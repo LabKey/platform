@@ -35,6 +35,7 @@ public class OutputStreamWrapper extends OutputStream
         _out = out;
     }
 
+    @Override
     public void write(int b) throws IOException
     {
         _out.write(b);

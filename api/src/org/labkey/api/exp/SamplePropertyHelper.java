@@ -210,11 +210,13 @@ public abstract class SamplePropertyHelper<ObjectType>
             _autoCompletePrefix = autoCompletePrefix;
         }
 
+        @Override
         public boolean isEditable()
         {
             return true;
         }
 
+        @Override
         protected Object getInputValue(RenderContext ctx)
         {
             TableViewForm viewForm = ctx.getForm();

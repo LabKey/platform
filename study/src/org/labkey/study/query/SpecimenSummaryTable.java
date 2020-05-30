@@ -72,6 +72,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
                 _rootTable.getColumn("ParticipantSequenceNum"));
         _participantSequenceNumColumn.setFk(new LookupForeignKey(cf,"ParticipantSequenceNum", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return new ParticipantVisitTable(_userSchema, getLookupContainerFilter(), false);
@@ -122,6 +123,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         var commentsCol = addColumn(new ExprColumn(this, "Comments", sqlFragComments, JdbcType.VARCHAR));
         commentsCol.setDisplayColumnFactory(new DisplayColumnFactory()
         {
+            @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
                 return new CommentDisplayColumn(colInfo, SpecimenSummaryTable.this);
@@ -194,16 +196,19 @@ public class SpecimenSummaryTable extends BaseStudyTable
             setWidth("200px");
         }
 
+        @Override
         public boolean isFilterable()
         {
             return false;
         }
 
+        @Override
         public boolean isSortable()
         {
             return false;
         }
 
+        @Override
         public void addQueryColumns(Set<ColumnInfo> columns)
         {
             FieldKey me = getBoundColumn().getFieldKey();
@@ -369,11 +374,13 @@ public class SpecimenSummaryTable extends BaseStudyTable
             return sb.toString();
         }
 
+        @Override
         public Object getDisplayValue(RenderContext ctx)
         {
             return getDisplayText(ctx, false);
         }
 
+        @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             out.write(getDisplayText(ctx, true));

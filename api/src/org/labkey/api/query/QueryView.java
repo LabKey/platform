@@ -1647,6 +1647,7 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
+        @Override
         public boolean accept(String type, String label)
         {
             if (_filter.accept(type, label))

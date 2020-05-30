@@ -212,6 +212,7 @@ public class SavePaths implements DavCrawler.SavePaths
     }
 
 
+    @Override
     public boolean insertPath(Path path, Date nextCrawl)
     {
         try
@@ -251,6 +252,7 @@ public class SavePaths implements DavCrawler.SavePaths
     }
 
 
+    @Override
     public boolean updatePath(Path path, java.util.Date last, java.util.Date next, boolean create)
     {
         try
@@ -270,6 +272,7 @@ public class SavePaths implements DavCrawler.SavePaths
     }
     
 
+    @Override
     public void updatePrefix(Path path, Date next, boolean forceIndex)
     {
         if (next == null)
@@ -295,6 +298,7 @@ public class SavePaths implements DavCrawler.SavePaths
     }
 
     
+    @Override
     public void clearFailedDocuments()
     {
         assert failDate.getTime() < oldDate.getTime();
@@ -304,6 +308,7 @@ public class SavePaths implements DavCrawler.SavePaths
     }
 
 
+    @Override
     public void deletePath(Path path)
     {
         // UNDONE LIKE ESCAPE
@@ -313,6 +318,7 @@ public class SavePaths implements DavCrawler.SavePaths
     }
 
 
+    @Override
     public Date getNextCrawl()
     {
         SQLFragment f = new SQLFragment("SELECT MIN(NextCrawl) FROM search.CrawlCollections WHERE LastCrawled IS NULL OR LastCrawled < ?");
@@ -321,6 +327,7 @@ public class SavePaths implements DavCrawler.SavePaths
     }
 
 
+    @Override
     public Map<Path, Pair<Date,Date>> getPaths(int limit)
     {
         Date now = new Date(System.currentTimeMillis());
@@ -387,6 +394,7 @@ public class SavePaths implements DavCrawler.SavePaths
     // FILES/RESOURCES
     //
 
+    @Override
     public Map<String, DavCrawler.ResourceInfo> getFiles(Path path)
     {
         SQLFragment s = new SQLFragment(
@@ -411,6 +419,7 @@ public class SavePaths implements DavCrawler.SavePaths
 
     String datetime = null;
 
+    @Override
     public boolean updateFile(@NotNull Path path, @NotNull Date lastIndexed, Date modified)
     {
         try

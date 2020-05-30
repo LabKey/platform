@@ -68,6 +68,7 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
         return QueryService.get().metadataLastModified();
     }
 
+    @Override
     public ApiResponse execute(Form form, BindException errors) throws Exception
     {
         _withHtmlEncoding = form.isWithHtmlEncoding();

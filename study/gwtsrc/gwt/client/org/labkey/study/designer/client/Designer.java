@@ -69,6 +69,7 @@ public class Designer implements EntryPoint
     /**
      * This is the entry point method.
      */
+    @Override
     public void onModuleLoad()
     {
         StudyApplication.getRootPanel().add(new Label("Loading..."));
@@ -81,6 +82,7 @@ public class Designer implements EntryPoint
         {
             getService().getBlank(new ErrorDialogAsyncCallback<GWTStudyDefinition>("Couldn't get blank protocol"){
 
+                @Override
                 public void onSuccess(GWTStudyDefinition result)
                 {
                     showStudy(result);
@@ -95,6 +97,7 @@ public class Designer implements EntryPoint
 
         Window.addWindowClosingHandler(new Window.ClosingHandler()
         {
+            @Override
             public void onWindowClosing(Window.ClosingEvent event)
             {
                 if (dirty)
@@ -115,6 +118,7 @@ public class Designer implements EntryPoint
     void showStudy(final int studyId, final int revision)
     {
         getService().getRevision(studyId, revision, new ErrorDialogAsyncCallback<GWTStudyDefinition>("Couldn't get protocol " + studyId + ", revision " + revision){
+            @Override
             public void onSuccess(GWTStudyDefinition result)
             {
                 showStudy(result);
@@ -185,6 +189,7 @@ public class Designer implements EntryPoint
                 {
                     Widget createRepositoryButton = new ImageButton("Create Study Folder", new ClickHandler()
                     {
+                        @Override
                         public void onClick(ClickEvent event)
                         {
                             createRepository();
@@ -199,11 +204,13 @@ public class Designer implements EntryPoint
         {
             buttonPanel.add(new ImageButton("Finished", new ClickHandler()
             {
+                @Override
                 public void onClick(ClickEvent event)
                 {
                     if (isDirty())
                     {
                         new Saver() {
+                            @Override
                             void afterSave(GWTStudyDesignVersion info) {
                                 String location = PropertyUtil.getServerProperty("finishURL");
                                 if (null == location)
@@ -230,6 +237,7 @@ public class Designer implements EntryPoint
             }));
 
             saveButton = new ImageButton("Save", new ClickHandler() {
+                @Override
                 public void onClick(ClickEvent event)
                 {
                     new Saver().save();
@@ -247,6 +255,7 @@ public class Designer implements EntryPoint
             {
                 buttonPanel.add(new ImageButton("Configure Dropdown Options", new ClickListener()
                 {
+                    @Override
                     public void onClick(Widget sender)
                     {
                         DesignerLookupConfigDialog dlg = new DesignerLookupConfigDialog(false, true);
@@ -263,10 +272,12 @@ public class Designer implements EntryPoint
             {
                 Widget createPlaceholderDatasetsButton = new ImageButton("Create Assay Datasets", new ClickHandler()
                 {
+                    @Override
                     public void onClick(ClickEvent event)
                     {
                         getService().ensureDatasetPlaceholders(definition, new ErrorDialogAsyncCallback<GWTStudyDefinition>()
                             {
+                                @Override
                                 public void onSuccess(GWTStudyDefinition def)
                                 {
                                     Window.alert("Placeholder datasets created. Use Manage/Study Schedule to define datasets or link to assay data.");
@@ -283,6 +294,7 @@ public class Designer implements EntryPoint
             createTimepointButton.setEnabled("true".equals(PropertyUtil.getServerProperty("canCreateTimepoints")));
             createTimepointButton.addClickHandler(new ClickHandler()
             {
+                @Override
                 public void onClick(ClickEvent event)
                 {
                     if (definition.getAssaySchedule().getTimepoints().size() == 0)
@@ -293,6 +305,7 @@ public class Designer implements EntryPoint
 
                     getService().createTimepoints(definition, new ErrorDialogAsyncCallback<GWTStudyDefinition>()
                     {
+                        @Override
                         public void onSuccess(GWTStudyDefinition def)
                         {
                             Window.alert(def.getAssaySchedule().getTimepoints().size() +  " timepoints created.");
@@ -313,6 +326,7 @@ public class Designer implements EntryPoint
             createCohortButton.setVisible("true".equals(PropertyUtil.getServerProperty("canAdmin")));
             getService().hasNewCohorts(definition, new ErrorDialogAsyncCallback<Boolean>()
             {
+                @Override
                 public void onSuccess(Boolean hasNewCohort)
                 {
                     createCohortButton.setVisible(hasNewCohort);
@@ -321,6 +335,7 @@ public class Designer implements EntryPoint
 
             createCohortButton.addClickHandler(new ClickHandler()
             {
+                @Override
                 public void onClick(ClickEvent event)
                 {
                     if (definition.getGroups().size() == 0)
@@ -331,6 +346,7 @@ public class Designer implements EntryPoint
 
                     getService().createCohorts(definition, new ErrorDialogAsyncCallback<GWTStudyDefinition>()
                     {
+                        @Override
                         public void onSuccess(GWTStudyDefinition def)
                         {
                             Window.alert("New cohorts created.");
@@ -362,6 +378,7 @@ public class Designer implements EntryPoint
 
             getService().save(definition, new ErrorDialogAsyncCallback<GWTStudyDesignVersion>()
             {
+                @Override
                 public void onSuccess(GWTStudyDesignVersion info)
                 {
                     if (info.isSaveSuccessful())

@@ -48,6 +48,7 @@ public class ParticipantCategoryImpl extends AbstractParticipantCategory<String>
     {
     }
 
+    @Override
     public AbstractParticipantGroup<String>[] createGroups()
     {
         return new ParticipantGroup[0];
@@ -133,6 +134,7 @@ public class ParticipantCategoryImpl extends AbstractParticipantCategory<String>
     }
 
     // syntactic sugar
+    @Override
     public ParticipantGroup[] getGroups()
     {
         return (ParticipantGroup[]) super.getGroups();

@@ -46,6 +46,7 @@ public class VisitMapKey implements Comparable
         return datasetId * 4093 + visitRowId;
     }
 
+    @Override
     public int compareTo(Object o)
     {
         VisitMapKey k = (VisitMapKey) o;

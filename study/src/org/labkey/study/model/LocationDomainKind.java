@@ -92,6 +92,7 @@ public final class LocationDomainKind extends AbstractSpecimenDomainKind
         ADDED_PROPERTIES = Arrays.asList(addedProps);
     }
 
+    @Override
     public String getKindName()
     {
         return NAME;
@@ -115,6 +116,7 @@ public final class LocationDomainKind extends AbstractSpecimenDomainKind
         return Collections.emptySet();
     }
 
+    @Override
     protected String getNamespacePrefix()
     {
         return NAMESPACE_PREFIX;

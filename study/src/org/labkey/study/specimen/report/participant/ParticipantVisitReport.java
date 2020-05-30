@@ -46,6 +46,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
         _showCohorts = StudyManager.getInstance().showCohorts(_container, getUser());
     }
 
+    @Override
     public Collection<Row> createRows()
     {
         CohortFilter.Type cohortType = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
@@ -77,11 +78,13 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
         return rows.values();
     }
 
+    @Override
     public int getLabelDepth()
     {
         return _showCohorts ? 2 : 1;
     }
 
+    @Override
     protected String[] getCellExcelText(VisitImpl visit, SummaryByVisitParticipant summary)
     {
         if (summary == null || summary.getVialCount() == null)
@@ -99,6 +102,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
         return new String[] { summaryString.toString() };
     }
 
+    @Override
     protected String getCellHtml(VisitImpl visit, SummaryByVisitParticipant summary)
     {
         if (summary == null || summary.getVialCount() == null)

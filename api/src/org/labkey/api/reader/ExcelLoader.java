@@ -221,6 +221,7 @@ public class ExcelLoader extends DataLoader
     }
 
 
+    @Override
     public String[][] getFirstNLines(int n) throws IOException
     {
         if (null != _file)
@@ -313,6 +314,7 @@ public class ExcelLoader extends DataLoader
         return cells.toArray(new String[cells.size()][]);
     }
 
+    @Override
     public CloseableIterator<Map<String, Object>> iterator()
     {
         try
@@ -344,6 +346,7 @@ public class ExcelLoader extends DataLoader
     }
 */
 
+    @Override
     public void close()
     {
     }
@@ -529,6 +532,7 @@ public class ExcelLoader extends DataLoader
             return fields;
         }
 
+        @Override
         public void close() throws IOException
         {
             super.close();       // TODO: Shouldn't this close the workbook?
@@ -775,6 +779,7 @@ public class ExcelLoader extends DataLoader
            * (non-Javadoc)
            * @see org.xml.sax.helpers.DefaultHandler#startElement(java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
            */
+        @Override
         public void startElement(String uri, String localName, String name,
                                  Attributes attributes)
         {
@@ -841,6 +846,7 @@ public class ExcelLoader extends DataLoader
            * (non-Javadoc)
            * @see org.xml.sax.helpers.DefaultHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
            */
+        @Override
         public void endElement(String uri, String localName, String name)
         {
             Object thisValue = null;
@@ -938,6 +944,7 @@ public class ExcelLoader extends DataLoader
          * Captures characters only if a suitable element is open.
          * Originally was just "v"; extended for inlineStr also.
          */
+        @Override
         public void characters(char[] ch, int start, int length)
         {
             debugPrint((vIsOpen?"+":" ") + "chars:" + new String(ch,start,length));

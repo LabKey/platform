@@ -142,6 +142,7 @@ public class PropertyValidator implements Serializable, Cloneable
         _propertyId = propertyId;
     }
 
+    @Override
     public final PropertyValidator clone()
     {
         try

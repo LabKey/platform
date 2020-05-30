@@ -86,12 +86,14 @@ public class Entity implements java.io.Serializable, Ownable
     }
 
 
+    @Override
     public int getCreatedBy()
     {
         return createdBy;
     }
 
 
+    @Override
     public void setCreatedBy(int createdBy)
     {
         this.createdBy = createdBy;
@@ -110,12 +112,14 @@ public class Entity implements java.io.Serializable, Ownable
     }
 
 
+    @Override
     public int getModifiedBy()
     {
         return modifiedBy;
     }
 
 
+    @Override
     public void setModifiedBy(int modifiedBy)
     {
         this.modifiedBy = modifiedBy;
@@ -134,6 +138,7 @@ public class Entity implements java.io.Serializable, Ownable
     }
 
 
+    @Override
     public String getContainerId()
     {
         return null==containerId?null:containerId.toString();

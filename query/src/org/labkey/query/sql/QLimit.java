@@ -23,6 +23,7 @@ public class QLimit extends QNode
 		super(QExpr.class);
 	}
 	
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.append("\nLIMIT ");

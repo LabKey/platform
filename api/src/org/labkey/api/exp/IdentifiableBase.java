@@ -49,6 +49,7 @@ public class IdentifiableBase implements Identifiable, Serializable
         container = oo.getContainer();
     }
 
+    @Override
     public String getLSID()
     {
         return _lsid;
@@ -64,6 +65,7 @@ public class IdentifiableBase implements Identifiable, Serializable
         _name = name;
     }
 
+    @Override
     public String getName()
     {
         if (null == _name && null != getLSID())
@@ -84,6 +86,7 @@ public class IdentifiableBase implements Identifiable, Serializable
         this.objectId = objectId;
     }
 
+    @Override
     public Container getContainer()
     {
         return container;

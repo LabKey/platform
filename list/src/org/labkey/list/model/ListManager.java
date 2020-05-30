@@ -857,15 +857,17 @@ public class ListManager implements SearchService.DocumentProvider
     {
         AttachmentService as = AttachmentService.get();
 
-        FieldKey entityIdKey = FieldKey.fromParts("EntityId");
-        TableInfo listTable = new ListQuerySchema(User.getSearchUser(), list.getContainer()).getTable(list.getName());
+        // make sure container still exists (race condition on container delete)
+        Container listContainer = list.getContainer();
+        if (null == listContainer)
+            return;
+        TableInfo listTable = new ListQuerySchema(User.getSearchUser(), listContainer).getTable(list.getName());
         if (null == listTable)
             return;
 
         List<String> parentIds = new ArrayList<>();
-        Set<String> cols = new HashSet<>(Arrays.asList("EntityId"));
-        new TableSelector(listTable, cols).setJdbcCaching(false).forEachMap(row -> {
-            parentIds.add((String)row.get(entityIdKey.getName()));
+        new TableSelector(listTable, Set.of("EntityId")).setJdbcCaching(false).forEachMap(row -> {
+            parentIds.add((String)row.get("EntityId"));
 
             // Delete in batches to minimize db queries
             if (parentIds.size() > 10000)
@@ -1042,6 +1044,7 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
+    @Override
     public void indexDeleted()
     {
         TableInfo listTable = getListMetadataTable();

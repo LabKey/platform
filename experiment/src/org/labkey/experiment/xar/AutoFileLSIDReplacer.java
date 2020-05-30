@@ -51,6 +51,7 @@ public class AutoFileLSIDReplacer implements Replacer
         _source = source;
     }
 
+    @Override
     public String getReplacement(String original) throws XarFormatException
     {
         if (original.equals(AUTO_FILE_LSID_NAME))

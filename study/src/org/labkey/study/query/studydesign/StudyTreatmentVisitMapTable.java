@@ -45,6 +45,7 @@ public class StudyTreatmentVisitMapTable extends BaseStudyTable
         var cohortCol = new AliasedColumn(this, "CohortId", _rootTable.getColumn("CohortId"));
         cohortCol.setFk(new LookupForeignKey("RowId")
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return new CohortTable(_userSchema, cf);
@@ -66,6 +67,7 @@ public class StudyTreatmentVisitMapTable extends BaseStudyTable
         var visitCol = new AliasedColumn(this, "VisitId", _rootTable.getColumn("VisitId"));
         visitCol.setFk(new LookupForeignKey("RowId")
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return new VisitTable(_userSchema, cf);

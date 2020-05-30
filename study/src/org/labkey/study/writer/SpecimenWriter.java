@@ -54,11 +54,13 @@ import java.util.List;
  */
 public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
 {
+    @Override
     public String getDataType()
     {
         return null;
     }
 
+    @Override
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         StudySchema schema = StudySchema.getInstance();

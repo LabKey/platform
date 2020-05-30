@@ -50,6 +50,7 @@ public class SimpleModuleContainerListener extends ContainerManager.AbstractCont
         _owner = owner;
     }
 
+    @Override
     public void containerDeleted(Container c, User user)
     {
         for (final String schemaName : _owner.getSchemaNames())

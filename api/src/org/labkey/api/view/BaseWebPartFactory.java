@@ -87,6 +87,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
         this(name, WebPartFactory.LOCATION_BODY);
     }
 
+    @Override
     public String getName()
     {
         return _name;
@@ -103,6 +104,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
         _name = name;
     }
 
+    @Override
     public Set<String> getAllowableLocations()
     {
         return _allowableLocations;
@@ -113,21 +115,25 @@ public abstract class BaseWebPartFactory implements WebPartFactory
         return _allowableScopes==null ? defaultAllowableScopes : _allowableScopes;
     }
 
+    @Override
     public String getDefaultLocation()
     {
         return _allowableLocations.iterator().next();
     }
 
+    @Override
     public HttpView getEditView(WebPart webPart, ViewContext context)
     {
         return null;
     }
 
+    @Override
     public WebPart createWebPart()
     {
         return createWebPart(getDefaultLocation());
     }
 
+    @Override
     public WebPart createWebPart(String location)
     {
         WebPart part = new WebPart();
@@ -165,16 +171,19 @@ public abstract class BaseWebPartFactory implements WebPartFactory
         _legacyNames = Collections.unmodifiableList(newNames);
     }
 
+    @Override
     public boolean isEditable()
     {
         return _editable;
     }
 
+    @Override
     public boolean showCustomizeOnInsert()
     {
         return _showCustomizeOnInsert;
     }
 
+    @Override
     public Module getModule()
     {
         if (_module == null)
@@ -182,6 +191,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
         return _module;
     }
 
+    @Override
     public void setModule(Module module)
     {
         if (_module != null && !_module.equals(module))
@@ -189,11 +199,13 @@ public abstract class BaseWebPartFactory implements WebPartFactory
         _module = module;
     }
 
+    @Override
     public List<String> getLegacyNames()
     {
         return _legacyNames;
     }
 
+    @Override
     public boolean isAvailable(Container c, String scope, String location)
     {
         if (!getAllowableScopes().contains(scope))

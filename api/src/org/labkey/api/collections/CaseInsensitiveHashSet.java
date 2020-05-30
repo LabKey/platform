@@ -50,11 +50,13 @@ public class CaseInsensitiveHashSet extends HashSet<String>
         addAll(col);
     }
 
+    @Override
     public boolean remove(Object o)
     {
         return super.remove(o == null ? null : ((String) o).toLowerCase());
     }
 
+    @Override
     public boolean add(String s)
     {
         return super.add(s == null ? null : s.toLowerCase());
@@ -66,6 +68,7 @@ public class CaseInsensitiveHashSet extends HashSet<String>
             add(value);
     }
 
+    @Override
     public boolean contains(Object o)
     {
         return super.contains(o == null ? null : ((String) o).toLowerCase());

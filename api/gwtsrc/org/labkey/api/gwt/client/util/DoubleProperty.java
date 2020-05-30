@@ -42,11 +42,13 @@ public class DoubleProperty implements IPropertyWrapper, IsSerializable
         set(d);
     }
 
+    @Override
     public Object get()
     {
         return d;
     }
 
+    @Override
     public void set(Object o)
     {
         d = (Double)o;

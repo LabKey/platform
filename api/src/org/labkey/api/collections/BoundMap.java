@@ -190,16 +190,19 @@ public class BoundMap extends AbstractMap<String, Object> implements Serializabl
             this.key = key;
         }
 
+        @Override
         public String getKey()
         {
             return key;
         }
 
+        @Override
         public Object getValue()
         {
             return get(key);
         }
 
+        @Override
         public Object setValue(Object v)
         {
             return put(key, v);

@@ -51,6 +51,7 @@ public class ConsoleOutput extends AbstractParamReplacement
         return file;
     }
 
+    @Override
     public HttpView render(ViewContext context)
     {
         ROutputView view = new TextOutput.TextOutputView(this);

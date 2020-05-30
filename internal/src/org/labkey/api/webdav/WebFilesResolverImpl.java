@@ -69,11 +69,13 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
         return _instance;
     }
 
+    @Override
     public boolean requiresLogin()
     {
         return false;
     }
 
+    @Override
     public Path getRootPath()
     {
         return _rootPath;
@@ -81,6 +83,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
 
     WebFilesFolderResource _root = null;
 
+    @Override
     protected synchronized WebFilesFolderResource getRoot()
     {
         if (null == _root)
@@ -251,6 +254,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
             return perms.contains(UpdatePermission.class) || perms.contains(DeletePermission.class);
         }
 
+        @Override
         public boolean canRename(User user, boolean forRename)
         {
             return hasAccess(user) && !user.isGuest() && canCreate(user, forRename) && canDelete(user, forRename, null);
@@ -325,6 +329,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
             return collection.stream().anyMatch(s -> s.equalsIgnoreCase(target));
         }
 
+        @Override
         public WebdavResource find(String child)
         {
             String name = null;

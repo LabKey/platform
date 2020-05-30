@@ -209,6 +209,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
     protected abstract void writeObject(Object object) throws IOException;
 
     /** Completes the response, writing out closing elements/tags/etc */
+    @Override
     public abstract void close() throws IOException;
 
     public void writeAndClose(Throwable e, int status) throws IOException

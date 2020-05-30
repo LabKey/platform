@@ -106,6 +106,7 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
                 if (COLUMN_NAME_DATASET_ID.equalsIgnoreCase(col.getName()))
                 {
                     LookupForeignKey fk = new LookupForeignKey("DatasetId", "Label") {
+                        @Override
                         public TableInfo getLookupTableInfo()
                         {
                             return StudySchema.getInstance().getTableInfoDataset();

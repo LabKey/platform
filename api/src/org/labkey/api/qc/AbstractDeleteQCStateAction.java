@@ -27,6 +27,7 @@ public abstract class AbstractDeleteQCStateAction extends FormHandlerAction<Dele
 {
     protected static QCStateHandler _qcStateHandler;
     public abstract QCStateHandler getQCStateHandler();
+    @Override
     public abstract ActionURL getSuccessURL(DeleteQCStateForm form);
 
     @Override

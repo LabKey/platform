@@ -40,17 +40,20 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
         makeWriteable(c);
     }
 
+    @Override
     protected String getType()
     {
         return "look and feel settings";
     }
 
+    @Override
     protected String getGroupName()
     {
         return LOOK_AND_FEEL_SET_NAME;
     }
 
     // Make public plus clear out the folder settings cache on every save
+    @Override
     public void save()
     {
         super.save();

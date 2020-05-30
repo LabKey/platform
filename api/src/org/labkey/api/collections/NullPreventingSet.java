@@ -37,39 +37,46 @@ public class NullPreventingSet<T> implements Set<T>
         _set = set;
     }
 
+    @Override
     public int size()
     {
         return _set.size();
     }
 
+    @Override
     public boolean isEmpty()
     {
         return _set.isEmpty();
     }
 
+    @Override
     public boolean contains(Object o)
     {
         return _set.contains(o);
     }
 
+    @Override
     @NotNull
     public Iterator<T> iterator()
     {
         return _set.iterator();
     }
 
+    @Override
     @NotNull
     public Object[] toArray()
     {
         return _set.toArray();
     }
 
+    @Override
     @NotNull
     public <T> T[] toArray(T[] a)
     {
         return _set.toArray(a);
     }
 
+    @Override
     public boolean add(T t)
     {
         if (t == null)
@@ -79,31 +86,37 @@ public class NullPreventingSet<T> implements Set<T>
         return _set.add(t);
     }
 
+    @Override
     public boolean remove(Object o)
     {
         return _set.remove(o);
     }
 
+    @Override
     public boolean containsAll(Collection<?> c)
     {
         return _set.containsAll(c);
     }
 
+    @Override
     public boolean addAll(Collection<? extends T> c)
     {
         return _set.addAll(c);
     }
 
+    @Override
     public boolean retainAll(Collection<?> c)
     {
         return _set.retainAll(c);
     }
 
+    @Override
     public boolean removeAll(Collection<?> c)
     {
         return _set.removeAll(c);
     }
 
+    @Override
     public void clear()
     {
         _set.clear();

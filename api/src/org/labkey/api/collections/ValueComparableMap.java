@@ -52,6 +52,7 @@ public class ValueComparableMap<K extends Comparable<K>, V> extends TreeMap<K, V
         return (Ordering<K2>)Ordering.natural();
     }
 
+    @Override
     public V put(K k, V v)
     {
         if (_valueMap.containsKey(k))

@@ -29,6 +29,7 @@ import org.labkey.api.view.NavTree;
  */
 public abstract class FormHandlerAction<FORM> extends FormViewAction<FORM>
 {
+    @Override
     public final ModelAndView getView(FORM form, boolean reshow, BindException errors)
     {
         if (null == errors)
@@ -43,6 +44,7 @@ public abstract class FormHandlerAction<FORM> extends FormViewAction<FORM>
         return new SimpleErrorView(errors);
     }
 
+    @Override
     public final void addNavTrail(NavTree root)
     {
         if (null == getPageConfig().getTitle())

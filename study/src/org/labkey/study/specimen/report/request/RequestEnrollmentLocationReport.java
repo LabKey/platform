@@ -41,6 +41,7 @@ public class RequestEnrollmentLocationReport extends SpecimenTypeVisitReport
         _completedRequestsOnly = completedRequestsOnly;
     }
 
+    @Override
     protected String getFilterQueryString(VisitImpl visit, SpecimenManager.SummaryByVisitType summary)
     {
         return super.getFilterQueryString(visit, summary)  + "&" +

@@ -30,6 +30,7 @@ import java.util.List;
  */
 public abstract class BaseRedirectReport extends RedirectReport
 {
+    @Override
     public boolean canEdit(User user, Container container, List<ValidationError> errors)
     {
         super.canEdit(user, container, errors);
@@ -42,6 +43,7 @@ public abstract class BaseRedirectReport extends RedirectReport
         return errors.isEmpty();
     }
 
+    @Override
     public boolean canDelete(User user, Container container, List<ValidationError> errors)
     {
         super.canDelete(user, container, errors);

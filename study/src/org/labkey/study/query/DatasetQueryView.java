@@ -195,6 +195,7 @@ public class DatasetQueryView extends StudyQueryView
         return form;
     }
 
+    @Override
     public DataView createDataView()
     {
         DataView view = super.createDataView();
@@ -331,6 +332,7 @@ public class DatasetQueryView extends StudyQueryView
         return url;
     }
 
+    @Override
     protected void populateReportButtonBar(ButtonBar bar)
     {
         Report report = getSettings().getReportView(getViewContext());
@@ -586,6 +588,7 @@ public class DatasetQueryView extends StudyQueryView
         private int _datasetId;
         private int _visitRowId;
 
+        @Override
         public @NotNull BindException bindParameters(PropertyValues params)
         {
             return BaseViewAction.springBindParameters(this, "form", params);

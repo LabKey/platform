@@ -153,6 +153,7 @@ public class LookupColumn extends BaseColumnInfo
         setAlias(alias);
     }
 
+    @Override
     public SQLFragment getValueSql(String tableAliasName)
     {
         return _lookupColumn.getValueSql(getTableAlias(tableAliasName));
@@ -217,6 +218,7 @@ public class LookupColumn extends BaseColumnInfo
     }
 
     
+    @Override
     @SuppressWarnings({"ConstantConditions"})
     public void declareJoins(String baseAlias, Map<String, SQLFragment> map)
     {
@@ -270,6 +272,7 @@ public class LookupColumn extends BaseColumnInfo
      * ref 10493
      * @param baseAlias alias of table on "left hand side" of the lookup
      */
+    @Override
     public String getTableAlias(String baseAlias)
     {
         return getTableAlias(baseAlias, _foreignKey.getAlias(), _foreignKey.getSqlDialect());
@@ -283,6 +286,7 @@ public class LookupColumn extends BaseColumnInfo
         return alias;
     }
 
+    @Override
     public String getColumnName()
     {
         return _lookupColumn.getName();

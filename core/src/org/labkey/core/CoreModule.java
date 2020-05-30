@@ -58,6 +58,7 @@ import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.products.ProductRegistry;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
@@ -198,6 +199,7 @@ import org.labkey.core.portal.ProjectController;
 import org.labkey.core.portal.UtilController;
 import org.labkey.core.products.ProductController;
 import org.labkey.core.project.FolderNavigationForm;
+import org.labkey.core.qc.CoreQCStateHandler;
 import org.labkey.core.qc.QCStateImporter;
 import org.labkey.core.qc.QCStateWriter;
 import org.labkey.core.query.AttachmentAuditProvider;
@@ -587,6 +589,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     if (webPart.getPropertyMap().isEmpty())
                     {
                         // Configure to show subfolders if not previously configured
+                        webPart = new WebPart(webPart);
                         webPart.getPropertyMap().put("title", "Subfolders");
                         webPart.getPropertyMap().put("containerFilter", ContainerFilter.Type.CurrentAndFirstChildren.name());
                         webPart.getPropertyMap().put("containerTypes", "folder");
@@ -788,6 +791,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AuditLogService.get().registerAuditType(new FileSystemBatchAuditProvider());
             AuditLogService.get().registerAuditType(new ClientApiAuditProvider());
             AuditLogService.get().registerAuditType(new AuthenticationSettingsAuditTypeProvider());
+
+            QCStateManager.getInstance().registerQCHandler(new CoreQCStateHandler());
         }
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());

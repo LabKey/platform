@@ -291,6 +291,7 @@ public class TempTableTracker extends WeakReference<Object>
             setDaemon(true);
         }
 
+        @Override
         public void run()
         {
             while (true)
@@ -316,12 +317,14 @@ public class TempTableTracker extends WeakReference<Object>
         }
 
 
+        @Override
         public void shutdownPre()
         {
             _shutdown.set(true);
             interrupt();
         }
 
+        @Override
         public void shutdownStarted()
         {
             synchronized(createdTableNames)

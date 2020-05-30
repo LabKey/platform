@@ -525,6 +525,7 @@ public class MailHelper
             _map.put(Collections.singleton(email), m);
         }
 
+        @Override
         public void run()
         {
             for (Map.Entry<Collection<String>, MimeMessage> entry : _map.entrySet())

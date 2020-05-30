@@ -79,6 +79,7 @@ public class Sas92Dialect extends SasDialect
         }
     }
 
+    @Override
     public PkMetaDataReader getPkMetaDataReader(ResultSet rs)
     {
         return new PkMetaDataReader(rs, "COLUMN_NAME", "KEY_SEQ") {

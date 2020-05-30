@@ -72,6 +72,7 @@ public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
 
         _replacements.add(new ReplacementParam<String>("folderUrl", String.class, "URL to folder")
         {
+            @Override
             public String getValue(Container c)
             {
                 return _folderUrl == null ? null : _folderUrl.getURIString();
@@ -79,6 +80,7 @@ public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
         });
         _replacements.add(new ReplacementParam<String>("folderPath", String.class, "Path to folder")
         {
+            @Override
             public String getValue(Container c)
             {
                 return PageFlowUtil.filter(c.getPath());
@@ -86,10 +88,12 @@ public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
         });
         _replacements.add(new ReplacementParam<String>("emailPrefsUrl", String.class, "URL to set email preferences")
         {
+            @Override
             public String getValue(Container c) {return _emailPrefsUrl == null ? null : _emailPrefsUrl.getURIString();}
         });
         _replacements.add(new ReplacementParam<String>("reportAndDatasetList", String.class, "Formatted list of changed reports/datasets", ContentType.HTML)
         {
+            @Override
             public String getValue(Container c) {return _reportAndDatasetList; }
         });
         _replacements.addAll(super.getValidReplacements());

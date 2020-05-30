@@ -54,21 +54,25 @@ public abstract class UserOriginatedEmailTemplate extends EmailTemplate
     {
         super(name, subject, body, description, contentType, senderDisplayName, replyToEmail);
         _replacements.add(new ReplacementParam<String>("userFirstName", String.class, "First name of the user who originated the action"){
+            @Override
             public String getValue(Container c) {
                 return _originatingUser == null ? null : _originatingUser.getFirstName();
             }
         });
         _replacements.add(new ReplacementParam<String>("userLastName", String.class, "Last name of the user who originated the action"){
+            @Override
             public String getValue(Container c) {
                 return _originatingUser == null ? null : _originatingUser.getLastName();
             }
         });
         _replacements.add(new ReplacementParam<String>("userDisplayName", String.class, "Display name of the user who originated the action"){
+            @Override
             public String getValue(Container c) {
                 return _originatingUser == null ? null : _originatingUser.getFriendlyName();
             }
         });
         _replacements.add(new ReplacementParam<String>("userEmail", String.class, "Email address of the user who originated the action"){
+            @Override
             public String getValue(Container c) {
                 return _originatingUser == null ? null : _originatingUser.getEmail();
             }
@@ -76,6 +80,7 @@ public abstract class UserOriginatedEmailTemplate extends EmailTemplate
 
         _replacements.addAll(super.getValidReplacements());
     }
+    @Override
     public List<ReplacementParam> getValidReplacements(){return _replacements;}
     public void setOriginatingUser(User user){_originatingUser = user;}
 }

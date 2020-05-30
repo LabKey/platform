@@ -89,11 +89,13 @@ public class StudyDesignController extends BaseStudyController
     @RequiresPermission(UpdatePermission.class)
     public class ManageAssayScheduleAction extends SimpleViewAction<AssayScheduleForm>
     {
+        @Override
         public ModelAndView getView(AssayScheduleForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/study/view/studydesign/manageAssaySchedule.jsp", form);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageAssaySchedule");
@@ -121,11 +123,13 @@ public class StudyDesignController extends BaseStudyController
     @RequiresPermission(UpdatePermission.class)
     public class ManageStudyProductsAction extends SimpleViewAction<ReturnUrlForm>
     {
+        @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/study/view/studydesign/manageStudyProducts.jsp", form);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("studyProducts");
@@ -153,6 +157,7 @@ public class StudyDesignController extends BaseStudyController
     @RequiresPermission(UpdatePermission.class)
     public class ManageTreatmentsAction extends SimpleViewAction<ManageTreatmentsBean>
     {
+        @Override
         public ModelAndView getView(ManageTreatmentsBean form, BindException errors)
         {
             // if the singleTable param is not explicitly set, do a container check
@@ -162,6 +167,7 @@ public class StudyDesignController extends BaseStudyController
             return new JspView<>("/org/labkey/study/view/studydesign/manageTreatments.jsp", form);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageTreatments");

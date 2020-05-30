@@ -24,6 +24,7 @@ import java.util.List;
  */
 public class QPivot extends QNode
 {
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.append("PIVOT ");

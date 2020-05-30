@@ -237,6 +237,7 @@ public class BlacklistFilter
             this.userAgent = userAgent;
         }
 
+        @Override
         public synchronized Suspicious clone()
         {
             Suspicious c = new Suspicious(this.host,this.userAgent);

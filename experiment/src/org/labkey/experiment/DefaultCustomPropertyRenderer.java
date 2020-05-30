@@ -39,6 +39,7 @@ import java.util.List;
  */
 public class DefaultCustomPropertyRenderer implements CustomPropertyRenderer
 {
+    @Override
     public String getValue(ObjectProperty prop, List<ObjectProperty> siblingProperties, Container c)
     {
         Object o = prop.value();
@@ -73,11 +74,13 @@ public class DefaultCustomPropertyRenderer implements CustomPropertyRenderer
         return PageFlowUtil.filter(value);
     }
 
+    @Override
     public boolean shouldRender(ObjectProperty prop, List<ObjectProperty> siblingProperties)
     {
         return true;
     }
 
+    @Override
     public String getDescription(ObjectProperty prop, List<ObjectProperty> siblingProperties)
     {
         PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(prop.getPropertyURI(), prop.getContainer());

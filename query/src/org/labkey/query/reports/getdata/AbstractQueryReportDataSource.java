@@ -54,6 +54,7 @@ public abstract class AbstractQueryReportDataSource extends AbstractBaseQueryRep
         _parameters = parameters;
     }
 
+    @Override
     @NotNull
     public UserSchema getSchema()
     {

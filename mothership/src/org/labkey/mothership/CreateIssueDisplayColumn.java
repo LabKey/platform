@@ -41,6 +41,7 @@ public class CreateIssueDisplayColumn extends DataColumn
         setEditable(false);
     }
 
+    @Override
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
         _saveButton.render(ctx, out);

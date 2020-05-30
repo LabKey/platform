@@ -47,6 +47,7 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
         super(factory, job);
     }
 
+    @Override
     @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
@@ -133,26 +134,31 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
             super(StudyImportFinalTask.class);
         }
 
+        @Override
         public PipelineJob.Task createTask(PipelineJob job)
         {
             return new StudyImportFinalTask(this, job);
         }
 
+        @Override
         public List<FileType> getInputTypes()
         {
             return Collections.emptyList();
         }
 
+        @Override
         public List<String> getProtocolActionNames()
         {
             return Collections.emptyList();
         }
 
+        @Override
         public String getStatusName()
         {
             return "STUDY IMPORT";    // TODO: RELOAD?
         }
 
+        @Override
         public boolean isJobComplete(PipelineJob job)
         {
             return false;

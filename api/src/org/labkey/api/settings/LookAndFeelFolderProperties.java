@@ -41,11 +41,13 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         _c = c;
     }
 
+    @Override
     protected String getType()
     {
         return "look and feel settings";
     }
 
+    @Override
     protected String getGroupName()
     {
         return LOOK_AND_FEEL_SET_NAME;
@@ -65,6 +67,7 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         throw new IllegalStateException("Must provide a container");
     }
 
+    @Override
     protected String lookupStringValue(Container c, String name, @Nullable String defaultValue)
     {
         if (c.isRoot())

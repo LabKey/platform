@@ -33,6 +33,7 @@ public abstract class AbstractTableMethodInfo extends AbstractMethodInfo
         super(jdbcType);
     }
     
+    @Override
     public final SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
     {
         throw new IllegalStateException("Table name required for this method");

@@ -50,17 +50,20 @@ public class AuthFilter implements Filter
     private static volatile boolean _sslChecked = false;
     private static SecurityPointcutService _securityPointcut = null;
 
+    @Override
     public void init(FilterConfig filterConfig)
     {
     }
 
 
+    @Override
     public void destroy()
     {
     }
 
 
     // This is the first (and last) LabKey code invoked on a request.
+    @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException
     {
         ViewServlet.setAsRequestThread();

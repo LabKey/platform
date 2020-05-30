@@ -61,6 +61,7 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
         return _reshow;
     }
 
+    @Override
     public final ModelAndView handleRequest() throws Exception
     {
         FORM form;
@@ -141,6 +142,7 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
     }
 
 
+    @Override
     protected String getCommandClassMethodName()
     {
         return "handlePost";
@@ -151,7 +153,7 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
         return defaultBindParameters(getCommand(), m);
     }
 
-
+    @Override
     public void validate(Object target, Errors errors)
     {
         if (target instanceof HasValidator)

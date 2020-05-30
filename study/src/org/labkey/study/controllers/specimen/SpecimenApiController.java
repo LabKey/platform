@@ -55,11 +55,13 @@ public class SpecimenApiController extends BaseStudyController
     {
         private ViewContext _viewContext;
 
+        @Override
         public ViewContext getViewContext()
         {
             return _viewContext;
         }
 
+        @Override
         public void setViewContext(ViewContext viewContext)
         {
             _viewContext = viewContext;
@@ -200,6 +202,7 @@ public class SpecimenApiController extends BaseStudyController
     @ApiVersion(9.1)
     public class GetRepositoriesAction extends ReadOnlyApiAction<SpecimenApiForm>
     {
+        @Override
         public ApiResponse execute(SpecimenApiForm form, BindException errors)
         {
             final List<Map<String, Object>> repositories = new ArrayList<>();
@@ -218,6 +221,7 @@ public class SpecimenApiController extends BaseStudyController
     @ApiVersion(9.1)
     public class GetOpenRequestsAction extends ReadOnlyApiAction<GetRequestsForm>
     {
+        @Override
         public ApiResponse execute(GetRequestsForm requestsForm, BindException errors)
         {
             Container container = requestsForm.getViewContext().getContainer();
@@ -251,6 +255,7 @@ public class SpecimenApiController extends BaseStudyController
     @ApiVersion(9.1)
     public class GetRequestAction extends ReadOnlyApiAction<RequestIdForm>
     {
+        @Override
         public ApiResponse execute(RequestIdForm requestIdForm, BindException errors)
         {
             SpecimenRequest request = getRequest(getUser(), getContainer(), requestIdForm.getRequestId(), false, false);
@@ -294,6 +299,7 @@ public class SpecimenApiController extends BaseStudyController
     @ApiVersion(9.1)
     public class GetProvidingLocations extends ReadOnlyApiAction<GetProvidingLocationsForm>
     {
+        @Override
         public ApiResponse execute(GetProvidingLocationsForm form, BindException errors)
         {
             Map<String, List<Vial>> vialsByHash = SpecimenManager.getInstance().getVialsForSampleHashes(getContainer(), getUser(),
@@ -312,6 +318,7 @@ public class SpecimenApiController extends BaseStudyController
     @ApiVersion(9.1)
     public class GetVialsByRowIdAction extends ReadOnlyApiAction<GetVialsByRowIdForm>
     {
+        @Override
         public ApiResponse execute(GetVialsByRowIdForm form, BindException errors)
         {
             Container container = form.getViewContext().getContainer();
@@ -424,6 +431,7 @@ public class SpecimenApiController extends BaseStudyController
     @ApiVersion(9.1)
     public class AddVialsToRequestAction extends MutatingApiAction<VialRequestForm>
     {
+        @Override
         public ApiResponse execute(VialRequestForm vialRequestForm, BindException errors) throws Exception
         {
             SpecimenRequest request = getRequest(getUser(), getContainer(), vialRequestForm.getRequestId(), true, true);
@@ -486,6 +494,7 @@ public class SpecimenApiController extends BaseStudyController
     @ApiVersion(9.1)
     public class RemoveVialsFromRequestAction extends MutatingApiAction<VialRequestForm>
     {
+        @Override
         public ApiResponse execute(VialRequestForm vialRequestForm, BindException errors) throws Exception
         {
             SpecimenRequest request = getRequest(getUser(), getContainer(), vialRequestForm.getRequestId(), true, true);
@@ -526,6 +535,7 @@ public class SpecimenApiController extends BaseStudyController
     @ApiVersion(9.1)
     public class AddSamplesToRequestAction extends MutatingApiAction<AddSpecimenToRequestForm>
     {
+        @Override
         public ApiResponse execute(AddSpecimenToRequestForm addSampleToRequestForm, BindException errors) throws Exception
         {
             final SpecimenRequest request = getRequest(getUser(), getContainer(), addSampleToRequestForm.getRequestId(), true, true);
@@ -560,6 +570,7 @@ public class SpecimenApiController extends BaseStudyController
     @ApiVersion(9.1)
     public class CancelRequestAction extends MutatingApiAction<RequestIdForm>
     {
+        @Override
         public ApiResponse execute(RequestIdForm deleteRequestForm, BindException errors) throws Exception
         {
             SpecimenRequest request = getRequest(getUser(), getContainer(), deleteRequestForm.getRequestId(), true, true);
@@ -604,6 +615,7 @@ public class SpecimenApiController extends BaseStudyController
     @ApiVersion(11.2)
     public class GetVialTypeSummaryAction extends ReadOnlyApiAction<SpecimenApiForm>
     {
+        @Override
         public ApiResponse execute(SpecimenApiForm form, BindException errors)
         {
             Container container = form.getViewContext().getContainer();
@@ -630,6 +642,7 @@ public class SpecimenApiController extends BaseStudyController
     @ApiVersion(13.1)
     public class GetSpecimenWebPartGroupsAction extends ReadOnlyApiAction<SpecimenApiForm>
     {
+        @Override
         public ApiResponse execute(SpecimenApiForm form, BindException errors)
         {
             // Build a JSON response with up to 2 groupings, each with up to 3 levels

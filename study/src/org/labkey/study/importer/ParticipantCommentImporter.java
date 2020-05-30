@@ -29,13 +29,16 @@ import org.springframework.validation.BindException;
  */
 public class ParticipantCommentImporter implements InternalStudyImporter
 {
+    @Override
     public String getDescription()
     {
         return StudyArchiveDataTypes.PARTICIPANT_COMMENTS;
     }
 
+    @Override
     public String getDataType() { return StudyArchiveDataTypes.PARTICIPANT_COMMENTS; }
 
+    @Override
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
         if (!ctx.isDataTypeSelected(getDataType()))

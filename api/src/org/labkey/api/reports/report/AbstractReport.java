@@ -83,6 +83,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
 {
     protected ReportDescriptor _descriptor;
 
+    @Override
     public String getDescriptorType()
     {
         return ReportDescriptor.TYPE;
@@ -98,6 +99,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         getDescriptor().setReportId(reportId);
     }
 
+    @Override
     public void beforeSave(ContainerUser context)
     {
         if (getDescriptor() != null && hasContentModified(context))
@@ -157,6 +159,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         AttachmentService.get().deleteAttachments(this);
     }
 
+    @Override
     public ReportDescriptor getDescriptor()
     {
         if (_descriptor == null)
@@ -167,6 +170,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return _descriptor;
     }
 
+    @Override
     public void setDescriptor(ReportDescriptor descriptor)
     {
         _descriptor = descriptor;
@@ -184,6 +188,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return null;
     }
 
+    @Override
     @Nullable
     public ActionURL getEditReportURL(ViewContext context)
     {
@@ -192,22 +197,26 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
 
     // Callers should pass in the "after save" redirect location; report might not be able to figure this out
     // (e.g., when manage views call this method, context.getActionURL() is a JSON API action)
+    @Override
     public @Nullable ActionURL getEditReportURL(ViewContext context, ActionURL returnURL)
     {
         ActionURL url = getEditReportURL(context);
         return null != url ? url.addReturnURL(returnURL) : null;
     }
 
+    @Override
     public HttpView renderDataView(ViewContext context) throws Exception
     {
         return new HtmlView("No Data view available for this report");
     }
 
+    @Override
     public HttpView getRunReportView(ViewContext context) throws Exception
     {
         return renderReport(context);
     }
 
+    @Override
     public ActionURL getDownloadDataURL(ViewContext context)
     {
         ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlDownloadData(context.getContainer());
@@ -225,6 +234,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return url;
     }
 
+    @Override
     public void clearCache()
     {
     }
@@ -250,6 +260,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return props;
     }
 
+    @Override
     public void serialize(ImportContext context, VirtualFile dir, String filename) throws IOException
     {
         ReportDescriptor descriptor = getDescriptor();
@@ -260,6 +271,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
             throw new IllegalArgumentException("Cannot serialize a report that hasn't been saved yet");
     }
 
+    @Override
     public void serializeToFolder(ImportContext context, VirtualFile dir) throws IOException
     {
         ReportDescriptor descriptor = getDescriptor();
@@ -292,6 +304,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         }
     }
 
+    @Override
     public void afterDeserializeFromFile(File reportFile) throws IOException
     {
     }
@@ -426,11 +439,13 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return hasEditPermissions(user, container, errors);
     }
 
+    @Override
     public final boolean canEdit(User user, Container container)
     {
         return canEdit(user, container, new ArrayList<>());
     }
 
+    @Override
     public boolean canShare(User user, Container container, List<ValidationError> errors)
     {
         if (getDescriptor().isInherited(container))
@@ -454,6 +469,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return errors.isEmpty();
     }
 
+    @Override
     public boolean canShare(User user, Container container)
     {
         return canShare(user, container, new ArrayList<>());
@@ -466,11 +482,13 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return false;
     }
 
+    @Override
     public boolean canDelete(User user, Container container)
     {
         return canDelete(user, container, new ArrayList<>());
     }
 
+    @Override
     public boolean canDelete(User user, Container container, List<ValidationError> errors)
     {
         if (getDescriptor().isInherited(container))

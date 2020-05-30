@@ -66,11 +66,13 @@ public class JobRunner implements Executor
                 return "Job Runner (" + name + ")";
             }
 
+            @Override
             public void shutdownPre()
             {
                 _executor.shutdown();
             }
 
+            @Override
             public void shutdownStarted()
             {
             }
@@ -107,6 +109,7 @@ public class JobRunner implements Executor
      * This will schedule the runnable to execute immediately, with no delay
      * @param command
      */
+    @Override
     public void execute(Runnable command)
     {
         execute(command, 0);
@@ -159,6 +162,7 @@ public class JobRunner implements Executor
             setMaximumPoolSize(max);
         }
 
+        @Override
         protected void beforeExecute(Thread t, Runnable r)
         {
             super.beforeExecute(t, r);
@@ -177,6 +181,7 @@ public class JobRunner implements Executor
         }
 
 
+        @Override
         protected void afterExecute(Runnable r, Throwable t)
         {
             try
@@ -265,6 +270,7 @@ public class JobRunner implements Executor
             this.priority = priority;
         }
 
+        @Override
         public Thread newThread(Runnable r)
         {
             Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);

@@ -174,6 +174,7 @@ public class AggregateColumnInfo extends BaseColumnInfo
         return _member;
     }
 
+    @Override
     public SQLFragment getValueSql(String tableAliasName)
     {
         return new SQLFragment(tableAliasName + "." + getName());

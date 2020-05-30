@@ -71,34 +71,42 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
 
         _replacements.add(new ReplacementParam<Integer>("issueId", Integer.class, "Unique id for the issue")
         {
+            @Override
             public Integer getValue(Container c) {return _newIssue == null ? null : _newIssue.getIssueId();}
         });
         _replacements.add(new ReplacementParam<String>("detailsURL", String.class, "URL to get the details view for the issue")
         {
+            @Override
             public String getValue(Container c) {return _detailsURL == null ? null : _detailsURL.getURIString();}
         });
         _replacements.add(new ReplacementParam<String>("action", String.class, "Description of the type of action, like 'opened' or 'resolved'")
         {
+            @Override
             public String getValue(Container c) {return _change;}
         });
         _replacements.add(new ReplacementParam<String>("itemName", String.class, "Potentially customized singular item name, typically 'Issue'")
         {
+            @Override
             public String getValue(Container c) {return  getEntryTypeName(c, _newIssue).singularName;}
         });
         _replacements.add(new ReplacementParam<String>("itemNameLowerCase", String.class, "Potentially customized singular item name in lower case, typically 'issue'")
         {
+            @Override
             public String getValue(Container c) {return getEntryTypeName(c, _newIssue).singularName.toLowerCase();}
         });
         _replacements.add(new ReplacementParam<String>("itemNamePlural", String.class, "Potentially customized plural item name, typically 'Issues'")
         {
+            @Override
             public String getValue(Container c) {return getEntryTypeName(c, _newIssue).pluralName;}
         });
         _replacements.add(new ReplacementParam<String>("itemNamePluralLowerCase", String.class, "Potentially customized plural item name in lower case, typically 'issues'")
         {
+            @Override
             public String getValue(Container c) {return getEntryTypeName(c, _newIssue).pluralName.toLowerCase();}
         });
         _replacements.add(new IssueUpdateEmailTemplate.UserIdReplacementParam("user", "The display name of the user performing the operation")
         {
+            @Override
             public Integer getUserId(Container c)
             {
                 return _newIssue.getModifiedBy();
@@ -106,6 +114,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         });
         _replacements.add(new ReplacementParam<String>("comment", String.class, "The comment that was just added")
         {
+            @Override
             public String getValue(Container c)
             {
                 return _comment;
@@ -113,6 +122,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         });
         _replacements.add(new ReplacementParam<String>("attachments", String.class, "A List of attachments, if applicable")
         {
+            @Override
             public String getValue(Container c)
             {
 
@@ -121,6 +131,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         });
         _replacements.add(new ReplacementParam<String>("recipients", String.class, "All of the recipients of the email notification")
         {
+            @Override
             public String getValue(Container c)
             {
                 return _recipients == null ? "user@domain.com" : _recipients;
@@ -128,6 +139,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         });
         _replacements.add(new IssueUpdateEmailTemplate.StringReplacementParam("title", "The current title of the issue")
         {
+            @Override
             public String getStringValue(Container c)
             {
                 return _newIssue.getTitle();
@@ -135,6 +147,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         });
         _replacements.add(new IssueUpdateEmailTemplate.StringReplacementParam("status", "The current status of the issue")
         {
+            @Override
             public String getStringValue(Container c)
             {
                 return _newIssue.getStatus();
@@ -142,6 +155,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         });
         _replacements.add(new IssueUpdateEmailTemplate.StringReplacementParam("type", "The current type of the issue")
         {
+            @Override
             public String getStringValue(Container c)
             {
                 return _newIssue.getProperty(Issue.Prop.type);
@@ -149,6 +163,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         });
         _replacements.add(new IssueUpdateEmailTemplate.StringReplacementParam("area", "The current area of the issue")
         {
+            @Override
             public String getStringValue(Container c)
             {
                 return _newIssue.getProperty(Issue.Prop.area);
@@ -168,6 +183,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         });
         _replacements.add(new IssueUpdateEmailTemplate.StringReplacementParam("milestone", "The current milestone of the issue")
         {
+            @Override
             public String getStringValue(Container c)
             {
                 return _newIssue.getProperty(Issue.Prop.milestone);
@@ -175,6 +191,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         });
         _replacements.add(new IssueUpdateEmailTemplate.UserIdReplacementParam("openedBy", "The user that opened the issue")
         {
+            @Override
             public Integer getUserId(Container c)
             {
                 return _newIssue.getCreatedBy();
@@ -182,6 +199,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         });
         _replacements.add(new ReplacementParam<Date>("opened", Date.class, "The date that the issue was opened")
         {
+            @Override
             public Date getValue(Container c)
             {
                 return _newIssue == null ? null : _newIssue.getCreated();
@@ -189,6 +207,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         });
         _replacements.add(new ReplacementParam<Date>("resolved", Date.class, "The date that the issue was last resolved")
         {
+            @Override
             public Date getValue(Container c)
             {
                 return _newIssue == null || _newIssue.getResolved() == null ? null : _newIssue.getResolved();
@@ -196,6 +215,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         });
         _replacements.add(new IssueUpdateEmailTemplate.UserIdReplacementParam("resolvedBy", "The user who last resolved this issue")
         {
+            @Override
             public Integer getUserId(Container c)
             {
                 return _newIssue.getResolvedBy();
@@ -203,6 +223,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         });
         _replacements.add(new IssueUpdateEmailTemplate.StringReplacementParam("resolution", "The resolution type that was last used for this issue")
         {
+            @Override
             public String getStringValue(Container c)
             {
                 return _newIssue.getResolution();
@@ -210,6 +231,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         });
         _replacements.add(new ReplacementParam<Date>("closed", Date.class, "The date that the issue was last closed")
         {
+            @Override
             public Date getValue(Container c)
             {
                 return _newIssue == null || _newIssue.getClosed() == null ? null : _newIssue.getClosed();
@@ -217,6 +239,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         });
         _replacements.add(new IssueUpdateEmailTemplate.UserIdReplacementParam("closedBy", "The user who last closed this issue")
         {
+            @Override
             public Integer getUserId(Container c)
             {
                 return _newIssue.getClosedBy();
@@ -224,6 +247,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         });
         _replacements.add(new IssueUpdateEmailTemplate.StringReplacementParam("notifyList", "The current notification list for this issue")
         {
+            @Override
             public String getStringValue(Container c)
             {
                 List<String> names = _newIssue.getNotifyListDisplayNames(null);
@@ -232,6 +256,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         });
         _replacements.add(new ReplacementParam<String>("modifiedFields", String.class, "Summary of all changed fields with before and after values")
         {
+            @Override
             public String getValue(Container c)
             {
                 return _fieldChanges;
@@ -362,6 +387,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         }
     }
 
+    @Override
     public List<ReplacementParam> getValidReplacements()
     {
         return _allReplacements.isEmpty() ? _replacements : _allReplacements;

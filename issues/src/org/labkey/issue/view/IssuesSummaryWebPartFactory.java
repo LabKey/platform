@@ -42,6 +42,7 @@ public class IssuesSummaryWebPartFactory extends BaseWebPartFactory
         addLegacyNames(IssuesModule.NAME);
     }
 
+    @Override
     public WebPartView getWebPartView(@NotNull ViewContext context, @NotNull Portal.WebPart webPart)
     {
         Map<String, String> propertyMap = webPart.getPropertyMap();
@@ -63,6 +64,7 @@ public class IssuesSummaryWebPartFactory extends BaseWebPartFactory
         return view;
     }
 
+    @Override
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
         if (!IssueManager.getIssueListDefs(context.getContainer()).isEmpty())

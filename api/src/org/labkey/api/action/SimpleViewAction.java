@@ -48,6 +48,7 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
         super(formClass);
     }
 
+    @Override
     public ModelAndView handleRequest() throws Exception
     {
         BindException errors;
@@ -112,6 +113,7 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
     }
 
 
+    @Override
     protected String getCommandClassMethodName()
     {
         return "getView";
@@ -136,6 +138,7 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
         return print;
     }
 
+    @Override
     public void validate(Object target, Errors errors)
     {
     }

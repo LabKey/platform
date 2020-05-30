@@ -133,6 +133,7 @@ public class Aggregate
     {
         SUM("Sum")
                 {
+                    @Override
                     public SQLFragment getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
                     {
                         if (jdbcType != null && !isLegal(jdbcType))
@@ -290,16 +291,19 @@ public class Aggregate
             _displayValue = displayValue;
         }
 
+        @Override
         public String getName()
         {
             return  name();
         }
 
+        @Override
         public String getFullLabel()
         {
             return _fullLabel;
         }
 
+        @Override
         public String getDisplayValue()
         {
             return _displayValue;

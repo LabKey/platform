@@ -50,6 +50,7 @@ public abstract class UserPrincipal implements Principal, Parameter.JdbcParamete
         _userId = id;
     }
 
+    @Override
     public String getName()
     {
         return _name;

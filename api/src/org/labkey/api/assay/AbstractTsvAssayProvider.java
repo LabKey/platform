@@ -50,6 +50,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         super(protocolLSIDPrefix, runLSIDPrefix, resultRowLSIDPrefix, dataType, declaringModule);
     }
 
+    @Override
     public ExpData getDataForDataRow(Object dataRowId, ExpProtocol protocol)
     {
         if (dataRowId == null)

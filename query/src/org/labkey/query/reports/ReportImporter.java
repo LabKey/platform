@@ -57,11 +57,13 @@ public class ReportImporter implements FolderImporter
         return FolderArchiveDataTypes.REPORTS_AND_CHARTS;
     }
 
+    @Override
     public String getDescription()
     {
         return getDataType().toLowerCase();
     }
 
+    @Override
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws IOException, SQLException, ImportException
     {
         if (isValidForImportArchive(ctx))
@@ -101,6 +103,7 @@ public class ReportImporter implements FolderImporter
         }
     }
 
+    @Override
     @NotNull
     public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root)
     {
@@ -146,6 +149,7 @@ public class ReportImporter implements FolderImporter
 
     public static class Factory extends AbstractFolderImportFactory
     {
+        @Override
         public FolderImporter create()
         {
             return new ReportImporter();

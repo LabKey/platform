@@ -43,6 +43,7 @@ public class SpecimenRequestTable extends BaseStudyTable
         AliasedColumn statusColumn = new AliasedColumn(this, "Status", _rootTable.getColumn("StatusId"));
         statusColumn.setFk(new LookupForeignKey(null, (String) null, "RowId", "Label")
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return new SpecimenRequestStatusTable(_userSchema, cf);

@@ -35,6 +35,7 @@ public abstract class DataInputColumn extends PublishResultsQueryView.InputColum
 
     protected abstract Object calculateValue(RenderContext ctx);
 
+    @Override
     public Object getValue(RenderContext ctx)
     {
         return calculateValue(ctx);

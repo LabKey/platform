@@ -70,6 +70,7 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
         _props.put(Prop.scriptDependencies.toString(), scriptDependencies);
     }
 
+    @Override
     public boolean isArrayType(String prop)
     {
         if (!super.isArrayType(prop))
@@ -79,6 +80,7 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
         return true;
     }
 
+    @Override
     public ReportDescriptorDocument getDescriptorDocument(ImportContext context)
     {
         // if we are doing folder export (or module file save), we don't want to double save the script property

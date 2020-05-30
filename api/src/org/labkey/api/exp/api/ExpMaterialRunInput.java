@@ -29,5 +29,6 @@ public interface ExpMaterialRunInput extends ExpRunInput
      * Get the {@link ExpMaterialProtocolInput} from original {@link ExpProtocol} the that this
      * input or output is associated with.
      */
+    @Override
     @Nullable ExpMaterialProtocolInput getProtocolInput();
 }

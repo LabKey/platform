@@ -82,7 +82,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
         }
 
         PropertyDescriptor namePropertyDescriptor = new PropertyDescriptor(ExperimentServiceImpl.get().getTinfoMaterial().getColumn("Name"), c);
-        namePropertyDescriptor.setRequired(!_sampleSet.hasNameExpression());
+        namePropertyDescriptor.setRequired(_nameGenerator == null);
         _nameProperty = new DomainPropertyImpl(null, namePropertyDescriptor);
 
         List<DomainProperty> dps = new ArrayList<>();
@@ -106,11 +106,13 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
         return _sampleSet;
     }
 
+    @Override
     public List<String> getSampleNames()
     {
         return _names;
     }
 
+    @Override
     protected Lsid getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException
     {
         Lsid lsid = _lsids.get(index);
@@ -181,6 +183,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
         }
     }
 
+    @Override
     protected boolean isCopyable(DomainProperty pd)
     {
         return !getNamePDs().contains(pd);

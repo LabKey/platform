@@ -84,11 +84,13 @@ public class DefaultViewInfo implements DataViewInfo
         _container = container;
     }
 
+    @Override
     public String getId()
     {
         return _id;
     }
 
+    @Override
     public DataViewProvider.Type getDataType()
     {
         return _dataType;
@@ -104,16 +106,19 @@ public class DefaultViewInfo implements DataViewInfo
         _reportId = reportId;
     }
 
+    @Override
     public String getName()
     {
         return _name;
     }
 
+    @Override
     public Container getContainer()
     {
         return _container;
     }
 
+    @Override
     public String getType()
     {
         return _type;
@@ -124,6 +129,7 @@ public class DefaultViewInfo implements DataViewInfo
         _type = type;
     }
 
+    @Override
     public String getDescription()
     {
         return _description;
@@ -134,6 +140,7 @@ public class DefaultViewInfo implements DataViewInfo
         _description = description;
     }
 
+    @Override
     public User getCreatedBy()
     {
         return _createdBy;
@@ -144,6 +151,7 @@ public class DefaultViewInfo implements DataViewInfo
         _createdBy = createdBy;
     }
 
+    @Override
     public User getModifiedBy()
     {
         return _modifiedBy;
@@ -154,6 +162,7 @@ public class DefaultViewInfo implements DataViewInfo
         _modifiedBy = modifiedBy;
     }
 
+    @Override
     public Date getCreated()
     {
         return _created;
@@ -164,6 +173,7 @@ public class DefaultViewInfo implements DataViewInfo
         _created = created;
     }
 
+    @Override
     public Date getModified()
     {
         return _modified;
@@ -174,6 +184,7 @@ public class DefaultViewInfo implements DataViewInfo
         _modified = modified;
     }
 
+    @Override
     public Date getContentModified()
     {
         return _contentModified;
@@ -184,6 +195,7 @@ public class DefaultViewInfo implements DataViewInfo
         _contentModified = contentModified;
     }
 
+    @Override
     public ActionURL getRunUrl()
     {
         return _runUrl;
@@ -194,6 +206,7 @@ public class DefaultViewInfo implements DataViewInfo
         _runUrl = runUrl;
     }
 
+    @Override
     public String getRunTarget()
     {
         return _runTarget;
@@ -204,6 +217,7 @@ public class DefaultViewInfo implements DataViewInfo
         _runTarget = target;
     }
 
+    @Override
     public URLHelper getThumbnailUrl()
     {
         return _thumbnailUrl;
@@ -214,6 +228,7 @@ public class DefaultViewInfo implements DataViewInfo
         _thumbnailUrl = thumbnailUrl;
     }
 
+    @Override
     public ActionURL getDetailsUrl()
     {
         return _detailsUrl;
@@ -224,6 +239,7 @@ public class DefaultViewInfo implements DataViewInfo
         _detailsUrl = detailsUrl;
     }
 
+    @Override
     public String getDefaultIconCls()
     {
         return _defaultIconCls;
@@ -234,6 +250,7 @@ public class DefaultViewInfo implements DataViewInfo
         _defaultIconCls = defaultIconCls;
     }
 
+    @Override
     public URLHelper getDefaultThumbnailUrl()
     {
         return _defaultThumbnailUrl;
@@ -244,6 +261,7 @@ public class DefaultViewInfo implements DataViewInfo
         _defaultThumbnailUrl = defaultThumbnailUrl;
     }
 
+    @Override
     public URLHelper getIconUrl()
     {
         return _iconUrl;
@@ -254,6 +272,7 @@ public class DefaultViewInfo implements DataViewInfo
         _iconUrl = iconUrl;
     }
 
+    @Override
     public String getIconCls()
     {
         return _iconCls;
@@ -264,6 +283,7 @@ public class DefaultViewInfo implements DataViewInfo
         _iconCls = iconCls;
     }
 
+    @Override
     public ViewCategory getCategory()
     {
         return _category;
@@ -274,11 +294,13 @@ public class DefaultViewInfo implements DataViewInfo
         _category = category;
     }
 
+    @Override
     public boolean isVisible()
     {
         return _visible;
     }
 
+    @Override
     public boolean showInDashboard()
     {
         return _showInDashboard;
@@ -294,6 +316,7 @@ public class DefaultViewInfo implements DataViewInfo
         _visible = visible;
     }
 
+    @Override
     public boolean isReadOnly()
     {
         return _readOnly;
@@ -315,6 +338,7 @@ public class DefaultViewInfo implements DataViewInfo
         return _tags;
     }
 
+    @Override
     public User getAuthor()
     {
         if (_author != null) return _author;
@@ -328,6 +352,7 @@ public class DefaultViewInfo implements DataViewInfo
         _author = author;
     }
 
+    @Override
     public String getAccess()
     {
         return _access;
@@ -344,11 +369,13 @@ public class DefaultViewInfo implements DataViewInfo
         _accessUrl = url;
     }
 
+    @Override
     public ActionURL getAccessUrl()
     {
         return _accessUrl;
     }
 
+    @Override
     public boolean isShared()
     {
         return _shared;
@@ -359,6 +386,7 @@ public class DefaultViewInfo implements DataViewInfo
         _shared = shared;
     }
 
+    @Override
     public boolean isAllowCustomThumbnail()
     {
         return _allowCustomThumbnail;
@@ -369,6 +397,7 @@ public class DefaultViewInfo implements DataViewInfo
         _allowCustomThumbnail = allowCustomThumbnail;
     }
 
+    @Override
     public String getSchemaName()
     {
         return _schemaName;
@@ -379,6 +408,7 @@ public class DefaultViewInfo implements DataViewInfo
         _schemaName = schemaName;
     }
 
+    @Override
     public String getQueryName()
     {
         return _queryName;
@@ -389,10 +419,12 @@ public class DefaultViewInfo implements DataViewInfo
         _queryName = queryName;
     }
 
+    @Override
     public String getViewName() { return _viewName; }
 
     public void setViewName(String viewName) { _viewName = viewName; }
 
+    @Override
     public int getDisplayOrder() {return _displayOrder; }
 
     public void setDisplayOrder(int displayOrder) {_displayOrder = displayOrder; }

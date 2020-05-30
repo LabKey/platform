@@ -346,6 +346,7 @@ public abstract class QueryRelation
             _column = column;
         }
 
+        @Override
         public SQLFragment getValueSql(String tableAlias)
         {
             return new SQLFragment(tableAlias + "." + getParentTable().getSqlDialect().makeLegalIdentifier(getAlias()));

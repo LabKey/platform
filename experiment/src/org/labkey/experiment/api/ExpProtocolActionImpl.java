@@ -44,26 +44,31 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
         _action = action;
     }
 
+    @Override
     public ExpProtocolImpl getParentProtocol()
     {
         return ExperimentServiceImpl.get().getExpProtocol(_action.getParentProtocolId());
     }
 
+    @Override
     public ExpProtocolImpl getChildProtocol()
     {
         return ExperimentServiceImpl.get().getExpProtocol(_action.getChildProtocolId());
     }
 
+    @Override
     public int getRowId()
     {
         return _action.getRowId();
     }
 
+    @Override
     public int getActionSequence()
     {
         return _action.getSequence();
     }
 
+    @Override
     public List<ExpProtocolActionImpl> getPredecessors()
     {
         SimpleFilter filter = new SimpleFilter();
@@ -72,6 +77,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
         return new TableSelector(table, table.getColumns("PredecessorId"), filter, null).stream(Integer.class).map(ExpProtocolActionImpl::fromRowId).collect(Collectors.toList());
     }
 
+    @Override
     public List<ExpProtocolActionImpl> getSuccessors()
     {
         SimpleFilter filter = new SimpleFilter();
@@ -80,6 +86,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
         return new TableSelector(table, table.getColumns("ActionId"), filter, null).stream(Integer.class).map(ExpProtocolActionImpl::fromRowId).collect(Collectors.toList());
     }
 
+    @Override
     public void addSuccessor(User user, ExpProtocolAction successor)
     {
         ExperimentServiceImpl.get().insertProtocolPredecessor(user, successor.getRowId(), getRowId());

@@ -213,6 +213,7 @@ public class GroupMembershipCache
             uncache(user);
         }
 
+        @Override
         public void propertyChange(PropertyChangeEvent evt)
         {
         }

@@ -115,6 +115,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         addCondition(new SimpleFilter(FieldKey.fromParts("classId"), _dataClass.getRowId()));
     }
 
+    @Override
     @NotNull
     public Domain getDomain()
     {
@@ -792,6 +793,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             }
         }
 
+        @Override
         protected Domain getDomain()
         {
             return _dataClass.getDomain();

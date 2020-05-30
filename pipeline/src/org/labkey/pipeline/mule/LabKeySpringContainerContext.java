@@ -26,6 +26,7 @@ public class LabKeySpringContainerContext extends SpringContainerContext
 {
     private static BeanFactory context;
 
+    @Override
     public BeanFactory getBeanFactory()
     {
         return context;

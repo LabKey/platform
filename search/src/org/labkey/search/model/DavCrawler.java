@@ -175,6 +175,7 @@ public class DavCrawler implements ShutdownListener
         return "DAV crawler";
     }
 
+    @Override
     public void shutdownPre()
     {
         _shuttingDown = true;
@@ -183,6 +184,7 @@ public class DavCrawler implements ShutdownListener
     }
 
 
+    @Override
     public void shutdownStarted()
     {
         if (null != _crawlerThread)
@@ -275,6 +277,7 @@ public class DavCrawler implements ShutdownListener
         /** TaskListener **/
 
 
+        @Override
         public void run()
         {
             boolean isCrawlerThread = Thread.currentThread() == _crawlerThread;

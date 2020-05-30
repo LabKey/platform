@@ -33,11 +33,13 @@ public class ChartQueryReport extends ChartReport
 {
     public static final String TYPE = "ReportService.chartQueryReport";
 
+    @Override
     public String getType()
     {
         return TYPE;
     }
 
+    @Override
     public HttpView renderReport(ViewContext context)
     {
         return null;

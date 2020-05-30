@@ -133,6 +133,7 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
         }
     }
 
+    @Override
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         if (!portalCtx.hasPermission(ReadPermission.class))

@@ -22,16 +22,19 @@ package org.labkey.api.query;
 */
 public class JavaScriptExportScriptFactory implements ExportScriptFactory
 {
+    @Override
     public String getScriptType()
     {
         return "js";
     }
 
+    @Override
     public String getMenuText()
     {
         return "JavaScript";
     }
 
+    @Override
     public ExportScriptModel getModel(QueryView queryView)
     {
         return new JavaScriptExportScriptModel(queryView);

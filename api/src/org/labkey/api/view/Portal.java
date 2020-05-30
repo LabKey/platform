@@ -16,6 +16,7 @@
 
 package org.labkey.api.view;
 
+import org.apache.commons.collections4.Factory;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
@@ -87,6 +88,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.util.DOM.*;
 import static org.labkey.api.util.DOM.Attribute.*;
@@ -175,8 +177,10 @@ public class Portal implements ModuleChangeListener
 
     public static final String WEBPART_PROP_LegacyPageAdded = "legacyPageAdded";
 
-    /** Bean object for persisting web part configurations in the core.portalwebparts table */
-    public static class WebPart implements Serializable
+    /** Bean object for persisting web part configurations in the core.portalwebparts table
+     * NOTE: implements Factory<> so this can be used as a builder for immutable object
+     */
+    public static class WebPart implements Serializable, Factory<WebPart>
     {
         Container container;
         String pageId;
@@ -202,6 +206,11 @@ public class Portal implements ModuleChangeListener
 
         public WebPart(WebPart copyFrom)
         {
+            this(copyFrom, false);
+        }
+
+        protected WebPart(WebPart copyFrom, boolean readonly)
+        {
             pageId = copyFrom.pageId;
             portalPageId = copyFrom.portalPageId;
             container = copyFrom.container;
@@ -212,8 +221,15 @@ public class Portal implements ModuleChangeListener
             permanent = copyFrom.permanent;
             permission = copyFrom.permission;
             permissionContainer = copyFrom.permissionContainer;
-            setProperties(copyFrom.getProperties());
-            this.extendedProperties = copyFrom.extendedProperties;
+            propertyMap.putAll(copyFrom.propertyMap);
+            if (readonly)
+                propertyMap = Collections.unmodifiableMap(propertyMap);
+            if (null != copyFrom.extendedProperties)
+            {
+                extendedProperties = new HashMap<>(copyFrom.extendedProperties);
+                if (readonly)
+                    extendedProperties = Collections.unmodifiableMap(extendedProperties);
+            }
         }
 
         public String getPageId()
@@ -411,6 +427,99 @@ public class Portal implements ModuleChangeListener
             result = 31 * result + (extendedProperties != null ? extendedProperties.hashCode() : 0);
             return result;
         }
+
+        // return an immutable webpart
+
+        @Override
+        public WebPart create()
+        {
+            return new WebPart(this, true)
+            {
+                @Override
+                public WebPart create()
+                {
+                    return this;
+                }
+
+                @Override
+                public void setPortalPageId(int portalPageId)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setPageId(String pageId)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setContainer(Container container)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setIndex(int index)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setName(String name)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setLocation(String location)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setProperty(String k, String v)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setProperties(String query)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setExtendedProperties(Map<String, Object> extendedProperties)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setPermanent(boolean permanent)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setRowId(int rowId)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setPermission(String permission)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setPermissionContainer(Container permissionContainer)
+                {
+                    throw new UnsupportedOperationException();
+                }
+            };
+        }
     }
 
 
@@ -433,6 +542,12 @@ public class Portal implements ModuleChangeListener
     public static List<WebPart> getParts(Container c)
     {
         return getParts(c, DEFAULT_PORTAL_PAGE_ID);
+    }
+
+    @NotNull
+    public static List<WebPart> getEditableParts(Container c)
+    {
+        return getParts(c, DEFAULT_PORTAL_PAGE_ID).stream().map(WebPart::new).collect(Collectors.toList());
     }
 
 
@@ -500,6 +615,12 @@ public class Portal implements ModuleChangeListener
     }
 
     @NotNull
+    public static List<WebPart> getEditableParts(Container c, String pageId)
+    {
+        return WebPartCache.getWebParts(c, pageId).stream().map(WebPart::new).collect(Collectors.toList());
+    }
+
+    @NotNull
     public static List<WebPart> getParts(Container c, ViewContext context)
     {
         return getParts(c, DEFAULT_PORTAL_PAGE_ID, context);
@@ -544,9 +665,10 @@ public class Portal implements ModuleChangeListener
     }
 
 
-    // TODO: Should use WebPartCache... but we need pageId to do that. Fortunately, this is used infrequently now (see #13267).
+    /** returns an editable webPart (could rename to getEditablePart() */
     public static WebPart getPart(Container c, int webPartRowId)
     {
+        // TODO: Should use WebPartCache... but we need pageId to do that. Fortunately, this is used infrequently now (see #13267).
         WebPart webPart = new TableSelector(getTableInfoPortalWebParts(), SimpleFilter.createContainerFilter(c), null).getObject(webPartRowId, WebPart.class);
         if (null != webPart)
         {
@@ -560,13 +682,13 @@ public class Portal implements ModuleChangeListener
         return null;
     }
 
-
+    /** returns an editable webPart (could rename to getEditablePart() */
     @Nullable
     public static WebPart getPart(Container c, String pageId, int index)
     {
-        return WebPartCache.getWebPart(c, pageId, index);
+        WebPart cached = WebPartCache.getWebPart(c, pageId, index);
+        return null==cached ? null : new Portal.WebPart(cached);
     }
-
 
     public static void updatePart(User u, WebPart part)
     {
@@ -611,7 +733,7 @@ public class Portal implements ModuleChangeListener
         if (null != page)
             pageId = page.getPageId();
         
-        List<WebPart> parts = getParts(c, pageId);
+        List<WebPart> parts = getEditableParts(c, pageId);
 
         WebPart newPart = new Portal.WebPart();
         newPart.setContainer(c);
@@ -725,6 +847,8 @@ public class Portal implements ModuleChangeListener
                 PortalPage find = Portal.getPortalPage(c, tab.getName());   // Portal uses CaseInsensitiveHashMap, which is important
                 if (null != find)
                 {
+                    // create a copy for modifying
+                    find = new PortalPage(find);
                     pageMap.remove(tab.getName());
 
                     if (resetIndexes)
@@ -757,9 +881,8 @@ public class Portal implements ModuleChangeListener
             allPages.sort(Comparator.comparingInt(PortalPage::getIndex));
 
             // Next add all other pages to allPages (includes custom pages)
-            ArrayList<PortalPage> pagesLeft = new ArrayList<>(pageMap.values());
-            pagesLeft.sort(Comparator.comparingInt(PortalPage::getIndex));
-            allPages.addAll(pagesLeft);
+            // creating copy of PortalPage object
+            allPages.addAll(pageMap.values().stream().map(PortalPage::new).sorted(Comparator.comparing(PortalPage::getIndex)).collect(Collectors.toList()));
 
             // Now set indexes of all pages by walking in reverse order, assigning indexes down
             Collections.reverse(allPages);
@@ -1561,8 +1684,6 @@ public class Portal implements ModuleChangeListener
     {
         if (page.isHidden() == hidden)
             return;
-
-
         _hidePage(page, hidden);
     }
 
@@ -1731,7 +1852,7 @@ public class Portal implements ModuleChangeListener
         return _homeWebParts;
     }
 
-    public static class PortalPage implements Cloneable
+    public static class PortalPage implements Cloneable, Factory<PortalPage>
     {
         private GUID entityId;
         private GUID containerId;
@@ -1745,8 +1866,41 @@ public class Portal implements ModuleChangeListener
         private boolean permanent;   // may not rename,hide,delete
         private int rowId;
 
-        private final Map<String, String> propertyMap = new HashMap<>();
-        private final LinkedHashMap<Integer, WebPart> webparts = new LinkedHashMap<>();
+        private Map<String, String> propertyMap = new HashMap<>();
+        private Map<Integer, WebPart> webparts = new LinkedHashMap<>();
+
+        public PortalPage()
+        {
+        }
+
+        /** copy constructor */
+        public PortalPage(PortalPage copyFrom)
+        {
+            this(copyFrom, false);
+        }
+
+        protected PortalPage(PortalPage copyFrom, boolean readonly)
+        {
+            this.entityId = copyFrom.entityId;
+            this.containerId = copyFrom.containerId;
+            this.pageId = copyFrom.pageId;
+            this.index = copyFrom.index;
+            this.caption = copyFrom.caption;
+            this.hidden = copyFrom.hidden;
+            this.type = copyFrom.type;
+            this.action = copyFrom.action;
+            this.targetFolder = copyFrom.targetFolder;
+            this.permanent = copyFrom.permanent;
+            this.rowId = copyFrom.rowId;
+            this.propertyMap.putAll(copyFrom.propertyMap);
+            if (readonly)
+                this.propertyMap = Collections.unmodifiableMap(propertyMap);
+            // deep copy, note that .create() creates readonly copy
+            for (WebPart wp : copyFrom.webparts.values())
+                webparts.put(wp.index, (readonly ? wp.create() : new WebPart(wp)));
+            if (readonly)
+                this.webparts = Collections.unmodifiableMap(webparts);
+        }
 
         public GUID getEntityId()
         {
@@ -1880,21 +2034,14 @@ public class Portal implements ModuleChangeListener
         }
 
         @Transient
-        public LinkedHashMap<Integer, WebPart> getWebParts()
+        public Map<Integer, WebPart> getWebParts()
         {
             return webparts;
         }
 
         public PortalPage copy()
         {
-            try
-            {
-                return (PortalPage)this.clone();
-            }
-            catch (CloneNotSupportedException x)
-            {
-                throw new RuntimeException(x);
-            }
+            return new PortalPage(this);
         }
 
         public boolean isCustomTab()
@@ -1913,6 +2060,98 @@ public class Portal implements ModuleChangeListener
         public void setRowId(int rowId)
         {
             this.rowId = rowId;
+        }
+
+        /** create a read only copy of this PortalPage suitable for caching */
+        @Override
+        public PortalPage create()
+        {
+            return new PortalPage(this, true)
+            {
+                @Override
+                public PortalPage create()
+                {
+                    return this;
+                }
+
+                @Override
+                public void setEntityId(GUID entityId)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setContainer(GUID containerId)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setPageId(String pageId)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setIndex(int index)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setCaption(String name)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setHidden(boolean hidden)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setType(String type)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setAction(String action)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setTargetFolder(GUID targetFolder)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setPermanent(boolean permanent)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setProperty(String k, String v)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setProperties(String query)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setRowId(int rowId)
+                {
+                    throw new UnsupportedOperationException();
+                }
+            };
         }
     }
 
