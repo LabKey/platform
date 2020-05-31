@@ -86,6 +86,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -112,9 +113,9 @@ public class Portal implements ModuleChangeListener
         ModuleResourceCaches.create("File-based webpart definitions", new SimpleWebPartFactoryCacheHandler(), ResourceRootProvider.getStandard(ModuleHtmlView.VIEWS_PATH));
 
     private static Map<String, WebPartFactory> _viewMap = null;
-    private static List<WebPartFactory> _homeWebParts = new ArrayList<>();
+    private static final List<WebPartFactory> _homeWebParts = new ArrayList<>();
 
-    private static Map<String, NavTreeCustomizer> _navTreeCustomizerMap = new HashMap<>();
+    private static final Map<String, NavTreeCustomizer> _navTreeCustomizerMap = new HashMap<>();
 
 
     public static DbSchema getSchema()
@@ -173,6 +174,11 @@ public class Portal implements ModuleChangeListener
             if (null != c)
                 WebPartCache.remove(c);
         }
+    }
+
+    @NotNull static ProjectUrls urlProvider()
+    {
+        return Objects.requireNonNull(PageFlowUtil.urlProvider(ProjectUrls.class));
     }
 
     public static final String WEBPART_PROP_LegacyPageAdded = "legacyPageAdded";
@@ -242,6 +248,7 @@ public class Portal implements ModuleChangeListener
             return portalPageId;
         }
 
+        @SuppressWarnings("unused")
         public void setPortalPageId(int portalPageId)
         {
             this.portalPageId = portalPageId;
@@ -341,7 +348,7 @@ public class Portal implements ModuleChangeListener
         public ActionURL getCustomizePostURL(ViewContext viewContext)
         {
             ActionURL current = viewContext.getActionURL();
-            ActionURL ret = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(container);
+            ActionURL ret = urlProvider().getCustomizeWebPartURL(container);
             ret.addParameter("pageId", getPageId());
             ret.addParameter("index", Integer.toString(getIndex()));
             if (null != current.getReturnURL())
@@ -609,9 +616,7 @@ public class Portal implements ModuleChangeListener
     public static List<WebPart> getParts(Container c, String pageId)
     {
         Collection<WebPart> parts = WebPartCache.getWebParts(c, pageId);
-        if (parts instanceof List)
-            return Collections.unmodifiableList((List<WebPart>)parts);
-        return Collections.unmodifiableList(new ArrayList<>(parts));
+        return List.copyOf(parts);
     }
 
     @NotNull
@@ -748,10 +753,10 @@ public class Portal implements ModuleChangeListener
 
         if (properties != null)
         {
-            for (Map.Entry prop : properties.entrySet())
+            for (Map.Entry<String,String> prop : properties.entrySet())
             {
-                String propName = prop.getKey().toString();
-                String propValue = prop.getValue().toString();
+                String propName = prop.getKey();
+                String propValue = prop.getValue();
                 newPart.setProperty(propName, propValue);
             }
         }
@@ -848,7 +853,7 @@ public class Portal implements ModuleChangeListener
                 if (null != find)
                 {
                     // create a copy for modifying
-                    find = new PortalPage(find);
+                    find = find.copy();
                     pageMap.remove(tab.getName());
 
                     if (resetIndexes)
@@ -882,7 +887,7 @@ public class Portal implements ModuleChangeListener
 
             // Next add all other pages to allPages (includes custom pages)
             // creating copy of PortalPage object
-            allPages.addAll(pageMap.values().stream().map(PortalPage::new).sorted(Comparator.comparing(PortalPage::getIndex)).collect(Collectors.toList()));
+            allPages.addAll(pageMap.values().stream().map(PortalPage::copy).sorted(Comparator.comparing(PortalPage::getIndex)).collect(Collectors.toList()));
 
             // Now set indexes of all pages by walking in reverse order, assigning indexes down
             Collections.reverse(allPages);
@@ -1068,6 +1073,7 @@ public class Portal implements ModuleChangeListener
                 int index = 0;
                 for (PortalPage page : pagesList)
                 {
+                    page = page.copy();    // writable copy
                     page.setIndex(index++);
                     Portal.updatePortalPage(c, page);
                 }
@@ -1085,6 +1091,8 @@ public class Portal implements ModuleChangeListener
 
             try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
             {
+                page1 = page1.copy();
+                page2 = page2.copy();
                 page2.setIndex(-1);
                 Portal.updatePortalPage(c, page2);
                 page1.setIndex(newIndex);
@@ -1181,7 +1189,7 @@ public class Portal implements ModuleChangeListener
         public String scope;
     }
 
-    private static void addCustomizeDropdowns(ViewContext context, HttpView template, String id, Collection<String> occupiedLocations, String scope)
+    private static void addCustomizeDropdowns(ViewContext context, HttpView<?> template, String id, Collection<String> occupiedLocations, String scope)
     {
         Set<String> regionNames = new HashSet<>();
 
@@ -1210,11 +1218,11 @@ public class Portal implements ModuleChangeListener
         }
     }
 
-    public static String addWebPartWidgets(ViewContext viewContext, AddWebParts bean)
+    public static HtmlString addWebPartWidgets(ViewContext viewContext, AddWebParts bean)
     {
         if (WebPartFactory.LOCATION_MENUBAR.equals(bean.location))
         {
-            return addWebPartWidget(bean, viewContext, "", "pull-left").toString();
+            return addWebPartWidget(bean, viewContext, "", "pull-left");
         }
         else if (WebPartFactory.LOCATION_BODY.equals(bean.location))
         {
@@ -1228,10 +1236,10 @@ public class Portal implements ModuleChangeListener
                 newBean.scope = bean.scope;
                 // Add right webpart dropdown should be hidden on extra small screens
                 HtmlString rightWidget = addWebPartWidget(newBean, viewContext, "hidden-xs", "pull-right");
-                return leftWidget.toString() + rightWidget.toString();
+                return HtmlString.unsafe(leftWidget.toString() + rightWidget.toString());
             }
 
-            return addWebPartWidget(bean, viewContext, "visible-md-inline visible-lg-inline", "pull-left").toString();
+            return addWebPartWidget(bean, viewContext, "visible-md-inline visible-lg-inline", "pull-left");
         }
         else if (WebPartFactory.LOCATION_RIGHT.equals(bean.location) && !bean.rightEmpty)
         {
@@ -1245,12 +1253,12 @@ public class Portal implements ModuleChangeListener
             HtmlString rightBottomWidget = addWebPartWidget(bean, viewContext, "visible-sm-inline", "pull-right");
             HtmlString rightMainWidget = addWebPartWidget(bean, viewContext, "visible-md-inline visible-lg-inline", "pull-left");
 
-            return leftBottomWidget.toString() + rightBottomWidget.toString() + rightMainWidget.toString();
+            return HtmlString.unsafe(leftBottomWidget.toString() + rightBottomWidget.toString() + rightMainWidget.toString());
         }
         else
         {
             // incorrect usage
-            return "";
+            return HtmlString.EMPTY_STRING;
         }
     }
 
@@ -1264,35 +1272,24 @@ public class Portal implements ModuleChangeListener
 
         if (null != bean.scope && !"folder".equals(bean.scope))
         {
-            Portal.getPartsToAdd(c, bean.scope, bean.location).entrySet().forEach(entry ->
-            {
-                if (partsSeen.add(entry.getValue()))
-                {
-                    OPTIONS.add(OPTION(
-                            at(value, entry.getValue()),
-                            entry.getKey()));
-                }
+            Portal.getPartsToAdd(c, bean.scope, bean.location).forEach((displayName, name) -> {
+                if (partsSeen.add(name))
+                    OPTIONS.add(OPTION(at(value, name), displayName));
             });
 
             if (OPTIONS.size() > 0)
                 OPTIONS.add(OPTION(at(value, ""), HR()));
         }
 
-        Portal.getPartsToAdd(c, FOLDER_PORTAL_PAGE, bean.location).entrySet().forEach(entry ->
-        {
-            if (partsSeen.add(entry.getValue()))
-            {
-                OPTIONS.add(OPTION(
-                        at(value, entry.getValue()),
-                        entry.getKey()
-                ));
-            }
+        Portal.getPartsToAdd(c, FOLDER_PORTAL_PAGE, bean.location).forEach((displayName, name) -> {
+            if (partsSeen.add(name))
+                OPTIONS.add(OPTION(at(value, name), displayName));
         });
 
        return createHtml(
                 DIV(
                         LK.FORM(
-                                at(method, "POST", action, PageFlowUtil.urlProvider(ProjectUrls.class).getAddWebPartURL(c))
+                                at(method, "POST", action, urlProvider().getAddWebPartURL(c))
                                         .cl("form-inline").cl(pullClass).cl(visibilityClass),
 
                                 INPUT(
@@ -1325,7 +1322,7 @@ public class Portal implements ModuleChangeListener
         );
     }
 
-    public static void addViewToRegion(HttpView template, String regionName, HttpView view)
+    public static void addViewToRegion(HttpView<?> template, String regionName, HttpView<?> view)
     {
         //place
         ModelAndView region = template.getView(regionName);
@@ -1343,20 +1340,20 @@ public class Portal implements ModuleChangeListener
     }
 
 
-    public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView)
+    public static void populatePortalView(ViewContext context, String id, HttpView<?> template, boolean printView)
     {
         boolean canCustomize = context.getContainer().hasPermission("populatePortalView",context.getUser(), AdminPermission.class);
         populatePortalView(context, id, template, printView, canCustomize, false, true, FOLDER_PORTAL_PAGE);
     }
 
-    public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView,
+    public static void populatePortalView(ViewContext context, String id, HttpView<?> template, boolean printView,
                                           boolean canCustomize, boolean alwaysShowCustomize, boolean allowHideFrame)
     {
         populatePortalView(context, id, template, printView, canCustomize, false, true, FOLDER_PORTAL_PAGE);
     }
 
 
-    public static int populatePortalView(ViewContext context, String id, HttpView template, boolean printView,
+    public static int populatePortalView(ViewContext context, String id, HttpView<?> template, boolean printView,
                           boolean canCustomize, boolean alwaysShowCustomize, boolean allowHideFrame, String scope)
     {
         int count = 0;
@@ -1487,7 +1484,7 @@ public class Portal implements ModuleChangeListener
 
     public static String getCustomizeURL(ViewContext context, Portal.WebPart webPart)
     {
-        return PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
+        return urlProvider().getCustomizeWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
     }
 
 
@@ -1503,7 +1500,7 @@ public class Portal implements ModuleChangeListener
                     "})";
         }
         else
-            return PageFlowUtil.urlProvider(ProjectUrls.class).getMoveWebPartURL(context.getContainer(), webPart, direction, context.getActionURL()).getLocalURIString();
+            return urlProvider().getMoveWebPartURL(context.getContainer(), webPart, direction, context.getActionURL()).getLocalURIString();
     }
 
 
@@ -1517,7 +1514,7 @@ public class Portal implements ModuleChangeListener
                     "})";
         }
         else
-            return PageFlowUtil.urlProvider(ProjectUrls.class).getDeleteWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
+            return urlProvider().getDeleteWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
     }
 
     public static String getToggleFrameURL(ViewContext context, Portal.WebPart webPart)
@@ -1708,7 +1705,8 @@ public class Portal implements ModuleChangeListener
     public static void deletePage(Container c, String pageId)
     {
         PortalPage page = WebPartCache.getPortalPage(c,pageId);
-        deletePage(page);
+        if (null != page)
+            deletePage(page);
     }
 
     public static void deletePage(Container c, int index)
@@ -1817,6 +1815,8 @@ public class Portal implements ModuleChangeListener
     public static void addProperties(Container container, String pageId, String properties)
     {
         Portal.PortalPage page = WebPartCache.getPortalPage(container, pageId);
+        if (null == page)
+            return;
         page = page.copy();
         page.setProperties(properties);
         _setProperties(page);
@@ -1825,6 +1825,8 @@ public class Portal implements ModuleChangeListener
     public static void addProperty(Container container, String pageId, String property)
     {
         Portal.PortalPage page = WebPartCache.getPortalPage(container, pageId);
+        if (null == page)
+            return;
         page = page.copy();
         page.setProperty(property, "true");
         _setProperties(page);
@@ -1987,6 +1989,7 @@ public class Portal implements ModuleChangeListener
             return targetFolder;
         }
 
+        @SuppressWarnings("unused")
         public void setTargetFolder(GUID targetFolder)
         {
             this.targetFolder = targetFolder;

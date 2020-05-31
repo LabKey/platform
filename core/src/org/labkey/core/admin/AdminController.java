@@ -8969,6 +8969,7 @@ public class AdminController extends SpringActionController
             Container container = getContainer().getContainerFor(ContainerType.DataType.tabParent);
             CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(container, true));
             Portal.PortalPage page = pages.get(form.getTabPageId());
+            page = page.copy();
             page.setCaption(form.getTabName());
             // Update the page the caption is saved.
             Portal.updatePortalPage(container, page);
