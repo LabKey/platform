@@ -285,7 +285,7 @@ public class TabLoader extends DataLoader
         if (null == _reader)
         {
             _reader = _readerFactory.getReader();
-            // Allocate a reasonalby large buffer for "infer fields" scanning: 10K per row. #23437, #40544
+            // Allocate a reasonably large buffer for "infer fields" scanning: 10K per row. #23437, #40544
             _reader.mark(_scanAheadLineCount * 10 * 1024);
         }
 
