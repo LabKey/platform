@@ -584,8 +584,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
-                    JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
-
                     if (webPart.getPropertyMap().isEmpty())
                     {
                         // Configure to show subfolders if not previously configured
@@ -595,8 +593,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         webPart.getPropertyMap().put("containerTypes", "folder");
                     }
 
-                    String title = webPart.getPropertyMap().get("title");
-                    view.setTitle(title);
+                    JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
+                    view.setTitle(webPart.getPropertyMap().get("title"));
 
                     if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
                     {
