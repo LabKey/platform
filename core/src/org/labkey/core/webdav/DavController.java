@@ -2697,7 +2697,10 @@ public class DavController extends SpringActionController
                         xml.writeElement(null, "prop", XMLWriter.OPENING);
 
                         for (String aPropertiesNotFound : propertiesNotFound)
-                            xml.writeElement(null, aPropertiesNotFound, XMLWriter.NO_CONTENT);
+                        {
+                            if (isValidXmlElementName(aPropertiesNotFound))
+                                xml.writeElement(null, aPropertiesNotFound, XMLWriter.NO_CONTENT);
+                        }
 
                         xml.writeElement(null, "prop", XMLWriter.CLOSING);
                         xml.writeElement(null, "status", XMLWriter.OPENING);
