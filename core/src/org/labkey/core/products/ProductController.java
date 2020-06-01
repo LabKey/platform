@@ -27,6 +27,10 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Marshal(Marshaller.Jackson)
 public class ProductController extends SpringActionController
 {
@@ -42,37 +46,47 @@ public class ProductController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public static class MenuSectionsAction extends ReadOnlyApiAction<MenuItemsForm>
     {
+        private List<String> _productIds;
+
         @Override
         public void validateForm(MenuItemsForm menuItemsForm, Errors errors)
         {
-            if (StringUtils.isEmpty(menuItemsForm.getProductId()))
-                errors.reject(ERROR_REQUIRED, "'productId' is required");
-            else if (!ProductRegistry.get().containsProductId(menuItemsForm.getProductId()))
-                errors.reject(ERROR_MSG, "No such product: '" + menuItemsForm.getProductId() + "'");
             if (menuItemsForm.getItemLimit() != null && menuItemsForm.getItemLimit() < 0)
                 errors.reject(ERROR_MSG, "'itemLimit' must be >= 0");
+
+            ProductRegistry registry = ProductRegistry.get();
+            if (!StringUtils.isEmpty(menuItemsForm.getProductIds()))
+            {
+                _productIds = Arrays.asList(menuItemsForm.getProductIds().split(","));
+                String missingProducts = _productIds.stream().filter(productId -> !registry.containsProductId(productId)).collect(Collectors.joining(", "));
+                if (!StringUtils.isEmpty(missingProducts))
+                    errors.reject(ERROR_MSG, "No such products: " + missingProducts);
+            }
         }
 
         @Override
         public Object execute(MenuItemsForm menuItemsForm, BindException errors) throws Exception
         {
-            return ProductRegistry.get().getMenuSections(getViewContext(), menuItemsForm.getProductId(), menuItemsForm.getItemLimit());
+            if (_productIds != null)
+                return ProductRegistry.get().getProductMenuSections(getViewContext(), _productIds, menuItemsForm.getItemLimit());
+            else
+                return ProductRegistry.get().getProductMenuSections(getViewContext(), getContainer(), menuItemsForm.getItemLimit());
         }
     }
 
     public static class MenuItemsForm
     {
-        private String _productId;
+        private String _productIds; // comma-separated list of productIds
         private Integer _itemLimit;
 
-        public String getProductId()
+        public String getProductIds()
         {
-            return _productId;
+            return _productIds;
         }
 
-        public void setProductId(String productId)
+        public void setProductIds(String productIds)
         {
-            _productId = productId;
+            _productIds = productIds;
         }
 
         public Integer getItemLimit()
