@@ -17,6 +17,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * A no-op implementation of ProvenanceService
+ * */
 public class DefaultProvenanceProvider implements ProvenanceService
 {
     @Override
@@ -104,13 +107,13 @@ public class DefaultProvenanceProvider implements ProvenanceService
     }
 
     @Override
-    public void addRecordingStep(HttpServletRequest request, String recordingId, RecordedAction action)
+    public void addRecordingStep(HttpServletRequest request, GUID recordingId, RecordedAction action)
     {
 
     }
 
     @Override
-    public ExpRun stopRecording(HttpServletRequest request, String recordingId, RecordedAction action, User user, Container container)
+    public ExpRun stopRecording(HttpServletRequest request, GUID recordingId, RecordedAction action, User user, Container container)
     {
         return null;
     }

@@ -129,12 +129,12 @@ public interface ProvenanceService
     /**
      * Get the current recording session from http session state, and add the actionSet
      */
-    void addRecordingStep(HttpServletRequest request, String recordingId, RecordedAction action);
+    void addRecordingStep(HttpServletRequest request, GUID recordingId, RecordedAction action);
 
     /**
      *  Get the recording from session state and create an ExpRun
      */
-    ExpRun stopRecording(HttpServletRequest request, String recordingId, RecordedAction action, User user, Container container) throws ExperimentException, ValidationException;
+    ExpRun stopRecording(HttpServletRequest request, GUID recordingId, RecordedAction action, User user, Container container) throws ExperimentException, ValidationException;
 
     /**
      * Helper method to create recording params object

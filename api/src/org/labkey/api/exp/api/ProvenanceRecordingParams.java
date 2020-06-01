@@ -1,5 +1,6 @@
 package org.labkey.api.exp.api;
 
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 
 import java.io.Serializable;
@@ -9,7 +10,7 @@ import java.util.Map;
 
 public class ProvenanceRecordingParams implements Serializable
 {
-    private String recordingId;
+    private GUID recordingId;
     private String name;
     private String description;
 
@@ -30,12 +31,12 @@ public class ProvenanceRecordingParams implements Serializable
     private List<ExpMaterial> materialOutputs = Collections.emptyList();
     private List<ExpData> dataOutputs = Collections.emptyList();
 
-    public String getRecordingId()
+    public GUID getRecordingId()
     {
         return recordingId;
     }
 
-    public void setRecordingId(String recordingId)
+    public void setRecordingId(GUID recordingId)
     {
         this.recordingId = recordingId;
     }
