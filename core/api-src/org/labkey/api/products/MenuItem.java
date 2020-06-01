@@ -25,6 +25,7 @@ public class MenuItem
     private String _url; // the URL on the server side
     private Integer _orderNum; // ordinal for producing the primary sort order of the items
     private Boolean _requiresLogin = false; // indicates if link should be shown if not logged in.
+    private String _productId = null; // indicates the product/application this link should direct to.  Can (should?) be null if the current application is to be used.
 
     public MenuItem(String label, String url, Integer id, String key, Integer orderNum)
     {
@@ -98,6 +99,16 @@ public class MenuItem
     public void setUrl(String url)
     {
         _url = url;
+    }
+
+    public String getProductId()
+    {
+        return _productId;
+    }
+
+    public void setProductId(String productId)
+    {
+        _productId = productId;
     }
 
     public Integer getOrderNum()
