@@ -164,7 +164,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     '<tpl else>' +
                         '><img src="{[this.getBlankImage()]}" style="background-image:url({data.icon})" class="x4-tree-icon dataview-icon">' +
                     '</tpl>' +
-                    '&nbsp;&nbsp;{data.name}</span></div>' +
+                    '&nbsp;&nbsp;{data.name:htmlEncode}</span></div>' +
                 '</tpl>' +
             '</tpl>',
             {
@@ -1105,7 +1105,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                                         this.getFullStore().load();
                                     },
                                     failure : LABKEY.Utils.getCallbackWrapper(function(json, response, options) {
-                                        Ext4.Msg.alert("Delete", "Deletion Failed: " + json.exception);
+                                        Ext4.Msg.alert("Delete", "Deletion Failed: " + LABKEY.Utils.htmlEncode(json.exception));
                                     }, null, true)
                                 });
                             }
@@ -1456,7 +1456,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                                 if (json.exception)
                                     msg = msg + ' - ' + json.exception;
                             }
-                            Ext4.Msg.alert("Error", msg);
+                            Ext4.Msg.alert("Error", LABKEY.Utils.htmlEncode(msg));
                         },
                         scope : this
                     });
@@ -1473,7 +1473,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 scope: this,
                 handler: function ()
                 {
-                    var msg = 'Are you sure you want to delete "' + record.data.name + '"';
+                    var msg = 'Are you sure you want to delete "' + LABKEY.Utils.htmlEncode(record.data.name) + '"';
                     var successCallback = function (response)
                     {
                         editWindow.close();
@@ -1482,7 +1482,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     };
                     var failureCallback = function (response)
                     {
-                        Ext4.MessageBox.alert('Error Deleting Report', 'There was an error deleting the report "' + record.data.name + '"');
+                        Ext4.MessageBox.alert('Error Deleting Report', 'There was an error deleting the report "' + LABKEY.Utils.htmlEncode(record.data.name) + '"');
                         editWindow.close();
                     };
                     var confirmCallback = function (choice)
