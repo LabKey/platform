@@ -2001,6 +2001,30 @@ public class DavController extends SpringActionController
     }
 
 
+    private static boolean isValidXmlElementName(String name)
+    {
+            /*https://www.w3schools.com/xml/xml_elements.asp
+            Element names are case-sensitive
+            Element names must start with a letter or underscore
+            Element names cannot start with the letters xml (or XML, or Xml, etc)
+            Element names can contain letters, digits, hyphens, underscores, and periods
+            Element names cannot contain spaces*/
+        if (name.isEmpty())
+            return false;
+        char ch = name.charAt(0);
+        if (!Character.isLetter(ch) && '_' != ch)
+            return false;
+        for (int i = 1; i < name.length(); i++)
+        {
+            ch = name.charAt(i);
+            if (Character.isLetterOrDigit(ch) || '-' == ch || '_' == ch || '.' == ch)
+                continue;
+            return false;
+        }
+        return !StringUtils.startsWithIgnoreCase(name,"xml");
+    }
+
+
     class XMLResourceWriter implements ResourceWriter
     {
         XMLWriter xml;
@@ -2048,7 +2072,7 @@ public class DavController extends SpringActionController
             xml.writeElement(null, "href", XMLWriter.OPENING);
             String href = resource.getLocalHref(getViewContext());
             if (gvfs)
-                href = href.replace("%40","@"); // gvfs workaround
+                href = href.replace("%40", "@"); // gvfs workaround
             xml.writeText(href);
             xml.writeElement(null, "href", XMLWriter.CLOSING);
 
@@ -2161,15 +2185,15 @@ public class DavController extends SpringActionController
                         //xml.writeElement(null, "directget", XMLWriter.NO_CONTENT);
                     }
                     //xml.writeElement(null, "directput", XMLWriter.NO_CONTENT);
-					xml.writeElement(null, "actions", XMLWriter.NO_CONTENT);
-					xml.writeElement(null, "description", XMLWriter.NO_CONTENT);
-					xml.writeElement(null, "iconHref", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "actions", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "description", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "iconHref", XMLWriter.NO_CONTENT);
                     xml.writeElement(null, "iconFontCls", XMLWriter.NO_CONTENT);
-					xml.writeElement(null, "history", XMLWriter.NO_CONTENT);
-					xml.writeElement(null, "md5sum", XMLWriter.NO_CONTENT);
-					xml.writeElement(null, "href", XMLWriter.NO_CONTENT);
-					xml.writeElement(null, "ishidden", XMLWriter.NO_CONTENT);
-					xml.writeElement(null, "isreadonly", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "history", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "md5sum", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "href", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "ishidden", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "isreadonly", XMLWriter.NO_CONTENT);
                     xml.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
                     xml.writeElement(null, "source", XMLWriter.NO_CONTENT);
                     xml.writeElement(null, "options", XMLWriter.NO_CONTENT);
@@ -2338,32 +2362,32 @@ public class DavController extends SpringActionController
                                     xml.writeProperty(null, "getlastmodified", getHttpDateFormat(modified));
                             }
                         }
-						else if (property.equals("href"))
-						{
-							xml.writeElement(null, "href", XMLWriter.OPENING);
+                        else if (property.equals("href"))
+                        {
+                            xml.writeElement(null, "href", XMLWriter.OPENING);
                             xml.writeText(resource.getLocalHref(getViewContext()));
-							xml.writeElement(null, "href", XMLWriter.CLOSING);
-						}
-						else if (property.equals("iconHref"))
-						{
+                            xml.writeElement(null, "href", XMLWriter.CLOSING);
+                        }
+                        else if (property.equals("iconHref"))
+                        {
                             xml.writeProperty(null, "iconHref", resource.getIconHref());
-						}
+                        }
                         else if (property.equals("iconFontCls"))
                         {
                             xml.writeProperty(null, "iconFontCls", resource.getIconFontCls());
                         }
-						else if (property.equals("ishidden"))
-						{
-							xml.writeElement(null, "ishidden", XMLWriter.OPENING);
-							xml.writeText("0");
-							xml.writeElement(null, "ishidden", XMLWriter.CLOSING);
-						}
-						else if (property.equals("isreadonly"))
-						{
-							xml.writeElement(null, "isreadonly", XMLWriter.OPENING);
-							xml.writeText(resource.canWrite(getUser(),false) ? "0" : "1");
-							xml.writeElement(null, "isreadonly", XMLWriter.CLOSING);
-						}
+                        else if (property.equals("ishidden"))
+                        {
+                            xml.writeElement(null, "ishidden", XMLWriter.OPENING);
+                            xml.writeText("0");
+                            xml.writeElement(null, "ishidden", XMLWriter.CLOSING);
+                        }
+                        else if (property.equals("isreadonly"))
+                        {
+                            xml.writeElement(null, "isreadonly", XMLWriter.OPENING);
+                            xml.writeText(resource.canWrite(getUser(), false) ? "0" : "1");
+                            xml.writeElement(null, "isreadonly", XMLWriter.CLOSING);
+                        }
                         else if (property.equals("resourcetype"))
                         {
                             if (resource.isCollection())
@@ -2411,7 +2435,7 @@ public class DavController extends SpringActionController
                             {
                                 xml.writeElement(null, "entry", XMLWriter.OPENING);
                                 xml.writeElement(null, "date", XMLWriter.OPENING);
-                                  xml.writeText(DateUtil.toISO(history.getDate()));
+                                xml.writeText(DateUtil.toISO(history.getDate()));
                                 xml.writeElement(null, "date", XMLWriter.CLOSING);
                                 xml.writeElement(null, "user", XMLWriter.OPENING);
                                 xml.writeText(history.getUser().getDisplayName(null));
@@ -2473,7 +2497,8 @@ public class DavController extends SpringActionController
                         xml.writeElement(null, "prop", XMLWriter.OPENING);
                         for (String property : propertiesNotFound)
                         {
-                            xml.writeElement(null, property, XMLWriter.NO_CONTENT);
+                            if (isValidXmlElementName(property))
+                                xml.writeElement(null, property, XMLWriter.NO_CONTENT);
                         }
                         xml.writeElement(null, "prop", XMLWriter.CLOSING);
                         xml.writeElement(null, "status", XMLWriter.OPENING);
@@ -6699,6 +6724,20 @@ public class DavController extends SpringActionController
                     "   </D:prop>\n" +
                     " </D:set>\n" +
                     "</D:propertyupdate>").getBytes(StringUtilsLabKey.DEFAULT_CHARSET))));
+        }
+
+        @Test
+        public void testElementName()
+        {
+            assertFalse(isValidXmlElementName(""));
+            assertFalse(isValidXmlElementName("na me"));
+            assertFalse(isValidXmlElementName("na<me"));
+            assertTrue(isValidXmlElementName("name3"));
+            assertFalse(isValidXmlElementName("3name"));
+            assertTrue(isValidXmlElementName("name.3"));
+            assertFalse(isValidXmlElementName(".name"));
+            assertTrue(isValidXmlElementName("_xml"));
+            assertFalse(isValidXmlElementName("xml_"));
         }
 
         @Test
