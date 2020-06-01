@@ -159,7 +159,7 @@ dependencies {
     if (project.hasProperty("gradle7Compat"))
     {
         api "javax.servlet:servlet-api:${servletApiVersion}"
-        implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
+        api "com.sun.mail:jakarta.mail:${javaMailVersion}"
     }
     else
     {

@@ -1,6 +1,7 @@
 import org.labkey.gradle.util.BuildUtils
 
 dependencies {
+    implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
     external("org.apache.activemq:activemq-core:${activemqCoreVersion}") {
       exclude group: "javax.servlet", module: "servlet-api"
     }
@@ -30,7 +31,7 @@ dependencies {
             exclude group:"jaxen", module: "jaxen"
         }
 
-
+    BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
     BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath:  BuildUtils.getPlatformModuleProjectPath(project.gradle, "core"), depProjectConfig: 'apiJarFile')
 }
 
