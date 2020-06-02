@@ -2595,6 +2595,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     {
         // Get the ExpRuns referenced by the dataset row LSIDs
         List<? extends ExpRun> runs = pvs.getRuns(new HashSet<>(lsids));
+        // get all lsids for the dataset
+        Collection<String> allDatasetLsids = StudyManager.getInstance().getDatasetProvenanceLsids(this);
 
         // delete the provenance rows and the exp.object that the provenance module created for the dataset LSID row
         for (String lsid : lsids)
@@ -2618,10 +2620,11 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             if (run.getProtocol().getLSID().equals(AssayPublishService.STUDY_PUBLISH_PROTOCOL_LSID))
             {
                 // get all the input and output LSIDs that remain for the selected runs
-                Set<String> allRunLsids = new HashSet<>(pvs.getProvenanceObjectUriSet(run.getInputProtocolApplication().getObjectId()));
-                allRunLsids.addAll(pvs.getProvenanceObjectUriSet(run.getOutputProtocolApplication().getObjectId()));
+                Set<String> allRunLsids = new HashSet<>(pvs.getProvenanceObjectUriSet(run.getInputProtocolApplication().getRowId()));
+                allRunLsids.addAll(pvs.getProvenanceObjectUriSet(run.getOutputProtocolApplication().getRowId()));
 
-                if (allRunLsids.isEmpty())
+                // if allRunLsids is empty or all the lsids of the dataset are recalled, delete the StudyPublishRun
+                if (allRunLsids.isEmpty() || allDatasetLsids.size() == lsids.size())
                 {
                     ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), u, run.getRowId());
                     syncNeeded = false;
