@@ -15,6 +15,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -150,4 +151,9 @@ public interface ProvenanceService
      * Extract the provenance map information from the data rows
      */
     List<Pair<String, String>> createProvenanceMapFromRows(ViewContext context, ProvenanceRecordingParams params, JSONArray rows);
+
+    /**
+     * Returns the rows of dataset involved in provenance
+     */
+    Collection<String> getDatasetProvenanceLsids(String datasetTableName);
 }

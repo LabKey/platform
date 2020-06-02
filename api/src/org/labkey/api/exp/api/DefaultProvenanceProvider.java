@@ -12,6 +12,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -132,6 +133,12 @@ public class DefaultProvenanceProvider implements ProvenanceService
 
     @Override
     public List<Pair<String, String>> createProvenanceMapFromRows(ViewContext context, ProvenanceRecordingParams params, JSONArray rows)
+    {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Collection<String> getDatasetProvenanceLsids(String datasetTableName)
     {
         return Collections.emptyList();
     }

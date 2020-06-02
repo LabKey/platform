@@ -74,6 +74,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
@@ -2730,20 +2731,6 @@ public class StudyManager
         return dataset.deleteRows(cutoff);
     }
 
-    private Collection<String> getDatasetProvenanceLsids(DatasetDefinition ds)
-    {
-        String datasetTableName = ds.getStorageTableInfo().getName();
-
-        SQLFragment sql = new SQLFragment("SELECT ds.lsid FROM ");
-        sql.append("studydataset.").append(datasetTableName).append(" ds ");
-        sql.append(" INNER JOIN exp.Object o ON (ds.lsid = o.objecturi) ");
-        sql.append("WHERE EXISTS (");
-        sql.append(" SELECT prov.protocolApplicationId FROM provenance.protocolapplicationobjectmap prov ");
-        sql.append(" WHERE o.objectid = prov.fromobjectid or o.objectid = prov.toobjectid )");
-
-        return  new SqlSelector(StudySchema.getInstance().getSchema(), sql).getCollection(String.class);
-    }
-
     /**
      * delete a dataset definition along with associated type, data, visitmap entries
      * @param performStudyResync whether or not to kick off our normal bookkeeping. If the whole study is being deleted,
@@ -2758,29 +2745,28 @@ public class StudyManager
 
         // When the dataset is deleted, the provenance rows should be cleaned up
         ProvenanceService pvs = ProvenanceService.get();
-        if (null != pvs)
-        {
-            Collection<String> allDatasetLsids = getDatasetProvenanceLsids(ds);
 
-            allDatasetLsids.forEach(lsid -> {
-                Set<Integer> protocolApplications = pvs.getProtocolApplications(lsid);
+        Collection<String> allDatasetLsids = pvs.getDatasetProvenanceLsids(ds.getStorageTableInfo().getName());
 
-                OntologyObject expObject = OntologyManager.getOntologyObject(null, lsid);
-                if (null != expObject)
-                {
-                    pvs.deleteObjectProvenance(expObject.getObjectId());
-                }
+        allDatasetLsids.forEach(lsid -> {
+            Set<Integer> protocolApplications = pvs.getProtocolApplications(lsid);
 
-                if (!protocolApplications.isEmpty())
-                {
-                    ExperimentService expService = ExperimentService.get();
-                    protocolApplications.forEach(protocolApp -> {
-                        ExpRun run = expService.getExpProtocolApplication(protocolApp).getRun();
-                        expService.deleteExperimentRunsByRowIds(study.getContainer(), user, run.getRowId());
-                    });
-                }
-            });
-        }
+            OntologyObject expObject = OntologyManager.getOntologyObject(null, lsid);
+            if (null != expObject)
+            {
+                pvs.deleteObjectProvenance(expObject.getObjectId());
+            }
+
+            if (!protocolApplications.isEmpty())
+            {
+                ExperimentService expService = ExperimentService.get();
+                protocolApplications.forEach(protocolApp -> {
+                    ExpRun run = expService.getExpProtocolApplication(protocolApp).getRun();
+                    expService.deleteExperimentRunsByRowIds(study.getContainer(), user, run.getRowId());
+                });
+            }
+        });
+
 
         deleteDatasetType(study, user, ds);
         try
