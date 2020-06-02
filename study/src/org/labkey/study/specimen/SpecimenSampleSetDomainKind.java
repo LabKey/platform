@@ -19,11 +19,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.api.SampleSetDomainKind;
-
-import static org.labkey.study.SpecimenManager.STUDY_SPECIMENS_SAMPLE_SET_NAME;
 
 public class SpecimenSampleSetDomainKind extends SampleSetDomainKind
 {
@@ -37,7 +36,7 @@ public class SpecimenSampleSetDomainKind extends SampleSetDomainKind
         Lsid lsid = new Lsid(domainURI);
         String prefix = lsid.getNamespacePrefix();
         String name = lsid.getObjectId();
-        if ("SampleSet".equals(prefix) && STUDY_SPECIMENS_SAMPLE_SET_NAME.equals(name))
+        if ("SampleSet".equals(prefix) && SpecimenService.SAMPLE_TYPE_NAME.equals(name))
             return Priority.HIGH;
         return null;
     }
