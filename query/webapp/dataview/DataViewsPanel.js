@@ -580,14 +580,14 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         }
                         else if (rec) {
                             tip.removeCls('hide-tip');
-                            tip.setTitle(rec.get('name'));
+                            tip.setTitle(Ext4.htmlEncode(rec.get('name')));
                             tip.down('panel').update(rec);
                         }
                     },
                     show : function(tip) {
                         var h = tip.getHeader();
                         if (h && !Ext4.isEmpty(h.title)) {
-                            h.setTitle(Ext4.htmlEncode(h.title));
+                            h.setTitle(h.title);
                         }
 
                         // Have to load the image on show and force layout after image loads because Ext assumes 0
