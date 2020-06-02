@@ -7,6 +7,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
@@ -138,7 +139,7 @@ public class DefaultProvenanceProvider implements ProvenanceService
     }
 
     @Override
-    public Collection<String> getDatasetProvenanceLsids(String datasetTableName)
+    public Collection<String> getDatasetProvenanceLsids(User user, Dataset dataset)
     {
         return Collections.emptyList();
     }

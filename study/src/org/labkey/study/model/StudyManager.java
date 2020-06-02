@@ -2746,7 +2746,7 @@ public class StudyManager
         // When the dataset is deleted, the provenance rows should be cleaned up
         ProvenanceService pvs = ProvenanceService.get();
 
-        Collection<String> allDatasetLsids = pvs.getDatasetProvenanceLsids(ds.getStorageTableInfo().getName());
+        Collection<String> allDatasetLsids = pvs.getDatasetProvenanceLsids(user, ds);
 
         allDatasetLsids.forEach(lsid -> {
             Set<Integer> protocolApplications = pvs.getProtocolApplications(lsid);

@@ -10,6 +10,7 @@ import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
@@ -155,5 +156,5 @@ public interface ProvenanceService
     /**
      * Returns the rows of dataset involved in provenance
      */
-    Collection<String> getDatasetProvenanceLsids(String datasetTableName);
+    Collection<String> getDatasetProvenanceLsids(User user, Dataset dataset);
 }
