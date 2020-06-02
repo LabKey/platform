@@ -295,6 +295,20 @@ if (typeof LABKEY == "undefined")
             return file && (file.indexOf('.') === -1 || file.indexOf('.lib.xml') > -1);
         };
 
+        var loadApp = function(appName, appTarget, appContext)
+        {
+            if (window.dispatchEvent && window.CustomEvent)
+            {
+                window.dispatchEvent(new CustomEvent('initApp', {
+                    detail: {
+                        appName: appName,
+                        appContext: appContext,
+                        appTarget: appTarget,
+                    }
+                }));
+            }
+        };
+
         var loadScripts = function()
         {
             configs.isDocumentClosed = true;
@@ -860,6 +874,7 @@ if (typeof LABKEY == "undefined")
             id: id,
             init: init,
             isDirty: isDirty,
+            loadApp: loadApp,
             loadScripts: loadScripts,
             loadedScripts: loadedScripts,
 
