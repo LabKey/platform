@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { AppContainer } from 'react-hot-loader';
+import { registerApp } from '@labkey/components';
 
-import { RunGraph } from './RunGraph';
-import { AppContext, registerApp } from './util';
+import { AppContext, RunGraph } from './RunGraph';
 
 const render = (target: string, ctx: AppContext) => {
     ReactDOM.render(

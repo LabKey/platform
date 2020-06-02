@@ -6,11 +6,15 @@ import {
     LineageURLResolvers,
 } from '@labkey/components';
 
-import { AppContext } from './util'
-
 import '@labkey/components/dist/components.css';
 
 initQueryGridState();
+
+export interface AppContext {
+    lsid: string;
+    rowId: number;
+    target: string;
+}
 
 interface RunGraphProps {
     context: AppContext;
