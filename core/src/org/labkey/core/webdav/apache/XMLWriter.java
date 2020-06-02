@@ -17,6 +17,7 @@
 
 package org.labkey.core.webdav.apache;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -65,7 +66,7 @@ public class XMLWriter {
     /**
      * Buffer.
      */
-    protected StringBuffer buffer = new StringBuffer();
+    protected StringBuilder buffer = new StringBuilder();
 
 
     /**
@@ -117,7 +118,7 @@ public class XMLWriter {
     public void writeProperty(String namespace, String namespaceInfo,
                               String name, String value) {
         writeElement(namespace, namespaceInfo, name, OPENING);
-        buffer.append(normalize(value));
+        normalize(buffer, value);
         writeElement(namespace, namespaceInfo, name, CLOSING);
 
     }
@@ -132,7 +133,7 @@ public class XMLWriter {
      */
     public void writeProperty(@Nullable String namespace, String name, String value) {
         writeElement(namespace, name, OPENING);
-        buffer.append(normalize(value));
+        normalize(buffer, value);
         writeElement(namespace, name, CLOSING);
     }
 
@@ -170,6 +171,10 @@ public class XMLWriter {
      */
     public void writeElement(@Nullable String namespace, @Nullable String namespaceInfo,
                              String name, int type) {
+        // NOTE: name can actually name + attributes
+        // CONSIDER: api could be cleaner
+        assert isValidXmlElementName(name.contains(" ") ? name.substring(0,name.indexOf(' ')) : name);
+
         if ((namespace != null) && (namespace.length() > 0)) {
             switch (type) {
             case OPENING:
@@ -218,7 +223,7 @@ public class XMLWriter {
      * @param text Text to append
      */
     public void writeText(String text) {
-        buffer.append(normalize(text));
+        normalize(buffer, text);
     }
 
 
@@ -279,7 +284,7 @@ public class XMLWriter {
                     }
 
                     buffer.append("=\"");
-                    buffer.append(normalize(attr.getNodeValue()));
+                    normalize(buffer, attr.getNodeValue());
                     buffer.append('"');
                 }
                 buffer.append('>');
@@ -318,7 +323,7 @@ public class XMLWriter {
             // print cdata sections
             case Node.CDATA_SECTION_NODE: {
                 if ( canonical ) {
-                    buffer.append(normalize(node.getNodeValue()));
+                    normalize(buffer, node.getNodeValue());
                 } else {
                     buffer.append("<![CDATA[");
                     buffer.append(node.getNodeValue());
@@ -329,7 +334,7 @@ public class XMLWriter {
 
             // print text
             case Node.TEXT_NODE: {
-                buffer.append(normalize(node.getNodeValue()));
+                normalize(buffer, node.getNodeValue());
                 break;
             }
 
@@ -405,12 +410,10 @@ public class XMLWriter {
 
     } // sortAttributes(NamedNodeMap):Attr[]
 
-    protected String normalize(String s) {
-        if (s == null) {
-            return "";
-        }
-
-        StringBuilder str = new StringBuilder();
+    protected void normalize(StringBuilder str, String s)
+    {
+        if (s == null)
+            return;
 
         int len = s.length();
         for ( int i = 0; i < len; i++ ) {
@@ -448,12 +451,7 @@ public class XMLWriter {
                 }
             }
         }
-
-        return (str.toString());
-
-    } // normalize(String):String
-
-
+    }
 
     /**
      * Send data and reinitializes buffer.
@@ -463,7 +461,31 @@ public class XMLWriter {
         if (writer != null)
         {
             writer.write(buffer.toString());
-            buffer = new StringBuffer();
+            buffer = new StringBuilder();
         }
+    }
+
+    /* https://www.w3schools.com/xml/xml_elements.asp
+    Element names are case-sensitive
+    Element names must start with a letter or underscore
+    Element names cannot start with the letters xml (or XML, or Xml, etc)
+    Element names can contain letters, digits, hyphens, underscores, and periods
+    Element names cannot contain spaces
+    */
+    public static boolean isValidXmlElementName(String name)
+    {
+        if (name.isEmpty())
+            return false;
+        char ch = name.charAt(0);
+        if (!Character.isLetter(ch) && '_' != ch)
+            return false;
+        for (int i = 1; i < name.length(); i++)
+        {
+            ch = name.charAt(i);
+            if (Character.isLetterOrDigit(ch) || '-' == ch || '_' == ch || '.' == ch)
+                continue;
+            return false;
+        }
+        return !StringUtils.startsWithIgnoreCase(name,"xml");
     }
 }

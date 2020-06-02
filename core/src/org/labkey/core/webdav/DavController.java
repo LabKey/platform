@@ -2001,30 +2001,6 @@ public class DavController extends SpringActionController
     }
 
 
-    private static boolean isValidXmlElementName(String name)
-    {
-            /*https://www.w3schools.com/xml/xml_elements.asp
-            Element names are case-sensitive
-            Element names must start with a letter or underscore
-            Element names cannot start with the letters xml (or XML, or Xml, etc)
-            Element names can contain letters, digits, hyphens, underscores, and periods
-            Element names cannot contain spaces*/
-        if (name.isEmpty())
-            return false;
-        char ch = name.charAt(0);
-        if (!Character.isLetter(ch) && '_' != ch)
-            return false;
-        for (int i = 1; i < name.length(); i++)
-        {
-            ch = name.charAt(i);
-            if (Character.isLetterOrDigit(ch) || '-' == ch || '_' == ch || '.' == ch)
-                continue;
-            return false;
-        }
-        return !StringUtils.startsWithIgnoreCase(name,"xml");
-    }
-
-
     class XMLResourceWriter implements ResourceWriter
     {
         XMLWriter xml;
@@ -2481,7 +2457,9 @@ public class DavController extends SpringActionController
 //                        }
                         else
                         {
-                            propertiesNotFound.add(property);
+                            // ignore not well-formed property names, must be a valid XML element
+                            if (XMLWriter.isValidXmlElementName(property))
+                                propertiesNotFound.add(property);
                         }
                     }
 
@@ -2496,10 +2474,7 @@ public class DavController extends SpringActionController
                         xml.writeElement(null, "propstat", XMLWriter.OPENING);
                         xml.writeElement(null, "prop", XMLWriter.OPENING);
                         for (String property : propertiesNotFound)
-                        {
-                            if (isValidXmlElementName(property))
-                                xml.writeElement(null, property, XMLWriter.NO_CONTENT);
-                        }
+                            xml.writeElement(null, property, XMLWriter.NO_CONTENT);
                         xml.writeElement(null, "prop", XMLWriter.CLOSING);
                         xml.writeElement(null, "status", XMLWriter.OPENING);
                         xml.writeText("HTTP/1.1 " + WebdavStatus.SC_NOT_FOUND);
@@ -2679,7 +2654,9 @@ public class DavController extends SpringActionController
                         }
                         else
                         {
-                            propertiesNotFound.add(property);
+                            // ignore not well-formed property names, must be a valid XML element
+                            if (XMLWriter.isValidXmlElementName(property))
+                                propertiesNotFound.add(property);
                         }
 
                     }
@@ -2697,10 +2674,7 @@ public class DavController extends SpringActionController
                         xml.writeElement(null, "prop", XMLWriter.OPENING);
 
                         for (String aPropertiesNotFound : propertiesNotFound)
-                        {
-                            if (isValidXmlElementName(aPropertiesNotFound))
-                                xml.writeElement(null, aPropertiesNotFound, XMLWriter.NO_CONTENT);
-                        }
+                            xml.writeElement(null, aPropertiesNotFound, XMLWriter.NO_CONTENT);
 
                         xml.writeElement(null, "prop", XMLWriter.CLOSING);
                         xml.writeElement(null, "status", XMLWriter.OPENING);
@@ -6732,15 +6706,15 @@ public class DavController extends SpringActionController
         @Test
         public void testElementName()
         {
-            assertFalse(isValidXmlElementName(""));
-            assertFalse(isValidXmlElementName("na me"));
-            assertFalse(isValidXmlElementName("na<me"));
-            assertTrue(isValidXmlElementName("name3"));
-            assertFalse(isValidXmlElementName("3name"));
-            assertTrue(isValidXmlElementName("name.3"));
-            assertFalse(isValidXmlElementName(".name"));
-            assertTrue(isValidXmlElementName("_xml"));
-            assertFalse(isValidXmlElementName("xml_"));
+            assertFalse(XMLWriter.isValidXmlElementName(""));
+            assertFalse(XMLWriter.isValidXmlElementName("na me"));
+            assertFalse(XMLWriter.isValidXmlElementName("na<me"));
+            assertTrue(XMLWriter.isValidXmlElementName("name3"));
+            assertFalse(XMLWriter.isValidXmlElementName("3name"));
+            assertTrue(XMLWriter.isValidXmlElementName("name.3"));
+            assertFalse(XMLWriter.isValidXmlElementName(".name"));
+            assertTrue(XMLWriter.isValidXmlElementName("_xml"));
+            assertFalse(XMLWriter.isValidXmlElementName("xml_"));
         }
 
         @Test
