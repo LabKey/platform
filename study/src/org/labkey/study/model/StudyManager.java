@@ -74,7 +74,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
