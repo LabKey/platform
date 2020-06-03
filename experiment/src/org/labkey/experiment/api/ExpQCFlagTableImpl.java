@@ -150,7 +150,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
             public TableInfo getLookupTableInfo()
             {
                 AssayProvider provider = AssayService.get().getProvider(_assayProtocol);
-                return null==provider ? null : provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), _assayProtocol, null).createRunsTable(null);
+                return null==provider ? null : provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), _assayProtocol, null).createRunsTable(getContainerFilter());
             }
         });
         SQLFragment protocolSQL = new SQLFragment("RunId IN (SELECT er.RowId FROM ");
