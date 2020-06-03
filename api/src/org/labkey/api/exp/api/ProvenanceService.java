@@ -40,7 +40,7 @@ public interface ProvenanceService
 
     String PROVENANCE_OBJECT_MAP = "provenanceMap";
 
-    String CURRENT_PROVENANCE_RECORDING_PARAMS = "ProvenanceRecordingParams";
+    String PROVENANCE_RECORDING_IDS = "ProvenanceRecordingIds";
 
     String PROVENANCE_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:ProvenanceProtocol";
 
