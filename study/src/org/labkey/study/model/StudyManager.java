@@ -2730,7 +2730,7 @@ public class StudyManager
         return dataset.deleteRows(cutoff);
     }
 
-    private Collection<String> getDatasetProvenanceLsids(DatasetDefinition ds)
+    public Collection<String> getDatasetProvenanceLsids(DatasetDefinition ds)
     {
         String datasetTableName = ds.getStorageTableInfo().getName();
 
