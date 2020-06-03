@@ -1069,14 +1069,17 @@ public class ProjectController extends SpringActionController
             if (null == webPart)
             {
                 //the web part no longer exists--probably because another admin has deleted it
-                errors.reject(null, "The web part you are trying to customize no longer exists. It may have been removed by another administrator.");
+                errors.reject(ERROR_MSG, "The web part you are trying to customize no longer exists. It may have been removed by another administrator.");
                 return false;
             }
 
             // Security check -- subclasses may have overridden isEditable for certain types of users
             WebPartFactory desc = Portal.getPortalPart(webPart.getName());
             if (!desc.isEditable())
-                throw new IllegalStateException("This is not an editable web part");
+            {
+                errors.reject(ERROR_MSG, "This is not an editable web part");
+                return false;
+            }
 
             CustomizeWebPartHelper.populatePropertyMap(getViewContext().getRequest(), webPart);
             Portal.updatePart(getUser(), webPart);
@@ -1255,22 +1258,36 @@ public class ProjectController extends SpringActionController
             String webPartName = request.getParameter(PARAM_WEBPART);
 
             if (null == webPartName || webPartName.length() == 0)
-                throw new IllegalArgumentException("You must provide a value for the " + PARAM_WEBPART + " parameter!");
+            {
+                // can't use errors.rejectValue() because of odd-ball class GetWebPartForm
+                // errors.rejectValue("name", SpringActionController.ERROR_REQUIRED);
+                errors.reject(SpringActionController.ERROR_MSG, "webpart.name is required");
+                return null;
+            }
 
             WebPartFactory factory = Portal.getPortalPartCaseInsensitive(webPartName);
             if (null == factory)
-                throw new NotFoundException("Couldn't get the web part factory for web part '" + webPartName + "'!");
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Couldn't find the web part factory for web part '" + webPartName + "'.");
+                return null;
+            }
 
             Portal.WebPart part = factory.createWebPart();
             if (null == part)
-                throw new RuntimeException("Couldn't create web part '" + webPartName + "'!");
+            {
+                errors.reject(ERROR_MSG, "Couldn't create web part '" + webPartName + "'.");
+                return null;
+            }
 
             part.setProperties(qs);
             part.setExtendedProperties(form.getExtendedProperties());
 
             WebPartView view = Portal.getWebPartViewSafe(factory, getViewContext(), part);
             if (null == view)
-                throw new RuntimeException("Couldn't create web part view for part '" + webPartName + "'!");
+            {
+                errors.reject(ERROR_MSG, "Couldn't create web part view for part '" + webPartName + "'.");
+                return null;
+            }
 
             String frame = StringUtils.trimToEmpty(request.getParameter("webpart.frame"));
             if (null != frame && frame.length() > 0 && _frameTypeMap.containsKey(frame))

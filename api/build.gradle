@@ -1,8 +1,7 @@
 import org.labkey.gradle.util.BuildUtils
 
 apply plugin: 'java'
-if (project.hasProperty("gradle7Compat"))
-    apply plugin: 'java-library'
+apply plugin: 'java-library'
 apply plugin: 'org.labkey.javaModule'
 apply plugin: 'org.labkey.xmlBeans'
 
@@ -140,32 +139,18 @@ dependencies {
     // declare a transitive labkey dependency so the dependencies of the labkey-client-api are copied into api's lib directory
     // and so the dependencies are included in the dependencies.txt file.
     BuildUtils.addLabKeyDependency(project: project, config: "labkey", depProjectPath: BuildUtils.getRemoteApiProjectPath(gradle), transitive: true, depProjectConfig: "default", depVersion: project.labkeyClientApiVersion)
-    if (project.hasProperty("gradle7Compat"))
-    {
-        BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
-        api project.tasks.schemasCompile.outputs.files
-    }
-    else
-    {
-        BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
-        compile project.tasks.schemasCompile.outputs.files
-    }
+    BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
+    api project.tasks.schemasCompile.outputs.files
+
     // always include labkey-client-api in the dependencies.txt file, whether that project is being built locally or not.
     creditable "org.labkey.api:labkey-client-api:${project.labkeyClientApiVersion}"
 
     BuildUtils.addTomcatBuildDependencies(project, "implementation")
     // the following two libraries are required for compilation but we don't want extra ones in the classpath, so we exclude
     // them from external dependencies in favor of the versions in the tomcat directory (FIXME seems somewhat sketchy...)
-    if (project.hasProperty("gradle7Compat"))
-    {
-        api "javax.servlet:servlet-api:${servletApiVersion}"
-        implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
-    }
-    else
-    {
-        compile "javax.servlet:servlet-api:${servletApiVersion}"
-        compile "com.sun.mail:jakarta.mail:${javaMailVersion}"
-    }
+    api "javax.servlet:servlet-api:${servletApiVersion}"
+    api "com.sun.mail:jakarta.mail:${javaMailVersion}"
+
 
     external("com.fasterxml.jackson.datatype:jackson-datatype-json-org:${jacksonVersion}") {
       // exclude this because it gets in the way of our own JSON object implementations from server/api

@@ -20,14 +20,19 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Pair;
 
 import java.io.File;
 import java.io.Serializable;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -59,6 +64,19 @@ public class RecordedAction
     private Date _startTime;
     private Date _endTime;
     private Integer _recordCount;
+
+    // Provenance map (list of from and to lsid pairs)
+    private Set<Pair<String,String>> _provenanceMap = new HashSet<>();
+    // Set of lsids
+    private Set<String> _materialInputs = new HashSet<>();
+    private Set<String> _materialOutputs = new HashSet<>();
+
+    // set of lsids
+    private Set<String> _objectInputs = new HashSet<>();
+    private Set<String> _objectOutputs = new HashSet<>();
+
+    private boolean _isStart;
+    private boolean _isEnd;
 
     /** No-args constructor to support de-serialization in Java 7 and beyond */
     @SuppressWarnings({"UnusedDeclaration"})
@@ -247,6 +265,81 @@ public class RecordedAction
     public Map<PropertyDescriptor, Object> getProps()
     {
         return Collections.unmodifiableMap(_props);
+    }
+
+    public Set<Pair<String, String>> getProvenanceMap()
+    {
+        return _provenanceMap;
+    }
+
+    public void setProvenanceMap(Set<Pair<String, String>> provenanceMap)
+    {
+        _provenanceMap = provenanceMap;
+    }
+
+    public Set<String> getMaterialInputs()
+    {
+        return _materialInputs;
+    }
+
+    public void setMaterialInputs(Set<String> materialInputs)
+    {
+        _materialInputs = materialInputs;
+    }
+
+    public Set<String> getMaterialOutputs()
+    {
+        return _materialOutputs;
+    }
+
+    public void setMaterialOutputs(Set<String> materialOutputs)
+    {
+        _materialOutputs = materialOutputs;
+    }
+
+    public Set<String> getObjectInputs()
+    {
+        return _objectInputs;
+    }
+
+    public void setObjectInputs(Set<String> objectInputs)
+    {
+        _objectInputs = objectInputs;
+    }
+
+    public Set<String> getObjectOutputs()
+    {
+        return _objectOutputs;
+    }
+
+    public void setObjectOutputs(Set<String> objectOutputs)
+    {
+        _objectOutputs = objectOutputs;
+    }
+
+    public void setProps(Map<PropertyDescriptor, Object> props)
+    {
+        _props = props;
+    }
+
+    public boolean isStart()
+    {
+        return _isStart;
+    }
+
+    public void setStart(boolean start)
+    {
+        _isStart = start;
+    }
+
+    public boolean isEnd()
+    {
+        return _isEnd;
+    }
+
+    public void setEnd(boolean end)
+    {
+        _isEnd = end;
     }
 
     public static class ParameterType implements Serializable
