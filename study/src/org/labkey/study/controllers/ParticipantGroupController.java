@@ -527,7 +527,8 @@ public class ParticipantGroupController extends BaseStudyController
                         }
                         else if (form.getGroupId() != -1)
                         {
-                            // NOTE this method reads from the cache (faster), but will not find personal groups that have been shared for instance
+                            // NOTE this method reads from the cache (faster), but will not find personal groups that have been shared, for instance
+
                             ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getGroupId());
                             if (null == group)
                             {
