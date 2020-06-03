@@ -9,7 +9,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.components.CustomizeView;
-import org.labkey.test.components.SetDefaultPageClass;
+import org.labkey.test.components.study.ViewPreferencesPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.PortalHelper;
 
@@ -17,7 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Category({DailyA.class})
-@BaseWebDriverTest.ClassTimeout(minutes = 2)
+@BaseWebDriverTest.ClassTimeout(minutes = 3)
 public class StudyDatasetDefaultView extends BaseWebDriverTest
 {
     @BeforeClass
@@ -49,7 +49,7 @@ public class StudyDatasetDefaultView extends BaseWebDriverTest
     private void doCreateSteps()
     {
         _containerHelper.createProject(getProjectName(), "Study");
-        importFolderFromZip(TestFileUtils.getSampleData("studies/LabkeyDemoStudy.zip"));
+        importFolderFromZip(TestFileUtils.getSampleData("studies/LabkeyDemoStudy.zip"),false,1);
 
         goToProjectHome();
         PortalHelper portalHelper = new PortalHelper(this);
@@ -77,13 +77,19 @@ public class StudyDatasetDefaultView extends BaseWebDriverTest
         datasetTableCustomizer.saveCustomView(gridName, true);
 
         log("Setting the default view");
-        SetDefaultPageClass setDefaultPage = datasetTable.clicksetDefault();
+        ViewPreferencesPage setDefaultPage = datasetTable.clicksetDefault();
         setDefaultPage.selectDefaultGrid(gridName);
 
         log("Verifying default view for the dataset.");
         goToProjectHome();
         clickAndWait(Locator.linkWithText(datasetName));
+        DataRegionTable table = new DataRegionTable("Dataset",getDriver());
         checker().verifyTrue("Not the correct default view", isElementPresent(Locator.tagWithText("span", gridName)));
+        checker().verifyEquals("Column Day was not found",5,table.getColumnIndex("Day"));
+        checker().verifyEquals("Column M1 was found",-1,table.getColumnIndex("M1"));
+        checker().verifyEquals("Column M2 was found",-1,table.getColumnIndex("M2"));
+        checker().verifyEquals("Column M3 was found",-1,table.getColumnIndex("M3"));
+
     }
 
     //Test coverage added for https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=40502
