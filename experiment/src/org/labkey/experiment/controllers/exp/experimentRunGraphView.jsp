@@ -129,7 +129,7 @@
             });
         });
 
-        LABKEY.loadApp('runGraph', <%=q(appId)%>, {
+        LABKEY.App.loadApp('runGraph', <%=q(appId)%>, {
             lsid: <%=q(model.getRun().getLSID())%>,
             rowId: <%=model.getRun().getRowId()%>,
         });

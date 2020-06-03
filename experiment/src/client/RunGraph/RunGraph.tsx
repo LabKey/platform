@@ -13,7 +13,6 @@ initQueryGridState();
 export interface AppContext {
     lsid: string;
     rowId: number;
-    target: string;
 }
 
 interface RunGraphProps {
