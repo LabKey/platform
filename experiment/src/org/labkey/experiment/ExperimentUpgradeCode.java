@@ -558,22 +558,15 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 // Drop foreign keys before dropping the original column.  First materialInput
                 sql.append("ALTER TABLE exp.materialInput DROP CONSTRAINT fk_materialinput_material;\n");
                 // now ms2
-                sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE NAME = 'ms2')\n" +
-                        "   ALTER TABLE ms2.ExpressionData DROP CONSTRAINT FK_ExpressionData_SampleId;\n");
+                sql.append("EXEC core.fn_dropifexists 'ExpressionData', 'ms2', 'constraint', 'FK_ExpressionData_SampleId';\n");
                 // and labbook
-                sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE NAME = 'labbook')\n" +
-                        "   ALTER TABLE labbook.LabBookExperimentMaterial DROP CONSTRAINT FK_LabBookExperimentMaterial_MaterialId;\n");
+                sql.append("EXEC core.fn_dropifexists 'LabBookExperimentMaterial', 'labbook', 'constraint', 'FK_LabBookExperimentMaterial_MaterialId';\n");
                 // and microarray
-                sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE NAME = 'microarray')\n" +
-                        "   ALTER TABLE microarray.FeatureData DROP CONSTRAINT FK_FeatureData_SampleId;\n");
+                sql.append("EXEC core.fn_dropifexists 'FeatureData', 'microarray', 'constraint', 'FK_FeatureData_SampleId';\n");
                 // and idri
-                sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE NAME = 'idri')\n" +
-                        " BEGIN\n" +
-                        "   ALTER TABLE idri.concentrations DROP CONSTRAINT FK_Compounds;\n" +
-                        "   ALTER TABLE idri.concentrations DROP CONSTRAINT FK_Materials;\n" +
-                        "   ALTER TABLE idri.concentrations DROP CONSTRAINT FK_Lot;\n" +
-                        "END;\n"
-                );
+                sql.append("EXEC core.fn_dropifexists 'concentrations', 'idri', 'constraint', 'FK_Compounds';\n");
+                sql.append("EXEC core.fn_dropifexists 'concentrations', 'idri', 'constraint', 'FK_Materials';\n");
+                sql.append("EXEC core.fn_dropifexists 'concentrations', 'idri', 'constraint', 'FK_Lot';\n");
                 // Remove primary key constraint
                 sql.append("ALTER TABLE exp.Material DROP CONSTRAINT PK_Material;\n");
 
@@ -597,9 +590,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 sql.append("ALTER TABLE exp.materialInput ADD CONSTRAINT FK_MaterialInput_Material FOREIGN KEY (MaterialId) REFERENCES exp.Material (RowId);\n");
                 sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE Name = 'ms2') \n" +
                         "       ALTER TABLE ms2.ExpressionData ADD CONSTRAINT FK_ExpressionData_SampleId FOREIGN KEY (SampleId) REFERENCES exp.material (RowId);\n"
-                );
-                sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE Name = 'labbook')\n" +
-                        "       ALTER TABLE labbook.LabBookExperimentMaterial ADD CONSTRAINT FK_LabBookExperimentMaterial_MaterialId FOREIGN KEY (MaterialId) REFERENCES exp.Material (RowId);\n"
                 );
                 sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE NAME = 'microarray')\n" +
                         "   ALTER TABLE microarray.FeatureData ADD CONSTRAINT FK_FeatureData_SampleId FOREIGN KEY (SampleId) REFERENCES exp.material (RowId);\n");

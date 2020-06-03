@@ -47,12 +47,15 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
+import org.labkey.api.exp.api.ProvenanceRecordingParams;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.ActionNames;
@@ -86,6 +89,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.StringExpression;
@@ -120,8 +124,8 @@ import org.labkey.query.CustomViewUtil;
 import org.labkey.query.EditQueriesPermission;
 import org.labkey.query.EditableCustomView;
 import org.labkey.query.LinkedTableInfo;
-import org.labkey.query.ModuleCustomQueryDefinition;
 import org.labkey.query.MetadataTableJSON;
+import org.labkey.query.ModuleCustomQueryDefinition;
 import org.labkey.query.ModuleCustomView;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.TableXML;
@@ -187,7 +191,10 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import static org.labkey.api.data.DbScope.NO_OP_TRANSACTION;
-import static org.labkey.api.util.DOM.*;
+import static org.labkey.api.util.DOM.BR;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.Renderable;
+import static org.labkey.api.util.DOM.cl;
 
 @SuppressWarnings("DefaultAnnotationParam")
 
@@ -3867,6 +3874,27 @@ public class QueryController extends SpringActionController
             JSONObject response = executeJson(apiSaveRowsForm.getJsonObject(), CommandType.insert, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
+
+            // if there is any provenance information, save it here
+            ProvenanceService svc = ProvenanceService.get();
+            if (apiSaveRowsForm.getJsonObject().has("provenance"))
+            {
+                JSONObject provenanceJSON = apiSaveRowsForm.getJsonObject().getJSONObject("provenance");
+                ProvenanceRecordingParams params = svc.createRecordingParams(getViewContext(), provenanceJSON, ProvenanceService.ADD_RECORDING);
+                RecordedAction action = svc.createRecordedAction(getViewContext(), params);
+                if (action != null && params.getRecordingId() != null)
+                {
+                    // check for any row level provenance information
+                    if (apiSaveRowsForm.getJsonObject().has("rows"))
+                    {
+                        JSONArray rows = apiSaveRowsForm.getJsonObject().getJSONArray("rows");
+                        List<Pair<String, String>> provenanceMap = svc.createProvenanceMapFromRows(getViewContext(), params, rows);
+
+                        action.getProvenanceMap().addAll(provenanceMap);
+                        svc.addRecordingStep(getViewContext().getRequest(), params.getRecordingId(), action);
+                    }
+                }
+            }
             return new ApiSimpleResponse(response);
         }
     }

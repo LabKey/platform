@@ -61,6 +61,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -124,6 +125,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<? extends ExpRun> getExpRunsForFilePathRoot(File filePathRoot);
 
     ExpRun createExperimentRun(Container container, String name);
+
+    @Nullable
+    ExpRun createRunForProvenanceRecording(Container container, User user,
+                                           RecordedActionSet actionSet,
+                                           String runName,
+                                           @Nullable Integer runJobId) throws ExperimentException, ValidationException;
 
     void queueSyncRunEdges(int runId);
 
@@ -421,6 +428,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpProtocol getExpProtocol(int rowid);
 
+    @Nullable
     ExpProtocol getExpProtocol(String lsid);
 
     ExpProtocol getExpProtocol(Container container, String name);
