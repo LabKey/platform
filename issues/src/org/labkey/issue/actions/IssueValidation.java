@@ -178,7 +178,7 @@ public class IssueValidation
         Set<Integer> newRelatedIssues = new TreeSet<>();
         if (textInput != null)
         {
-            String[] textValues = issue.getRelated().split("[\\s,;]+");
+            String[] textValues = textInput.split("[\\s,;]+");
             int relatedId;
             // for each issue id we need to validate
             for (String relatedText : textValues)
@@ -221,6 +221,20 @@ public class IssueValidation
                 {
                     errors.reject(SpringActionController.ERROR_MSG, "User does not have Read Permission for related issue '" + relatedId + "'");
                     return;
+                }
+            }
+
+            // Issue 40178: Related Issues need to be in synch when related issues are deleted
+            for (Integer originalRelatedId : originalRelatedIssues)
+            {
+                if (!newRelatedIssues.contains(originalRelatedId))
+                {
+                    Issue related = IssueManager.getIssue(null, user, originalRelatedId);
+                    if (null != related)
+                    {
+                      related = ChangeSummary.relatedIssueCommentHandler(originalIssue.getIssueId(), related.getIssueId(), user, true );
+                      IssueManager.saveIssue(user, related.lookupContainer(), related);
+                    }
                 }
             }
         }
