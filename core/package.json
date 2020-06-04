@@ -94,8 +94,8 @@
     }
   },
   "dependencies": {
-    "@labkey/api": "0.3.0-fb-register-apps.0",
-    "@labkey/components": "0.65.1-fb-register-apps.0",
+    "@labkey/api": "0.3.0",
+    "@labkey/components": "0.65.1",
     "@labkey/eslint-config-react": "0.0.5",
     "react-toggle-button": "2.2.0"
   },
