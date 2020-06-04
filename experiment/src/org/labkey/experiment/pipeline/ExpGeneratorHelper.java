@@ -217,15 +217,14 @@ public class ExpGeneratorHelper
 
             log.info("Checking files referenced by experiment run");
 
-            boolean hasStartApp = actions.stream().anyMatch(RecordedAction::isStart);
-            boolean hasEndApp = actions.stream().anyMatch(RecordedAction::isEnd);
+            boolean fromProvenanceRecording = protocol.getLSID().contains(ProvenanceService.PROVENANCE_PROTOCOL_LSID);
 
             for (RecordedAction action : actions)
             {
                 for (RecordedAction.DataFile dataFile : action.getInputs())
                 {
                     // For inputs, don't stomp over the role specified the first time a file was used as an input
-                    if (hasStartApp && !action.isStart())
+                    if (fromProvenanceRecording && !action.isStart())
                         continue;
                     runInputsWithRoles.computeIfAbsent(dataFile.getURI(), k -> dataFile.getRole());
 
@@ -237,7 +236,7 @@ public class ExpGeneratorHelper
                     if (!dataFile.isTransient())
                     {
                         // For outputs, want to use the last role that was specified, so always overwrite
-                        if (hasEndApp && !action.isEnd())
+                        if (fromProvenanceRecording && !action.isEnd())
                             continue;
                         runOutputsWithRoles.put(dataFile.getURI(), dataFile.getRole());
                     }
