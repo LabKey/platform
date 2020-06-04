@@ -27,12 +27,11 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -42,6 +41,7 @@ import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 
 import java.util.Collections;
+import java.util.Optional;
 
 /**
  * User: adam
@@ -64,14 +64,8 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
         issueIdColumn.setLabel(names.singularName);
         ActionURL base = IssuesController.issueURL(_userSchema.getContainer(), IssuesController.DetailsAction.class);
         issueIdColumn.setURL(new DetailsURL(base, Collections.singletonMap("issueId", "IssueId")));
-        issueIdColumn.setFk(new LookupForeignKey("IssueId", "IssueId")
-        {
-            @Override
-            public @Nullable TableInfo getLookupTableInfo()
-            {
-                return IssuesSchema.getInstance().getTableInfoIssues();
-            }
-        });
+        Optional<IssueListDef> firstIssueListDef = IssueManager.getIssueListDefs(schema.getContainer()).stream().findFirst();
+        firstIssueListDef.ifPresent(issueListDef -> issueIdColumn.setFk(new QueryForeignKey(schema, cf, schema, null, issueListDef.getName(), "IssueId", "IssueId")));
         issueIdColumn.setDisplayColumnFactory(colInfo -> new IssueIdDisplayColumn(colInfo,getContainer(), getUserSchema().getUser()));
         addColumn(issueIdColumn);
 
