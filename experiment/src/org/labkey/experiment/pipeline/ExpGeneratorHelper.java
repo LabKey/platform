@@ -217,12 +217,15 @@ public class ExpGeneratorHelper
 
             log.info("Checking files referenced by experiment run");
 
+            boolean hasStartApp = actions.stream().anyMatch(RecordedAction::isStart);
+            boolean hasEndApp = actions.stream().anyMatch(RecordedAction::isEnd);
+
             for (RecordedAction action : actions)
             {
                 for (RecordedAction.DataFile dataFile : action.getInputs())
                 {
                     // For inputs, don't stomp over the role specified the first time a file was used as an input
-                    if (!action.isStart())
+                    if (hasStartApp && !action.isStart())
                         continue;
                     runInputsWithRoles.computeIfAbsent(dataFile.getURI(), k -> dataFile.getRole());
 
@@ -234,7 +237,7 @@ public class ExpGeneratorHelper
                     if (!dataFile.isTransient())
                     {
                         // For outputs, want to use the last role that was specified, so always overwrite
-                        if (!action.isEnd())
+                        if (hasEndApp && !action.isEnd())
                             continue;
                         runOutputsWithRoles.put(dataFile.getURI(), dataFile.getRole());
                     }
