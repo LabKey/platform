@@ -69,6 +69,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.util.DateUtil;
@@ -490,8 +491,13 @@ public class XarReader extends AbstractXarImporter
             {
                 List<IdentifiableEntity.Difference> diffs = new ArrayList<>();
                 IdentifiableEntity.diff(materialSource.getName(), existingMaterialSource.getName(), "Name", diffs);
-                IdentifiableEntity.diff(materialSource.getDescription(), existingMaterialSource.getDescription(), "Description", diffs);
-                IdentifiableEntity.diff(materialSource.getMaterialLSIDPrefix(), existingMaterialSource.getMaterialLSIDPrefix(), "Material LSID prefix", diffs);
+
+                // Issue 37936 - Skip validation of description for the magic specimen/sample link, which is auto-generated based on the container name
+                if (!existingMaterialSource.getName().equalsIgnoreCase(SpecimenService.SAMPLE_TYPE_NAME))
+                {
+                    IdentifiableEntity.diff(materialSource.getMaterialLSIDPrefix(), existingMaterialSource.getMaterialLSIDPrefix(), "Material LSID prefix", diffs);
+                    IdentifiableEntity.diff(materialSource.getDescription(), existingMaterialSource.getDescription(), "Description", diffs);
+                }
                 if (!diffs.isEmpty())
                 {
                     getLog().error("The SampleSet specified with LSID '" + lsid + "' has " + diffs.size() + " differences from the one that has already been loaded");

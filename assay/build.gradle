@@ -2,6 +2,7 @@ import org.labkey.gradle.util.BuildUtils
 
 dependencies{
     BuildUtils.addLabKeyDependency(project: project, config: "modules", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "experiment"), depProjectConfig: "published", depExtension: "module")
+    apiImplementation "org.apache.tomcat:tomcat-jsp-api:${apacheTomcatVersion}"
 }
 
 project.evaluationDependsOn(BuildUtils.getPlatformProjectPath(project.gradle))

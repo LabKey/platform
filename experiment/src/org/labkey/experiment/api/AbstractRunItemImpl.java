@@ -44,7 +44,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
 {
     private ExpProtocolApplicationImpl _sourceApp;
     private List<ExpProtocolApplication> _successorAppList;
-    private List<Integer> _successorRunIdList;
+    private List<Integer> _successorRunIdList = Collections.emptyList();
 
     // For serialization
     protected AbstractRunItemImpl() {}
