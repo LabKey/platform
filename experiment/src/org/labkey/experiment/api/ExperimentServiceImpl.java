@@ -83,6 +83,8 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.pipeline.RecordedAction;
+import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
@@ -170,6 +172,7 @@ import static org.labkey.api.exp.OntologyManager.getTinfoObject;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOutput;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplication;
+import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
 
 public class ExperimentServiceImpl implements ExperimentService
 {
@@ -410,6 +413,49 @@ public class ExperimentServiceImpl implements ExperimentService
         run.setLSID(generateGuidLSID(container, "Run"));
         run.setContainer(container);
         return new ExpRunImpl(run);
+    }
+
+    @Override
+    public ExpRun createRunForProvenanceRecording(Container container, User user, RecordedActionSet actionSet, String runName, @Nullable Integer runJobId) throws ExperimentException, ValidationException
+    {
+        try
+        {
+            ExpProtocol protocol;
+            try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
+            {
+                List<String> sequenceProtocols = new ArrayList<>();
+                Map<String, ExpProtocol> protocolCache = new HashMap<>();
+                for (RecordedAction ra : actionSet.getActions())
+                {
+                    if (ra.isStart() || ra.isEnd())
+                        continue;
+
+                    String stepName = ra.getName();
+                    sequenceProtocols.add(stepName);
+                    if (!protocolCache.containsKey(stepName))
+                    {
+                        // Check if it's in the database already
+                        ExpProtocol stepProtocol = ExperimentService.get().getExpProtocol(container, stepName);
+                        if (stepProtocol == null)
+                        {
+                            stepProtocol = ExperimentService.get().createExpProtocol(container, ProtocolApplication, stepName);
+                            stepProtocol.save(user);
+                        }
+                        protocolCache.put(stepName, stepProtocol);
+                    }
+                }
+                Lsid provenanceLsid = new Lsid(PROVENANCE_PROTOCOL_LSID + container.getEntityId().toString());
+                protocol = ExpGeneratorHelper.ensureProtocol(container, user, protocolCache, sequenceProtocols, provenanceLsid, runName, LOG);
+
+                transaction.commit();
+            }
+            return ExpGeneratorHelper.insertRun(container, user, actionSet, runName, runJobId, protocol, LOG, null, null);
+        }
+        catch (ExperimentException | ValidationException e)
+        {
+            LOG.error(e);
+            throw e;
+        }
     }
 
     @Override
@@ -2893,19 +2939,16 @@ public class ExperimentServiceImpl implements ExperimentService
             Set<Pair<Integer, Integer>> provenanceFinalOutputs = emptySet();
 
             ProvenanceService pvs = ProvenanceService.get();
-            if (pvs != null)
+            ProtocolApplication startProtocolApp = getStartingProtocolApplication(runId);
+            if (null != startProtocolApp)
             {
-                ProtocolApplication startProtocolApp = getStartingProtocolApplication(runId);
-                if (null != startProtocolApp)
-                {
-                    provenanceStartingInputs = pvs.getProvenanceObjectIds(startProtocolApp.getRowId());
-                }
+                provenanceStartingInputs = pvs.getProvenanceObjectIds(startProtocolApp.getRowId());
+            }
 
-                ProtocolApplication finalProtocolApp = getFinalProtocolApplication(runId);
-                if (null != finalProtocolApp)
-                {
-                    provenanceFinalOutputs = pvs.getProvenanceObjectIds(finalProtocolApp.getRowId());
-                }
+            ProtocolApplication finalProtocolApp = getFinalProtocolApplication(runId);
+            if (null != finalProtocolApp)
+            {
+                provenanceFinalOutputs = pvs.getProvenanceObjectIds(finalProtocolApp.getRowId());
             }
 
             // delete all existing edges for this run

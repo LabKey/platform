@@ -2596,7 +2596,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         // Get the ExpRuns referenced by the dataset row LSIDs
         List<? extends ExpRun> runs = pvs.getRuns(new HashSet<>(lsids));
         // get all lsids for the dataset
-        Collection<String> allDatasetLsids = StudyManager.getInstance().getDatasetProvenanceLsids(this);
+        Collection<String> allDatasetLsids = pvs.getDatasetProvenanceLsids(u, this);
 
         // delete the provenance rows and the exp.object that the provenance module created for the dataset LSID row
         for (String lsid : lsids)

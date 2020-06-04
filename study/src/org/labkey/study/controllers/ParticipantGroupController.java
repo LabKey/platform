@@ -527,8 +527,15 @@ public class ParticipantGroupController extends BaseStudyController
                         }
                         else if (form.getGroupId() != -1)
                         {
-                            // NOTE: this can expose the participant group information to a user that can't otherwise see it via the standard UI in the study module
+                            // NOTE this method reads from the cache (faster), but will not find personal groups that have been shared, for instance
+
                             ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getGroupId());
+                            if (null == group)
+                            {
+                                // NOTE: This can expose the participant group information to a user that can't otherwise see it via the standard UI in the study module.
+                                // NOTE: This is intentional as 'personal' groups are not secured and can be shared.
+                                group = ParticipantGroupManager.getInstance().getParticipantGroupFromGroupRowId(getContainer(), getUser(), form.getGroupId());
+                            }
                             if (group != null)
                             {
                                 ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
