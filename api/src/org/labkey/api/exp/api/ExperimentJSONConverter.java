@@ -415,10 +415,10 @@ public class ExperimentJSONConverter
             if (!inputSet.isEmpty())
             {
                 obj.put(ProvenanceService.PROVENANCE_OBJECT_INPUTS,
-                        inputSet.stream()
+                        Collections.unmodifiableList(inputSet.stream()
                                 .map(Pair::getKey)
                                 .map(ExperimentJSONConverter::serializeProvenanceObject)
-                                .collect(Collectors.toUnmodifiableList()));
+                                .collect(Collectors.toList())));
             }
         }
 

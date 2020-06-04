@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.experiment.api.SampleSetServiceImpl" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container proj = getContainer().getProject();
@@ -39,7 +40,7 @@
         for (ExpSampleSet sampleSet : sampleSets)
         {
             ActionURL url;
-            boolean isStudySample = "Study Specimens".equals(sampleSet.getName());
+            boolean isStudySample = SpecimenService.SAMPLE_TYPE_NAME.equals(sampleSet.getName());
             if (isStudySample)
                 url = urlProvider(SamplesUrls.class).getSamplesURL(sampleSet.getContainer());
             else

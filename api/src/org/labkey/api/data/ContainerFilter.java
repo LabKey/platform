@@ -922,11 +922,20 @@ public abstract class ContainerFilter
         }
     }
 
-    public static class CurrentOrParentAndWorkbooks extends ContainerFilterWithPermission
+    public static class CurrentOrParentAndChildrenOfType extends ContainerFilterWithPermission
     {
-        public CurrentOrParentAndWorkbooks(Container c, User user)
+        Set<String> _includedChildTypes;
+
+        public CurrentOrParentAndChildrenOfType(Container c, User user, Set<String> includedChildTypes)
         {
             super(c, user);
+            _includedChildTypes = includedChildTypes;
+        }
+
+        @Override
+        public Set<String> getIncludedChildTypes()
+        {
+            return _includedChildTypes;
         }
 
         @Override
@@ -936,7 +945,7 @@ public abstract class ContainerFilter
 
             Set<GUID> result = new HashSet<>();
 
-            if (currentContainer.isWorkbook())
+            if (_includedChildTypes.contains(currentContainer.getType()))
             {
                 if (currentContainer.getParent().hasPermission(_user, perm, roles))
                     result.add(currentContainer.getParent().getEntityId());
@@ -948,6 +957,20 @@ public abstract class ContainerFilter
             }
 
             return result;
+        }
+
+        @Override
+        public Type getType()
+        {
+            return null;
+        }
+    }
+
+    public static class CurrentOrParentAndWorkbooks extends CurrentOrParentAndChildrenOfType
+    {
+        public CurrentOrParentAndWorkbooks(Container c, User user)
+        {
+            super(c, user, Collections.singleton(WorkbookContainerType.NAME));
         }
 
         @Override
