@@ -44,7 +44,8 @@ LABKEY.Query = new function()
             rows : config.rows || config.rowDataArray,
             transacted : config.transacted,
             auditBehavior: config.auditBehavior,
-            extraContext : config.extraContext
+            extraContext : config.extraContext,
+            provenance : config.provenance
         };
 
         var requestConfig = {

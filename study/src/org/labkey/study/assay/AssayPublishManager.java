@@ -433,7 +433,7 @@ public class AssayPublishManager implements AssayPublishService
 
         try
         {
-            studyPublishProtocol = ensureStudyPublishProtocol(user, targetContainer);
+            studyPublishProtocol = ensureStudyPublishProtocol(user, targetContainer, null, null);
 
             run.setProtocol(studyPublishProtocol);
             ViewBackgroundInfo info = new ViewBackgroundInfo(targetContainer, user, null);
@@ -1072,13 +1072,17 @@ public class AssayPublishManager implements AssayPublishService
         return null;
     }
 
-    public ExpProtocol ensureStudyPublishProtocol(User user, Container container) throws ExperimentException
+    @Override
+    public ExpProtocol ensureStudyPublishProtocol(User user, Container container, String name, String lsid) throws ExperimentException
     {
-        ExpProtocol protocol = ExperimentService.get().getExpProtocol(STUDY_PUBLISH_PROTOCOL_LSID);
+        String protocolName = null != name ? name : STUDY_PUBLISH_PROTOCOL_NAME;
+        String protocolLsid = null != lsid ? lsid : STUDY_PUBLISH_PROTOCOL_LSID;
+        ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolLsid);
+
         if (protocol == null)
         {
-            ExpProtocol baseProtocol = ExperimentService.get().createExpProtocol(container, ExpProtocol.ApplicationType.ExperimentRun, STUDY_PUBLISH_PROTOCOL_NAME);
-            baseProtocol.setLSID(STUDY_PUBLISH_PROTOCOL_LSID);
+            ExpProtocol baseProtocol = ExperimentService.get().createExpProtocol(container, ExpProtocol.ApplicationType.ExperimentRun, protocolName);
+            baseProtocol.setLSID(protocolLsid);
             baseProtocol.setMaxInputMaterialPerInstance(0);
             baseProtocol.setProtocolDescription("Simple protocol for publishing study using copy to study.");
             return ExperimentService.get().insertSimpleProtocol(baseProtocol, user);
