@@ -121,7 +121,8 @@ public class ProductRegistry
             }
         }
         // always include the user menu as the last item
-        sections.add(new UserInfoMenuSection(context, userMenuProvider));
+        if (userMenuProvider != null)
+            sections.add(new UserInfoMenuSection(context, userMenuProvider));
         return sections;
     }
 
@@ -181,7 +182,7 @@ public class ProductRegistry
 
             public TestMenuSection(@NotNull ViewContext context, @NotNull String label, @Nullable String iconClass, @Nullable Integer itemLimit)
             {
-                super(context, label, iconClass, itemLimit);
+                super(context, label, iconClass, itemLimit, VALID_PRODUCT_ID);
             }
 
             @Override

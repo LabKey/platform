@@ -27,33 +27,24 @@ public class MenuItem
     private Boolean _requiresLogin = false; // indicates if link should be shown if not logged in.
     private String _productId = null; // indicates the product/application this link should direct to.  Can (should?) be null if the current application is to be used.
 
-    public MenuItem(String label, String url, Integer id, String key, Integer orderNum)
+    public MenuItem(String label, String url, Integer id, String key, Integer orderNum, String productId)
     {
         _label = label;
         _id = id;
         _key = key;
         _url = url;
         _orderNum = orderNum == null ? -1 : orderNum;
+        _productId = productId;
     }
 
-    public MenuItem(String label, String url, Integer id, Integer orderNum)
+    public MenuItem(String label, ActionURL url, Integer id, Integer orderNum, String productId)
     {
-        this(label, url, id, String.valueOf(id), orderNum);
+        this(label, url == null ? null : url.toString(), id, String.valueOf(id), orderNum, productId);
     }
 
-    public MenuItem(String label, ActionURL url, Integer id, Integer orderNum)
+    public MenuItem(String label, ActionURL url, Integer id, String productId)
     {
-        this(label, url == null ? null : url.toString(), id, orderNum);
-    }
-
-    public MenuItem(String label, String url, Integer orderNum)
-    {
-        this(label, url, null, orderNum);
-    }
-
-    public MenuItem(String label, ActionURL url, Integer id)
-    {
-        this(label, url, id, null);
+        this(label, url, id, null, productId);
     }
 
     public String getLabel()
