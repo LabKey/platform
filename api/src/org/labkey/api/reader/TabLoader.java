@@ -34,7 +34,6 @@ import org.labkey.api.util.Filter;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.writer.PrintWriters;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -332,7 +331,7 @@ public class TabLoader extends DataLoader
 
 
 
-    private CharSequence readLine(BufferedReader r, boolean skipComments, boolean skipBlankLines)
+    private CharSequence readLine(TabBufferedReader r, boolean skipComments, boolean skipBlankLines)
     {
         String line = readOneTextLine(r, skipComments, skipBlankLines);
         if (null == line || null == _lineDelimiter)
@@ -354,7 +353,7 @@ public class TabLoader extends DataLoader
     }
 
 
-    private String readOneTextLine(BufferedReader r, boolean skipComments, boolean skipBlankLines)
+    private String readOneTextLine(TabBufferedReader r, boolean skipComments, boolean skipBlankLines)
     {
         try
         {
@@ -377,7 +376,7 @@ public class TabLoader extends DataLoader
 
     Pattern _replaceDoubleQuotes = null;
 
-    private String[] readFields(BufferedReader r, @Nullable ColumnDescriptor[] columns)
+    private String[] readFields(TabBufferedReader r, @Nullable ColumnDescriptor[] columns)
     {
         CharSequence line = readLine(r, true, !isIncludeBlankLines());
 
@@ -648,7 +647,7 @@ public class TabLoader extends DataLoader
 
     public class TabLoaderIterator extends DataLoaderIterator
     {
-        private final BufferedReader reader;
+        private final TabBufferedReader reader;
 
         protected TabLoaderIterator() throws IOException
         {
