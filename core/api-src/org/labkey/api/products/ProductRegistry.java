@@ -85,36 +85,35 @@ public class ProductRegistry
     }
 
     @NotNull
-    public List<MenuSection> getProductMenuSections(@NotNull ViewContext context, @NotNull Container container, @Nullable Integer itemLimit)
+    public List<MenuSection> getProductMenuSections(@NotNull ViewContext context, @NotNull String currentProductId, @NotNull Container container, @Nullable Integer itemLimit)
     {
         Set<String> modules = container.getActiveModules().stream().map(Module::getName).collect(Collectors.toSet());
         List<MenuSection> sections = new ArrayList<>();
-        ProductMenuProvider userMenuProvider = null;
+        ProductMenuProvider userMenuProvider = _productMap.get(currentProductId);
         for (String module : modules)
         {
            if (_moduleProviderMap.containsKey(module))
            {
-               // TODO this works for now since Inventory doesn't provide a user menu, but we'll likely need a better resolution strategy here in general
                if (userMenuProvider == null)
                    userMenuProvider = _moduleProviderMap.get(module);
                sections.addAll(_moduleProviderMap.get(module).getSections(context, itemLimit));
            }
         }
         // always include the user menu as the last item
-        sections.add(new UserInfoMenuSection(context, userMenuProvider));
+        if (userMenuProvider != null)
+            sections.add(new UserInfoMenuSection(context, userMenuProvider));
         return sections;
     }
 
     @NotNull
-    public List<MenuSection> getProductMenuSections(@NotNull ViewContext context, @NotNull List<String> productIds, @Nullable Integer itemLimit)
+    public List<MenuSection> getProductMenuSections(@NotNull ViewContext context, @NotNull String currentProductId, @NotNull List<String> productIds, @Nullable Integer itemLimit)
     {
         List<MenuSection> sections = new ArrayList<>();
-        ProductMenuProvider userMenuProvider = null;
+        ProductMenuProvider userMenuProvider = _productMap.get(currentProductId);
         for (String productId : productIds)
         {
             if (_productMap.containsKey(productId))
             {
-                // TODO this works for now since Inventory doesn't provide a user menu, but we'll likely need a better resolution strategy here in general
                 if (userMenuProvider == null)
                     userMenuProvider = _productMap.get(productId);
                 sections.addAll(_productMap.get(productId).getSections(context, itemLimit));

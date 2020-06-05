@@ -54,6 +54,9 @@ public class ProductController extends SpringActionController
             if (menuItemsForm.getItemLimit() != null && menuItemsForm.getItemLimit() < 0)
                 errors.reject(ERROR_MSG, "'itemLimit' must be >= 0");
 
+            if (menuItemsForm.getCurrentProductId() == null)
+                errors.reject(ERROR_REQUIRED, "currentProductId is required");
+
             ProductRegistry registry = ProductRegistry.get();
             if (!StringUtils.isEmpty(menuItemsForm.getProductIds()))
             {
@@ -68,9 +71,9 @@ public class ProductController extends SpringActionController
         public Object execute(MenuItemsForm menuItemsForm, BindException errors) throws Exception
         {
             if (_productIds != null)
-                return ProductRegistry.get().getProductMenuSections(getViewContext(), _productIds, menuItemsForm.getItemLimit());
+                return ProductRegistry.get().getProductMenuSections(getViewContext(), menuItemsForm.getCurrentProductId(), _productIds, menuItemsForm.getItemLimit());
             else
-                return ProductRegistry.get().getProductMenuSections(getViewContext(), getContainer(), menuItemsForm.getItemLimit());
+                return ProductRegistry.get().getProductMenuSections(getViewContext(), menuItemsForm.getCurrentProductId(), getContainer(), menuItemsForm.getItemLimit());
         }
     }
 
@@ -78,6 +81,7 @@ public class ProductController extends SpringActionController
     {
         private String _productIds; // comma-separated list of productIds
         private Integer _itemLimit;
+        private String _currentProductId;
 
         public String getProductIds()
         {
@@ -97,6 +101,16 @@ public class ProductController extends SpringActionController
         public void setItemLimit(Integer itemLimit)
         {
             _itemLimit = itemLimit;
+        }
+
+        public String getCurrentProductId()
+        {
+            return _currentProductId;
+        }
+
+        public void setCurrentProductId(String currentProductId)
+        {
+            _currentProductId = currentProductId;
         }
     }
 }
