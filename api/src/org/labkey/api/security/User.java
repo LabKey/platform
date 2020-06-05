@@ -586,22 +586,17 @@ public class User extends UserPrincipal implements Serializable, Cloneable
 
     public static JSONObject getUserProps(User user, User currentUser, @Nullable Container container, boolean includePermissionProps)
     {
-        boolean nonNullContainer = null != container;
-        boolean includeEmail = nonNullContainer && SecurityManager.canSeeUserDetails(container, currentUser);
-
         JSONObject props = new JSONObject();
 
         props.put("id", user.getUserId());
         props.put("displayName", user.getDisplayName(currentUser));
-
-        if (includeEmail)
-            props.put("email", user.getEmail());
-
+        props.put("email", user.getEmail());
         props.put("phone", user.getPhone());
         props.put("avatar", user.getAvatarThumbnailPath());
 
         if (includePermissionProps)
         {
+            boolean nonNullContainer = null != container;
             props.put("canInsert", nonNullContainer && container.hasPermission(user, InsertPermission.class));
             props.put("canUpdate", nonNullContainer && container.hasPermission(user, UpdatePermission.class));
             props.put("canUpdateOwn", nonNullContainer && container.hasPermission(user, UpdatePermission.class));
