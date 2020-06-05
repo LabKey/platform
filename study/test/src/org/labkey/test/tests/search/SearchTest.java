@@ -106,12 +106,13 @@ public abstract class SearchTest extends StudyBaseTest
         initTest.doSetup();
     }
 
+    @LogMethod
     private void doSetup()
     {
         Log4jUtils.setLogLevel("org.labkey.search", ManagerPage.LoggingLevel.DEBUG);
         Log4jUtils.setLogLevel("org.labkey.wiki", ManagerPage.LoggingLevel.DEBUG);
-        SearchAdminAPIHelper.startCrawler(getDriver());
         _searchHelper.initialize();
+        SearchAdminAPIHelper.startCrawler(getDriver());
         enableEmailRecorder();
     }
 
