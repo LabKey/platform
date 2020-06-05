@@ -18,12 +18,12 @@ import java.util.List;
 
 @Category({DailyA.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 3)
-public class StudyDatasetDefaultView extends BaseWebDriverTest
+public class StudyDatasetDefaultViewTest extends BaseWebDriverTest
 {
     @BeforeClass
     public static void doSetup()
     {
-        StudyDatasetDefaultView init = (StudyDatasetDefaultView) getCurrentTest();
+        StudyDatasetDefaultViewTest init = (StudyDatasetDefaultViewTest) getCurrentTest();
         init.doCreateSteps();
     }
 
