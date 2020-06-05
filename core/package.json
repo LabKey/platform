@@ -40,23 +40,29 @@
       }
     },
     "build-pages:dev": {
-      "command": "webpack --config ../webpack/dev.config.js --progress --profile --colors",
+      "command": "webpack --config ../../../webpack/dev.config.js --progress --profile --colors",
       "env": {
         "LK_MODULE": "core",
+        "LK_PATH_TO_WEBPACK_DIR": "../../../",
+        "LK_PATH_FROM_SERVER_DIR": "modules/platform/",
         "NODE_ENV": "development"
       }
     },
     "build-pages:prod": {
-      "command": "webpack --config ../webpack/prod.config.js --progress --profile --colors",
+      "command": "webpack --config ../../../webpack/prod.config.js --progress --profile --colors",
       "env": {
         "LK_MODULE": "core",
+        "LK_PATH_TO_WEBPACK_DIR": "../../../",
+        "LK_PATH_FROM_SERVER_DIR": "modules/platform/",
         "NODE_ENV": "production"
       }
     },
     "build-pages:watch": {
-      "command": "webpack-dev-server --config ../webpack/watch.config.js",
+      "command": "webpack-dev-server --config ../../../webpack/watch.config.js",
       "env": {
         "LK_MODULE": "core",
+        "LK_PATH_TO_WEBPACK_DIR": "../../../",
+        "LK_PATH_FROM_SERVER_DIR": "modules/platform/",
         "NODE_ENV": "development"
       }
     },
