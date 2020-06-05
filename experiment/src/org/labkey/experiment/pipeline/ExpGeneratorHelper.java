@@ -254,7 +254,7 @@ public class ExpGeneratorHelper
 
             try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
             {
-                run = _insertRun(container, user, runName, runJobId, protocol, actionSet.getActions(), source, runOutputsWithRoles, runInputsWithRoles);
+                run = _insertRun(container, user, runName, runJobId, protocol, actionSet.getActions(), source, runOutputsWithRoles, runInputsWithRoles, fromProvenanceRecording);
 
                 if (null != xarWriter)
                     xarWriter.writeToDisk(run);
@@ -283,7 +283,8 @@ public class ExpGeneratorHelper
                                          Set<RecordedAction> actions,
                                          @Nullable XarSource source,
                                          Map<URI, String> runOutputsWithRoles,
-                                         Map<URI, String> runInputsWithRoles) throws ExperimentException, ValidationException, BatchValidationException
+                                         Map<URI, String> runInputsWithRoles,
+                                         boolean fromProvenanceRecording) throws ExperimentException, ValidationException, BatchValidationException
     {
         ExpRunImpl run = ExperimentServiceImpl.get().createExperimentRun(container, runName);
         ProvenanceService pvs = ProvenanceService.get();
@@ -393,7 +394,7 @@ public class ExpGeneratorHelper
             // Set up the inputs
             for (RecordedAction.DataFile dd : action.getInputs())
             {
-                if (!action.isStart())
+                if ((fromProvenanceRecording && !action.isStart()) ^ !fromProvenanceRecording)
                 {
                     ExpData data = addData(container, user, datas, dd.getURI(), source);
                     stepApp.addDataInput(user, data, dd.getRole());
@@ -403,7 +404,7 @@ public class ExpGeneratorHelper
             // Set up the outputs
             for (RecordedAction.DataFile dd : action.getOutputs())
             {
-                if (!action.isEnd())
+                if ((fromProvenanceRecording && !action.isEnd()) ^ !fromProvenanceRecording)
                 {
                     ExpData outputData = addData(container, user, datas, dd.getURI(), source);
                     if (outputData.getSourceApplication() != null)
