@@ -484,20 +484,6 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return this == getSearchUser();
     }
 
-/*    public static synchronized User getSystemUser()
-    {
-        if (system == null)
-        {
-            Set<Role> roles = new HashSet<>();
-            roles.add(RoleManager.getRole(SiteAdminRole.class));
-            roles.add(RoleManager.getRole(PlatformDeveloperRole.class));
-            system = new LimitedUser(new User("@system", userSystem), new int[0], roles, true);
-            system.setPrincipalType(PrincipalType.SERVICE);
-        }
-        return system;
-    }
-*/
-
     public boolean isServiceUser()
     {
         return this.getPrincipalType() == PrincipalType.SERVICE;
@@ -595,28 +581,41 @@ public class User extends UserPrincipal implements Serializable, Cloneable
 
     public static JSONObject getUserProps(User user, @Nullable Container container)
     {
+        return getUserProps(user, user, container, true);
+    }
+
+    public static JSONObject getUserProps(User user, User currentUser, @Nullable Container container, boolean includePermissionProps)
+    {
+        boolean nonNullContainer = null != container;
+        boolean includeEmail = nonNullContainer && SecurityManager.canSeeUserDetails(container, currentUser);
+
         JSONObject props = new JSONObject();
 
         props.put("id", user.getUserId());
-        props.put("displayName", user.getDisplayName(user));
-        props.put("email", user.getEmail());
+        props.put("displayName", user.getDisplayName(currentUser));
+
+        if (includeEmail)
+            props.put("email", user.getEmail());
+
         props.put("phone", user.getPhone());
         props.put("avatar", user.getAvatarThumbnailPath());
 
-        boolean nonNullContainer = null != container;
-        props.put("canInsert", nonNullContainer && container.hasPermission(user, InsertPermission.class));
-        props.put("canUpdate", nonNullContainer && container.hasPermission(user, UpdatePermission.class));
-        props.put("canUpdateOwn", nonNullContainer && container.hasPermission(user, UpdatePermission.class));
-        props.put("canDelete", nonNullContainer && container.hasPermission(user, DeletePermission.class));
-        props.put("canDeleteOwn", nonNullContainer && container.hasPermission(user, DeletePermission.class));
-        props.put("isAdmin", nonNullContainer && container.hasPermission(user, AdminPermission.class));
-        props.put("isRootAdmin", user.hasRootAdminPermission());
-        props.put("isSystemAdmin", user.hasSiteAdminPermission());
-        props.put("isGuest", user.isGuest());
-        props.put("isDeveloper", user.isBrowserDev());
-        props.put("isAnalyst", user.hasRootPermission(AnalystPermission.class));
-        props.put("isTrusted", user.hasRootPermission(TrustedPermission.class));
-        props.put("isSignedIn", 0 != user.getUserId() || !user.isGuest());
+        if (includePermissionProps)
+        {
+            props.put("canInsert", nonNullContainer && container.hasPermission(user, InsertPermission.class));
+            props.put("canUpdate", nonNullContainer && container.hasPermission(user, UpdatePermission.class));
+            props.put("canUpdateOwn", nonNullContainer && container.hasPermission(user, UpdatePermission.class));
+            props.put("canDelete", nonNullContainer && container.hasPermission(user, DeletePermission.class));
+            props.put("canDeleteOwn", nonNullContainer && container.hasPermission(user, DeletePermission.class));
+            props.put("isAdmin", nonNullContainer && container.hasPermission(user, AdminPermission.class));
+            props.put("isRootAdmin", user.hasRootAdminPermission());
+            props.put("isSystemAdmin", user.hasSiteAdminPermission());
+            props.put("isGuest", user.isGuest());
+            props.put("isDeveloper", user.isBrowserDev());
+            props.put("isAnalyst", user.hasRootPermission(AnalystPermission.class));
+            props.put("isTrusted", user.hasRootPermission(TrustedPermission.class));
+            props.put("isSignedIn", 0 != user.getUserId() || !user.isGuest());
+        }
 
         return props;
     }
