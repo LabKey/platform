@@ -243,9 +243,15 @@ public class ExpGeneratorHelper
 
                     // This can be slow over network file systems so do it outside of the database
                     // transaction. The XarSource caches the results so it'll be fast once we start inserting.
+                }
+            }
 
-                    // Files count as inputs to the run if they're used by one of the actions and weren't produced by one of
-                    // the actions.
+            // Files count as inputs to the run if they're used by one of the actions and weren't produced by one of
+            // the actions.
+            for (RecordedAction action : actions)
+            {
+                for (RecordedAction.DataFile dataFile : action.getOutputs())
+                {
                     runInputsWithRoles.remove(dataFile.getURI());
                 }
             }
