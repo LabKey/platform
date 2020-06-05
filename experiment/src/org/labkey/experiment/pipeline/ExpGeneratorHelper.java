@@ -400,7 +400,7 @@ public class ExpGeneratorHelper
             // Set up the inputs
             for (RecordedAction.DataFile dd : action.getInputs())
             {
-                if ((fromProvenanceRecording && !action.isStart()) ^ !fromProvenanceRecording)
+                if (!fromProvenanceRecording || !action.isStart())
                 {
                     ExpData data = addData(container, user, datas, dd.getURI(), source);
                     stepApp.addDataInput(user, data, dd.getRole());
@@ -410,7 +410,7 @@ public class ExpGeneratorHelper
             // Set up the outputs
             for (RecordedAction.DataFile dd : action.getOutputs())
             {
-                if ((fromProvenanceRecording && !action.isEnd()) ^ !fromProvenanceRecording)
+                if (!fromProvenanceRecording || !action.isEnd())
                 {
                     ExpData outputData = addData(container, user, datas, dd.getURI(), source);
                     if (outputData.getSourceApplication() != null)
