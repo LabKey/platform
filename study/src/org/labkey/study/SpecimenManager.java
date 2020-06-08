@@ -53,6 +53,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.query.CustomView;
@@ -62,6 +63,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyCachable;
 import org.labkey.api.study.StudyService;
@@ -136,8 +138,6 @@ import java.util.concurrent.locks.ReentrantLock;
 public class SpecimenManager implements ContainerManager.ContainerListener
 {
     private final static SpecimenManager _instance = new SpecimenManager();
-
-    public static final String STUDY_SPECIMENS_SAMPLE_SET_NAME = "Study Specimens";
 
     private final QueryHelper<SpecimenRequestEvent> _requestEventHelper;
 //    private final QueryHelper<AdditiveType> _additiveHelper;
@@ -2042,7 +2042,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         DbSchema expSchema = ExperimentService.get().getSchema();
         TableInfo tinfoMaterial = expSchema.getTable("Material");
 
-        ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(c, SpecimenManager.STUDY_SPECIMENS_SAMPLE_SET_NAME);
+        ExpSampleSet sampleSet = SampleSetService.get().getSampleSet(c, SpecimenService.SAMPLE_TYPE_NAME);
 
         if (sampleSet != null)
         {

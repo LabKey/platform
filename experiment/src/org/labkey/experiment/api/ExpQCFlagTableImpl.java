@@ -161,7 +161,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return null == _provider ? null :  _provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), _assayProtocol, null).createRunsTable(null);
+                return null == _provider ? null :  _provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), _assayProtocol, null).createRunsTable(getContainerFilter());
             }
         });
 
