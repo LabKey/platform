@@ -37,7 +37,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.65.1"
+    "@labkey/components": "0.67.1"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.13.0",
