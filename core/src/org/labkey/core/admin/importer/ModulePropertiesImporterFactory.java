@@ -42,12 +42,12 @@ import java.util.Collections;
 public class ModulePropertiesImporterFactory extends AbstractFolderImportFactory
 {
     @Override
-    public FolderImporter create()
+    public FolderImporter<FolderDocument.Folder> create()
     {
         return new ModulePropertiesImporter();
     }
 
-    public class ModulePropertiesImporter implements  FolderImporter<FolderDocument.Folder>
+    public static class ModulePropertiesImporter implements  FolderImporter<FolderDocument.Folder>
     {
         @Override
         public String getDataType()
@@ -75,10 +75,17 @@ public class ModulePropertiesImporterFactory extends AbstractFolderImportFactory
                 for(ModulePropertyType modulePropType: modulePropsType.getModulePropertyArray())
                 {
                     Module module = ModuleLoader.getInstance().getModule(modulePropType.getModuleName());
-                    ModuleProperty property = module.getModuleProperties().get(modulePropType.getPropertyName());
-                    if(property != null)
+                    if (module == null)
                     {
-                        property.saveValue(null, ctx.getContainer(), modulePropType.getValue());
+                        ctx.getLogger().info("Module '" + modulePropType.getModuleName() + "' not deployed, skipping import of property '" + modulePropType.getPropertyName() + "'");
+                    }
+                    else
+                    {
+                        ModuleProperty property = module.getModuleProperties().get(modulePropType.getPropertyName());
+                        if (property != null)
+                        {
+                            property.saveValue(null, ctx.getContainer(), modulePropType.getValue());
+                        }
                     }
                 }
 
