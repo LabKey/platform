@@ -837,7 +837,7 @@ public class DavController extends SpringActionController
                 // might be a little cleaner to register a javax.servlet.Filter
                 if (x.getStatus() != WebdavStatus.SC_NOT_FOUND || !"GET".equals(method))
                     throw x;
-                Container c = ContainerManager.getForPath(getResourcePath());
+                Container c = ContainerManager.resolveContainerPathAlias(getResourcePath().toString());
                 if (null == c)
                     throw x;
                 throw new RedirectException(c.getStartURL(getUser()));
