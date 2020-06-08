@@ -61,6 +61,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.queryCustomView.NamedFiltersType;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.QueryDef;
@@ -719,7 +720,25 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     @Override
     public boolean isHidden()
     {
-        return mgr.isHidden(_queryDef.getFlags());
+        if (mgr.isHidden(_queryDef.getFlags()))
+            return true;
+
+        if (_queryDef.getParsedMetadata() != null)
+        {
+            List<QueryException> errors = new ArrayList<>();
+            TablesDocument xDoc = _queryDef.getParsedMetadata().getTablesDocument(errors);
+            if (errors.isEmpty() && xDoc != null)
+            {
+                TableType[] xTables = xDoc.getTables().getTableArray();
+                if (xTables != null && xTables.length > 0)
+                {
+                    if (xTables[0].isSetHidden())
+                        return xTables[0].getHidden();
+                }
+            }
+        }
+
+        return false;
     }
 
     @Override
