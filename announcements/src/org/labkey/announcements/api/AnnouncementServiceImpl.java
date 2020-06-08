@@ -15,6 +15,7 @@
  */
 package org.labkey.announcements.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.AnnouncementModel;
@@ -26,9 +27,9 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 
-import javax.mail.MessagingException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,6 +46,12 @@ public class AnnouncementServiceImpl implements AnnouncementService
     @Override
     public Announcement insertAnnouncement(Container c, User u, String title, String body, boolean sendEmailNotification)
     {
+        return insertAnnouncement(c, u, title, body, sendEmailNotification, null);
+    }
+
+    @Override
+    public Announcement insertAnnouncement(Container c, User u, String title, String body, boolean sendEmailNotification, @Nullable Integer parentRowId)
+    {
         DiscussionService.Settings settings = AnnouncementsController.getSettings(c);
         Permissions perm = AnnouncementsController.getPermissions(c, u, settings);
 
@@ -52,10 +59,20 @@ public class AnnouncementServiceImpl implements AnnouncementService
         {
             throw new UnauthorizedException();
         }
-                              
+
         AnnouncementModel insert = new AnnouncementModel();
         insert.setTitle(title);
         insert.setBody(body);
+
+        if (parentRowId != null)
+        {
+            Announcement parentAnnouncement = getAnnouncement(c, u, parentRowId);
+            if(parentAnnouncement == null)
+            {
+                throw new NotFoundException("Can't find a parent announcement with the given id: " + parentRowId);
+            }
+            insert.setParent(parentAnnouncement.getEntityId());
+        }
 
         List<AttachmentFile> files = Collections.emptyList();
 

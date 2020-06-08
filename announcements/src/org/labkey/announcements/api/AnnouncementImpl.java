@@ -63,6 +63,12 @@ public class AnnouncementImpl implements Announcement
         _model.setRowId(rowId);
     }
 
+    @Override
+    public String getEntityId()
+    {
+        return _model.getEntityId();
+    }
+
     public String getTitle()
     {
         return _model.getTitle();
