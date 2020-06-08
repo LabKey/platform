@@ -12,7 +12,5 @@ the `assay` controller. The generated `<entryPoint>.html` and `<entryPoint>.view
 be placed in the `assay/resources/views` directory and the generated JS/CSS artifacts will be 
 placed in the `assay/resources/web/assay/gen` directory.
 
-For further details about developing React based pages in this module see the following documentation:
-[LabKey React Page Development]. 
-
-[LabKey React Page Development]: https://github.com/LabKey/platform/tree/develop/webpack
+For further details about developing React based pages see the README doc in `/server/webpack`:
+"LabKey React Page Development".
