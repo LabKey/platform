@@ -22,6 +22,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.writer.PrintWriters;
 
 import java.io.File;
@@ -256,8 +257,10 @@ public class DebugInfoDumper
                 threadInfo.append(", Database Connection SPIDs = ");
                 threadInfo.append(spids);
             }
-
             log.debug(threadInfo);
+            String uri = ViewServlet.getRequestURL(thread);
+            if (null != uri)
+                log.debug(uri);
             for (StackTraceElement stackTraceElement : threadEntry.getValue())
             {
                 log.debug("\t" + stackTraceElement.toString());
