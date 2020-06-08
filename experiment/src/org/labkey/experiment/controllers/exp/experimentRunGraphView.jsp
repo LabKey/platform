@@ -129,17 +129,7 @@
             });
         });
 
-        function loadApp(appName, appTarget, appContext) {
-            window.dispatchEvent(new CustomEvent('initApp', {
-                detail: {
-                    appName: appName,
-                    appContext: appContext,
-                    appTarget: appTarget,
-                }
-            }));
-        }
-
-        loadApp('runGraph', <%=q(appId)%>, {
+        LABKEY.App.loadApp('runGraph', <%=q(appId)%>, {
             lsid: <%=q(model.getRun().getLSID())%>,
             rowId: <%=model.getRun().getRowId()%>,
         });
