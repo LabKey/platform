@@ -1,5 +1,5 @@
 {
-  "extends": "../tsconfig.json",
+  "extends": "../../../tsconfig.json",
   "compilerOptions": {
     "types": ["jest"] // implicitly include only jest types; otherwise get those included via import
   },
