@@ -54,6 +54,7 @@ import org.labkey.search.view.DefaultSearchResultTemplate;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -503,6 +504,16 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         synchronized (_commitLock)
         {
             _countIndexedSinceCommit++;
+        }
+    }
+
+    @Override
+    public void deleteResources(Collection<String> ids)
+    {
+        this.deleteDocuments(ids);
+        synchronized (_commitLock)
+        {
+            _countIndexedSinceCommit += ids.size();
         }
     }
 
@@ -1120,6 +1131,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     protected abstract void commitIndex();
     protected abstract void deleteDocument(String id);
+    protected abstract void deleteDocuments(Collection<String> ids);
     protected abstract void deleteDocumentsForPrefix(String prefix);
     protected abstract void deleteIndexedContainer(String id);
 

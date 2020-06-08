@@ -16,6 +16,7 @@
 package org.labkey.search.model;
 
 import com.google.common.collect.ImmutableMap;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
@@ -36,7 +37,9 @@ import org.labkey.api.util.ExceptionUtil;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -139,12 +142,23 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     @Override
     public void deleteDocument(String id)
     {
+        deleteDocuments(List.of(id));
+    }
+
+    @Override
+    public void deleteDocuments(Collection<String> ids)
+    {
+        String currentId = null;
         try
         {
             synchronized (_writerLock)
             {
                 IndexWriter iw = getIndexWriter();
-                iw.deleteDocuments(new Term(LuceneSearchServiceImpl.FIELD_NAME.uniqueId.toString(), id));
+                for (var id : ids)
+                {
+                    currentId = id;
+                    iw.deleteDocuments(new Term(LuceneSearchServiceImpl.FIELD_NAME.uniqueId.toString(), id));
+                }
                 _manager.maybeRefresh();
             }
         }
@@ -166,7 +180,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         }
         catch (Throwable e)
         {
-            _log.error("Indexing error deleting " + id, e);
+            _log.error("Indexing error deleting " + StringUtils.trimToEmpty(currentId), e);
             ExceptionUtil.logExceptionToMothership(null, e);
         }
     }

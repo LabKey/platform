@@ -33,6 +33,7 @@ import org.labkey.api.webdav.WebdavResource;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -205,6 +206,11 @@ public class NoopSearchService implements SearchService
 
     @Override
     public void deleteResource(String identifier)
+    {
+    }
+
+    @Override
+    public void deleteResources(Collection<String> ids)
     {
     }
 

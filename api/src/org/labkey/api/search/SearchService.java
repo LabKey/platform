@@ -49,6 +49,7 @@ import java.io.Reader;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -356,6 +357,7 @@ public interface SearchService
     IndexTask createTask(String description, TaskListener l);
 
     void deleteResource(String identifier);
+    void deleteResources(Collection<String> ids);
 
     // Delete all resources whose documentIds starts with the given prefix
     void deleteResourcesForPrefix(String prefix);

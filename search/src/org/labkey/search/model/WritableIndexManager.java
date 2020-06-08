@@ -22,6 +22,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.store.Directory;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 
 /*
@@ -32,6 +33,8 @@ import java.util.Map;
 public interface WritableIndexManager
 {
     void deleteDocument(String id);
+
+    void deleteDocuments(Collection<String> ids);
 
     IndexSearcher getSearcher() throws IOException;
 
