@@ -1,6 +1,7 @@
 import org.labkey.gradle.util.BuildUtils
 
 dependencies {
+    implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
     BuildUtils.addLabKeyDependency(project: project, config: "modules", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "experiment"), depProjectConfig: "published", depExtension: "module")
     BuildUtils.addLabKeyDependency(project: project, config: "modules", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "search"), depProjectConfig: "published", depExtension: "module")
 }

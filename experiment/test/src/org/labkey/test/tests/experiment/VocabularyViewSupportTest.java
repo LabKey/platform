@@ -11,14 +11,11 @@ import org.labkey.remoteapi.assay.Run;
 import org.labkey.remoteapi.assay.SaveAssayBatchCommand;
 import org.labkey.remoteapi.assay.SaveAssayRunsCommand;
 import org.labkey.remoteapi.assay.SaveAssayRunsResponse;
-import org.labkey.remoteapi.domain.CreateDomainCommand;
 import org.labkey.remoteapi.domain.DomainResponse;
-import org.labkey.remoteapi.domain.GetDomainCommand;
 import org.labkey.remoteapi.domain.PropertyDescriptor;
 import org.labkey.remoteapi.query.InsertRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
-import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.CustomizeView;
@@ -38,7 +35,7 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.hasItem;
 
 @Category({DailyC.class})
-public class VocabularyViewSupportTest extends BaseWebDriverTest
+public class VocabularyViewSupportTest extends ProvenanceAssayHelper
 {
 
     @BeforeClass
@@ -251,17 +248,6 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
 
         _listHelper.createList(getProjectName(), listName, ListHelper.ListColumnType.AutoInteger, "Key", columns);
         goToManageLists();
-    }
-
-    private DomainResponse createDomain(String domainKind, String domainName, String description, List<PropertyDescriptor> fields) throws IOException, CommandException
-    {
-        CreateDomainCommand domainCommand = new CreateDomainCommand(domainKind, domainName);
-        domainCommand.getDomainDesign().setFields(fields);
-        domainCommand.getDomainDesign().setDescription(description);
-
-        DomainResponse domainResponse = domainCommand.execute(createDefaultConnection(false), getProjectName());
-        GetDomainCommand getDomainCommand = new GetDomainCommand(domainResponse.getDomain().getDomainId());
-        return getDomainCommand.execute(createDefaultConnection(false), getProjectName());
     }
 
 }
