@@ -67,7 +67,8 @@ public class AnnouncementServiceImpl implements AnnouncementService
         if (parentRowId != null)
         {
             Announcement parentAnnouncement = getAnnouncement(c, u, parentRowId);
-            if(parentAnnouncement == null)
+            if (parentAnnouncement == null)
+
             {
                 throw new NotFoundException("Can't find a parent announcement with the given id: " + parentRowId);
             }
