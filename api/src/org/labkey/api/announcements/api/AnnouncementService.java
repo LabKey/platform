@@ -15,6 +15,7 @@
  */
 package org.labkey.api.announcements.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -40,6 +41,9 @@ public interface AnnouncementService
 
     // IRUD (Insert, Read, Update, Delete)
     Announcement insertAnnouncement(Container container, User u, String title, String body, boolean sendEmailNotification);
+
+    /** @param parentRowId optionally, the existing thread to add the post to. If null, start a new thread */
+    Announcement insertAnnouncement(Container container, User u, String title, String body, boolean sendEmailNotification, @Nullable Integer parentRowId);
 
     // Get One
     Announcement getAnnouncement(Container container, User user, int RowId);
