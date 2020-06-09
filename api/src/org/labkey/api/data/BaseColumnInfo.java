@@ -40,7 +40,6 @@ import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -99,9 +98,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     protected String _selectName = null;
     protected ColumnInfo _displayField;
     private List<FieldKey> _sortFieldKeys = null;
-    private Map<FieldKey, ColumnInfo> _cachedSortColumns = new HashMap<>();
-    private List<ConditionalFormat> _conditionalFormats = new ArrayList<>();
-    private List<? extends IPropertyValidator> _validators = Collections.emptyList();
+    private List<ConditionalFormat> _conditionalFormats = List.of();
+    private List<? extends IPropertyValidator> _validators = List.of();
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
     private boolean _shouldLog = true;
     private boolean _lockName = false;
@@ -1815,7 +1813,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public void setSortFieldKeys(List<FieldKey> sortFieldKeys)
     {
         checkLocked();
-        _sortFieldKeys = sortFieldKeys;
+        _sortFieldKeys = copyFixedList(sortFieldKeys);
     }
 
     @Override
@@ -2054,8 +2052,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public void setConditionalFormats(@NotNull List<ConditionalFormat> formats)
     {
         checkLocked();
-        _conditionalFormats.clear();
-        _conditionalFormats.addAll(formats);
+        _conditionalFormats = copyFixedList(formats);
     }
 
     @Override
@@ -2069,7 +2066,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public void setValidators(List<? extends IPropertyValidator> validators)
     {
         checkLocked();
-        _validators = validators;
+        _validators = copyFixedList(validators);
     }
 
     // TODO: fix up OORIndicator
