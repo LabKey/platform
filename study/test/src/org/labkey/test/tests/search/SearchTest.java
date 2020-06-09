@@ -28,6 +28,7 @@ import org.labkey.test.pages.core.admin.logger.ManagerPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.tests.issues.IssuesTest;
 import org.labkey.test.util.ApiPermissionsHelper;
+import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.IssuesHelper;
 import org.labkey.test.util.Log4jUtils;
 import org.labkey.test.util.LogMethod;
@@ -105,11 +106,13 @@ public abstract class SearchTest extends StudyBaseTest
         initTest.doSetup();
     }
 
+    @LogMethod
     private void doSetup()
     {
         Log4jUtils.setLogLevel("org.labkey.search", ManagerPage.LoggingLevel.DEBUG);
         Log4jUtils.setLogLevel("org.labkey.wiki", ManagerPage.LoggingLevel.DEBUG);
         _searchHelper.initialize();
+        SearchAdminAPIHelper.startCrawler(getDriver());
         enableEmailRecorder();
     }
 
@@ -417,5 +420,8 @@ public abstract class SearchTest extends StudyBaseTest
     public static void resetLogger()
     {
         Log4jUtils.resetAllLogLevels();
+
+        //Turn crawler off after test is finished
+        SearchAdminAPIHelper.pauseCrawler(getCurrentTest().getWrappedDriver());
     }
 }
