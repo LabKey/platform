@@ -379,9 +379,12 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         if (chartType === "box_plot")
         {
+            // Issue 38105: For box plot of study visit labels, don't sort alphabetically
+            var sortFn = measures.x.fieldKey === 'ParticipantVisit/Visit' ? undefined : LABKEY.vis.discreteSortFn;
+
             scales.x = {
                 scaleType: 'discrete', // Force discrete x-axis scale for box plots.
-                sortFn: LABKEY.vis.discreteSortFn,
+                sortFn: sortFn,
                 tickLabelMax: DEFAULT_TICK_LABEL_MAX
             };
 
