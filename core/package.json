@@ -94,8 +94,8 @@
     }
   },
   "dependencies": {
-    "@labkey/api": "0.3.1",
-    "@labkey/components": "0.67.1",
+    "@labkey/api": "0.3.2",
+    "@labkey/components": "0.68.0",
     "@labkey/eslint-config-react": "0.0.5",
     "react-toggle-button": "2.2.0"
   },
