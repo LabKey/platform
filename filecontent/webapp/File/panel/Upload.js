@@ -345,7 +345,7 @@ Ext4.define('File.panel.Upload', {
                             if (file.errorText === 'Drag-and-drop upload') {
                                 dragDropError = true;
                             }
-                            else if (file.errorText === 'Already exists') {
+                            else if (file.code === 208) {
                                 alreadyExistFiles.push(file);
                             }
                             else {
@@ -412,16 +412,16 @@ Ext4.define('File.panel.Upload', {
                         });
 
                     }
-                    else if (!dragDropError && alreadyExistFiles.length > 0) {
+                    else if (!dragDropError && alreadyExistFiles.length > 0 && countErrorFiles == 0) {
                         var msg = '';
                         if (alreadyExistFiles.length === 1)
-                            msg = "There is already a file named " + alreadyExistFiles[0].name + ' in this location. Would you like to replace it?';
+                            msg = "There is already a file named " + Ext4.htmlEncode(alreadyExistFiles[0].name) + ' in this location. Would you like to replace it?';
                         else if (alreadyExistFiles.length <=10) {
                             msg = "The following files already exist in this location. Would you like to replace them?<br><ul>";
                             Ext4.each(alreadyExistFiles, function(f) {
-                                msg += "<li>" + f.name + "</li>"
+                                msg += "<li>" + Ext4.htmlEncode(f.name) + "</li>"
                             }, this);
-                            msg += "</url>";
+                            msg += "</ul>";
                         }
                         else {
                             msg = "The following files already exist in this location. Would you like to replace them?<br><ul>";
@@ -429,9 +429,9 @@ Ext4.define('File.panel.Upload', {
                             Ext4.each(alreadyExistFiles, function(f) {
                                 if (count++ >= 9)
                                     return;
-                                msg += "<li>" + f.name + "</li>"
+                                msg += "<li>" + Ext4.htmlEncode(f.name) + "</li>"
                             }, this);
-                            msg += "</url>";
+                            msg += "</ul>";
                             msg += "and " + (alreadyExistFiles.length - 9) + " more...";
                         }
 
