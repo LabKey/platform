@@ -117,6 +117,11 @@ configurations {
         canBeResolved = true
     }
 
+    apiJarFile {
+        canBeConsumed = true
+        canBeResolved = true
+    }
+
 }
 
 // declared separately to include the gwtsrc directory
@@ -168,5 +173,9 @@ dependencies {
 
     jspImplementation files(project.tasks.jar)
     jspImplementation apache, jackson, spring
+}
+
+artifacts {
+    apiJarFile(jar)
 }
 
