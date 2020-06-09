@@ -77,7 +77,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 {
     ExpProtocol _protocol;
     ExpExperiment _experiment;
-    String[] _protocolPatterns;
 
     private ExpMaterial _inputMaterial;
     private ExpData _inputData;
@@ -330,7 +329,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     {
                         // TODO ContainerFilter: getLookupTableInfo() should not mutate table
                         // for now use forWrite==true to get mutable tableinfo
-                        ExpTable result = (ExpTable)getExpSchema().getTable(ExpSchema.TableType.RunGroupMap.name(), getLookupContainerFilter(), true, true);
+                        ExpTable<ExpRunGroupMapTable.Column> result = (ExpTable)getExpSchema().getTable(ExpSchema.TableType.RunGroupMap.name(), getLookupContainerFilter(), true, true);
                         result.getMutableColumn(ExpRunGroupMapTable.Column.RunGroup).setFk(getExpSchema().getRunGroupIdForeignKey(getContainerFilter(), false));
                         result.setLocked(true);
                         return result;
@@ -387,7 +386,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 batchIdCol.setFk(getExpSchema().getRunGroupIdForeignKey(getContainerFilter(), true));
                 return batchIdCol;
             case Properties:
-                return (BaseColumnInfo) createPropertiesColumn(alias);
+                return createPropertiesColumn(alias);
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -491,7 +490,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             public TableInfo getLookupTableInfo()
             {
                 final ContainerFilter cf = ExpRunTableImpl.this.getContainerFilter();
-                VirtualTable t = new VirtualTable(ExperimentServiceImpl.get().getSchema(), null)
+                VirtualTable t = new VirtualTable(ExperimentServiceImpl.get().getSchema(), null, getUserSchema(), cf)
                 {
                     @NotNull
                     @Override
@@ -648,7 +647,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
         // 10481: convince ExcelColumn.setSimpleType() that we are actually a string.
         @Override
-        public Class getDisplayValueClass()
+        public Class<?> getDisplayValueClass()
         {
             return String.class;
         }
@@ -805,7 +804,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         @Override
         public TableInfo getLookupTableInfo()
         {
-            VirtualTable result = new VirtualTable<>(ExperimentServiceImpl.get().getSchema(), "Experiments", getUserSchema());
+            VirtualTable<?> result = new VirtualTable<>(ExperimentServiceImpl.get().getSchema(), ExpSchema.TableType.RunGroups.name(), getUserSchema());
             for (ExpExperiment experiment : getExperiments())
             {
                 var column = new BaseColumnInfo(experiment.getName(), JdbcType.BOOLEAN);
@@ -815,7 +814,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return result;
         }
 
-        @Override
+        @Override @NotNull
         public NamedObjectList getSelectList(RenderContext ctx)
         {
             // XXX: NYI
@@ -849,7 +848,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
     private static class RunTableUpdateService extends AbstractQueryUpdateService
     {
-        private RemapCache _cache = new RemapCache();       // only used if the experimental feature : EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE is enabled
+        private final RemapCache _cache = new RemapCache();       // only used if the experimental feature : EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE is enabled
 
         RunTableUpdateService(ExpRunTable queryTable)
         {
@@ -990,7 +989,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return getRow(user, container, oldRow);
         }
 
-        private StringBuilder appendPropertyIfChanged(StringBuilder sb, String label, Object oldValue, Object newValue)
+        private void appendPropertyIfChanged(StringBuilder sb, String label, Object oldValue, Object newValue)
         {
             if (!Objects.equals(oldValue, newValue))
             {
@@ -1002,7 +1001,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 sb.append(newValue == null ? "blank" : "'" + newValue + "'");
                 sb.append(".");
             }
-            return sb;
         }
 
         private ExpRunImpl getRun(Map<String, Object> row)
