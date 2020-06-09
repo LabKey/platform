@@ -17,7 +17,6 @@
 package org.labkey.experiment.api;
 
 import com.google.common.collect.Iterables;
-import com.google.gwt.user.client.Command;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;

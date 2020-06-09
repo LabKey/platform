@@ -31,6 +31,9 @@ import org.apache.lucene.search.SearcherFactory;
 import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.store.Directory;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.Throttle;
+import org.labkey.api.data.DbScope.RetryPassthroughException;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 
@@ -134,7 +137,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         {
             deleteDocument(id);
             getIndexWriter().addDocument(doc);
-            _manager.maybeRefresh(); // Make this document immediately available for searching (i.e., near-real-time searching), see #39330
+            maybeRefresh(); // Make this document immediately available for searching (i.e., near-real-time searching), see #39330
         }
     }
 
@@ -159,7 +162,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
                     currentId = id;
                     iw.deleteDocuments(new Term(LuceneSearchServiceImpl.FIELD_NAME.uniqueId.toString(), id));
                 }
-                _manager.maybeRefresh();
+                maybeRefresh();
             }
         }
         catch (IndexManagerClosedException x)
@@ -194,7 +197,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
             {
                 IndexWriter w = getIndexWriter();
                 w.deleteDocuments(query);
-                _manager.maybeRefresh();
+                maybeRefresh();
             }
         }
         catch (AlreadyClosedException e)
@@ -235,7 +238,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
             try
             {
                 iw.commit();
-                _manager.maybeRefresh();
+                maybeRefresh();
             }
             catch (AccessDeniedException e)
             {
@@ -319,5 +322,30 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     public boolean isReal()
     {
         return true;
+    }
+
+    // Throttle maybeRefresh() calls to once every five seconds, #40601
+    private final Throttle<String> _maybeRefreshThrottle = new Throttle<>("Maybe refresh throttle", 1, 5 * CacheManager.SECOND, s -> {
+        try
+        {
+            _manager.maybeRefresh();
+        }
+        catch (IOException e)
+        {
+            throw new RetryPassthroughException(e);
+        }
+    });
+
+    private void maybeRefresh() throws IOException
+    {
+        try
+        {
+            _maybeRefreshThrottle.execute("maybe refresh");
+        }
+        catch (RetryPassthroughException e)
+        {
+            e.rethrow(IOException.class);
+            throw e;
+        }
     }
 }
