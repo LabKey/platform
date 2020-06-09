@@ -723,7 +723,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         // Issue 38105: For box plot of study visit labels, sort by sequenceNum
         if (this.renderType === 'box_plot' && this.measures.x && this.measures.x.fieldKey === 'ParticipantVisit/Visit') {
-            sortKey = 'ParticipantVisit/SequenceNum';
+            sortKey = 'ParticipantVisit/Visit/DisplayOrder, ParticipantVisit/SequenceNum';
         }
 
         var config = {
