@@ -40,13 +40,15 @@ public abstract class MenuSection
     protected Integer _itemLimit;
     protected String _key;
     private List<MenuItem> _allItems;
+    private String _productId;
 
-    public MenuSection(@NotNull ViewContext context, @NotNull String label, @NotNull String key, @Nullable Integer itemLimit)
+    public MenuSection(@NotNull ViewContext context, @NotNull String label, @NotNull String key, @Nullable Integer itemLimit, @Nullable String productId)
     {
         _context = context;
         _label = label;
         _key = key;
         _itemLimit = itemLimit;
+        _productId = productId;
     }
 
     public String getLabel()
@@ -105,6 +107,16 @@ public abstract class MenuSection
     public void setItemLimit(Integer itemLimit)
     {
         _itemLimit = itemLimit;
+    }
+
+    public String getProductId()
+    {
+        return _productId;
+    }
+
+    public void setProductId(String productId)
+    {
+        _productId = productId;
     }
 
     // Might be handy if we implement linking deep into LabKey server from application, but also for URLResolver

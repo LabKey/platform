@@ -23,6 +23,8 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.collections.ConcurrentCaseInsensitiveSortedMap;
+import org.labkey.api.data.Container;
+import org.labkey.api.module.Module;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -32,13 +34,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class ProductRegistry
 {
-    private static Logger _logger = Logger.getLogger(ProductRegistry.class);
-    private static Map<String, ProductMenuProvider> _productMap = new ConcurrentCaseInsensitiveSortedMap<>();
-    private static Map<String, ProductMenuProvider> _sectionMap = new ConcurrentCaseInsensitiveSortedMap<>();
-    private static ProductRegistry _instance = new ProductRegistry();
+    private static final Logger _logger = Logger.getLogger(ProductRegistry.class);
+    private static final Map<String, ProductMenuProvider> _productMap = new ConcurrentCaseInsensitiveSortedMap<>();
+    private static final Map<String, ProductMenuProvider> _moduleProviderMap = new ConcurrentHashMap<>();
+    private static final Map<String, ProductMenuProvider> _sectionMap = new ConcurrentCaseInsensitiveSortedMap<>();
+    private static final ProductRegistry _instance = new ProductRegistry();
 
     private ProductRegistry()
     {
@@ -62,17 +68,61 @@ public class ProductRegistry
             throw new IllegalArgumentException("Product key '" + provider.getProductId() + " already registered by module '" + _productMap.get(provider.getProductId()).getModuleName() + "'");
 
         _productMap.put(provider.getProductId(), provider);
+        _moduleProviderMap.put(provider.getModuleName(), provider);
         provider.getSectionNames().forEach(name -> _sectionMap.put(name, provider));
     }
 
     public void unregisterMenuItemsProvider(ProductMenuProvider provider)
     {
         if (_productMap.containsKey(provider.getProductId()))
+        {
             _productMap.remove(provider.getProductId());
+            _moduleProviderMap.remove(provider.getModuleName());
+        }
         provider.getSectionNames().forEach((name) -> {
-            if (_sectionMap.containsKey(name))
-                _sectionMap.remove(name);
+            _sectionMap.remove(name);
         });
+    }
+
+    @NotNull
+    public List<MenuSection> getProductMenuSections(@NotNull ViewContext context, @NotNull String currentProductId, @NotNull Container container, @Nullable Integer itemLimit)
+    {
+        Set<String> modules = container.getActiveModules().stream().map(Module::getName).collect(Collectors.toSet());
+        List<MenuSection> sections = new ArrayList<>();
+        ProductMenuProvider userMenuProvider = _productMap.get(currentProductId);
+        for (String module : modules)
+        {
+           if (_moduleProviderMap.containsKey(module))
+           {
+               if (userMenuProvider == null)
+                   userMenuProvider = _moduleProviderMap.get(module);
+               sections.addAll(_moduleProviderMap.get(module).getSections(context, itemLimit));
+           }
+        }
+        // always include the user menu as the last item
+        if (userMenuProvider != null)
+            sections.add(new UserInfoMenuSection(context, userMenuProvider));
+        return sections;
+    }
+
+    @NotNull
+    public List<MenuSection> getProductMenuSections(@NotNull ViewContext context, @NotNull String currentProductId, @NotNull List<String> productIds, @Nullable Integer itemLimit)
+    {
+        List<MenuSection> sections = new ArrayList<>();
+        ProductMenuProvider userMenuProvider = _productMap.get(currentProductId);
+        for (String productId : productIds)
+        {
+            if (_productMap.containsKey(productId))
+            {
+                if (userMenuProvider == null)
+                    userMenuProvider = _productMap.get(productId);
+                sections.addAll(_productMap.get(productId).getSections(context, itemLimit));
+            }
+        }
+        // always include the user menu as the last item
+        if (userMenuProvider != null)
+            sections.add(new UserInfoMenuSection(context, userMenuProvider));
+        return sections;
     }
 
     @NotNull
@@ -122,16 +172,16 @@ public class ProductRegistry
     {
         private static final String VALID_PRODUCT_ID = "testProductId1";
         private static final String VALID_PRODUCT_ID_2 = "testProductId2";
-        private static ProductRegistry registry = ProductRegistry.get();
-        private static ProductMenuProvider _provider1 = new TestMenuProvider("testModule", VALID_PRODUCT_ID, List.of("section X", "Section B", "section b2"));
-        private static ProductMenuProvider _provider2 = new TestMenuProvider("testModule", VALID_PRODUCT_ID_2, Collections.emptyList());
+        private static final ProductRegistry registry = ProductRegistry.get();
+        private static final ProductMenuProvider _provider1 = new TestMenuProvider("testModule", VALID_PRODUCT_ID, List.of("section X", "Section B", "section b2"));
+        private static final ProductMenuProvider _provider2 = new TestMenuProvider("testModule", VALID_PRODUCT_ID_2, Collections.emptyList());
 
         private static class TestMenuSection extends MenuSection
         {
 
             public TestMenuSection(@NotNull ViewContext context, @NotNull String label, @Nullable String iconClass, @Nullable Integer itemLimit)
             {
-                super(context, label, iconClass, itemLimit);
+                super(context, label, iconClass, itemLimit, VALID_PRODUCT_ID);
             }
 
             @Override
@@ -142,9 +192,9 @@ public class ProductRegistry
         }
         private static class TestMenuProvider extends ProductMenuProvider
         {
-            private String _moduleName;
-            private String _productId;
-            private Collection<String> _sectionNames;
+            private final String _moduleName;
+            private final String _productId;
+            private final Collection<String> _sectionNames;
 
             public TestMenuProvider(String moduleName, String productId, Collection<String> sectionNames)
             {
