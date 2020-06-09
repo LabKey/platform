@@ -171,8 +171,8 @@ Ext4.define('File.panel.Upload', {
                     var cwd = this.uploadPanel.getWorkingDirectory('cwd');
                     if (cwd)
                     {
-                        // Overwrite if explicitly set (in confirmation by user) or if we're uploading multiple files.
-                        var overwrite = file.overwrite || this.files.length > 1;
+                        // Overwrite if explicitly set (in confirmation by user).
+                        var overwrite = file.overwrite;
 
                         var uri = this.uploadPanel.fileSystem.concatPaths(cwd, file.fullPath ? file.fullPath : file.name);
 
@@ -241,21 +241,6 @@ Ext4.define('File.panel.Upload', {
                             file.status = Dropzone.ERROR;
                             file.errorText = 'Already exists';
                             file.code = response.status;
-                            Ext4.Msg.show({
-                                title : "File Conflict:",
-                                msg : "There is already a file named " + file.name + ' in this location. Would you like to replace it?',
-                                cls : 'data-window',
-                                icon : Ext4.Msg.QUESTION,
-                                buttons : Ext4.Msg.YESNO,
-                                fn : function(btn) {
-                                    if (btn == 'yes') {
-                                        file.overwrite = true;
-                                        file.status = Dropzone.ADDED;
-                                        this.processFile(file);
-                                    }
-                                },
-                                scope : this
-                            });
                         }
                         else if (response.status === 401 || response.status === 403)
                         {
@@ -349,6 +334,7 @@ Ext4.define('File.panel.Upload', {
                     var file0 = null;
                     var dragDropError = false;
                     var firstMessage = null;
+                    var alreadyExistFiles = [];
 
                     for (var i = 0; i < this.files.length; i++) {
                         var file = this.files[i];
@@ -358,6 +344,9 @@ Ext4.define('File.panel.Upload', {
                         else if (file.status === Dropzone.ERROR) {
                             if (file.errorText === 'Drag-and-drop upload') {
                                 dragDropError = true;
+                            }
+                            else if (file.errorText === 'Already exists') {
+                                alreadyExistFiles.push(file);
                             }
                             else {
                                 if (!firstMessage) {
@@ -422,6 +411,47 @@ Ext4.define('File.panel.Upload', {
                             }
                         });
 
+                    }
+                    else if (!dragDropError && alreadyExistFiles.length > 0) {
+                        var msg = '';
+                        if (alreadyExistFiles.length === 1)
+                            msg = "There is already a file named " + alreadyExistFiles[0].name + ' in this location. Would you like to replace it?';
+                        else if (alreadyExistFiles.length <=10) {
+                            msg = "The following files already exist in this location. Would you like to replace them?<br><ul>";
+                            Ext4.each(alreadyExistFiles, function(f) {
+                                msg += "<li>" + f.name + "</li>"
+                            }, this);
+                            msg += "</url>";
+                        }
+                        else {
+                            msg = "The following files already exist in this location. Would you like to replace them?<br><ul>";
+                            var count = 0;
+                            Ext4.each(alreadyExistFiles, function(f) {
+                                if (count++ >= 9)
+                                    return;
+                                msg += "<li>" + f.name + "</li>"
+                            }, this);
+                            msg += "</url>";
+                            msg += "and " + (alreadyExistFiles.length - 9) + " more...";
+                        }
+
+                        Ext4.Msg.show({
+                            title : "File Conflict:",
+                            msg : msg,
+                            cls : 'data-window',
+                            icon : Ext4.Msg.QUESTION,
+                            buttons : Ext4.Msg.YESNO,
+                            fn : function(btn) {
+                                if (btn == 'yes') {
+                                    Ext4.each(alreadyExistFiles, function(f) {
+                                        file.overwrite = true;
+                                        file.status = Dropzone.ADDED;
+                                        this.processFile(f);
+                                    }, this);
+                                }
+                            },
+                            scope : this
+                        });
                     }
                     else {
                         this.uploadPanel.fireEvent('transfercomplete', {fileRecords: fileRecords});
