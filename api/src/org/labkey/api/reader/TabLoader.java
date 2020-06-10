@@ -215,7 +215,7 @@ public class TabLoader extends DataLoader
     // This constructor doesn't support MV Indicators:
     public TabLoader(final CharSequence src, Boolean hasColumnHeaders)
     {
-        this(() -> new TabBufferedReader(new CharSequenceReader(src), src.length()), hasColumnHeaders, null);
+        this(() -> new TabBufferedReader(new CharSequenceReader(src)), hasColumnHeaders, null);
 
         if (src == null)
             throw new IllegalArgumentException("src cannot be null");
