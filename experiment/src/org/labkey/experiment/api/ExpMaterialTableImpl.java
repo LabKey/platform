@@ -93,6 +93,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -128,6 +130,39 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             // Special case sample auditing to help build a useful timeline view
             SampleSetService.get().addAuditEvent(user, container, this, auditBehavior, auditAction, parameters);
+        }
+        else
+        {
+            super.addAuditEvent(user, container, auditBehavior, auditAction, parameters);
+        }
+    }
+
+    @Override
+    public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, QueryService.AuditAction auditAction, Map<String, Object> parameters)
+    {
+        // Special case sample auditing to help build a useful timeline view
+        if (getUserSchema().getName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
+        {
+            Map<String, Object> params = new CaseInsensitiveHashMap<>(parameters);
+            if (auditAction.equals(QueryService.AuditAction.MERGE))
+            {
+                AuditBehaviorType sampleAuditType = auditBehavior;
+                if (sampleAuditType == null || getXmlAuditBehaviorType() != null)
+                    sampleAuditType = getAuditBehavior();
+
+                if (sampleAuditType == AuditBehaviorType.DETAILED || sampleAuditType == AuditBehaviorType.SUMMARY)
+                {
+                    // material.rowid is a dbsequence column that auto increments during merge, even if rowId is not updated
+                    // need to reselect rowId
+                    if (params.containsKey(LSID))
+                    {
+                        ExpMaterial sample = ExperimentService.get().getExpMaterial((String) params.get(LSID));
+                        if (sample != null)
+                            params.put(ROW_ID, sample.getRowId());
+                    }
+                }
+            }
+            SampleSetService.get().addAuditEvent(user, container, this, auditBehavior, auditAction, Collections.singletonList(params));
         }
         else
         {
