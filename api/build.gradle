@@ -117,6 +117,10 @@ configurations {
         canBeResolved = true
     }
 
+    // this configuration and its artifact are declared because the default outgoing variant for the api
+    // module (runtimeElements) does not include all the class files since the classes compiled from
+    // the XSDs are produced in a separate classes directory.  The name is chosen to be the same as
+    // the apiJarFile configuration that comes from the API Gradle plugin.
     apiJarFile {
         canBeConsumed = true
         canBeResolved = true
