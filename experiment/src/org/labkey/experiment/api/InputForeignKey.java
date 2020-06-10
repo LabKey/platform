@@ -81,13 +81,13 @@ public class InputForeignKey extends LookupForeignKey
             @Override
             public String getPublicName()
             {
-                return null;
+                return getName();
             }
 
             @Override
             public String getPublicSchemaName()
             {
-                return null;
+                return _schema.getName();
             }
 
             @Override

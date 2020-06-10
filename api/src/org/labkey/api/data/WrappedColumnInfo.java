@@ -112,6 +112,12 @@ public class WrappedColumnInfo
             }
 
             @Override
+            public String getSelectName()
+            {
+                return sourceColumnInfo.getSelectName();
+            }
+
+            @Override
             public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
             {
                 sourceColumnInfo.declareJoins(parentAlias, map);

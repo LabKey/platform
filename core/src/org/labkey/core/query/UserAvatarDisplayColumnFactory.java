@@ -24,7 +24,6 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
@@ -54,7 +53,7 @@ public class UserAvatarDisplayColumnFactory implements DisplayColumnFactory
             public String renderURL(RenderContext ctx)
             {
                 User user = getUserFromCtx(ctx);
-                return (user != null && user.getAvatarUrl() != null) ? user.getAvatarThumbnailPath() : null;
+                return user != null ? user.getAvatarThumbnailPath() : null;
             }
 
             @Override

@@ -52,6 +52,7 @@ import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -153,7 +154,9 @@ abstract public class ExpTableImpl<C extends Enum>
     protected ColumnInfo addContainerColumn(C containerCol, ActionURL url)
     {
         var result = addColumn(containerCol);
-        result.getImportAliasSet().add("container");
+        Set<String> set = new LinkedHashSet(result.getImportAliasSet());
+        set.add("container");
+        result.setImportAliasesSet(set);
         ContainerForeignKey.initColumn(result, _userSchema, url);
         return result;
     }
