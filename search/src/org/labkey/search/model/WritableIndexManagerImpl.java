@@ -250,7 +250,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
             try
             {
                 iw.commit();
-                maybeRefresh();
+                _manager.maybeRefreshBlocking();
             }
             catch (AccessDeniedException e)
             {
