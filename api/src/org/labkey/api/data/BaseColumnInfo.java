@@ -533,12 +533,22 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     @Override
     public String getMetaDataName()
     {
-        return _metaDataName;      // Actual name returned by metadata; use to query meta data or to select columns enclosed in quotes
+        return _metaDataName;
     }
-
 
     @Override
     public String getSelectName()
+    {
+        assert getParentTable() instanceof SchemaTableInfo : "Use getValueSql()";
+        if (null == _selectName)
+        {
+            if (!(getParentTable() instanceof SchemaTableInfo))
+                throw new UnsupportedOperationException("Use getValueSql()");
+        }
+        return generateSelectName();
+    }
+
+    private String generateSelectName()
     {
         if (null == _selectName)
         {
@@ -547,14 +557,14 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             else
                 _selectName = getSqlDialect().getColumnSelectName(getMetaDataName());
         }
-
         return _selectName;
     }
 
     @Override
     public SQLFragment getValueSql(String tableAliasName)
     {
-        return new SQLFragment(tableAliasName + "." + getSelectName());
+        // call generateSelectName() to avoid asserts in getSelectName()
+        return new SQLFragment(tableAliasName + "." + generateSelectName());
     }
 
     @Override
