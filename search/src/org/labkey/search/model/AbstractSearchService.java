@@ -657,8 +657,23 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             return null;
         String prefix = resourceIdentifier.substring(0, i);
         ResourceResolver res = _resolvers.get(prefix);
+
         if (null == res)
+        {
+            // Special case to allow customizing docs whose docId does not starting with category.
+            // For example, assay design doc id is of "containerId:assays:rowId"
+            if (resourceIdentifier.matches(".+[:].+[:].+"))
+            {
+                String[] idParts = resourceIdentifier.split(":");
+                String resolverName = idParts[1];
+                res = _resolvers.get(resolverName);
+                if (res != null)
+                    return res.getCustomSearchJson(user, idParts[2]);
+            }
+
             return null;
+        }
+
         return res.getCustomSearchJson(user, resourceIdentifier.substring(i+1));
     }
 

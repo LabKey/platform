@@ -2248,6 +2248,12 @@ public class ContainerManager
     @Nullable
     private static Container resolveContainerPathAlias(String path, boolean top)
     {
+        // Strip any trailing slashes
+        while (path.endsWith("/"))
+        {
+            path = path.substring(0, path.length() - 1);
+        }
+
         // Simple case -- resolve directly (sans alias)
         Container aliased = getForPath(path);
         if (aliased != null)

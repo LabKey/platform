@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
@@ -183,7 +184,9 @@ public abstract class ContainerFilter
         SQLFragment sql;
         if (columnInfo != null)
         {
-            sql = new SQLFragment(columnInfo.getSelectName());
+            // NOTE: we really should know the tableAlias here, but we don't, so caller has to guarantee that the columninfo is unambigious
+            SQLFragment value = columnInfo.getValueSql(ExprColumn.STR_TABLE_ALIAS);
+            sql = new SQLFragment(value.getSQL().replace(ExprColumn.STR_TABLE_ALIAS+".", ""), value.getParams());
         }
         else
         {

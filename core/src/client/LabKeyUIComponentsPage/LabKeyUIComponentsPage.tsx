@@ -417,7 +417,7 @@ export class App extends React.Component<any, State> {
                 {selected === 'SearchResultCard' &&
                     this.renderPanel('SearchResultCard',
                         <SearchResultCard
-                            title={'Search Result Title'}
+                            cardData={{title: 'Search Result Title'}}
                             summary={'Test search result summary text for the components page.'}
                             url={'#searchresultcard'}
                             iconUrl={'/labkey/_images/construct.svg'}
