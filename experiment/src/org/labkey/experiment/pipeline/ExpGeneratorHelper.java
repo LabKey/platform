@@ -217,12 +217,14 @@ public class ExpGeneratorHelper
 
             log.info("Checking files referenced by experiment run");
 
+            boolean fromProvenanceRecording = protocol.getLSID().contains(ProvenanceService.PROVENANCE_PROTOCOL_LSID);
+
             for (RecordedAction action : actions)
             {
                 for (RecordedAction.DataFile dataFile : action.getInputs())
                 {
                     // For inputs, don't stomp over the role specified the first time a file was used as an input
-                    if (!action.isStart())
+                    if (fromProvenanceRecording && !action.isStart())
                         continue;
                     runInputsWithRoles.computeIfAbsent(dataFile.getURI(), k -> dataFile.getRole());
 
@@ -234,16 +236,22 @@ public class ExpGeneratorHelper
                     if (!dataFile.isTransient())
                     {
                         // For outputs, want to use the last role that was specified, so always overwrite
-                        if (!action.isEnd())
+                        if (fromProvenanceRecording && !action.isEnd())
                             continue;
                         runOutputsWithRoles.put(dataFile.getURI(), dataFile.getRole());
                     }
 
                     // This can be slow over network file systems so do it outside of the database
                     // transaction. The XarSource caches the results so it'll be fast once we start inserting.
+                }
+            }
 
-                    // Files count as inputs to the run if they're used by one of the actions and weren't produced by one of
-                    // the actions.
+            // Files count as inputs to the run if they're used by one of the actions and weren't produced by one of
+            // the actions.
+            for (RecordedAction action : actions)
+            {
+                for (RecordedAction.DataFile dataFile : action.getOutputs())
+                {
                     runInputsWithRoles.remove(dataFile.getURI());
                 }
             }
@@ -252,7 +260,7 @@ public class ExpGeneratorHelper
 
             try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
             {
-                run = _insertRun(container, user, runName, runJobId, protocol, actionSet.getActions(), source, runOutputsWithRoles, runInputsWithRoles);
+                run = _insertRun(container, user, runName, runJobId, protocol, actionSet.getActions(), source, runOutputsWithRoles, runInputsWithRoles, fromProvenanceRecording);
 
                 if (null != xarWriter)
                     xarWriter.writeToDisk(run);
@@ -281,7 +289,8 @@ public class ExpGeneratorHelper
                                          Set<RecordedAction> actions,
                                          @Nullable XarSource source,
                                          Map<URI, String> runOutputsWithRoles,
-                                         Map<URI, String> runInputsWithRoles) throws ExperimentException, ValidationException, BatchValidationException
+                                         Map<URI, String> runInputsWithRoles,
+                                         boolean fromProvenanceRecording) throws ExperimentException, ValidationException, BatchValidationException
     {
         ExpRunImpl run = ExperimentServiceImpl.get().createExperimentRun(container, runName);
         ProvenanceService pvs = ProvenanceService.get();
@@ -391,7 +400,7 @@ public class ExpGeneratorHelper
             // Set up the inputs
             for (RecordedAction.DataFile dd : action.getInputs())
             {
-                if (!action.isStart())
+                if (!fromProvenanceRecording || !action.isStart())
                 {
                     ExpData data = addData(container, user, datas, dd.getURI(), source);
                     stepApp.addDataInput(user, data, dd.getRole());
@@ -401,7 +410,7 @@ public class ExpGeneratorHelper
             // Set up the outputs
             for (RecordedAction.DataFile dd : action.getOutputs())
             {
-                if (!action.isEnd())
+                if (!fromProvenanceRecording || !action.isEnd())
                 {
                     ExpData outputData = addData(container, user, datas, dd.getURI(), source);
                     if (outputData.getSourceApplication() != null)

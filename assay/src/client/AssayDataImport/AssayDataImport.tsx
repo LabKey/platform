@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, ButtonToolbar, Panel } from "react-bootstrap";
 import {Map, List, fromJS} from 'immutable';
-import {ActionURL, Security, Utils, getServerContext} from '@labkey/api'
+import { ActionURL, getServerContext, PermissionTypes, Security, Utils } from '@labkey/api';
 import {
     Alert,
     Cards,
@@ -11,7 +11,6 @@ import {
     AssayDefinitionModel,
     InferDomainResponse,
     QueryColumn,
-    PermissionTypes,
     User,
     fetchAllAssays,
     importAssayRun,

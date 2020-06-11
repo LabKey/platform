@@ -483,7 +483,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic("editDatasetProperties");
+            setHelpTopic("datasetProperties");
             _addNavTrailDatasetAdmin(root);
             root.addChild(_def.getName(), new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", _def.getDatasetId()));
             root.addChild("Edit Dataset Definition");

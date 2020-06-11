@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { AppContainer } from 'react-hot-loader';
+import { App } from '@labkey/api';
 
-import { RunGraph } from './RunGraph';
-import { AppContext, registerApp } from './util';
+import { AppContext, RunGraph } from './RunGraph';
 
 const render = (target: string, ctx: AppContext) => {
     ReactDOM.render(
@@ -14,7 +14,7 @@ const render = (target: string, ctx: AppContext) => {
     );
 };
 
-registerApp<AppContext>('runGraph', render, true);
+App.registerApp<AppContext>('runGraph', render, true);
 
 declare const module: any;
 
