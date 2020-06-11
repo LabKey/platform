@@ -15,6 +15,9 @@
  */
 package org.labkey.api.data;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Sort.SortDirection;
@@ -27,6 +30,7 @@ import org.labkey.api.util.StringExpression;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -569,7 +573,18 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return Collections.unmodifiableSet(new LinkedHashSet<>(_importAliases));
     }
 
+    @NotNull
+    @JsonGetter("_importAliases")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @SuppressWarnings("unused")
+    public Set<String> getImportAliasSet_for_jackson_do_not_use()
+    {
+        // Jackson does not like immutable sets
+        return new HashSet<>(_importAliases);
+    }
+
     @Override
+    @JsonSetter("_importAliases")
     public void setImportAliasesSet(Set<String> importAliases)
     {
         assert _checkLocked();
