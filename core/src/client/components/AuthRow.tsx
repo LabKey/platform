@@ -124,19 +124,32 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
             <Modal show={true} onHide={() => this.onToggleModal("deleteModalOpen", this.state.deleteModalOpen)}>
                 <Modal.Header closeButton>
                     <Modal.Title>
-                        Warning
+                        Permanently delete {authConfig.provider} configuration?
                     </Modal.Title>
                 </Modal.Header>
-                <div className={"auth-row__delete-modal"}>
-                    <div>
-                        {`Are you sure you want to delete authentication configuration ${authConfig.description}?`}
+                <div className="auth-row__delete-modal">
+                    <div className="auth-row__delete-modal__textBox">
+                        <p>
+                            Deleting this authentication configuration will remove all settings associated with it.
+                            To enable it again, the authentication configuration will need to be re-configured.
+                        </p>
+                        <p>
+                            Deletion cannot be undone.
+                        </p>
                     </div>
 
                     <Button
-                        className="labkey-button primary auth-row__confirm-delete"
+                        className="labkey-button auth-row__delete-modal__cancel"
+                        onClick={() => this.onToggleModal("deleteModalOpen", this.state.deleteModalOpen)}
+                    >
+                        Cancel
+                    </Button>
+
+                    <Button
+                        className="labkey-button primary auth-row__delete-modal__delete"
                         onClick={onDelete}
                     >
-                        Yes
+                        Yes, delete
                     </Button>
                 </div>
             </Modal>;
