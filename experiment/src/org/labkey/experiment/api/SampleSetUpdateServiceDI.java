@@ -34,6 +34,11 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpRunItem;
+import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -53,10 +58,12 @@ import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  *
@@ -313,7 +320,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
             for (Map<String, Object> k : keys)
             {
                 Integer rowId = getMaterialRowId(k);
-                Map<String, Object> map = getMaterialMap(rowId, getMaterialLsid(k));
+                Map<String, Object> map = getMaterialMap(rowId, getMaterialLsid(k), user, container);
                 if (map == null)
                     throw new QueryUpdateServiceException("No Sample Set Material found for rowId or LSID");
 
@@ -362,7 +369,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         return null;
     }
 
-    private Map<String, Object> getMaterialMap(Integer rowId, String lsid)
+    private Map<String, Object> getMaterialMap(Integer rowId, String lsid, User user, Container container)
             throws QueryUpdateServiceException
     {
         Filter filter;
@@ -373,7 +380,52 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         else
             throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Set Material.");
 
-        return new TableSelector(getQueryTable(), filter, null).getMap();
+        Map<String, Object> sampleRow = new TableSelector(getQueryTable(), filter, null).getMap();
+
+        ExperimentService experimentService = ExperimentService.get();
+        ExpMaterial seed = rowId != null ? experimentService.getExpMaterial(rowId) : experimentService.getExpMaterial(lsid);
+        Set<ExpMaterial> parentSamples = experimentService.getNearestParentMaterials(container, user, seed);
+        if (parentSamples != null && !parentSamples.isEmpty())
+            addParentFields(sampleRow, parentSamples, ExpMaterial.MATERIAL_INPUT_PARENT + "/", user);
+        Set<ExpData> parentDatas = experimentService.getNearestParentDatas(container, user, seed);
+        if (parentDatas != null && !parentDatas.isEmpty())
+            addParentFields(sampleRow, parentDatas, ExpData.DATA_INPUT_PARENT + "/", user);
+
+        return sampleRow;
+    }
+
+    private <T extends ExpRunItem> void addParentFields(Map<String, Object> sampleRow, Set<T> parents, String parentPrefix, User user)
+    {
+        Map<String, List<String>> parentByType = new HashMap<>();
+        for (ExpRunItem parent : parents)
+        {
+            String type = "";
+            if (parent instanceof ExpData)
+            {
+                ExpDataClass dataClass = ((ExpData) parent).getDataClass(user);
+                if (dataClass == null)
+                    continue;
+                type = dataClass.getName();
+            }
+
+            else if (parent instanceof ExpMaterial)
+            {
+                ExpSampleSet sampleset = ((ExpMaterial) parent).getSampleSet();
+                if (sampleset == null)
+                    continue;
+                type = sampleset.getName();
+            }
+
+            parentByType.computeIfAbsent(type, k -> new ArrayList<>());
+            parentByType.get(type).add(parent.getName());
+        }
+
+        for (String type : parentByType.keySet())
+        {
+            String key = parentPrefix + type;
+            String value = String.join(",", parentByType.get(type));
+            sampleRow.put(key, value);
+        }
     }
 
     @Override
@@ -383,7 +435,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
         for (Map<String, Object> k : keys)
         {
-            result.add(getMaterialMap(getMaterialRowId(k), getMaterialLsid(k)));
+            result.add(getMaterialMap(getMaterialRowId(k), getMaterialLsid(k), user, container));
         }
         return result;
     }
@@ -391,7 +443,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        return getMaterialMap(getMaterialRowId(keys), getMaterialLsid(keys));
+        return getMaterialMap(getMaterialRowId(keys), getMaterialLsid(keys), user, container);
     }
 
     /* don't need to implement these since we override insertRows() etc. */

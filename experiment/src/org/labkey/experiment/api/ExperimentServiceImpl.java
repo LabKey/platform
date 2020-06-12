@@ -2183,6 +2183,15 @@ public class ExperimentServiceImpl implements ExperimentService
         return lineage.findNearestParentDatas(start);
     }
 
+    @Override
+    public Set<ExpMaterial> getNearestParentMaterials(Container c, User user, ExpMaterial start)
+    {
+        ExpLineageOptions options = new ExpLineageOptions();
+        options.setChildren(false);
+
+        ExpLineage lineage = getLineage(c, user, start, options);
+        return lineage.findNearestParentMaterials(start);
+    }
 
     public List<ExpRun> oldCollectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options)
     {

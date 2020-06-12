@@ -498,6 +498,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
     Set<ExpData> getNearestParentDatas(Container c, User user, ExpMaterial start);
 
     /**
+     * Find all parent ExpMaterial that are parents of the <code>start</code> ExpMaterial,
+     * stopping at the first parent generation (no grandparents.)
+     */
+    Set<ExpMaterial> getNearestParentMaterials(Container c, User user, ExpMaterial start);
+
+    /**
      * Get the lineage for the seed Identifiable object.  Typically, the seed object is a ExpMaterial,
      * a ExpData (in a DataClass), or an ExpRun.
      */
