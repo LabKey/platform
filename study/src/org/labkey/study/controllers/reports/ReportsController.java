@@ -111,6 +111,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.PrintWriter;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -160,10 +161,15 @@ public class ReportsController extends BaseStudyController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class DeleteReportAction extends SimpleViewAction
+    public class DeleteReportAction extends FormHandlerAction<Object>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors)
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
             String reportIdParam = getRequest().getParameter(ReportDescriptor.Prop.reportId.name());
             ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdParam, getViewContext().getUser(), getViewContext().getContainer());
@@ -177,16 +183,27 @@ public class ReportsController extends BaseStudyController
             {
                 ReportManager.get().deleteReport(getViewContext(), report);
             }
-            String redirectUrl = getRequest().getParameter(ReportDescriptor.Prop.redirectUrl.name());
-            if (redirectUrl != null)
-                return HttpView.redirect(redirectUrl);
-            else
-                return HttpView.redirect(PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+
+            return true;
         }
 
         @Override
-        public void addNavTrail(NavTree root)
+        public URLHelper getSuccessURL(Object o)
         {
+            String redirectUrl = getRequest().getParameter(ReportDescriptor.Prop.redirectUrl.name());
+            if (redirectUrl != null)
+            {
+                try
+                {
+                    return new URLHelper(redirectUrl);
+                }
+                catch (URISyntaxException e)
+                {
+                    // ignore bad URI
+                }
+            }
+
+            return PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer());
         }
     }
 
