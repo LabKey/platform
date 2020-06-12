@@ -320,7 +320,9 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
             for (Map<String, Object> k : keys)
             {
                 Integer rowId = getMaterialRowId(k);
-                Map<String, Object> map = getMaterialMap(rowId, getMaterialLsid(k), user, container);
+                // Issue 40621
+                // adding input fields is expensive, skip input fields for delete since deleted samples are not surfaced on Timeline UI
+                Map<String, Object> map = getMaterialMap(rowId, getMaterialLsid(k), user, container, false);
                 if (map == null)
                     throw new QueryUpdateServiceException("No Sample Set Material found for rowId or LSID");
 
@@ -369,7 +371,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         return null;
     }
 
-    private Map<String, Object> getMaterialMap(Integer rowId, String lsid, User user, Container container)
+    private Map<String, Object> getMaterialMap(Integer rowId, String lsid, User user, Container container, boolean addInputs)
             throws QueryUpdateServiceException
     {
         Filter filter;
@@ -381,6 +383,9 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
             throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Set Material.");
 
         Map<String, Object> sampleRow = new TableSelector(getQueryTable(), filter, null).getMap();
+
+        if (!addInputs)
+            return sampleRow;
 
         ExperimentService experimentService = ExperimentService.get();
         ExpMaterial seed = rowId != null ? experimentService.getExpMaterial(rowId) : experimentService.getExpMaterial(lsid);
@@ -435,7 +440,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
         for (Map<String, Object> k : keys)
         {
-            result.add(getMaterialMap(getMaterialRowId(k), getMaterialLsid(k), user, container));
+            result.add(getMaterialMap(getMaterialRowId(k), getMaterialLsid(k), user, container, true));
         }
         return result;
     }
@@ -443,7 +448,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        return getMaterialMap(getMaterialRowId(keys), getMaterialLsid(keys), user, container);
+        return getMaterialMap(getMaterialRowId(keys), getMaterialLsid(keys), user, container, true);
     }
 
     /* don't need to implement these since we override insertRows() etc. */
