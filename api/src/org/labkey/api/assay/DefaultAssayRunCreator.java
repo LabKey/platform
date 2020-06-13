@@ -53,6 +53,7 @@ import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.ValidatorContext;
@@ -592,7 +593,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             return null;
 
         Container c = lookup.getContainer() != null ? lookup.getContainer() : container;
-        return ExperimentService.get().getSampleSet(c, user, lookup.getQueryName());
+        return SampleSetService.get().getSampleSet(c, user, lookup.getQueryName());
     }
 
     /** returns true if the property has a lookup to exp.Materials and is an int or string. */

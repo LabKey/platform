@@ -237,7 +237,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
     {
         ExpSampleSet ss = getSampleSet(domain);
         if (null == ss)
-            return "Sample Set '" + domain.getName() + "'";
+            return "Sample Type '" + domain.getName() + "'";
         return ss.getName();
     }
 
@@ -252,7 +252,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
     @Override
     public boolean canEditDefinition(User user, Domain domain)
     {
-        // Cannot edit default sample set
+        // Cannot edit default sample type
         ExpSampleSet ss = getSampleSet(domain);
         if (ss == null || SampleSetService.get().getDefaultSampleSetLsid().equals(domain.getTypeURI()))
         {
@@ -367,7 +367,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
                 throw new IllegalArgumentException(String.format("Duplicate parent alias header found: %1$s", trimmedKey));
             }
 
-            //Check if parent alias has correct format MaterialInput/<name> or NEW_SAMPLE_SET_ALIAS_VALUE
+            //Check if parent alias has correct format MaterialInput/<name> or NEW_SAMPLE_TYPE_ALIAS_VALUE
             if (!ss.parentAliasHasCorrectFormat(trimmedValue))
                 throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", trimmedValue));
         });
@@ -393,7 +393,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
 
         if (arguments != null)
         {
-            //These are outdated but some clients still use them, or have existing sample sets that do.
+            //These are outdated but some clients still use them, or have existing sample types that do.
             List<Integer> idCols = (arguments.getIdCols() != null) ? arguments.getIdCols() : Collections.emptyList();
             idCol1 = idCols.size() > 0 ? idCols.get(0) : -1;
             idCol2 = idCols.size() > 1 ? idCols.get(1) : -1;
@@ -425,7 +425,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
     {
         ExpSampleSet ss = SampleSetService.get().getSampleSet(domain.getTypeURI());
         if (ss == null)
-            throw new NotFoundException("Sample Set not found: " + domain);
+            throw new NotFoundException("Sample Type not found: " + domain);
 
         ss.delete(user);
     }

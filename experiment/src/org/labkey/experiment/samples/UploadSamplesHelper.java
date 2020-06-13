@@ -288,7 +288,7 @@ public abstract class UploadSamplesHelper
 
     /**
      * support for mapping DataClass or SampleSet objects as a parent input using the column name format:
-     * DataInputs/<data class name> or MaterialInputs/<sample set name>. Either / or . works as a delimiter
+     * DataInputs/<data class name> or MaterialInputs/<sample type name>. Either / or . works as a delimiter
      *
      * @param parentNames set of (parent column name, parent value) pairs.  Parent values that are empty
      *                    indicate tha parent should be removed.

@@ -24,6 +24,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.StringExpressionFactory;
@@ -337,7 +338,7 @@ public class NameGenerator
             if (_incrementSampleCounts && !_exprHasSampleCounterFormats)
             {
                 Date now = (Date)_batchExpressionContext.get("now");
-                sampleCounts = ExperimentService.get().incrementSampleCounts(now);
+                sampleCounts = SampleSetService.get().incrementSampleCounts(now);
             }
 
             // If a name is already provided, just use it as is

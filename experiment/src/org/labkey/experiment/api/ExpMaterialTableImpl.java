@@ -370,11 +370,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         checkLocked();
         if (_ss != null)
         {
-            throw new IllegalStateException("Cannot unset sample set");
+            throw new IllegalStateException("Cannot unset sample type");
         }
         if (ss != null && !(ss instanceof ExpSampleSetImpl))
         {
-            throw new IllegalArgumentException("Expected sample set to be an instance of " + ExpSampleSetImpl.class.getName() + " but was a " + ss.getClass().getName());
+            throw new IllegalArgumentException("Expected sample type to be an instance of " + ExpSampleSetImpl.class.getName() + " but was a " + ss.getClass().getName());
         }
         _ss = (ExpSampleSetImpl)ss;
         if (_ss != null)
@@ -436,7 +436,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             else
             {
-                setDescription("Contains one row per sample in the " + ss.getName() + " sample set");
+                setDescription("Contains one row per sample in the " + ss.getName() + " sample type");
             }
         }
 
@@ -484,9 +484,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             @Override
             protected ContainerFilter getLookupContainerFilter()
             {
-                // Be sure that we can resolve the sample set if it's defined in a separate container.
+                // Be sure that we can resolve the sample type if it's defined in a separate container.
                 // Same as CurrentPlusProjectAndShared but includes SampleSet's container as well.
-                // Issue 37982: Sample Set: Link to precursor sample set does not resolve correctly if sample has parents in current sample set and a sample set in the parent container
+                // Issue 37982: Sample Type: Link to precursor sample type does not resolve correctly if sample has parents in current sample type and a sample type in the parent container
                 Set<Container> containers = new HashSet<>();
                 if (null != ss)
                     containers.add(ss.getContainer());
@@ -720,7 +720,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (_ss != null || perm.isAssignableFrom(DeletePermission.class) || perm.isAssignableFrom(ReadPermission.class))
             return _userSchema.getContainer().hasPermission(user, perm);
 
-        // don't allow insert/update on exp.Materials without a sample set
+        // don't allow insert/update on exp.Materials without a sample type
         return false;
     }
 

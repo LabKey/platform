@@ -50,7 +50,7 @@ public class SampleSetWebPart extends QueryView
         super(new ExpSchema(viewContext.getUser(), viewContext.getContainer()));
         _narrow = narrow;
         setSettings(createQuerySettings(viewContext, "SampleSet" + (_narrow ? "Narrow" : "")));
-        setTitle("Sample Sets");
+        setTitle("Sample Types");
         setTitleHref(new ActionURL(ExperimentController.ListMaterialSourcesAction.class, viewContext.getContainer()));
         setShowDetailsColumn(false);
 
@@ -102,7 +102,7 @@ public class SampleSetWebPart extends QueryView
 
         ActionURL urlInsert = new ActionURL(ExperimentController.EditSampleSetAction.class, getContainer());
         urlInsert.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-        ActionButton createNewButton = new ActionButton(urlInsert, "New Sample Set", ActionButton.Action.LINK);
+        ActionButton createNewButton = new ActionButton(urlInsert, "New Sample Type", ActionButton.Action.LINK);
         createNewButton.setDisplayPermission(DesignSampleSetPermission.class);
         createNewButton.setURL(urlInsert);
         bar.add(createNewButton);

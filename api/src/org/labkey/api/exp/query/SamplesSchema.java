@@ -27,6 +27,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
@@ -56,7 +57,7 @@ public class SamplesSchema extends AbstractExpSchema
     {
         Map<String, ExpSampleSet> map = new CaseInsensitiveTreeMap<>();
         // User can be null if we're running in a background thread, such as doing a study export
-        for (ExpSampleSet ss : ExperimentService.get().getSampleSets(container, user, user != null))
+        for (ExpSampleSet ss : SampleSetService.get().getSampleSets(container, user, user != null))
         {
             map.put(ss.getName(), ss);
         }
@@ -141,7 +142,7 @@ public class SamplesSchema extends AbstractExpSchema
         return queryView;
     }
 
-    /** Creates a table of materials, scoped to the given sample set and including its custom columns, if provided */
+    /** Creates a table of materials, scoped to the given sample type and including its custom columns, if provided */
     public ExpMaterialTable getSampleTable(ExpSampleSet ss, ContainerFilter cf)
     {
         if (log.isTraceEnabled())
@@ -207,7 +208,7 @@ public class SamplesSchema extends AbstractExpSchema
         Container container = getContainer();
         ExpSampleSet ss = getSampleSets().get(queryName);
         if (ss == null)
-            throw new NotFoundException("Sample set '" + queryName + "' not found in this container '" + container.getPath() + "'.");
+            throw new NotFoundException("Sample type '" + queryName + "' not found in this container '" + container.getPath() + "'.");
 
         return ss.getDomain().getTypeURI();
     }

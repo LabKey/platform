@@ -61,7 +61,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     }
 
     @Override
-    public void afterSave(ViewContext context, List<? extends ExpExperiment> batches, ExpProtocol protocol) throws Exception
+    public void afterSave(ViewContext context, List<? extends ExpExperiment> batches, ExpProtocol protocol)
     {
     }
 
@@ -466,29 +466,29 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         if (material == null)
         {
             // Get SampleSet by id, name, or lsid
-            if (materialObject.has(ExperimentJSONConverter.SAMPLE_SET))
+            if (materialObject.has(ExperimentJSONConverter.SAMPLE_TYPE))
             {
-                JSONObject sampleSetJson = materialObject.getJSONObject(ExperimentJSONConverter.SAMPLE_SET);
+                JSONObject sampleSetJson = materialObject.getJSONObject(ExperimentJSONConverter.SAMPLE_TYPE);
                 if (sampleSetJson.has(ExperimentJSONConverter.ID))
                 {
                     int sampleSetRowId = sampleSetJson.getInt(ExperimentJSONConverter.ID);
-                    sampleSet = ExperimentService.get().getSampleSet(sampleSetRowId);
+                    sampleSet = SampleSetService.get().getSampleSet(sampleSetRowId);
                     if (sampleSet == null)
-                        throw new NotFoundException("A sample set with row id '" + sampleSetRowId + "' doesn't exist.");
+                        throw new NotFoundException("A sample type with row id '" + sampleSetRowId + "' doesn't exist.");
                 }
                 else if (sampleSetJson.has(ExperimentJSONConverter.NAME))
                 {
                     String sampleSetName = sampleSetJson.getString(ExperimentJSONConverter.NAME);
-                    sampleSet = ExperimentService.get().getSampleSet(context.getContainer(), context.getUser(), sampleSetName);
+                    sampleSet = SampleSetService.get().getSampleSet(context.getContainer(), context.getUser(), sampleSetName);
                     if (sampleSet == null)
-                        throw new NotFoundException("A sample set named '" + sampleSetName + "' doesn't exist.");
+                        throw new NotFoundException("A sample type named '" + sampleSetName + "' doesn't exist.");
                 }
                 else if (sampleSetJson.has(ExperimentJSONConverter.LSID))
                 {
                     String lsid = sampleSetJson.getString(ExperimentJSONConverter.LSID);
-                    sampleSet = ExperimentService.get().getSampleSet(lsid);
+                    sampleSet = SampleSetService.get().getSampleSet(lsid);
                     if (sampleSet == null)
-                        throw new NotFoundException("A sample set with LSID '" + lsid + "' doesn't exist.");
+                        throw new NotFoundException("A sample type with LSID '" + lsid + "' doesn't exist.");
                 }
             }
 

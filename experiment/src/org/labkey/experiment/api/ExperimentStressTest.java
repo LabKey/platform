@@ -42,7 +42,7 @@ public class ExperimentStressTest
         }
     }
 
-    private Random random;
+    private final Random random;
 
     public ExperimentStressTest()
     {
@@ -59,7 +59,7 @@ public class ExperimentStressTest
         return random.nextInt(max);
     }
 
-    private List<String> insertSamples(User user, Container c, String sampleSetName, List<String> existingNames, int rowCount)
+    private List<String> insertSamples(User user, Container c, String sampleTypeName, List<String> existingNames, int rowCount)
             throws Exception
     {
         LOG.info("** inserting " + rowCount + " samples " + (existingNames != null ? "with lineage" : "without lineage") + "...");
@@ -80,13 +80,13 @@ public class ExperimentStressTest
             Map<String, Object> row = CaseInsensitiveHashMap.of("age", 100);
             if (parentName != null)
             {
-                row.put("MaterialInputs/" + sampleSetName, parentName);
+                row.put("MaterialInputs/" + sampleTypeName, parentName);
             }
             samples.add(row);
         }
 
         // perform the insert
-        TableInfo ssTable = QueryService.get().getUserSchema(user, c, "samples").getTable(sampleSetName);
+        TableInfo ssTable = QueryService.get().getUserSchema(user, c, "samples").getTable(sampleTypeName);
         try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
         {
             BatchValidationException errors = new BatchValidationException();
@@ -118,7 +118,7 @@ public class ExperimentStressTest
 
     private void _sampleSetInserts(boolean withLineage) throws Throwable
     {
-        LOG.info("** starting sample set insert test " + (withLineage ? "with lineage" : "without lineage"));
+        LOG.info("** starting sample type insert test " + (withLineage ? "with lineage" : "without lineage"));
         final User user = TestContext.get().getUser();
         final Container c = JunitUtil.getTestContainer();
 

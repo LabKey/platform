@@ -40,6 +40,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -105,7 +106,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
 
         // skip the 'Unspecified' SampleSet
-        if (ExperimentServiceImpl.get().getDefaultSampleSetLsid().equals(ss.getLSID()))
+        if (SampleSetService.get().getDefaultSampleSetLsid().equals(ss.getLSID()))
             return;
 
         DbScope scope = ExperimentServiceImpl.get().getSchema().getScope();
@@ -286,7 +287,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             return;
 
         // skip the 'Unspecified' SampleSet
-        if (ExperimentServiceImpl.get().getDefaultSampleSetLsid().equals(ss.getLSID()))
+        if (SampleSetService.get().getDefaultSampleSetLsid().equals(ss.getLSID()))
             return;
 
         DbSchema schema = kind.getSchema();
@@ -316,7 +317,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         setGenIdCounter(ss, domain, scope);
     }
 
-    // A previous version of the 'materializeSampleSet' upgrade didn't insert rows into the provisioned table for each exp.material in the sample set.
+    // A previous version of the 'materializeSampleSet' upgrade didn't insert rows into the provisioned table for each exp.material in the sample type.
     // Insert any missing provisioned rows that exist in exp.material but didn't have an exp.object row
     private static void addMissingSampleRows(ExpSampleSetImpl ss, Domain domain, DbScope scope)
     {

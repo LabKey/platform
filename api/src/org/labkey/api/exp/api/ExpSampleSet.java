@@ -56,7 +56,7 @@ public interface ExpSampleSet extends ExpObject
     String getDescription();
 
     /**
-     * Some sample sets shouldn't be updated through the standard import or derived samples
+     * Some sample types shouldn't be updated through the standard import or derived samples
      * UI, as they don't have any properties. Study specimens are an example.
      */
     boolean canImportMoreSamples();
@@ -67,17 +67,17 @@ public interface ExpSampleSet extends ExpObject
     /** @return true if using 'Name' as the Id column.  getIdCol1(), getIdCol2() and getIdCol3() will all be null. */
     boolean hasNameAsIdCol();
 
-    /** @return property that determines the first part of the sample set's sample's keys.  Will be null if using 'Name' as the Id column. */
+    /** @return property that determines the first part of the sample type's sample's keys.  Will be null if using 'Name' as the Id column. */
     @Nullable
     @Deprecated
     DomainProperty getIdCol1();
 
-    /** @return property that determines the second part of the sample set's sample's keys */
+    /** @return property that determines the second part of the sample type's sample's keys */
     @Nullable
     @Deprecated
     DomainProperty getIdCol2();
 
-    /** @return property that determines the third part of the sample set's sample's keys */
+    /** @return property that determines the third part of the sample type's sample's keys */
     @Nullable
     @Deprecated
     DomainProperty getIdCol3();
@@ -158,7 +158,7 @@ public interface ExpSampleSet extends ExpObject
     List<DomainProperty> getIdCols();
 
     /**
-     * @return LSID that is prepared for use as a material in this Sample Set.
+     * @return LSID that is prepared for use as a material in this Sample Type.
      */
     Lsid.LsidBuilder generateSampleLSID();
 

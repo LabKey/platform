@@ -344,7 +344,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
             props.put(SearchService.PROPERTY.navtrail.toString(), nav);
 
-            // Add sample set name to body, if it's not already present
+            // Add sample type name to body, if it's not already present
             if (-1 == body.indexOf(sampleSetName))
                 append(body, sampleSetName);
         }

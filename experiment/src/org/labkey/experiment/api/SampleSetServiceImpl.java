@@ -294,11 +294,11 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
             String maxSampleSetLSID = (String) queryResult.get("MaxSampleSetLSID");
             String minSampleSetLSID = (String) queryResult.get("MinSampleSetLSID");
 
-            // Check if we have a sample set that was being referenced
+            // Check if we have a sample type that was being referenced
             if (maxSampleSetLSID != null && maxSampleSetLSID.equalsIgnoreCase(minSampleSetLSID))
             {
                 // If the min and the max are the same, it means all rows share the same value so we know that there's
-                // a single sample set being targeted
+                // a single sample type being targeted
                 sampleSet = getSampleSet(container, maxSampleSetLSID);
             }
             result.put((String) queryResult.get("Role"), sampleSet);
@@ -779,8 +779,8 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
                 throw new IllegalArgumentException("Parent aliases contain blanks");
 
             //Substitute the currentAliasName for the placeholder value
-            if (trimmedVal.equalsIgnoreCase(NEW_SAMPLE_SET_ALIAS_VALUE) ||
-                trimmedVal.equalsIgnoreCase(MATERIAL_INPUTS_PREFIX + NEW_SAMPLE_SET_ALIAS_VALUE))
+            if (trimmedVal.equalsIgnoreCase(NEW_SAMPLE_TYPE_ALIAS_VALUE) ||
+                trimmedVal.equalsIgnoreCase(MATERIAL_INPUTS_PREFIX + NEW_SAMPLE_TYPE_ALIAS_VALUE))
             {
                 trimmedVal = MATERIAL_INPUTS_PREFIX + currentAliasName;
             }
@@ -880,7 +880,7 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
     public boolean parentAliasHasCorrectFormat(String parentAlias)
     {
         //check if it is of the expected format or targeting the to be created sampleset
-        if (!(UploadSamplesHelper.isInputOutputHeader(parentAlias) || NEW_SAMPLE_SET_ALIAS_VALUE.equals(parentAlias)))
+        if (!(UploadSamplesHelper.isInputOutputHeader(parentAlias) || NEW_SAMPLE_TYPE_ALIAS_VALUE.equals(parentAlias)))
             throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", parentAlias));
 
         return true;

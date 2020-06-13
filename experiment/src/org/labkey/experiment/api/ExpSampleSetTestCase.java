@@ -37,6 +37,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
@@ -112,7 +113,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
             List<GWTPropertyDescriptor> props = new ArrayList<>();
             props.add(new GWTPropertyDescriptor("name", "string"));
 
-            final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
+            final ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user,
                     null, null, props, Collections.emptyList(),
                     -1, -1, -1, -1, null, null);
         }
@@ -135,7 +136,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
 
             String name = StringUtils.repeat("a", 1000);
 
-            final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
+            final ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user,
                     name, null, props, Collections.emptyList(),
                     -1, -1, -1, -1, null, null);
         }
@@ -160,7 +161,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
 
             String nameExpression = StringUtils.repeat("a", 1000);
 
-            final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
+            final ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user,
                     "Samples", null, props, Collections.emptyList(),
                     -1, -1, -1, -1, nameExpression, null);
         }
@@ -182,7 +183,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
             props.add(new GWTPropertyDescriptor("notName", "string"));
             props.add(new GWTPropertyDescriptor("age", "int"));
 
-            final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
+            final ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user,
                     "Samples", null, props, Collections.emptyList(),
                     -1, -1, -1, -1, null, null);
             fail("Expected exception");
@@ -203,7 +204,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
         props.add(new GWTPropertyDescriptor("name", "string"));
         props.add(new GWTPropertyDescriptor("age", "int"));
 
-        final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
+        final ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user,
                 "Samples", null, props, Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
 
@@ -238,7 +239,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
 
         final String nameExpression = "S-${prop}.${age}";
 
-        final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
+        final ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user,
                 "Samples", null, props, Collections.emptyList(),
                 -1, -1, -1, -1, nameExpression, null);
     }
@@ -253,7 +254,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
         props.add(new GWTPropertyDescriptor("prop", "string"));
         props.add(new GWTPropertyDescriptor("age", "int"));
 
-        final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
+        final ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user,
                 "Samples", null, props, Collections.emptyList(),
                 0, 1, -1, -1, null, null);
 
@@ -293,7 +294,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
             props.add(new GWTPropertyDescriptor("name", "string"));
             props.add(new GWTPropertyDescriptor("age", "int"));
 
-            final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
+            final ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user,
                     "Samples", null, props, Collections.emptyList(),
                     1, -1, -1, -1, null, null);
             fail("Expected exception");
@@ -315,7 +316,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
         props.add(new GWTPropertyDescriptor("prop", "string"));
         props.add(new GWTPropertyDescriptor("age", "int"));
 
-        final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
+        final ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user,
                 "Samples", null, props, Collections.emptyList(),
                 0, -1, -1, -1, null, null);
 
@@ -359,7 +360,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
             props.add(new GWTPropertyDescriptor("name", "string"));
             props.add(new GWTPropertyDescriptor("age", "int"));
 
-            final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
+            final ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user,
                     "Samples", null, props, Collections.emptyList(),
                     1, -1, -1, -1, "S-${name}.${age}", null);
             fail("Expected exception");
@@ -383,7 +384,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
 
         final String nameExpression = "S-${prop}.${age}.${genId:number('000')}";
 
-        final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
+        final ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user,
                 "Samples", null, props, Collections.emptyList(),
                 -1, -1, -1, -1, nameExpression, null);
 
@@ -433,7 +434,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
         props.add(new GWTPropertyDescriptor("name", "string"));
         props.add(new GWTPropertyDescriptor("age", "int"));
 
-        final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
+        final ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user,
                 "Samples", null, props, Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
 
@@ -835,7 +836,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
         Domain mockDomain = createVocabularyTestDomain(user, c);
         Map<String, String> vocabularyPropertyURIs = getVocabularyPropertyURIS(mockDomain);
 
-        //create sample set
+        //create sample type
         ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
                 sampleName, null, List.of(new GWTPropertyDescriptor("name", "string")), Collections.emptyList(),
                 -1, -1, -1, -1, null, null);

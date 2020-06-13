@@ -40,7 +40,7 @@ import java.util.Map;
 
 public interface SampleSetService
 {
-    String NEW_SAMPLE_SET_ALIAS_VALUE = "{{this_sample_set}}";
+    String NEW_SAMPLE_TYPE_ALIAS_VALUE = "{{this_sample_set}}";
     String MATERIAL_INPUTS_PREFIX = "materialInputs/";
     String MODULE_NAME = "Experiment";
 
@@ -89,7 +89,7 @@ public interface SampleSetService
     ExpSampleSet getSampleSet(String lsid);
 
     /**
-     * @param includeOtherContainers whether sample sets from the shared container or the container's project should be included
+     * @param includeOtherContainers whether sample types from the shared container or the container's project should be included
      */
     List<? extends ExpSampleSet> getSampleSets(@NotNull Container container, @Nullable User user, boolean includeOtherContainers);
 

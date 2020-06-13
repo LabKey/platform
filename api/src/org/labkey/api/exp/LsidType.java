@@ -28,6 +28,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
@@ -125,7 +126,7 @@ public enum LsidType
                 @Override
                 public ExpSampleSet getObject(Lsid lsid)
                 {
-                    return ExperimentService.get().getSampleSet(lsid.toString());
+                    return SampleSetService.get().getSampleSet(lsid.toString());
                 }
             },
 

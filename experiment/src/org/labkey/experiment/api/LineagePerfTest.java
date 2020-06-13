@@ -39,6 +39,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DuplicateKeyException;
@@ -396,7 +397,7 @@ public class LineagePerfTest extends Assert
             props = new ArrayList<>();
             props.add(new GWTPropertyDescriptor("name", "string"));
             props.add(new GWTPropertyDescriptor("age", "int"));
-            ss = ExperimentService.get().createSampleSet(_container, _user, "MySamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null, null);
+            ss = SampleSetService.get().createSampleSet(_container, _user, "MySamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null, null);
             TableInfo ssTable = QueryService.get().getUserSchema(_user, _container, "samples").getTable("MySamples");
             errors = new BatchValidationException();
             ssTable.getUpdateService().insertRows(_user, _container, samples, errors, null, null);
@@ -414,7 +415,7 @@ public class LineagePerfTest extends Assert
 
     private Pair<ExpSampleSet, ExpData> reuseExistingJunk()
     {
-        ExpSampleSet ss = ExperimentService.get().getSampleSet(_container, "MySamples");
+        ExpSampleSet ss = SampleSetService.get().getSampleSet(_container, "MySamples");
         if (ss == null)
             return null;
 

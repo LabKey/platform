@@ -101,12 +101,10 @@ import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.FolderXarWriterFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -121,7 +119,7 @@ import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
  */
 public class ExperimentModule extends SpringModule implements SearchService.DocumentProvider
 {
-    private static final String SAMPLE_SET_WEB_PART_NAME = "Sample Sets";
+    private static final String SAMPLE_TYPE_WEB_PART_NAME = "Sample Types";
     private static final String PROTOCOL_WEB_PART_NAME = "Protocols";
 
     public static final String EXPERIMENT_RUN_WEB_PART_NAME = "Experiment Runs";
@@ -231,7 +229,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         result.add(runTypesFactory);
 
         result.add(new ExperimentRunWebPartFactory());
-        BaseWebPartFactory sampleSetFactory = new BaseWebPartFactory(SAMPLE_SET_WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
+        BaseWebPartFactory sampleSetFactory = new BaseWebPartFactory(SAMPLE_TYPE_WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
         {
             @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
@@ -239,7 +237,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 return new SampleSetWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx);
             }
         };
-        sampleSetFactory.addLegacyNames("Narrow Sample Sets");
+        sampleSetFactory.addLegacyNames("Narrow Sample Sets", "Sample Sets");
         result.add(sampleSetFactory);
         result.add(new AlwaysAvailableWebPartFactory("Samples Menu", false, false, WebPartFactory.LOCATION_MENUBAR) {
             @Override
@@ -506,7 +504,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         int sampleSetCount = SampleSetService.get().getSampleSets(c, null, false).size();
         if (sampleSetCount > 0)
-            list.add(sampleSetCount + " Sample Set" + (sampleSetCount > 1 ? "s" : ""));
+            list.add(sampleSetCount + " Sample Type" + (sampleSetCount > 1 ? "s" : ""));
 
         return list;
     }

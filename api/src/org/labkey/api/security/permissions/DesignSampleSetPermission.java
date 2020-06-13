@@ -19,6 +19,6 @@ public class DesignSampleSetPermission extends AbstractPermission
 {
     public DesignSampleSetPermission()
     {
-        super("Design Sample Sets", "Can create and design new samples sets or change existing ones.");
+        super("Design Sample Types", "Can create and design new samples sets or change existing ones.");
     }
 }

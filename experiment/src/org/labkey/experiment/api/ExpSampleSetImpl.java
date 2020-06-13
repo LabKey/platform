@@ -59,7 +59,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.SimpleDocumentResource;
@@ -589,7 +588,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public void index(SearchService.IndexTask task)
     {
-        // Big hack to prevent study specimens from being indexed as part of sample sets
+        // Big hack to prevent study specimens from being indexed as part of sample types
         // Check needed on restart, as all documents are enumerated.
         if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()))
         {
@@ -629,11 +628,10 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         identifiersHi.add(getName());
 
         props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
-        props.put(SearchService.PROPERTY.title.toString(), "Sample Set - " + getName());
+        props.put(SearchService.PROPERTY.title.toString(), "Sample Type - " + getName());
         props.put(SearchService.PROPERTY.summary.toString(), getDescription());
 
-        //TODO: Remove 'Set' after completion of naming convention change https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=39257
-        props.put(SearchService.PROPERTY.keywordsLo.toString(), "Sample Set Type");      // Treat the words "Sample Set" as a low priority keyword
+        props.put(SearchService.PROPERTY.keywordsLo.toString(), "Sample Type");      // Treat the words "Sample Type" as a low priority keyword
         props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
 
         String body = StringUtils.isNotBlank(getDescription()) ? getDescription() : "";

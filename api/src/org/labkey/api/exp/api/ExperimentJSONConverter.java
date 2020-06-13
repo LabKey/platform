@@ -92,7 +92,7 @@ public class ExperimentJSONConverter
     public static final String STEPS = "steps";
 
     // Material properties
-    public static final String SAMPLE_SET = "sampleSet";
+    public static final String SAMPLE_TYPE = "sampleSet";
 
     // Data properties
     public static final String DATA_CLASS = "dataClass";
@@ -715,7 +715,7 @@ public class ExperimentJSONConverter
             if (settings.isIncludeProperties())
             {
                 JSONObject sampleSetJson = serializeExpObject(sampleSet, null, settings.withIncludeProperties(false));
-                jsonObject.put(SAMPLE_SET, sampleSetJson);
+                jsonObject.put(SAMPLE_TYPE, sampleSetJson);
             }
         }
 

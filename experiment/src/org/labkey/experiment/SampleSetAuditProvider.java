@@ -71,13 +71,13 @@ public class SampleSetAuditProvider extends AbstractAuditTypeProvider implements
     @Override
     public String getLabel()
     {
-        return "Sample Set events";
+        return "Sample Type events";
     }
 
     @Override
     public String getDescription()
     {
-        return "Summarizes events from sample set inserts or updates";
+        return "Summarizes events from sample type inserts or updates";
     }
 
     @Override

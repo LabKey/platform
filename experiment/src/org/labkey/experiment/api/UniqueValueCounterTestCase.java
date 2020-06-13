@@ -25,6 +25,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryDefinition;
@@ -103,7 +104,7 @@ public class UniqueValueCounterTestCase
 
         final String nameExpression = "${vessel}.${one}.${three}.${suffix}";
 
-        final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
+        final ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user,
                 sampSetName, null, props, emptyList(),
                 -1, -1, -1, -1, nameExpression, null);
 

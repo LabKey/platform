@@ -53,6 +53,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -547,7 +548,7 @@ public class XarExporter
             return;
         }
         _sampleSetLSIDs.add(cpasType);
-        ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(cpasType);
+        ExpSampleSet sampleSet = SampleSetService.get().getSampleSet(cpasType);
         addSampleSet(sampleSet);
     }
 

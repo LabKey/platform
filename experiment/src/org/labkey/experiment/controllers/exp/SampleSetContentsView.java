@@ -29,13 +29,13 @@ import java.util.List;
 
 public class SampleSetContentsView extends QueryView
 {
-    private ExpSampleSetImpl _source;
+    private final ExpSampleSetImpl _source;
 
     public SampleSetContentsView(ExpSampleSetImpl source, SamplesSchema schema, QuerySettings settings, Errors errors)
     {
         super(schema, settings, errors);
         _source = source;
-        setTitle("Sample Set Contents");
+        setTitle("Sample Type Contents");
         addClientDependency(ClientDependency.fromPath("Ext4"));
         addClientDependency(ClientDependency.fromPath("experiment/confirmDelete.js"));
     }

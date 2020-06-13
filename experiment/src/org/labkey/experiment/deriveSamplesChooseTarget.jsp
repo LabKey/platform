@@ -30,7 +30,7 @@
     ExperimentController.DeriveSamplesChooseTargetBean bean = me.getModelBean();
 
     Map<Integer, String> sampleSetOptions = new LinkedHashMap<>();
-    sampleSetOptions.put(0, "Not a member of a sample set");
+    sampleSetOptions.put(0, "Not a member of a sample type");
     for (ExpSampleSet ss : bean.getSampleSets())
     {
         sampleSetOptions.put(ss.getRowId(), ss.getName() + " in " + ss.getContainer().getPath());
@@ -85,7 +85,7 @@
             </td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Target sample set:</td>
+            <td class="labkey-form-label">Target sample type:</td>
             <td colspan="2">
                 <labkey:select name="targetSampleSetId">
                     <labkey:options value="<%=bean.getTargetSampleSetId()%>" map="<%=sampleSetOptions%>"/>

@@ -76,7 +76,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
                     ExperimentServiceImpl.get().getTinfoMaterial() +
                     " m WHERE m.CpasType = " + ExprColumn.STR_TABLE_ALIAS + ".LSID)");
                 ExprColumn sampleCountColumnInfo = new ExprColumn(this, "SampleCount", sql, JdbcType.INTEGER);
-                sampleCountColumnInfo.setDescription("Contains the number of samples currently stored in this sample set");
+                sampleCountColumnInfo.setDescription("Contains the number of samples currently stored in this sample type");
                 return sampleCountColumnInfo;
             }
             case Properties:

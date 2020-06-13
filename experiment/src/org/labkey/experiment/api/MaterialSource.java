@@ -26,7 +26,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 /**
- * Bean class for the exp.materialsource table. Referred to as sample sets within the UI.
+ * Bean class for the exp.materialsource table. Referred to as sample types within the UI.
  * User: migra
  * Date: Aug 15, 2005
  */

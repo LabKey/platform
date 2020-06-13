@@ -315,12 +315,12 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
                 Integer rowId = getMaterialRowId(k);
                 Map<String, Object> map = getMaterialMap(rowId, getMaterialLsid(k));
                 if (map == null)
-                    throw new QueryUpdateServiceException("No Sample Set Material found for rowId or LSID");
+                    throw new QueryUpdateServiceException("No Sample Type Material found for rowId or LSID");
 
                 if (rowId == null)
                     rowId = getMaterialRowId(map);
                 if (rowId == null)
-                    throw new QueryUpdateServiceException("RowID is required to delete a Sample Set Material");
+                    throw new QueryUpdateServiceException("RowID is required to delete a Sample Type Material");
 
                 ids.add(rowId);
                 result.add(map);
@@ -371,7 +371,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         else if (lsid != null)
             filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID), lsid);
         else
-            throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Set Material.");
+            throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Type Material.");
 
         return new TableSelector(getQueryTable(), filter, null).getMap();
     }

@@ -38,7 +38,7 @@ public class SampleSetDisplayColumn extends SimpleDisplayColumn
     public SampleSetDisplayColumn(ExpMaterial material)
     {
         _material = material;
-        setCaption("Sample Set");
+        setCaption("Sample Type");
     }
 
     @Override
@@ -48,7 +48,7 @@ public class SampleSetDisplayColumn extends SimpleDisplayColumn
 
         if (ss == null)
         {
-            out.write("Not a member of a sample set");
+            out.write("Not a member of a sample type");
         }
         else
         {

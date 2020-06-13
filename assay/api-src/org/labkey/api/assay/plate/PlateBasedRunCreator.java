@@ -27,6 +27,7 @@ import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.ParticipantVisit;
@@ -207,10 +208,10 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
                 Map<DomainProperty, String> properties = materialProperties.get(key);
 
                 String domainURI = AbstractAssayProvider.getDomainURIForPrefix(context.getProtocol(), AbstractPlateBasedAssayProvider.ASSAY_DOMAIN_SAMPLE_WELLGROUP);
-                ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(domainURI);
+                ExpSampleSet sampleSet = SampleSetService.get().getSampleSet(domainURI);
                 if (sampleSet == null)
                 {
-                    sampleSet = ExperimentService.get().createSampleSet();
+                    sampleSet = SampleSetService.get().createSampleSet();
                     sampleSet.setContainer(context.getProtocol().getContainer());
                     sampleSet.setName("Input Samples: " + context.getProtocol().getName());
                     sampleSet.setLSID(domainURI);

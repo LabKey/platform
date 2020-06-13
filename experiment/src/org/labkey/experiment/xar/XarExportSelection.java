@@ -21,6 +21,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.experiment.ArchiveURLRewriter;
 import org.labkey.experiment.URLRewriter;
 import org.labkey.experiment.XarExporter;
@@ -126,7 +127,7 @@ public class XarExportSelection implements Serializable
 
         for (int sampleSetId : _sampleSetIds)
         {
-            exporter.addSampleSet(ExperimentServiceImpl.get().getSampleSet(sampleSetId));
+            exporter.addSampleSet(SampleSetService.get().getSampleSet(sampleSetId));
         }
 
         for (int dataId : _dataIds)

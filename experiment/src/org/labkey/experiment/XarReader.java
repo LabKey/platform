@@ -60,6 +60,7 @@ import org.labkey.api.exp.api.ExpProtocolInputCriteria;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -1102,7 +1103,7 @@ public class XarReader extends AbstractXarImporter
         ExpMaterialImpl material = ExperimentServiceImpl.get().getExpMaterial(materialLSID);
         if (material == null && sampleSet != null)
         {
-            // Try resolving it by name within the sample set in case we have it under a different LSID
+            // Try resolving it by name within the sample type in case we have it under a different LSID
             material = sampleSet.getSample(context.getContainer(), xbMaterial.getName());
             if (material != null)
             {
@@ -1927,7 +1928,7 @@ public class XarReader extends AbstractXarImporter
         ExpSampleSet sampleSet = null;
         if (sampleSetName != null)
         {
-            sampleSet = ExperimentService.get().getSampleSet(getContainer(), getUser(), sampleSetName);
+            sampleSet = SampleSetService.get().getSampleSet(getContainer(), getUser(), sampleSetName);
             if (sampleSet == null)
                 logErrorAndThrow("SampleSet '" + sampleSetName + "' not found for protocol input '" + name + "'");
         }

@@ -631,7 +631,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     @Override
     @NotNull
-    public List<ExpMaterialImpl> getExpMaterials(Container container, User user, Set<String> sampleNames, @Nullable ExpSampleSet sampleSet, boolean throwIfMissing, boolean createIfMissing)
+    public List<ExpMaterialImpl> getExpMaterials(Container container, User user, Set<String> sampleNames, @Nullable ExpSampleSet sampleType, boolean throwIfMissing, boolean createIfMissing)
             throws ExperimentException
     {
         if (throwIfMissing && createIfMissing)
@@ -639,8 +639,8 @@ public class ExperimentServiceImpl implements ExperimentService
 
         SimpleFilter filter = new SimpleFilter();
         filter.addInClause(FieldKey.fromParts("Name"), sampleNames);
-        if (sampleSet != null)
-            filter.addCondition(FieldKey.fromParts("CpasType"), sampleSet.getLSID());
+        if (sampleType != null)
+            filter.addCondition(FieldKey.fromParts("CpasType"), sampleType.getLSID());
 
         // SampleSet may live in different container
         ContainerFilter.CurrentPlusProjectAndShared containerFilter = new ContainerFilter.CurrentPlusProjectAndShared(container, user);
@@ -663,13 +663,13 @@ public class ExperimentServiceImpl implements ExperimentService
                 throw new ExperimentException("No samples found for: " + StringUtils.join(missingSamples, ", "));
 
             if (createIfMissing)
-                resolvedSamples.addAll(createExpMaterials(container, user, sampleSet, missingSamples));
+                resolvedSamples.addAll(createExpMaterials(container, user, sampleType, missingSamples));
         }
 
         return resolvedSamples;
     }
 
-    // Insert new materials into the given sample set or the default (unspecified) sample set if none is provided.
+    // Insert new materials into the given sample type or the default (unspecified) sample type if none is provided.
     private List<ExpMaterialImpl> createExpMaterials(Container container, User user, @Nullable ExpSampleSet sampleSet, Set<String> sampleNames)
     {
         List<ExpMaterialImpl> materials = new ArrayList<>(sampleNames.size());
@@ -1248,7 +1248,7 @@ public class ExperimentServiceImpl implements ExperimentService
     public String generateLSID(Container container, Class<? extends ExpObject> clazz, @NotNull String name)
     {
         if (clazz == ExpSampleSet.class && name.equals(DEFAULT_MATERIAL_SOURCE_NAME) && ContainerManager.getSharedContainer().equals(container))
-            return getDefaultSampleSetLsid();
+            return SampleSetService.get().getDefaultSampleSetLsid();
         return generateLSID(container, getNamespacePrefix(clazz), name);
     }
 
@@ -7088,12 +7088,10 @@ public class ExperimentServiceImpl implements ExperimentService
             // assert no MaterialInput exp.object exist
             assertEquals(0L, countMaterialInputObjects(c));
 
-            ExperimentServiceImpl impl = ExperimentServiceImpl.get();
-
-            // create sample set
+            // create sample type
             List<GWTPropertyDescriptor> props = new ArrayList<>();
             props.add(new GWTPropertyDescriptor("name", "string"));
-            ExpSampleSet ss = impl.createSampleSet(c, user, "TestSamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null);
+            ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user, "TestSamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null);
 
             // create material
             UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
@@ -7112,7 +7110,6 @@ public class ExperimentServiceImpl implements ExperimentService
             ExpMaterial sampleIn = ss.getSample(c, "bob");
             ExpMaterial sampleOut = ss.getSample(c, "sally");
 
-
             // create run
             Map<ExpMaterial, String> inputMaterials = new HashMap<>();
             inputMaterials.put(sampleIn, "Sample Goo");
@@ -7123,6 +7120,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
             Map<ExpData, String> outputData = new HashMap<>();
 
+            ExperimentServiceImpl impl = ExperimentServiceImpl.get();
             ExpRun run = impl.derive(inputMaterials, inputData, outputMaterials, outputData, info, log);
             run.save(user);
 

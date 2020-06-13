@@ -32,6 +32,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -98,7 +99,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         props.add(new GWTPropertyDescriptor("age", "string"));
 
         // Create a SampleSet and some samples
-        final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user, "Samples", null, props, emptyList(), 0, -1, -1, -1, null, null);
+        final ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user, "Samples", null, props, emptyList(), 0, -1, -1, -1, null, null);
         final ExpMaterial s1 = ExperimentService.get().createExpMaterial(c,
                 ss.generateSampleLSID().setObjectId("S-1").toString(), "S-1");
         s1.setCpasType(ss.getLSID());
@@ -240,7 +241,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
     {
         final User user = TestContext.get().getUser();
 
-        // setup sample set
+        // setup sample type
         List<GWTPropertyDescriptor> sampleProps = new ArrayList<>();
         sampleProps.add(new GWTPropertyDescriptor("name", "string"));
         sampleProps.add(new GWTPropertyDescriptor("age", "int"));
@@ -323,7 +324,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
     {
         final User user = TestContext.get().getUser();
 
-        // setup sample set
+        // setup sample type
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("name", "string"));
         props.add(new GWTPropertyDescriptor("age", "int"));
@@ -345,7 +346,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         if (errors.hasErrors())
             throw errors;
 
-        // setup list with lookup to sample set
+        // setup list with lookup to sample type
         ListDefinition listDef = ListService.get().createList(c, "MyList", ListDefinition.KeyType.AutoIncrementInteger);
 
         Domain listDomain = listDef.getDomain();
