@@ -124,9 +124,9 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public @Nullable QueryRowReference getQueryRowReference()
     {
-        ExpSampleType ss = getSampleType();
-        if (ss != null)
-            return new QueryRowReference(getContainer(), SamplesSchema.SCHEMA_SAMPLES, ss.getName(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
+        ExpSampleType st = getSampleType();
+        if (st != null)
+            return new QueryRowReference(getContainer(), SamplesSchema.SCHEMA_SAMPLES, st.getName(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
         else
             return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
     }
@@ -179,11 +179,11 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Nullable
     public Integer getParentObjectId()
     {
-        ExpSampleType ss = getSampleType();
-        if (ss == null)
+        ExpSampleType st = getSampleType();
+        if (st == null)
             return null;
 
-        return ss.getObjectId();
+        return st.getObjectId();
     }
 
     @Override
@@ -335,11 +335,11 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             append(body, value);
         });
 
-        ExpSampleType ss = getSampleType();
-        if (null != ss)
+        ExpSampleType st = getSampleType();
+        if (null != st)
         {
-            String sampleSetName = ss.getName();
-            ActionURL show = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer()).addParameter("rowId", ss.getRowId());
+            String sampleSetName = st.getName();
+            ActionURL show = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer()).addParameter("rowId", st.getRowId());
             NavTree t = new NavTree("SampleSet - " + sampleSetName, show);
             String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
             props.put(SearchService.PROPERTY.navtrail.toString(), nav);

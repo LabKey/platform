@@ -682,7 +682,7 @@ public class ExperimentController extends SpringActionController
                     ActionURL updateURL = new ActionURL(EditSampleSetAction.class, _source.getContainer());
                     updateURL.addParameter("RowId", _source.getRowId());
                     updateURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                    ActionButton updateButton = new ActionButton(updateURL, "Edit Set", ActionButton.Action.LINK);
+                    ActionButton updateButton = new ActionButton(updateURL, "Edit Type", ActionButton.Action.LINK);
                     updateButton.setDisplayPermission(DesignSampleTypePermission.class);
                     updateButton.setPrimary(true);
                     detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
@@ -690,7 +690,7 @@ public class ExperimentController extends SpringActionController
                     ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, _source.getContainer());
                     deleteURL.addParameter("singleObjectRowId", _source.getRowId());
                     deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()).toString());
-                    ActionButton deleteButton = new ActionButton(deleteURL, "Delete Set", ActionButton.Action.LINK);
+                    ActionButton deleteButton = new ActionButton(deleteURL, "Delete Type", ActionButton.Action.LINK);
                     deleteButton.setDisplayPermission(DesignSampleTypePermission.class);
                     detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(deleteButton);
                 }
@@ -909,18 +909,18 @@ public class ExperimentController extends SpringActionController
             }
 
             StringBuilder updateLinks = new StringBuilder();
-            ExpSampleType ss = _material.getSampleType();
-            if (ss != null && ss.getContainer() != null && ss.getContainer().hasPermission(getUser(), UpdatePermission.class))
+            ExpSampleType st = _material.getSampleType();
+            if (st != null && st.getContainer() != null && st.getContainer().hasPermission(getUser(), UpdatePermission.class))
             {
                 // XXX: ridiculous amount of work to get a update url expression for the sample type's table.
-                UserSchema samplesSchema = QueryService.get().getUserSchema(getUser(), ss.getContainer(), "Samples");
-                QueryDefinition queryDef = samplesSchema.getQueryDefForTable(ss.getName());
+                UserSchema samplesSchema = QueryService.get().getUserSchema(getUser(), st.getContainer(), "Samples");
+                QueryDefinition queryDef = samplesSchema.getQueryDefForTable(st.getName());
                 StringExpression expr = queryDef.urlExpr(QueryAction.updateQueryRow, null);
                 if (expr != null)
                 {
                     // Since we're building a detailsURL outside the context of a "row" need to set the correct
                     // container context on the generated expr.
-                    ((DetailsURL) expr).setContainerContext(ss.getContainer());
+                    ((DetailsURL) expr).setContainerContext(st.getContainer());
                     String url = expr.eval(Collections.singletonMap(new FieldKey(null, "RowId"), _material.getRowId()));
                     updateLinks.append(PageFlowUtil.link("edit").href(url)).append(" ");
                 }
@@ -930,8 +930,8 @@ public class ExperimentController extends SpringActionController
             {
                 ActionURL deriveURL = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
                 deriveURL.addParameter("rowIds", _material.getRowId());
-                if (ss != null)
-                    deriveURL.addParameter("targetSampleSetId", ss.getRowId());
+                if (st != null)
+                    deriveURL.addParameter("targetSampleSetId", st.getRowId());
 
                 updateLinks.append(PageFlowUtil.link("derive samples from this sample").href(deriveURL)).append(" ");
             }
@@ -4950,8 +4950,8 @@ public class ExperimentController extends SpringActionController
                 String inputRole = form.determineLabel(i);
                 if (inputRole == null || "".equals(inputRole))
                 {
-                    ExpSampleType ss = m.getSampleType();
-                    inputRole = ss != null ? ss.getName() : ExpMaterialRunInput.DEFAULT_ROLE;
+                    ExpSampleType st = m.getSampleType();
+                    inputRole = st != null ? st.getName() : ExpMaterialRunInput.DEFAULT_ROLE;
                 }
                 inputMaterials.put(materials.get(i), inputRole);
             }
@@ -5248,8 +5248,8 @@ public class ExperimentController extends SpringActionController
                         continue;
                     }
 
-                    ExpSampleType ss = m.getSampleType();
-                    if (ss == null)
+                    ExpSampleType st = m.getSampleType();
+                    if (st == null)
                     {
                         errors.reject(ERROR_MSG, "Material input is not a member of a SampleType");
                         continue;
@@ -5258,7 +5258,7 @@ public class ExperimentController extends SpringActionController
                     String role = in.role;
                     if (role == null || "".equals(role))
                     {
-                        role = ss.getName();
+                        role = st.getName();
                     }
                     materialInputs.put(m, role);
                 }

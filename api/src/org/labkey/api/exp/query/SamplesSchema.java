@@ -57,9 +57,9 @@ public class SamplesSchema extends AbstractExpSchema
     {
         Map<String, ExpSampleType> map = new CaseInsensitiveTreeMap<>();
         // User can be null if we're running in a background thread, such as doing a study export
-        for (ExpSampleType ss : SampleTypeService.get().getSampleTypes(container, user, user != null))
+        for (ExpSampleType st : SampleTypeService.get().getSampleTypes(container, user, user != null))
         {
-            map.put(ss.getName(), ss);
+            map.put(st.getName(), st);
         }
         return map;
     }
@@ -124,10 +124,10 @@ public class SamplesSchema extends AbstractExpSchema
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
-        ExpSampleType ss = getSampleSets().get(name);
-        if (ss == null)
+        ExpSampleType st = getSampleSets().get(name);
+        if (st == null)
             return null;
-        return getSampleTable(ss, cf);
+        return getSampleTable(st, cf);
     }
 
     @Override
@@ -143,14 +143,14 @@ public class SamplesSchema extends AbstractExpSchema
     }
 
     /** Creates a table of materials, scoped to the given sample type and including its custom columns, if provided */
-    public ExpMaterialTable getSampleTable(ExpSampleType ss, ContainerFilter cf)
+    public ExpMaterialTable getSampleTable(ExpSampleType st, ContainerFilter cf)
     {
         if (log.isTraceEnabled())
         {
-            log.trace("CREATE TABLE: " + (null==ss ? "null" : ss.getName()) + " schema=" + System.identityHashCode(this), new Throwable());
+            log.trace("CREATE TABLE: " + (null==st ? "null" : st.getName()) + " schema=" + System.identityHashCode(this), new Throwable());
         }
         ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), this, cf);
-        ret.populate(ss, true);
+        ret.populate(st, true);
         ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
         return ret;
     }
@@ -158,10 +158,10 @@ public class SamplesSchema extends AbstractExpSchema
     /**
      * @param domainProperty the property on which the lookup is configured
      */
-    public ForeignKey materialIdForeignKey(@Nullable final ExpSampleType ss, @Nullable DomainProperty domainProperty)
+    public ForeignKey materialIdForeignKey(@Nullable final ExpSampleType st, @Nullable DomainProperty domainProperty)
     {
-        final String tableName =  null == ss ? ExpSchema.TableType.Materials.toString() : ss.getName();
-        final String schemaName = null == ss ? ExpSchema.SCHEMA_NAME : SamplesSchema.SCHEMA_NAME;
+        final String tableName =  null == st ? ExpSchema.TableType.Materials.toString() : st.getName();
+        final String schemaName = null == st ? ExpSchema.SCHEMA_NAME : SamplesSchema.SCHEMA_NAME;
 
         return new LookupForeignKey(null, null, schemaName, tableName, "RowId", null)
         {
@@ -169,14 +169,14 @@ public class SamplesSchema extends AbstractExpSchema
             public @Nullable TableInfo getLookupTableInfo()
             {
                 ContainerFilter cf = getLookupContainerFilter();
-                String cacheKey = SamplesSchema.class.getName() + "/" + schemaName + "/" + tableName + "/" + (null==ss ? "" : ss.getMaterialLSIDPrefix()) + "/" + (null==domainProperty ? "" : domainProperty.getPropertyURI()) + cf.getCacheKey();
+                String cacheKey = SamplesSchema.class.getName() + "/" + schemaName + "/" + tableName + "/" + (null==st ? "" : st.getMaterialLSIDPrefix()) + "/" + (null==domainProperty ? "" : domainProperty.getPropertyURI()) + cf.getCacheKey();
                 return SamplesSchema.this.getCachedLookupTableInfo(cacheKey, this::createLookupTableInfo);
             }
 
             private TableInfo createLookupTableInfo()
             {
                 ExpMaterialTable ret = ExperimentService.get().createMaterialTable(tableName, SamplesSchema.this, null);
-                ret.populate(ss, true);
+                ret.populate(st, true);
                 ret.setContainerFilter(getLookupContainerFilter());
                 ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
                 if (domainProperty != null && domainProperty.getPropertyType().getJdbcType().isText())
@@ -191,7 +191,7 @@ public class SamplesSchema extends AbstractExpSchema
             @Override
             protected ContainerFilter getLookupContainerFilter()
             {
-                return new ContainerFilter.SimpleContainerFilter(ExpSchema.getSearchContainers(getContainer(), ss, domainProperty, getUser()));
+                return new ContainerFilter.SimpleContainerFilter(ExpSchema.getSearchContainers(getContainer(), st, domainProperty, getUser()));
             }
 
             @Override
@@ -206,10 +206,10 @@ public class SamplesSchema extends AbstractExpSchema
     public String getDomainURI(String queryName)
     {
         Container container = getContainer();
-        ExpSampleType ss = getSampleSets().get(queryName);
-        if (ss == null)
+        ExpSampleType st = getSampleSets().get(queryName);
+        if (st == null)
             throw new NotFoundException("Sample type '" + queryName + "' not found in this container '" + container.getPath() + "'.");
 
-        return ss.getDomain().getTypeURI();
+        return st.getDomain().getTypeURI();
     }
 }

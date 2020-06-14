@@ -319,7 +319,7 @@ public class LineagePerfTest extends Assert
         Pair<ExpSampleType, ExpData> pair = reuseExistingJunk();
         if (pair == null)
             pair = generateJunk(generateRowsTimer, insertDataTimer, insertSamplesTimer);
-        ExpSampleType ss = pair.first;
+        ExpSampleType st = pair.first;
         ExpData firstData = pair.second;
 
 
@@ -333,7 +333,7 @@ public class LineagePerfTest extends Assert
 
         LOG.info("TEST querying with exp.edge lineage: ");
         ExperimentalFeatureService.get().setFeatureEnabled(ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE, false, _user);
-        lineageQueries("NEW", newLineageQuery, newLineageGraph, newInsertMoreTimer, ss, firstData);
+        lineageQueries("NEW", newLineageQuery, newLineageGraph, newInsertMoreTimer, st, firstData);
 
         elapsedTimer.stop();
 
@@ -355,7 +355,7 @@ public class LineagePerfTest extends Assert
     public Pair<ExpSampleType, ExpData> generateJunk(CPUTimer generateRowsTimer, CPUTimer insertDataTimer, CPUTimer insertSamplesTimer)
             throws ExperimentException, SQLException, DuplicateKeyException, BatchValidationException, QueryUpdateServiceException
     {
-        ExpSampleType ss;
+        ExpSampleType st;
         ExpData firstData;
 
         // Create a DataClass and SampleSet and insert into MyData first, then MySamples
@@ -397,7 +397,7 @@ public class LineagePerfTest extends Assert
             props = new ArrayList<>();
             props.add(new GWTPropertyDescriptor("name", "string"));
             props.add(new GWTPropertyDescriptor("age", "int"));
-            ss = SampleTypeService.get().createSampleType(_container, _user, "MySamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null, null);
+            st = SampleTypeService.get().createSampleType(_container, _user, "MySamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null, null);
             TableInfo ssTable = QueryService.get().getUserSchema(_user, _container, "samples").getTable("MySamples");
             errors = new BatchValidationException();
             ssTable.getUpdateService().insertRows(_user, _container, samples, errors, null, null);
@@ -410,13 +410,13 @@ public class LineagePerfTest extends Assert
             LOG.info("committed tx");
         }
 
-        return Pair.of(ss, firstData);
+        return Pair.of(st, firstData);
     }
 
     private Pair<ExpSampleType, ExpData> reuseExistingJunk()
     {
-        ExpSampleType ss = SampleTypeService.get().getSampleType(_container, "MySamples");
-        if (ss == null)
+        ExpSampleType st = SampleTypeService.get().getSampleType(_container, "MySamples");
+        if (st == null)
             return null;
 
         ExpDataClass dc = ExperimentService.get().getDataClass(_container, "MyData");
@@ -434,10 +434,10 @@ public class LineagePerfTest extends Assert
             return null;
 
         LOG.info("found existing data and samples to use; skipping generation of new data");
-        return Pair.of(ss, data);
+        return Pair.of(st, data);
     }
 
-    private void lineageQueries(String prefix, CPUTimer lineageQuery, CPUTimer lineageGraph, CPUTimer insertMoreTimer, ExpSampleType ss, ExpData firstData) throws ExperimentException
+    private void lineageQueries(String prefix, CPUTimer lineageQuery, CPUTimer lineageGraph, CPUTimer insertMoreTimer, ExpSampleType st, ExpData firstData) throws ExperimentException
     {
         // parse the query once
         final StringBuilder sql = new StringBuilder()
@@ -464,9 +464,9 @@ public class LineagePerfTest extends Assert
             LOG.info("  creating sample");
             insertMoreTimer.start();
             String name = prefix + "-" + maxMaterialId + 1 + i;
-            Lsid lsid = ss.generateSampleLSID().setObjectId(name).build();
+            Lsid lsid = st.generateSampleLSID().setObjectId(name).build();
             ExpMaterial sample = ExperimentService.get().createExpMaterial(_container, lsid);
-            sample.setCpasType(ss.getLSID());
+            sample.setCpasType(st.getLSID());
             sample.save(_user);
 
             // derive from the first MyData

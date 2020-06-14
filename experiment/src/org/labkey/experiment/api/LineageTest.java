@@ -99,15 +99,15 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         props.add(new GWTPropertyDescriptor("age", "string"));
 
         // Create a SampleSet and some samples
-        final ExpSampleType ss = SampleTypeService.get().createSampleType(c, user, "Samples", null, props, emptyList(), 0, -1, -1, -1, null, null);
+        final ExpSampleType st = SampleTypeService.get().createSampleType(c, user, "Samples", null, props, emptyList(), 0, -1, -1, -1, null, null);
         final ExpMaterial s1 = ExperimentService.get().createExpMaterial(c,
-                ss.generateSampleLSID().setObjectId("S-1").toString(), "S-1");
-        s1.setCpasType(ss.getLSID());
+                st.generateSampleLSID().setObjectId("S-1").toString(), "S-1");
+        s1.setCpasType(st.getLSID());
         s1.save(user);
 
         final ExpMaterial s2 = ExperimentService.get().createExpMaterial(c,
-                ss.generateSampleLSID().setObjectId("S-2").toString(), "S-2");
-        s2.setCpasType(ss.getLSID());
+                st.generateSampleLSID().setObjectId("S-2").toString(), "S-2");
+        s2.setCpasType(st.getLSID());
         s2.save(user);
 
         // Create two DataClasses

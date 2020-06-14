@@ -143,20 +143,20 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
 
     @Nullable
     @Override
-    public ExpSampleType getSampleSet()
+    public ExpSampleType getSampleType()
     {
-        Integer sampleSetRowId = _object.getMaterialSourceId();
-        if (sampleSetRowId != null)
-            return SampleTypeService.get().getSampleType(sampleSetRowId);
+        Integer sampleTypeRowId = _object.getMaterialSourceId();
+        if (sampleTypeRowId != null)
+            return SampleTypeService.get().getSampleType(sampleTypeRowId);
 
         return null;
     }
 
     @Override
-    public void setSampleSet(Integer sampleSet)
+    public void setSampleType(Integer sampleType)
     {
         ensureUnlocked();
-        _object.setMaterialSourceId(sampleSet);
+        _object.setMaterialSourceId(sampleType);
     }
 
     @Override

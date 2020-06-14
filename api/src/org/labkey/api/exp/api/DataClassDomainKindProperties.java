@@ -11,7 +11,7 @@ public class DataClassDomainKindProperties
     private String name;
     private String description;
     private String nameExpression;
-    private Integer sampleSet;
+    private Integer sampleType;
     private String category;
 
     public DataClassDomainKindProperties()
@@ -32,8 +32,8 @@ public class DataClassDomainKindProperties
         if (this.description == null && dc.getDomain() != null)
             this.description = dc.getDomain().getDescription();
 
-        if (dc.getSampleSet() != null)
-            this.sampleSet = dc.getSampleSet().getRowId();
+        if (dc.getSampleType() != null)
+            this.sampleType = dc.getSampleType().getRowId();
 
         if (dc.getDomain() != null)
             this.domainId = dc.getDomain().getTypeId();
@@ -89,14 +89,14 @@ public class DataClassDomainKindProperties
         this.nameExpression = nameExpression;
     }
 
-    public Integer getSampleSet()
+    public Integer getSampleType()
     {
-        return sampleSet;
+        return sampleType;
     }
 
-    public void setSampleSet(Integer sampleSet)
+    public void setSampleType(Integer sampleType)
     {
-        this.sampleSet = sampleSet;
+        this.sampleType = sampleType;
     }
 
     public String getCategory()

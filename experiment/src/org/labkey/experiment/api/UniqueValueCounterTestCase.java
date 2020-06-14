@@ -103,7 +103,7 @@ public class UniqueValueCounterTestCase
 
         final String nameExpression = "${vessel}.${one}.${three}.${suffix}";
 
-        final ExpSampleType ss = SampleTypeService.get().createSampleType(c, user,
+        final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
                 sampSetName, null, props, emptyList(),
                 -1, -1, -1, -1, nameExpression, null);
 

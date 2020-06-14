@@ -128,7 +128,7 @@ public class ExperimentStressTest
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("name", "string"));
         props.add(new GWTPropertyDescriptor("age", "int"));
-        ExpSampleType ss = SampleTypeService.get().createSampleType(c, user, sampleSetName, null, props, Collections.emptyList(), -1, -1, -1, -1, "S-${genId}", null);
+        ExpSampleType st = SampleTypeService.get().createSampleType(c, user, sampleSetName, null, props, Collections.emptyList(), -1, -1, -1, -1, "S-${genId}", null);
 
         // seed samples
         final int rowsToInsert = 50;

@@ -203,15 +203,15 @@ public class ParentChildView extends VBox
             }
         }
 
-        final ExpSampleType ss;
+        final ExpSampleType st;
         if (sameType && typeName != null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(typeName) && !"Sample".equals(typeName))
-            ss = SampleTypeService.get().getSampleType(typeName);
+            st = SampleTypeService.get().getSampleType(typeName);
         else
-            ss = null;
+            st = null;
 
         QuerySettings settings;
         UserSchema schema;
-        if (ss == null)
+        if (st == null)
         {
             schema = new ExpSchema(getUser(), getContainer());
             settings = schema.getSettings(getViewContext(), dataRegionName, ExpSchema.TableType.Materials.toString());
@@ -219,7 +219,7 @@ public class ParentChildView extends VBox
         else
         {
             schema = new SamplesSchema(getUser(), getContainer());
-            settings = schema.getSettings(getViewContext(), dataRegionName, ss.getName());
+            settings = schema.getSettings(getViewContext(), dataRegionName, st.getName());
         }
 
         QueryView queryView = new QueryView(schema, settings, null)
@@ -230,10 +230,10 @@ public class ParentChildView extends VBox
                 // Use ContainerFilter.EVERYTHING - We've already set an IN clause that restricts us to showing just data that we have permission to view
                 ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), getSchema(), ContainerFilter.EVERYTHING);
                 table.setMaterials(materials);
-                table.populate(ss, false);
+                table.populate(st, false);
 
                 List<FieldKey> defaultVisibleColumns = new ArrayList<>();
-                if (ss == null)
+                if (st == null)
                 {
                     // The table columns without any of the active SampleSet property columns
                     defaultVisibleColumns.add(FieldKey.fromParts(ExpMaterialTable.Column.Name));

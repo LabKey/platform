@@ -1178,8 +1178,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     String role = entry.getValue();
                     if (role == null)
                     {
-                        ExpSampleType ss = newInput.getSampleType();
-                        role = ss != null ? ss.getName() : "Sample";
+                        ExpSampleType st = newInput.getSampleType();
+                        role = st != null ? st.getName() : "Sample";
                     }
                     protApp.addMaterialInput(user, newInput, role);
                 }

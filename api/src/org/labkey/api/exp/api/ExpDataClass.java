@@ -45,11 +45,11 @@ public interface ExpDataClass extends ExpObject
 
     ExpData getData(Container c, String name);
 
-    /** Get the SampleSet related to this ExpDataClass. */
+    /** Get the SampleType related to this ExpDataClass. */
     @Nullable
-    ExpSampleType getSampleSet();
+    ExpSampleType getSampleType();
 
-    void setSampleSet(Integer sampleSet);
+    void setSampleType(Integer sampleType);
 
     Domain getDomain();
 

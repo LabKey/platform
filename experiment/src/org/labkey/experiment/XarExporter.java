@@ -991,9 +991,9 @@ public class XarExporter
         Lsid lsid = Lsid.parse(pi.getLSID());
         xMpi.setGuid(lsid.getObjectId());
 
-        ExpSampleType ss = pi.getType();
-        if (ss != null)
-            xMpi.setSampleSet(ss.getName());
+        ExpSampleType st = pi.getType();
+        if (st != null)
+            xMpi.setSampleSet(st.getName());
 
         ExpProtocolInputCriteria criteria = pi.getCriteria();
         if (criteria != null)

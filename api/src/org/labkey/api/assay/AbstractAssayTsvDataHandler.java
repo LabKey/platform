@@ -779,16 +779,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
             else
             {
-                ExpSampleType ss = DefaultAssayRunCreator.getLookupSampleSet(pd, container, user);
-                if (ss != null)
+                ExpSampleType st = DefaultAssayRunCreator.getLookupSampleType(pd, container, user);
+                if (st != null)
                 {
                     if (pd.getPropertyType().getJdbcType().isText())
                     {
-                        lookupToSampleSetByName.put(pd, ss);
+                        lookupToSampleSetByName.put(pd, st);
                     }
                     else
                     {
-                        lookupToSampleSetById.put(pd, ss);
+                        lookupToSampleSetById.put(pd, st);
                     }
                 }
                 else if (DefaultAssayRunCreator.isLookupToMaterials(pd))

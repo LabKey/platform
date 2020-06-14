@@ -44,17 +44,17 @@ public class SampleTypeDisplayColumn extends SimpleDisplayColumn
     @Override
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        ExpSampleType ss = _material.getSampleType();
+        ExpSampleType st = _material.getSampleType();
 
-        if (ss == null)
+        if (st == null)
         {
             out.write("Not a member of a sample type");
         }
         else
         {
-            ActionURL url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, ss.getContainer());
-            url.addParameter("rowId", Integer.toString(ss.getRowId()));
-            out.write("<a href=\"" + url.toString() + "\">" + PageFlowUtil.filter(ss.getName()) + "</a>");
+            ActionURL url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, st.getContainer());
+            url.addParameter("rowId", Integer.toString(st.getRowId()));
+            out.write("<a href=\"" + url.toString() + "\">" + PageFlowUtil.filter(st.getName()) + "</a>");
         }
     }
 }

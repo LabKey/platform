@@ -553,16 +553,16 @@ public class ExpSchema extends AbstractExpSchema
      * @param domainProperty the property on which the lookup is configured
      */
     @NotNull
-    public ForeignKey getMaterialIdForeignKey(@Nullable ExpSampleType targetSampleSet, @Nullable DomainProperty domainProperty, ContainerFilter cfParent)
+    public ForeignKey getMaterialIdForeignKey(@Nullable ExpSampleType targetSampleType, @Nullable DomainProperty domainProperty, ContainerFilter cfParent)
     {
-        if (targetSampleSet == null)
+        if (targetSampleType == null)
         {
             return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Materials.name(), "RowId", null)
             {
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
-                    ContainerFilter cf = new ContainerFilter.SimpleContainerFilter(getSearchContainers(getContainer(), targetSampleSet, domainProperty, getUser()));
+                    ContainerFilter cf = new ContainerFilter.SimpleContainerFilter(getSearchContainers(getContainer(), targetSampleType, domainProperty, getUser()));
                     if (null != cfParent)
                         cf = new UnionContainerFilter(cf, cfParent);
                     ExpTable result = getTable(TableType.Materials, cf);
@@ -570,11 +570,11 @@ public class ExpSchema extends AbstractExpSchema
                 }
             };
         }
-        return getSamplesSchema().materialIdForeignKey(targetSampleSet, domainProperty);
+        return getSamplesSchema().materialIdForeignKey(targetSampleType, domainProperty);
     }
 
     @NotNull
-    public static Set<Container> getSearchContainers(Container currentContainer, @Nullable ExpSampleType ss, @Nullable DomainProperty dp, User user)
+    public static Set<Container> getSearchContainers(Container currentContainer, @Nullable ExpSampleType st, @Nullable DomainProperty dp, User user)
     {
         Set<Container> searchContainers = new LinkedHashSet<>();
         if (dp != null)
@@ -595,7 +595,7 @@ public class ExpSchema extends AbstractExpSchema
         {
             // Default to looking in the current container
             searchContainers.add(currentContainer);
-            if (ss == null || (ss.getContainer().isProject() && !currentContainer.isProject()))
+            if (st == null || (st.getContainer().isProject() && !currentContainer.isProject()))
             {
                 Container c = currentContainer.getParent();
                 // Recurse up the chain to the project
@@ -609,7 +609,7 @@ public class ExpSchema extends AbstractExpSchema
                 }
             }
             Container sharedContainer = ContainerManager.getSharedContainer();
-            if (ss == null || ss.getContainer().equals(sharedContainer))
+            if (st == null || st.getContainer().equals(sharedContainer))
             {
                 if (sharedContainer.hasPermission(user, ReadPermission.class))
                 {

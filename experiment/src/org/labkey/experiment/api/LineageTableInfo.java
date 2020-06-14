@@ -156,8 +156,8 @@ public class LineageTableInfo extends VirtualTable
     private ForeignKey createCpasTypeFK(String cpasType)
     {
         // TODO: check in scope and has permission
-        ExpSampleType ss = SampleTypeService.get().getSampleType(cpasType);
-        if (ss != null)
+        ExpSampleType st = SampleTypeService.get().getSampleType(cpasType);
+        if (st != null)
         {
             return new LookupForeignKey("lsid", "Name")
             {
@@ -167,10 +167,10 @@ public class LineageTableInfo extends VirtualTable
                 public TableInfo getLookupTableInfo()
                 {
                     if (null == _table)
-                        _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/Samples/" + ss.getRowId() + "/" + ss.getName(), () ->
+                        _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/Samples/" + st.getRowId() + "/" + st.getName(), () ->
                         {
                             SamplesSchema samplesSchema = new SamplesSchema(_userSchema);
-                            var ret = samplesSchema.getSampleTable(ss, null);
+                            var ret = samplesSchema.getSampleTable(st, null);
                             ret.setLocked(true);
                             return ret;
                         });

@@ -545,8 +545,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 continue;
 
             // Lookup must point at "Samples.*", "exp.materials.*", or "exp.Materials"
-            @Nullable ExpSampleType ss = getLookupSampleSet(dp, context.getContainer(), context.getUser());
-            if (ss == null && !isLookupToMaterials(dp))
+            @Nullable ExpSampleType st = getLookupSampleType(dp, context.getContainer(), context.getUser());
+            if (st == null && !isLookupToMaterials(dp))
                 continue;
 
             // Use the DomainProperty name as the role
@@ -555,14 +555,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             String value = entry.getValue();
             if (pt.getJdbcType().isText())
             {
-                addMaterialByName(context, inputMaterials, value, role, searchContainers, ss);
+                addMaterialByName(context, inputMaterials, value, role, searchContainers, st);
             }
             else if (pt.getJdbcType().isInteger())
             {
                 try
                 {
                     int sampleRowId = Integer.parseInt(value);
-                    addMaterialById(context, inputMaterials, sampleRowId, role, searchContainers, ss);
+                    addMaterialById(context, inputMaterials, sampleRowId, role, searchContainers, st);
                 }
                 catch (NumberFormatException ex)
                 {
@@ -573,9 +573,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    /** returns the lookup ExpSampleSet if the property has a lookup to samples.<SampleSetName> or exp.materials.<SampleSetName> and is an int or string. */
+    /** returns the lookup ExpSampleType if the property has a lookup to samples.<SampleSetName> or exp.materials.<SampleSetName> and is an int or string. */
     @Nullable
-    public static ExpSampleType getLookupSampleSet(@NotNull DomainProperty dp, @NotNull Container container, @NotNull User user)
+    public static ExpSampleType getLookupSampleType(@NotNull DomainProperty dp, @NotNull Container container, @NotNull User user)
     {
         Lookup lookup = dp.getLookup();
         if (lookup == null)
@@ -739,7 +739,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    protected void addMaterialByName(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> resolved, String sampleName, String role, @NotNull Set<Container> searchContainers, @Nullable ExpSampleType ss) throws ExperimentException
+    protected void addMaterialByName(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> resolved, String sampleName, String role, @NotNull Set<Container> searchContainers, @Nullable ExpSampleType st) throws ExperimentException
     {
         // First, attempt to resolve by LSID
         ExpMaterial material = ExperimentService.get().getExpMaterial(sampleName);
@@ -747,7 +747,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         if (material == null)
         {
             // Next, attempt to resolve by name
-            List<? extends ExpMaterial> matches = ExperimentService.get().getExpMaterials(context.getContainer(), context.getUser(), Collections.singleton(sampleName), ss, false, false);
+            List<? extends ExpMaterial> matches = ExperimentService.get().getExpMaterials(context.getContainer(), context.getUser(), Collections.singleton(sampleName), st, false, false);
             if (matches.size() == 0)
             {
                 Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
@@ -766,17 +766,17 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
         if (material != null && !resolved.containsKey(material) && searchContainers.contains(material.getContainer()))
         {
-            if (ss == null || ss.getLSID().equals(material.getCpasType()))
+            if (st == null || st.getLSID().equals(material.getCpasType()))
                 resolved.put(material, role);
         }
     }
 
-    protected void addMaterialById(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> resolved, Integer sampleRowId, String role, @NotNull Set<Container> searchContainers, @Nullable ExpSampleType ss)
+    protected void addMaterialById(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> resolved, Integer sampleRowId, String role, @NotNull Set<Container> searchContainers, @Nullable ExpSampleType st)
     {
         ExpMaterial material = ExperimentService.get().getExpMaterial(sampleRowId);
         if (material != null && !resolved.containsKey(material) && searchContainers.contains(material.getContainer()))
         {
-            if (ss == null || ss.getLSID().equals(material.getCpasType()))
+            if (st == null || st.getLSID().equals(material.getCpasType()))
                 resolved.put(material, role);
         }
     }

@@ -29,11 +29,11 @@
     JspView<ExperimentController.DeriveSamplesChooseTargetBean> me = (JspView<ExperimentController.DeriveSamplesChooseTargetBean>) HttpView.currentView();
     ExperimentController.DeriveSamplesChooseTargetBean bean = me.getModelBean();
 
-    Map<Integer, String> sampleSetOptions = new LinkedHashMap<>();
-    sampleSetOptions.put(0, "Not a member of a sample type");
-    for (ExpSampleType ss : bean.getSampleTypes())
+    Map<Integer, String> sampleTypeOptions = new LinkedHashMap<>();
+    sampleTypeOptions.put(0, "Not a member of a sample type");
+    for (ExpSampleType st : bean.getSampleTypes())
     {
-        sampleSetOptions.put(ss.getRowId(), ss.getName() + " in " + ss.getContainer().getPath());
+        sampleTypeOptions.put(st.getRowId(), st.getName() + " in " + st.getContainer().getPath());
     }
 %>
 
@@ -88,7 +88,7 @@
             <td class="labkey-form-label">Target sample type:</td>
             <td colspan="2">
                 <labkey:select name="targetSampleSetId">
-                    <labkey:options value="<%=bean.getTargetSampleSetId()%>" map="<%=sampleSetOptions%>"/>
+                    <labkey:options value="<%=bean.getTargetSampleSetId()%>" map="<%=sampleTypeOptions%>"/>
                 </labkey:select>
             </td>
         </tr>

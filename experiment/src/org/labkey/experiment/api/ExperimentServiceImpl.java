@@ -2751,12 +2751,12 @@ public class ExperimentServiceImpl implements ExperimentService
             OntologyObject oo = OntologyManager.getOntologyObject(null, cpasType);
             if (oo == null)
             {
-                // NOTE: We must get the SampleSet definition so that the exp.object is ensured in the correct container
-                ExpSampleType ss = SampleTypeService.get().getSampleType(cpasType);
-                if (ss != null)
+                // NOTE: We must get the SampleType definition so that the exp.object is ensured in the correct container
+                ExpSampleType st = SampleTypeService.get().getSampleType(cpasType);
+                if (st != null)
                 {
                     LOG.debug("  creating exp.object.objectId for owner cpasType '" + cpasType + "' needed by child objects");
-                    return OntologyManager.ensureObject(ss.getContainer(), cpasType, (Integer) null);
+                    return OntologyManager.ensureObject(st.getContainer(), cpasType, (Integer) null);
                 }
             }
             else
@@ -3914,7 +3914,7 @@ public class ExperimentServiceImpl implements ExperimentService
         deleteMaterialByRowIds(user, container, selectedMaterialIds, true, null);
     }
 
-    public void deleteMaterialByRowIds(User user, Container container, Collection<Integer> selectedMaterialIds, boolean deleteRunsUsingMaterials, ExpSampleType ssDeleteFrom)
+    public void deleteMaterialByRowIds(User user, Container container, Collection<Integer> selectedMaterialIds, boolean deleteRunsUsingMaterials, ExpSampleType stDeleteFrom)
     {
         if (selectedMaterialIds.isEmpty())
             return;
@@ -3935,18 +3935,18 @@ public class ExperimentServiceImpl implements ExperimentService
                 materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), sql).getArrayList(Material.class));
             }
 
-            Set<ExpSampleType> sss = new HashSet<>();
-            if (null != ssDeleteFrom)
-                sss.add(ssDeleteFrom);
+            Set<ExpSampleType> sampleTypes = new HashSet<>();
+            if (null != stDeleteFrom)
+                sampleTypes.add(stDeleteFrom);
             for (ExpMaterial material : materials)
             {
                 if (!material.getContainer().hasPermission(user, DeletePermission.class))
                     throw new UnauthorizedException();
-                if (null == ssDeleteFrom)
+                if (null == stDeleteFrom)
                 {
-                    ExpSampleType ss = material.getSampleType();
-                    if (null != ss)
-                        sss.add(ss);
+                    ExpSampleType st = material.getSampleType();
+                    if (null != st)
+                        sampleTypes.add(st);
                 }
             }
 
@@ -4020,9 +4020,9 @@ public class ExperimentServiceImpl implements ExperimentService
 
             try (Timing ignored = MiniProfiler.step("expsampleset materialized tables"))
             {
-                for (ExpSampleType ss : sss)
+                for (ExpSampleType st : sampleTypes)
                 {
-                    TableInfo dbTinfo = ((ExpSampleTypeImpl)ss).getTinfo();
+                    TableInfo dbTinfo = ((ExpSampleTypeImpl)st).getTinfo();
                     // NOTE: study specimens don't have a domain for their samples, so no table
                     if (null != dbTinfo)
                     {
@@ -6416,7 +6416,7 @@ public class ExperimentServiceImpl implements ExperimentService
         DataClassDomainKindProperties options = new DataClassDomainKindProperties();
         options.setDescription(description);
         options.setNameExpression(nameExpression);
-        options.setSampleSet(sampleSetId);
+        options.setSampleType(sampleSetId);
         options.setCategory(category);
         return createDataClass(c, u, name, options, properties, indices, templateInfo);
     }
@@ -6473,7 +6473,7 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             bean.setDescription(options.getDescription());
             bean.setNameExpression(options.getNameExpression());
-            bean.setMaterialSourceId(options.getSampleSet());
+            bean.setMaterialSourceId(options.getSampleType());
             bean.setCategory(options.getCategory());
         }
 
@@ -6509,7 +6509,7 @@ public class ExperimentServiceImpl implements ExperimentService
             validateDataClassOptions(c, u, options);
             dataClass.setDescription(options.getDescription());
             dataClass.setNameExpression(options.getNameExpression());
-            dataClass.setSampleSet(options.getSampleSet());
+            dataClass.setSampleType(options.getSampleType());
             dataClass.setCategory(options.getCategory());
         }
 
@@ -6559,14 +6559,14 @@ public class ExperimentServiceImpl implements ExperimentService
         if (options.getCategory() != null && options.getCategory().length() > categoryMax)
             throw new IllegalArgumentException("Category may not exceed " + categoryMax + " characters.");
 
-        if (options.getSampleSet() != null)
+        if (options.getSampleType() != null)
         {
-            ExpSampleType ss = SampleTypeService.get().getSampleType(c, u, options.getSampleSet());
-            if (ss == null)
-                throw new IllegalArgumentException("SampleSet '" + options.getSampleSet() + "' not found.");
+            ExpSampleType st = SampleTypeService.get().getSampleType(c, u, options.getSampleType());
+            if (st == null)
+                throw new IllegalArgumentException("SampleType '" + options.getSampleType() + "' not found.");
 
-            if (!ss.getContainer().equals(c))
-                throw new IllegalArgumentException("Associated SampleSet must be defined in the same container as this DataClass.");
+            if (!st.getContainer().equals(c))
+                throw new IllegalArgumentException("Associated SampleType must be defined in the same container as this DataClass.");
         }
     }
 

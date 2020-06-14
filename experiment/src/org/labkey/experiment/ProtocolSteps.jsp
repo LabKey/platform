@@ -160,13 +160,13 @@
             <b>Inputs</b><br>
             <table class="labkey-data-region-legacy labkey-show-borders" width="100%">
                 <% for (ExpMaterialProtocolInput mpi : materialProtocolInputs) { %>
-                <% ExpSampleType ss = mpi.getType(); %>
+                <% ExpSampleType st = mpi.getType(); %>
                 <% ExpProtocolInputCriteria criteria = mpi.getCriteria(); %>
                 <tr class="labkey-row">
                     <td width="100px"><%=h(mpi.getName())%></td>
                     <td width="80px">
-                        <% if (ss != null) { %>
-                        <a href="<%=h(ss.detailsURL())%>"><%=h(ss.getName())%></a>
+                        <% if (st != null) { %>
+                        <a href="<%=h(st.detailsURL())%>"><%=h(st.getName())%></a>
                         <% } %>
                     </td>
                     <td width="200px"><%=h(mpi.getLSID())%></td>
@@ -208,12 +208,12 @@
             <table class="labkey-data-region-legacy labkey-show-borders" width="100%">
                 <% for (ExpMaterialProtocolInput mpo : materialProtocolOutputs) { %>
                 <% ExpProtocolInputCriteria criteria = mpo.getCriteria(); %>
-                <% ExpSampleType ss = mpo.getType(); %>
+                <% ExpSampleType st = mpo.getType(); %>
                 <tr class="labkey-row">
                     <td width="100px"><%=h(mpo.getName())%></td>
                     <td width="80px">
-                        <% if (ss != null) { %>
-                        <a href="<%=h(ss.detailsURL())%>"><%=h(ss.getName())%></a>
+                        <% if (st != null) { %>
+                        <a href="<%=h(st.detailsURL())%>"><%=h(st.getName())%></a>
                         <% } %>
                     </td>
                     <td width="200px"><%=h(mpo.getLSID())%></td>

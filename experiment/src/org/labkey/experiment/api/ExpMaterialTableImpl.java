@@ -365,22 +365,22 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
-    public void setSampleSet(ExpSampleType ss, boolean filter)
+    public void setSampleSet(ExpSampleType st, boolean filter)
     {
         checkLocked();
         if (_ss != null)
         {
             throw new IllegalStateException("Cannot unset sample type");
         }
-        if (ss != null && !(ss instanceof ExpSampleTypeImpl))
+        if (st != null && !(st instanceof ExpSampleTypeImpl))
         {
-            throw new IllegalArgumentException("Expected sample type to be an instance of " + ExpSampleTypeImpl.class.getName() + " but was a " + ss.getClass().getName());
+            throw new IllegalArgumentException("Expected sample type to be an instance of " + ExpSampleTypeImpl.class.getName() + " but was a " + st.getClass().getName());
         }
-        _ss = (ExpSampleTypeImpl)ss;
+        _ss = (ExpSampleTypeImpl) st;
         if (_ss != null)
         {
             setPublicSchemaName(SamplesSchema.SCHEMA_NAME);
-            setName(ss.getName());
+            setName(st.getName());
             if (filter)
                 addCondition(getRealTable().getColumn("CpasType"), _ss.getLSID());
 
@@ -420,23 +420,23 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
-    public final void populate(@Nullable ExpSampleType ss, boolean filter)
+    public final void populate(@Nullable ExpSampleType st, boolean filter)
     {
-        populateColumns(ss, filter);
+        populateColumns(st, filter);
         _populated = true;
     }
 
-    protected void populateColumns(@Nullable ExpSampleType ss, boolean filter)
+    protected void populateColumns(@Nullable ExpSampleType st, boolean filter)
     {
-        if (ss != null)
+        if (st != null)
         {
-            if (ss.getDescription() != null)
+            if (st.getDescription() != null)
             {
-                setDescription(ss.getDescription());
+                setDescription(st.getDescription());
             }
             else
             {
-                setDescription("Contains one row per sample in the " + ss.getName() + " sample type");
+                setDescription("Contains one row per sample in the " + st.getName() + " sample type");
             }
         }
 
@@ -453,13 +453,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(Column.SourceProtocolLSID);
 
         var nameCol = addColumn(ExpMaterialTable.Column.Name);
-        if (ss != null && ss.hasNameAsIdCol())
+        if (st != null && st.hasNameAsIdCol())
         {
             // Show the Name field but don't mark is as required when using name expressions
-            if (ss.hasNameExpression())
+            if (st.hasNameExpression())
             {
                 nameCol.setNullable(true);
-                String desc = appendNameExpressionDescription(nameCol.getDescription(), ss.getNameExpression());
+                String desc = appendNameExpressionDescription(nameCol.getDescription(), st.getNameExpression());
                 nameCol.setDescription(desc);
             }
             else
@@ -488,8 +488,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 // Same as CurrentPlusProjectAndShared but includes SampleSet's container as well.
                 // Issue 37982: Sample Type: Link to precursor sample type does not resolve correctly if sample has parents in current sample type and a sample type in the parent container
                 Set<Container> containers = new HashSet<>();
-                if (null != ss)
-                    containers.add(ss.getContainer());
+                if (null != st)
+                    containers.add(st.getContainer());
                 containers.add(getContainer());
                 if (getContainer().getProject() != null)
                     containers.add(getContainer().getProject());
@@ -529,20 +529,20 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Name));
         defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Run));
 
-        if (ss == null)
+        if (st == null)
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleSet));
 
         addColumn(ExpMaterialTable.Column.Flag);
         // TODO is this a real Domain???
-        if (ss != null && !"urn:lsid:labkey.com:SampleSource:Default".equals(ss.getDomain().getTypeURI()))
+        if (st != null && !"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))
         {
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Flag));
-            setSampleSet(ss, filter);
-            addSampleSetColumns(ss, defaultCols);
+            setSampleSet(st, filter);
+            addSampleSetColumns(st, defaultCols);
             setName(_ss.getName());
 
             ActionURL gridUrl = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer());
-            gridUrl.addParameter("rowId", ss.getRowId());
+            gridUrl.addParameter("rowId", st.getRowId());
             setGridURL(new DetailsURL(gridUrl));
         }
 
@@ -587,14 +587,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return sb.toString();
     }
 
-    private void addSampleSetColumns(ExpSampleType ss, List<FieldKey> visibleColumns)
+    private void addSampleSetColumns(ExpSampleType st, List<FieldKey> visibleColumns)
     {
-        TableInfo dbTable = ((ExpSampleTypeImpl)ss).getTinfo();
+        TableInfo dbTable = ((ExpSampleTypeImpl)st).getTinfo();
         if (null == dbTable)
             return;
 
         UserSchema schema = getUserSchema();
-        Domain domain = ss.getDomain();
+        Domain domain = st.getDomain();
         ColumnInfo lsidColumn = getColumn(Column.LSID);
 
         visibleColumns.remove(FieldKey.fromParts("Run"));
@@ -620,8 +620,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             if (null != dp)
             {
                 PropertyColumn.copyAttributes(schema.getUser(), propColumn, dp.getPropertyDescriptor(), schema.getContainer(),
-                    SchemaKey.fromParts("samples"), ss.getName(), FieldKey.fromParts("RowId"));
-                if (isIdCol(ss, dp.getPropertyDescriptor()))
+                    SchemaKey.fromParts("samples"), st.getName(), FieldKey.fromParts("RowId"));
+                if (isIdCol(st, dp.getPropertyDescriptor()))
                 {
                     propColumn.setNullable(false);
                     propColumn.setDisplayColumnFactory(new IdColumnRendererFactory());
@@ -675,9 +675,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
 
-    private boolean isIdCol(ExpSampleType ss, PropertyDescriptor pd)
+    private boolean isIdCol(ExpSampleType st, PropertyDescriptor pd)
     {
-        for (DomainProperty dp : ss.getIdCols())
+        for (DomainProperty dp : st.getIdCols())
             if (dp.getPropertyDescriptor() == pd)
                 return true;
         return false;

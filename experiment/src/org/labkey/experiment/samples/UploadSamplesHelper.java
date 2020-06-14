@@ -453,8 +453,8 @@ public abstract class UploadSamplesHelper
 
     public static String sampleRole(ExpMaterial material)
     {
-        ExpSampleType ss = material.getSampleType();
-        return ss != null ? ss.getName() : "Sample";
+        ExpSampleType st = material.getSampleType();
+        return st != null ? st.getName() : "Sample";
     }
 
     public static String dataRole(ExpData data, User user)
