@@ -193,19 +193,18 @@ public class ExperimentServiceImpl implements ExperimentService
     public static final String DEFAULT_MATERIAL_SOURCE_NAME = "Unspecified";
     public static final String EXPERIMENTAL_DOMAIN_DESIGNER = "experimental-uxdomaindesigner";
 
-    private List<ExperimentRunTypeSource> _runTypeSources = new CopyOnWriteArrayList<>();
-    private Set<ExperimentDataHandler> _dataHandlers = new HashSet<>();
-    private List<ExpRunEditor> _runEditors = new ArrayList<>();
-    protected Map<String, DataType> _dataTypes = new HashMap<>();
-    protected Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
-    protected Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
-    private Set<ExperimentProtocolHandler> _protocolHandlers = new HashSet<>();
-
     private static final List<ExperimentListener> _listeners = new CopyOnWriteArrayList<>();
-
     private static final ReentrantLock XAR_IMPORT_LOCK = new ReentrantLock();
 
-    Cache<String, SortedSet<DataClass>> getDataClassCache()
+    private final List<ExperimentRunTypeSource> _runTypeSources = new CopyOnWriteArrayList<>();
+    private final Set<ExperimentDataHandler> _dataHandlers = new HashSet<>();
+    private final List<ExpRunEditor> _runEditors = new ArrayList<>();
+    private final Map<String, DataType> _dataTypes = new HashMap<>();
+    private final Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
+    private final Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
+    private final Set<ExperimentProtocolHandler> _protocolHandlers = new HashSet<>();
+
+    private Cache<String, SortedSet<DataClass>> getDataClassCache()
     {
         return dataClassCache;
     }
