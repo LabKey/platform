@@ -21,9 +21,9 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.view.ActionURL;
@@ -186,7 +186,7 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
             String sampleSetName = name.substring(0, dotIndex);
             String sampleName = name.substring(dotIndex + 1);
             // Could easily do some caching here, but probably not a significant perf issue
-            for (ExpSampleSet sampleSet : SampleSetService.get().getSampleSets(getContainer(), getUser(), true))
+            for (ExpSampleType sampleSet : SampleTypeService.get().getSampleTypes(getContainer(), getUser(), true))
             {
                 // Look for a sample type with the right name
                 if (sampleSetName.equals(sampleSet.getName()))

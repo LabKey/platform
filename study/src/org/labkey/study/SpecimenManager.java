@@ -51,9 +51,9 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.query.CustomView;
@@ -2042,7 +2042,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         DbSchema expSchema = ExperimentService.get().getSchema();
         TableInfo tinfoMaterial = expSchema.getTable("Material");
 
-        ExpSampleSet sampleSet = SampleSetService.get().getSampleSet(c, SpecimenService.SAMPLE_TYPE_NAME);
+        ExpSampleType sampleSet = SampleTypeService.get().getSampleType(c, SpecimenService.SAMPLE_TYPE_NAME);
 
         if (sampleSet != null)
         {

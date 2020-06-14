@@ -25,9 +25,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
@@ -53,11 +53,11 @@ public class SamplesSchema extends AbstractExpSchema
     public static final String SCHEMA_DESCR = "Contains data about the samples used in experiment runs.";
     static final Logger log = Logger.getLogger(SamplesSchema.class);
 
-    static private Map<String, ExpSampleSet> getSampleSetMap(Container container, User user)
+    static private Map<String, ExpSampleType> getSampleSetMap(Container container, User user)
     {
-        Map<String, ExpSampleSet> map = new CaseInsensitiveTreeMap<>();
+        Map<String, ExpSampleType> map = new CaseInsensitiveTreeMap<>();
         // User can be null if we're running in a background thread, such as doing a study export
-        for (ExpSampleSet ss : SampleSetService.get().getSampleSets(container, user, user != null))
+        for (ExpSampleType ss : SampleTypeService.get().getSampleTypes(container, user, user != null))
         {
             map.put(ss.getName(), ss);
         }
@@ -93,14 +93,14 @@ public class SamplesSchema extends AbstractExpSchema
         this(SchemaKey.fromParts(SCHEMA_NAME), user, container);
     }
 
-    private Map<String, ExpSampleSet> _sampleSetMap = null;
+    private Map<String, ExpSampleType> _sampleSetMap = null;
 
     /*package*/ SamplesSchema(SchemaKey path, User user, Container container)
     {
         super(path, SCHEMA_DESCR, user, container, ExperimentService.get().getSchema());
     }
 
-    protected Map<String, ExpSampleSet> getSampleSets()
+    protected Map<String, ExpSampleType> getSampleSets()
     {
         if (_sampleSetMap == null)
         {
@@ -124,7 +124,7 @@ public class SamplesSchema extends AbstractExpSchema
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
-        ExpSampleSet ss = getSampleSets().get(name);
+        ExpSampleType ss = getSampleSets().get(name);
         if (ss == null)
             return null;
         return getSampleTable(ss, cf);
@@ -143,7 +143,7 @@ public class SamplesSchema extends AbstractExpSchema
     }
 
     /** Creates a table of materials, scoped to the given sample type and including its custom columns, if provided */
-    public ExpMaterialTable getSampleTable(ExpSampleSet ss, ContainerFilter cf)
+    public ExpMaterialTable getSampleTable(ExpSampleType ss, ContainerFilter cf)
     {
         if (log.isTraceEnabled())
         {
@@ -158,7 +158,7 @@ public class SamplesSchema extends AbstractExpSchema
     /**
      * @param domainProperty the property on which the lookup is configured
      */
-    public ForeignKey materialIdForeignKey(@Nullable final ExpSampleSet ss, @Nullable DomainProperty domainProperty)
+    public ForeignKey materialIdForeignKey(@Nullable final ExpSampleType ss, @Nullable DomainProperty domainProperty)
     {
         final String tableName =  null == ss ? ExpSchema.TableType.Materials.toString() : ss.getName();
         final String schemaName = null == ss ? ExpSchema.SCHEMA_NAME : SamplesSchema.SCHEMA_NAME;
@@ -206,7 +206,7 @@ public class SamplesSchema extends AbstractExpSchema
     public String getDomainURI(String queryName)
     {
         Container container = getContainer();
-        ExpSampleSet ss = getSampleSets().get(queryName);
+        ExpSampleType ss = getSampleSets().get(queryName);
         if (ss == null)
             throw new NotFoundException("Sample type '" + queryName + "' not found in this container '" + container.getPath() + "'.");
 

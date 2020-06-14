@@ -44,7 +44,7 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -153,7 +153,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                     FieldKey pkFieldKey = new FieldKey(null, AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
                     PropertyColumn.copyAttributes(_userSchema.getUser(), col, pd, schema.getContainer(), _userSchema.getSchemaPath(), getPublicName(), pkFieldKey);
 
-                    ExpSampleSet ss = DefaultAssayRunCreator.getLookupSampleSet(domainProperty, getContainer(), getUserSchema().getUser());
+                    ExpSampleType ss = DefaultAssayRunCreator.getLookupSampleSet(domainProperty, getContainer(), getUserSchema().getUser());
                     if (ss != null || DefaultAssayRunCreator.isLookupToMaterials(domainProperty))
                     {
                         col.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getMaterialIdForeignKey(ss, domainProperty, cf));

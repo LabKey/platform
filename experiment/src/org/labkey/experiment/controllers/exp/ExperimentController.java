@@ -137,7 +137,7 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
-import org.labkey.api.security.permissions.DesignSampleSetPermission;
+import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -198,8 +198,8 @@ import org.labkey.experiment.ProtocolApplicationDisplayColumn;
 import org.labkey.experiment.ProtocolDisplayColumn;
 import org.labkey.experiment.ProtocolWebPart;
 import org.labkey.experiment.RunGroupWebPart;
-import org.labkey.experiment.SampleSetDisplayColumn;
-import org.labkey.experiment.SampleSetWebPart;
+import org.labkey.experiment.SampleTypeDisplayColumn;
+import org.labkey.experiment.SampleTypeWebPart;
 import org.labkey.experiment.StandardAndCustomPropertiesView;
 import org.labkey.experiment.XarExportPipelineJob;
 import org.labkey.experiment.XarExportType;
@@ -214,14 +214,14 @@ import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
 import org.labkey.experiment.api.ExpProtocolImpl;
 import org.labkey.experiment.api.ExpRunImpl;
-import org.labkey.experiment.api.ExpSampleSetImpl;
+import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.Experiment;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.GraphAlgorithms;
 import org.labkey.experiment.api.ProtocolActionStepDetail;
-import org.labkey.experiment.api.SampleSetDomainKind;
-import org.labkey.experiment.api.SampleSetServiceImpl;
-import org.labkey.experiment.api.SampleSetUpdateServiceDI;
+import org.labkey.experiment.api.SampleTypeDomainKind;
+import org.labkey.experiment.api.SampleTypeServiceImpl;
+import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.types.TypesController;
@@ -347,7 +347,7 @@ public class ExperimentController extends SpringActionController
             result.addView(runGroups);
 
             result.addView(new ProtocolWebPart(false, getViewContext()));
-            result.addView(new SampleSetWebPart(false, getViewContext()));
+            result.addView(new SampleTypeWebPart(false, getViewContext()));
             result.addView(new DataClassWebPart(false, getViewContext(), null));
 
             return result;
@@ -365,7 +365,7 @@ public class ExperimentController extends SpringActionController
     public class ShowRunsAction extends SimpleViewAction
     {
         @Override
-        public VBox getView(Object o, BindException errors) throws Exception
+        public VBox getView(Object o, BindException errors)
         {
             VBox result = createRunListView(100);
             return result;
@@ -573,7 +573,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            SampleSetWebPart view = new SampleSetWebPart(false, getViewContext());
+            SampleTypeWebPart view = new SampleTypeWebPart(false, getViewContext());
             view.setFrame(WebPartView.FrameType.NONE);
             view.setErrorMessage(getViewContext().getRequest().getParameter("errorMessage"));
 
@@ -592,12 +592,12 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowMaterialSourceAction extends SimpleViewAction<ExpObjectForm>
     {
-        private ExpSampleSetImpl _source;
+        private ExpSampleTypeImpl _source;
 
         @Override
         public ModelAndView getView(ExpObjectForm form, BindException errors)
         {
-            _source = SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), form.getRowId());
+            _source = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), form.getRowId());
             if (_source == null && form.getLsid() != null)
             {
                 if (form.getLsid().equalsIgnoreCase("Material") || form.getLsid().equalsIgnoreCase("Sample"))
@@ -606,7 +606,7 @@ public class ExperimentController extends SpringActionController
                     throw new RedirectException(new ActionURL(ShowAllMaterialsAction.class, getContainer()));
                 }
                 // Check if the URL specifies the LSID, and stick the bean back into the form
-                _source = SampleSetServiceImpl.get().getSampleSet(form.getLsid());
+                _source = SampleTypeServiceImpl.get().getSampleType(form.getLsid());
             }
 
             if (_source == null)
@@ -614,15 +614,15 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("No matching sample type found");
             }
 
-            List<ExpSampleSetImpl> allScopedSampleSets = (List<ExpSampleSetImpl>) SampleSetService.get().getSampleSets(getContainer(), getUser(), true);
-            if (!allScopedSampleSets.contains(_source))
+            List<ExpSampleTypeImpl> allScopedSampleTypes = (List<ExpSampleTypeImpl>) SampleTypeService.get().getSampleTypes(getContainer(), getUser(), true);
+            if (!allScopedSampleTypes.contains(_source))
             {
                 ensureCorrectContainer(getContainer(), _source, getViewContext());
             }
 
             SamplesSchema schema = new SamplesSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "Material", _source.getName());
-            QueryView queryView = new SampleSetContentsView(_source, schema, settings, errors);
+            QueryView queryView = new SampleTypeContentsView(_source, schema, settings, errors);
 
             DetailsView detailsView = new DetailsView(getMaterialSourceRegion(getViewContext()), _source.getRowId());
             detailsView.getDataRegion().getDisplayColumn("Name").setURL(null);
@@ -663,7 +663,7 @@ public class ExperimentController extends SpringActionController
 
             if (!getContainer().equals(_source.getContainer()))
             {
-                ActionURL definitionURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleSetURL(_source);
+                ActionURL definitionURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_source);
                 SimpleDisplayColumn definedInCol = new SimpleDisplayColumn("<a href=\"" +
                         PageFlowUtil.filter(definitionURL) +
                         "\">" +
@@ -677,21 +677,21 @@ public class ExperimentController extends SpringActionController
             DomainKind domainKind = _source.getDomain().getDomainKind();
             if (domainKind != null && domainKind.canEditDefinition(getUser(), _source.getDomain()))
             {
-                if (domainKind instanceof SampleSetDomainKind)
+                if (domainKind instanceof SampleTypeDomainKind)
                 {
                     ActionURL updateURL = new ActionURL(EditSampleSetAction.class, _source.getContainer());
                     updateURL.addParameter("RowId", _source.getRowId());
                     updateURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
                     ActionButton updateButton = new ActionButton(updateURL, "Edit Set", ActionButton.Action.LINK);
-                    updateButton.setDisplayPermission(DesignSampleSetPermission.class);
+                    updateButton.setDisplayPermission(DesignSampleTypePermission.class);
                     updateButton.setPrimary(true);
                     detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
 
                     ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, _source.getContainer());
                     deleteURL.addParameter("singleObjectRowId", _source.getRowId());
-                    deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()).toString());
+                    deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()).toString());
                     ActionButton deleteButton = new ActionButton(deleteURL, "Delete Set", ActionButton.Action.LINK);
-                    deleteButton.setDisplayPermission(DesignSampleSetPermission.class);
+                    deleteButton.setDisplayPermission(DesignSampleTypePermission.class);
                     detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(deleteButton);
                 }
                 else
@@ -753,7 +753,7 @@ public class ExperimentController extends SpringActionController
                 protected void populateButtonBar(DataView view, ButtonBar bar)
                 {
                     super.populateButtonBar(view, bar);
-                    bar.add(SampleSetContentsView.getDeriveSamplesButton(getContainer(),null));
+                    bar.add(SampleTypeContentsView.getDeriveSamplesButton(getContainer(),null));
                 }
             };
             view.setShowDetailsColumn(false);
@@ -852,7 +852,7 @@ public class ExperimentController extends SpringActionController
             dr.addDisplayColumn(new ProtocolDisplayColumn(sourceProtocol, "Source Protocol"));
             dr.addDisplayColumn(new ProtocolApplicationDisplayColumn(sourceProtocolApplication, "Source Protocol Application"));
             dr.addDisplayColumn(new LineageGraphDisplayColumn(_material, run));
-            dr.addDisplayColumn(new SampleSetDisplayColumn(_material));
+            dr.addDisplayColumn(new SampleTypeDisplayColumn(_material));
 
             //TODO: Can't yet edit materials uploaded from a material source
             dr.setButtonBar(new ButtonBar());
@@ -870,11 +870,11 @@ public class ExperimentController extends SpringActionController
         {
             setHelpTopic("sampleSets");
             addRootNavTrail(root);
-            root.addChild("Sample Types", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
-            ExpSampleSet sampleSet = _material.getSampleSet();
-            if (sampleSet != null)
+            root.addChild("Sample Types", ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()));
+            ExpSampleType sampleType = _material.getSampleType();
+            if (sampleType != null)
             {
-                root.addChild(sampleSet.getName(), ExperimentUrlsImpl.get().getShowSampleSetURL(sampleSet));
+                root.addChild(sampleType.getName(), ExperimentUrlsImpl.get().getShowSampleTypeURL(sampleType));
             }
             root.addChild("Sample " + _material.getName());
         }
@@ -910,7 +910,7 @@ public class ExperimentController extends SpringActionController
             }
 
             StringBuilder updateLinks = new StringBuilder();
-            ExpSampleSet ss = _material.getSampleSet();
+            ExpSampleType ss = _material.getSampleType();
             if (ss != null && ss.getContainer() != null && ss.getContainer().hasPermission(getUser(), UpdatePermission.class))
             {
                 // XXX: ridiculous amount of work to get a update url expression for the sample type's table.
@@ -1235,10 +1235,10 @@ public class ExperimentController extends SpringActionController
                 // Issue 40230: if template includes sample type option, verify that it exists
                 if (template.getOptions().containsKey("sampleSet"))
                 {
-                    String sampleSetName = template.getOptions().get("sampleSet").toString();
-                    ExpSampleSet sampleSet = SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), sampleSetName);
-                    if (sampleSet == null)
-                        errors.reject(ERROR_MSG, "Unable to find a sample type in this container with name: " + sampleSetName + ".");
+                    String sampleTypeName = template.getOptions().get("sampleSet").toString();
+                    ExpSampleType sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), sampleTypeName);
+                    if (sampleType == null)
+                        errors.reject(ERROR_MSG, "Unable to find a sample type in this container with name: " + sampleTypeName + ".");
                 }
             }
 
@@ -2151,7 +2151,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    // SampleSetTest
+    // SampleTypeTest
     private void streamToJSON(File realContent, String format, int maxRow, String originalFileName) throws IOException
     {
         String lowerCaseFileName = realContent.getName().toLowerCase();
@@ -3421,7 +3421,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(DesignSampleSetPermission.class)
+    @RequiresPermission(DesignSampleTypePermission.class)
     public class DeleteMaterialSourceAction extends AbstractDeleteAction
     {
         @Override
@@ -3434,17 +3434,17 @@ public class ExperimentController extends SpringActionController
         @Override
         protected void deleteObjects(DeleteForm deleteForm)
         {
-            List<ExpSampleSet> sampleSets = getSampleSets(deleteForm);
-            if (sampleSets.size() == 0)
+            List<ExpSampleType> sampleTypes = getSampleTypes(deleteForm);
+            if (sampleTypes.size() == 0)
             {
                 throw new NotFoundException("No sample types found for ids provided.");
             }
-            if (!ensureCorrectContainer(sampleSets))
+            if (!ensureCorrectContainer(sampleTypes))
             {
                 throw new UnauthorizedException();
             }
 
-            for (ExpRun run : getRuns(sampleSets))
+            for (ExpRun run : getRuns(sampleTypes))
             {
                 if (!run.getContainer().hasPermission(getUser(), DeletePermission.class))
                 {
@@ -3452,7 +3452,7 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            for (ExpSampleSet source : sampleSets)
+            for (ExpSampleType source : sampleTypes)
             {
                 Domain domain = source.getDomain();
                 if (domain != null && !domain.getDomainKind().canDeleteDefinition(getUser(), domain))
@@ -3467,38 +3467,38 @@ public class ExperimentController extends SpringActionController
         @Override
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
         {
-            List<ExpSampleSet> sampleSets = getSampleSets(deleteForm);
-            String defaultSampleSet = SampleSetService.get().getDefaultSampleSetLsid();
-            if (sampleSets.stream().anyMatch(ss -> defaultSampleSet.equals(ss.getLSID())))
+            List<ExpSampleType> sampleTypes = getSampleTypes(deleteForm);
+            String defaultSampleType = SampleTypeService.get().getDefaultSampleTypeLsid();
+            if (sampleTypes.stream().anyMatch(ss -> defaultSampleType.equals(ss.getLSID())))
             {
-                throw new RedirectException(ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer(), "You cannot delete the default sample type."));
+                throw new RedirectException(ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer(), "You cannot delete the default sample type."));
             }
 
-            if (!ensureCorrectContainer(sampleSets))
+            if (!ensureCorrectContainer(sampleTypes))
             {
-                throw new RedirectException(ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer(), "To delete a sample type, you must be in its folder or project."));
+                throw new RedirectException(ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer(), "To delete a sample type, you must be in its folder or project."));
             }
 
-            return new ConfirmDeleteView("Sample Type", ShowMaterialSourceAction.class, sampleSets, deleteForm, getRuns(sampleSets));
+            return new ConfirmDeleteView("Sample Type", ShowMaterialSourceAction.class, sampleTypes, deleteForm, getRuns(sampleTypes));
         }
 
-        private List<ExpSampleSet> getSampleSets(DeleteForm deleteForm)
+        private List<ExpSampleType> getSampleTypes(DeleteForm deleteForm)
         {
-            List<ExpSampleSet> sources = new ArrayList<>();
+            List<ExpSampleType> sources = new ArrayList<>();
             for (int rowId : deleteForm.getIds(false))
             {
-                ExpSampleSet sampleSet = SampleSetService.get().getSampleSet(getContainer(), getUser(), rowId);
-                if (sampleSet != null)
+                ExpSampleType sampleType = SampleTypeService.get().getSampleType(getContainer(), getUser(), rowId);
+                if (sampleType != null)
                 {
-                    sources.add(sampleSet);
+                    sources.add(sampleType);
                 }
             }
             return sources;
         }
 
-        private boolean ensureCorrectContainer(List<ExpSampleSet> sampleSets)
+        private boolean ensureCorrectContainer(List<ExpSampleType> sampleTypes)
         {
-            for (ExpSampleSet source : sampleSets)
+            for (ExpSampleType source : sampleTypes)
             {
                 Container sourceContainer = source.getContainer();
                 if (!sourceContainer.equals(getContainer()))
@@ -3509,11 +3509,11 @@ public class ExperimentController extends SpringActionController
             return true;
         }
 
-        private List<? extends ExpRun> getRuns(List<ExpSampleSet> sampleSets)
+        private List<? extends ExpRun> getRuns(List<ExpSampleType> sampleTypes)
         {
-            if (sampleSets.size() > 0)
+            if (sampleTypes.size() > 0)
             {
-                List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingSampleSets(sampleSets.toArray(new ExpSampleSet[sampleSets.size()]));
+                List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingSampleTypes(sampleTypes.toArray(new ExpSampleType[sampleTypes.size()]));
                 return ExperimentService.get().runsDeletedWithInput(runArray);
             }
             else
@@ -3551,51 +3551,51 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetSampleSetApiAction extends ReadOnlyApiAction<SampleSetForm>
+    public class GetSampleSetApiAction extends ReadOnlyApiAction<SampleTypeForm>
     {
         @Override
-        public void validateForm(SampleSetForm form, Errors errors)
+        public void validateForm(SampleTypeForm form, Errors errors)
         {
             if (form.getRowId() == null && form.getLSID() == null)
                 errors.reject(ERROR_REQUIRED, "RowId or LSID must be provided");
         }
 
         @Override
-        public Object execute(SampleSetForm form, BindException errors) throws Exception
+        public Object execute(SampleTypeForm form, BindException errors) throws Exception
         {
-            ExpSampleSetImpl ss = form.getSampleSet(getContainer());
+            ExpSampleTypeImpl ss = form.getSampleType(getContainer());
 
-            return getSampleSetApiResponse(ss);
+            return getSampleTypeApiResponse(ss);
         }
     }
 
     @NotNull
-    private static ApiSimpleResponse getSampleSetApiResponse(ExpSampleSet ss) throws IOException
+    private static ApiSimpleResponse getSampleTypeApiResponse(ExpSampleType st) throws IOException
     {
-        Map<String,Object> sampleSet = new HashMap<>();
-        sampleSet.put("name", ss.getName());
-        sampleSet.put("nameExpression", ss.getNameExpression());
-        sampleSet.put("description", ss.getDescription());
-        sampleSet.put("importAliases", ss.getImportAliasMap());
-        sampleSet.put("lsid", ss.getLSID());
-        sampleSet.put("rowId", ss.getRowId());
-        sampleSet.put("domainId", ss.getDomain().getTypeId());
+        Map<String,Object> sampleType = new HashMap<>();
+        sampleType.put("name", st.getName());
+        sampleType.put("nameExpression", st.getNameExpression());
+        sampleType.put("description", st.getDescription());
+        sampleType.put("importAliases", st.getImportAliasMap());
+        sampleType.put("lsid", st.getLSID());
+        sampleType.put("rowId", st.getRowId());
+        sampleType.put("domainId", st.getDomain().getTypeId());
 
-        return new ApiSimpleResponse(Map.of("sampleSet", sampleSet, "success", true));
+        return new ApiSimpleResponse(Map.of("sampleSet", sampleType, "success", true));
     }
 
 
-    @RequiresPermission(DesignSampleSetPermission.class)
-    public class EditSampleSetAction extends SimpleViewAction<SampleSetForm>
+    @RequiresPermission(DesignSampleTypePermission.class)
+    public class EditSampleSetAction extends SimpleViewAction<SampleTypeForm>
     {
-        private ExpSampleSetImpl _sampleSet;
+        private ExpSampleTypeImpl _sampleType;
 
         @Override
-        public ModelAndView getView(SampleSetForm form, BindException errors) throws Exception
+        public ModelAndView getView(SampleTypeForm form, BindException errors) throws Exception
         {
             boolean create = form.getLSID() == null && form.getRowId() == null;
             if (!create)
-                _sampleSet = form.getSampleSet(getContainer());
+                _sampleType = form.getSampleType(getContainer());
 
             return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), "sampleTypeDesigner");
         }
@@ -3605,20 +3605,20 @@ public class ExperimentController extends SpringActionController
         {
             setHelpTopic("sampleSets");
 
-            root.addChild("Sample Types", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
-            if (_sampleSet == null)
+            root.addChild("Sample Types", ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()));
+            if (_sampleType == null)
             {
                 root.addChild("Create Sample Type");
             }
             else
             {
-                root.addChild(_sampleSet.getName(), ExperimentUrlsImpl.get().getShowSampleSetURL(_sampleSet));
+                root.addChild(_sampleType.getName(), ExperimentUrlsImpl.get().getShowSampleTypeURL(_sampleType));
                 root.addChild("Update Sample Type");
             }
         }
     }
 
-    public static class SampleSetForm extends ReturnUrlForm
+    public static class SampleTypeForm extends ReturnUrlForm
     {
         private Integer rowId;
         private String lsid;
@@ -3643,23 +3643,23 @@ public class ExperimentController extends SpringActionController
             this.lsid = lsid;
         }
 
-        public ExpSampleSetImpl getSampleSet(Container container) throws NotFoundException
+        public ExpSampleTypeImpl getSampleType(Container container) throws NotFoundException
         {
-            ExpSampleSetImpl sampleSet = SampleSetServiceImpl.get().getSampleSet(getLSID());
-            if (sampleSet == null)
-                sampleSet = SampleSetServiceImpl.get().getSampleSet(getRowId());
+            ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getLSID());
+            if (sampleType == null)
+                sampleType = SampleTypeServiceImpl.get().getSampleType(getRowId());
 
-            if (sampleSet == null)
+            if (sampleType == null)
             {
                 throw new NotFoundException("Sample type not found: " + (getLSID() != null ? getLSID() : getRowId()));
             }
 
-            if (!container.equals(sampleSet.getContainer()))
+            if (!container.equals(sampleType.getContainer()))
             {
                 throw new NotFoundException("Sample type is not defined in the given container.");
             }
 
-            return sampleSet;
+            return sampleType;
         }
     }
 
@@ -3677,8 +3677,8 @@ public class ExperimentController extends SpringActionController
                 errors.reject(ERROR_MSG, "Sample type name is required");
             else
             {
-                ExpSampleSetImpl sampleSet = SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), queryForm.getQueryName());
-                if (sampleSet == null)
+                ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), queryForm.getQueryName());
+                if (sampleType == null)
                 {
                     errors.reject(ERROR_MSG, "Sample type '" + queryForm.getQueryName() + " not found.");
                 }
@@ -3699,7 +3699,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Sample Types", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
+            root.addChild("Sample Types", ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()));
             ActionURL url = _form.urlFor(QueryAction.executeQuery);
             if (_form.getQueryName() != null && url != null)
                 root.addChild(_form.getQueryName(), url);
@@ -4041,7 +4041,7 @@ public class ExperimentController extends SpringActionController
         private String _zipFileName;
         private String _fileExportType;
         private Integer _protocolId;
-        private Integer _sampleSetId;
+        private Integer _sampleTypeId;
         private int[] _dataIds;
         private String[] _roles = new String[0];
 
@@ -4125,14 +4125,14 @@ public class ExperimentController extends SpringActionController
             _roles = roles;
         }
 
-        public Integer getSampleSetId()
+        public Integer getSampleTypeId()
         {
-            return _sampleSetId;
+            return _sampleTypeId;
         }
 
-        public void setSampleSetId(Integer sampleSetId)
+        public void setSampleTypeId(Integer sampleTypeId)
         {
-            _sampleSetId = sampleSetId;
+            _sampleTypeId = sampleTypeId;
         }
 
         public int[] getDataIds()
@@ -4353,25 +4353,25 @@ public class ExperimentController extends SpringActionController
         @Override
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
         {
-            Integer rowId = form.getSampleSetId();
+            Integer rowId = form.getSampleTypeId();
             if (rowId == null)
             {
                 throw new NotFoundException("No sampleSetId specified");
             }
-            ExpSampleSet sampleSet = SampleSetService.get().getSampleSet(getContainer(), getUser(), rowId.intValue());
-            if (sampleSet == null)
+            ExpSampleType sampleType = SampleTypeService.get().getSampleType(getContainer(), getUser(), rowId.intValue());
+            if (sampleType == null)
             {
                 throw new NotFoundException("No such sample type with RowId " + rowId);
             }
-            if (!sampleSet.getContainer().hasPermission(getUser(), ReadPermission.class))
+            if (!sampleType.getContainer().hasPermission(getUser(), ReadPermission.class))
             {
                 throw new UnauthorizedException();
             }
 
             XarExportSelection selection = new XarExportSelection();
-            selection.addSampleSet(sampleSet);
+            selection.addSampleType(sampleType);
 
-            _resultURL = exportXAR(selection, form.getLsidOutputType(), form.getExportType(), FileUtil.makeLegalName(sampleSet.getName() + ".xar"));
+            _resultURL = exportXAR(selection, form.getLsidOutputType(), form.getExportType(), FileUtil.makeLegalName(sampleType.getName() + ".xar"));
             return true;
         }
     }
@@ -4721,11 +4721,11 @@ public class ExperimentController extends SpringActionController
         {
             setHelpTopic("sampleSets");
             addRootNavTrail(root);
-            root.addChild("Sample Types", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
-            ExpSampleSet sampleSet = _materials != null && _materials.size() > 0 ? _materials.get(0).getSampleSet() : null;
-            if (sampleSet != null)
+            root.addChild("Sample Types", ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()));
+            ExpSampleType sampleType = _materials != null && _materials.size() > 0 ? _materials.get(0).getSampleType() : null;
+            if (sampleType != null)
             {
-                root.addChild(sampleSet.getName(), ExperimentUrlsImpl.get().getShowSampleSetURL(sampleSet));
+                root.addChild(sampleType.getName(), ExperimentUrlsImpl.get().getShowSampleTypeURL(sampleType));
             }
             root.addChild("Derive Samples");
         }
@@ -4768,9 +4768,9 @@ public class ExperimentController extends SpringActionController
                     materialsWithRoles.put(material, null);
                 }
 
-                List<ExpSampleSet> sampleSets = getUploadableSampleSets();
+                List<ExpSampleType> sampleTypes = getUploadableSampleTypes();
 
-                DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getDataRegionSelectionKey(), form.getTargetSampleSetId(), sampleSets, materialsWithRoles, form.getOutputCount(), materialInputRoles, null);
+                DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getDataRegionSelectionKey(), form.getTargetSampleSetId(), sampleTypes, materialsWithRoles, form.getOutputCount(), materialInputRoles, null);
                 view = new JspView<>("/org/labkey/experiment/deriveSamplesChooseTarget.jsp", bean);
             }
             return view;
@@ -4780,20 +4780,21 @@ public class ExperimentController extends SpringActionController
     public static class DeriveSamplesChooseTargetBean implements DataRegionSelection.DataSelectionKeyForm
     {
         private String _dataRegionSelectionKey;
-        private Integer _targetSampleSetId;
-        private List<ExpSampleSet> _sampleSets;
-        private Map<ExpMaterial, String> _sourceMaterials;
+
+        private final Integer _targetSampleSetId;
+        private final List<ExpSampleType> _sampleTypes;
+        private final Map<ExpMaterial, String> _sourceMaterials;
         private final int _sampleCount;
         private final Collection<String> _inputRoles;
-        private DerivedSamplePropertyHelper _propertyHelper;
+        private final DerivedSamplePropertyHelper _propertyHelper;
 
         public static final String CUSTOM_ROLE = "--CUSTOM--";
 
-        public DeriveSamplesChooseTargetBean(String dataRegionSelectionKey, Integer targetSampleSetId, List<ExpSampleSet> sampleSets, Map<ExpMaterial, String> sourceMaterials, int sampleCount, Collection<String> inputRoles, DerivedSamplePropertyHelper helper)
+        public DeriveSamplesChooseTargetBean(String dataRegionSelectionKey, Integer targetSampleSetId, List<ExpSampleType> sampleTypes, Map<ExpMaterial, String> sourceMaterials, int sampleCount, Collection<String> inputRoles, DerivedSamplePropertyHelper helper)
         {
             _dataRegionSelectionKey = dataRegionSelectionKey;
             _targetSampleSetId = targetSampleSetId;
-            _sampleSets = sampleSets;
+            _sampleTypes = sampleTypes;
             _sourceMaterials = sourceMaterials;
             _sampleCount = sampleCount;
             _inputRoles = inputRoles;
@@ -4820,9 +4821,9 @@ public class ExperimentController extends SpringActionController
             return _sourceMaterials;
         }
 
-        public List<ExpSampleSet> getSampleSets()
+        public List<ExpSampleType> getSampleTypes()
         {
-            return _sampleSets;
+            return _sampleTypes;
         }
 
         public Collection<String> getInputRoles()
@@ -4843,12 +4844,12 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private List<ExpSampleSet> getUploadableSampleSets()
+    private List<ExpSampleType> getUploadableSampleTypes()
     {
         // Make a copy so we can modify it
-        List<ExpSampleSet> sampleSets = new ArrayList<>(SampleSetService.get().getSampleSets(getContainer(), getUser(), true));
-        sampleSets.removeIf(sampleSet -> !sampleSet.canImportMoreSamples());
-        return sampleSets;
+        List<ExpSampleType> sampleTypes = new ArrayList<>(SampleTypeService.get().getSampleTypes(getContainer(), getUser(), true));
+        sampleTypes.removeIf(sampleType -> !sampleType.canImportMoreSamples());
+        return sampleTypes;
     }
 
     @RequiresPermission(InsertPermission.class)
@@ -4873,15 +4874,15 @@ public class ExperimentController extends SpringActionController
                 form.setOutputCount(1);
             }
 
-            ExpSampleSetImpl sampleSet = SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), form.getTargetSampleSetId());
-            if (form.getTargetSampleSetId() != 0 && sampleSet == null)
+            ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), form.getTargetSampleSetId());
+            if (form.getTargetSampleSetId() != 0 && sampleType == null)
             {
                 throw new NotFoundException("Could not find sample type with rowId " + form.getTargetSampleSetId());
             }
 
             InsertView insertView = new InsertView(new DataRegion(), errors);
 
-            DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleSet, form.getOutputCount(), c, getUser());
+            DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleType, form.getOutputCount(), c, getUser());
             helper.addSampleColumns(insertView, getUser());
 
             int[] rowIds = form.getRowIds();
@@ -4912,7 +4913,7 @@ public class ExperimentController extends SpringActionController
                 materialsWithRoles.put(materials.get(i), form.determineLabel(i));
             }
 
-            DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getDataRegionSelectionKey(), form.getTargetSampleSetId(), getUploadableSampleSets(), materialsWithRoles, form.getOutputCount(), Collections.emptyList(), helper);
+            DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getDataRegionSelectionKey(), form.getTargetSampleSetId(), getUploadableSampleTypes(), materialsWithRoles, form.getOutputCount(), Collections.emptyList(), helper);
             JspView<DeriveSamplesChooseTargetBean> view = new JspView<>("/org/labkey/experiment/summarizeMaterialInputs.jsp", bean);
             view.setTitle("Input Samples");
 
@@ -4924,11 +4925,11 @@ public class ExperimentController extends SpringActionController
         {
             setHelpTopic("sampleSets");
             addRootNavTrail(root);
-            root.addChild("Sample Types", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
-            ExpSampleSet sampleSet = _materials != null && _materials.size() > 0 ? _materials.get(0).getSampleSet() : null;
-            if (sampleSet != null)
+            root.addChild("Sample Types", ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()));
+            ExpSampleType sampleType = _materials != null && _materials.size() > 0 ? _materials.get(0).getSampleType() : null;
+            if (sampleType != null)
             {
-                root.addChild(sampleSet.getName(), ExperimentUrlsImpl.get().getShowSampleSetURL(sampleSet));
+                root.addChild(sampleType.getName(), ExperimentUrlsImpl.get().getShowSampleTypeURL(sampleType));
             }
             root.addChild("Derive Samples");
         }
@@ -4950,15 +4951,15 @@ public class ExperimentController extends SpringActionController
                 String inputRole = form.determineLabel(i);
                 if (inputRole == null || "".equals(inputRole))
                 {
-                    ExpSampleSet ss = m.getSampleSet();
+                    ExpSampleType ss = m.getSampleType();
                     inputRole = ss != null ? ss.getName() : ExpMaterialRunInput.DEFAULT_ROLE;
                 }
                 inputMaterials.put(materials.get(i), inputRole);
             }
 
-            ExpSampleSetImpl sampleSet = SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), form.getTargetSampleSetId());
+            ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), form.getTargetSampleSetId());
 
-            DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleSet, form.getOutputCount(), getContainer(), getUser());
+            DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleType, form.getOutputCount(), getContainer(), getUser());
 
             Map<Lsid, Map<DomainProperty, String>> allProperties;
             try
@@ -4994,13 +4995,13 @@ public class ExperimentController extends SpringActionController
                     assert name != null;
 
                     ExpMaterialImpl outputMaterial = ExperimentServiceImpl.get().createExpMaterial(getContainer(), entry.getKey().toString(), name);
-                    if (sampleSet != null)
+                    if (sampleType != null)
                     {
-                        outputMaterial.setCpasType(sampleSet.getLSID());
+                        outputMaterial.setCpasType(sampleType.getLSID());
                     }
                     outputMaterial.save(getUser());
 
-                    if (sampleSet != null)
+                    if (sampleType != null)
                     {
                         Map<String, Object> pvs = new HashMap<>();
                         for (Map.Entry<DomainProperty, String> propertyEntry : entry.getValue().entrySet())
@@ -5248,10 +5249,10 @@ public class ExperimentController extends SpringActionController
                         continue;
                     }
 
-                    ExpSampleSet ss = m.getSampleSet();
+                    ExpSampleType ss = m.getSampleType();
                     if (ss == null)
                     {
-                        errors.reject(ERROR_MSG, "Material input is not a member of a SampleSet");
+                        errors.reject(ERROR_MSG, "Material input is not a member of a SampleType");
                         continue;
                     }
 
@@ -5306,17 +5307,17 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            ExpSampleSet outSampleSet;
+            ExpSampleType outSampleType;
             if (form.targetSampleSet != null)
             {
                 // TODO: check in scope and has permission
-                outSampleSet = SampleSetService.get().getSampleSet(form.targetSampleSet.toString());
-                if (outSampleSet == null)
+                outSampleType = SampleTypeService.get().getSampleType(form.targetSampleSet.toString());
+                if (outSampleType == null)
                     errors.reject(ERROR_MSG, "Sample type not found: " + form.targetSampleSet.toString());
             }
             else
             {
-                outSampleSet = null;
+                outSampleType = null;
             }
 
             ExpDataClass outDataClass;
@@ -5340,8 +5341,8 @@ public class ExperimentController extends SpringActionController
             final Map<String, Set<String>> parentInputNames = new HashMap<>();
             for (ExpMaterial material : materialInputs.keySet())
             {
-                ExpSampleSet ss = material.getSampleSet();
-                String keyName = ExpMaterial.MATERIAL_INPUT_PARENT + "/" + ss.getName();
+                ExpSampleType st = material.getSampleType();
+                String keyName = ExpMaterial.MATERIAL_INPUT_PARENT + "/" + st.getName();
                 parentInputNames.computeIfAbsent(keyName, (x) -> new LinkedHashSet<>()).add(material.getName());
             }
 
@@ -5361,7 +5362,7 @@ public class ExperimentController extends SpringActionController
                 // output materials
                 Map<ExpMaterial, String> outputMaterials = new HashMap<>();
                 int materialOutputCount = Math.max(form.materialOutputCount, form.materialOutputs != null ? form.materialOutputs.size() : 0);
-                if (materialOutputCount > 0 && outSampleSet != null)
+                if (materialOutputCount > 0 && outSampleType != null)
                 {
                     DerivedOutputs<ExpMaterial> derived = new DerivedOutputs<ExpMaterial>(parentInputNames, form.materialDefault, form.materialOutputs, materialOutputCount, "Material")
                     {
@@ -5369,7 +5370,7 @@ public class ExperimentController extends SpringActionController
                         protected TableInfo createTable()
                         {
                             SamplesSchema schema = new SamplesSchema(getUser(), getContainer());
-                            return schema.getTable(outSampleSet.getName());
+                            return schema.getTable(outSampleType.getName());
                         }
 
                         @Override
@@ -5508,7 +5509,7 @@ public class ExperimentController extends SpringActionController
 
                 Map<Enum, Object> configParams = new HashMap<>();
                 // Skip derivation during insert -- DeriveAction will call ExperimentService.get().derive() after samples are inserted
-                configParams.put(SampleSetUpdateServiceDI.Options.SkipDerivation, true);
+                configParams.put(SampleTypeUpdateServiceDI.Options.SkipDerivation, true);
 
                 BatchValidationException qusErrors = new BatchValidationException();
                 List<Map<String, Object>> insertedRows = qus.insertRows(getUser(), getContainer(), rows, qusErrors, configParams, null);
@@ -6131,15 +6132,15 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ActionURL getShowSampleSetListURL(Container c)
+        public ActionURL getShowSampleTypeListURL(Container c)
         {
-            return getShowSampleSetListURL(c, null);
+            return getShowSampleTypeListURL(c, null);
         }
 
         @Override
-        public ActionURL getShowSampleSetURL(ExpSampleSet sampleSet)
+        public ActionURL getShowSampleTypeURL(ExpSampleType sampleType)
         {
-            return new ActionURL(ShowMaterialSourceAction.class, sampleSet.getContainer()).addParameter("rowId", sampleSet.getRowId());
+            return new ActionURL(ShowMaterialSourceAction.class, sampleType.getContainer()).addParameter("rowId", sampleType.getRowId());
         }
 
         public ActionURL getExperimentListURL(Container container)
@@ -6147,7 +6148,7 @@ public class ExperimentController extends SpringActionController
             return new ActionURL(ShowRunGroupsAction.class, container);
         }
 
-        public ActionURL getShowSampleSetListURL(Container c, String errorMessage)
+        public ActionURL getShowSampleTypeListURL(Container c, String errorMessage)
         {
             ActionURL url = new ActionURL(ListMaterialSourcesAction.class, c);
             if (errorMessage != null)
@@ -6308,16 +6309,16 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ActionURL getCreateSampleSetURL(Container container)
+        public ActionURL getCreateSampleTypeURL(Container container)
         {
             return new ActionURL(EditSampleSetAction.class, container);
         }
 
         @Override
-        public ActionURL getImportSamplesURL(Container container, String sampleSetName)
+        public ActionURL getImportSamplesURL(Container container, String sampleTypeName)
         {
             ActionURL url = new ActionURL(ImportSamplesAction.class, container);
-            url.addParameter("query.queryName", sampleSetName);
+            url.addParameter("query.queryName", sampleTypeName);
             url.addParameter("schemaName", "exp.materials");
             return url;
         }

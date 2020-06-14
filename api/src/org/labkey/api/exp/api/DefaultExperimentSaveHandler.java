@@ -444,7 +444,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     @Override
     public ExpMaterial handleMaterial(ViewContext context, JSONObject materialObject) throws ValidationException
     {
-        ExpSampleSet sampleSet = null;
+        ExpSampleType sampleSet = null;
         ExpMaterial material = null;
         if (materialObject.has(ExperimentJSONConverter.ID))
         {
@@ -452,7 +452,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             material = ExperimentService.get().getExpMaterial(materialRowId);
             if (material == null)
                 throw new NotFoundException("Could not find material with row id '" + materialRowId + "'");
-            sampleSet = material.getSampleSet();
+            sampleSet = material.getSampleType();
         }
         else if (materialObject.has(ExperimentJSONConverter.LSID))
         {
@@ -460,7 +460,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             material = ExperimentService.get().getExpMaterial(materialLsid);
             if (material == null)
                 throw new NotFoundException("Could not find material with LSID '" + materialLsid + "'");
-            sampleSet = material.getSampleSet();
+            sampleSet = material.getSampleType();
         }
 
         if (material == null)
@@ -472,21 +472,21 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 if (sampleSetJson.has(ExperimentJSONConverter.ID))
                 {
                     int sampleSetRowId = sampleSetJson.getInt(ExperimentJSONConverter.ID);
-                    sampleSet = SampleSetService.get().getSampleSet(sampleSetRowId);
+                    sampleSet = SampleTypeService.get().getSampleType(sampleSetRowId);
                     if (sampleSet == null)
                         throw new NotFoundException("A sample type with row id '" + sampleSetRowId + "' doesn't exist.");
                 }
                 else if (sampleSetJson.has(ExperimentJSONConverter.NAME))
                 {
                     String sampleSetName = sampleSetJson.getString(ExperimentJSONConverter.NAME);
-                    sampleSet = SampleSetService.get().getSampleSet(context.getContainer(), context.getUser(), sampleSetName);
+                    sampleSet = SampleTypeService.get().getSampleType(context.getContainer(), context.getUser(), sampleSetName);
                     if (sampleSet == null)
                         throw new NotFoundException("A sample type named '" + sampleSetName + "' doesn't exist.");
                 }
                 else if (sampleSetJson.has(ExperimentJSONConverter.LSID))
                 {
                     String lsid = sampleSetJson.getString(ExperimentJSONConverter.LSID);
-                    sampleSet = SampleSetService.get().getSampleSet(lsid);
+                    sampleSet = SampleTypeService.get().getSampleType(lsid);
                     if (sampleSet == null)
                         throw new NotFoundException("A sample type with LSID '" + lsid + "' doesn't exist.");
                 }
@@ -559,7 +559,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 
     // XXX: doesn't handle SampleSet parent property magic
     // XXX: doesn't assert the materialName is the concat of sampleSet id columns
-    private ExpMaterial createMaterial(ViewContext viewContext, ExpSampleSet sampleSet, String materialName)
+    private ExpMaterial createMaterial(ViewContext viewContext, ExpSampleType sampleSet, String materialName)
     {
         ExpMaterial material;
         String materialLsid;

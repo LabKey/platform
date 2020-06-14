@@ -16,11 +16,11 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.exp.api.ExpSampleSet" %>
+<%@ page import="org.labkey.api.exp.api.ExpSampleType" %>
 <%@ page import="org.labkey.api.study.SamplesUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.experiment.api.ExpSampleSetImpl" %>
-<%@ page import="org.labkey.experiment.api.SampleSetServiceImpl" %>
+<%@ page import="org.labkey.experiment.api.ExpSampleTypeImpl" %>
+<%@ page import="org.labkey.experiment.api.SampleTypeServiceImpl" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
@@ -33,11 +33,11 @@
     }
     else
     {
-        List<ExpSampleSetImpl> sampleSets = SampleSetServiceImpl.get().getSampleSets(getContainer(), getUser(), true);
+        List<ExpSampleTypeImpl> sampleSets = SampleTypeServiceImpl.get().getSampleTypes(getContainer(), getUser(), true);
 
         int i = 0;
     %> <table style="width:50px;margin-right:1em" ><tr><td style="vertical-align:top;white-space:nowrap;margin:1em"> <%
-        for (ExpSampleSet sampleSet : sampleSets)
+        for (ExpSampleType sampleSet : sampleSets)
         {
             ActionURL url;
             boolean isStudySample = SpecimenService.SAMPLE_TYPE_NAME.equals(sampleSet.getName());

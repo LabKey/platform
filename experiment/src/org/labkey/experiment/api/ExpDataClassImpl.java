@@ -24,10 +24,10 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
@@ -143,11 +143,11 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
 
     @Nullable
     @Override
-    public ExpSampleSet getSampleSet()
+    public ExpSampleType getSampleSet()
     {
         Integer sampleSetRowId = _object.getMaterialSourceId();
         if (sampleSetRowId != null)
-            return SampleSetService.get().getSampleSet(sampleSetRowId);
+            return SampleTypeService.get().getSampleType(sampleSetRowId);
 
         return null;
     }

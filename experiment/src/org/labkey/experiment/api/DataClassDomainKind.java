@@ -33,10 +33,10 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.DataClassDomainKindProperties;
 import org.labkey.api.exp.api.ExpDataClass;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.DataClassUserSchema;
@@ -124,7 +124,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         // if "sampleSet" is the Name string, look it up and switch the argument map to use the RowId
         if (arguments.containsKey("sampleSet") && !StringUtils.isNumeric(arguments.get("sampleSet").toString()))
         {
-            ExpSampleSet sampleSet = SampleSetService.get().getSampleSet(container, user, (String)arguments.get("sampleSet"));
+            ExpSampleType sampleSet = SampleTypeService.get().getSampleType(container, user, (String)arguments.get("sampleSet"));
             if (sampleSet != null)
                 updatedArguments.put("sampleSet", sampleSet.getRowId());
         }

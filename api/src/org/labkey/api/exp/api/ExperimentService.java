@@ -53,7 +53,7 @@ import org.labkey.api.exp.query.ExpProtocolTable;
 import org.labkey.api.exp.query.ExpQCFlagTable;
 import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
-import org.labkey.api.exp.query.ExpSampleSetTable;
+import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
@@ -260,7 +260,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @return Resolved samples
      * @throws ExperimentException
      */
-    @NotNull List<? extends ExpMaterial> getExpMaterials(Container container, @Nullable User user, Set<String> sampleNames, @Nullable ExpSampleSet sampleType, boolean throwIfMissing, boolean createIfMissing) throws ExperimentException;
+    @NotNull List<? extends ExpMaterial> getExpMaterials(Container container, @Nullable User user, Set<String> sampleNames, @Nullable ExpSampleType sampleType, boolean throwIfMissing, boolean createIfMissing) throws ExperimentException;
 
     /* This version of createExpMaterial() takes name from lsid.getObjectId() */
     ExpMaterial createExpMaterial(Container container, Lsid lsid);
@@ -317,7 +317,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpMaterialProtocolInput createMaterialProtocolInput(
             @NotNull String name, @NotNull ExpProtocol protocol, boolean input,
-            @Nullable ExpSampleSet sampleSet, @Nullable ExpProtocolInputCriteria criteria,
+            @Nullable ExpSampleType sampleSet, @Nullable ExpProtocolInputCriteria criteria,
             int minOccurs, @Nullable Integer maxOccurs);
 
     @Nullable ExpProtocolInput getProtocolInput(Lsid lsid);
@@ -395,7 +395,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpDataProtocolInputTable createDataProtocolInputTable(String name, ExpSchema schema, ContainerFilter cf);
 
-    ExpSampleSetTable createSampleSetTable(String name, UserSchema schema, ContainerFilter cf);
+    ExpSampleTypeTable createSampleSetTable(String name, UserSchema schema, ContainerFilter cf);
 
     ExpDataClassTable createDataClassTable(String name, UserSchema schema, ContainerFilter cf);
 
@@ -510,7 +510,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<? extends ExpRun> getExpRunsForProtocolIds(boolean includeRelated, @NotNull Collection<Integer> rowIds);
 
-    List<? extends ExpRun> getRunsUsingSampleSets(ExpSampleSet... sampleSets);
+    List<? extends ExpRun> getRunsUsingSampleTypes(ExpSampleType... sampleSets);
 
     List<? extends ExpRun> getRunsUsingDataClasses(Collection<ExpDataClass> dataClasses);
 

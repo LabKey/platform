@@ -18,8 +18,7 @@ package org.labkey.api.util;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
@@ -342,7 +341,7 @@ public class SubstitutionFormat
 
             // Increment sample counters for the given date or today's date if null
             // TODO: How can we check if we have incremented sample counters for this same date within the current context/row?
-            Map<String, Long> counts = SampleSetService.get().incrementSampleCounts(date);
+            Map<String, Long> counts = SampleTypeService.get().incrementSampleCounts(date);
             return counts.get(_name);
         }
     }

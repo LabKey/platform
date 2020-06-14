@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
 <%@ page import="org.labkey.api.exp.api.ExpMaterial" %>
-<%@ page import="org.labkey.api.exp.api.ExpSampleSet" %>
+<%@ page import="org.labkey.api.exp.api.ExpSampleType" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
@@ -31,7 +31,7 @@
 
     Map<Integer, String> sampleSetOptions = new LinkedHashMap<>();
     sampleSetOptions.put(0, "Not a member of a sample type");
-    for (ExpSampleSet ss : bean.getSampleSets())
+    for (ExpSampleType ss : bean.getSampleTypes())
     {
         sampleSetOptions.put(ss.getRowId(), ss.getName() + " in " + ss.getContainer().getPath());
     }

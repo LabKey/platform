@@ -17,8 +17,7 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.exp.query.ExpMaterialTable;
-import org.labkey.api.exp.query.ExpSampleSetTable;
+import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
@@ -146,7 +145,7 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     @Override
     public @Nullable QueryRowReference getQueryRowReference()
     {
-        return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.SampleSets.name(), FieldKey.fromParts(ExpSampleSetTable.Column.RowId.name()), getRowId());
+        return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.SampleSets.name(), FieldKey.fromParts(ExpSampleTypeTable.Column.RowId.name()), getRowId());
     }
 
     @Override

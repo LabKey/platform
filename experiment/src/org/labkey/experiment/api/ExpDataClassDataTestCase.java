@@ -859,7 +859,7 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
         String sampleName = "CarLocations";
         String sampleOneLocation = "California";
 
-        ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
+        ExpSampleTypeImpl ss = SampleTypeServiceImpl.get().createSampleType(c, user,
                 sampleName, null, List.of(new GWTPropertyDescriptor("name", "string")), Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
 

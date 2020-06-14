@@ -50,9 +50,9 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunItem;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -67,14 +67,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
-import org.labkey.experiment.api.ExpSampleSetImpl;
+import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -430,7 +429,7 @@ public abstract class UploadSamplesHelper
             {
                 Map<ExpMaterial, String> existingParentMaterials = new HashMap<>();
                 currentParents.second.forEach((materialParent) -> {
-                    ExpSampleSet sampleSet = materialParent.getSampleSet();
+                    ExpSampleType sampleSet = materialParent.getSampleType();
                     String role = sampleRole(materialParent);
                     if (sampleSet != null && !parentMaterials.containsValue(role) && !parentSampleTypesToRemove.contains(role))
                         existingParentMaterials.put(materialParent, role);
@@ -454,7 +453,7 @@ public abstract class UploadSamplesHelper
 
     public static String sampleRole(ExpMaterial material)
     {
-        ExpSampleSet ss = material.getSampleSet();
+        ExpSampleType ss = material.getSampleType();
         return ss != null ? ss.getName() : "Sample";
     }
 
@@ -501,7 +500,7 @@ public abstract class UploadSamplesHelper
 
     private static boolean findMaterialSource(Container c, User user, String parentName)
     {
-        return SampleSetService.get().getSampleSet(c, user, parentName) != null;
+        return SampleTypeService.get().getSampleType(c, user, parentName) != null;
     }
 
 
@@ -567,12 +566,12 @@ public abstract class UploadSamplesHelper
     {
         private static final int BATCH_SIZE = 100;
 
-        final ExpSampleSetImpl sampleset;
+        final ExpSampleTypeImpl sampleset;
         final DataIteratorBuilder builder;
         final Lsid.LsidBuilder lsidBuilder;
         final ExpMaterialTableImpl materialTable;
 
-        public PrepareDataIteratorBuilder(ExpSampleSetImpl sampleset, TableInfo materialTable, DataIteratorBuilder in)
+        public PrepareDataIteratorBuilder(ExpSampleTypeImpl sampleset, TableInfo materialTable, DataIteratorBuilder in)
         {
             this.sampleset = sampleset;
             this.builder = in;
@@ -621,11 +620,11 @@ public abstract class UploadSamplesHelper
 
             ColumnInfo genIdCol = new BaseColumnInfo(FieldKey.fromParts("genId"), JdbcType.INTEGER);
             final int batchSize = context.getInsertOption().batch ? BATCH_SIZE : 1;
-            addGenId.addSequenceColumn(genIdCol, sampleset.getContainer(), ExpSampleSetImpl.SEQUENCE_PREFIX, sampleset.getRowId(), batchSize);
+            addGenId.addSequenceColumn(genIdCol, sampleset.getContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, sampleset.getRowId(), batchSize);
             DataIterator dataIterator = LoggingDataIterator.wrap(addGenId);
 
             // Table Counters
-            DataIteratorBuilder dib = ExpDataIterators.CounterDataIteratorBuilder.create(DataIteratorBuilder.wrap(dataIterator), sampleset.getContainer(), materialTable, ExpSampleSet.SEQUENCE_PREFIX, sampleset.getRowId());
+            DataIteratorBuilder dib = ExpDataIterators.CounterDataIteratorBuilder.create(DataIteratorBuilder.wrap(dataIterator), sampleset.getContainer(), materialTable, ExpSampleType.SEQUENCE_PREFIX, sampleset.getRowId());
             dataIterator = dib.getDataIterator(context);
 
             // sampleset.createSampleNames() + generate lsid
@@ -639,7 +638,7 @@ public abstract class UploadSamplesHelper
 
     static class _GenerateNamesDataIterator extends SimpleTranslator
     {
-        final ExpSampleSetImpl sampleset;
+        final ExpSampleTypeImpl sampleset;
         final NameGenerator nameGen;
         final NameGenerator.State nameState;
         final Lsid.LsidBuilder lsidBuilder;
@@ -648,7 +647,7 @@ public abstract class UploadSamplesHelper
         String generatedName = null;
         String generatedLsid = null;
 
-        _GenerateNamesDataIterator(ExpSampleSetImpl sampleset, MapDataIterator source, DataIteratorContext context)
+        _GenerateNamesDataIterator(ExpSampleTypeImpl sampleset, MapDataIterator source, DataIteratorContext context)
         {
             super(source, context);
             this.sampleset = sampleset;

@@ -67,7 +67,7 @@ import org.labkey.api.exp.query.ExpMaterialInputTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
-import org.labkey.api.exp.query.ExpSampleSetTable;
+import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
@@ -87,7 +87,6 @@ import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
@@ -631,7 +630,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     @Override
     @NotNull
-    public List<ExpMaterialImpl> getExpMaterials(Container container, User user, Set<String> sampleNames, @Nullable ExpSampleSet sampleType, boolean throwIfMissing, boolean createIfMissing)
+    public List<ExpMaterialImpl> getExpMaterials(Container container, User user, Set<String> sampleNames, @Nullable ExpSampleType sampleType, boolean throwIfMissing, boolean createIfMissing)
             throws ExperimentException
     {
         if (throwIfMissing && createIfMissing)
@@ -670,7 +669,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     // Insert new materials into the given sample type or the default (unspecified) sample type if none is provided.
-    private List<ExpMaterialImpl> createExpMaterials(Container container, User user, @Nullable ExpSampleSet sampleSet, Set<String> sampleNames)
+    private List<ExpMaterialImpl> createExpMaterials(Container container, User user, @Nullable ExpSampleType sampleSet, Set<String> sampleNames)
     {
         List<ExpMaterialImpl> materials = new ArrayList<>(sampleNames.size());
 
@@ -685,8 +684,8 @@ public class ExperimentServiceImpl implements ExperimentService
             }
             else
             {
-                cpasType = SampleSetServiceImpl.get().getDefaultSampleSetLsid();
-                materialLsidPrefix = SampleSetServiceImpl.get().getDefaultSampleSetMaterialLsidPrefix();
+                cpasType = SampleTypeServiceImpl.get().getDefaultSampleTypeLsid();
+                materialLsidPrefix = SampleTypeServiceImpl.get().getDefaultSampleTypeMaterialLsidPrefix();
             }
 
             // Create materials directly using Name.
@@ -777,13 +776,13 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpDataClassImpl.fromDataClasses(new SqlSelector(getSchema(), sql).getArrayList(DataClass.class));
     }
 
-    public Collection<ExpSampleSetImpl> getIndexableSampleSets(Container container, @Nullable Date modifiedSince)
+    public Collection<ExpSampleTypeImpl> getIndexableSampleSets(Container container, @Nullable Date modifiedSince)
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoMaterialSource() + " WHERE Container = ?").add(container.getId());
         SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterialSource(), modifiedSince, null).toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
-        return ExpSampleSetImpl.fromMaterialSources(new SqlSelector(getSchema(), sql).getArrayList(MaterialSource.class));
+        return ExpSampleTypeImpl.fromMaterialSources(new SqlSelector(getSchema(), sql).getArrayList(MaterialSource.class));
     }
 
     public void setDataLastIndexed(int rowId, long ms)
@@ -1044,7 +1043,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public ExpMaterialProtocolInputImpl createMaterialProtocolInput(
             @NotNull String name, @NotNull ExpProtocol protocol, boolean input,
-            @Nullable ExpSampleSet sampleSet,
+            @Nullable ExpSampleType sampleSet,
             @Nullable ExpProtocolInputCriteria criteria,
             int minOccurs, @Nullable Integer maxOccurs)
     {
@@ -1060,7 +1059,7 @@ public class ExperimentServiceImpl implements ExperimentService
     public ExpMaterialProtocolInputImpl createMaterialProtocolInput(
             @NotNull Container c,
             @NotNull String name, int protocolId, boolean input,
-            @Nullable ExpSampleSet sampleSet,
+            @Nullable ExpSampleType sampleSet,
             @Nullable ExpProtocolInputCriteria criteria,
             int minOccurs, @Nullable Integer maxOccurs)
     {
@@ -1134,9 +1133,9 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpSampleSetTable createSampleSetTable(String name, UserSchema schema, ContainerFilter cf)
+    public ExpSampleTypeTable createSampleSetTable(String name, UserSchema schema, ContainerFilter cf)
     {
-        return new ExpSampleSetTableImpl(name, schema, cf);
+        return new ExpSampleTypeTableImpl(name, schema, cf);
     }
 
     @Override
@@ -1211,7 +1210,7 @@ public class ExperimentServiceImpl implements ExperimentService
             return "Run";
         if (clazz == ExpExperiment.class)
             return "Experiment";
-        if (clazz == ExpSampleSet.class)
+        if (clazz == ExpSampleType.class)
             return "SampleSet";
         if (clazz == ExpDataClass.class)
             return ExpDataClassImpl.NAMESPACE_PREFIX;
@@ -1247,8 +1246,8 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public String generateLSID(Container container, Class<? extends ExpObject> clazz, @NotNull String name)
     {
-        if (clazz == ExpSampleSet.class && name.equals(DEFAULT_MATERIAL_SOURCE_NAME) && ContainerManager.getSharedContainer().equals(container))
-            return SampleSetService.get().getDefaultSampleSetLsid();
+        if (clazz == ExpSampleType.class && name.equals(DEFAULT_MATERIAL_SOURCE_NAME) && ContainerManager.getSharedContainer().equals(container))
+            return SampleTypeService.get().getDefaultSampleTypeLsid();
         return generateLSID(container, getNamespacePrefix(clazz), name);
     }
 
@@ -2754,7 +2753,7 @@ public class ExperimentServiceImpl implements ExperimentService
             if (oo == null)
             {
                 // NOTE: We must get the SampleSet definition so that the exp.object is ensured in the correct container
-                ExpSampleSet ss = SampleSetService.get().getSampleSet(cpasType);
+                ExpSampleType ss = SampleTypeService.get().getSampleType(cpasType);
                 if (ss != null)
                 {
                     LOG.debug("  creating exp.object.objectId for owner cpasType '" + cpasType + "' needed by child objects");
@@ -3471,7 +3470,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public void clearCaches()
     {
-        ((SampleSetServiceImpl)SampleSetService.get()).clearMaterialSourceCache(null);
+        ((SampleTypeServiceImpl) SampleTypeService.get()).clearMaterialSourceCache(null);
         getDataClassCache().clear();
         getProtocolCache().clear();
     }
@@ -3916,7 +3915,7 @@ public class ExperimentServiceImpl implements ExperimentService
         deleteMaterialByRowIds(user, container, selectedMaterialIds, true, null);
     }
 
-    public void deleteMaterialByRowIds(User user, Container container, Collection<Integer> selectedMaterialIds, boolean deleteRunsUsingMaterials, ExpSampleSet ssDeleteFrom)
+    public void deleteMaterialByRowIds(User user, Container container, Collection<Integer> selectedMaterialIds, boolean deleteRunsUsingMaterials, ExpSampleType ssDeleteFrom)
     {
         if (selectedMaterialIds.isEmpty())
             return;
@@ -3937,7 +3936,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), sql).getArrayList(Material.class));
             }
 
-            Set<ExpSampleSet> sss = new HashSet<>();
+            Set<ExpSampleType> sss = new HashSet<>();
             if (null != ssDeleteFrom)
                 sss.add(ssDeleteFrom);
             for (ExpMaterial material : materials)
@@ -3946,7 +3945,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     throw new UnauthorizedException();
                 if (null == ssDeleteFrom)
                 {
-                    ExpSampleSet ss = material.getSampleSet();
+                    ExpSampleType ss = material.getSampleType();
                     if (null != ss)
                         sss.add(ss);
                 }
@@ -4022,9 +4021,9 @@ public class ExperimentServiceImpl implements ExperimentService
 
             try (Timing ignored = MiniProfiler.step("expsampleset materialized tables"))
             {
-                for (ExpSampleSet ss : sss)
+                for (ExpSampleType ss : sss)
                 {
-                    TableInfo dbTinfo = ((ExpSampleSetImpl)ss).getTinfo();
+                    TableInfo dbTinfo = ((ExpSampleTypeImpl)ss).getTinfo();
                     // NOTE: study specimens don't have a domain for their samples, so no table
                     if (null != dbTinfo)
                     {
@@ -4401,7 +4400,7 @@ public class ExperimentServiceImpl implements ExperimentService
         int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
 
         List<ExpExperimentImpl> exps = getExperiments(c, user, false, true, true);
-        List<ExpSampleSetImpl> sampleSets = ((SampleSetServiceImpl)SampleSetService.get()).getSampleSets(c, user, false);
+        List<ExpSampleTypeImpl> sampleSets = ((SampleTypeServiceImpl) SampleTypeService.get()).getSampleTypes(c, user, false);
         List<ExpDataClassImpl> dataClasses = getDataClasses(c, user, false);
 
         sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ?";
@@ -4452,7 +4451,7 @@ public class ExperimentServiceImpl implements ExperimentService
             // delete material sources
             // now call the specialized function to delete the Materials that belong to the Material Source,
             // including the top-level properties of the Materials, of which there are often many
-            for (ExpSampleSet sampleSet : sampleSets)
+            for (ExpSampleType sampleSet : sampleSets)
             {
                 sampleSet.delete(user);
             }
@@ -4778,10 +4777,10 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public List<ExpRunImpl> getRunsUsingSampleSets(ExpSampleSet... sources)
+    public List<ExpRunImpl> getRunsUsingSampleTypes(ExpSampleType... sources)
     {
         List<String> materialSourceIds = new ArrayList<>(sources.length);
-        for (ExpSampleSet source : sources)
+        for (ExpSampleType source : sources)
         {
             materialSourceIds.add(source.getLSID());
         }
@@ -6563,7 +6562,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
         if (options.getSampleSet() != null)
         {
-            ExpSampleSet ss = SampleSetService.get().getSampleSet(c, u, options.getSampleSet());
+            ExpSampleType ss = SampleTypeService.get().getSampleType(c, u, options.getSampleSet());
             if (ss == null)
                 throw new IllegalArgumentException("SampleSet '" + options.getSampleSet() + "' not found.");
 
@@ -6953,12 +6952,12 @@ public class ExperimentServiceImpl implements ExperimentService
     public Map<String, List<ExpMaterialImpl>> getSamplesByName(Container container, User user)
     {
         Map<String, List<ExpMaterialImpl>> potentialParents = new HashMap<>();
-        for (ExpSampleSet sampleSet : SampleSetService.get().getSampleSets(container, user, true))
+        for (ExpSampleType sampleSet : SampleTypeService.get().getSampleTypes(container, user, true))
         {
             List<ExpMaterial> samples = new ArrayList<>(sampleSet.getSamples(sampleSet.getContainer()));
             if (!container.equals(sampleSet.getContainer()))
             {
-                samples.addAll(((ExpSampleSetImpl)sampleSet).getSamples(container));
+                samples.addAll(((ExpSampleTypeImpl)sampleSet).getSamples(container));
             }
             for (ExpMaterial expMaterial : samples)
             {
@@ -7091,7 +7090,7 @@ public class ExperimentServiceImpl implements ExperimentService
             // create sample type
             List<GWTPropertyDescriptor> props = new ArrayList<>();
             props.add(new GWTPropertyDescriptor("name", "string"));
-            ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user, "TestSamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null);
+            ExpSampleType st = SampleTypeService.get().createSampleType(c, user, "TestSamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null);
 
             // create material
             UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
@@ -7107,8 +7106,8 @@ public class ExperimentServiceImpl implements ExperimentService
             if (errors.hasErrors())
                 throw errors;
 
-            ExpMaterial sampleIn = ss.getSample(c, "bob");
-            ExpMaterial sampleOut = ss.getSample(c, "sally");
+            ExpMaterial sampleIn = st.getSample(c, "bob");
+            ExpMaterial sampleOut = st.getSample(c, "sally");
 
             // create run
             Map<ExpMaterial, String> inputMaterials = new HashMap<>();

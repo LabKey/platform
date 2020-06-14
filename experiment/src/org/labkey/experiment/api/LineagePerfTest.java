@@ -37,9 +37,9 @@ import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DuplicateKeyException;
@@ -316,10 +316,10 @@ public class LineagePerfTest extends Assert
 
         elapsedTimer.start();
 
-        Pair<ExpSampleSet, ExpData> pair = reuseExistingJunk();
+        Pair<ExpSampleType, ExpData> pair = reuseExistingJunk();
         if (pair == null)
             pair = generateJunk(generateRowsTimer, insertDataTimer, insertSamplesTimer);
-        ExpSampleSet ss = pair.first;
+        ExpSampleType ss = pair.first;
         ExpData firstData = pair.second;
 
 
@@ -352,10 +352,10 @@ public class LineagePerfTest extends Assert
         LOG.info(elapsedTimer);
     }
 
-    public Pair<ExpSampleSet, ExpData> generateJunk(CPUTimer generateRowsTimer, CPUTimer insertDataTimer, CPUTimer insertSamplesTimer)
+    public Pair<ExpSampleType, ExpData> generateJunk(CPUTimer generateRowsTimer, CPUTimer insertDataTimer, CPUTimer insertSamplesTimer)
             throws ExperimentException, SQLException, DuplicateKeyException, BatchValidationException, QueryUpdateServiceException
     {
-        ExpSampleSet ss;
+        ExpSampleType ss;
         ExpData firstData;
 
         // Create a DataClass and SampleSet and insert into MyData first, then MySamples
@@ -397,7 +397,7 @@ public class LineagePerfTest extends Assert
             props = new ArrayList<>();
             props.add(new GWTPropertyDescriptor("name", "string"));
             props.add(new GWTPropertyDescriptor("age", "int"));
-            ss = SampleSetService.get().createSampleSet(_container, _user, "MySamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null, null);
+            ss = SampleTypeService.get().createSampleType(_container, _user, "MySamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null, null);
             TableInfo ssTable = QueryService.get().getUserSchema(_user, _container, "samples").getTable("MySamples");
             errors = new BatchValidationException();
             ssTable.getUpdateService().insertRows(_user, _container, samples, errors, null, null);
@@ -413,9 +413,9 @@ public class LineagePerfTest extends Assert
         return Pair.of(ss, firstData);
     }
 
-    private Pair<ExpSampleSet, ExpData> reuseExistingJunk()
+    private Pair<ExpSampleType, ExpData> reuseExistingJunk()
     {
-        ExpSampleSet ss = SampleSetService.get().getSampleSet(_container, "MySamples");
+        ExpSampleType ss = SampleTypeService.get().getSampleType(_container, "MySamples");
         if (ss == null)
             return null;
 
@@ -437,7 +437,7 @@ public class LineagePerfTest extends Assert
         return Pair.of(ss, data);
     }
 
-    private void lineageQueries(String prefix, CPUTimer lineageQuery, CPUTimer lineageGraph, CPUTimer insertMoreTimer, ExpSampleSet ss, ExpData firstData) throws ExperimentException
+    private void lineageQueries(String prefix, CPUTimer lineageQuery, CPUTimer lineageGraph, CPUTimer insertMoreTimer, ExpSampleType ss, ExpData firstData) throws ExperimentException
     {
         // parse the query once
         final StringBuilder sql = new StringBuilder()

@@ -26,7 +26,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import java.util.List;
 
 /**
- * Category of {@link ExpData}, extended by a Domain with custom properties. Data version of an {@link ExpSampleSet}
+ * Category of {@link ExpData}, extended by a Domain with custom properties. Data version of an {@link ExpSampleType}
  * User: kevink
  * Date: 9/15/15
  */
@@ -47,7 +47,7 @@ public interface ExpDataClass extends ExpObject
 
     /** Get the SampleSet related to this ExpDataClass. */
     @Nullable
-    ExpSampleSet getSampleSet();
+    ExpSampleType getSampleSet();
 
     void setSampleSet(Integer sampleSet);
 

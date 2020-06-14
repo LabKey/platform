@@ -101,7 +101,7 @@ public class FilterProtocolInputCriteria extends AbstractProtocolInputCriteria
         else if (protocolInput instanceof ExpMaterialProtocolInput)
         {
             ExpMaterialProtocolInput mpi = (ExpMaterialProtocolInput)protocolInput;
-            ExpSampleSet ss = mpi.getType();
+            ExpSampleType ss = mpi.getType();
             if (ss != null)
             {
                 UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME));

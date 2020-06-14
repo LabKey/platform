@@ -23,7 +23,7 @@
 <%@ page import="org.labkey.api.exp.api.ExpMaterialProtocolInput" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocolInputCriteria" %>
-<%@ page import="org.labkey.api.exp.api.ExpSampleSet" %>
+<%@ page import="org.labkey.api.exp.api.ExpSampleType" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -160,7 +160,7 @@
             <b>Inputs</b><br>
             <table class="labkey-data-region-legacy labkey-show-borders" width="100%">
                 <% for (ExpMaterialProtocolInput mpi : materialProtocolInputs) { %>
-                <% ExpSampleSet ss = mpi.getType(); %>
+                <% ExpSampleType ss = mpi.getType(); %>
                 <% ExpProtocolInputCriteria criteria = mpi.getCriteria(); %>
                 <tr class="labkey-row">
                     <td width="100px"><%=h(mpi.getName())%></td>
@@ -208,7 +208,7 @@
             <table class="labkey-data-region-legacy labkey-show-borders" width="100%">
                 <% for (ExpMaterialProtocolInput mpo : materialProtocolOutputs) { %>
                 <% ExpProtocolInputCriteria criteria = mpo.getCriteria(); %>
-                <% ExpSampleSet ss = mpo.getType(); %>
+                <% ExpSampleType ss = mpo.getType(); %>
                 <tr class="labkey-row">
                     <td width="100px"><%=h(mpo.getName())%></td>
                     <td width="80px">

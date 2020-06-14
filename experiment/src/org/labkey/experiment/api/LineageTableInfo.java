@@ -28,9 +28,9 @@ import org.labkey.api.data.VirtualTable;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.DataClassUserSchema;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -156,7 +156,7 @@ public class LineageTableInfo extends VirtualTable
     private ForeignKey createCpasTypeFK(String cpasType)
     {
         // TODO: check in scope and has permission
-        ExpSampleSet ss = SampleSetService.get().getSampleSet(cpasType);
+        ExpSampleType ss = SampleTypeService.get().getSampleType(cpasType);
         if (ss != null)
         {
             return new LookupForeignKey("lsid", "Name")

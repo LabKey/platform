@@ -19,9 +19,9 @@ package org.labkey.experiment.xar;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.experiment.ArchiveURLRewriter;
 import org.labkey.experiment.URLRewriter;
 import org.labkey.experiment.XarExporter;
@@ -42,11 +42,12 @@ import java.util.Set;
  */
 public class XarExportSelection implements Serializable
 {
-    private List<Integer> _expIds = new ArrayList<>();
-    private Set<ExpRun> _runs = new LinkedHashSet<>();
-    private List<Integer> _dataIds = new ArrayList<>();
-    private List<Integer> _sampleSetIds = new ArrayList<>();
-    private List<Integer> _protocolIds = new ArrayList<>();
+    private final List<Integer> _expIds = new ArrayList<>();
+    private final Set<ExpRun> _runs = new LinkedHashSet<>();
+    private final List<Integer> _dataIds = new ArrayList<>();
+    private final List<Integer> _sampleTypeIds = new ArrayList<>();
+    private final List<Integer> _protocolIds = new ArrayList<>();
+
     private boolean _includeXarXml = true;
     private Set<String> _roles;
 
@@ -125,9 +126,9 @@ public class XarExportSelection implements Serializable
             exporter.addProtocol(protocol, true);
         }
 
-        for (int sampleSetId : _sampleSetIds)
+        for (int sampleTypeId : _sampleTypeIds)
         {
-            exporter.addSampleSet(SampleSetService.get().getSampleSet(sampleSetId));
+            exporter.addSampleSet(SampleTypeService.get().getSampleType(sampleTypeId));
         }
 
         for (int dataId : _dataIds)
@@ -141,8 +142,8 @@ public class XarExportSelection implements Serializable
         return new ArchiveURLRewriter(_includeXarXml, _roles);
     }
 
-    public void addSampleSet(ExpSampleSet sampleSet)
+    public void addSampleType(ExpSampleType sampleType)
     {
-        _sampleSetIds.add(sampleSet.getRowId());
+        _sampleTypeIds.add(sampleType.getRowId());
     }
 }

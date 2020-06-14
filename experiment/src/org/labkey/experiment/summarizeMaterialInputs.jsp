@@ -37,7 +37,7 @@
     {
         for (ExpMaterial material : bean.getSourceMaterials().keySet())
         {
-            if (helper.getSampleSet().equals(material.getSampleSet()))
+            if (helper.getSampleSet().equals(material.getSampleType()))
             {
                 sameTypeInputs.add(material);
             }

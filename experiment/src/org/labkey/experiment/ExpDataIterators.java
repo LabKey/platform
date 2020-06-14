@@ -15,7 +15,6 @@
  */
 package org.labkey.experiment;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -63,7 +62,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExpDataClassDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
-import org.labkey.experiment.api.SampleSetUpdateServiceDI;
+import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.api.VocabularyDomainKind;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.labkey.experiment.samples.UploadSamplesHelper;
@@ -401,7 +400,7 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _pre.getDataIterator(context);
-            if (null != context.getConfigParameters() && context.getConfigParameters().containsKey(SampleSetUpdateServiceDI.Options.SkipDerivation))
+            if (null != context.getConfigParameters() && context.getConfigParameters().containsKey(SampleTypeUpdateServiceDI.Options.SkipDerivation))
             {
                 return pre;
             }

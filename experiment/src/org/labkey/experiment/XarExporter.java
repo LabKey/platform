@@ -50,10 +50,10 @@ import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpProtocolInput;
 import org.labkey.api.exp.api.ExpProtocolInputCriteria;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -548,11 +548,11 @@ public class XarExporter
             return;
         }
         _sampleSetLSIDs.add(cpasType);
-        ExpSampleSet sampleSet = SampleSetService.get().getSampleSet(cpasType);
+        ExpSampleType sampleSet = SampleTypeService.get().getSampleType(cpasType);
         addSampleSet(sampleSet);
     }
 
-    public void addSampleSet(ExpSampleSet sampleSet)
+    public void addSampleSet(ExpSampleType sampleSet)
     {
         if (sampleSet == null)
         {
@@ -991,7 +991,7 @@ public class XarExporter
         Lsid lsid = Lsid.parse(pi.getLSID());
         xMpi.setGuid(lsid.getObjectId());
 
-        ExpSampleSet ss = pi.getType();
+        ExpSampleType ss = pi.getType();
         if (ss != null)
             xMpi.setSampleSet(ss.getName());
 

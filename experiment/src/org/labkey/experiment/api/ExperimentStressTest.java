@@ -10,9 +10,9 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
@@ -128,7 +128,7 @@ public class ExperimentStressTest
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("name", "string"));
         props.add(new GWTPropertyDescriptor("age", "int"));
-        ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user, sampleSetName, null, props, Collections.emptyList(), -1, -1, -1, -1, "S-${genId}", null);
+        ExpSampleType ss = SampleTypeService.get().createSampleType(c, user, sampleSetName, null, props, Collections.emptyList(), -1, -1, -1, -1, "S-${genId}", null);
 
         // seed samples
         final int rowsToInsert = 50;

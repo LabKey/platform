@@ -22,16 +22,16 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.ClientDependency;
-import org.labkey.experiment.api.ExpSampleSetImpl;
+import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.springframework.validation.Errors;
 
 import java.util.List;
 
-public class SampleSetContentsView extends QueryView
+public class SampleTypeContentsView extends QueryView
 {
-    private final ExpSampleSetImpl _source;
+    private final ExpSampleTypeImpl _source;
 
-    public SampleSetContentsView(ExpSampleSetImpl source, SamplesSchema schema, QuerySettings settings, Errors errors)
+    public SampleTypeContentsView(ExpSampleTypeImpl source, SamplesSchema schema, QuerySettings settings, Errors errors)
     {
         super(schema, settings, errors);
         _source = source;
@@ -118,7 +118,7 @@ public class SampleSetContentsView extends QueryView
         PanelButton result = super.createExportButton(recordSelectorColumns);
         ActionURL url = new ActionURL(ExperimentController.ExportSampleSetAction.class, getContainer());
         url.addParameter("sampleSetId", _source.getRowId());
-        result.addSubPanel("XAR", new JspView<>("/org/labkey/experiment/controllers/exp/exportSampleSetAsXar.jsp", url));
+        result.addSubPanel("XAR", new JspView<>("/org/labkey/experiment/controllers/exp/exportSampleTypeAsXar.jsp", url));
         return result;
     }
 
@@ -179,6 +179,5 @@ public class SampleSetContentsView extends QueryView
         }
 
         return hasInsertNewOption && hasImportDataOption ? button : hasInsertNewOption ? createInsertButton() : hasImportDataOption ? createImportButton() : null;
-
     }
 }

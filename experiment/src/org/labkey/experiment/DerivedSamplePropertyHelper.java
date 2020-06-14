@@ -28,12 +28,12 @@ import org.labkey.api.exp.SamplePropertyHelper;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.security.User;
-import org.labkey.experiment.api.ExpSampleSetImpl;
+import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
 
@@ -55,7 +55,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
 {
     private final List<String> _names;
     private final Map<Integer, Lsid> _lsids = new HashMap<>();
-    private final ExpSampleSetImpl _sampleSet;
+    private final ExpSampleTypeImpl _sampleSet;
     private final Container _container;
     private final User _user;
 
@@ -63,7 +63,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
     private final NameGenerator _nameGenerator;
     private NameGenerator.State _state;
 
-    public DerivedSamplePropertyHelper(ExpSampleSetImpl sampleSet, int sampleCount, Container c, User user)
+    public DerivedSamplePropertyHelper(ExpSampleTypeImpl sampleSet, int sampleCount, Container c, User user)
     {
         super(Collections.emptyList());
 
@@ -101,7 +101,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
         setDomainProperties(Collections.unmodifiableList(dps));
     }
 
-    public ExpSampleSet getSampleSet()
+    public ExpSampleType getSampleSet()
     {
         return _sampleSet;
     }

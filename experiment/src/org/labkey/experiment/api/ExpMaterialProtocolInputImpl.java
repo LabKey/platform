@@ -22,7 +22,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpMaterialProtocolInput;
 import org.labkey.api.exp.api.ExpProtocolInput;
 import org.labkey.api.exp.api.ExpProtocolInputCriteria;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.security.User;
 
 import java.util.Objects;
@@ -41,8 +41,8 @@ public class ExpMaterialProtocolInputImpl extends ExpProtocolInputImpl<MaterialP
         if (material == null)
             return "Sample must not be null";
 
-        ExpSampleSet ss = getType();
-        if (ss != null && !Objects.equals(ss, material.getSampleSet()))
+        ExpSampleType ss = getType();
+        if (ss != null && !Objects.equals(ss, material.getSampleType()))
             return "Sample is not from '" + ss.getName() + "' SampleSet";
 
         ExpProtocolInputCriteria critera = getCriteria();
@@ -59,13 +59,13 @@ public class ExpMaterialProtocolInputImpl extends ExpProtocolInputImpl<MaterialP
 
 
     @Override
-    public @Nullable ExpSampleSetImpl getType()
+    public @Nullable ExpSampleTypeImpl getType()
     {
         Integer materialSourceId = _object.getMaterialSourceId();
         if (materialSourceId == null)
             return null;
 
-        return SampleSetServiceImpl.get().getSampleSet(materialSourceId);
+        return SampleTypeServiceImpl.get().getSampleType(materialSourceId);
     }
 
     @Override

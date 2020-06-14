@@ -41,11 +41,11 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolAttachmentType;
 import org.labkey.api.exp.api.ExpRunAttachmentType;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.FilterProtocolInputCriteria;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.ExperimentProperty;
@@ -150,14 +150,14 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         addController("experiment-types", TypesController.class);
         addController("property", PropertyController.class);
         ExperimentService.setInstance(new ExperimentServiceImpl());
-        SampleSetService.setInstance(new SampleSetServiceImpl());
+        SampleTypeService.setInstance(new SampleTypeServiceImpl());
         PropertyService.setInstance(new PropertyServiceImpl());
         DefaultValueService.setInstance(new DefaultValueServiceImpl());
 
         ExperimentProperty.register();
         SamplesSchema.register(this);
         ExpSchema.register(this);
-        PropertyService.get().registerDomainKind(new SampleSetDomainKind());
+        PropertyService.get().registerDomainKind(new SampleTypeDomainKind());
         PropertyService.get().registerDomainKind(new DataClassDomainKind());
         PropertyService.get().registerDomainKind(new VocabularyDomainKind());
 
@@ -229,16 +229,16 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         result.add(runTypesFactory);
 
         result.add(new ExperimentRunWebPartFactory());
-        BaseWebPartFactory sampleSetFactory = new BaseWebPartFactory(SAMPLE_TYPE_WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
+        BaseWebPartFactory sampleTypeFactory = new BaseWebPartFactory(SAMPLE_TYPE_WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
         {
             @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
-                return new SampleSetWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx);
+                return new SampleTypeWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx);
             }
         };
-        sampleSetFactory.addLegacyNames("Narrow Sample Sets", "Sample Sets");
-        result.add(sampleSetFactory);
+        sampleTypeFactory.addLegacyNames("Narrow Sample Sets", "Sample Sets");
+        result.add(sampleTypeFactory);
         result.add(new AlwaysAvailableWebPartFactory("Samples Menu", false, false, WebPartFactory.LOCATION_MENUBAR) {
             @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
@@ -275,7 +275,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
         // delete the default "Unspecified" SampleSet TODO: move to an upgrade script in 19.2
-        SampleSetServiceImpl.get().deleteDefaultSampleSet();
+        SampleTypeServiceImpl.get().deleteDefaultSampleType();
 
         // TODO move to an upgrade script
         ExperimentUpgradeCode.upgradeMaterialSource(null);
@@ -329,7 +329,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     return properties;
                 }
             });
-            ss.addResourceResolver(ExpSampleSetImpl.searchCategory.getName(), new SearchService.ResourceResolver(){
+            ss.addResourceResolver(ExpSampleTypeImpl.searchCategory.getName(), new SearchService.ResourceResolver(){
                 @Override
                 public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
                 {
@@ -337,7 +337,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     if (rowId == 0)
                         return null;
 
-                    ExpSampleSet sampleSet = SampleSetService.get().getSampleSet(rowId);
+                    ExpSampleType sampleSet = SampleTypeService.get().getSampleType(rowId);
                     if (sampleSet == null)
                         return null;
 
@@ -375,7 +375,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AuditLogService.get().registerAuditType(new DomainAuditProvider());
         AuditLogService.get().registerAuditType(new DomainPropertyAuditProvider());
         AuditLogService.get().registerAuditType(new ExperimentAuditProvider());
-        AuditLogService.get().registerAuditType(new SampleSetAuditProvider());
+        AuditLogService.get().registerAuditType(new SampleTypeAuditProvider());
         AuditLogService.get().registerAuditType(new SampleTimelineAuditProvider());
 
         FileContentService fileContentService = FileContentService.get();
@@ -502,7 +502,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         if (dataClassCount > 0)
             list.add(dataClassCount + " Data Class" + (dataClassCount > 1 ? "es" : ""));
 
-        int sampleSetCount = SampleSetService.get().getSampleSets(c, null, false).size();
+        int sampleSetCount = SampleTypeService.get().getSampleTypes(c, null, false).size();
         if (sampleSetCount > 0)
             list.add(sampleSetCount + " Sample Type" + (sampleSetCount > 1 ? "s" : ""));
 
@@ -518,7 +518,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             DomainPropertyImpl.TestCase.class,
             ExpDataClassDataTestCase.class,
             ExpDataTableImpl.TestCase.class,
-            ExpSampleSetTestCase.class,
+            ExpSampleTypeTestCase.class,
             ExperimentServiceImpl.TestCase.class,
             ExperimentStressTest.class,
             LineagePerfTest.class,
@@ -548,7 +548,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return Set.of(
             ExpSchema.SCHEMA_NAME,
             DataClassDomainKind.PROVISIONED_SCHEMA_NAME,
-            SampleSetDomainKind.PROVISIONED_SCHEMA_NAME
+            SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME
         );
     }
 
@@ -556,7 +556,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Collection<String> getProvisionedSchemaNames()
     {
-        return PageFlowUtil.set(DataClassDomainKind.PROVISIONED_SCHEMA_NAME, SampleSetDomainKind.PROVISIONED_SCHEMA_NAME);
+        return PageFlowUtil.set(DataClassDomainKind.PROVISIONED_SCHEMA_NAME, SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME);
     }
 
 
@@ -564,7 +564,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
         task.addRunnable(() -> {
-            for (ExpSampleSetImpl sampleSet : ExperimentServiceImpl.get().getIndexableSampleSets(c, modifiedSince))
+            for (ExpSampleTypeImpl sampleSet : ExperimentServiceImpl.get().getIndexableSampleSets(c, modifiedSince))
             {
                 sampleSet.index(task);
             }

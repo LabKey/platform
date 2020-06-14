@@ -48,7 +48,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.experiment.ExpDataIterators;
-import org.labkey.experiment.SampleSetAuditProvider;
+import org.labkey.experiment.SampleTypeAuditProvider;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.sql.SQLException;
@@ -67,28 +67,28 @@ import java.util.Objects;
  * TODO find remaining shared code and refactor
  *
  */
-public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
+public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 {
-    public static final Logger LOG = Logger.getLogger(SampleSetUpdateServiceDI.class);
+    public static final Logger LOG = Logger.getLogger(SampleTypeUpdateServiceDI.class);
 
     public enum Options {
         SkipDerivation
     }
 
 
-    final ExpSampleSetImpl _sampleset;
+    final ExpSampleTypeImpl _sampleType;
     final UserSchema _schema;
     final TableInfo _samplesTable;
     // super.getRootTable() is UserSchema table
     // getDbTable() is exp.materials
     // getSamplesTable() is the materialized table with row properties
 
-    public SampleSetUpdateServiceDI(ExpMaterialTableImpl table, ExpSampleSetImpl sampleset)
+    public SampleTypeUpdateServiceDI(ExpMaterialTableImpl table, ExpSampleTypeImpl sampleType)
     {
         super(table, table.getRealTable());
-        this._sampleset = sampleset;
-        this._schema = table.getUserSchema();
-        this._samplesTable = sampleset.getTinfo();
+        _sampleType = sampleType;
+        _schema = table.getUserSchema();
+        _samplesTable = sampleType.getTinfo();
     }
 
     UserSchema getSchema()
@@ -122,7 +122,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         }
 
         // MOVE PrepareDataIteratorBuilder into this file
-        return new UploadSamplesHelper.PrepareDataIteratorBuilder(_sampleset, getQueryTable(), in);
+        return new UploadSamplesHelper.PrepareDataIteratorBuilder(_sampleType, getQueryTable(), in);
     }
 
     @Override
@@ -200,7 +200,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
     protected Map<String, Object> _select(Container container, Object[] keys) throws ConversionException
     {
         TableInfo d = getDbTable();
-        TableInfo t = _sampleset.getTinfo();
+        TableInfo t = _sampleType.getTinfo();
 
         SQLFragment sql = new SQLFragment()
                 .append("SELECT t.*, d.RowId, d.Name, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
@@ -229,8 +229,8 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
 
         // update provisioned table -- note that LSID isn't the PK so we need to use the filter to update the correct row instead
         keys = new Object[]{lsid};
-        TableInfo t = _sampleset.getTinfo();
-        // Sampleset Uses FILE_LINK not FILE_ATTACHMENT, use convertTypes() to handle posted files
+        TableInfo t = _sampleType.getTinfo();
+        // Sample type uses FILE_LINK not FILE_ATTACHMENT, use convertTypes() to handle posted files
         convertTypes(c, rowCopy, t, "sampleset");
         if (t.getColumnNameSet().stream().anyMatch(rowCopy::containsKey))
         {
@@ -268,7 +268,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     protected int truncateRows(User user, Container container)
     {
-        int ret = SampleSetServiceImpl.get().truncateSampleSet(_sampleset, user, container);
+        int ret = SampleTypeServiceImpl.get().truncateSampleType(_sampleType, user, container);
         if (ret > 0)
         {
             // NOTE: Not necessary to call onSamplesChanged -- already called by truncateSampleSet
@@ -280,7 +280,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     protected Domain getDomain()
     {
-        return _sampleset.getDomain();
+        return _sampleType.getDomain();
     }
 
     @Override
@@ -432,21 +432,21 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         }
         else
         {
-            this.fireSamplesChanged();
+            fireSamplesChanged();
         }
     }
 
     private void fireSamplesChanged()
     {
-        _sampleset.onSamplesChanged(getUser(), null);
+        _sampleType.onSamplesChanged(getUser(), null);
     }
 
     void audit(QueryService.AuditAction auditAction)
     {
-        SampleSetAuditProvider.SampleSetAuditEvent event = new SampleSetAuditProvider.SampleSetAuditEvent(
-                getContainer().getId(), "Samples " + auditAction.getVerbPastTense() + " in: " + _sampleset.getName());
-        event.setSourceLsid(_sampleset.getLSID());
-        event.setSampleSetName(_sampleset.getName());
+        SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(
+                getContainer().getId(), "Samples " + auditAction.getVerbPastTense() + " in: " + _sampleType.getName());
+        event.setSourceLsid(_sampleType.getLSID());
+        event.setSampleTypeName(_sampleType.getName());
         event.setInsertUpdateChoice(auditAction.toString().toLowerCase());
         AuditLogService.get().addEvent(getUser(), event);
     }

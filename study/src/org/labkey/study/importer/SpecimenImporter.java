@@ -43,9 +43,9 @@ import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -2355,15 +2355,15 @@ public class SpecimenImporter
 
         String prefix = new Lsid(StudyService.SPECIMEN_NAMESPACE_PREFIX, "Folder-" + info.getContainer().getRowId(), "").toString();
         String cpasType;
-        ExpSampleSet sampleSet = SampleSetService.get().getSampleSet(info.getContainer(), SpecimenService.SAMPLE_TYPE_NAME);
+        ExpSampleType sampleSet = SampleTypeService.get().getSampleType(info.getContainer(), SpecimenService.SAMPLE_TYPE_NAME);
 
         if (sampleSet == null)
         {
-            ExpSampleSet source = SampleSetService.get().createSampleSet();
+            ExpSampleType source = SampleTypeService.get().createSampleType();
             source.setContainer(info.getContainer());
             source.setMaterialLSIDPrefix(prefix);
             source.setName(SpecimenService.SAMPLE_TYPE_NAME);
-            source.setLSID(SampleSetService.get().getSampleSetLsid(SpecimenService.SAMPLE_TYPE_NAME, info.getContainer()).toString());
+            source.setLSID(SampleTypeService.get().getSampleTypeLsid(SpecimenService.SAMPLE_TYPE_NAME, info.getContainer()).toString());
             source.setDescription("Study specimens for " + info.getContainer().getPath());
             source.save(null);
             cpasType = source.getLSID();

@@ -16,30 +16,39 @@
 
 package org.labkey.api.exp.query;
 
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.exp.api.ExpSampleType;
-
-public interface ExpProtocolApplicationTable extends ExpTable<ExpProtocolApplicationTable.Column>
+/**
+ * User: jeckels
+ * Date: Oct 17, 2007
+ */
+public interface ExpSampleTypeTable extends ExpTable<ExpSampleTypeTable.Column>
 {
-    String PROTOCOL_APPLICATION_PATTERN_PREFIX = "urn:lsid:%:ProtocolApplication.%:";
-
     enum Column
     {
         RowId,
-        Name,
-        Comments,
         LSID,
-        Protocol,
+        Name,
+        Description,
+        NameExpression,
+        MaterialLSIDPrefix,
+        Created,
+        Modified,
+        CreatedBy,
+        ModifiedBy,
+        Folder,
+        SampleCount,
+        // Columns not supported by ExpSampleSetTableImpl.createColumn()
+        Flag,
         Run,
-        ActionSequence,
-        Type,
-        ActivityDate,
-        StartTime,
-        EndTime,
-        RecordCount,
+        SampleSet,
+        SourceProtocolLSID,
+        SourceProtocolApplication,
+        SourceApplicationInput,
+        RunApplication,
+        RunApplicationOutput,
+        Property,
+        Alias,
+        Inputs,
+        Outputs,
         Properties
     }
-
-    BaseColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleType sampleSet, String... roleNames);
-    BaseColumnInfo createDataInputColumn(String alias, ExpSchema schema, String... roleNames);
 }

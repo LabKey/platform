@@ -25,9 +25,9 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRunItem;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
@@ -203,9 +203,9 @@ public class ParentChildView extends VBox
             }
         }
 
-        final ExpSampleSet ss;
+        final ExpSampleType ss;
         if (sameType && typeName != null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(typeName) && !"Sample".equals(typeName))
-            ss = SampleSetService.get().getSampleSet(typeName);
+            ss = SampleTypeService.get().getSampleType(typeName);
         else
             ss = null;
 

@@ -28,7 +28,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
@@ -153,7 +153,7 @@ public class ExpSchema extends AbstractExpSchema
             @Override
             public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpSampleSetTable ret = ExperimentService.get().createSampleSetTable(SampleSets.toString(), expSchema, cf);
+                ExpSampleTypeTable ret = ExperimentService.get().createSampleSetTable(SampleSets.toString(), expSchema, cf);
                 return expSchema.setupTable(ret);
             }
         },
@@ -553,7 +553,7 @@ public class ExpSchema extends AbstractExpSchema
      * @param domainProperty the property on which the lookup is configured
      */
     @NotNull
-    public ForeignKey getMaterialIdForeignKey(@Nullable ExpSampleSet targetSampleSet, @Nullable DomainProperty domainProperty, ContainerFilter cfParent)
+    public ForeignKey getMaterialIdForeignKey(@Nullable ExpSampleType targetSampleSet, @Nullable DomainProperty domainProperty, ContainerFilter cfParent)
     {
         if (targetSampleSet == null)
         {
@@ -574,7 +574,7 @@ public class ExpSchema extends AbstractExpSchema
     }
 
     @NotNull
-    public static Set<Container> getSearchContainers(Container currentContainer, @Nullable ExpSampleSet ss, @Nullable DomainProperty dp, User user)
+    public static Set<Container> getSearchContainers(Container currentContainer, @Nullable ExpSampleType ss, @Nullable DomainProperty dp, User user)
     {
         Set<Container> searchContainers = new LinkedHashSet<>();
         if (dp != null)

@@ -62,7 +62,7 @@ import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.IAssayDomainType;
@@ -1178,7 +1178,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     String role = entry.getValue();
                     if (role == null)
                     {
-                        ExpSampleSet ss = newInput.getSampleSet();
+                        ExpSampleType ss = newInput.getSampleType();
                         role = ss != null ? ss.getName() : "Sample";
                     }
                     protApp.addMaterialInput(user, newInput, role);

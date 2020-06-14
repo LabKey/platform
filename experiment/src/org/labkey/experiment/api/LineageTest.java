@@ -29,10 +29,10 @@ import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -99,7 +99,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         props.add(new GWTPropertyDescriptor("age", "string"));
 
         // Create a SampleSet and some samples
-        final ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user, "Samples", null, props, emptyList(), 0, -1, -1, -1, null, null);
+        final ExpSampleType ss = SampleTypeService.get().createSampleType(c, user, "Samples", null, props, emptyList(), 0, -1, -1, -1, null, null);
         final ExpMaterial s1 = ExperimentService.get().createExpMaterial(c,
                 ss.generateSampleLSID().setObjectId("S-1").toString(), "S-1");
         s1.setCpasType(ss.getLSID());
@@ -246,7 +246,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         sampleProps.add(new GWTPropertyDescriptor("name", "string"));
         sampleProps.add(new GWTPropertyDescriptor("age", "int"));
 
-        final ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
+        final ExpSampleTypeImpl ss = SampleTypeServiceImpl.get().createSampleType(c, user,
                 "MySamples", null, sampleProps, Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
         final ExpMaterial s1 = ExperimentService.get().createExpMaterial(c,
@@ -328,7 +328,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("name", "string"));
         props.add(new GWTPropertyDescriptor("age", "int"));
-        final ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
+        final ExpSampleTypeImpl ss = SampleTypeServiceImpl.get().createSampleType(c, user,
                 "MySamples", null, props, Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
 

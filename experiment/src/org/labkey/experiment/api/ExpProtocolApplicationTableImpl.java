@@ -23,7 +23,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpProtocolApplicationTable;
 import org.labkey.api.exp.query.ExpSchema;
@@ -97,7 +97,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
     }
 
     @Override
-    public BaseColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleSet sampleSet, String... roleNames)
+    public BaseColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleType sampleSet, String... roleNames)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.MaterialInput.MaterialId) FROM exp.MaterialInput\nWHERE ");
 

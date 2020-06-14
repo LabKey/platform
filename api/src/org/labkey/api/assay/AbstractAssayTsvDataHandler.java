@@ -42,7 +42,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
@@ -739,8 +739,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         Map<DomainProperty, TableInfo> remappableLookup = new HashMap<>();
         Map<Integer, ExpMaterial> materialCache = new HashMap<>();
 
-        Map<DomainProperty, ExpSampleSet> lookupToSampleSetByName = new HashMap<>();
-        Map<DomainProperty, ExpSampleSet> lookupToSampleSetById = new HashMap<>();
+        Map<DomainProperty, ExpSampleType> lookupToSampleSetByName = new HashMap<>();
+        Map<DomainProperty, ExpSampleType> lookupToSampleSetById = new HashMap<>();
         Set<DomainProperty> lookupToAllSamplesByName = new HashSet<>();
         Set<DomainProperty> lookupToAllSamplesById = new HashSet<>();
 
@@ -779,7 +779,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
             else
             {
-                ExpSampleSet ss = DefaultAssayRunCreator.getLookupSampleSet(pd, container, user);
+                ExpSampleType ss = DefaultAssayRunCreator.getLookupSampleSet(pd, container, user);
                 if (ss != null)
                 {
                     if (pd.getPropertyType().getJdbcType().isText())
@@ -984,7 +984,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                 // Collect sample names or ids for each of the SampleSet lookup columns
                 // Add any sample inputs to the rowInputLSIDs
-                ExpSampleSet byNameSS = lookupToSampleSetByName.get(pd);
+                ExpSampleType byNameSS = lookupToSampleSetByName.get(pd);
                 if (o instanceof String && (byNameSS != null || lookupToAllSamplesByName.contains(pd)))
                 {
                     String ssName = byNameSS != null ? byNameSS.getName() : null;

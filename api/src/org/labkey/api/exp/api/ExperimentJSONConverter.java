@@ -693,7 +693,7 @@ public class ExperimentJSONConverter
     @NotNull
     public static JSONObject serializeMaterial(@NotNull ExpMaterial material, @NotNull Settings settings)
     {
-        ExpSampleSet sampleSet = material.getSampleSet();
+        ExpSampleType sampleSet = material.getSampleType();
 
         JSONObject jsonObject;
         if (sampleSet == null)

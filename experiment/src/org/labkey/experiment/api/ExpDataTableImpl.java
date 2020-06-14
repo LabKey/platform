@@ -49,7 +49,7 @@ import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -644,7 +644,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
     }
 
     @Override
-    public MutableColumnInfo addMaterialInputColumn(String alias, SamplesSchema schema, String pdRole, final ExpSampleSet ss)
+    public MutableColumnInfo addMaterialInputColumn(String alias, SamplesSchema schema, String pdRole, final ExpSampleType ss)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(InputMaterial.RowId)" +
             "\nFROM exp.materialInput" +

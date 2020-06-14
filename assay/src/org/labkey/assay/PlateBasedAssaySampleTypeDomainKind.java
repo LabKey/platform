@@ -32,7 +32,7 @@ import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.experiment.api.SampleSetDomainKind;
+import org.labkey.experiment.api.SampleTypeDomainKind;
 
 import java.util.Set;
 
@@ -40,11 +40,11 @@ import java.util.Set;
  * User: jeckels
  * Date: Jan 25, 2012
  */
-public class PlateBasedAssaySampleSetDomainKind extends SampleSetDomainKind
+public class PlateBasedAssaySampleTypeDomainKind extends SampleTypeDomainKind
 {
     private final AssayDomainKind _assayDelegate;
 
-    public PlateBasedAssaySampleSetDomainKind()
+    public PlateBasedAssaySampleTypeDomainKind()
     {
         super();
         _assayDelegate = new AssayDomainKind(AbstractPlateBasedAssayProvider.ASSAY_DOMAIN_SAMPLE_WELLGROUP)

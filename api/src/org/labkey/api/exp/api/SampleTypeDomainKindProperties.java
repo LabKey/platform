@@ -17,7 +17,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
     {
     }
 
-    public SampleTypeDomainKindProperties(ExpSampleSet ss)
+    public SampleTypeDomainKindProperties(ExpSampleType ss)
     {
         if (ss != null)
         {
