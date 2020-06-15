@@ -1001,8 +1001,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             i = getItemToIndex();
             long ms = HeartBeat.currentTimeMillis();
 
-            //TODO: _commitItem is never enqueued should this case be removed?
-            if (null == i || _commitItem == i)
+            //TODO: _commitItem is never enqueued should that case be removed?
+            if (null == i || _commitItem == i || _crawlerPaused)
             {
                 commitCheck(ms);
                 return;
