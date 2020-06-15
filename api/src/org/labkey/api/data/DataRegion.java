@@ -1595,7 +1595,7 @@ public class DataRegion extends DisplayElement
                             boolean error = value.second;
                             if (error)
                                 out.write("<span class=\"labkey-error\">");
-                            out.write(value.first);
+                            out.write(PageFlowUtil.filter(value.first));
                             if (error)
                                 out.write("</span>");
                             out.write("</div>");
