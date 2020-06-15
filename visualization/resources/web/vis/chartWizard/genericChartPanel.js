@@ -43,7 +43,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         var params = LABKEY.ActionURL.getParameters();
         this.editMode = params.edit == "true" || !this.savedReportInfo;
-        this.useRaphael = params.useRaphael != null ? params.useRaphael : false;
         this.parameters = LABKEY.Filter.getQueryParamsFromUrl(params['filterUrl'], this.dataRegionName);
 
         // Issue 19163
@@ -1577,12 +1576,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         );
                     }, this);
                 }
-            }
-
-            if (!this.supportedBrowser || this.useRaphael) {
-                Ext4.each(plotConfigArr, function(plotConfig) {
-                    plotConfig.rendererType = 'raphael';
-                }, this);
             }
         }
 
