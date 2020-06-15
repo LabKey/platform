@@ -1663,7 +1663,7 @@ public class ExperimentServiceImpl implements ExperimentService
         XarReader reader = new XarReader(source, pipelineJob);
         reader.setReloadExistingRuns(options.isReplaceExistingRuns());
         reader.setUseOriginalFileUrl(options.isUseOriginalDataFileUrl());
-        reader.setStrictValidateExistingSampleSet(options.isStrictValidateExistingSampleSet());
+        reader.setStrictValidateExistingSampleSet(options.isStrictValidateExistingSampleType());
         reader.parseAndLoad();
         return reader.getExperimentRuns();
     }

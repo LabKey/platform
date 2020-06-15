@@ -70,7 +70,7 @@ public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
     void setDataType(DataType type);
     DataType getDataType();
 
-    MutableColumnInfo addMaterialInputColumn(String alias, SamplesSchema schema, String inputRole, ExpSampleType sampleSet);
+    MutableColumnInfo addMaterialInputColumn(String alias, SamplesSchema schema, String inputRole, ExpSampleType sampleType);
     MutableColumnInfo addDataInputColumn(String alias, String role);
     MutableColumnInfo addInputRunCountColumn(String alias);
 }

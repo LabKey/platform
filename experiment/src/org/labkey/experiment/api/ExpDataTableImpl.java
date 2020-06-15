@@ -644,20 +644,20 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
     }
 
     @Override
-    public MutableColumnInfo addMaterialInputColumn(String alias, SamplesSchema schema, String pdRole, final ExpSampleType st)
+    public MutableColumnInfo addMaterialInputColumn(String alias, SamplesSchema schema, String pdRole, final ExpSampleType sampleType)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(InputMaterial.RowId)" +
             "\nFROM exp.materialInput" +
             "\nINNER JOIN exp.material AS InputMaterial ON exp.materialInput.materialId = InputMaterial.RowId" +
             "\nWHERE " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId = exp.materialInput.TargetApplicationId");
-        if (st != null)
+        if (sampleType != null)
         {
             sql.append("\nAND InputMaterial.CPASType = ?");
-            sql.add(st.getLSID());
+            sql.add(sampleType.getLSID());
         }
         sql.append(")");
         ExprColumn ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
-        ret.setFk(schema.materialIdForeignKey(st, null));
+        ret.setFk(schema.materialIdForeignKey(sampleType, null));
         return doAdd(ret);
     }
 

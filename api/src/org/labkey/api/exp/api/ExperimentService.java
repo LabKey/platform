@@ -807,7 +807,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     {
         boolean _replaceExistingRuns = false;
         boolean _useOriginalDataFileUrl = false;
-        boolean _strictValidateExistingSampleSet = true;
+        boolean _strictValidateExistingSampleType = true;
 
 
         // e.g. delete then re-import
@@ -836,14 +836,14 @@ public interface ExperimentService extends ExperimentRunTypeSource
             return this;
         }
 
-        public boolean isStrictValidateExistingSampleSet()
+        public boolean isStrictValidateExistingSampleType()
         {
-            return _strictValidateExistingSampleSet;
+            return _strictValidateExistingSampleType;
         }
 
-        public XarImportOptions setStrictValidateExistingSampleSet(boolean strictValidateExistingSampleSet)
+        public XarImportOptions setStrictValidateExistingSampleType(boolean strictValidateExistingSampleType)
         {
-            _strictValidateExistingSampleSet = strictValidateExistingSampleSet;
+            _strictValidateExistingSampleType = strictValidateExistingSampleType;
             return this;
         }
     }
