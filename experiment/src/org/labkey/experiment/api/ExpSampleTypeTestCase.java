@@ -141,7 +141,7 @@ public class ExpSampleTypeTestCase extends ExpProvisionedTableTestHelper
         }
         catch (ExperimentException ee)
         {
-            assertEquals("SampleSet name may not exceed 100 characters.", ee.getMessage());
+            assertEquals("SampleType name may not exceed 100 characters.", ee.getMessage());
         }
     }
 
