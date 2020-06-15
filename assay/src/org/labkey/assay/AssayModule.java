@@ -168,6 +168,7 @@ public class AssayModule extends SpringModule
         if (null != ss)
         {
             ss.addSearchCategory(AssayManager.ASSAY_CATEGORY);
+            ss.addResourceResolver(AssayManager.ASSAY_CATEGORY.getName(), AssayDocumentProvider.getSearchResolver());
             ss.addDocumentProvider(new AssayDocumentProvider());
         }
 

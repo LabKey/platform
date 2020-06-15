@@ -590,7 +590,7 @@ public class OntologyManager
                                 FieldKey mvName = col.getMvColumnName();
                                 if (mvName != null)
                                 {
-                                    String storageName = table.getColumn(mvName).getSelectName();
+                                    String storageName = table.getColumn(mvName).getMetaDataName();
                                     parameterMap.put(storageName, p.second);
                                 }
                             }
