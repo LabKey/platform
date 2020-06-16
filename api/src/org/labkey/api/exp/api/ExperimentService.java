@@ -495,12 +495,14 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Find all parent ExpData that are parents of the <code>start</code> ExpMaterial,
      * stopping at the first parent generation (no grandparents.)
      */
+    @NotNull
     Set<ExpData> getNearestParentDatas(Container c, User user, ExpMaterial start);
 
     /**
      * Find all parent ExpMaterial that are parents of the <code>start</code> ExpMaterial,
      * stopping at the first parent generation (no grandparents.)
      */
+    @NotNull
     Set<ExpMaterial> getNearestParentMaterials(Container c, User user, ExpMaterial start);
 
     /**

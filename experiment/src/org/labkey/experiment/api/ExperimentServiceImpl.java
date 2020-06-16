@@ -2174,6 +2174,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
+    @NotNull
     public Set<ExpData> getNearestParentDatas(Container c, User user, ExpMaterial start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
@@ -2184,6 +2185,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
+    @NotNull
     public Set<ExpMaterial> getNearestParentMaterials(Container c, User user, ExpMaterial start)
     {
         ExpLineageOptions options = new ExpLineageOptions();

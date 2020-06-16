@@ -390,10 +390,10 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         ExperimentService experimentService = ExperimentService.get();
         ExpMaterial seed = rowId != null ? experimentService.getExpMaterial(rowId) : experimentService.getExpMaterial(lsid);
         Set<ExpMaterial> parentSamples = experimentService.getNearestParentMaterials(container, user, seed);
-        if (parentSamples != null && !parentSamples.isEmpty())
+        if (!parentSamples.isEmpty())
             addParentFields(sampleRow, parentSamples, ExpMaterial.MATERIAL_INPUT_PARENT + "/", user);
         Set<ExpData> parentDatas = experimentService.getNearestParentDatas(container, user, seed);
-        if (parentDatas != null && !parentDatas.isEmpty())
+        if (!parentDatas.isEmpty())
             addParentFields(sampleRow, parentDatas, ExpData.DATA_INPUT_PARENT + "/", user);
 
         return sampleRow;
