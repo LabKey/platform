@@ -960,7 +960,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             try
             {
-                waitForRunning();
                 _indexLoop();
             }
             catch (Throwable t)
