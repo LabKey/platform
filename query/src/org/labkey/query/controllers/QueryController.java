@@ -3808,16 +3808,24 @@ public class QueryController extends SpringActionController
                         // check for any row level provenance information
                         if (json.has("rows"))
                         {
-                            JSONArray jsonRows = json.getJSONArray("rows");
-                            // we need to match any provenance object inputs to the object outputs from the response rows, this typically would
-                            // be the row lsid but it configurable in the provenance recording params
-                            //
-                            List<Pair<String, String>> provenanceMap = svc.createProvenanceMapFromRows(getViewContext(), params, jsonRows, responseRows);
-                            if (!provenanceMap.isEmpty())
+                            Object rowObject = json.get("rows");
+                            if (rowObject instanceof JSONArray)
                             {
-                                action.getProvenanceMap().addAll(provenanceMap);
+                                JSONArray jsonRows = (JSONArray)rowObject;
+                                // we need to match any provenance object inputs to the object outputs from the response rows, this typically would
+                                // be the row lsid but it configurable in the provenance recording params
+                                //
+                                List<Pair<String, String>> provenanceMap = svc.createProvenanceMapFromRows(getViewContext(), params, jsonRows, responseRows);
+                                if (!provenanceMap.isEmpty())
+                                {
+                                    action.getProvenanceMap().addAll(provenanceMap);
+                                }
+                                svc.addRecordingStep(getViewContext().getRequest(), params.getRecordingId(), action);
                             }
-                            svc.addRecordingStep(getViewContext().getRequest(), params.getRecordingId(), action);
+                            else
+                            {
+                                errors.reject(SpringActionController.ERROR_MSG, "Unable to process provenance information, the rows object was not an array");
+                            }
                         }
                     }
                 }
