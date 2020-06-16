@@ -24,6 +24,7 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.CSRF;
+import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -247,7 +248,7 @@ public class TestController extends SpringActionController
     {
         public MultipartFormAction()
         {
-            _enctype ="multipart/form-data";
+            _enctype = "multipart/form-data";
         }
 
         @Override
@@ -265,9 +266,9 @@ public class TestController extends SpringActionController
         public void validateCommand(ComplexForm target, Errors errors)
         {
             ArrayList<TestBean> beans = target.getBeans();
-            for (int i=0 ; i<beans.size(); i++)
+            for (int i = 0; i < beans.size(); i++)
             {
-                errors.pushNestedPath("beans["+i+"]");
+                errors.pushNestedPath("beans[" + i + "]");
                 beans.get(i).validate(errors);
                 errors.popNestedPath();
             }
@@ -999,18 +1000,53 @@ public class TestController extends SpringActionController
         @Override
         public ModelAndView getView(URLForm form, BindException errors) throws Exception
         {
-            var td = TD(at(style,"height:500px;width:500px;"),IFRAME(at(style,"height:100%;width:100%;",src,form.url)));
+            var td = TD(at(style, "height:500px;width:500px;"), IFRAME(at(style, "height:100%;width:100%;", src, form.url)));
             return new HtmlView(
-                DIV(
-                    DOM.LK.FORM(INPUT(at(type,"submit")),INPUT(at(type,"text",name,"url",value,form.url,style,"width:890px;"))),
-                    BR(),
-                    TABLE(at(DOM.Attribute.style,"width:1000px;height:1000px;"),
-                        TR(td,td),TR(td,td))));
+                    DIV(
+                            DOM.LK.FORM(INPUT(at(type, "submit")), INPUT(at(type, "text", name, "url", value, form.url, style, "width:890px;"))),
+                            BR(),
+                            TABLE(at(DOM.Attribute.style, "width:1000px;height:1000px;"),
+                                    TR(td, td), TR(td, td))));
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
         }
+    }
+
+    @RequiresNoPermission
+    @MethodsAllowed("GET")
+    public class GetAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new HtmlView(HtmlString.of(getViewContext().getRequest().getMethod()));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+
+        }
+    }
+
+    @RequiresNoPermission
+    @MethodsAllowed("POST")
+    public class PostAction extends GetAction
+    {
+    }
+
+    @RequiresNoPermission
+    @MethodsAllowed("DELETE")
+    public class DeleteAction extends GetAction
+    {
+    }
+
+    @RequiresNoPermission
+    @MethodsAllowed("PUT")
+    public class PutAction extends GetAction
+    {
     }
 }

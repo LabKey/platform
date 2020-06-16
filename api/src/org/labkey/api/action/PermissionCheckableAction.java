@@ -21,6 +21,7 @@ import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.ContextualRoles;
 import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresLogin;
@@ -44,6 +45,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.springframework.web.servlet.mvc.Controller;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -53,6 +55,7 @@ import java.util.Set;
  */
 public abstract class PermissionCheckableAction implements Controller, PermissionCheckable, HasViewContext
 {
+    private static final String[] arrayGetPost = new String[] {"GET", "POST"};
     private ViewContext _context = null;
     UnauthorizedException.Type _unauthorizedType = UnauthorizedException.Type.redirectToLogin;
 
@@ -95,7 +98,8 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         }
         catch (UnauthorizedException e)
         {
-            e.setType(unauthorizedType);
+            if (e.getType() != UnauthorizedException.Type.sendMethodNotAllowed)
+                e.setType(unauthorizedType);
             throw e;
         }
     }
@@ -138,7 +142,6 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         return "PATCH".equals(getViewContext().getRequest().getMethod());
     }
 
-
     private void _checkActionPermissions(Set<Role> contextualRoles) throws UnauthorizedException
     {
         ViewContext context = getViewContext();
@@ -150,6 +153,19 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             throw new ForbiddenProjectException();
 
         Class<? extends Controller> actionClass = getClass();
+
+        String method = context.getRequest().getMethod();
+        String[] methodsAllowed = arrayGetPost;
+        MethodsAllowed methodsAllowedAnnotation = actionClass.getAnnotation(MethodsAllowed.class);
+        if (null != methodsAllowedAnnotation)
+            methodsAllowed = methodsAllowedAnnotation.value();
+        if (Arrays.stream(methodsAllowed).noneMatch(s -> s.equals(method)))
+        {
+            // NOTE: could throw something like BadRequestException, but that would require a lot of signature changes
+            var uae = new UnauthorizedException("Method Not Allowed: " + method);
+            uae.setType(UnauthorizedException.Type.sendMethodNotAllowed);
+            throw uae;
+        }
 
         boolean requiresSiteAdmin = actionClass.isAnnotationPresent(RequiresSiteAdmin.class);
         if (requiresSiteAdmin && !user.hasSiteAdminPermission())

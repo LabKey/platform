@@ -24,6 +24,7 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -137,6 +138,7 @@ public class SharedStudyController extends BaseStudyController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
+    @MethodsAllowed({"POST", "DELETE"})
     public class SharedStudyContainerFilterAction extends MutatingApiAction<SharedStudyContainerFilterForm>
     {
         private Study _study = null;

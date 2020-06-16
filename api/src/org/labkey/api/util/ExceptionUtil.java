@@ -147,6 +147,9 @@ public class ExceptionUtil
             }
         }
 
+        if (ex instanceof UnauthorizedException && null != ex.getCause())
+            ex = ex.getCause();
+
         return ex;
     }
 
