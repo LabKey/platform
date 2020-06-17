@@ -840,9 +840,17 @@ public class ExperimentServiceImpl implements ExperimentService
         if (!_batchDataLastIndexed.isEmpty())
         {
             SQLFragment sql = new SQLFragment();
+            int batchSize = 0;
             for (Map.Entry<Integer, Long> row : _batchDataLastIndexed.entrySet())
             {
                 sql.append(updateIndexStatement(getTinfoData(), row.getKey(), row.getValue()));
+
+                // Limit batch size to 1000, sql server limit for inserts in a query
+                if (++batchSize > 999)
+                {
+                    batchSize = 0;
+                    new SqlExecutor(getSchema()).execute(sql);
+                }
             }
             new SqlExecutor(getSchema()).execute(sql);
         }
