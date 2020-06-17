@@ -202,7 +202,7 @@ public class ExperimentServiceImpl implements ExperimentService
     private Set<ExperimentProtocolHandler> _protocolHandlers = new HashSet<>();
 
     private boolean _isBatchDataLastIndexed = false;
-    private Map<Integer, Long> _batchDataLastIndexes;
+    private Map<Integer, Long> _batchDataLastIndexed;
 
     private static final List<ExperimentListener> _listeners = new CopyOnWriteArrayList<>();
 
@@ -806,7 +806,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public void startBatchDataLastIndexed()
     {
-        _batchDataLastIndexes = new HashMap<>();
+        _batchDataLastIndexed = new HashMap<>();
         _isBatchDataLastIndexed = true;
     }
 
@@ -821,7 +821,7 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         if (_isBatchDataLastIndexed)
         {
-            _batchDataLastIndexes.put(rowId, ms);
+            _batchDataLastIndexed.put(rowId, ms);
         }
         else
         {
@@ -837,12 +837,15 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private void batchUpdateDataLastIndexed()
     {
-        SQLFragment sql = new SQLFragment();
-        for (Map.Entry<Integer, Long> row : _batchDataLastIndexes.entrySet())
+        if (!_batchDataLastIndexed.isEmpty())
         {
-            sql.append(updateIndexStatement(getTinfoData(), row.getKey(), row.getValue()));
+            SQLFragment sql = new SQLFragment();
+            for (Map.Entry<Integer, Long> row : _batchDataLastIndexed.entrySet())
+            {
+                sql.append(updateIndexStatement(getTinfoData(), row.getKey(), row.getValue()));
+            }
+            new SqlExecutor(getSchema()).execute(sql);
         }
-        new SqlExecutor(getSchema()).execute(sql);
     }
 
     private void setLastIndexed(TableInfo table, int rowId, long ms)
