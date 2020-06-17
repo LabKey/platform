@@ -33,9 +33,7 @@ public class UnauthorizedException extends RuntimeException implements SkipMothe
         /** Send a 401, but signal that the server would accept HTTP BasicAuth credentials */
         sendBasicAuth,
         /** Send a 401 and don't solicit BasicAuth credentials */
-        sendUnauthorized,
-        /** send 405 */
-        sendMethodNotAllowed
+        sendUnauthorized
     };
 
     Type _type = Type.redirectToLogin;
@@ -53,14 +51,6 @@ public class UnauthorizedException extends RuntimeException implements SkipMothe
     public void setType(Type type)
     {
         _type = type;
-    }
-
-    @Override
-    public synchronized Throwable getCause()
-    {
-        if (_type == Type.sendMethodNotAllowed)
-            return new BadRequestException(HttpServletResponse.SC_METHOD_NOT_ALLOWED, getMessage(), null);
-        return null;
     }
 
     public Type getType()

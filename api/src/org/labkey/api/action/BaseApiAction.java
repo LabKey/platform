@@ -116,14 +116,14 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     @Override
     public ModelAndView handleRequest() throws Exception
     {
-        switch (getViewContext().getRequest().getMethod())
+        switch (getViewContext().getMethod())
         {
-            case "POST":
-            case "PUT":
-            case "DELETE":
-            case "PATCH":
+            case POST:
+            case PUT:
+            case DELETE:
+            case PATCH:
                 return handlePost();
-            case "GET":
+            case GET:
                 return handleGet();
         }
         throw new BadRequestException(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed: " + getViewContext().getRequest().getMethod(), null);

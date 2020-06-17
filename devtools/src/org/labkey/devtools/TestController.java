@@ -69,6 +69,10 @@ import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.HttpUtil.Method.DELETE;
+import static org.labkey.api.util.HttpUtil.Method.GET;
+import static org.labkey.api.util.HttpUtil.Method.POST;
+import static org.labkey.api.util.HttpUtil.Method.PUT;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 /**
@@ -1016,7 +1020,7 @@ public class TestController extends SpringActionController
     }
 
     @RequiresNoPermission
-    @MethodsAllowed("GET")
+    @MethodsAllowed(GET)
     public class GetAction extends SimpleViewAction
     {
         @Override
@@ -1033,19 +1037,19 @@ public class TestController extends SpringActionController
     }
 
     @RequiresNoPermission
-    @MethodsAllowed("POST")
+    @MethodsAllowed(POST)
     public class PostAction extends GetAction
     {
     }
 
     @RequiresNoPermission
-    @MethodsAllowed("DELETE")
+    @MethodsAllowed(DELETE)
     public class DeleteAction extends GetAction
     {
     }
 
     @RequiresNoPermission
-    @MethodsAllowed("PUT")
+    @MethodsAllowed(PUT)
     public class PutAction extends GetAction
     {
     }

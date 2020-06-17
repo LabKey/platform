@@ -20,6 +20,8 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
 
+import static org.labkey.api.util.HttpUtil.Method.POST;
+
 /**
  * Base class for all API actions that change the server's state in some way. This class enforces
  * that clients use the HTTP POST method.
@@ -27,7 +29,7 @@ import javax.servlet.http.HttpServletResponse;
  * User: Dave
  * Date: May 25, 2009
  */
-@MethodsAllowed({"POST"})
+@MethodsAllowed(POST)
 public abstract class MutatingApiAction<FORM> extends BaseApiAction<FORM>
 {
     @Override

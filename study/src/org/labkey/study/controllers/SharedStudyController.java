@@ -48,6 +48,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import static org.labkey.api.util.HttpUtil.Method.DELETE;
+import static org.labkey.api.util.HttpUtil.Method.POST;
+
 /**
  * Created by matthew on 5/28/15.
  *
@@ -138,7 +141,7 @@ public class SharedStudyController extends BaseStudyController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    @MethodsAllowed({"POST", "DELETE"})
+    @MethodsAllowed({POST, DELETE})
     public class SharedStudyContainerFilterAction extends MutatingApiAction<SharedStudyContainerFilterForm>
     {
         private Study _study = null;

@@ -76,6 +76,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.util.HttpUtil.Method.DELETE;
+import static org.labkey.api.util.HttpUtil.Method.POST;
+
 /**
  * User: klum
  * Date: May 30, 2011
@@ -1403,7 +1406,7 @@ public class ParticipantGroupController extends BaseStudyController
     // CONSIDER: Merge with UpdateParticipantGroupAction
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    @MethodsAllowed({"POST", "DELETE"})
+    @MethodsAllowed({POST, DELETE})
     public class SessionParticipantGroupAction extends MutatingApiAction<UpdateParticipantGroupForm>
     {
         @Override
