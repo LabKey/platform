@@ -71,7 +71,7 @@ public class ListsWebPart extends WebPartView<ViewContext>
         if (portalCtx.hasPermission(DesignListPermission.class))
         {
             NavTree menu = new NavTree("");
-            menu.addChild("Create New List", PageFlowUtil.urlProvider(ListUrls.class).getCreateListURL(portalCtx.getContainer()).addReturnURL(getContextURLHelper()));
+            menu.addChild("Create New List", PageFlowUtil.urlProvider(ListUrls.class).getCreateListURL(portalCtx.getContainer()));
             menu.addChild("Manage Lists", PageFlowUtil.urlProvider(ListUrls.class).getManageListsURL(portalCtx.getContainer()));
             setNavMenu(menu);
         }

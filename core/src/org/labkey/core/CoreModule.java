@@ -123,6 +123,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.UsageReportingLevel;
@@ -232,6 +233,7 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
+import javax.servlet.ServletContext;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -346,7 +348,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         catch (Exception e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
 
         WarningService.get().register(new CoreWarningProvider());
@@ -709,10 +711,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContainerManager.bootstrapContainer("/", noPermsRole, noPermsRole, devRole);
         Container rootContainer = ContainerManager.getRoot();
 
-        MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer, rootContainer.getPolicy());
         Group devs = SecurityManager.getGroup(Group.groupDevelopers);
-        policy.addRoleAssignment(devs, PlatformDeveloperRole.class);
-        SecurityPolicyManager.savePolicy(policy, false);
+        if (null != devs)
+        {
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer, rootContainer.getPolicy());
+            policy.addRoleAssignment(devs, PlatformDeveloperRole.class);
+            SecurityPolicyManager.savePolicy(policy, false);
+        }
 
         // Create all the standard containers (Home, Home/support, Shared) using an empty Collaboration folder type
         FolderType collaborationType = new CollaborationFolderType(Collections.emptyList());
@@ -860,7 +865,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         // populate look and feel settings and site settings with values read from startup properties as appropriate for not bootstrap
-        populateSiteSettingsWithStartupProps();
         populateLookAndFeelWithStartupProps();
         WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps();
         WriteableAppProps.populateSiteSettingsWithStartupProps();
@@ -868,6 +872,21 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         SecurityManager.populateGroupRolesWithStartupProps();
         SecurityManager.populateUserRolesWithStartupProps();
         SecurityManager.populateUserGroupsWithStartupProps();
+        // This method depends on resources (FolderType) from other modules, so handle in afterstartup()
+        ContextListener.addStartupListener(new StartupListener()
+        {
+            @Override
+            public String getName()
+            {
+                return "CoreModule.populateSiteSettingsWithStartupProps";
+            }
+
+            @Override
+            public void moduleStartupComplete(ServletContext servletContext)
+            {
+                populateSiteSettingsWithStartupProps();
+            }
+        });
 
         LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
         // populate script engine definitions values read from startup properties as appropriate for not bootstrap
@@ -1008,7 +1027,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         catch (SchedulerException e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
 
         // On bootstrap in production mode, this will send an initial ping with very little information, as the admin will
@@ -1257,11 +1276,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 MutableSecurityPolicy homePolicy = new MutableSecurityPolicy(ContainerManager.getHomeContainer());
                 SecurityPolicyManager.savePolicy(homePolicy);
                 // remove the guest role assignment from the support subfolder
-                MutableSecurityPolicy supportPolicy = new MutableSecurityPolicy(ContainerManager.getDefaultSupportContainer().getPolicy());
                 Group guests = SecurityManager.getGroup(Group.groupGuests);
-                for (Role assignedRole : supportPolicy.getAssignedRoles(guests))
-                    supportPolicy.removeRoleAssignment(guests, assignedRole);
-                SecurityPolicyManager.savePolicy(supportPolicy);
+                if (null != guests)
+                {
+                    MutableSecurityPolicy supportPolicy = new MutableSecurityPolicy(ContainerManager.getDefaultSupportContainer().getPolicy());
+                    for (Role assignedRole : supportPolicy.getAssignedRoles(guests))
+                        supportPolicy.removeRoleAssignment(guests, assignedRole);
+                    SecurityPolicyManager.savePolicy(supportPolicy);
+                }
             }
         }
     }

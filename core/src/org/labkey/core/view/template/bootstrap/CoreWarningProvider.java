@@ -108,14 +108,13 @@ public class CoreWarningProvider implements WarningProvider
 
     private void getHeapSizeWarnings(Warnings warnings)
     {
-        //FIX: 9683
-        //show admins warning about inadequate heap size (<= 1GB)
+        // Issue 9683 - show admins warning about inadequate heap size (< 2GB)
         MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
         long maxMem = membean.getHeapMemoryUsage().getMax();
 
-        if (SHOW_ALL_WARNINGS || maxMem > 0 && maxMem < 1024*1024*1024)
+        if (SHOW_ALL_WARNINGS || maxMem > 0 && maxMem < 2*1024*1024*1024L)
         {
-            HtmlStringBuilder html = HtmlStringBuilder.of("The maximum amount of heap memory allocated to LabKey Server is too low (less than 1GB). LabKey recommends ");
+            HtmlStringBuilder html = HtmlStringBuilder.of("The maximum amount of heap memory allocated to LabKey Server is too low (less than 2GB). LabKey recommends ");
             html.append(new HelpTopic("configWebappMemory").getSimpleLinkHtml("setting the maximum heap to at least 2 gigabytes (-Xmx2G) on test/evaluation servers and at least 4 gigabytes (-Xmx4G) on production servers"));
             html.append(".");
             warnings.add(html.getHtmlString());

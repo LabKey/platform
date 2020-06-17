@@ -1590,8 +1590,14 @@ public class DataRegion extends DisplayElement
                                 statDescr = PageFlowUtil.helpPopup(type.getFullLabel(), type.getDescription(), true);
 
                             out.write("<div>");
-                            out.write("<span class=\"summary-stat-label\">" + statLabel + statDescr + ":</span>&nbsp;");
-                            out.write(PageFlowUtil.filter(r.getFormattedValue(renderer, ctx.getContainer())));
+                            out.write("<span class=\"summary-stat-label\">" + PageFlowUtil.filter(statLabel) + statDescr + ":</span>&nbsp;");
+                            Pair<String, Boolean> value = r.getFormattedValue(renderer, ctx.getContainer());
+                            boolean error = value.second;
+                            if (error)
+                                out.write("<span class=\"labkey-error\">");
+                            out.write(PageFlowUtil.filter(value.first));
+                            if (error)
+                                out.write("</span>");
                             out.write("</div>");
                         }
                     }

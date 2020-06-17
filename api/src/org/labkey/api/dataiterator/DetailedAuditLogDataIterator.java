@@ -20,15 +20,12 @@ import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.api.SampleSetService;
-import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 
 import java.io.IOException;
-import java.util.Collections;
 
 import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
 
@@ -88,12 +85,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
                 auditType = auditConfigurable.getAuditBehavior();
 
             if (auditType == DETAILED)
-            {
-                if (_table.getPublicSchemaName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
-                    SampleSetService.get().addAuditEvent(_user, _container, _table, auditType, _auditAction, Collections.singletonList(((MapDataIterator) _data).getMap()));
-                else
-                    QueryService.get().addAuditEvent(_user, _container, _table, auditType, _auditAction, Collections.singletonList(((MapDataIterator) _data).getMap()));
-            }
+                _table.addAuditEvent(_user, _container, auditType, _auditAction, ((MapDataIterator) _data).getMap());
         }
 
         return true;

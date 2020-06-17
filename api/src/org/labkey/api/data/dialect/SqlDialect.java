@@ -624,8 +624,30 @@ public abstract class SqlDialect
     /** @param part the java.util.Calendar field for the unit of time, such as Calendar.DATE or Calendar.MINUTE */
     public abstract String getDatePart(int part, String value);
 
+    public SQLFragment getDatePart(int part, SQLFragment value)
+    {
+        SQLFragment datePartExpr = new SQLFragment(value);
+        datePartExpr.setRawSQL(getDatePart(part, datePartExpr.getRawSQL()));
+        return datePartExpr;
+    }
+
     /** @param expression The expression with datetime value for which a date value is desired */
     public abstract String getDateTimeToDateCast(String expression);
+
+    /** @param expression The expression with datetime value for which a date value is desired */
+    public SQLFragment getDateTimeToDateCast(SQLFragment expression)
+    {
+        SQLFragment cast = new SQLFragment(expression);
+        cast.setRawSQL(getDateTimeToDateCast(cast.getRawSQL()));
+        return cast;
+    }
+
+    public SQLFragment getVarcharCast(SQLFragment expression)
+    {
+        SQLFragment cast = new SQLFragment(expression);
+        cast.setRawSQL( "CAST(" + cast.getRawSQL() + " AS " + getSqlCastTypeName(JdbcType.VARCHAR) + ")");
+        return cast;
+    }
 
     public abstract String getRoundFunction(String valueToRound);
 

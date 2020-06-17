@@ -43,7 +43,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         var params = LABKEY.ActionURL.getParameters();
         this.editMode = params.edit == "true" || !this.savedReportInfo;
-        this.useRaphael = params.useRaphael != null ? params.useRaphael : false;
         this.parameters = LABKEY.Filter.getQueryParamsFromUrl(params['filterUrl'], this.dataRegionName);
 
         // Issue 19163
@@ -719,6 +718,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     getQueryConfig : function(serialize)
     {
         var dataRegion = LABKEY.DataRegions[this.panelDataRegionName];
+        var sortKey = 'lsid'; // needed to keep expected ordering for legend data
+
+        // Issue 38105: For box plot of study visit labels, sort by visit display order and then sequenceNum
+        if (this.renderType === 'box_plot' && this.measures.x && this.measures.x.fieldKey === 'ParticipantVisit/Visit') {
+            sortKey = 'ParticipantVisit/Visit/DisplayOrder, ParticipantVisit/SequenceNum';
+        }
 
         var config = {
             schemaName  : this.schemaName,
@@ -729,7 +734,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             parameters  : this.parameters,
             requiredVersion : 13.2,
             maxRows: -1,
-            sort: 'lsid', // needed to keep expected ordering for legend data
+            sort: sortKey,
             method: 'POST'
         };
 
@@ -1571,12 +1576,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         );
                     }, this);
                 }
-            }
-
-            if (!this.supportedBrowser || this.useRaphael) {
-                Ext4.each(plotConfigArr, function(plotConfig) {
-                    plotConfig.rendererType = 'raphael';
-                }, this);
             }
         }
 
