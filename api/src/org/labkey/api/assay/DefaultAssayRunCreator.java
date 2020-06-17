@@ -533,7 +533,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         Set<Container> searchContainers = ExpSchema.getSearchContainers(context.getContainer(), null, null, context.getUser());
         addMaterials(context, inputMaterials, context.getInputMaterials(), searchContainers);
 
-        // Find lookups to a SampleSet and add the resolved material as an input sample
+        // Find lookups to a SampleType and add the resolved material as an input sample
         for (Map.Entry<DomainProperty, String> entry : context.getRunProperties().entrySet())
         {
             if (entry.getValue() == null)
@@ -573,7 +573,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    /** returns the lookup ExpSampleType if the property has a lookup to samples.<SampleSetName> or exp.materials.<SampleSetName> and is an int or string. */
+    /** returns the lookup ExpSampleType if the property has a lookup to samples.<SampleTypeName> or exp.materials.<SampleTypeName> and is an int or string. */
     @Nullable
     public static ExpSampleType getLookupSampleType(@NotNull DomainProperty dp, @NotNull Container container, @NotNull User user)
     {

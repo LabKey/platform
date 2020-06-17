@@ -66,10 +66,10 @@ public class UniqueValueCounterTestCase
 
 
     private static final String counterName = "CounterName";
-    private static final String sampSetName = "SampleSetWithSeq";
+    private static final String sampTypeName = "SampleSetWithSeq";
     private static final String sampSetMetadataWithCounters = "" +
             "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
-            "  <table tableName=\"" + sampSetName + "\" tableDbType=\"NOT_IN_DB\">\n" +
+            "  <table tableName=\"" + sampTypeName + "\" tableDbType=\"NOT_IN_DB\">\n" +
             "    <javaCustomizer class=\"org.labkey.experiment.api.CountOfUniqueValueTableCustomizer\">\n" +
             "        <properties>\n" +
             "            <property name=\"counterName\">" + counterName + "</property>\n" +
@@ -88,7 +88,7 @@ public class UniqueValueCounterTestCase
 
 
     @Test
-    public void sampleSetWithCounter() throws Exception
+    public void sampleTypeWithCounter() throws Exception
     {
         final User user = TestContext.get().getUser();
 
@@ -104,20 +104,20 @@ public class UniqueValueCounterTestCase
         final String nameExpression = "${vessel}.${one}.${three}.${suffix}";
 
         final ExpSampleType st = SampleTypeService.get().createSampleType(c, user,
-                sampSetName, null, props, emptyList(),
+                sampTypeName, null, props, emptyList(),
                 -1, -1, -1, -1, nameExpression, null);
 
         UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
-        QueryDefinition queryDefinition = QueryService.get().getQueryDef(user, c, "Samples", sampSetName);
+        QueryDefinition queryDefinition = QueryService.get().getQueryDef(user, c, "Samples", sampTypeName);
         if (null == queryDefinition)
         {
-            queryDefinition = schema.getQueryDefForTable(sampSetName);
+            queryDefinition = schema.getQueryDefForTable(sampTypeName);
         }
 
         queryDefinition.setMetadataXml(sampSetMetadataWithCounters);
         queryDefinition.save(user, c);
 
-        TableInfo table = schema.getTable(sampSetName);
+        TableInfo table = schema.getTable(sampTypeName);
         QueryUpdateService svc = table.getUpdateService();
 
         // GOOD INSERT - combinations of the paired columns
@@ -175,7 +175,7 @@ public class UniqueValueCounterTestCase
                errors.getMessage().contains("duplicate key"));
 
 
-        // NOTE: This test case doesn't repro for SampleSet because the CoerceDataIterator is run before the CounterDataIteratorBuilder and will include null values for any missing columns
+        // NOTE: This test case doesn't repro for SampleType because the CoerceDataIterator is run before the CounterDataIteratorBuilder and will include null values for any missing columns
 //        // BAD INSERT - Paired columns must be included in the input data
 //        rows = new ArrayList<>();
 //        rows.add(CaseInsensitiveHashMap.of("vessel", "STP", "suffix", "SUF1", "three", 20));
@@ -292,7 +292,7 @@ public class UniqueValueCounterTestCase
         assertEquals("DC-10.1.5", inserted.get(0).get("name"));
 
 
-        // NOTE: This test case doesn't repro for SampleSet because the CoerceDataIterator is run before the CounterDataIteratorBuilder and will include null values for any missing columns
+        // NOTE: This test case doesn't repro for SampleType because the CoerceDataIterator is run before the CounterDataIteratorBuilder and will include null values for any missing columns
         // BAD INSERT - Paired columns must be included in the input data
         rows = new ArrayList<>();
         rows.add(CaseInsensitiveHashMap.of("two", 20));

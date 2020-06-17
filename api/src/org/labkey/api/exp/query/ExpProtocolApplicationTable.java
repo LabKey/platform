@@ -40,6 +40,6 @@ public interface ExpProtocolApplicationTable extends ExpTable<ExpProtocolApplica
         Properties
     }
 
-    BaseColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleType sampleSet, String... roleNames);
+    BaseColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleType sampleType, String... roleNames);
     BaseColumnInfo createDataInputColumn(String alias, ExpSchema schema, String... roleNames);
 }

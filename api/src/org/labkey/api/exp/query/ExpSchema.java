@@ -153,7 +153,7 @@ public class ExpSchema extends AbstractExpSchema
             @Override
             public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpSampleTypeTable ret = ExperimentService.get().createSampleSetTable(SampleSets.toString(), expSchema, cf);
+                ExpSampleTypeTable ret = ExperimentService.get().createSampleTypeTable(SampleSets.toString(), expSchema, cf);
                 return expSchema.setupTable(ret);
             }
         },

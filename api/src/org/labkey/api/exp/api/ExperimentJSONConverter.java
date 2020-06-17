@@ -693,17 +693,17 @@ public class ExperimentJSONConverter
     @NotNull
     public static JSONObject serializeMaterial(@NotNull ExpMaterial material, @NotNull Settings settings)
     {
-        ExpSampleType sampleSet = material.getSampleType();
+        ExpSampleType sampleType = material.getSampleType();
 
         JSONObject jsonObject;
-        if (sampleSet == null)
+        if (sampleType == null)
         {
             jsonObject = serializeExpObject(material, null, settings);
         }
         else
         {
-            jsonObject = serializeExpObject(material, sampleSet.getDomain().getProperties(), settings);
-            if (sampleSet.hasNameAsIdCol())
+            jsonObject = serializeExpObject(material, sampleType.getDomain().getProperties(), settings);
+            if (sampleType.hasNameAsIdCol())
             {
                 JSONObject properties = jsonObject.optJSONObject(ExperimentJSONConverter.PROPERTIES);
                 if (properties == null)
@@ -714,8 +714,8 @@ public class ExperimentJSONConverter
 
             if (settings.isIncludeProperties())
             {
-                JSONObject sampleSetJson = serializeExpObject(sampleSet, null, settings.withIncludeProperties(false));
-                jsonObject.put(SAMPLE_TYPE, sampleSetJson);
+                JSONObject sampleTypeJson = serializeExpObject(sampleType, null, settings.withIncludeProperties(false));
+                jsonObject.put(SAMPLE_TYPE, sampleTypeJson);
             }
         }
 

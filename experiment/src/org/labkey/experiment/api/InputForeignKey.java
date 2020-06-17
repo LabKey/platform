@@ -123,8 +123,8 @@ public class InputForeignKey extends LookupForeignKey
         for (Map.Entry<String, ExpSampleType> entry : getMaterialInputs().entrySet())
         {
             String role = entry.getKey();
-            ExpSampleType sampleSet = entry.getValue();
-            ret.safeAddColumn(ret.createMaterialInputColumn(role, samplesSchema, sampleSet, role));
+            ExpSampleType sampleType = entry.getValue();
+            ret.safeAddColumn(ret.createMaterialInputColumn(role, samplesSchema, sampleType, role));
         }
         ret.setLocked(true);
         return ret;

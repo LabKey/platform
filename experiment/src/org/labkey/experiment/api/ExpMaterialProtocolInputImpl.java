@@ -43,7 +43,7 @@ public class ExpMaterialProtocolInputImpl extends ExpProtocolInputImpl<MaterialP
 
         ExpSampleType st = getType();
         if (st != null && !Objects.equals(st, material.getSampleType()))
-            return "Sample is not from '" + st.getName() + "' SampleSet";
+            return "Sample is not from '" + st.getName() + "' SampleType";
 
         ExpProtocolInputCriteria critera = getCriteria();
         if (critera != null)

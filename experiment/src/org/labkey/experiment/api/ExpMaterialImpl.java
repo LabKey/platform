@@ -174,7 +174,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return Collections.unmodifiableList(aliases);
     }
 
-    /** Get the ObjectId of the ExpSampleSet that this ExpMaterial belongs to. */
+    /** Get the ObjectId of the ExpSampleType that this ExpMaterial belongs to. */
     @Override
     @Nullable
     public Integer getParentObjectId()
@@ -192,12 +192,12 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         save(user, (ExpSampleTypeImpl) getSampleType());
     }
 
-    public void save(User user, ExpSampleTypeImpl ss)
+    public void save(User user, ExpSampleTypeImpl st)
     {
         save(user, ExperimentServiceImpl.get().getTinfoMaterial(), true);
-        if (null != ss)
+        if (null != st)
         {
-            TableInfo ti = ss.getTinfo();
+            TableInfo ti = st.getTinfo();
             if (null != ti)
             {
                 new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (lsid) SELECT ? WHERE NOT EXISTS (SELECT lsid FROM " + ti + " WHERE lsid = ?)", getLSID(), getLSID());
@@ -338,15 +338,15 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         ExpSampleType st = getSampleType();
         if (null != st)
         {
-            String sampleSetName = st.getName();
+            String sampleTypeName = st.getName();
             ActionURL show = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer()).addParameter("rowId", st.getRowId());
-            NavTree t = new NavTree("SampleSet - " + sampleSetName, show);
+            NavTree t = new NavTree("SampleType - " + sampleTypeName, show);
             String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
             props.put(SearchService.PROPERTY.navtrail.toString(), nav);
 
             // Add sample type name to body, if it's not already present
-            if (-1 == body.indexOf(sampleSetName))
-                append(body, sampleSetName);
+            if (-1 == body.indexOf(sampleTypeName))
+                append(body, sampleTypeName);
         }
 
         return new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
@@ -387,17 +387,17 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return "material:" + getRowId();
     }
 
-    /* This is expensive! consider using getProperties(SampleSet ss) */
+    /* This is expensive! consider using getProperties(SampleType st) */
     @Override
     public Map<String, Object> getProperties()
     {
         return getProperties((ExpSampleTypeImpl) getSampleType());
     }
 
-    public Map<String,Object> getProperties(ExpSampleTypeImpl ss)
+    public Map<String,Object> getProperties(ExpSampleTypeImpl st)
     {
         var ret = super.getProperties();
-        var ti = null == ss ? null : ss.getTinfo();
+        var ti = null == st ? null : st.getTinfo();
         if (null != ti)
         {
             new SqlSelector(ti.getSchema(),"SELECT * FROM " + ti + " WHERE lsid=?",  getLSID()).forEach(rs ->
@@ -417,10 +417,10 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public Map<PropertyDescriptor, Object> getPropertyValues()
     {
-        ExpSampleTypeImpl sampleSet = (ExpSampleTypeImpl) getSampleType();
-        Map<String,Object> uriMap = getProperties(sampleSet);
+        ExpSampleTypeImpl sampleType = (ExpSampleTypeImpl) getSampleType();
+        Map<String,Object> uriMap = getProperties(sampleType);
         Map<PropertyDescriptor, Object> values = new HashMap<>();
-        for (DomainProperty pd : sampleSet.getDomain().getProperties())
+        for (DomainProperty pd : sampleType.getDomain().getProperties())
         {
             values.put(pd.getPropertyDescriptor(), uriMap.get(pd.getPropertyURI()));
         }
@@ -433,10 +433,10 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return getObjectProperties((ExpSampleTypeImpl) getSampleType());
     }
 
-    public Map<String, ObjectProperty> getObjectProperties(ExpSampleTypeImpl ss)
+    public Map<String, ObjectProperty> getObjectProperties(ExpSampleTypeImpl st)
     {
         HashMap<String,ObjectProperty> ret = new HashMap<>(super.getObjectProperties());
-        var ti = null == ss ? null : ss.getTinfo();
+        var ti = null == st ? null : st.getTinfo();
         if (null != ti)
         {
             new SqlSelector(ti.getSchema(),"SELECT * FROM " + ti + " WHERE lsid=?",  getLSID()).forEach(rs ->
@@ -492,14 +492,14 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
     public void setProperties(User user, Map<String,?> values_) throws ValidationException
     {
-        ExpSampleTypeImpl ss = (ExpSampleTypeImpl) getSampleType();
+        ExpSampleTypeImpl st = (ExpSampleTypeImpl) getSampleType();
         Map<String, Object> values = new HashMap<>(values_);
         Map<String,Object> converted = new HashMap<>();
 
-        TableInfo ti = null==ss ? null : ss.getTinfo();
+        TableInfo ti = null==st ? null : st.getTinfo();
         if (null != ti)
         {
-            Domain d = ss.getDomain();
+            Domain d = st.getDomain();
             for (DomainProperty dp : d.getProperties())
             {
                 String key;
@@ -527,11 +527,11 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 converted.put(dp.getName(), value);
                 values.remove(key);
             }
-            Table.update(user, ss.getTinfo(), converted, getLSID());
+            Table.update(user, st.getTinfo(), converted, getLSID());
         }
         for (var entry : values.entrySet())
         {
-            PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(entry.getKey(), ss.getContainer());
+            PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(entry.getKey(), st.getContainer());
             if (null != pd)
                 super.setProperty(user, pd, entry.getValue());
         }

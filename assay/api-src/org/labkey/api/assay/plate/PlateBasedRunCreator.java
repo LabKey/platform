@@ -208,26 +208,26 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
                 Map<DomainProperty, String> properties = materialProperties.get(key);
 
                 String domainURI = AbstractAssayProvider.getDomainURIForPrefix(context.getProtocol(), AbstractPlateBasedAssayProvider.ASSAY_DOMAIN_SAMPLE_WELLGROUP);
-                ExpSampleType sampleSet = SampleTypeService.get().getSampleType(domainURI);
-                if (sampleSet == null)
+                ExpSampleType sampleType = SampleTypeService.get().getSampleType(domainURI);
+                if (sampleType == null)
                 {
-                    sampleSet = SampleTypeService.get().createSampleType();
-                    sampleSet.setContainer(context.getProtocol().getContainer());
-                    sampleSet.setName("Input Samples: " + context.getProtocol().getName());
-                    sampleSet.setLSID(domainURI);
+                    sampleType = SampleTypeService.get().createSampleType();
+                    sampleType.setContainer(context.getProtocol().getContainer());
+                    sampleType.setName("Input Samples: " + context.getProtocol().getName());
+                    sampleType.setLSID(domainURI);
 
-                    Lsid.LsidBuilder sampleSetLSID = new Lsid.LsidBuilder(domainURI);
-                    sampleSetLSID.setNamespacePrefix("Sample");
-                    sampleSetLSID.setNamespaceSuffix(context.getProtocol().getContainer().getRowId() + "." + context.getProtocol().getName());
-                    sampleSetLSID.setObjectId("");
-                    String prefix = sampleSetLSID.toString();
+                    Lsid.LsidBuilder sampleTypeLSID = new Lsid.LsidBuilder(domainURI);
+                    sampleTypeLSID.setNamespacePrefix("Sample");
+                    sampleTypeLSID.setNamespaceSuffix(context.getProtocol().getContainer().getRowId() + "." + context.getProtocol().getName());
+                    sampleTypeLSID.setObjectId("");
+                    String prefix = sampleTypeLSID.toString();
 
-                    sampleSet.setMaterialLSIDPrefix(prefix);
-                    sampleSet.setIdCol1("SpecimenID");
-                    sampleSet.save(context.getUser());
+                    sampleType.setMaterialLSIDPrefix(prefix);
+                    sampleType.setIdCol1("SpecimenID");
+                    sampleType.save(context.getUser());
                 }
 
-                Lsid.LsidBuilder derivedLsid = new Lsid.LsidBuilder(sampleSet.getMaterialLSIDPrefix() + "OBJECT");
+                Lsid.LsidBuilder derivedLsid = new Lsid.LsidBuilder(sampleType.getMaterialLSIDPrefix() + "OBJECT");
                 derivedLsid.setObjectId(derivedLsid.getObjectId() + "-" + key + "-" + ms);
                 int index = 0;
 
@@ -241,7 +241,7 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
                 while(ExperimentService.get().getExpMaterial(derivedLsid.toString()) != null)
                     derivedLsid.setObjectId(baseObjectId + "-" + ++index);
                 ExpMaterial derivedMaterial = ExperimentService.get().createExpMaterial(context.getContainer(), derivedLsid.build());
-                derivedMaterial.setCpasType(sampleSet.getLSID());
+                derivedMaterial.setCpasType(sampleType.getLSID());
                 Map<ExpMaterial, String> originalMaterialSet = Collections.singletonMap(originalMaterial, null);
                 Map<ExpMaterial, String> derivedMaterialSet = Collections.singletonMap(derivedMaterial, "PreparedMaterial");
                 derivedMaterials.put(derivedMaterial, key);

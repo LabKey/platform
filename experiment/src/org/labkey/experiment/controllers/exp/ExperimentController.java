@@ -3562,9 +3562,9 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(SampleTypeForm form, BindException errors) throws Exception
         {
-            ExpSampleTypeImpl ss = form.getSampleType(getContainer());
+            ExpSampleTypeImpl st = form.getSampleType(getContainer());
 
-            return getSampleTypeApiResponse(ss);
+            return getSampleTypeApiResponse(st);
         }
     }
 
@@ -4769,7 +4769,7 @@ public class ExperimentController extends SpringActionController
 
                 List<ExpSampleType> sampleTypes = getUploadableSampleTypes();
 
-                DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getDataRegionSelectionKey(), form.getTargetSampleSetId(), sampleTypes, materialsWithRoles, form.getOutputCount(), materialInputRoles, null);
+                DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getDataRegionSelectionKey(), form.getTargetSampleTypeId(), sampleTypes, materialsWithRoles, form.getOutputCount(), materialInputRoles, null);
                 view = new JspView<>("/org/labkey/experiment/deriveSamplesChooseTarget.jsp", bean);
             }
             return view;
@@ -4780,7 +4780,7 @@ public class ExperimentController extends SpringActionController
     {
         private String _dataRegionSelectionKey;
 
-        private final Integer _targetSampleSetId;
+        private final Integer _targetSampleTypeId;
         private final List<ExpSampleType> _sampleTypes;
         private final Map<ExpMaterial, String> _sourceMaterials;
         private final int _sampleCount;
@@ -4789,10 +4789,10 @@ public class ExperimentController extends SpringActionController
 
         public static final String CUSTOM_ROLE = "--CUSTOM--";
 
-        public DeriveSamplesChooseTargetBean(String dataRegionSelectionKey, Integer targetSampleSetId, List<ExpSampleType> sampleTypes, Map<ExpMaterial, String> sourceMaterials, int sampleCount, Collection<String> inputRoles, DerivedSamplePropertyHelper helper)
+        public DeriveSamplesChooseTargetBean(String dataRegionSelectionKey, Integer targetSampleTypeId, List<ExpSampleType> sampleTypes, Map<ExpMaterial, String> sourceMaterials, int sampleCount, Collection<String> inputRoles, DerivedSamplePropertyHelper helper)
         {
             _dataRegionSelectionKey = dataRegionSelectionKey;
-            _targetSampleSetId = targetSampleSetId;
+            _targetSampleTypeId = targetSampleTypeId;
             _sampleTypes = sampleTypes;
             _sourceMaterials = sourceMaterials;
             _sampleCount = sampleCount;
@@ -4800,9 +4800,9 @@ public class ExperimentController extends SpringActionController
             _propertyHelper = helper;
         }
 
-        public Integer getTargetSampleSetId()
+        public Integer getTargetSampleTypeId()
         {
-            return _targetSampleSetId;
+            return _targetSampleTypeId;
         }
 
         public DerivedSamplePropertyHelper getPropertyHelper()
@@ -4873,10 +4873,10 @@ public class ExperimentController extends SpringActionController
                 form.setOutputCount(1);
             }
 
-            ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), form.getTargetSampleSetId());
-            if (form.getTargetSampleSetId() != 0 && sampleType == null)
+            ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), form.getTargetSampleTypeId());
+            if (form.getTargetSampleTypeId() != 0 && sampleType == null)
             {
-                throw new NotFoundException("Could not find sample type with rowId " + form.getTargetSampleSetId());
+                throw new NotFoundException("Could not find sample type with rowId " + form.getTargetSampleTypeId());
             }
 
             InsertView insertView = new InsertView(new DataRegion(), errors);
@@ -4892,7 +4892,7 @@ public class ExperimentController extends SpringActionController
                 insertView.getDataRegion().addHiddenFormField("customRole" + i, form.getCustomRole(i) == null ? "" : form.getCustomRole(i));
             }
 
-            insertView.getDataRegion().addHiddenFormField("targetSampleSetId", Integer.toString(form.getTargetSampleSetId()));
+            insertView.getDataRegion().addHiddenFormField("targetSampleSetId", Integer.toString(form.getTargetSampleTypeId()));
             insertView.getDataRegion().addHiddenFormField("outputCount", Integer.toString(form.getOutputCount()));
             if (form.getDataRegionSelectionKey() != null)
                 insertView.getDataRegion().addHiddenFormField(DataRegionSelection.DATA_REGION_SELECTION_KEY, form.getDataRegionSelectionKey());
@@ -4912,7 +4912,7 @@ public class ExperimentController extends SpringActionController
                 materialsWithRoles.put(materials.get(i), form.determineLabel(i));
             }
 
-            DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getDataRegionSelectionKey(), form.getTargetSampleSetId(), getUploadableSampleTypes(), materialsWithRoles, form.getOutputCount(), Collections.emptyList(), helper);
+            DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getDataRegionSelectionKey(), form.getTargetSampleTypeId(), getUploadableSampleTypes(), materialsWithRoles, form.getOutputCount(), Collections.emptyList(), helper);
             JspView<DeriveSamplesChooseTargetBean> view = new JspView<>("/org/labkey/experiment/summarizeMaterialInputs.jsp", bean);
             view.setTitle("Input Samples");
 
@@ -4956,7 +4956,7 @@ public class ExperimentController extends SpringActionController
                 inputMaterials.put(materials.get(i), inputRole);
             }
 
-            ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), form.getTargetSampleSetId());
+            ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), form.getTargetSampleTypeId());
 
             DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleType, form.getOutputCount(), getContainer(), getUser());
 
@@ -5035,7 +5035,7 @@ public class ExperimentController extends SpringActionController
     {
         private String _dataRegionSelectionKey;
         private int _outputCount = 1;
-        private int _targetSampleSetId;
+        private int _targetSampleTypeId;
         private int[] _rowIds;
         private String _name;
 
@@ -5125,14 +5125,14 @@ public class ExperimentController extends SpringActionController
             _outputCount = outputCount;
         }
 
-        public int getTargetSampleSetId()
+        public int getTargetSampleTypeId()
         {
-            return _targetSampleSetId;
+            return _targetSampleTypeId;
         }
 
-        public void setTargetSampleSetId(int targetSampleSetId)
+        public void setTargetSampleTypeId(int targetSampleTypeId)
         {
-            _targetSampleSetId = targetSampleSetId;
+            _targetSampleTypeId = targetSampleTypeId;
         }
 
         public String getInputRole(int i)

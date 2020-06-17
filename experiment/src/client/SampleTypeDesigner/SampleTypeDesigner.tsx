@@ -36,7 +36,7 @@ interface State {
     message?: string
 }
 
-const UPDATE_SAMPLE_SET_ACTION = 'updateMaterialSource';
+const UPDATE_SAMPLE_TYPE_ACTION = 'updateMaterialSource';
 
 export class App extends React.PureComponent<any, State> {
 
@@ -47,7 +47,7 @@ export class App extends React.PureComponent<any, State> {
 
         const action = ActionURL.getAction();
         let message;
-        if (action === UPDATE_SAMPLE_SET_ACTION && !this.getRowIdParam()) {
+        if (action === UPDATE_SAMPLE_TYPE_ACTION && !this.getRowIdParam()) {
             message = 'RowId parameter not supplied. Unable to determine which Sample Type to edit.';
         }
 

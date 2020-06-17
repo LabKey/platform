@@ -128,7 +128,7 @@ public class XarExportSelection implements Serializable
 
         for (int sampleTypeId : _sampleTypeIds)
         {
-            exporter.addSampleSet(SampleTypeService.get().getSampleType(sampleTypeId));
+            exporter.addSampleType(SampleTypeService.get().getSampleType(sampleTypeId));
         }
 
         for (int dataId : _dataIds)

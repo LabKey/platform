@@ -40,7 +40,7 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
     public static final String EVENT_TYPE = "SampleSetAuditEvent";
 
     public static final String COLUMN_NAME_SOURCE_LSID = "SourceLsid";
-    public static final String COLUMN_NAME_SAMPLE_SET_NAME = "SampleSetName";
+    public static final String COLUMN_NAME_SAMPLE_TYPE_NAME = "SampleSetName";
     public static final String COLUMN_NAME_INSERT_UPDATE_CHOICE = "InsertUpdateChoice";
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
@@ -50,7 +50,7 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_SAMPLE_SET_NAME));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_SAMPLE_TYPE_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROJECT_ID));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
@@ -162,7 +162,7 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
 
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
             fields.add(createPropertyDescriptor(COLUMN_NAME_SOURCE_LSID, PropertyType.STRING));
-            fields.add(createPropertyDescriptor(COLUMN_NAME_SAMPLE_SET_NAME, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_SAMPLE_TYPE_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_INSERT_UPDATE_CHOICE, PropertyType.STRING));
             _fields = Collections.unmodifiableSet(fields);
         }

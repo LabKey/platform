@@ -53,7 +53,7 @@ public class SamplesSchema extends AbstractExpSchema
     public static final String SCHEMA_DESCR = "Contains data about the samples used in experiment runs.";
     static final Logger log = Logger.getLogger(SamplesSchema.class);
 
-    static private Map<String, ExpSampleType> getSampleSetMap(Container container, User user)
+    static private Map<String, ExpSampleType> getSampleTypeMap(Container container, User user)
     {
         Map<String, ExpSampleType> map = new CaseInsensitiveTreeMap<>();
         // User can be null if we're running in a background thread, such as doing a study export
@@ -70,7 +70,7 @@ public class SamplesSchema extends AbstractExpSchema
             @Override
             public boolean isAvailable(DefaultSchema schema, Module module)
             {
-                // The 'samples' schema is always available, but will be hidden if there are no SampleSets
+                // The 'samples' schema is always available, but will be hidden if there are no SampleTypes
                 return true;
             }
 
@@ -93,38 +93,38 @@ public class SamplesSchema extends AbstractExpSchema
         this(SchemaKey.fromParts(SCHEMA_NAME), user, container);
     }
 
-    private Map<String, ExpSampleType> _sampleSetMap = null;
+    private Map<String, ExpSampleType> _sampleTypeMap = null;
 
     /*package*/ SamplesSchema(SchemaKey path, User user, Container container)
     {
         super(path, SCHEMA_DESCR, user, container, ExperimentService.get().getSchema());
     }
 
-    protected Map<String, ExpSampleType> getSampleSets()
+    protected Map<String, ExpSampleType> getSampleTypes()
     {
-        if (_sampleSetMap == null)
+        if (_sampleTypeMap == null)
         {
-            _sampleSetMap = getSampleSetMap(getContainer(), getUser());
+            _sampleTypeMap = getSampleTypeMap(getContainer(), getUser());
         }
-        return _sampleSetMap;
+        return _sampleTypeMap;
     }
 
     @Override
     public boolean isHidden()
     {
-        return getSampleSets().isEmpty();
+        return getSampleTypes().isEmpty();
     }
 
     @Override
     public Set<String> getTableNames()
     {
-        return getSampleSets().keySet();
+        return getSampleTypes().keySet();
     }
 
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
-        ExpSampleType st = getSampleSets().get(name);
+        ExpSampleType st = getSampleTypes().get(name);
         if (st == null)
             return null;
         return getSampleTable(st, cf);
@@ -206,7 +206,7 @@ public class SamplesSchema extends AbstractExpSchema
     public String getDomainURI(String queryName)
     {
         Container container = getContainer();
-        ExpSampleType st = getSampleSets().get(queryName);
+        ExpSampleType st = getSampleTypes().get(queryName);
         if (st == null)
             throw new NotFoundException("Sample type '" + queryName + "' not found in this container '" + container.getPath() + "'.");
 

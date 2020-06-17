@@ -246,17 +246,17 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         sampleProps.add(new GWTPropertyDescriptor("name", "string"));
         sampleProps.add(new GWTPropertyDescriptor("age", "int"));
 
-        final ExpSampleTypeImpl ss = SampleTypeServiceImpl.get().createSampleType(c, user,
+        final ExpSampleTypeImpl st = SampleTypeServiceImpl.get().createSampleType(c, user,
                 "MySamples", null, sampleProps, Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
         final ExpMaterial s1 = ExperimentService.get().createExpMaterial(c,
-                ss.generateSampleLSID().setObjectId("S-1").toString(), "S-1");
-        s1.setCpasType(ss.getLSID());
+                st.generateSampleLSID().setObjectId("S-1").toString(), "S-1");
+        s1.setCpasType(st.getLSID());
         s1.save(user);
 
         final ExpMaterial s2 = ExperimentService.get().createExpMaterial(c,
-                ss.generateSampleLSID().setObjectId("S-2").toString(), "S-2");
-        s2.setCpasType(ss.getLSID());
+                st.generateSampleLSID().setObjectId("S-2").toString(), "S-2");
+        s2.setCpasType(st.getLSID());
         s2.save(user);
 
         // Create DataClass
@@ -328,7 +328,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("name", "string"));
         props.add(new GWTPropertyDescriptor("age", "int"));
-        final ExpSampleTypeImpl ss = SampleTypeServiceImpl.get().createSampleType(c, user,
+        final ExpSampleTypeImpl st = SampleTypeServiceImpl.get().createSampleType(c, user,
                 "MySamples", null, props, Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
 

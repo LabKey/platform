@@ -191,9 +191,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     @Override
                     public TableInfo getLookupTableInfo()
                     {
-                        ExpSampleTypeTable sampleSetTable = ExperimentService.get().createSampleSetTable(ExpSchema.TableType.SampleSets.toString(), _userSchema, getLookupContainerFilter());
-                        sampleSetTable.populate();
-                        return sampleSetTable;
+                        ExpSampleTypeTable sampleTypeTable = ExperimentService.get().createSampleTypeTable(ExpSchema.TableType.SampleSets.toString(), _userSchema, getLookupContainerFilter());
+                        sampleTypeTable.populate();
+                        return sampleTypeTable;
                     }
 
                     @Override
@@ -365,7 +365,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
-    public void setSampleSet(ExpSampleType st, boolean filter)
+    public void setSampleType(ExpSampleType st, boolean filter)
     {
         checkLocked();
         if (_ss != null)
@@ -420,9 +420,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
-    public final void populate(@Nullable ExpSampleType st, boolean filter)
+    public final void populate(@Nullable ExpSampleType st, boolean filterSampleType)
     {
-        populateColumns(st, filter);
+        populateColumns(st, filterSampleType);
         _populated = true;
     }
 
@@ -537,8 +537,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (st != null && !"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))
         {
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Flag));
-            setSampleSet(st, filter);
-            addSampleSetColumns(st, defaultCols);
+            setSampleType(st, filter);
+            addSampleTypeColumns(st, defaultCols);
             setName(_ss.getName());
 
             ActionURL gridUrl = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer());
@@ -587,7 +587,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return sb.toString();
     }
 
-    private void addSampleSetColumns(ExpSampleType st, List<FieldKey> visibleColumns)
+    private void addSampleTypeColumns(ExpSampleType st, List<FieldKey> visibleColumns)
     {
         TableInfo dbTable = ((ExpSampleTypeImpl)st).getTinfo();
         if (null == dbTable)
@@ -768,12 +768,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     {
         TableInfo propertiesTable = _ss.getTinfo();
 
-        int sampleSetObjectId = requireNonNull(getOwnerObjectId());
+        int sampleTypeObjectId = requireNonNull(getOwnerObjectId());
 
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         try
         {
-            DataIteratorBuilder persist = LoggingDataIterator.wrap(new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleSetObjectId)
+            DataIteratorBuilder persist = LoggingDataIterator.wrap(new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
                     .setFileLinkDirectory("sampleset")
                     .setIndexFunction(lsids -> () ->
                     {

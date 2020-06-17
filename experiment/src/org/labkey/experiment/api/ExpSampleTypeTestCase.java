@@ -76,16 +76,18 @@ import static org.junit.Assert.assertTrue;
 @TestWhen(TestWhen.When.BVT)
 public class ExpSampleTypeTestCase extends ExpProvisionedTableTestHelper
 {
-    Container c;
+    private static final String PROJECT_NAME = "_testSampleType";
+
+    private Container c;
 
     @Before
     public void setUp()
     {
         // NOTE: We need to use a project to create the DataClass so we can insert rows into sub-folders
-        c = ContainerManager.getForPath("_testSampleSet");
+        c = ContainerManager.getForPath(PROJECT_NAME);
         if (c != null)
             ContainerManager.deleteAll(c, TestContext.get().getUser());
-        c = ContainerManager.createContainer(ContainerManager.getRoot(), "_testSampleSet");
+        c = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME);
     }
 
     @After
@@ -467,7 +469,7 @@ public class ExpSampleTypeTestCase extends ExpProvisionedTableTestHelper
     }
 
 
-    // Issue 33682: Calling insertRows on SampleSet with empty values will not insert new samples
+    // Issue 33682: Calling insertRows on SampleType with empty values will not insert new samples
     @Test
     public void testBlankRows() throws Exception
     {
@@ -480,11 +482,11 @@ public class ExpSampleTypeTestCase extends ExpProvisionedTableTestHelper
 
         final String nameExpression = "S-${now:date}-${dailySampleCount}";
 
-        final ExpSampleTypeImpl ss = SampleTypeServiceImpl.get().createSampleType(c, user,
+        final ExpSampleTypeImpl st = SampleTypeServiceImpl.get().createSampleType(c, user,
                 "Samples", null, props, Collections.emptyList(),
                 -1, -1, -1, -1, nameExpression, null);
 
-        List<? extends ExpMaterial> allSamples = ss.getSamples(c);
+        List<? extends ExpMaterial> allSamples = st.getSamples(c);
         assertTrue("Expected no samples", allSamples.isEmpty());
 
         //
@@ -512,7 +514,7 @@ public class ExpSampleTypeTestCase extends ExpProvisionedTableTestHelper
         String name1 = (String)inserted.get(0).get("name");
         assertTrue("Expected generated sample name to start with 'S-', got: " + name1, name1 != null && name1.startsWith("S-"));
 
-        allSamples = ss.getSamples(c);
+        allSamples = st.getSamples(c);
         assertEquals("Expected 3 total samples", 3, allSamples.size());
 
         //
@@ -548,7 +550,7 @@ public class ExpSampleTypeTestCase extends ExpProvisionedTableTestHelper
         assertNotNull(age2);
         assertEquals("Expected to insert age of 30, got: " + age2, 30, age2.intValue());
 
-        allSamples = ss.getSamples(c);
+        allSamples = st.getSamples(c);
         assertEquals("Expected 5 total samples", 5, allSamples.size());
 
         // how about an update
@@ -562,7 +564,7 @@ public class ExpSampleTypeTestCase extends ExpProvisionedTableTestHelper
 
         // and a delete
         svc.deleteRows(user, c, Collections.singletonList(updated), null, null);
-        allSamples = ss.getSamples(c);
+        allSamples = st.getSamples(c);
         assertEquals("Expected 5 total samples", 4, allSamples.size());
     }
 
@@ -693,7 +695,7 @@ public class ExpSampleTypeTestCase extends ExpProvisionedTableTestHelper
         props.add(new GWTPropertyDescriptor("data", "int"));
         props.add(new GWTPropertyDescriptor("parent", "string"));
 
-        final ExpSampleTypeImpl ss = SampleTypeServiceImpl.get().createSampleType(c, user,
+        final ExpSampleTypeImpl st = SampleTypeServiceImpl.get().createSampleType(c, user,
                 "Samples", null, props, Collections.emptyList(),
                 0, -1, -1, 2, null, null);
 
@@ -729,33 +731,33 @@ public class ExpSampleTypeTestCase extends ExpProvisionedTableTestHelper
         opts.setParents(true);
         opts.setDepth(2);
 
-        ExpMaterial A = ss.getSample(c, "A");
+        ExpMaterial A = st.getSample(c, "A");
         assertNotNull(A);
         ExpLineage lineage = ExperimentService.get().getLineage(c, user, A, opts);
         assertTrue(lineage.getMaterials().isEmpty());
         assertNull(A.getRunId());
 
-        ExpMaterial B = ss.getSample(c, "B");
+        ExpMaterial B = st.getSample(c, "B");
         assertNotNull(B);
         lineage = ExperimentService.get().getLineage(c, user, B, opts);
         assertEquals(1, lineage.getMaterials().size());
         assertTrue("Expected 'B' to be derived from 'A'", lineage.getMaterials().contains(A));
         assertNotNull(B.getRunId());
 
-        ExpMaterial C = ss.getSample(c, "C");
+        ExpMaterial C = st.getSample(c, "C");
         assertNotNull(C);
         lineage = ExperimentService.get().getLineage(c, user, C, opts);
         assertEquals(1, lineage.getMaterials().size());
         assertTrue("Expected 'C' to be derived from 'B'", lineage.getMaterials().contains(B));
 
-        ExpMaterial D = ss.getSample(c, "D");
+        ExpMaterial D = st.getSample(c, "D");
         assertNotNull(D);
         lineage = ExperimentService.get().getLineage(c, user, D, opts);
         assertEquals(2, lineage.getMaterials().size());
         assertTrue("Expected 'D' to be derived from 'B'", lineage.getMaterials().contains(B));
         assertTrue("Expected 'D' to be derived from 'C'", lineage.getMaterials().contains(C));
 
-        ExpMaterial E = ss.getSample(c, "E");
+        ExpMaterial E = st.getSample(c, "E");
         assertNotNull(E);
         lineage = ExperimentService.get().getLineage(c, user, E, opts);
         assertTrue("Expected 'E' to be the seed", lineage.getSeeds().contains(E));
@@ -793,7 +795,7 @@ public class ExpSampleTypeTestCase extends ExpProvisionedTableTestHelper
         List<Map<String, Object>> updated = svc.updateRows(user, c, rows, null, null, null);
         assertEquals(1, updated.size());
 
-        ExpMaterial D2 = ss.getSample(c, "D");
+        ExpMaterial D2 = st.getSample(c, "D");
         lineage = ExperimentService.get().getLineage(c, user, D2, opts);
         assertEquals(2, lineage.getMaterials().size());
         assertTrue("Expected 'D' to be derived from 'B'", lineage.getMaterials().contains(B));
@@ -836,11 +838,11 @@ public class ExpSampleTypeTestCase extends ExpProvisionedTableTestHelper
         Map<String, String> vocabularyPropertyURIs = getVocabularyPropertyURIS(mockDomain);
 
         //create sample type
-        ExpSampleTypeImpl ss = SampleTypeServiceImpl.get().createSampleType(c, user,
+        ExpSampleTypeImpl st = SampleTypeServiceImpl.get().createSampleType(c, user,
                 sampleName, null, List.of(new GWTPropertyDescriptor("name", "string")), Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
 
-        assertNotNull(ss);
+        assertNotNull(st);
 
         UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
 

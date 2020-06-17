@@ -361,14 +361,14 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         String id = sampleTypeCache.get(lsid);
         if (null != id && (null == hint || !id.equals(hint.getId())))
             c = ContainerManager.getForId(id);
-        ExpSampleTypeImpl ss = null;
+        ExpSampleTypeImpl st = null;
         if (null != c)
-            ss = getSampleType(c, null, false, ms -> lsid.equals(ms.getLSID()) );
-        if (null == ss)
-            ss = _getSampleType(lsid);
-        if (null != ss && null==id)
-            sampleTypeCache.put(lsid,ss.getContainer().getId());
-        return ss;
+            st = getSampleType(c, null, false, ms -> lsid.equals(ms.getLSID()) );
+        if (null == st)
+            st = _getSampleType(lsid);
+        if (null != st && null==id)
+            sampleTypeCache.put(lsid,st.getContainer().getId());
+        return st;
     }
 
 
@@ -718,7 +718,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         if (parentUri != null)
             source.setParentCol(parentUri);
 
-        final ExpSampleTypeImpl ss = new ExpSampleTypeImpl(source);
+        final ExpSampleTypeImpl st = new ExpSampleTypeImpl(source);
 
         try
         {
@@ -727,10 +727,10 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
                 try
                 {
                     domain.save(u);
-                    ss.save(u);
+                    st.save(u);
                     DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
                     transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
-                    return ss;
+                    return st;
                 }
                 catch (ExperimentException eex)
                 {
@@ -744,7 +744,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
             throw x;
         }
 
-        return ss;
+        return st;
     }
 
     public String getAliasJson(Map<String, String> importAliases, String currentAliasName)
@@ -838,31 +838,31 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
     @Override
     public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
     {
-        ExpSampleTypeImpl ss = new ExpSampleTypeImpl(getMaterialSource(update.getDomainURI()));
+        ExpSampleTypeImpl st = new ExpSampleTypeImpl(getMaterialSource(update.getDomainURI()));
 
         String newDescription = StringUtils.trimToNull(update.getDescription());
-        String description = ss.getDescription();
+        String description = st.getDescription();
         if (description == null || !description.equals(newDescription))
         {
-            ss.setDescription(newDescription);
+            st.setDescription(newDescription);
         }
 
         if (options != null)
         {
             String sampleIdPattern = StringUtils.trimToNull(options.getNameExpression());
-            String oldPattern = ss.getNameExpression();
+            String oldPattern = st.getNameExpression();
             if (oldPattern == null || !oldPattern.equals(sampleIdPattern))
             {
-                ss.setNameExpression(sampleIdPattern);
+                st.setNameExpression(sampleIdPattern);
             }
 
-            ss.setImportAliasMap(options.getImportAliases());
+            st.setImportAliasMap(options.getImportAliases());
         }
 
         ValidationException errors;
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            ss.save(user);
+            st.save(user);
             errors = DomainUtil.updateDomainDescriptor(original, update, container, user);
 
             if (!errors.hasErrors())

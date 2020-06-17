@@ -739,8 +739,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         Map<DomainProperty, TableInfo> remappableLookup = new HashMap<>();
         Map<Integer, ExpMaterial> materialCache = new HashMap<>();
 
-        Map<DomainProperty, ExpSampleType> lookupToSampleSetByName = new HashMap<>();
-        Map<DomainProperty, ExpSampleType> lookupToSampleSetById = new HashMap<>();
+        Map<DomainProperty, ExpSampleType> lookupToSampleTypeByName = new HashMap<>();
+        Map<DomainProperty, ExpSampleType> lookupToSampleTypeById = new HashMap<>();
         Set<DomainProperty> lookupToAllSamplesByName = new HashSet<>();
         Set<DomainProperty> lookupToAllSamplesById = new HashSet<>();
 
@@ -784,11 +784,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 {
                     if (pd.getPropertyType().getJdbcType().isText())
                     {
-                        lookupToSampleSetByName.put(pd, st);
+                        lookupToSampleTypeByName.put(pd, st);
                     }
                     else
                     {
-                        lookupToSampleSetById.put(pd, st);
+                        lookupToSampleTypeById.put(pd, st);
                     }
                 }
                 else if (DefaultAssayRunCreator.isLookupToMaterials(pd))
@@ -982,9 +982,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     errors.add(new PropertyValidationError(pd.getName() + " must be of type " + ColumnInfo.getFriendlyTypeName(pd.getPropertyDescriptor().getPropertyType().getJavaType()) + ".", pd.getName()));
                 }
 
-                // Collect sample names or ids for each of the SampleSet lookup columns
+                // Collect sample names or ids for each of the SampleType lookup columns
                 // Add any sample inputs to the rowInputLSIDs
-                ExpSampleType byNameSS = lookupToSampleSetByName.get(pd);
+                ExpSampleType byNameSS = lookupToSampleTypeByName.get(pd);
                 if (o instanceof String && (byNameSS != null || lookupToAllSamplesByName.contains(pd)))
                 {
                     String ssName = byNameSS != null ? byNameSS.getName() : null;
@@ -997,7 +997,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     }
                 }
 
-                if (o instanceof Integer && (lookupToSampleSetById.containsKey(pd) || lookupToAllSamplesById.contains(pd)))
+                if (o instanceof Integer && (lookupToSampleTypeById.containsKey(pd) || lookupToAllSamplesById.contains(pd)))
                 {
                     ExpMaterial material = materialCache.computeIfAbsent((Integer)o, exp::getExpMaterial);
                     if (material != null)

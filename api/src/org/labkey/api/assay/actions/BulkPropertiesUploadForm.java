@@ -183,15 +183,15 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
         int dotIndex = name.indexOf(".");
         if (dotIndex != -1)
         {
-            String sampleSetName = name.substring(0, dotIndex);
+            String sampleTypeName = name.substring(0, dotIndex);
             String sampleName = name.substring(dotIndex + 1);
             // Could easily do some caching here, but probably not a significant perf issue
-            for (ExpSampleType sampleSet : SampleTypeService.get().getSampleTypes(getContainer(), getUser(), true))
+            for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(getContainer(), getUser(), true))
             {
                 // Look for a sample type with the right name
-                if (sampleSetName.equals(sampleSet.getName()))
+                if (sampleTypeName.equals(sampleType.getName()))
                 {
-                    for (ExpMaterial sample : sampleSet.getSamples(sampleSet.getContainer()))
+                    for (ExpMaterial sample : sampleType.getSamples(sampleType.getContainer()))
                     {
                         // Look for a sample with the right name
                         if (sample.getName().equals(sampleName))

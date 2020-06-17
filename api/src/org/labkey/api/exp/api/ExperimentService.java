@@ -186,7 +186,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     @Deprecated
     ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, String description,
-                                 List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleSetId, String nameExpression,
+                                 List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleTypeId, String nameExpression,
                                  @Nullable TemplateInfo templateInfo, @Nullable String category)
             throws ExperimentException;
 
@@ -254,9 +254,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param container       Samples will be found within this container, project, or shared container.
      * @param user            Samples will only be resolved within containers that the user has ReadPermission.
      * @param sampleNames     The set of samples to be resolved by name.
-     * @param sampleType       Optional sample type that the samples must live in.
+     * @param sampleType      Optional sample type that the samples must live in.
      * @param throwIfMissing  Throw ExperimentException if any of the sampleNames do not exist.
-     * @param createIfMissing Create missing samples in the given <code>sampleSet</code>.
+     * @param createIfMissing Create missing samples in the given <code>sampleType</code>.
      * @return Resolved samples
      * @throws ExperimentException
      */
@@ -285,7 +285,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
             throws ValidationException;
 
     @Nullable ExpMaterial findExpMaterial(Container c, User user,
-                                          String sampleSetName, String sampleName,
+                                          String sampleTypeName, String sampleName,
                                           RemapCache cache, Map<Integer, ExpMaterial> materialCache)
             throws ValidationException;
 
@@ -317,7 +317,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpMaterialProtocolInput createMaterialProtocolInput(
             @NotNull String name, @NotNull ExpProtocol protocol, boolean input,
-            @Nullable ExpSampleType sampleSet, @Nullable ExpProtocolInputCriteria criteria,
+            @Nullable ExpSampleType sampleType, @Nullable ExpProtocolInputCriteria criteria,
             int minOccurs, @Nullable Integer maxOccurs);
 
     @Nullable ExpProtocolInput getProtocolInput(Lsid lsid);
@@ -395,7 +395,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpDataProtocolInputTable createDataProtocolInputTable(String name, ExpSchema schema, ContainerFilter cf);
 
-    ExpSampleTypeTable createSampleSetTable(String name, UserSchema schema, ContainerFilter cf);
+    ExpSampleTypeTable createSampleTypeTable(String name, UserSchema schema, ContainerFilter cf);
 
     ExpDataClassTable createDataClassTable(String name, UserSchema schema, ContainerFilter cf);
 
@@ -510,7 +510,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<? extends ExpRun> getExpRunsForProtocolIds(boolean includeRelated, @NotNull Collection<Integer> rowIds);
 
-    List<? extends ExpRun> getRunsUsingSampleTypes(ExpSampleType... sampleSets);
+    List<? extends ExpRun> getRunsUsingSampleTypes(ExpSampleType... sampleTypes);
 
     List<? extends ExpRun> getRunsUsingDataClasses(Collection<ExpDataClass> dataClasses);
 

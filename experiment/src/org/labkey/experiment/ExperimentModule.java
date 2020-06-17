@@ -337,11 +337,11 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     if (rowId == 0)
                         return null;
 
-                    ExpSampleType sampleSet = SampleTypeService.get().getSampleType(rowId);
-                    if (sampleSet == null)
+                    ExpSampleType sampleType = SampleTypeService.get().getSampleType(rowId);
+                    if (sampleType == null)
                         return null;
 
-                    Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(sampleSet, null, ExperimentJSONConverter.DEFAULT_SETTINGS);
+                    Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(sampleType, null, ExperimentJSONConverter.DEFAULT_SETTINGS);
 
                     //Need to map to proper Icon
                     properties.put("type", "sampleSet");
@@ -502,9 +502,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         if (dataClassCount > 0)
             list.add(dataClassCount + " Data Class" + (dataClassCount > 1 ? "es" : ""));
 
-        int sampleSetCount = SampleTypeService.get().getSampleTypes(c, null, false).size();
-        if (sampleSetCount > 0)
-            list.add(sampleSetCount + " Sample Type" + (sampleSetCount > 1 ? "s" : ""));
+        int sampleTypeCount = SampleTypeService.get().getSampleTypes(c, null, false).size();
+        if (sampleTypeCount > 0)
+            list.add(sampleTypeCount + " Sample Type" + (sampleTypeCount > 1 ? "s" : ""));
 
         return list;
     }
@@ -564,9 +564,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
         task.addRunnable(() -> {
-            for (ExpSampleTypeImpl sampleSet : ExperimentServiceImpl.get().getIndexableSampleSets(c, modifiedSince))
+            for (ExpSampleTypeImpl sampleType : ExperimentServiceImpl.get().getIndexableSampleTypes(c, modifiedSince))
             {
-                sampleSet.index(task);
+                sampleType.index(task);
             }
         }, SearchService.PRIORITY.bulk);
 

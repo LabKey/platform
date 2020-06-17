@@ -97,7 +97,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
     }
 
     @Override
-    public BaseColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleType sampleSet, String... roleNames)
+    public BaseColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleType sampleType, String... roleNames)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.MaterialInput.MaterialId) FROM exp.MaterialInput\nWHERE ");
 
@@ -118,7 +118,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         sql.append(")");
         var ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
 
-        ret.setFk(schema.materialIdForeignKey(sampleSet, null));
+        ret.setFk(schema.materialIdForeignKey(sampleType, null));
         return ret;
     }
 

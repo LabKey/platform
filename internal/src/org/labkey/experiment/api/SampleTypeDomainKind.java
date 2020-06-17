@@ -214,7 +214,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         }
         catch (IOException e)
         {
-            logger.error(String.format("Failed to parse SampleSet parent aliases for [%1$s]", st.getRowId()), e);
+            logger.error(String.format("Failed to parse SampleType parent aliases for [%1$s]", st.getRowId()), e);
         }
         return reserved;
     }
@@ -323,16 +323,16 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             return;
 
         SampleTypeService ss = SampleTypeService.get();
-        ExpSampleType sampleSet = options.getRowId() >= 0 ? ss.getSampleType(options.getRowId()) : null;
-        Domain ssDomain = sampleSet != null ? sampleSet.getDomain() : null;
-        Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(ssDomain));
+        ExpSampleType sampleType = options.getRowId() >= 0 ? ss.getSampleType(options.getRowId()) : null;
+        Domain stDomain = sampleType != null ? sampleType.getDomain() : null;
+        Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(stDomain));
         Set<String> existingAliases = new CaseInsensitiveHashSet();
         Set<String> dupes = new CaseInsensitiveHashSet();
 
         try
         {
-            if (sampleSet != null)
-                existingAliases = new CaseInsensitiveHashSet(sampleSet.getImportAliasMap().keySet());
+            if (sampleType != null)
+                existingAliases = new CaseInsensitiveHashSet(sampleType.getImportAliasMap().keySet());
         }
         catch (IOException e)
         {
@@ -468,7 +468,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     @Override
     public SampleTypeDomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
     {
-        ExpSampleType sampleSet = domain != null ? SampleTypeService.get().getSampleType(domain.getDomainURI()) : null;
-        return new SampleTypeDomainKindProperties(sampleSet);
+        ExpSampleType sampleType = domain != null ? SampleTypeService.get().getSampleType(domain.getDomainURI()) : null;
+        return new SampleTypeDomainKindProperties(sampleType);
     }
 }

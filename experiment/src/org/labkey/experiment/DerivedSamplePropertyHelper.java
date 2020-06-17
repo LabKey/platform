@@ -55,7 +55,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
 {
     private final List<String> _names;
     private final Map<Integer, Lsid> _lsids = new HashMap<>();
-    private final ExpSampleTypeImpl _sampleSet;
+    private final ExpSampleTypeImpl _sampleType;
     private final Container _container;
     private final User _user;
 
@@ -63,13 +63,13 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
     private final NameGenerator _nameGenerator;
     private NameGenerator.State _state;
 
-    public DerivedSamplePropertyHelper(ExpSampleTypeImpl sampleSet, int sampleCount, Container c, User user)
+    public DerivedSamplePropertyHelper(ExpSampleTypeImpl sampleType, int sampleCount, Container c, User user)
     {
         super(Collections.emptyList());
 
-        _sampleSet = sampleSet;
-        if (_sampleSet != null)
-            _nameGenerator = _sampleSet.getNameGenerator();
+        _sampleType = sampleType;
+        if (_sampleType != null)
+            _nameGenerator = _sampleType.getNameGenerator();
         else
             _nameGenerator = null;
 
@@ -86,13 +86,13 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
         _nameProperty = new DomainPropertyImpl(null, namePropertyDescriptor);
 
         List<DomainProperty> dps = new ArrayList<>();
-        if (sampleSet != null)
+        if (sampleType != null)
         {
-            if (sampleSet.hasNameAsIdCol())
+            if (sampleType.hasNameAsIdCol())
             {
                 dps.add(_nameProperty);
             }
-            dps.addAll(sampleSet.getDomain().getProperties());
+            dps.addAll(sampleType.getDomain().getProperties());
         }
         else
         {
@@ -101,9 +101,9 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
         setDomainProperties(Collections.unmodifiableList(dps));
     }
 
-    public ExpSampleType getSampleSet()
+    public ExpSampleType getSampleType()
     {
-        return _sampleSet;
+        return _sampleType;
     }
 
     @Override
@@ -119,7 +119,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
         if (lsid == null)
         {
             String name = determineMaterialName(sampleProperties, parentMaterials);
-            if (_sampleSet == null)
+            if (_sampleType == null)
             {
                 XarContext context = new XarContext("DeriveSamples", _container, _user);
                 try
@@ -135,7 +135,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
             }
             else
             {
-                lsid = _sampleSet.generateSampleLSID().setObjectId(name).build();
+                lsid = _sampleType.generateSampleLSID().setObjectId(name).build();
             }
 
             if (_lsids.containsValue(lsid) || ExperimentService.get().getExpMaterial(lsid.toString()) != null)
@@ -155,7 +155,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
 
     public String determineMaterialName(Map<DomainProperty, String> sampleProperties, Set<ExpMaterial> parentSamples)
     {
-        if (_sampleSet != null)
+        if (_sampleType != null)
         {
             if (_state == null)
             {
@@ -191,18 +191,18 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
 
     public List<? extends DomainProperty> getNamePDs()
     {
-        if (_sampleSet != null)
+        if (_sampleType != null)
         {
-            if (_sampleSet.hasNameAsIdCol())
+            if (_sampleType.hasNameAsIdCol())
             {
                 return Collections.singletonList(_nameProperty);
             }
 
             Set<String> idColNames = new HashSet<>();
-            for (DomainProperty pd : _sampleSet.getIdCols())
+            for (DomainProperty pd : _sampleType.getIdCols())
                 idColNames.add(pd.getName());
             List<DomainProperty> properties = new ArrayList<>();
-            for (DomainProperty dp : _sampleSet.getDomain().getProperties())
+            for (DomainProperty dp : _sampleType.getDomain().getProperties())
             {
                 if (idColNames.contains(dp.getName()))
                     properties.add(dp);

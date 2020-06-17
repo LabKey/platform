@@ -196,13 +196,13 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return ExpMaterialTable.Column.Name.name().equals(_object.getIdCol1());
     }
 
-    // NOTE: intentionally not public in ExpSampleSet interface
+    // NOTE: intentionally not public in ExpSampleType interface
     public void setParentCol(@Nullable String parentColumnPropertyURI)
     {
         _object.setParentCol(getPropertyOrThrow(parentColumnPropertyURI).getPropertyURI());
     }
 
-    // NOTE: intentionally not public in ExpSampleSet interface
+    // NOTE: intentionally not public in ExpSampleType interface
     public void setIdCols(@NotNull List<String> propertyURIs)
     {
         if (_object.getNameExpression() != null)
@@ -274,7 +274,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return getDomainProperty(_object.getParentCol());
     }
 
-    // NOTE: intentionally not public in ExpSampleSet interface
+    // NOTE: intentionally not public in ExpSampleType interface
     public void setNameExpression(String expression)
     {
         if (hasIdColumns() && !hasNameAsIdCol())
@@ -474,7 +474,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     {
         TableInfo tinfoProtocol = ExperimentServiceImpl.get().getTinfoProtocol();
         ColumnInfo colLSID = tinfoProtocol.getColumn("LSID");
-        ColumnInfo colSampleLSID = new PropertyColumn(ExperimentProperty.SampleSetLSID.getPropertyDescriptor(), colLSID, getContainer(), user, false);
+        ColumnInfo colSampleLSID = new PropertyColumn(ExperimentProperty.SampleTypeLSID.getPropertyDescriptor(), colLSID, getContainer(), user, false);
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(colSampleLSID, getLSID());
         List<ColumnInfo> selectColumns = new ArrayList<>(tinfoProtocol.getColumns());
@@ -524,7 +524,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public void save(User user)
     {
         if (SampleTypeService.get().getDefaultSampleTypeLsid().equals(getLSID()))
-            throw new IllegalStateException("Can't create or update the default SampleSet");
+            throw new IllegalStateException("Can't create or update the default SampleType");
 
         boolean isNew = _object.getRowId() == 0;
         save(user, ExperimentServiceImpl.get().getTinfoMaterialSource(), true);
@@ -583,7 +583,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public String toString()
     {
-        return "SampleSet " + getName() + " in " + getContainer().getPath();
+        return "SampleType " + getName() + " in " + getContainer().getPath();
     }
 
     public void index(SearchService.IndexTask task)
@@ -605,12 +605,12 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         final SearchService.IndexTask indexTask = task;
         final ExpSampleTypeImpl me = this;
         indexTask.addRunnable(
-                () -> me.indexSampleSet(indexTask)
+                () -> me.indexSampleType(indexTask)
                 , SearchService.PRIORITY.bulk
         );
     }
 
-    private void indexSampleSet(SearchService.IndexTask indexTask)
+    private void indexSampleType(SearchService.IndexTask indexTask)
     {
         ExperimentUrls urlProvider = PageFlowUtil.urlProvider(ExperimentUrls.class);
         ActionURL url = null;

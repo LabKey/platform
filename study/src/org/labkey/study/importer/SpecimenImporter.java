@@ -2355,9 +2355,9 @@ public class SpecimenImporter
 
         String prefix = new Lsid(StudyService.SPECIMEN_NAMESPACE_PREFIX, "Folder-" + info.getContainer().getRowId(), "").toString();
         String cpasType;
-        ExpSampleType sampleSet = SampleTypeService.get().getSampleType(info.getContainer(), SpecimenService.SAMPLE_TYPE_NAME);
+        ExpSampleType sampleType = SampleTypeService.get().getSampleType(info.getContainer(), SpecimenService.SAMPLE_TYPE_NAME);
 
-        if (sampleSet == null)
+        if (sampleType == null)
         {
             ExpSampleType source = SampleTypeService.get().createSampleType();
             source.setContainer(info.getContainer());
@@ -2370,7 +2370,7 @@ public class SpecimenImporter
         }
         else
         {
-            cpasType = sampleSet.getLSID();
+            cpasType = sampleType.getLSID();
         }
 
         var createdTimestamp = new Parameter.TypedValue(new Timestamp(System.currentTimeMillis()), JdbcType.TIMESTAMP);
