@@ -206,8 +206,8 @@ LABKEY.internal.FileDrop = new function () {
             success: LABKEY.Utils.getCallbackWrapper(function(results){
                 Dropzone.patterns = results.rows;
             }, this),
-            failure: function(){
-                console.error("Error in getting Ziploader patterns.");
+            failure: function() {
+                console.error("Error in getting Ziploader patterns");
             }
         });
 
