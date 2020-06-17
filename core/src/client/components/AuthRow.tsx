@@ -133,7 +133,7 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
                     <Modal.Title>Permanently delete {authConfig.provider} configuration?</Modal.Title>
                 </Modal.Header>
                 <div className="auth-row__delete-modal">
-                    <div className="auth-row__delete-modal__textBox">
+                    <div className="auth-row__delete-modal__textBox modal-body">
                         <p>
                             Deleting this authentication configuration will remove all settings associated with it. To
                             enable it again, the authentication configuration will need to be re-configured.
