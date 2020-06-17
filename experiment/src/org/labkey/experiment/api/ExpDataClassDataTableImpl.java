@@ -639,6 +639,17 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             return _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         }
 
+        protected int _importRowsUsingDIB(User user, Container container, DataIteratorBuilder in, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
+        {
+            ExperimentService svc = ExperimentService.get();
+
+            svc.startBatchDataLastIndexed();
+            int result = super._importRowsUsingDIB(user, container, in, outputRows, context, extraScriptContext);
+            svc.finishBatchDataLastIndexed();
+
+            return result;
+        }
+
         @Override
         public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
         {

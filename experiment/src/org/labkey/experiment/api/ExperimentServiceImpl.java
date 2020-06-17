@@ -87,7 +87,6 @@ import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
@@ -201,6 +200,9 @@ public class ExperimentServiceImpl implements ExperimentService
     protected Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
     protected Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
     private Set<ExperimentProtocolHandler> _protocolHandlers = new HashSet<>();
+
+    private boolean _isBatchDataLastIndexed = false;
+    private Map<Integer, Long> _batchDataLastIndexes;
 
     private static final List<ExperimentListener> _listeners = new CopyOnWriteArrayList<>();
 
@@ -786,11 +788,6 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpSampleSetImpl.fromMaterialSources(new SqlSelector(getSchema(), sql).getArrayList(MaterialSource.class));
     }
 
-    public void setDataLastIndexed(int rowId, long ms)
-    {
-        setLastIndexed(getTinfoData(), rowId, ms);
-    }
-
     public void setDataClassLastIndexed(int rowId, long ms)
     {
         setLastIndexed(getTinfoDataClass(), rowId, ms);
@@ -806,11 +803,51 @@ public class ExperimentServiceImpl implements ExperimentService
         setLastIndexed(getTinfoMaterialSource(), rowId, ms);
     }
 
+    @Override
+    public void startBatchDataLastIndexed()
+    {
+        _batchDataLastIndexes = new HashMap<>();
+        _isBatchDataLastIndexed = true;
+    }
+
+    @Override
+    public void finishBatchDataLastIndexed()
+    {
+        batchUpdateDataLastIndexed();
+        _isBatchDataLastIndexed = false;
+    }
+
+    public void setDataLastIndexed(int rowId, long ms)
+    {
+        if (_isBatchDataLastIndexed)
+        {
+            _batchDataLastIndexes.put(rowId, ms);
+        }
+        else
+        {
+            setLastIndexed(getTinfoData(), rowId, ms);
+        }
+    }
+
+    private SQLFragment updateIndexStatement(TableInfo table, int rowId, long ms)
+    {
+        return new SQLFragment("UPDATE " + table + " SET LastIndexed = ? WHERE RowId = ?; ",
+        new Timestamp(ms), rowId);
+    }
+
+    private void batchUpdateDataLastIndexed()
+    {
+        SQLFragment sql = new SQLFragment();
+        for (Map.Entry<Integer, Long> row : _batchDataLastIndexes.entrySet())
+        {
+            sql.append(updateIndexStatement(getTinfoData(), row.getKey(), row.getValue()));
+        }
+        new SqlExecutor(getSchema()).execute(sql);
+    }
 
     private void setLastIndexed(TableInfo table, int rowId, long ms)
     {
-        new SqlExecutor(getSchema()).execute("UPDATE " + table + " SET LastIndexed = ? WHERE RowId = ?",
-                new Timestamp(ms), rowId);
+        new SqlExecutor(getSchema()).execute(updateIndexStatement(table, rowId, ms));
     }
 
     public void indexDataClass(ExpDataClass dataClass)

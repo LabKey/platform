@@ -875,6 +875,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options);
 
+    void startBatchDataLastIndexed();
+
+    void finishBatchDataLastIndexed();
+
     class XarExportOptions
     {
         String _lsidRelativizer = LSID_OPTION_FOLDER_RELATIVE;
