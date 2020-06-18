@@ -16,6 +16,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -36,10 +37,8 @@ import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
@@ -75,8 +74,7 @@ public class JunitUtil
         fact.setIgnoringComments(true);
         fact.setNamespaceAware(false);
         DocumentBuilder builder = fact.newDocumentBuilder();
-        Document doc = builder.parse(new InputSource(new StringReader(tidy)));
-        return doc;
+        return builder.parse(new InputSource(new StringReader(tidy)));
     }
 
     /**
@@ -150,7 +148,7 @@ public class JunitUtil
         };
 
         ExecutorService pool = Executors.newFixedThreadPool(threads);
-        Collection<Future> futures = new LinkedList<>();
+        Collection<Future<?>> futures = new LinkedList<>();
 
         for (int i = 0; i < threads; i++)
             futures.add(pool.submit(runnableWrapper));
@@ -158,7 +156,7 @@ public class JunitUtil
         pool.shutdown();
         pool.awaitTermination(timeoutSeconds, TimeUnit.SECONDS);
 
-        for (Future future : futures)
+        for (Future<?> future : futures)
         {
             try
             {
@@ -195,7 +193,7 @@ public class JunitUtil
      * @throws AssertionError in dev mode if file is not found.
      * @throws org.junit.AssumptionViolatedException in production mode if file is not found.
      */
-    public static File getSampleData(@Nullable Module module, String relativePath) throws IOException
+    public static @NotNull File getSampleData(@Nullable Module module, String relativePath) throws IOException
     {
         String projectRoot = AppProps.getInstance().getProjectRoot();
 
@@ -261,9 +259,14 @@ public class JunitUtil
         }
 
         if (AppProps.getInstance().isDevMode())
+        {
+            //noinspection SimplifiableJUnitAssertion
             Assert.assertTrue(message, message == null);
+        }
         else
+        {
             Assume.assumeTrue(message + " Skipping test in production mode.", message == null);
+        }
 
         return file;
     }
