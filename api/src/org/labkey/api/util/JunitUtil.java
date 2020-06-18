@@ -253,7 +253,7 @@ public class JunitUtil
                 message = "Sample data directory not found for [" + module.getName() + "] module.";
             }
         }
-        if (!file.exists())
+        if (message == null && !file.exists())
         {
             message = "No sample data found at [" + file.getAbsolutePath() + "].";
         }
