@@ -390,7 +390,7 @@ LABKEY.Utils = new function()
             document.cookie = name + "=" + value + expires + "; path=" + path;
 
             if (name === "email" && window.location.href.startsWith("https")) {
-                document.cookie = name + "=" + value + "; secure"
+                document.cookie = name + "=" + value + "; secure";
             }
         },
 
