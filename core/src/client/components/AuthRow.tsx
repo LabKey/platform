@@ -140,19 +140,20 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
                         </p>
                         <p>Deletion cannot be undone.</p>
                     </div>
+                    <div className="auth-row__delete-modal-bottom">
+                        <Button
+                            className="labkey-button auth-row__delete-modal__cancel"
+                            onClick={() => {
+                                this.onToggleModal('deleteModalOpen', this.state.deleteModalOpen);
+                                toggleModalOpen(false);
+                            }}>
+                            Cancel
+                        </Button>
 
-                    <Button
-                        className="labkey-button auth-row__delete-modal__cancel"
-                        onClick={() => {
-                            this.onToggleModal('deleteModalOpen', this.state.deleteModalOpen);
-                            toggleModalOpen(false);
-                        }}>
-                        Cancel
-                    </Button>
-
-                    <Button className="labkey-button primary auth-row__confirm-delete" onClick={onDelete}>
-                        Yes, delete
-                    </Button>
+                        <Button className="labkey-button primary auth-row__confirm-delete" onClick={onDelete}>
+                            Yes, delete
+                        </Button>
+                    </div>
                 </div>
             </Modal>
         );

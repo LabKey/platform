@@ -106,16 +106,24 @@ body {
   border-bottom: 1px solid #eee;
 }
 
+.auth-row__delete-modal-bottom {
+  height: 65px;
+}
+
 .auth-row__delete-modal__cancel {
-  position: relative;
   margin-left: 10px;
-  margin-top: 15px;
+  vertical-align: middle;
+  position: relative;
+  top: 50%;
+  transform: translateY(-60%);
 }
 
 .auth-row__confirm-delete {
+  float: right;
+  margin-right: 10px;
   position: relative;
-  margin-left: 410px;
-  margin-top: 15px;
+  top: 50%;
+  transform: translateY(-60%);
 }
 
 .globalAuthConfig-textInput{
