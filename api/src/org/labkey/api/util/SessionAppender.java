@@ -139,7 +139,7 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
         }
     }
 
-    // set up logging for this thread, based on session settings
+    // set up logging for this thread, based on an already existing AppenderInfo
     public static void initThread(AppenderInfo info)
     {
         localInfo.set(info);
