@@ -150,7 +150,7 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
                         Cancel
                     </Button>
 
-                    <Button className="labkey-button primary auth-row__delete-modal__delete" onClick={onDelete}>
+                    <Button className="labkey-button primary auth-row__confirm-delete" onClick={onDelete}>
                         Yes, delete
                     </Button>
                 </div>

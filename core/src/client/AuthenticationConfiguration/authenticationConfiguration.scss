@@ -107,11 +107,13 @@ body {
 }
 
 .auth-row__delete-modal__cancel {
+  position: relative;
   margin-left: 10px;
   margin-top: 15px;
 }
 
-.auth-row__delete-modal__delete {
+.auth-row__confirm-delete {
+  position: relative;
   margin-left: 410px;
   margin-top: 15px;
 }
