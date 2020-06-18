@@ -269,6 +269,7 @@ groupByLoop:
             FieldKey key = qtable.getTableKey();
             String alias = qtable.getAlias().getName();
             QNode node = qtable.getTable();
+            ContainerFilter.Type containerFilter = qtable.getContainerFilterType();
 
             QueryRelation relation = null;
             if (null != qtable.getQueryRelation())
@@ -338,7 +339,7 @@ groupByLoop:
                 }
                 else
                 {
-                    relation = _query.resolveTable(_schema, node, key, alias);
+                    relation = _query.resolveTable(_schema, node, key, alias, containerFilter);
                     assert relation == null || alias.equals(relation.getAlias());
                     if (null != relation)
                         relation._parent = this;
@@ -654,7 +655,32 @@ groupByLoop:
             if (children.size() > 1 && children.get(1) instanceof QIdentifier)
                 alias = (QIdentifier) children.get(1);
 
-            QTable table = new QTable(expr);
+            ContainerFilter.Type cfType = null;
+            Map<String,Object> annotations = ((QUnknownNode)node).getAnnotations();
+            if (null != annotations)
+            {
+                for (var entry : annotations.entrySet())
+                {
+                    var value = entry.getValue();
+                    switch (entry.getKey())
+                    {
+                        case "containerfilter":
+                            if (!(value instanceof String))
+                            {
+                                _query.getParseErrors().add(new QueryParseException("@ContainerFilter annotation requires a string value", null, node.getLine(), node.getColumn()));
+                                continue;
+                            }
+                            cfType = ContainerFilter.getType((String)value);
+                            if (null == cfType)
+                                _query.getParseErrors().add(new QueryParseException("Unrecognized container filter type: " + value, null, node.getLine(), node.getColumn()));
+                            break;
+                        default:
+                            _query.getParseErrors().add(new QueryParseException("Unknown annotation: " + entry.getKey(), null, node.getLine(), node.getColumn()));
+                    }
+                }
+            }
+
+            QTable table = new QTable(expr, cfType);
             table.setAlias(alias);
             FieldKey aliasKey = table.getAlias();
             if (null == aliasKey)

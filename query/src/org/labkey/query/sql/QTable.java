@@ -16,26 +16,30 @@
 
 package org.labkey.query.sql;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.FieldKey;
 
 public class QTable implements QJoinOrTable
 {
-    QExpr _table;
+    final QExpr _table;
+    final ContainerFilter.Type _cfType;
     QIdentifier _alias;
     QueryRelation _queryRelation;
 
-    public QTable(QExpr table)
+    public QTable(QExpr table, ContainerFilter.Type cfType)
     {
         _table = table;
+        _cfType = cfType;
     }
-
 
     public QTable(QueryRelation t, String alias)
     {
         _queryRelation = t;
         _alias = new QIdentifier(alias);
         _table = _alias;
+        _cfType = null;
     }
 
     public void setAlias(QIdentifier alias)
@@ -99,5 +103,11 @@ public class QTable implements QJoinOrTable
     public void setQueryRelation(QueryRelation queryRelation)
     {
         _queryRelation = queryRelation;
+    }
+
+    @Nullable
+    public ContainerFilter.Type getContainerFilterType()
+    {
+        return _cfType;
     }
 }

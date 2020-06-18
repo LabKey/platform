@@ -974,6 +974,15 @@ public class SqlParser
                 }
                 return query;
             }
+            case RANGE:
+            {
+                // copy an annotations on the table specifications to the range node
+                QUnknownNode range = (QUnknownNode)qnode(node, children);
+                var annotations = ((SupportsAnnotations)node.getChild(0)).getAnnotations();
+                if (null != annotations)
+                    range.setAnnotations(QNode.convertAnnotations(annotations));
+                return range;
+            }
             default:
                 break;
         }

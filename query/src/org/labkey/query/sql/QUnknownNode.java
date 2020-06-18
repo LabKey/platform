@@ -18,7 +18,9 @@ package org.labkey.query.sql;
 
 import org.antlr.runtime.tree.CommonTree;
 
-public class QUnknownNode extends QNode
+import java.util.Map;
+
+public class QUnknownNode extends QNode implements SupportsAnnotations
 {
     int _type = 0;
     
@@ -36,5 +38,20 @@ public class QUnknownNode extends QNode
     public void appendSource(SourceBuilder builder)
     {
         builder.append(getTokenText());
+    }
+
+    // QUnknownNode is used to represent a table aka RANGE in the FROM list, need annotations for that
+    Map<String,Object> _annotations = null;
+
+    @Override
+    public void setAnnotations(Map<String, Object> a)
+    {
+        _annotations = a;
+    }
+
+    @Override
+    public Map<String, Object> getAnnotations()
+    {
+        return _annotations;
     }
 }

@@ -370,12 +370,16 @@ joinExpression
 
 
 fromRange
-	: (tableSpecification { weakKeywords(); } (AS? identifier)?) -> ^(RANGE tableSpecification identifier?)
+	: (tableSpecificationWithAnnotation { weakKeywords(); } (AS? identifier)?) -> ^(RANGE tableSpecificationWithAnnotation identifier?)
 	| OPEN
 	    ( (subQuery) => subQuery CLOSE (AS? identifier)? -> ^(RANGE subQuery identifier?)
 	    | joinExpression CLOSE -> joinExpression
 	    )
 	;
+
+tableSpecificationWithAnnotation
+    :  table=tableSpecification (annotations!)? { ((SupportsAnnotations)table.getTree()).setAnnotations(getAnnotations()); }
+    ;
 
 
 // Usually a simple dotted identifer 'path' such as "core.users".

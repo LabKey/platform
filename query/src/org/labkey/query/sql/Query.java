@@ -402,7 +402,7 @@ public class Query
 		SourceBuilder builder = new SourceBuilder();
 		builder.append("SELECT ");
 		builder.pushPrefix("");
-		QueryRelation relation = resolveTable(getSchema(), null, key, key.getName());
+		QueryRelation relation = resolveTable(getSchema(), null, key, key.getName(), null);
 		if (relation == null)
 		{
 			builder.append("'Table not found' AS message");
@@ -731,7 +731,7 @@ public class Query
 	/**
 	 * Resolve a particular table name.  The table name may have schema names (folder.schema.table etc.) prepended to it.
 	 */
-    QueryRelation resolveTable(QuerySchema currentSchema, QNode node, FieldKey key, String alias) throws QueryNotFoundException
+    QueryRelation resolveTable(QuerySchema currentSchema, QNode node, FieldKey key, String alias, @Nullable ContainerFilter.Type cfType) throws QueryNotFoundException
     {
         // to simplify the logic a bit, break out the error translation from the _resolveTable()
         List<QueryException> resolveExceptions = new ArrayList<>();
@@ -740,12 +740,7 @@ public class Query
 
         try
         {
-            // find the nearest ContainerSchema
-            QuerySchema.ContainerSchema containerSchema = currentSchema.getDefaultSchema();
-            // UNDONE: currentSchema.get
-            SchemaKey containerRelativeSchemaKey = new SchemaKey(null, currentSchema.getName());
-
-            ret = _resolveTable(currentSchema, node, key, alias, resolveExceptions, queryDefOUT);
+            ret = _resolveTable(currentSchema, node, key, alias, resolveExceptions, queryDefOUT, cfType);
             if ((ret != null) && (queryDefOUT[0] == null))
             {
                 TableInfo tinfo = ret.getTableInfo();
@@ -829,9 +824,11 @@ public class Query
             QuerySchema currentSchema, QNode node, FieldKey key, String alias,
             // OUT parameters
             List<QueryException> resolveExceptions,
-            QueryDefinition[] queryDefOUT)
+            QueryDefinition[] queryDefOUT,
+            ContainerFilter.Type cfType)
         throws QueryNotFoundException
 	{
+	    FieldKey cacheKey = null==cfType ? key : key.append(" ~cf~ ", cfType.name());
         boolean trackDependency = true;
 
         ++_countResolvedTables;
@@ -844,12 +841,16 @@ public class Query
 
         // check if we've resolved the exact same table
         _resolveCache.computeIfAbsent(currentSchema, k -> new HashMap<>());
-        Pair<QuerySchema, TableInfo> found = _resolveCache.get(currentSchema).get(key);
+        Pair<QuerySchema, TableInfo> found = _resolveCache.get(currentSchema).get(cacheKey);
         if (null != found)
         {
             TableInfo ti = found.second;
-            if (null != ti.getContainerFilter() && ti.getContainerFilter().equals(getContainerFilter()))
-                return new QueryTable(this, found.first, found.second, alias);
+            if (null != ti.getContainerFilter())
+            {
+                ContainerFilter cf = ti.getContainerFilter();
+                if (null == cfType ? cf.equals(getContainerFilter()) : cf.getType() == cfType)
+                    return new QueryTable(this, found.first, found.second, alias);
+            }
         }
 
 		List<String> parts = key.getParts();
@@ -857,7 +858,7 @@ public class Query
 		for (String part : parts)
 			names.add(FieldKey.decodePart(part));
 
-		ContainerFilter cf = getContainerFilter();
+		ContainerFilter cf = null==cfType ? getContainerFilter() : null;
 
         QuerySchema resolvedSchema = currentSchema;
 		for (int i = 0; i < parts.size() - 1; i ++)
@@ -886,6 +887,9 @@ public class Query
 
         try
         {
+            if (null == cf && null != cfType)
+                cf = cfType.create(resolvedSchema);
+
             if (resolvedSchema instanceof UserSchema)
             {
                 TableType tableType = lookupMetadataTable(key.getName());
@@ -893,7 +897,9 @@ public class Query
                 t = ((UserSchema) resolvedSchema)._getTableOrQuery(key.getName(), cf, true, forWrite, resolveExceptions);
             }
             else
+            {
                 t = resolvedSchema.getTable(key.getName(), cf);
+            }
         }
         catch (QueryException ex)
         {
@@ -925,7 +931,7 @@ public class Query
             TableType tableType = lookupMetadataTable(tableInfo.getName());
             if (null != tableType && tableInfo.isMetadataOverrideable() && resolvedSchema instanceof UserSchema)
                 tableInfo.overlayMetadata(Collections.singletonList(tableType), (UserSchema)resolvedSchema, _parseErrors);
-            _resolveCache.get(currentSchema).put(key, new Pair<>(resolvedSchema, tableInfo));
+            _resolveCache.get(currentSchema).put(cacheKey, new Pair<>(resolvedSchema, tableInfo));
 
             String name = ((TableInfo) t).getName();
 
