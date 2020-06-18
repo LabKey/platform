@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MultiValuedLookupColumn;
 import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.Results;
@@ -659,16 +660,21 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
     public void index(SearchService.IndexTask task)
     {
-        if (task == null)
-        {
-            SearchService ss = SearchService.get();
-            if (null == ss)
-                return;
-            task = ss.defaultTask();
-        }
+        SearchService ss = SearchService.get();
+//        if (task == null)
+//        {
+//
+//            if (null == ss)
+//                return;
+//            task = ss.defaultTask();
+//        }
 
-        WebdavResource doc = createDocument();
-        task.addResource(doc, SearchService.PRIORITY.item);
+//        WebdavResource doc = createDocument();
+//        task.addResource(doc, SearchService.PRIORITY.item);
+        ExperimentService.get().getTinfoData().getSchema().getScope().addCommitTask(() -> {
+            WebdavResource doc = createDocument();
+            ss.defaultTask().addResource(doc, SearchService.PRIORITY.item);
+        }, DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
     public WebdavResource createDocument()

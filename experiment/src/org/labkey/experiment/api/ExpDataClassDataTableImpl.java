@@ -643,9 +643,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         {
             ExperimentService svc = ExperimentService.get();
 
-            svc.startBatchDataLastIndexed();
+//            svc.startBatchDataLastIndexed();
             int result = super._importRowsUsingDIB(user, container, in, outputRows, context, extraScriptContext);
-            svc.finishBatchDataLastIndexed();
+//            svc.finishBatchDataLastIndexed();
 
             return result;
         }
