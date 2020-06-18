@@ -261,9 +261,9 @@ public class JunitUtil
         }
 
         if (AppProps.getInstance().isDevMode())
-            Assert.assertTrue(message, message != null);
+            Assert.assertTrue(message, message == null);
         else
-            Assume.assumeTrue(message + " Skipping test in production mode.", message != null);
+            Assume.assumeTrue(message + " Skipping test in production mode.", message == null);
 
         return file;
     }
