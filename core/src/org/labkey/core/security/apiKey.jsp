@@ -42,9 +42,6 @@
     }
 %>
 <%
-    ReturnUrlForm form = ((JspView<ReturnUrlForm>) HttpView.currentView()).getModelBean();
-    ActionURL alternativeURL = urlProvider(ProjectUrls.class).getBeginURL(getContainer());
-    ActionURL returnURL = form.getReturnActionURL(alternativeURL);
     URLHelper baseServerURL = null;
     try
     {
@@ -178,7 +175,6 @@ compliance requirements where interactions require specifying current role &amp;
 <%
     }
 %>
-<%= button("Done").href(returnURL) %>
 <script type="application/javascript">
     (function($) {
         addCopyToClipboard($, '#apikey-token-copy');

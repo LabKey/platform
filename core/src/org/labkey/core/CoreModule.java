@@ -43,6 +43,7 @@ import org.labkey.api.data.dialect.SqlDialectRegistry;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
+import org.labkey.api.external.tools.ExternalToolsViewService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.message.settings.MessageConfigService;
@@ -208,6 +209,7 @@ import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
+import org.labkey.core.security.ApiKeyViewProvider;
 import org.labkey.core.security.SecurityApiActions;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.security.validators.PermissionsValidator;
@@ -218,6 +220,7 @@ import org.labkey.core.thumbnail.ThumbnailServiceImpl;
 import org.labkey.core.user.UserController;
 import org.labkey.core.vcs.VcsServiceImpl;
 import org.labkey.core.view.ShortURLServiceImpl;
+import org.labkey.core.view.external.tools.ExternalToolsViewServiceImpl;
 import org.labkey.core.view.template.bootstrap.CoreWarningProvider;
 import org.labkey.core.view.template.bootstrap.ViewServiceImpl;
 import org.labkey.core.view.template.bootstrap.WarningServiceImpl;
@@ -288,6 +291,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         ContainerService.setInstance(new ContainerServiceImpl());
         FolderSerializationRegistry.setInstance(new FolderSerializationRegistryImpl());
+        ExternalToolsViewService.setInstance(new ExternalToolsViewServiceImpl());
+        ExternalToolsViewService.get().registerExternalAccessViewProvider(new ApiKeyViewProvider());
 
         // Register the default DataLoaders during init so they are available to sql upgrade scripts
         DataLoaderServiceImpl dls = new DataLoaderServiceImpl();

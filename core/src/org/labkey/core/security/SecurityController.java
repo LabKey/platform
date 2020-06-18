@@ -51,6 +51,8 @@ import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.external.tools.ExternalToolsViewProvider;
+import org.labkey.api.external.tools.ExternalToolsViewService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -1928,17 +1930,29 @@ public class SecurityController extends SpringActionController
         @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
-            if (!PopupUserView.allowApiKeyPage(getUser()))
-                throw new UnauthorizedException("API keys are not configured on this site. Contact a site administrator.");
+            VBox view = new VBox();
+            for (ExternalToolsViewProvider externalAccessViewProvider : ExternalToolsViewService.get().getExternalAccessViewProviders())
+            {
+                for (ModelAndView providerView : externalAccessViewProvider.getViews(getUser()))
+                {
+                    view.addView(providerView);
+                }
+            }
+
+            //TODO: this is no longer shown, should this message be part of the view or silently just not display because user does not have the access?
+//            if (!PopupUserView.allowApiKeyPage(getUser()))
+//                throw new UnauthorizedException("API keys are not configured on this site. Contact a site administrator.");
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            return new JspView<>("/org/labkey/core/security/apiKey.jsp", form);
+            view.addView(new JspView<>("/org/labkey/core/security/externalToolsBase.jsp", form));
+
+            return view;
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("API Keys");
+            root.addChild("External Tool Settings");
         }
     }
 
