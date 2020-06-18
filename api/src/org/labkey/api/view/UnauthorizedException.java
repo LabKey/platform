@@ -18,6 +18,8 @@ package org.labkey.api.view;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.SkipMothershipLogging;
 
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * Signals to the HTTP client that the request is not authorized, via a 401 status code.
  */
