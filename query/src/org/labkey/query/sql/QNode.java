@@ -16,6 +16,7 @@
 
 package org.labkey.query.sql;
 
+import org.antlr.runtime.CommonToken;
 import org.antlr.runtime.tree.CommonTree;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -34,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.labkey.query.sql.antlr.SqlBaseParser.FALSE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.IDENT;
 import static org.labkey.query.sql.antlr.SqlBaseParser.NUM_DOUBLE;
 import static org.labkey.query.sql.antlr.SqlBaseParser.NUM_FLOAT;
 import static org.labkey.query.sql.antlr.SqlBaseParser.NUM_INT;
@@ -208,6 +210,12 @@ abstract public class QNode implements Cloneable
 
     static Object constant(Object o)
     {
+        if (o instanceof CommonToken)
+        {
+            CommonToken t = (CommonToken)o;
+            if (t.getType() == IDENT)
+                return t.getText();
+        }
         if (o instanceof CommonTree)
         {
             CommonTree n = (CommonTree)o;
