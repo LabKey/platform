@@ -207,7 +207,7 @@ public class JunitUtil
 
         if (null == module)
         {
-            sampleDataDir = new File(projectRoot, "sampledata");
+            sampleDataDir = new File(projectRoot, "server/testAutomation/data");
         }
         else
         {
