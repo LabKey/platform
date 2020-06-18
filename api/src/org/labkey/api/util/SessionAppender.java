@@ -56,7 +56,8 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
         appenderInfos.put(info.key, info);
     }
 
-    // If accessing appenderInfo using this function ensure operations on it are thread safe
+    // If accessing appenderInfo using this function ensure operations on it are thread safe as multiple threads
+    // could be accessing it.
     public static AppenderInfo getAppenderInfo(String key)
     {
         return appenderInfos.get(key);
