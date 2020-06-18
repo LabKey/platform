@@ -673,6 +673,14 @@ public class LoginController extends SpringActionController
                 response = new ApiSimpleResponse();
                 response.put("success", true);
 
+                Cookie emailCookie = PageFlowUtil.getCookie(request, "email");
+
+                // emailCookie is null when Remember my email address is unchecked
+                if (null != emailCookie)
+                {
+                    emailCookie.setSecure(true);
+                }
+
                 if (form.isApprovedTermsOfUse())
                 {
                     if (form.getTermsOfUseType() == TermsOfUseType.PROJECT_LEVEL)
