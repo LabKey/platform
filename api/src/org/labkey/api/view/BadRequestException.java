@@ -18,14 +18,13 @@ package org.labkey.api.view;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.SkipMothershipLogging;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 
 /**
  * Indicates that the client made a bad HTTP request, resulting in a 400 HTTP response code and avoiding much
  * of the standard exception logging code for server-side bugs.
  */
-public class BadRequestException extends ServletException implements SkipMothershipLogging
+public class BadRequestException extends RuntimeException implements SkipMothershipLogging
 {
     final int status;
     boolean _useBasicAuthentication = false;
