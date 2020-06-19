@@ -1016,7 +1016,7 @@ public class DbScope
 
     private static final int spidUnknown = -1;
 
-    protected ConnectionWrapper getPooledConnection(ConnectionType type, @Nullable Logger log) throws SQLException
+    protected synchronized ConnectionWrapper getPooledConnection(ConnectionType type, @Nullable Logger log) throws SQLException
     {
         Connection conn;
 
