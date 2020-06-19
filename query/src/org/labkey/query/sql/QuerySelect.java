@@ -2107,7 +2107,8 @@ groupByLoop:
         @NotNull
         public JdbcType getJdbcType()
         {
-            return null != _resolved ? _resolved.getJdbcType() : JdbcType.NULL;
+            var resolved = getResolvedField();
+            return null != resolved ? resolved.getJdbcType() : JdbcType.NULL;
         }
 
 
