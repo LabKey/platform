@@ -39,6 +39,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -74,6 +75,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.util.HttpUtil.Method.DELETE;
+import static org.labkey.api.util.HttpUtil.Method.POST;
 
 /**
  * User: klum
@@ -1402,6 +1406,7 @@ public class ParticipantGroupController extends BaseStudyController
     // CONSIDER: Merge with UpdateParticipantGroupAction
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
+    @MethodsAllowed({POST, DELETE})
     public class SessionParticipantGroupAction extends MutatingApiAction<UpdateParticipantGroupForm>
     {
         @Override

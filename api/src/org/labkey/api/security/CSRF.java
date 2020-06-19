@@ -52,7 +52,7 @@ public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementT
             @Override
             public boolean check(String method)
             {
-                return StringUtils.equalsIgnoreCase("POST", method);
+                return !StringUtils.equalsIgnoreCase("GET", method);
             }
         },
 
