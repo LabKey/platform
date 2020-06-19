@@ -71,6 +71,7 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.audit.SearchAuditProvider;
 import org.labkey.search.model.AbstractSearchService;
 import org.labkey.search.model.IndexInspector;
+import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.model.SearchPropertyManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -800,17 +801,13 @@ public class SearchController extends SpringActionController
             SearchService ss = SearchService.get();
             final CountDownLatch latch = new CountDownLatch(1);
 
-            // TODO: This doesn't seem quite right... don't we need to wait for _itemQueue and _indexQueue as well?
+            ss.waitForIdle();
             SearchService.IndexTask task = ss.defaultTask();
-            task.addRunnable(new Runnable() {
-                @Override
-                public void run()
-                {
-                    latch.countDown();
-                }
-            }, SearchService.PRIORITY.item);
+            task.addRunnable(() -> latch.countDown(), SearchService.PRIORITY.item);
 
             boolean success = latch.await(5, TimeUnit.MINUTES);
+            if (ss instanceof LuceneSearchServiceImpl)
+                ((LuceneSearchServiceImpl)ss).refreshNow();
 
             // Return an error if we time out
             if (!success)

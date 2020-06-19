@@ -115,4 +115,9 @@ public class NoopWritableIndex implements WritableIndexManager
 
         _errors.incrementAndGet();
     }
+
+    @Override
+    public void refreshNow()
+    {
+    }
 }

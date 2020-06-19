@@ -57,4 +57,6 @@ public interface WritableIndexManager
      * @return Whether this manager points to a real search index
      */
     boolean isReal();
+
+    void refreshNow() throws IOException;
 }

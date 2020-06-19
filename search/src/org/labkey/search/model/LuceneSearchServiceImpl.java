@@ -2122,4 +2122,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             };
         }
     }
+
+    public void refreshNow()
+    {
+        try
+        {
+            _indexManager.refreshNow();
+        }
+        catch (IOException x)
+        {
+            /* pass */
+        }
+    }
+
 }

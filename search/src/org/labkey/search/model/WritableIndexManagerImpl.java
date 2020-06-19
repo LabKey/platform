@@ -384,7 +384,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
                 if (requests > 0)
                 {
                     WritableIndexManagerImpl impl = (WritableIndexManagerImpl)context.getJobDetail().getJobDataMap().get(WritableIndexManagerImpl.class.getName());
-                    impl._manager.maybeRefresh();
+                    impl.refreshNow();
                 }
             }
             catch (Exception e)
@@ -392,5 +392,10 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
                 throw new JobExecutionException(e);
             }
         }
+    }
+
+    public void refreshNow() throws IOException
+    {
+        _manager.maybeRefresh();
     }
 }
