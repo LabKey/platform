@@ -133,7 +133,7 @@ public class DefaultProvenanceProvider implements ProvenanceService
     }
 
     @Override
-    public List<Pair<String, String>> createProvenanceMapFromRows(ViewContext context, ProvenanceRecordingParams params, JSONArray rows)
+    public List<Pair<String, String>> createProvenanceMapFromRows(ViewContext context, ProvenanceRecordingParams params, JSONArray rows, List<Map<String, Object>> responseRows)
     {
         return Collections.emptyList();
     }

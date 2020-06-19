@@ -97,14 +97,33 @@ body {
 }
 
 .auth-row__delete-modal {
-  height: 80px;
-  text-align: center;
+  height: 150px;
   margin-top: 15px;
 }
 
+.auth-row__delete-modal__textBox {
+  padding: 0 20px 10px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.auth-row__delete-modal-bottom {
+  height: 65px;
+}
+
+.auth-row__delete-modal__cancel {
+  margin-left: 10px;
+  vertical-align: middle;
+  position: relative;
+  top: 50%;
+  transform: translateY(-60%);
+}
+
 .auth-row__confirm-delete {
-  margin-left: 510px;
-  margin-top: 10px;
+  float: right;
+  margin-right: 10px;
+  position: relative;
+  top: 50%;
+  transform: translateY(-60%);
 }
 
 .globalAuthConfig-textInput{
