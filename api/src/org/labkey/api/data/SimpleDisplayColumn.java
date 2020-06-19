@@ -144,7 +144,8 @@ public class SimpleDisplayColumn extends DisplayColumn
                 out.write(linkCls);
             }
 
-            out.write("'>");
+            out.write("' rel='noopener noreferrer'");
+            out.write(">");
         }
         Object value = getDisplayValue(ctx);
         if (value == null)

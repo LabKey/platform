@@ -278,7 +278,7 @@ Ext4.define('Security.panel.PolicyEditor', {
                 defaults: {border: false},
                 items: [{
                     html: '<div><h3 class="rn">' + Ext4.String.htmlEncode(role.displayName) + '</h3><div class="rd">' + Ext4.String.htmlEncode(role.description) +
-                        (isDeveloper?'<br><a target="_blank" href="https://www.labkey.org/devPermInfo.url">read about developer permissions</a>':'') +
+                        (isDeveloper?'<br><a target="_blank" href="https://www.labkey.org/devPermInfo.url" rel="noopener noreferrer">read about developer permissions</a>':'') +
                         '</div></div>',
                     bodyStyle : 'background-color: transparent;',
                     cls: 'rn',

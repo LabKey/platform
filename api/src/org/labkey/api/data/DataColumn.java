@@ -409,8 +409,9 @@ public class DataColumn extends DisplayColumn
                     out.write("\" style=\"");
                     out.write(css);
                 }
-                
-                out.write("\">");
+
+                out.write("\" rel=\"noopener noreferrer\"");
+                out.write(">");
             }
 
             out.write(getFormattedValue(ctx));

@@ -152,7 +152,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
 
                     <div className="database-modal__bottom">
                         <div className="modal__bottom-buttons">
-                            <a target="_blank" href={this.state.helpLink} className="modal__help-link">
+                            <a target="_blank" href={this.state.helpLink} className="modal__help-link" rel="noopener noreferrer">
                                 More about authentication
                             </a>
                             {canEdit && (
