@@ -382,31 +382,38 @@ public interface QueryService
 
     enum AuditAction
     {
-        INSERT("A row was inserted.",
-                "%s row(s) were inserted.",
+        INSERT("%s row(s) were inserted.",
+                "A %s was inserted.",
                 "inserted"),
-        UPDATE("A row was updated.",
-                "%s row(s) were updated.",
+        UPDATE("%s row(s) were updated.",
+                "A %s was updated.",
                 "updated"),
-        DELETE("A row was deleted.",
-                "%s row(s) were deleted.",
+        DELETE("%s row(s) were deleted.",
+                "A %s was deleted.",
                 "deleted"),
-        TRUNCATE("Table was truncated.",
-                "All rows were deleted.",
+        TRUNCATE("All rows were deleted.",
+                "Table was truncated",
                 "deleted"),
-        MERGE("A row was inserted or updated.",
-                "%s row(s) were inserted or updated.",
+        MERGE("%s row(s) were inserted or updated.",
+                "A %s was inserted or updated.",
                 "inserted or updated");
 
         String _commentDetailed;
+        String _commentDetailedFormat;
         String _commentSummary;
         String _verbPastTense;
 
-        AuditAction(String commentDetailed, String commentSummary, String verbPastTense)
+        AuditAction(String commentSummary, String commentDetailedFormat, String verbPastTense)
         {
-            _commentDetailed = commentDetailed;
             _commentSummary = commentSummary;
             _verbPastTense = verbPastTense;
+            _commentDetailedFormat = commentDetailedFormat;
+            _commentDetailed = String.format(commentDetailedFormat, "row");
+        }
+
+        public String getCommentDetailed(String noun)
+        {
+            return String.format(_commentDetailedFormat, noun);
         }
 
         public String getCommentDetailed()
