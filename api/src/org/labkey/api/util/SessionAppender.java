@@ -17,7 +17,7 @@ package org.labkey.api.util;
 
 import org.apache.log4j.spi.LoggingEvent;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.collections.ConcurrentCaseInsensitiveSortedMap;
+import org.springframework.util.ConcurrentReferenceHashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -48,7 +48,7 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
     }
 
     private static final ThreadLocal<AppenderInfo> localInfo = new ThreadLocal<>();
-    private static final Map<String, AppenderInfo> appenderInfos = new ConcurrentCaseInsensitiveSortedMap<>();
+    private static final Map<String, AppenderInfo> appenderInfos = new ConcurrentReferenceHashMap<>();
 
     // Makes appenderInfo available outside this thread
     private static void registerAppenderInfo(AppenderInfo info)
@@ -56,8 +56,8 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
         appenderInfos.put(info.key, info);
     }
 
-    // If accessing appenderInfo using this function ensure operations on it are thread safe as multiple threads
-    // could be accessing it.
+    // If accessing appenderInfo using this function ensure operations on the appenderInfo are thread safe as multiple
+    // threads could be accessing it.
     public static AppenderInfo getAppenderInfoByKey(String key)
     {
         return appenderInfos.get(key);
@@ -137,6 +137,11 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
             registerAppenderInfo(info);
             return info;
         }
+    }
+
+    public static void removeAppenderInfo()
+    {
+        localInfo.remove();
     }
 
     // set up logging for this thread, based on an already existing AppenderInfo
