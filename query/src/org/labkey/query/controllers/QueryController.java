@@ -3365,7 +3365,7 @@ public class QueryController extends SpringActionController
                         Aggregate.Type type = r.getAggregate().getType();
                         props.put("label", type.getFullLabel());
                         props.put("description", type.getDescription());
-                        props.put("value", r.getFormattedValue(displayColumn, getContainer()));
+                        props.put("value", r.getFormattedValue(displayColumn, getContainer()).first);
                         aggregateResults.put(type.getName(), props);
                     }
 
@@ -3688,7 +3688,7 @@ public class QueryController extends SpringActionController
         public static final String PROP_COMMAND = "command";
         private static final String PROP_ROWS = "rows";
 
-        protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws IOException, BatchValidationException, SQLException, InvalidKeyException
+        protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws Exception
         {
             JSONObject response = new JSONObject();
             Container container = getContainer();
@@ -3796,6 +3796,39 @@ public class QueryController extends SpringActionController
                 if (commandType != CommandType.importRows)
                     response.put("rows", responseRows);
 
+                // if there is any provenance information, save it here
+                ProvenanceService svc = ProvenanceService.get();
+                if (json.has("provenance"))
+                {
+                    JSONObject provenanceJSON = json.getJSONObject("provenance");
+                    ProvenanceRecordingParams params = svc.createRecordingParams(getViewContext(), provenanceJSON, ProvenanceService.ADD_RECORDING);
+                    RecordedAction action = svc.createRecordedAction(getViewContext(), params);
+                    if (action != null && params.getRecordingId() != null)
+                    {
+                        // check for any row level provenance information
+                        if (json.has("rows"))
+                        {
+                            Object rowObject = json.get("rows");
+                            if (rowObject instanceof JSONArray)
+                            {
+                                JSONArray jsonRows = (JSONArray)rowObject;
+                                // we need to match any provenance object inputs to the object outputs from the response rows, this typically would
+                                // be the row lsid but it configurable in the provenance recording params
+                                //
+                                List<Pair<String, String>> provenanceMap = svc.createProvenanceMapFromRows(getViewContext(), params, jsonRows, responseRows);
+                                if (!provenanceMap.isEmpty())
+                                {
+                                    action.getProvenanceMap().addAll(provenanceMap);
+                                }
+                                svc.addRecordingStep(getViewContext().getRequest(), params.getRecordingId(), action);
+                            }
+                            else
+                            {
+                                errors.reject(SpringActionController.ERROR_MSG, "Unable to process provenance information, the rows object was not an array");
+                            }
+                        }
+                    }
+                }
                 transaction.commit();
             }
             catch (OptimisticConflictException e)
@@ -3875,26 +3908,6 @@ public class QueryController extends SpringActionController
             if (response == null || errors.hasErrors())
                 return null;
 
-            // if there is any provenance information, save it here
-            ProvenanceService svc = ProvenanceService.get();
-            if (apiSaveRowsForm.getJsonObject().has("provenance"))
-            {
-                JSONObject provenanceJSON = apiSaveRowsForm.getJsonObject().getJSONObject("provenance");
-                ProvenanceRecordingParams params = svc.createRecordingParams(getViewContext(), provenanceJSON, ProvenanceService.ADD_RECORDING);
-                RecordedAction action = svc.createRecordedAction(getViewContext(), params);
-                if (action != null && params.getRecordingId() != null)
-                {
-                    // check for any row level provenance information
-                    if (apiSaveRowsForm.getJsonObject().has("rows"))
-                    {
-                        JSONArray rows = apiSaveRowsForm.getJsonObject().getJSONArray("rows");
-                        List<Pair<String, String>> provenanceMap = svc.createProvenanceMapFromRows(getViewContext(), params, rows);
-
-                        action.getProvenanceMap().addAll(provenanceMap);
-                        svc.addRecordingStep(getViewContext().getRequest(), params.getRecordingId(), action);
-                    }
-                }
-            }
             return new ApiSimpleResponse(response);
         }
     }

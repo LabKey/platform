@@ -30,12 +30,14 @@ import org.apache.log4j.Logger;
 import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.view.BadRequestException;
 import org.springframework.web.servlet.mvc.Controller;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -54,6 +56,31 @@ public class HttpUtil
     private static final Logger LOG = Logger.getLogger(HttpUtil.class);
 
     private static final Pattern _metaRefreshRegex = Pattern.compile("<meta http-equiv=['\"]refresh['\"] content=['\"].*URL=(.*)['\"]>", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+
+    public enum Method
+    {
+        // HTTP
+        // https://tools.ietf.org/html/rfc7231#section-4
+        // https://tools.ietf.org/html/rfc5789#section-2
+        CONNECT, DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, TRACE,
+        // WebDav
+        // https://tools.ietf.org/html/rfc4918#section-9
+        COPY, LOCK, MKCOL, MOVE, PROPFIND, PROPPATCH, UNLOCK,
+        // LabKey methods that our WebDav implementation understands
+        JSON, LASTERROR, MD5SUM, ZIP;
+
+        public static Method valueOf(HttpServletRequest req)
+        {
+            try
+            {
+                return Method.valueOf(req.getMethod());
+            }
+            catch (IllegalArgumentException x)
+            {
+                throw new BadRequestException(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed", null);
+            }
+        }
+    }
 
     /**
      * Get an InputStream from the endpoint following any HTTP redirects.

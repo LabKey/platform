@@ -99,7 +99,6 @@ LABKEY.vis.SVGConverter = {
         }
         xml = xml.replace(/<([^ ]+)/, '<$1 ' + nsString + ' ');
         
-        // raphael may put the xmlns attr in the svg tag more than once (for IE)
         var nsMatches = xml.match(svgnsRegExG);
         if (nsMatches.length > 1)
         {
