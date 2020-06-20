@@ -33,6 +33,7 @@ public interface Announcement
     String getBody();
     Date getExpires();
     int getRowId();
+    String getEntityId();
     Container getContainer();
     Collection<Attachment> getAttachments();
     String getStatus();

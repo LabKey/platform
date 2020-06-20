@@ -857,12 +857,20 @@ public class Query
 		for (String part : parts)
 			names.add(FieldKey.decodePart(part));
 
+		ContainerFilter cf = getContainerFilter();
+
         QuerySchema resolvedSchema = currentSchema;
 		for (int i = 0; i < parts.size() - 1; i ++)
 		{
 			String name = names.get(i);
             resolvedSchema = resolvedSchema.getSchema(name);
-            if (resolvedSchema == null && DbSchema.TEMP_SCHEMA_NAME.equalsIgnoreCase(name))
+            if (resolvedSchema instanceof QuerySchema.ContainerSchema)
+            {
+                // If user explicitly specifies a different folder, don't propagate the default container filter.
+                // Use the default container filter for that schema.
+                cf = null;
+            }
+            else if (resolvedSchema == null && DbSchema.TEMP_SCHEMA_NAME.equalsIgnoreCase(name))
             {
                 resolvedSchema = new QuerySchemaWrapper(DbSchema.getTemp());
                 trackDependency = false;
@@ -882,10 +890,10 @@ public class Query
             {
                 TableType tableType = lookupMetadataTable(key.getName());
                 boolean forWrite = tableType != null;
-                t = ((UserSchema) resolvedSchema)._getTableOrQuery(key.getName(), getContainerFilter(), true, forWrite, resolveExceptions);
+                t = ((UserSchema) resolvedSchema)._getTableOrQuery(key.getName(), cf, true, forWrite, resolveExceptions);
             }
             else
-                t = resolvedSchema.getTable(key.getName(), getContainerFilter());
+                t = resolvedSchema.getTable(key.getName(), cf);
         }
         catch (QueryException ex)
         {

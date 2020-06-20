@@ -133,26 +133,27 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
                     <Modal.Title>Permanently delete {authConfig.provider} configuration?</Modal.Title>
                 </Modal.Header>
                 <div className="auth-row__delete-modal">
-                    <div className="auth-row__delete-modal__textBox">
+                    <div className="auth-row__delete-modal__textBox modal-body">
                         <p>
                             Deleting this authentication configuration will remove all settings associated with it. To
                             enable it again, the authentication configuration will need to be re-configured.
                         </p>
                         <p>Deletion cannot be undone.</p>
                     </div>
+                    <div className="auth-row__delete-modal-bottom">
+                        <Button
+                            className="labkey-button auth-row__delete-modal__cancel"
+                            onClick={() => {
+                                this.onToggleModal('deleteModalOpen', this.state.deleteModalOpen);
+                                toggleModalOpen(false);
+                            }}>
+                            Cancel
+                        </Button>
 
-                    <Button
-                        className="labkey-button auth-row__delete-modal__cancel"
-                        onClick={() => {
-                            this.onToggleModal('deleteModalOpen', this.state.deleteModalOpen);
-                            toggleModalOpen(false);
-                        }}>
-                        Cancel
-                    </Button>
-
-                    <Button className="labkey-button primary auth-row__delete-modal__delete" onClick={onDelete}>
-                        Yes, delete
-                    </Button>
+                        <Button className="labkey-button primary auth-row__confirm-delete" onClick={onDelete}>
+                            Yes, delete
+                        </Button>
+                    </div>
                 </div>
             </Modal>
         );
