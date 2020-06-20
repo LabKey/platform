@@ -34,6 +34,7 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
@@ -83,6 +84,7 @@ import java.sql.Date;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -786,6 +788,20 @@ public class SearchController extends SpringActionController
         }
     }
 
+    public static class PriorityForm
+    {
+        SearchService.PRIORITY priority = SearchService.PRIORITY.item;
+
+        public SearchService.PRIORITY getPriority()
+        {
+            return priority;
+        }
+
+        public void setPriority(SearchService.PRIORITY priority)
+        {
+            this.priority = Objects.requireNonNullElse(priority, SearchService.PRIORITY.item);
+        }
+    }
 
     // This is intended to help test search indexing. This action sticks a special runnable in the indexer queue
     // and then returns when that runnable is executed (or if five minutes goes by without the runnable executing).
@@ -793,17 +809,24 @@ public class SearchController extends SpringActionController
     // does not guarantee that all indexed content has been committed... but that may not be required in practice.
 
     @RequiresSiteAdmin
-    public class WaitForIndexerAction extends ExportAction
+    public class WaitForIndexerAction extends ExportAction<PriorityForm>
     {
         @Override
-        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        public void export(PriorityForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             SearchService ss = SearchService.get();
             final CountDownLatch latch = new CountDownLatch(1);
 
-            ss.waitForIdle();
-            SearchService.IndexTask task = ss.defaultTask();
-            task.addRunnable(() -> latch.countDown(), SearchService.PRIORITY.item);
+            SearchService.IndexTask task = ss.createTask("WaitForIndexer", new SearchService.TaskListener()
+            {
+                @Override public void success()
+                {
+                    latch.countDown();
+                }
+                @Override public void indexError(Resource r, Throwable t) { }
+            });
+            task.addNoop(form.getPriority());
+            task.setReady();
 
             boolean success = latch.await(5, TimeUnit.MINUTES);
             if (ss instanceof LuceneSearchServiceImpl)

@@ -65,6 +65,11 @@ public class NoopSearchService implements SearchService
         }
 
         @Override
+        public void addNoop(PRIORITY pri)
+        {
+        }
+
+        @Override
         public void setReady()
         {
         }

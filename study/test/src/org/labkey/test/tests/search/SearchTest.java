@@ -289,6 +289,7 @@ public abstract class SearchTest extends StudyBaseTest
     private void deleteFolderAndVerifyNoResults()
     {
         _containerHelper.deleteProject(getProjectName());
+        SearchAdminAPIHelper.waitForIndexerBackground();
         goToHome(); // Need to leave deleted project
         _searchHelper.verifyNoSearchResults();
     }
