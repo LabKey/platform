@@ -2222,6 +2222,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
+    @NotNull
     public Set<ExpData> getNearestParentDatas(Container c, User user, ExpMaterial start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
@@ -2231,6 +2232,16 @@ public class ExperimentServiceImpl implements ExperimentService
         return lineage.findNearestParentDatas(start);
     }
 
+    @Override
+    @NotNull
+    public Set<ExpMaterial> getNearestParentMaterials(Container c, User user, ExpMaterial start)
+    {
+        ExpLineageOptions options = new ExpLineageOptions();
+        options.setChildren(false);
+
+        ExpLineage lineage = getLineage(c, user, start, options);
+        return lineage.findNearestParentMaterials(start);
+    }
 
     public List<ExpRun> oldCollectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options)
     {
