@@ -670,10 +670,6 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
         WebdavResource doc = createDocument();
         task.addResource(doc, SearchService.PRIORITY.item);
-//        ExperimentService.get().getTinfoData().getSchema().getScope().addCommitTask(() -> {
-//            WebdavResource doc = createDocument();
-//            ss.defaultTask().addResource(doc, SearchService.PRIORITY.item);
-//        }, DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
     public WebdavResource createDocument()
