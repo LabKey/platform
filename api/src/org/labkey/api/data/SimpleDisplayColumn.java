@@ -135,6 +135,7 @@ public class SimpleDisplayColumn extends DisplayColumn
             {
                 out.write("' target='");
                 out.write(linkTarget);
+                out.write("' rel='noopener noreferrer'");
             }
 
             String linkCls = getLinkCls();
@@ -144,8 +145,7 @@ public class SimpleDisplayColumn extends DisplayColumn
                 out.write(linkCls);
             }
 
-            out.write("' rel='noopener noreferrer'");
-            out.write(">");
+            out.write("'>");
         }
         Object value = getDisplayValue(ctx);
         if (value == null)
