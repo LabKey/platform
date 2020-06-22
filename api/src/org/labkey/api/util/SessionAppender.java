@@ -16,12 +16,15 @@
 package org.labkey.api.util;
 
 import org.apache.log4j.spi.LoggingEvent;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.util.ConcurrentReferenceHashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: matthewb
@@ -46,6 +49,29 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
 
     private static final ThreadLocal<AppenderInfo> localInfo = new ThreadLocal<>();
 
+    // AppenderInfos are thread-local variables initialized with the user session. This Map allows background threads to share an
+    // active session's appenderInfo to output logs to that session's SessionAppender. When the session is ended, the
+    // thread-local appenderInfo will be released and this map, which uses weak references, will allow gc to remove and
+    // reclaim the appenderInfo entry.
+    private static final Map<String, AppenderInfo> appenderInfos = new ConcurrentReferenceHashMap<>(16, ConcurrentReferenceHashMap.ReferenceType.WEAK);
+
+    // Makes appenderInfo available outside this thread
+    private static void registerAppenderInfo(AppenderInfo info)
+    {
+        appenderInfos.put(info.key, info);
+    }
+
+    // If accessing appenderInfo using this function ensure operations on the appenderInfo are thread safe as multiple
+    // threads could be accessing it.
+    public static AppenderInfo getAppenderInfoByKey(String key)
+    {
+        return appenderInfos.get(key);
+    }
+
+    public static String getAppendingInfoKey(HttpServletRequest request)
+    {
+        return _getLoggingForSession(request).key;
+    }
 
     @Override
     protected void append(LoggingEvent event)
@@ -78,7 +104,7 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
 
     public static LoggingEvent[] getLoggingEvents(HttpServletRequest request)
     {
-        AppenderInfo info = _getLoggingForSession(request, true);
+        AppenderInfo info = _getLoggingForSession(request);
         if (null == info)
             return new LoggingEvent[0];
         synchronized (info.list)
@@ -87,23 +113,20 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
         }
     }
 
-
     public static void setLoggingForSession(HttpServletRequest request, boolean on)
     {
-        AppenderInfo info = _getLoggingForSession(request, on);
+        AppenderInfo info = _getLoggingForSession(request);
         if (null != info)
             info.on = on;
     }
 
-
     public static boolean isLogging(HttpServletRequest request)
     {
-        AppenderInfo info = _getLoggingForSession(request, false);
+        AppenderInfo info = _getLoggingForSession(request);
         return null != info && info.on;
     }
-    
 
-    private static AppenderInfo _getLoggingForSession(HttpServletRequest request, boolean create)
+    private static AppenderInfo _getLoggingForSession(@NotNull HttpServletRequest request)
     {
         HttpSession session = request.getSession(true);
         if (null == session)
@@ -116,14 +139,25 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
                 info = new AppenderInfo(session.getId(), false);
                 session.setAttribute("SessionAppender#info",info);
             }
+            registerAppenderInfo(info);
             return info;
         }
     }
 
+    public static void removeAppenderInfo()
+    {
+        localInfo.remove();
+    }
+
+    // set up logging for this thread, based on an already existing AppenderInfo
+    public static void initThread(AppenderInfo info)
+    {
+        localInfo.set(info);
+    }
     
     // set up logging for this thread, based on session settings
     public static void initThread(HttpServletRequest request)
     {
-        localInfo.set(_getLoggingForSession(request, false));
+        localInfo.set(_getLoggingForSession(request));
     }
 }
