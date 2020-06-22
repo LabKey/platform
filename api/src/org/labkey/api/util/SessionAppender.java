@@ -48,7 +48,12 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
     }
 
     private static final ThreadLocal<AppenderInfo> localInfo = new ThreadLocal<>();
-    private static final Map<String, AppenderInfo> appenderInfos = new ConcurrentReferenceHashMap<>();
+
+    // AppenderInfos are thread-local variables initialized with the user session. This Map allows background threads to share an
+    // active session's appenderInfo to output logs to that session's SessionAppender. When the session is ended, the
+    // thread-local appenderInfo will be released and this map, which uses weak references, will allow gc to remove and
+    // reclaim the appenderInfo entry.
+    private static final Map<String, AppenderInfo> appenderInfos = new ConcurrentReferenceHashMap<>(16, ConcurrentReferenceHashMap.ReferenceType.WEAK);
 
     // Makes appenderInfo available outside this thread
     private static void registerAppenderInfo(AppenderInfo info)
