@@ -77,6 +77,7 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
+import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
@@ -100,6 +101,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
@@ -1282,14 +1284,25 @@ public class FileContentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
+    @RequiresNoPermission
     public class GetZiploaderPatternsAction extends ReadOnlyApiAction
     {
-
         @Override
         public Object execute(Object o, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
+
+            if (getViewContext().getContainer().isRoot())
+            {
+                response.put("rows", 0);
+                return response;
+            }
+
+            if (!getViewContext().hasPermission(ReadPermission.class))
+            {
+                throw new UnauthorizedException();
+            }
+
             FileContentService svc = FileContentService.get();
             List<DirectoryPattern> directoryPatterns = new ArrayList<>();
             List<JSONObject> directoryPatternsJson = new ArrayList<>();
