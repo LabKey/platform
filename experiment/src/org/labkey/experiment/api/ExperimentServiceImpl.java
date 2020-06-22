@@ -4054,15 +4054,14 @@ public class ExperimentServiceImpl implements ExperimentService
                 executor.execute(materialSQL);
             }
 
-            // Remove from search index
-            SearchService ss = SearchService.get();
+            // On successful commit, start task to remove items from search index
+            final SearchService ss = SearchService.get();
             if (null != ss)
             {
-                try (Timing ignored = MiniProfiler.step("search docs"))
-                {
-                    for (ExpMaterial material : materials)
-                        ss.deleteResource(material.getDocumentId());
-                }
+                final List<String> docids = materials.stream().map(m -> m.getDocumentId()).collect(Collectors.toList());
+                transaction.addCommitTask(
+                    () -> ss.defaultTask().addRunnable(() -> ss.deleteResources(docids), SearchService.PRIORITY.bulk),
+                    POSTCOMMIT);
             }
 
             transaction.commit();
