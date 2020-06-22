@@ -23,10 +23,11 @@ public abstract class AuditHandler
 
     /**
      * Allow for adding fields that may be present in the updated row but not represented in the original row
+     * @param originalRow the original data
      * @param modifiedRow the data from the updated row that has changed
      * @param updatedRow the row that has been updated, which may include fields that have not changed
      */
-    protected void addDetailedModifiedFields(Map<String, Object> modifiedRow, Map<String, Object> updatedRow)
+    protected void addDetailedModifiedFields(Map<String, Object> originalRow, Map<String, Object> modifiedRow, Map<String, Object> updatedRow)
     {
         // do nothing extra by default
     }
@@ -130,7 +131,7 @@ public abstract class AuditHandler
                                     }
                                 }
                                 // allow for adding fields that may be present in the updated row but not represented in the original row
-                                addDetailedModifiedFields(modifiedRow, updatedRow);
+                                addDetailedModifiedFields(row, modifiedRow, updatedRow);
 
                                 String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(c, originalRow);
                                 if (oldRecord != null)
