@@ -28,6 +28,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.beans.PropertyValues;
@@ -476,5 +477,10 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     public void setBindPropertyValues(PropertyValues pvs)
     {
         _pvsBind = pvs;
+    }
+
+    public HttpUtil.Method getMethod()
+    {
+        return HttpUtil.Method.valueOf(getRequest());
     }
 }

@@ -16,6 +16,7 @@
 package org.labkey.test.tests.devtools;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,10 +36,14 @@ import org.labkey.test.util.PasswordUtil;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @Category({Git.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 1)
@@ -83,12 +88,7 @@ public class SecondaryAuthenticationTest extends BaseWebDriverTest
                 .clickApply();
         configurePage.clickSaveAndFinish();
 
-        /** Test audit log
-         *   todo: uncomment this code block when audit is wired up to the new apis
-         *           this is tracked with issue https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=39425
-         *
-
-
+        /** Test audit log* */
         //get all the rows that are greater than or equal to today's date
         SelectRowsResponse selectRowsResponse = getLatestAuditEntries();
 
@@ -101,9 +101,8 @@ public class SecondaryAuthenticationTest extends BaseWebDriverTest
         assertFalse("No audit entry for enabled Secondary Authentication", auditDate.before(DateUtils.truncate(currentDate, Calendar.SECOND)));
 
         //compare 'Comment' value of the last/latest audit log
-        assertEquals("Latest audit log for Authentication provider should read: Test Secondary Authentication provider was enabled",
-                "Test Secondary Authentication provider was enabled", commentColVal);
-        **/
+        assertEquals("Latest audit log for Authentication provider is not as expected",
+                "TestSecondary authentication configuration \"TestSecondary Configuration\" was created", commentColVal);
 
         //Sign Out
         signOut();
@@ -153,27 +152,37 @@ public class SecondaryAuthenticationTest extends BaseWebDriverTest
                 .clickApply();
         configurePage.clickSaveAndFinish();
 
-         /** Test audit log
-          todo: uncomment this code block when audit is wired up to the new apis
-          this is tracked with issue https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=39425
-
         selectRowsResponse = getLatestAuditEntries();
         row = selectRowsResponse.getRows().get(0);
 
         commentColVal = (String) row.get("Comment"); //get a value from Comment column
         auditDate = (Date)row.get("Created"); //get a value from Created ('Date' in the UI) column
+        String change = (String)row.get("Changes");
 
         //compare time stamp of the audit log
-        assertFalse("No audit entry for disabled Secondary Authentication", auditDate.before(DateUtils.truncate(currentDate, Calendar.SECOND)));
+        assertFalse("No audit entry for disabled Secondary Authentication",
+                auditDate.before(DateUtils.truncate(currentDate, Calendar.SECOND)));
 
         //compare 'Comment' value of the last/latest audit log
-        assertEquals("Latest audit log for Authentication provider should read: Test Secondary Authentication provider was disabled",
-                "Test Secondary Authentication provider was disabled", commentColVal);
-        **/
+        assertTrue("Comment should be about the current configuration",
+                commentColVal.startsWith("TestSecondary authentication configuration \"TestSecondary Configuration\""));
+        assertTrue("Comment should say that the configuration was updated", commentColVal.endsWith("was updated"));
+        assertTrue("Change should be [enabled: true » false], but was["+change+"]", change.startsWith("enabled: true"));
+        assertTrue("Change should be [enabled: true » false], but was["+change+"]", change.endsWith("false"));
 
          // now remove the secondary auth configuration
         clearSecondaryConfigs();
 
+        // validate the delete entry in the audit log after deleting
+        selectRowsResponse = getLatestAuditEntries();
+        row = selectRowsResponse.getRows().get(0);
+
+        commentColVal = (String) row.get("Comment"); //get a value from Comment column
+        change = (String)row.get("Changes");
+
+        assertTrue(commentColVal.startsWith("TestSecondary authentication configuration \"TestSecondary Configuration\""));
+        assertTrue(commentColVal.endsWith("was deleted"));
+        assertEquals("Change should be 'deleted'", "deleted", change);
     }
 
     protected SelectRowsResponse getLatestAuditEntries()

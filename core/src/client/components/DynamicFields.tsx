@@ -126,17 +126,23 @@ export class Option extends PureComponent<OptionInputProps> {
 interface FixedHtmlProps {
     caption: string;
     html?: string;
+    description?: string;
 }
 
 export class FixedHtml extends PureComponent<FixedHtmlProps> {
     render() {
+        const { description, caption, html } = this.props;
+
         return (
             <div className="modal__fixed-html-field">
-                <span className="modal__field-label">{this.props.caption}</span>
+                <span className="modal__field-label">{caption}</span>
+                {description && (
+                    <LabelHelpTip title="Tip" body={() => <div> {description} </div>} />
+                )}
 
                 {/* HTML set is text-only information that lives on the server */}
                 <div className="modal__fixed-html-text">
-                    <div dangerouslySetInnerHTML={{ __html: this.props.html }} />
+                    <div dangerouslySetInnerHTML={{ __html: html }} />
                 </div>
             </div>
         );
@@ -312,7 +318,12 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                     );
 
                 case 'fixedHtml':
-                    return  <FixedHtml key={index} caption={field.caption} html={field.html}/>;
+                    return  <FixedHtml
+                        key={index}
+                        caption={field.caption}
+                        html={field.html}
+                        description={field.description}
+                    />;
 
                 default:
                     return <div> Error: Invalid field type received. </div>;

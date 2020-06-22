@@ -904,13 +904,16 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
     }
 
     @Override
-    protected void addDetailedModifiedFields(Map<String, Object> modifiedRow, Map<String, Object> updatedRow)
+    protected void addDetailedModifiedFields(Map<String, Object> originalRow, Map<String, Object> modifiedRow, Map<String, Object> updatedRow)
     {
         // we want to include the fields that indicate parent lineage has changed.
         // Note that we don't need to check for output fields because lineage can be modified only by changing inputs not outputs
         updatedRow.forEach((fieldName, value) -> {
             if (fieldName.startsWith(ExpData.DATA_INPUT_PARENT) || fieldName.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT))
-                modifiedRow.put(fieldName, value);
+                if (!originalRow.containsKey(fieldName))
+                {
+                    modifiedRow.put(fieldName, value);
+                }
         });
     }
 
