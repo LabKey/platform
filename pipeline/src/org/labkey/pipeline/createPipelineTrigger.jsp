@@ -72,7 +72,7 @@
             triggers that can automatically initiate pipeline tasks.</p>
         <p>In addition to this feature, premium editions of LabKey Server provide professional support and advanced functionality to help teams maximize the value of the platform.</p>
         <br>
-        <p><a class="alert-link" href="https://www.labkey.com/platform/go-premium/" target="_blank">Go Premium <i class="fa fa-external-link"></i></a></p>
+        <p><a class="alert-link" href="https://www.labkey.com/platform/go-premium/" target="_blank" rel="noopener noreferrer">Go Premium <i class="fa fa-external-link"></i></a></p>
     </div>
 
 <%
@@ -87,7 +87,7 @@
                 <a href="#details" class="list-group-item">Details</a>
                 <a href="#configuration" class="list-group-item">Configuration</a>
             </div>
-            <a class="list-group-item" style="margin-top: 2em" target="_blank" href="<%=h(docLink)%>">
+            <a class="list-group-item" style="margin-top: 2em" target="_blank" href="<%=h(docLink)%>" rel="noopener noreferrer">
                 Documentation &nbsp; &nbsp;<i class="fa fa-external-link" aria-hidden="true"></i>
             </a>
         </div>
