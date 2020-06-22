@@ -95,7 +95,7 @@
 
                 You may also supply an optional format string. If the value of the parameter is not blank, it
                 will be used to format the value in the outgoing email. For the full set of format options available,
-                see the <a target="_blank" href="<%= h(HelpTopic.getJDKJavaDocLink(Formatter.class)) %>">documentation for java.util.Formatter</a>. The syntax is:
+                see the <a target="_blank" href="<%= h(HelpTopic.getJDKJavaDocLink(Formatter.class)) %>" rel="noopener noreferrer">documentation for java.util.Formatter</a>. The syntax is:
                 <pre style="padding-left: 2em;">^&lt;param name&gt;|&lt;format string&gt;^</pre>
                 For example:
                 <pre style="padding-left: 2em;">^currentDateTime|The current date is: %1$tb %1$te, %1$tY^</pre>
