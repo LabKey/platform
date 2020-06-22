@@ -683,7 +683,7 @@ public class ExpSampleTypeTestCase extends ExpProvisionedTableTestHelper
 
     }
 
-    // Issue 29060: Deriving with DataInputs and MaterialInputs on SampleSet even when Parent col is set
+    // Issue 29060: Deriving with DataInputs and MaterialInputs on SampleType even when Parent col is set
     @Test
     public void testParentColAndDataInputDerivation() throws Exception
     {
@@ -824,7 +824,7 @@ public class ExpSampleTypeTestCase extends ExpProvisionedTableTestHelper
     }
 
     @Test
-    public void testSampleSetWithVocabularyProperties() throws Exception
+    public void testSampleTypeWithVocabularyProperties() throws Exception
     {
         User user = TestContext.get().getUser();
 

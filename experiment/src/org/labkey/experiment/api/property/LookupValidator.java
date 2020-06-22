@@ -205,7 +205,7 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
                     if (lookupTargetCol.getJdbcType() != jdbcType && jdbcType.isText() && _tableInfo instanceof ExpMaterialTableImpl)
                     {
                         ColumnInfo nameCol = _tableInfo.getColumn(ExpMaterialTableImpl.Column.Name.toString());
-                        assert nameCol != null : "Could not find Name column in SampleSet table";
+                        assert nameCol != null : "Could not find Name column in SampleType table";
                         if (nameCol != null)
                         {
                             lookupTargetCol = nameCol;

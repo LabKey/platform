@@ -93,12 +93,12 @@ public class LineageTest extends ExpProvisionedTableTestHelper
     {
         final User user = TestContext.get().getUser();
 
-        // just some properties used in both the SampleSet and DataClass
+        // just some properties used in both the SampleType and DataClass
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("me", "string"));
         props.add(new GWTPropertyDescriptor("age", "string"));
 
-        // Create a SampleSet and some samples
+        // Create a SampleType and some samples
         final ExpSampleType st = SampleTypeService.get().createSampleType(c, user, "Samples", null, props, emptyList(), 0, -1, -1, -1, null, null);
         final ExpMaterial s1 = ExperimentService.get().createExpMaterial(c,
                 st.generateSampleLSID().setObjectId("S-1").toString(), "S-1");
@@ -308,7 +308,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         assertEquals(1, updatedRows.size());
 
         // TODO: Is the expected behavior to create a new derivation run from S-2 and leave the existing derivation from S-1 intact?
-        // TODO: Or should the existing derivation run be deleted/updated to match the SampleSet derivation behavior?
+        // TODO: Or should the existing derivation run be deleted/updated to match the SampleType derivation behavior?
         // Verify the lineage
         lineage = ExperimentService.get().getLineage(c, user, bob, options);
         Assert.assertTrue(lineage.getDatas().isEmpty());

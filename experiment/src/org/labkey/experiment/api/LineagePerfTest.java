@@ -358,7 +358,7 @@ public class LineagePerfTest extends Assert
         ExpSampleType st;
         ExpData firstData;
 
-        // Create a DataClass and SampleSet and insert into MyData first, then MySamples
+        // Create a DataClass and SampleType and insert into MyData first, then MySamples
         try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
         {
             // Generate lots of samples
@@ -391,7 +391,7 @@ public class LineagePerfTest extends Assert
             assertNotNull(firstData);
 
 
-            // Create SampleSet and insert samples
+            // Create SampleType and insert samples
             LOG.info("inserting samples");
             insertSamplesTimer.start();
             props = new ArrayList<>();
