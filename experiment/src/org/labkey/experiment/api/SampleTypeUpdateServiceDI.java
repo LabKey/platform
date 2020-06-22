@@ -38,7 +38,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRunItem;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -415,10 +415,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             else if (parent instanceof ExpMaterial)
             {
-                ExpSampleSet sampleset = ((ExpMaterial) parent).getSampleSet();
-                if (sampleset == null)
+                ExpSampleType sampleType = ((ExpMaterial) parent).getSampleType();
+                if (sampleType == null)
                     continue;
-                type = sampleset.getName();
+                type = sampleType.getName();
             }
 
             parentByType.computeIfAbsent(type, k -> new ArrayList<>());
@@ -446,7 +446,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws QueryUpdateServiceException
     {
         return getMaterialMap(getMaterialRowId(keys), getMaterialLsid(keys), user, container, true);
     }
