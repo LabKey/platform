@@ -566,7 +566,15 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     @Override
     public String getDocumentId()
     {
-        return "dav:" + getPath().toString();
+        if (null == parent())
+            return "dav:" + getPath();
+        StringBuilder docid = new StringBuilder(parent().getDocumentId());
+        if (docid.charAt(docid.length()-1)!='/')
+            docid.append("/");
+        docid.append(getName());
+        if (isCollection())
+            docid.append('/');
+        return docid.toString();
     }
 
     @Override

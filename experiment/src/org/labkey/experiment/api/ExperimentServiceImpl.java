@@ -2174,6 +2174,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
+    @NotNull
     public Set<ExpData> getNearestParentDatas(Container c, User user, ExpMaterial start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
@@ -2183,6 +2184,16 @@ public class ExperimentServiceImpl implements ExperimentService
         return lineage.findNearestParentDatas(start);
     }
 
+    @Override
+    @NotNull
+    public Set<ExpMaterial> getNearestParentMaterials(Container c, User user, ExpMaterial start)
+    {
+        ExpLineageOptions options = new ExpLineageOptions();
+        options.setChildren(false);
+
+        ExpLineage lineage = getLineage(c, user, start, options);
+        return lineage.findNearestParentMaterials(start);
+    }
 
     public List<ExpRun> oldCollectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options)
     {
@@ -4043,15 +4054,14 @@ public class ExperimentServiceImpl implements ExperimentService
                 executor.execute(materialSQL);
             }
 
-            // Remove from search index
-            SearchService ss = SearchService.get();
+            // On successful commit, start task to remove items from search index
+            final SearchService ss = SearchService.get();
             if (null != ss)
             {
-                try (Timing ignored = MiniProfiler.step("search docs"))
-                {
-                    for (ExpMaterial material : materials)
-                        ss.deleteResource(material.getDocumentId());
-                }
+                final List<String> docids = materials.stream().map(m -> m.getDocumentId()).collect(Collectors.toList());
+                transaction.addCommitTask(
+                    () -> ss.defaultTask().addRunnable(() -> ss.deleteResources(docids), SearchService.PRIORITY.bulk),
+                    POSTCOMMIT);
             }
 
             transaction.commit();

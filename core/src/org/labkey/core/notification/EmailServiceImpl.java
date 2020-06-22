@@ -336,9 +336,6 @@ public class EmailServiceImpl implements EmailService
             EmailMessage msg = getBaseMessage();
             File attachment = JunitUtil.getSampleData(null, PROTOCOL_ATTACHMENT_PATH);
 
-            if (attachment == null)
-                return;
-
             assertTrue("Couldn't find " + attachment, attachment.isFile());
 
             List<String> lines = Files.readAllLines(Paths.get(attachment.toURI()), Charset.defaultCharset());
@@ -372,9 +369,6 @@ public class EmailServiceImpl implements EmailService
         {
             EmailMessage msg = getBaseMessage();
             File studySampleData = JunitUtil.getSampleData(null, "study");
-
-            if (studySampleData == null)
-                return;
 
             List<File> attachmentList = Collections.singletonList(new File(studySampleData, name));
 
