@@ -2783,7 +2783,8 @@ public class StudyController extends BaseStudyController
                 @Override
                 public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
                 {
-                    out.write(PageFlowUtil.link("Download Data File").href("downloadTsv.view?id=" + ctx.get("RowId")).toString());
+                    ActionURL url = new ActionURL(DownloadTsvAction.class, ctx.getContainer()).addParameter("id", String.valueOf(ctx.get("RowId")));
+                    out.write(PageFlowUtil.link("Download Data File").href(url).toString());
                 }
             };
             dr.addDisplayColumn(dc);
