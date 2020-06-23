@@ -90,18 +90,13 @@ public class SampleMindedImportTest extends BaseWebDriverTest
         selectOptionByValue(Locator.name("sequenceNumHandling"), "logUniqueByDate");
         clickAndWait(Locator.lkButton("Save"));
 
-        // "overview" is a dumb place for this link
-        clickAndWait(Locator.linkWithText("Overview"));
-        clickAndWait(Locator.linkWithText("manage files"));
-        setPipelineRoot(TestFileUtils.getLabKeyRoot() + "/sampledata/study");
-        clickProject(PROJECT_NAME);
         clickTab("Overview");
         clickAndWait(Locator.linkWithText("Manage Files"));
-
-        clickButton("Process and Import Data");
-        _fileBrowserHelper.importFile("specimens/" + FILE, "Import Specimen Data");
+        _fileBrowserHelper.uploadFile(TestFileUtils.getSampleData("study/specimens/" + FILE));
+        _fileBrowserHelper.importFile(FILE, "Import Specimen Data");
         clickButton("Start Import");
         waitForPipelineJobsToComplete(1, "Import specimens: SampleMindedExport.xlsx", false);
+
         clickTab("Specimen Data");
         waitForElement(Locator.linkWithText("BAL"));
         assertElementPresent(Locator.linkWithText("BAL"));
