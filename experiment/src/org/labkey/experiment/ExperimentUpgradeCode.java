@@ -368,7 +368,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
 
     /** Called from exp-18.32-18.33.sql */
-    public static void addSampleTypeGenId(ModuleContext context)
+    public static void addSampleSetGenId(ModuleContext context)
     {
         if (context.isNewInstall())
             return;
