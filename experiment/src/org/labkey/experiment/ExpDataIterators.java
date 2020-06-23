@@ -15,7 +15,6 @@
  */
 package org.labkey.experiment;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -673,7 +672,7 @@ public class ExpDataIterators
                 {
                     final ArrayList<String> lsids = new ArrayList<>(_lsids);
                     final Runnable indexTask = _indexFunction.apply(lsids);
-                    Runnable commitTask = () -> ss.defaultTask().addRunnable(indexTask, SearchService.PRIORITY.bulk);
+                    Runnable commitTask = indexTask;
                     if (null != DbScope.getLabKeyScope() && null != DbScope.getLabKeyScope().getCurrentTransaction())
                         DbScope.getLabKeyScope().getCurrentTransaction().addCommitTask(commitTask, DbScope.CommitTaskOption.POSTCOMMIT);
                     else
