@@ -27,25 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiJsonWriter;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.LabKeyError;
-import org.labkey.api.action.Marshal;
-import org.labkey.api.action.Marshaller;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.actions.UploadWizardAction;
@@ -3375,6 +3357,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(DesignSampleTypePermission.class)
+    @ActionNames("deleteSampleTypes,deleteMaterialSource")  // Referenced in labkey-ui-components components/samples/actions.ts TODO: migrate
     public class DeleteSampleTypesAction extends AbstractDeleteAction
     {
         @Override
@@ -3504,7 +3487,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    @ActionNames("getSampleTypeApi,getSampleSetApi") // Keep SampleType Designer happy for now. TODO: Remove
+    @ActionNames("getSampleTypeApi,getSampleSetApi") // Referenced in labkey-ui-components components/samples/actions.ts TODO: migrate
     public class GetSampleTypeApiAction extends ReadOnlyApiAction<SampleTypeForm>
     {
         @Override
