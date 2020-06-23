@@ -36,35 +36,27 @@ LABKEY.requiresTimeline = function(fn)
     LABKEY.requiresCss(sparkline_urlPrefix + 'ui.core.css', true);
     LABKEY.requiresCss(sparkline_urlPrefix + 'ui.tabs.css', true);
 
-    // onreadystatechange seems to be unreliable, so use timeline-all-min on IE
-    if (LABKEY.devMode && !Ext.isIE)
-    {
-        var dependencies = [
-            /* Simile */
-            SimileAjax_urlPrefix + "simile-ajax-bundle.js",
-            SimileAjax_urlPrefix + "scripts/signal.js",
-            Timeline_urlPrefix   + "timeline-bundle.js",
-            Timeplot_urlPrefix   + "timeplot-bundle.js",
-            Timeline_urlPrefix   + "scripts/l10n/en/timeline.js",
-            Timeline_urlPrefix   + "scripts/l10n/en/labellers.js",
+    var dependencies = [
+        /* Simile */
+        SimileAjax_urlPrefix + "simile-ajax-bundle.js",
+        SimileAjax_urlPrefix + "scripts/signal.js",
+        Timeline_urlPrefix   + "timeline-bundle.js",
+        Timeplot_urlPrefix   + "timeplot-bundle.js",
+        Timeline_urlPrefix   + "scripts/l10n/en/timeline.js",
+        Timeline_urlPrefix   + "scripts/l10n/en/labellers.js",
 
-            /* jQuery Sparkline */
-            jquery_urlPrefix + 'jquery-3.5.1.min.js',
+        /* jQuery Sparkline */
+        jquery_urlPrefix + 'jquery-3.5.1.min.js',
 
-            /* jQuery Sparkline */
-            sparkline_urlPrefix + 'ui.core.js',
-            sparkline_urlPrefix + 'jquery.sparkline.js',
+        /* jQuery Sparkline */
+        sparkline_urlPrefix + 'ui.core.js',
+        sparkline_urlPrefix + 'jquery.sparkline.js',
 
-            /* API */
-            prefix + 'Timeline.js'
-        ];
+        /* API */
+        prefix + 'Timeline.js'
+    ];
 
-        LABKEY.requiresScript(dependencies, fn, null, true);
-    }
-    else
-    {
-        LABKEY.requiresScript(prefix + "timeline-all-min.js");
-    }
+    LABKEY.requiresScript(dependencies, fn, null, true);
 };
 
 LABKEY.onTimelineReady = function(fn)
