@@ -387,6 +387,7 @@ public class DataColumn extends DisplayColumn
                 {
                     out.write("\" target=\"");
                     out.write(linkTarget);
+                    out.write("\" rel=\"noopener noreferrer\"");
                 }
 
                 String linkCls = getLinkCls();
@@ -409,7 +410,7 @@ public class DataColumn extends DisplayColumn
                     out.write("\" style=\"");
                     out.write(css);
                 }
-                
+
                 out.write("\">");
             }
 

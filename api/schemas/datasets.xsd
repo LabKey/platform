@@ -115,7 +115,7 @@
                 <xs:annotation>
                     <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
                          Indicates the default date format. See
-                         <a href="https://www.labkey.org/Documentation/wiki-page.view?name=dateFormats" target="_top">Date and Number Formats</a>.
+                         <a href="https://www.labkey.org/Documentation/wiki-page.view?name=dateFormats" target="_top" rel="noopener noreferrer">Date and Number Formats</a>.
                     </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
@@ -123,7 +123,7 @@
                 <xs:annotation>
                     <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
                         Indicates the default number format. See
-                         <a href="https://www.labkey.org/Documentation/wiki-page.view?name=dateFormats" target="_top">Date and Number Formats</a>.
+                         <a href="https://www.labkey.org/Documentation/wiki-page.view?name=dateFormats" target="_top" rel="noopener noreferrer">Date and Number Formats</a>.
                     </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
