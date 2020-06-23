@@ -335,7 +335,7 @@ public class ExperimentController extends SpringActionController
     public class BeginAction extends SimpleViewAction
     {
         @Override
-        public VBox getView(Object o, BindException errors) throws Exception
+        public VBox getView(Object o, BindException errors)
         {
             VBox result = new VBox();
 
@@ -3153,7 +3153,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public Object execute(DeleteConfirmationForm deleteForm, BindException errors) throws Exception
+        public Object execute(DeleteConfirmationForm deleteForm, BindException errors)
         {
 
             List<Integer> deleteRequest = new ArrayList<>(deleteForm.getIds(false));
@@ -3178,7 +3178,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public Object execute(DeleteConfirmationForm deleteForm, BindException errors) throws Exception
+        public Object execute(DeleteConfirmationForm deleteForm, BindException errors)
         {
             // start with all of them marked as deletable.  As we find evidence to the contrary, we will remove from this set.
             List<Integer> deleteRequest = new ArrayList<>(deleteForm.getIds(false));
@@ -4697,14 +4697,14 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(DeriveMaterialForm form, BindException errors)
         {
             Container c = getContainer();
-
             PipeRoot root = PipelineService.get().findPipelineRoot(c);
+
             if (root == null || !root.isValid())
             {
                 ActionURL pipelineURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c);
                 return new HtmlView(DOM.DIV("You must ",
-                        DOM.A(DOM.at(href, pipelineURL), "configure a valid pipeline root for this folder"),
-                        " before deriving samples."));
+                    DOM.A(DOM.at(href, pipelineURL), "configure a valid pipeline root for this folder"),
+                    " before deriving samples."));
             }
             else
             {
@@ -4718,8 +4718,6 @@ public class ExperimentController extends SpringActionController
                 List<ExpSampleType> sampleTypes = getUploadableSampleTypes();
 
                 DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getDataRegionSelectionKey(), form.getTargetSampleTypeId(), sampleTypes, materialsWithRoles, form.getOutputCount(), materialInputRoles, null);
-                view = new JspView<>("/org/labkey/experiment/deriveSamplesChooseTarget.jsp", bean);
-                DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getDataRegionSelectionKey(), form.getTargetSampleSetId(), sampleSets, materialsWithRoles, form.getOutputCount(), materialInputRoles, null);
                 return new JspView<>("/org/labkey/experiment/deriveSamplesChooseTarget.jsp", bean);
             }
         }
@@ -6351,7 +6349,7 @@ public class ExperimentController extends SpringActionController
     public class ResolveAction extends BaseResolveLsidApiAction<ResolveLsidsForm>
     {
         @Override
-        public Object execute(ResolveLsidsForm form, BindException errors) throws Exception
+        public Object execute(ResolveLsidsForm form, BindException errors)
         {
             var settings = new ExperimentJSONConverter.Settings(form.isIncludeProperties(), form.isIncludeInputsAndOutputs(), form.isIncludeRunSteps());
             var data = _seeds.stream().map(n -> ExperimentJSONConverter.serialize(n, getUser(), settings)).collect(toList());
