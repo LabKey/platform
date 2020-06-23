@@ -2685,7 +2685,6 @@ internal/webapp/vis/lib/patches.js -text
 internal/webapp/vis/lib/sqbin.js -text
 internal/webapp/vis/src/geom.js -text
 internal/webapp/vis/src/internal/D3Renderer.js -text
-internal/webapp/vis/src/internal/RaphaelRenderer.js -text
 internal/webapp/vis/src/layer.js -text
 internal/webapp/vis/src/plot.js -text
 internal/webapp/vis/src/scale.js -text

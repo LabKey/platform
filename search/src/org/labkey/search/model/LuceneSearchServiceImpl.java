@@ -117,6 +117,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileSystemException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1182,6 +1183,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         _indexManager.deleteDocument(id);
     }
 
+    @Override
+    protected void deleteDocuments(Collection<String> ids)
+    {
+        _indexManager.deleteDocuments(ids);
+    }
 
     @Override
     protected void deleteDocumentsForPrefix(String prefix)
@@ -1784,7 +1790,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     if (null != message)
                     {
                         if (strict)
-                            fail(message);
+                            fail(file.getName() + ": " + message);
                         else
                             _log.info(file.getName() + ": " + message);
                     }
@@ -1811,7 +1817,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             assertTrue(sampledata.isDirectory());
             SearchService ss = SearchService.get();
             LuceneSearchServiceImpl lssi = (LuceneSearchServiceImpl) ss;
-            Map<String, Pair<Integer, String[]>> expectations = getExpectations();
 
             for (File file : sampledata.listFiles(File::isFile))
             {
@@ -1861,8 +1866,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             add(map, "ppt_sample.ppt", 116, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
             add(map, "pptx_sample.pptx", 109, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
             add(map, "rtf_sample.rtf", 11, "One on One");
-            add(map, "sample.txt", 48, "Sample text file", "1", "2", "9");
-            add(map, "sql_sample.sql", 2322, "for JDBC Login support", "Container of parent, if parent has no ACLs");
+            add(map, "sample.txt", 38, "Sample text file", "1", "2", "9");
+            add(map, "sql_sample.sql", 2233, "for JDBC Login support", "Container of parent, if parent has no ACLs");
             add(map, "svg_sample.svg", 18, " "); // Not empty, but just a bunch of whitespace
             add(map, "tgz_sample.tgz", 7767, "assertthat is an extension", "Custom failure messages");
             add(map, "tif_sample.tif", 0);
@@ -2117,4 +2122,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             };
         }
     }
+
+    public void refreshNow()
+    {
+        try
+        {
+            _indexManager.refreshNow();
+        }
+        catch (IOException x)
+        {
+            /* pass */
+        }
+    }
+
 }

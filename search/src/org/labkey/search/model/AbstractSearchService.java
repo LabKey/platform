@@ -54,6 +54,7 @@ import org.labkey.search.view.DefaultSearchResultTemplate;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -90,7 +91,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     enum OPERATION
     {
-        add, delete
+        add, delete, noop
     }
 
     static final Comparator<Item> itemCompare = Comparator.comparing(o -> o._pri);
@@ -183,10 +184,19 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
 
         @Override
-        public void completeItem(Object item, boolean success)
+        public void addNoop(PRIORITY pri)
         {
-            if (item instanceof Item)
-                ((Item)item)._complete = HeartBeat.currentTimeMillis();
+            final Item i = new Item( this, OPERATION.noop, "noop://noop", null, pri);
+            addItem(i);
+            final Item r = new Item(this, () -> queueItem(i), pri);
+            queueItem(r);
+        }
+
+
+        @Override
+        public void completeItem(Item item, boolean success)
+        {
+            item._complete = HeartBeat.currentTimeMillis();
             super.completeItem(item, success);
         }
 
@@ -250,6 +260,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             _id = String.valueOf(r);
         }
 
+        OPERATION getOperation()
+        {
+            return _op;
+        }
+
         WebdavResource getResource()
         {
             if (null == _res)
@@ -302,7 +317,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         @Override
         public String toString()
         {
-            return "Item{" + (null != _res ? _res.toString() : _run.toString()) + '}';
+            return "Item{" + (null != _res ? _res.toString() : null != _run ? _run.toString() : _op.name()) + '}';
         }
     }
 
@@ -503,6 +518,16 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         synchronized (_commitLock)
         {
             _countIndexedSinceCommit++;
+        }
+    }
+
+    @Override
+    public void deleteResources(Collection<String> ids)
+    {
+        this.deleteDocuments(ids);
+        synchronized (_commitLock)
+        {
+            _countIndexedSinceCommit += ids.size();
         }
     }
 
@@ -862,6 +887,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         while (!_shuttingDown)
         {
             Item i = null;
+            boolean success = true;
 
             try
             {
@@ -869,6 +895,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 //                    if (!waitForRunning())
 //                        continue;
 
+                success = true;
                 i = _runQueue.poll(30, TimeUnit.SECONDS);
 
                 if (null != i)
@@ -885,6 +912,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
             catch (Throwable x)
             {
+                success = false;
                 try
                 {
                     ExceptionUtil.logExceptionToMothership(null, x);
@@ -901,7 +929,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 {
                     try
                     {
-                        i.complete(false);
+                        i.complete(success);
                     }
                     catch (Throwable t)
                     {
@@ -1005,6 +1033,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             if (null == i || _commitItem == i)
             {
                 commitCheck(ms);
+                success = true;
+                return;
+            }
+
+            if (i.getOperation() == OPERATION.noop)
+            {
+                success = true;
                 return;
             }
 
@@ -1016,6 +1051,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 // see 34102: Search indexing is unreliable for wiki attachments
                 i.complete(true);
                 commitCheck(ms);
+                success = true;
                 return;
             }
 
@@ -1135,6 +1171,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     protected abstract void commitIndex();
     protected abstract void deleteDocument(String id);
+    protected abstract void deleteDocuments(Collection<String> ids);
     protected abstract void deleteDocumentsForPrefix(String prefix);
     protected abstract void deleteIndexedContainer(String id);
 

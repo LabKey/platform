@@ -49,6 +49,7 @@ import java.io.Reader;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -185,6 +186,9 @@ public interface SearchService
         void addResource(@NotNull String identifier, SearchService.PRIORITY pri);
 
         void addResource(@NotNull WebdavResource r, SearchService.PRIORITY pri);
+
+        /* This adds do nothing item to the queue, this is only useful for tracking progress of the queue. see TaskListener. */
+        void addNoop(SearchService.PRIORITY pri);
 
         default <T> void addResourceList(List<T> list, int batchSize, Function<T,WebdavResource> mapper)
         {
@@ -356,6 +360,7 @@ public interface SearchService
     IndexTask createTask(String description, TaskListener l);
 
     void deleteResource(String identifier);
+    void deleteResources(Collection<String> ids);
 
     // Delete all resources whose documentIds starts with the given prefix
     void deleteResourcesForPrefix(String prefix);
