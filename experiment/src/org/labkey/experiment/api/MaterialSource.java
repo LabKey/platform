@@ -137,7 +137,7 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     @Override
     public @Nullable ActionURL detailsURL()
     {
-        ActionURL ret = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer());
+        ActionURL ret = new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer());
         ret.addParameter("rowId", Integer.toString(getRowId()));
         return ret;
     }

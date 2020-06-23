@@ -40,11 +40,11 @@ public class SampleTypeContentsView extends QueryView
         addClientDependency(ClientDependency.fromPath("experiment/confirmDelete.js"));
     }
 
-    public static ActionButton getDeriveSamplesButton(@NotNull Container container, @Nullable Integer targetSampleSetId)
+    public static ActionButton getDeriveSamplesButton(@NotNull Container container, @Nullable Integer targetSampleTypeId)
     {
         ActionURL urlDeriveSamples = new ActionURL(ExperimentController.DeriveSamplesChooseTargetAction.class, container);
-        if (targetSampleSetId != null)
-            urlDeriveSamples.addParameter("targetSampleSetId", targetSampleSetId);
+        if (targetSampleTypeId != null)
+            urlDeriveSamples.addParameter("targetSampleTypeId", targetSampleTypeId);
         ActionButton deriveButton = new ActionButton(urlDeriveSamples, "Derive Samples");
         deriveButton.setActionType(ActionButton.Action.POST);
         deriveButton.setDisplayPermission(InsertPermission.class);
@@ -116,7 +116,7 @@ public class SampleTypeContentsView extends QueryView
     public PanelButton createExportButton(@Nullable List<String> recordSelectorColumns)
     {
         PanelButton result = super.createExportButton(recordSelectorColumns);
-        ActionURL url = new ActionURL(ExperimentController.ExportSampleSetAction.class, getContainer());
+        ActionURL url = new ActionURL(ExperimentController.ExportSampleTypeAction.class, getContainer());
         url.addParameter("sampleSetId", _source.getRowId());
         result.addSubPanel("XAR", new JspView<>("/org/labkey/experiment/controllers/exp/exportSampleTypeAsXar.jsp", url));
         return result;

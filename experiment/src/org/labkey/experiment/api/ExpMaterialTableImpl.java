@@ -541,7 +541,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             addSampleTypeColumns(st, defaultCols);
             setName(_ss.getName());
 
-            ActionURL gridUrl = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer());
+            ActionURL gridUrl = new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer());
             gridUrl.addParameter("rowId", st.getRowId());
             setGridURL(new DetailsURL(gridUrl));
         }

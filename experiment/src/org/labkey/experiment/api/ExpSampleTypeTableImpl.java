@@ -41,7 +41,7 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
 {
     public ExpSampleTypeTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoMaterialSource(), schema, new ExpSampleTypeImpl(new MaterialSource()), cf);
+        super(name, ExperimentServiceImpl.get().getTinfoSampleType(), schema, new ExpSampleTypeImpl(new MaterialSource()), cf);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
     }
@@ -53,7 +53,7 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
         {
             case Folder:
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
-                ContainerForeignKey.initColumn(columnInfo, _userSchema, new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer()));
+                ContainerForeignKey.initColumn(columnInfo, _userSchema, new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer()));
                 return columnInfo;
             case Description:
             case LSID:
@@ -99,11 +99,11 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
         addColumn(ExpSampleTypeTable.Column.CreatedBy);
         addColumn(ExpSampleTypeTable.Column.Modified);
         addColumn(ExpSampleTypeTable.Column.ModifiedBy);
-        addContainerColumn(ExpSampleTypeTable.Column.Folder, new ActionURL(ExperimentController.ListMaterialSourcesAction.class, getContainer()));
+        addContainerColumn(ExpSampleTypeTable.Column.Folder, new ActionURL(ExperimentController.ListSampleTypesAction.class, getContainer()));
         addColumn(ExpSampleTypeTable.Column.SampleCount);
         addColumn(Column.Properties);
 
-        DetailsURL detailsURL = new DetailsURL(new ActionURL(ExperimentController.ShowMaterialSourceAction.class, _userSchema.getContainer()),
+        DetailsURL detailsURL = new DetailsURL(new ActionURL(ExperimentController.ShowSampleTypeAction.class, _userSchema.getContainer()),
                 Collections.singletonMap("rowId", "RowId"));
         detailsURL.setContainerContext(_userSchema.getContainer());
         setDetailsURL(detailsURL);

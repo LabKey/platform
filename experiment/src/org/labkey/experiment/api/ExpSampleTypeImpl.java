@@ -107,7 +107,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public ActionURL urlEditDefinition(ContainerUser cu)
     {
-        ActionURL ret = new ActionURL(ExperimentController.EditSampleSetAction.class, getContainer());
+        ActionURL ret = new ActionURL(ExperimentController.EditSampleTypeAction.class, getContainer());
         ret.addParameter("RowId", getRowId());
         return ret;
     }
@@ -527,7 +527,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             throw new IllegalStateException("Can't create or update the default SampleType");
 
         boolean isNew = _object.getRowId() == 0;
-        save(user, ExperimentServiceImpl.get().getTinfoMaterialSource(), true);
+        save(user, ExperimentServiceImpl.get().getTinfoSampleType(), true);
         if (isNew)
         {
             Domain domain = PropertyService.get().getDomain(getContainer(), getLSID());

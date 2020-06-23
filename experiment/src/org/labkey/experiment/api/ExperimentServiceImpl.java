@@ -777,8 +777,8 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public Collection<ExpSampleTypeImpl> getIndexableSampleTypes(Container container, @Nullable Date modifiedSince)
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoMaterialSource() + " WHERE Container = ?").add(container.getId());
-        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterialSource(), modifiedSince, null).toSQLFragment(null, null);
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoSampleType() + " WHERE Container = ?").add(container.getId());
+        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoSampleType(), modifiedSince, null).toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
         return ExpSampleTypeImpl.fromMaterialSources(new SqlSelector(getSchema(), sql).getArrayList(MaterialSource.class));
@@ -801,7 +801,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public void setMaterialSourceLastIndexed(int rowId, long ms)
     {
-        setLastIndexed(getTinfoMaterialSource(), rowId, ms);
+        setLastIndexed(getTinfoSampleType(), rowId, ms);
     }
 
 
@@ -3281,7 +3281,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public TableInfo getTinfoMaterialSource()
+    public TableInfo getTinfoSampleType()
     {
         return getExpSchema().getTable("MaterialSource");
     }

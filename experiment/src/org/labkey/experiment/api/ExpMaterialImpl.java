@@ -339,7 +339,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         if (null != st)
         {
             String sampleTypeName = st.getName();
-            ActionURL show = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer()).addParameter("rowId", st.getRowId());
+            ActionURL show = new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer()).addParameter("rowId", st.getRowId());
             NavTree t = new NavTree("SampleType - " + sampleTypeName, show);
             String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
             props.put(SearchService.PROPERTY.navtrail.toString(), nav);

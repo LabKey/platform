@@ -52,7 +52,7 @@ public class SampleTypeDisplayColumn extends SimpleDisplayColumn
         }
         else
         {
-            ActionURL url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, st.getContainer());
+            ActionURL url = new ActionURL(ExperimentController.ShowSampleTypeAction.class, st.getContainer());
             url.addParameter("rowId", Integer.toString(st.getRowId()));
             out.write("<a href=\"" + url.toString() + "\">" + PageFlowUtil.filter(st.getName()) + "</a>");
         }

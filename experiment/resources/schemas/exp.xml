@@ -324,8 +324,8 @@
     <description>Contains one row per material input in a protocol application for a run in this folder.</description>
   </table>
   <table tableName="MaterialSource" tableDbType="TABLE">
-    <gridUrl>/experiment/listMaterialSources.view</gridUrl>
-    <tableUrl>/experiment/showMaterialSource.view?rowId=${RowId}</tableUrl>
+    <gridUrl>/experiment/listSampleTypes.view</gridUrl>
+    <tableUrl>/experiment/showSampleType.view?rowId=${RowId}</tableUrl>
     <columns>
       <column columnName="RowId">
           <description>Contains a unique id for this sample type</description>

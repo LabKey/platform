@@ -265,7 +265,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             return;
 
         // get all MaterialSource across all containers
-        TableInfo source = ExperimentServiceImpl.get().getTinfoMaterialSource();
+        TableInfo source = ExperimentServiceImpl.get().getTinfoSampleType();
         new TableSelector(source, null, null).stream(MaterialSource.class)
                 .map(ExpSampleTypeImpl::new)
                 .forEach(ExperimentUpgradeCode::materializeSampleType);
@@ -376,7 +376,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
         {
             // get all MaterialSource across all containers
-            TableInfo source = ExperimentServiceImpl.get().getTinfoMaterialSource();
+            TableInfo source = ExperimentServiceImpl.get().getTinfoSampleType();
             new TableSelector(source, null, null).stream(MaterialSource.class)
                     .map(ExpSampleTypeImpl::new)
                     .forEach(ExperimentUpgradeCode::addSampleTypeGenId);
@@ -392,7 +392,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (context != null && context.isNewInstall())
             return;
 
-        TableInfo msTable = ExperimentServiceImpl.get().getTinfoMaterialSource();
+        TableInfo msTable = ExperimentServiceImpl.get().getTinfoSampleType();
         TableInfo objTable = OntologyManager.getTinfoObject();
         SQLFragment sql = new SQLFragment("SELECT ms.*, o.objectid FROM ")
                 .append(msTable.getFromSQL("ms"))

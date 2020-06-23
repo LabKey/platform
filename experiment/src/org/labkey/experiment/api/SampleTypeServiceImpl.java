@@ -155,7 +155,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
 
     private TableInfo getTinfoMaterialSource()
     {
-        return ExperimentServiceImpl.get().getTinfoMaterialSource();
+        return ExperimentServiceImpl.get().getTinfoSampleType();
     }
 
     private TableInfo getTinfoMaterial()
@@ -451,7 +451,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
     {
         SQLFragment sql = new SQLFragment()
                 .append("SELECT ms.rowId, dd.domainId\n")
-                .append("FROM ").append(ExperimentService.get().getTinfoMaterialSource(), "ms").append("\n")
+                .append("FROM ").append(ExperimentService.get().getTinfoSampleType(), "ms").append("\n")
                 .append("INNER JOIN ").append(OntologyManager.getTinfoDomainDescriptor(), "dd").append("\n")
                 .append("ON ms.lsid = dd.domainUri\n")
                 .append("WHERE ms.lsid = ?").add(getDefaultSampleTypeLsid());
@@ -609,7 +609,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         if (name == null)
             throw new ExperimentException("SampleType name is required");
 
-        TableInfo materialSourceTable = ExperimentService.get().getTinfoMaterialSource();
+        TableInfo materialSourceTable = ExperimentService.get().getTinfoSampleType();
         int nameMax = materialSourceTable.getColumn("Name").getScale();
         if (name.length() > nameMax)
             throw new ExperimentException("SampleType name may not exceed " + nameMax + " characters.");

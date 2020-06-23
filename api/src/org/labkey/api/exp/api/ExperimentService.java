@@ -462,7 +462,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     TableInfo getTinfoMaterial();
 
-    TableInfo getTinfoMaterialSource();
+    TableInfo getTinfoSampleType();
 
     TableInfo getTinfoProtocol();
 

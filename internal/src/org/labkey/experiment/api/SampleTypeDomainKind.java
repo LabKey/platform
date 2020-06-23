@@ -287,7 +287,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         super.validateOptions(container, user, options, name, domain, updatedDomainDesign);
 
         // verify and NameExpression values
-        TableInfo materialSourceTI = ExperimentService.get().getTinfoMaterialSource();
+        TableInfo materialSourceTI = ExperimentService.get().getTinfoSampleType();
 
         boolean isUpdate = domain != null;
         if (!isUpdate)

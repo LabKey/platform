@@ -274,7 +274,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
-        // delete the default "Unspecified" SampleSet TODO: move to an upgrade script in 19.2
+        // delete the default "Unspecified" SampleType TODO: move to an upgrade script in 19.2
         SampleTypeServiceImpl.get().deleteDefaultSampleType();
 
         // TODO move to an upgrade script
@@ -594,7 +594,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     public void indexDeleted()
     {
         // Clear the last indexed time on all material sources
-        new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoMaterialSource() +
+        new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoSampleType() +
                 " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
 
         // Clear the last indexed time on all data classes

@@ -51,7 +51,7 @@ public class SampleTypeWebPart extends QueryView
         _narrow = narrow;
         setSettings(createQuerySettings(viewContext, "SampleSet" + (_narrow ? "Narrow" : "")));
         setTitle("Sample Types");
-        setTitleHref(new ActionURL(ExperimentController.ListMaterialSourcesAction.class, viewContext.getContainer()));
+        setTitleHref(new ActionURL(ExperimentController.ListSampleTypesAction.class, viewContext.getContainer()));
         setShowDetailsColumn(false);
 
         if (_narrow)
@@ -89,10 +89,10 @@ public class SampleTypeWebPart extends QueryView
     {
         super.populateButtonBar(view, bar);
 
-        ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, getContainer());
+        ActionURL deleteURL = new ActionURL(ExperimentController.DeleteSampleTypesAction.class, getContainer());
         deleteURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
 
-        ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete", ActionButton.Action.GET);
+        ActionButton deleteButton = new ActionButton(ExperimentController.DeleteSampleTypesAction.class, "Delete", ActionButton.Action.GET);
         deleteButton.setDisplayPermission(DesignSampleTypePermission.class);
         deleteButton.setIconCls("trash");
         deleteButton.setURL(deleteURL);
@@ -100,7 +100,7 @@ public class SampleTypeWebPart extends QueryView
         deleteButton.setRequiresSelection(true);
         bar.add(deleteButton);
 
-        ActionURL urlInsert = new ActionURL(ExperimentController.EditSampleSetAction.class, getContainer());
+        ActionURL urlInsert = new ActionURL(ExperimentController.EditSampleTypeAction.class, getContainer());
         urlInsert.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
         ActionButton createNewButton = new ActionButton(urlInsert, "New Sample Type", ActionButton.Action.LINK);
         createNewButton.setDisplayPermission(DesignSampleTypePermission.class);

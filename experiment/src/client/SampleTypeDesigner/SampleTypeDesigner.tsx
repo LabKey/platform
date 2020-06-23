@@ -119,14 +119,14 @@ export class App extends React.PureComponent<any, State> {
     onComplete = (response: DomainDesign) => {
         const rowId = this.getRowIdParam();
         const url = rowId
-            ? ActionURL.buildURL('experiment', 'showMaterialSource', getServerContext().container.path, {rowId: rowId})
-            : ActionURL.buildURL('experiment', 'listMaterialSources', getServerContext().container.path);
+            ? ActionURL.buildURL('experiment', 'showSampleType', getServerContext().container.path, {rowId: rowId})
+            : ActionURL.buildURL('experiment', 'listSampleTypes', getServerContext().container.path);
 
         this.navigate(url);
     };
 
     onCancel = () => {
-        this.navigate(ActionURL.buildURL('experiment', 'listMaterialSources', getServerContext().container.path));
+        this.navigate(ActionURL.buildURL('experiment', 'listSampleTypes', getServerContext().container.path));
     };
 
     navigate(defaultUrl: string) {
