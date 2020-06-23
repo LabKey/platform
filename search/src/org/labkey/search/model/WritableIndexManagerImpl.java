@@ -16,6 +16,7 @@
 package org.labkey.search.model;
 
 import com.google.common.collect.ImmutableMap;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
@@ -32,12 +33,28 @@ import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.store.Directory;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
+import org.quartz.DateBuilder;
+import org.quartz.Job;
+import org.quartz.JobBuilder;
+import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.SimpleScheduleBuilder;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
+import org.quartz.TriggerKey;
+import org.quartz.impl.StdSchedulerFactory;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * User: adam
@@ -49,6 +66,7 @@ import java.util.Map;
 class WritableIndexManagerImpl extends IndexManager implements WritableIndexManager
 {
     private static final Logger _log = Logger.getLogger(WritableIndexManagerImpl.class);
+    private static final AtomicInteger _maybeRefreshRequests = new AtomicInteger();
 
     private final Object _writerLock = new Object();
     private final IndexWriter _iw;
@@ -87,9 +105,11 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
                 directory.close();
         }
 
-        return new WritableIndexManagerImpl(iw, factory, directory);
-    }
+        WritableIndexManagerImpl impl = new WritableIndexManagerImpl(iw, factory, directory);
+        MaybeRefreshJob.initializeTimer(impl);
 
+        return impl;
+    }
 
     /**
      * Open a Lucene Directory of the appropriate type. By default, we use the standard Lucene factory method, FSDirectory.open(),
@@ -104,13 +124,11 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         return LuceneSearchServiceImpl.getDirectoryType().open(path);
     }
 
-
     private WritableIndexManagerImpl(IndexWriter iw, SearcherFactory factory, Directory directory) throws IOException
     {
         super(new SearcherManager(iw, factory), directory);
         _iw = iw;
     }
-
 
     IndexWriter getIndexWriter()
     {
@@ -131,7 +149,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         {
             deleteDocument(id);
             getIndexWriter().addDocument(doc);
-            _manager.maybeRefresh(); // Make this document immediately available for searching (i.e., near-real-time searching), see #39330
+            maybeRefresh(); // Make this document immediately available for searching (i.e., near-real-time searching), see #39330
         }
     }
 
@@ -139,13 +157,24 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     @Override
     public void deleteDocument(String id)
     {
+        deleteDocuments(List.of(id));
+    }
+
+    @Override
+    public void deleteDocuments(Collection<String> ids)
+    {
+        String currentId = null;
         try
         {
             synchronized (_writerLock)
             {
                 IndexWriter iw = getIndexWriter();
-                iw.deleteDocuments(new Term(LuceneSearchServiceImpl.FIELD_NAME.uniqueId.toString(), id));
-                _manager.maybeRefresh();
+                for (var id : ids)
+                {
+                    currentId = id;
+                    iw.deleteDocuments(new Term(LuceneSearchServiceImpl.FIELD_NAME.uniqueId.toString(), id));
+                }
+                maybeRefresh();
             }
         }
         catch (IndexManagerClosedException x)
@@ -166,7 +195,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         }
         catch (Throwable e)
         {
-            _log.error("Indexing error deleting " + id, e);
+            _log.error("Indexing error deleting " + StringUtils.trimToEmpty(currentId), e);
             ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
@@ -180,7 +209,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
             {
                 IndexWriter w = getIndexWriter();
                 w.deleteDocuments(query);
-                _manager.maybeRefresh();
+                maybeRefresh();
             }
         }
         catch (AlreadyClosedException e)
@@ -221,7 +250,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
             try
             {
                 iw.commit();
-                _manager.maybeRefresh();
+                _manager.maybeRefreshBlocking();
             }
             catch (AccessDeniedException e)
             {
@@ -305,5 +334,68 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     public boolean isReal()
     {
         return true;
+    }
+
+    private void maybeRefresh()
+    {
+        _maybeRefreshRequests.incrementAndGet();
+    }
+
+    public static class MaybeRefreshJob implements Job
+    {
+        private static final int MAYBE_REFRESH_SECONDS = 5;
+        private static final TriggerKey TRIGGER_KEY = new TriggerKey(MaybeRefreshJob.class.getName());
+
+        private static void initializeTimer(WritableIndexManagerImpl impl)
+        {
+            try
+            {
+                Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+
+                // Clear previous job, if present
+                if (scheduler.checkExists(TRIGGER_KEY))
+                    scheduler.unscheduleJob(TRIGGER_KEY);
+
+                // Configure quartz Trigger
+                Trigger trigger = TriggerBuilder.newTrigger()
+                    .withSchedule(SimpleScheduleBuilder.repeatSecondlyForever(MAYBE_REFRESH_SECONDS))
+                    .startAt(DateBuilder.futureDate(MAYBE_REFRESH_SECONDS, DateBuilder.IntervalUnit.SECOND))
+                    .build();
+
+                // Quartz Job that executes maybe refresh
+                JobDetail job = JobBuilder.newJob(MaybeRefreshJob.class).build();
+                job.getJobDataMap().put(WritableIndexManagerImpl.class.getName(), impl);
+
+                // Schedule trigger to execute the maybe refresh job on the configured schedule
+                scheduler.scheduleJob(job, trigger);
+            }
+            catch (SchedulerException e)
+            {
+                throw new RuntimeException("Failed to schedule maybeRefresh job", e);
+            }
+        }
+
+        @Override
+        public void execute(JobExecutionContext context) throws JobExecutionException
+        {
+            try
+            {
+                int requests = _maybeRefreshRequests.getAndSet(0);
+                if (requests > 0)
+                {
+                    WritableIndexManagerImpl impl = (WritableIndexManagerImpl)context.getJobDetail().getJobDataMap().get(WritableIndexManagerImpl.class.getName());
+                    impl.refreshNow();
+                }
+            }
+            catch (Exception e)
+            {
+                throw new JobExecutionException(e);
+            }
+        }
+    }
+
+    public void refreshNow() throws IOException
+    {
+        _manager.maybeRefresh();
     }
 }
