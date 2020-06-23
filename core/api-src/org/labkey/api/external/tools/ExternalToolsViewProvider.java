@@ -8,6 +8,10 @@ import java.util.List;
 
 public interface ExternalToolsViewProvider
 {
-    //TODO: add javadoc
+    /**
+     *
+     * @param user with access to the views
+     * @return a list of views to be accessed via 'External Tools Setting'
+     */
     public List<ModelAndView> getViews(User user);
 }

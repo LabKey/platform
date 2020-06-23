@@ -1939,9 +1939,10 @@ public class SecurityController extends SpringActionController
                 }
             }
 
-            //TODO: this is no longer shown, should this message be part of the view or silently just not display because user does not have the access?
-//            if (!PopupUserView.allowApiKeyPage(getUser()))
-//                throw new UnauthorizedException("API keys are not configured on this site. Contact a site administrator.");
+            if (view.isEmpty())
+            {
+                view.addView(new JspView<>("/org/labkey/core/security/nothingEnabled.jsp", form));
+            }
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             view.addView(new JspView<>("/org/labkey/core/security/externalToolsBase.jsp", form));
