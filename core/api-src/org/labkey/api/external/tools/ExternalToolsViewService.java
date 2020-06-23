@@ -17,7 +17,13 @@ public interface ExternalToolsViewService
         ServiceRegistry.get().registerService(ExternalToolsViewService.class, impl);
     }
 
-    //TODO: Add javadoc
+    /**
+     * @param provider Module specific ExternalToolsViewProvider implementation
+     */
     void registerExternalAccessViewProvider(ExternalToolsViewProvider provider);
+
+    /**
+     * @return Collection of module specific ExternalToolsViewProviders
+     */
     Collection<ExternalToolsViewProvider> getExternalAccessViewProviders();
 }
