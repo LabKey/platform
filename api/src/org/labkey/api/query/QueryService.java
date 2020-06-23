@@ -383,37 +383,39 @@ public interface QueryService
     enum AuditAction
     {
         INSERT("%s row(s) were inserted.",
-                "A %s was inserted.",
+                "%s was inserted.",
                 "inserted"),
         UPDATE("%s row(s) were updated.",
-                "A %s was updated.",
+                "%s was updated.",
                 "updated"),
         DELETE("%s row(s) were deleted.",
-                "A %s was deleted.",
+                "%s was deleted.",
                 "deleted"),
         TRUNCATE("All rows were deleted.",
                 "Table was truncated",
                 "deleted"),
         MERGE("%s row(s) were inserted or updated.",
-                "A %s was inserted or updated.",
+                "%s was inserted or updated.",
                 "inserted or updated");
 
         String _commentDetailed;
         String _commentDetailedFormat;
         String _commentSummary;
         String _verbPastTense;
+        static String vowels = "aeiou";
 
         AuditAction(String commentSummary, String commentDetailedFormat, String verbPastTense)
         {
             _commentSummary = commentSummary;
             _verbPastTense = verbPastTense;
             _commentDetailedFormat = commentDetailedFormat;
-            _commentDetailed = String.format(commentDetailedFormat, "row");
+            _commentDetailed = String.format(commentDetailedFormat, "A row");
         }
 
         public String getCommentDetailed(String noun)
         {
-            return String.format(_commentDetailedFormat, noun);
+            String prefix = vowels.contains(noun.substring(0, 1).toLowerCase()) ? "An " : "A ";
+            return String.format(_commentDetailedFormat, prefix + noun);
         }
 
         public String getCommentDetailed()
