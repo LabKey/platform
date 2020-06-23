@@ -4696,20 +4696,15 @@ public class ExperimentController extends SpringActionController
         @Override
         public ModelAndView getView(DeriveMaterialForm form, BindException errors)
         {
-            if (!_materials.get(0).getContainer().equals(getContainer()))
-            {
-                ActionURL redirectURL = getViewContext().cloneActionURL().setContainer(_materials.get(0).getContainer());
-                throw new RedirectException(redirectURL);
-            }
-
             Container c = getContainer();
-            HttpView view;
 
             PipeRoot root = PipelineService.get().findPipelineRoot(c);
             if (root == null || !root.isValid())
             {
                 ActionURL pipelineURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c);
-                view = new HtmlView("You must <a href=\"" + pipelineURL + "\">configure a valid pipeline root for this folder</a> before deriving samples.");
+                return new HtmlView(DOM.DIV("You must ",
+                        DOM.A(DOM.at(href, pipelineURL), "configure a valid pipeline root for this folder"),
+                        " before deriving samples."));
             }
             else
             {
@@ -4724,8 +4719,9 @@ public class ExperimentController extends SpringActionController
 
                 DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getDataRegionSelectionKey(), form.getTargetSampleTypeId(), sampleTypes, materialsWithRoles, form.getOutputCount(), materialInputRoles, null);
                 view = new JspView<>("/org/labkey/experiment/deriveSamplesChooseTarget.jsp", bean);
+                DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getDataRegionSelectionKey(), form.getTargetSampleSetId(), sampleSets, materialsWithRoles, form.getOutputCount(), materialInputRoles, null);
+                return new JspView<>("/org/labkey/experiment/deriveSamplesChooseTarget.jsp", bean);
             }
-            return view;
         }
     }
 

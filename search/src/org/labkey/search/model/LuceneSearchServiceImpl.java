@@ -117,6 +117,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileSystemException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1182,6 +1183,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         _indexManager.deleteDocument(id);
     }
 
+    @Override
+    protected void deleteDocuments(Collection<String> ids)
+    {
+        _indexManager.deleteDocuments(ids);
+    }
 
     @Override
     protected void deleteDocumentsForPrefix(String prefix)
@@ -2116,4 +2122,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             };
         }
     }
+
+    public void refreshNow()
+    {
+        try
+        {
+            _indexManager.refreshNow();
+        }
+        catch (IOException x)
+        {
+            /* pass */
+        }
+    }
+
 }

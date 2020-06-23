@@ -243,6 +243,7 @@ public abstract class SearchTest extends StudyBaseTest
     private void renameFolderAndReSearch()
     {
         _containerHelper.renameFolder(getProjectName(), getFolderName(), FOLDER_C, true);
+        SearchAdminAPIHelper.waitForIndexerBackground();
         FOLDER_NAME = FOLDER_C;
         _searchHelper.verifySearchResults("/" + getProjectName() + "/" + getFolderName(), "searchAfterFolderRename");
     }
@@ -253,6 +254,7 @@ public abstract class SearchTest extends StudyBaseTest
         try
         {
             _containerHelper.moveFolder(getProjectName(), getFolderName(), getProjectName() + "/" + FOLDER_B, true);
+            SearchAdminAPIHelper.waitForIndexerBackground();
         }
         catch (CommandException fail)
         {
@@ -289,6 +291,7 @@ public abstract class SearchTest extends StudyBaseTest
     private void deleteFolderAndVerifyNoResults()
     {
         _containerHelper.deleteProject(getProjectName());
+        SearchAdminAPIHelper.waitForIndexerBackground();
         goToHome(); // Need to leave deleted project
         _searchHelper.verifyNoSearchResults();
     }
