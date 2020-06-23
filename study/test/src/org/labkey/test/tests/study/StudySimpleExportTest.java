@@ -39,7 +39,6 @@ import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.StudyHelper;
-import org.labkey.test.util.core.webdav.WebDavUploadHelper;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -97,8 +96,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         StudySimpleExportTest initTest = (StudySimpleExportTest)getCurrentTest();
 
         initTest.initializeFolder();
-        new WebDavUploadHelper(initTest.getProjectName() + "/" + initTest.getFolderName())
-                .uploadDirectoryContents(new File(StudyHelper.getPipelinePath()));
+        initTest.setPipelineRoot(StudyHelper.getPipelinePath());
 
         initTest.clickFolder(initTest.getFolderName()); // navigate to StudyVerifyProject/Manually Created Study
         // click button to create manual study
@@ -1005,8 +1003,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     {
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), subfolderName, "Collaboration", null, true);
         clickFolder(subfolderName);
-        new WebDavUploadHelper(getProjectName() + "/" + subfolderName)
-            .uploadDirectoryContents(new File(StudyHelper.getPipelinePath()));
+        setPipelineRoot(StudyHelper.getPipelinePath());
         importFolderFromPipeline("/export/folder.xml");
     }
 
