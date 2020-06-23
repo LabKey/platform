@@ -17,4 +17,4 @@
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-Nothing enabled
+This server does not have any configurations enabled that show settings here. An administrator can configure tool access via the Admin Console.

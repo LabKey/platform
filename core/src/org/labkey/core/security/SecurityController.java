@@ -271,9 +271,9 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public ActionURL getApiKeyURL(@NotNull URLHelper returnURL)
+        public ActionURL getExternalToolsViewURL(@NotNull URLHelper returnURL)
         {
-            ActionURL url = new ActionURL(ApiKeyAction.class, ContainerManager.getRoot());
+            ActionURL url = new ActionURL(ExternalToolsViewAction.class, ContainerManager.getRoot());
             url.addReturnURL(returnURL);
 
             return url;
@@ -1925,7 +1925,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresLogin
-    public class ApiKeyAction extends SimpleViewAction<ReturnUrlForm>
+    public class ExternalToolsViewAction extends SimpleViewAction<ReturnUrlForm>
     {
         @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors)

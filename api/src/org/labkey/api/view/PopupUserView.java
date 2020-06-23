@@ -60,7 +60,7 @@ public class PopupUserView extends PopupMenuView
 
         if (allowExternalToolSettingsPage(user))
         {
-            NavTree externalToolSettings = new NavTree("External Tool Settings", PageFlowUtil.urlProvider(SecurityUrls.class).getApiKeyURL(currentURL));
+            NavTree externalToolSettings = new NavTree("External Tool Settings", PageFlowUtil.urlProvider(SecurityUrls.class).getExternalToolsViewURL(currentURL));
             tree.addChild(externalToolSettings);
         }
 
