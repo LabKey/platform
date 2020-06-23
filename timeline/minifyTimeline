@@ -9,9 +9,9 @@ java -jar ../../compiler.jar \
   --js timeline_2.3.0/timeplot_js/timeplot-bundle.js \
   --js timeline_2.3.0/timeline_js/scripts/l10n/en/timeline.js \
   --js timeline_2.3.0/timeline_js/scripts/l10n/en/labellers.js \
-  --js jquery/jquery-1.6.1.min.js \
-  --js jquery/ui.core.js \
-  --js jquery/jquery.sparkline.js \
+  --js internal/jQuery/jquery-3.5.1.min.js \
+  --js sparkline/ui.core.js \
+  --js sparkline/jquery.sparkline.js \
   --js Timeline.js \
   --js_output_file timeline-all-min.js 
 
