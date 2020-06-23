@@ -99,6 +99,18 @@ public class DataClassDomainKindProperties
         this.sampleType = sampleType;
     }
 
+    @Deprecated // Left in place for now, until domain templates get cleaned up (e.g., media-base.template.xml)
+    public Integer getSampleSet()
+    {
+        return sampleType;
+    }
+
+    @Deprecated // Left in place for now, until domain templates get cleaned up (e.g., media-base.template.xml)
+    public void setSampleSet(Integer sampleType)
+    {
+        this.sampleType = sampleType;
+    }
+
     public String getCategory()
     {
         return StringUtils.trimToNull(category);
