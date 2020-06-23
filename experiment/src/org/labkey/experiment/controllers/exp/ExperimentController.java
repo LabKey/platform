@@ -3504,6 +3504,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
+    @ActionNames("getSampleTypeApi,getSampleSetApi") // Keep SampleType Designer happy for now. TODO: Remove
     public class GetSampleTypeApiAction extends ReadOnlyApiAction<SampleTypeForm>
     {
         @Override
