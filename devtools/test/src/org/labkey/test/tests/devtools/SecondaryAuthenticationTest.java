@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
+import org.labkey.remoteapi.query.Filter;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.remoteapi.query.Sort;
@@ -35,6 +36,8 @@ import org.labkey.test.params.devtools.SecondaryAuthenticationProvider;
 import org.labkey.test.util.PasswordUtil;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -43,6 +46,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @Category({Git.class})
@@ -92,7 +96,11 @@ public class SecondaryAuthenticationTest extends BaseWebDriverTest
         //get all the rows that are greater than or equal to today's date
         SelectRowsResponse selectRowsResponse = getLatestAuditEntries();
 
-        Map<String, Object> row = selectRowsResponse.getRows().get(0);
+        // get the one specific to TestSecondary Configuration changes
+        Map<String, Object> row = selectRowsResponse.getRows().stream()
+                .filter(a -> a.get("changes").toString().contains("TestSecondary Configuration"))
+                .findFirst().orElse(null);
+        assertNotNull("No event for TestSecondary Configuration exists today", row);
 
         String commentColVal = (String) row.get("Comment"); //get a value from Comment column
         Date auditDate = (Date)row.get("Created"); //get a value from Created ('Date' in the UI) column
@@ -153,7 +161,11 @@ public class SecondaryAuthenticationTest extends BaseWebDriverTest
         configurePage.clickSaveAndFinish();
 
         selectRowsResponse = getLatestAuditEntries();
-        row = selectRowsResponse.getRows().get(0);
+        row = selectRowsResponse.getRows().stream()
+                .filter(a -> a.get("Comment").toString().contains("TestSecondary Configuration") &&
+                        a.get("changes").toString().startsWith("enabled: true"))
+                .findFirst().orElse(null);
+        assertNotNull(row);
 
         commentColVal = (String) row.get("Comment"); //get a value from Comment column
         auditDate = (Date)row.get("Created"); //get a value from Created ('Date' in the UI) column
@@ -190,7 +202,11 @@ public class SecondaryAuthenticationTest extends BaseWebDriverTest
         Connection cn = createDefaultConnection(true);
         SelectRowsCommand selectCmd = new SelectRowsCommand("auditLog", "AuthenticationProviderConfiguration");
         selectCmd.setSorts(Arrays.asList(new Sort("Created", Sort.Direction.DESCENDING)));
-        selectCmd.setMaxRows(1);
+
+        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
+        Date date = new Date();
+
+        selectCmd.setFilters(Arrays.asList(new Filter("Date", dateFormat.format(date), Filter.Operator.DATE_GTE)));
         selectCmd.setColumns(Arrays.asList("*"));
 
         SelectRowsResponse selectResp = null;
