@@ -673,8 +673,8 @@ public class ExpDataIterators
                     final ArrayList<String> lsids = new ArrayList<>(_lsids);
                     final Runnable indexTask = _indexFunction.apply(lsids);
 
-                    if (null != DbScope.getLabKeyScope() && null != DbScope.getLabKeyScope().getCurrentTransaction())
-                        DbScope.getLabKeyScope().getCurrentTransaction().addCommitTask(indexTask, DbScope.CommitTaskOption.POSTCOMMIT);
+                    if (null != DbScope.getLabKeyScope())
+                        DbScope.getLabKeyScope().addCommitTask(indexTask, DbScope.CommitTaskOption.POSTCOMMIT);
                     else
                         indexTask.run();
                 }
