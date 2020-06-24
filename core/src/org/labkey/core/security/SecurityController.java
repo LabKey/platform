@@ -271,12 +271,17 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public ActionURL getExternalToolsViewURL(@NotNull URLHelper returnURL)
+        public ActionURL getExternalToolsViewURL(User user, @NotNull URLHelper returnURL)
         {
-            ActionURL url = new ActionURL(ExternalToolsViewAction.class, ContainerManager.getRoot());
-            url.addReturnURL(returnURL);
-
-            return url;
+            long viewCount = ExternalToolsViewService.get().getExternalAccessViewProviders().stream().
+                    filter(externalToolsViewProvider -> externalToolsViewProvider.getViews(user).size() > 0).count();
+            if (viewCount > 0)
+            {
+                ActionURL url = new ActionURL(ExternalToolsViewAction.class, ContainerManager.getRoot());
+                url.addReturnURL(returnURL);
+                return url;
+            }
+            return null;
         }
     }
 

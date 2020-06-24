@@ -58,8 +58,12 @@ public class PopupUserView extends PopupMenuView
         NavTree account = new NavTree("My Account", PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), currentURL));
         tree.addChild(account);
 
-        NavTree externalToolSettings = new NavTree("External Tool Settings", PageFlowUtil.urlProvider(SecurityUrls.class).getExternalToolsViewURL(currentURL));
-        tree.addChild(externalToolSettings);
+        ActionURL externalToolsViewURL = PageFlowUtil.urlProvider(SecurityUrls.class).getExternalToolsViewURL(user, currentURL);
+        if (null != externalToolsViewURL)
+        {
+            NavTree externalToolSettings = new NavTree("External Tool Settings", externalToolsViewURL);
+            tree.addChild(externalToolSettings);
+        }
 
         // Delegate impersonate, stop impersonating, adjust impersonation, and sign out menu items to the current ImpersonationContext
         ImpersonationContext impersonationContext = user.getImpersonationContext();
