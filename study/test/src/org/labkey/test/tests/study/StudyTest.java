@@ -137,7 +137,6 @@ public class StudyTest extends StudyBaseTest
     {
         if (!isQuickTest()) // StudyShortTest doesn't test alternate IDs
             SearchAdminAPIHelper.pauseCrawler(getDriver()); //necessary for the alternate ID testing
-        enableEmailRecorder();
 
         importStudy();
         startSpecimenImport(2);
