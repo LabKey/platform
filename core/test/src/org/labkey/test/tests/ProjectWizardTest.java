@@ -6,13 +6,16 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.TestTimeoutException;
-import org.labkey.test.categories.Git;
-import org.labkey.test.components.BodyWebPart;
+import org.labkey.test.categories.Daily;
+import org.labkey.test.util.PortalHelper;
 
 import java.util.Arrays;
 import java.util.List;
 
-@Category({Git.class})
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.junit.Assert.assertThat;
+
+@Category({Daily.class})
 public class ProjectWizardTest extends BaseWebDriverTest
 {
     @Override
@@ -54,9 +57,8 @@ public class ProjectWizardTest extends BaseWebDriverTest
                 .clickFinish();
 
         // confirm expected webparts in a collaboration project are present
-        new BodyWebPart(getDriver(), "Subfolders");
-        new BodyWebPart(getDriver(), "Wiki");
-        new BodyWebPart(getDriver(), "Messages");
+        assertThat("WebParts for collaboration folder type.",
+                new PortalHelper(getDriver()).getWebPartTitles(), hasItems("Subfolders"));
     }
 
     @Override
