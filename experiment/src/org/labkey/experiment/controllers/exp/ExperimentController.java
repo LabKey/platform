@@ -572,6 +572,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
+    @ActionNames("showMaterialSource,showSampleType") // Referenced in labkey-ui-components components/src/util/URLResolver.ts TODO: migrate
     public class ShowSampleTypeAction extends SimpleViewAction<ExpObjectForm>
     {
         private ExpSampleTypeImpl _sampleType;
