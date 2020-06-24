@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.ProtocolApplicationParameter;
@@ -63,6 +64,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Helper class to build experiments from pipeline jobs.  Used by XarGeneratorTask
@@ -460,9 +462,70 @@ public class ExpGeneratorHelper
                 outputApp.addDataInput(user, data, role);
             }
         }
+        if (fromProvenanceRecording)
+        {
+            promoteInputs(actions, run, datas, user, container);
+        }
         ExperimentServiceImpl.get().queueSyncRunEdges(run);
 
         return run;
+    }
+
+    /**
+     * Promote the inputs that are attached to the inner steps.
+     * Inputs get promoted -
+     * <li>if they are not the inputs to the run</li>
+     * <li>and if they are not the output of a previous step</li>
+     * */
+    static private void promoteInputs(Set<RecordedAction> actions, ExpRun run,Map<URI, ExpData> datas, User user, Container container)
+    {
+        List<RecordedAction> actionsList = new ArrayList<>(actions);
+        Set<String> runMaterialInputs = run
+                .getMaterialInputs()
+                .keySet()
+                .stream()
+                .map(Identifiable::getLSID)
+                .collect(Collectors.toSet());
+
+        Set<String> runDataInputs = run
+                .getDataInputs()
+                .keySet()
+                .stream()
+                .map(Identifiable::getLSID)
+                .collect(Collectors.toSet());
+
+        // skipping the first action as the inputs to first action are attached as run inputs for provenance recording
+        for (int i = 1; i < actionsList.size(); i++)
+        {
+            RecordedAction prevAction = actionsList.get(i-1);
+
+            actionsList.get(i).getMaterialInputs().forEach(materialLsid -> {
+                if (!runMaterialInputs.contains(materialLsid) && !prevAction.getMaterialOutputs().contains(materialLsid))
+                {
+                    // promote material input to run
+                    addMaterialInput(run, run.getInputProtocolApplication(), materialLsid, user);
+                }
+            });
+
+            actionsList.get(i).getInputs().forEach(dataFile -> {
+                if (!runDataInputs.contains(dataFile.getURI().toString()) && !prevAction.getInputs().contains(dataFile))
+                {
+                    // promote data input to run
+                    ExpData data = null;
+
+                    try
+                    {
+                        data = addData(container, user, datas, dataFile.getURI(), null);
+                    }
+                    catch (ExperimentException e)
+                    {
+                        e.printStackTrace();
+                    }
+
+                    run.getInputProtocolApplication().addDataInput(user, data, dataFile.getRole());
+                }
+            });
+        }
     }
 
     static private void addMaterialInput(ExpRun run, ExpProtocolApplication app, String lsid, User user)
