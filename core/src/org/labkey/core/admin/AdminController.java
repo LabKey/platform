@@ -2406,7 +2406,6 @@ public class AdminController extends SpringActionController
 
 
     @AdminConsoleAction(ApplicationAdminPermission.class)
-    @RequiresPermission(AdminPermission.class)
     public class ResetErrorMarkAction extends ConfirmAction
     {
         @Override
