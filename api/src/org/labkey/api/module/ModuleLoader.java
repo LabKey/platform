@@ -443,6 +443,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         _webappDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(servletCtx.getRealPath("")));
 
         // load startup configuration information from properties, side-effect may set newinstall=true
+        // Wiki: https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using
         loadStartupProps();
 
         List<Map.Entry<File,File>> explodedModuleDirs = new ArrayList<>();
@@ -2317,6 +2318,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
 
+    /**
+     * Loads startup/bootstrap properties from configuration files.
+     * Wiki: https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using
+     */
     private void loadStartupProps()
     {
         File propsDir = new File(_webappDir.getParent(), "startup");

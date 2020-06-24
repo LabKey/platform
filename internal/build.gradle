@@ -5,7 +5,7 @@ apply plugin: 'java-library'
 apply plugin: 'org.labkey.javaModule'
 
 dependencies {
-   BuildUtils.addLabKeyDependency(project: project, config: "api", depProjectPath: BuildUtils.getApiProjectPath(project.gradle))
+   BuildUtils.addLabKeyDependency(project: project, config: "api", depProjectPath: BuildUtils.getApiProjectPath(project.gradle), depProjectConfig: "apiElements")
    if (project.configurations.findByName("dedupe") != null)
       BuildUtils.addLabKeyDependency(project: project, config: "dedupe", depProjectPath: BuildUtils.getApiProjectPath(project.gradle), depProjectConfig: "external")
    implementation "org.apache.tomcat:tomcat-jsp-api:${apacheTomcatVersion}"
