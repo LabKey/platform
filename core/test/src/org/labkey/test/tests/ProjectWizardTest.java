@@ -7,6 +7,9 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Daily;
+import org.labkey.test.pages.admin.CreateProjectPage;
+import org.labkey.test.pages.admin.SetFolderPermissionsPage;
+import org.labkey.test.pages.admin.SetInitialFolderSettingsPage;
 import org.labkey.test.util.PortalHelper;
 
 import java.util.Arrays;
@@ -14,6 +17,7 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 @Category({Daily.class})
 public class ProjectWizardTest extends BaseWebDriverTest
@@ -43,16 +47,32 @@ public class ProjectWizardTest extends BaseWebDriverTest
         goToHome();
     }
 
+    /**
+     * regression coverage for https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=37736
+     * @throws Exception
+     */
     @Test
     public void testCreateFromProjectMenu() throws Exception
     {
-        projectMenu()
-                .navigateToCreateProjectPage()
+        CreateProjectPage createProjectPage = projectMenu()
+                .navigateToCreateProjectPage();
+        assertTrue("the [Create Project] wizard step is not correctly highlit",
+                createProjectPage.isCurrentStepHighlit());
+
+        SetFolderPermissionsPage setFolderPermissionsPage = createProjectPage
                 .setFolderType("Collaboration")
                 .setProjectName(getProjectName())
-                .clickNext()
+                .clickNext();
+        assertTrue("the [Users / Permissions] wizard step is not correctly highlit",
+                setFolderPermissionsPage.isCurrentStepHighlit());
+
+        SetInitialFolderSettingsPage setInitialFolderSettingsPage = setFolderPermissionsPage
                 .setMyUserOnly()
-                .clickNext()
+                .clickNext();
+        assertTrue("the [Project Settings] wizard step is not correctly highlit",
+                setInitialFolderSettingsPage.isCurrentStepHighlit());
+
+        setInitialFolderSettingsPage
                 .useDefaultLocation()
                 .clickFinish();
 
