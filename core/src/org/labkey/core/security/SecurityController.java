@@ -1939,7 +1939,7 @@ public class SecurityController extends SpringActionController
                 }
             }
 
-            if (view.isEmpty())
+            if (view.isEmpty() || !view.hasView())
             {
                 view.addView(new JspView<>("/org/labkey/core/security/nothingEnabled.jsp", form));
             }
