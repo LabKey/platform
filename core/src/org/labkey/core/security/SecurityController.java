@@ -271,6 +271,7 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
+        @Nullable
         public ActionURL getExternalToolsViewURL(User user, @NotNull URLHelper returnURL)
         {
             long viewCount = ExternalToolsViewService.get().getExternalAccessViewProviders().stream().
