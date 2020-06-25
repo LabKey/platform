@@ -1937,15 +1937,18 @@ public class SecurityController extends SpringActionController
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
             VBox view = new VBox();
+            int viewCount = 0;
             for (ExternalToolsViewProvider externalAccessViewProvider : ExternalToolsViewService.get().getExternalAccessViewProviders())
             {
                 for (ModelAndView providerView : externalAccessViewProvider.getViews(getUser()))
                 {
                     view.addView(providerView);
+                    ++viewCount;
                 }
             }
 
-            if (view.isEmpty() || !view.hasView())
+            //using view.isEmpty() || !view.hasView() wasn't reliable, so resorting to this count approach
+            if (viewCount == 0)
             {
                 view.addView(new JspView<>("/org/labkey/core/security/nothingEnabled.jsp", form));
             }
