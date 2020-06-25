@@ -175,11 +175,13 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         {
             if (!reshow)
             {
+                Map<String, Object> formDefaults = new HashMap<>();
+
                 Domain domain = PropertyService.get().getDomain(getContainer(), _ds.getTypeURI());
                 if (domain != null)
                 {
                     Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(getContainer(), domain, getUser());
-                    Map<String, Object> formDefaults = new HashMap<>();
+
                     for (Map.Entry<DomainProperty, Object> entry : defaults.entrySet())
                     {
                         if (entry.getValue() != null)
@@ -189,8 +191,14 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                             formDefaults.put(updateForm.getFormFieldName(temp), stringValue);
                         }
                     }
-                    ((InsertView) view).setInitialValues(formDefaults);
                 }
+
+                for (Map.Entry<String, Object> typedColEntry : updateForm.getTypedColumns().entrySet())
+                {
+                    formDefaults.put(updateForm.getFormFieldName(typedColEntry.getKey()), typedColEntry.getValue());
+                }
+
+                ((InsertView) view).setInitialValues(formDefaults);
             }
         }
         DataRegion dataRegion = view.getDataRegion();

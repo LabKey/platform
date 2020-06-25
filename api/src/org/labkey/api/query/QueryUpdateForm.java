@@ -81,6 +81,11 @@ public class QueryUpdateForm extends TableViewForm
     @Override
     public String getFormFieldName(@NotNull ColumnInfo column)
     {
-        return (_ignorePrefix ? "" : PREFIX) + column.getName();
+        return getFormFieldName(column.getName());
+    }
+
+    public String getFormFieldName(@NotNull String columnName)
+    {
+        return (_ignorePrefix ? "" : PREFIX) + columnName;
     }
 }
