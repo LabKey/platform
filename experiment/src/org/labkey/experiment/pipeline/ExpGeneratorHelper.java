@@ -477,7 +477,7 @@ public class ExpGeneratorHelper
      * <li>if they are not the inputs to the run</li>
      * <li>and if they are not the output of a previous step</li>
      * */
-    static private void promoteInputs(Set<RecordedAction> actions, ExpRun run,Map<URI, ExpData> datas, User user, Container container)
+    static private void promoteInputs(Set<RecordedAction> actions, ExpRun run, Map<URI, ExpData> datas, User user, Container container)
     {
         List<RecordedAction> actionsList = new ArrayList<>(actions);
         Set<String> runMaterialInputs = run
