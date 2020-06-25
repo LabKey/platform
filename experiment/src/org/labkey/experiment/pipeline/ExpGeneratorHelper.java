@@ -519,7 +519,7 @@ public class ExpGeneratorHelper
                     }
                     catch (ExperimentException e)
                     {
-                        e.printStackTrace();
+                        throw new RuntimeException(e);
                     }
 
                     run.getInputProtocolApplication().addDataInput(user, data, dataFile.getRole());
