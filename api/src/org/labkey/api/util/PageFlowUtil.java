@@ -1885,7 +1885,10 @@ public class PageFlowUtil
         {
             return staticResourcePrefix + slash + resourcePath;
         }
-        return AppProps.getInstance().getContextPath() + slash + resourcePath + "?" + getServerSessionHash();
+        if (resourcePath.contains(".cache."))        // CONSIDER: move DavController.alwaysCache() somewhere we can call it
+            return AppProps.getInstance().getContextPath() + slash + resourcePath;
+        else
+            return AppProps.getInstance().getContextPath() + slash + resourcePath + "?" + getServerSessionHash();
     }
 
 

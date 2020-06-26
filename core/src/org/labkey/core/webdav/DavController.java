@@ -4933,14 +4933,18 @@ public class DavController extends SpringActionController
     }
 
 
-    Path extPath = new Path(PageFlowUtil.extJsRoot());
-    Path mcePath = new Path("timymce");
+    static final Path jquery = new Path("internal","jQuery");
 
-    boolean alwaysCacheFile(Path p)
+    public static boolean alwaysCacheFile(Path p)
     {
-        return p.startsWith(extPath) || p.startsWith(mcePath);
+        String firstpart = p.get(0);
+        if (firstpart.startsWith("ext-"))
+            return true;
+        if (p.startsWith(jquery))
+            return true;
+        String name = p.getName();
+        return name.contains(".cache.");
     }
-
 
     private WebdavStatus serveResource(WebdavResource resource, boolean content)
             throws DavException, IOException
@@ -4973,12 +4977,11 @@ public class DavController extends SpringActionController
 
             if (!resource.getName().contains(".nocache."))
             {
-                boolean isPerfectCache = resource.getName().contains(".cache.");
                 boolean allowCaching = AppProps.getInstance().isCachingAllowed();
-
-                if (allowCaching || isPerfectCache || alwaysCacheFile(resource.getPath()))
+                boolean alwaysCache = alwaysCacheFile(resource.getPath());
+                if (allowCaching || alwaysCache)
                 {
-                    getResponse().setPublicStatic(isPerfectCache ? 365 : 35);
+                    getResponse().setPublicStatic(alwaysCache ? 365 : 35);
                 }
             }
         }
