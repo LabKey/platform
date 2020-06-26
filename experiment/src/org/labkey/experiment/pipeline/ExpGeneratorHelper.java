@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
@@ -56,9 +57,8 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -494,6 +494,18 @@ public class ExpGeneratorHelper
                 .map(Identifiable::getLSID)
                 .collect(Collectors.toSet());
 
+        String lsid = "lsid";
+        String datafileurl = "datafileurl";
+
+        Collection<Map<String, Object>> containerData = new TableSelector(ExperimentService.get().getTinfoData(), Set.of(lsid, datafileurl)).getMapCollection();
+        Map<String, String> containerDataLsids = new HashMap<>();
+        containerData.forEach(containerDataMap -> {
+            if (null != containerDataMap.get(datafileurl))
+            {
+                containerDataLsids.put(containerDataMap.get(datafileurl).toString(), containerDataMap.get(lsid).toString());
+            }
+        });
+
         // skipping the first action as the inputs to first action are attached as run inputs for provenance recording
         for (int i = 1; i < actionsList.size(); i++)
         {
@@ -508,7 +520,8 @@ public class ExpGeneratorHelper
             });
 
             actionsList.get(i).getInputs().forEach(dataFile -> {
-                if (!runDataInputs.contains(dataFile.getURI().toString()) && !prevAction.getInputs().contains(dataFile))
+                String dataLsid = containerDataLsids.get(dataFile.getURI().toString());
+                if (!runDataInputs.contains(dataLsid) && !prevAction.getOutputs().contains(dataFile))
                 {
                     // promote data input to run
                     ExpData data = null;
