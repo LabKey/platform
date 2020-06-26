@@ -37,7 +37,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.70.3"
+    "@labkey/components": "0.70.4-fb-Issue40591-LockOptions.3"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.13.0",
