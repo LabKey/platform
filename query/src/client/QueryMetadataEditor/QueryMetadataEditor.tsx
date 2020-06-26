@@ -336,7 +336,7 @@ export class App extends PureComponent<any, Partial<IAppState>> {
                             hideTextOptions: true,
                             disableMvEnabled: true,
                             hideDeleteIcon: userDefinedQuery,
-                            lockName: userDefinedQuery,
+                            disableNameInput: userDefinedQuery,
                         }}
                     />
                 }
