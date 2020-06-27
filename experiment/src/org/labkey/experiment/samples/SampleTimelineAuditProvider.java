@@ -29,6 +29,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
     public static final String SAMPLE_ID_COLUMN_NAME = "SampleID";
     public static final String METADATA_COLUMN_NAME = "Metadata";
     public static final String IS_LINEAGE_UPDATE_COLUMN_NAME = "IsLineageUpdate";
+    public static final String INVENTORY_UPDATE_TYPE_COLUMN_NAME = "InventoryUpdateType";
 
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
@@ -43,6 +44,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
         defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_NAME_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_ID_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(IS_LINEAGE_UPDATE_COLUMN_NAME));
+        defaultVisibleColumns.add(FieldKey.fromParts(INVENTORY_UPDATE_TYPE_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
@@ -108,6 +110,10 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
                 {
                     col.setLabel("Lineage Update?");
                 }
+                else if (INVENTORY_UPDATE_TYPE_COLUMN_NAME.equalsIgnoreCase(col.getName()))
+                {
+                    col.setLabel("Inventory Update Type");
+                }
             }
         };
         table.setTitleColumn(SAMPLE_NAME_COLUMN_NAME);
@@ -144,6 +150,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
             fields.add(createPropertyDescriptor(SAMPLE_ID_COLUMN_NAME, PropertyType.INTEGER));
             fields.add(createPropertyDescriptor(SAMPLE_LSID_COLUMN_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(IS_LINEAGE_UPDATE_COLUMN_NAME, PropertyType.BOOLEAN));
+            fields.add(createPropertyDescriptor(INVENTORY_UPDATE_TYPE_COLUMN_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(METADATA_COLUMN_NAME, PropertyType.STRING, -1));        // varchar max
             fields.add(createPropertyDescriptor(OLD_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
             fields.add(createPropertyDescriptor(NEW_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max

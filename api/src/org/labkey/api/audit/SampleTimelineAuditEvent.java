@@ -74,6 +74,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     private int _sampleTypeId;
     private boolean _isLineageUpdate;
     private String _metadata;
+    private String _inventoryUpdateType;
 
     public SampleTimelineAuditEvent()
     {
@@ -155,6 +156,16 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         _metadata = metadata;
     }
 
+    public String getInventoryUpdateType()
+    {
+        return _inventoryUpdateType;
+    }
+
+    public void setInventoryUpdateType(String inventoryUpdateType)
+    {
+        _inventoryUpdateType = inventoryUpdateType;
+    }
+
     @Override
     public Map<String, Object> getAuditLogMessageElements()
     {
@@ -165,6 +176,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         elements.put("sampleType", getSampleType());
         elements.put("sampleTypeId", getSampleTypeId());
         elements.put("isLineageUpdate", getIsLineageUpdate());
+        elements.put("inventoryUpdateType", getInventoryUpdateType());
         elements.putAll(super.getAuditLogMessageElements());
         return elements;
     }

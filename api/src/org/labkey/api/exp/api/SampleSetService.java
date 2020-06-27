@@ -143,4 +143,6 @@ public interface SampleSetService
     void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, QueryService.AuditAction action, List<Map<String, Object>>... params);
 
     void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata);
+
+    void addAuditEvent(User user, Container container, SampleInventoryUpdateType updateType, ExpMaterial sample, Map<String, Object> metadata);
 }

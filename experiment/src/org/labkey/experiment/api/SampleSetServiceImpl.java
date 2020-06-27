@@ -60,6 +60,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleInventoryUpdateType;
 import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.property.Domain;
@@ -973,8 +974,7 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
         return event;
     }
 
-    @Override
-    public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata)
+    private SampleTimelineAuditEvent createAuditRecord(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(container.getId(), comment);
         if (container.getProject() != null)
@@ -989,6 +989,20 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
             event.setSampleTypeId(type.getRowId());
         }
         event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(container, metadata));
+        return event;
+    }
+
+    @Override
+    public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata)
+    {
+        AuditLogService.get().addEvent(user, createAuditRecord(user, container, comment, sample, metadata));
+    }
+
+    @Override
+    public void addAuditEvent(User user, Container container, SampleInventoryUpdateType updateType, ExpMaterial sample, Map<String, Object> metadata)
+    {
+        SampleTimelineAuditEvent event = createAuditRecord(user, container, "Inventory item updated", sample, metadata);
+        event.setInventoryUpdateType(updateType.toString());
         AuditLogService.get().addEvent(user, event);
     }
 }
