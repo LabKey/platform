@@ -18,8 +18,10 @@ package org.labkey.experiment.pipeline;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Identifiable;
@@ -497,14 +499,8 @@ public class ExpGeneratorHelper
         String lsid = "lsid";
         String datafileurl = "datafileurl";
 
-        Collection<Map<String, Object>> containerData = new TableSelector(ExperimentService.get().getTinfoData(), Set.of(lsid, datafileurl)).getMapCollection();
-        Map<String, String> containerDataLsids = new HashMap<>();
-        containerData.forEach(containerDataMap -> {
-            if (null != containerDataMap.get(datafileurl))
-            {
-                containerDataLsids.put(containerDataMap.get(datafileurl).toString(), containerDataMap.get(lsid).toString());
-            }
-        });
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts(lsid), null, CompareType.NONBLANK);
 
         // skipping the first action as the inputs to first action are attached as run inputs for provenance recording
         for (int i = 1; i < actionsList.size(); i++)
@@ -520,22 +516,28 @@ public class ExpGeneratorHelper
             });
 
             actionsList.get(i).getInputs().forEach(dataFile -> {
-                String dataLsid = containerDataLsids.get(dataFile.getURI().toString());
-                if (!runDataInputs.contains(dataLsid) && !prevAction.getOutputs().contains(dataFile))
+                filter.addCondition(FieldKey.fromString(datafileurl), dataFile.getURI().toString(), CompareType.EQUAL);
+                Map<String,Object> dataLsidMap = new TableSelector(ExperimentService.get().getTinfoData(), Set.of(lsid), filter, null).getMap();
+
+                if (null != dataLsidMap)
                 {
-                    // promote data input to run
-                    ExpData data = null;
-
-                    try
+                    String dataLsid = dataLsidMap.get(lsid).toString();
+                    if (!runDataInputs.contains(dataLsid) && !prevAction.getOutputs().contains(dataFile))
                     {
-                        data = addData(container, user, datas, dataFile.getURI(), null);
-                    }
-                    catch (ExperimentException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
+                        // promote data input to run
+                        ExpData data = null;
 
-                    run.getInputProtocolApplication().addDataInput(user, data, dataFile.getRole());
+                        try
+                        {
+                            data = addData(container, user, datas, dataFile.getURI(), null);
+                        }
+                        catch (ExperimentException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+
+                        run.getInputProtocolApplication().addDataInput(user, data, dataFile.getRole());
+                    }
                 }
             });
         }
