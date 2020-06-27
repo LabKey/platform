@@ -714,9 +714,6 @@
             highlightGroupsForPart(-1);
         });
 
-        // we don't want ptidDiv to change height as it filters, so set height explicitly after first layout
-        ptidDiv.setHeight(ptidDiv.getHeight());
-
         // the groups panel starts with a height of 500, but make that bigger to match the ptid div
         var groupsPanel = Ext4.ComponentQuery.query('participantfilter[id=<%=(groupsPanelId)%>]');
         if (groupsPanel.length == 1 && groupsPanel[0].getHeight() < ptidDiv.getHeight())
@@ -744,7 +741,7 @@ Ext4.onReady(<%=viewObject%>.render, <%=viewObject%>);
                     <%= !bean.getWide() ? "<br/>" : "" %>
                     <span id="<%=divId%>.status" name="status" style="margin-bottom: 10px;">Loading...</span>
                 </div>
-                <div style="overflow-y:auto; height: 470px;" id="<%= listDivId %>"></div>
+                <div style="overflow-y:auto;" id="<%= listDivId %>"></div>
             </td>
         </tr>
     </table>
