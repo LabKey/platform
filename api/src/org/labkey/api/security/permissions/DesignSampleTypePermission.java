@@ -15,10 +15,22 @@
  */
 package org.labkey.api.security.permissions;
 
-public class DesignSampleSetPermission extends AbstractPermission
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Collection;
+import java.util.List;
+
+public class DesignSampleTypePermission extends AbstractPermission
 {
-    public DesignSampleSetPermission()
+    public DesignSampleTypePermission()
     {
-        super("Design Sample Sets", "Can create and design new samples sets or change existing ones.");
+        super("Design Sample Types", "Can create and design new samples types or change existing ones.");
+    }
+
+    @Override
+    public @NotNull Collection<String> getSerializationAliases()
+    {
+        // Support legacy name
+        return List.of("org.labkey.api.security.permissions.DesignSampleSetPermission");
     }
 }

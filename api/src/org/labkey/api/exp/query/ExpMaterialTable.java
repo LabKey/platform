@@ -19,7 +19,7 @@ package org.labkey.api.exp.query;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 
 import java.util.Set;
 
@@ -53,6 +53,6 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         Properties
     }
 
-    void populate(@Nullable ExpSampleSet ss, boolean filterSampleSet);
-    void setSampleSet(ExpSampleSet ss, boolean filter);
+    void populate(@Nullable ExpSampleType st, boolean filterSampleType);
+    void setSampleType(ExpSampleType st, boolean filter);
 }

@@ -35,14 +35,14 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.query.ExpSampleSetTable;
+import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
@@ -50,7 +50,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.DesignSampleSetPermission;
+import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -67,7 +67,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKindProperties>
+public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKindProperties>
 {
     private static final Logger logger;
     public static final String NAME = "SampleSet";
@@ -86,7 +86,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
         )));
 
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
-        RESERVED_NAMES.addAll(Arrays.stream(ExpSampleSetTable.Column.values()).map(ExpSampleSetTable.Column::name).collect(Collectors.toList()));
+        RESERVED_NAMES.addAll(Arrays.stream(ExpSampleTypeTable.Column.values()).map(ExpSampleTypeTable.Column::name).collect(Collectors.toList()));
         RESERVED_NAMES.add("CpasType");
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
@@ -99,10 +99,10 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
                 new PropertyStorageSpec.Index(true, "lsid")
         )));
 
-        logger = Logger.getLogger(SampleSetDomainKind.class);
+        logger = Logger.getLogger(SampleTypeDomainKind.class);
     }
 
-    public SampleSetDomainKind()
+    public SampleTypeDomainKind()
     {
     }
 
@@ -148,12 +148,12 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
     @Override
     public String generateDomainURI(String schemaName, String queryName, Container container, User user)
     {
-        return ExperimentService.get().generateLSID(container, ExpSampleSet.class, queryName);
+        return ExperimentService.get().generateLSID(container, ExpSampleType.class, queryName);
     }
 
-    private ExpSampleSet getSampleSet(Domain domain)
+    private ExpSampleType getSampleType(Domain domain)
     {
-        return SampleSetService.get().getSampleSet(domain.getTypeURI());
+        return SampleTypeService.get().getSampleType(domain.getTypeURI());
     }
 
     @Override
@@ -165,27 +165,27 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
     @Override
     public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
-        ExpSampleSet ss = getSampleSet(domain);
-        if (ss == null)
+        ExpSampleType st = getSampleType(domain);
+        if (st == null)
             return null;
 
-        return ss.detailsURL();
+        return st.detailsURL();
     }
 
     @Override
     public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateSampleSetURL(container);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateSampleTypeURL(container);
     }
 
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        ExpSampleSet ss = getSampleSet(domain);
-        if (ss == null)
+        ExpSampleType st = getSampleType(domain);
+        if (st == null)
             return null;
 
-        return ss.urlEditDefinition(containerUser);
+        return st.urlEditDefinition(containerUser);
     }
 
     @Override
@@ -202,19 +202,19 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
         if (domain == null)
             return reserved;
 
-        ExpSampleSet ss = getSampleSet(domain);
-        if (ss == null)
+        ExpSampleType st = getSampleType(domain);
+        if (st == null)
             return reserved;
 
         try
         {
-            Map<String, String> aliases = ss.getImportAliasMap();
+            Map<String, String> aliases = st.getImportAliasMap();
             reserved.addAll(aliases.keySet());
 
         }
         catch (IOException e)
         {
-            logger.error(String.format("Failed to parse SampleSet parent aliases for [%1$s]", ss.getRowId()), e);
+            logger.error(String.format("Failed to parse SampleType parent aliases for [%1$s]", st.getRowId()), e);
         }
         return reserved;
     }
@@ -235,10 +235,10 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
     @Override
     public String getTypeLabel(Domain domain)
     {
-        ExpSampleSet ss = getSampleSet(domain);
-        if (null == ss)
-            return "Sample Set '" + domain.getName() + "'";
-        return ss.getName();
+        ExpSampleType st = getSampleType(domain);
+        if (null == st)
+            return "Sample Type '" + domain.getName() + "'";
+        return st.getName();
     }
 
     @Override
@@ -252,25 +252,25 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
     @Override
     public boolean canEditDefinition(User user, Domain domain)
     {
-        // Cannot edit default sample set
-        ExpSampleSet ss = getSampleSet(domain);
-        if (ss == null || SampleSetService.get().getDefaultSampleSetLsid().equals(domain.getTypeURI()))
+        // Cannot edit default sample type
+        ExpSampleType st = getSampleType(domain);
+        if (st == null || SampleTypeService.get().getDefaultSampleTypeLsid().equals(domain.getTypeURI()))
         {
             return false;
         }
-        return domain.getContainer().hasPermission(user, DesignSampleSetPermission.class);
+        return domain.getContainer().hasPermission(user, DesignSampleTypePermission.class);
     }
 
     @Override
     public boolean canCreateDefinition(User user, Container container)
     {
-        return container.hasPermission(user, DesignSampleSetPermission.class);
+        return container.hasPermission(user, DesignSampleTypePermission.class);
     }
 
     @Override
     public boolean canDeleteDefinition(User user, Domain domain)
     {
-        return domain.getContainer().hasPermission(user, DesignSampleSetPermission.class);
+        return domain.getContainer().hasPermission(user, DesignSampleTypePermission.class);
     }
 
     @Override
@@ -278,7 +278,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
     public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, @NotNull GWTDomain<? extends GWTPropertyDescriptor> update,
                                             @Nullable SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
     {
-        return SampleSetService.get().updateSampleSet(original, update, options, container, user, includeWarnings);
+        return SampleTypeService.get().updateSampleType(original, update, options, container, user, includeWarnings);
     }
 
     @Override
@@ -287,7 +287,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
         super.validateOptions(container, user, options, name, domain, updatedDomainDesign);
 
         // verify and NameExpression values
-        TableInfo materialSourceTI = ExperimentService.get().getTinfoMaterialSource();
+        TableInfo materialSourceTI = ExperimentService.get().getTinfoSampleType();
 
         boolean isUpdate = domain != null;
         if (!isUpdate)
@@ -298,8 +298,8 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
             }
             else
             {
-                ExpSampleSet ss = SampleSetService.get().getSampleSet(container, user, name);
-                if (ss != null)
+                ExpSampleType st = SampleTypeService.get().getSampleType(container, user, name);
+                if (st != null)
                     throw new IllegalArgumentException("A Sample Type with that name already exists.");
             }
         }
@@ -322,17 +322,17 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
         if (aliasMap == null || aliasMap.size() == 0)
             return;
 
-        SampleSetService ss = SampleSetService.get();
-        ExpSampleSet sampleSet = options.getRowId() >= 0 ? ss.getSampleSet(options.getRowId()) : null;
-        Domain ssDomain = sampleSet != null ? sampleSet.getDomain() : null;
-        Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(ssDomain));
+        SampleTypeService ss = SampleTypeService.get();
+        ExpSampleType sampleType = options.getRowId() >= 0 ? ss.getSampleType(options.getRowId()) : null;
+        Domain stDomain = sampleType != null ? sampleType.getDomain() : null;
+        Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(stDomain));
         Set<String> existingAliases = new CaseInsensitiveHashSet();
         Set<String> dupes = new CaseInsensitiveHashSet();
 
         try
         {
-            if (sampleSet != null)
-                existingAliases = new CaseInsensitiveHashSet(sampleSet.getImportAliasMap().keySet());
+            if (sampleType != null)
+                existingAliases = new CaseInsensitiveHashSet(sampleType.getImportAliasMap().keySet());
         }
         catch (IOException e)
         {
@@ -367,7 +367,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
                 throw new IllegalArgumentException(String.format("Duplicate parent alias header found: %1$s", trimmedKey));
             }
 
-            //Check if parent alias has correct format MaterialInput/<name> or NEW_SAMPLE_SET_ALIAS_VALUE
+            //Check if parent alias has correct format MaterialInput/<name> or NEW_SAMPLE_TYPE_ALIAS_VALUE
             if (!ss.parentAliasHasCorrectFormat(trimmedValue))
                 throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", trimmedValue));
         });
@@ -393,7 +393,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
 
         if (arguments != null)
         {
-            //These are outdated but some clients still use them, or have existing sample sets that do.
+            //These are outdated but some clients still use them, or have existing sample types that do.
             List<Integer> idCols = (arguments.getIdCols() != null) ? arguments.getIdCols() : Collections.emptyList();
             idCol1 = idCols.size() > 0 ? idCols.get(0) : -1;
             idCol2 = idCols.size() > 1 ? idCols.get(1) : -1;
@@ -404,10 +404,10 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
             nameExpression = StringUtils.trimToNull(arguments.getNameExpression());
             aliases = arguments.getImportAliases();
         }
-        ExpSampleSet ss;
+        ExpSampleType st;
         try
         {
-            ss = SampleSetService.get().createSampleSet(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo, aliases);
+            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo, aliases);
         }
         catch (SQLException e)
         {
@@ -417,17 +417,17 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
         {
             throw new RuntimeException(e);
         }
-        return ss.getDomain();
+        return st.getDomain();
     }
 
     @Override
     public void deleteDomain(User user, Domain domain)
     {
-        ExpSampleSet ss = SampleSetService.get().getSampleSet(domain.getTypeURI());
-        if (ss == null)
-            throw new NotFoundException("Sample Set not found: " + domain);
+        ExpSampleType st = SampleTypeService.get().getSampleType(domain.getTypeURI());
+        if (st == null)
+            throw new NotFoundException("Sample Type not found: " + domain);
 
-        ss.delete(user);
+        st.delete(user);
     }
 
     @Override
@@ -442,9 +442,9 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
     {
         super.invalidate(domain);
 
-        ExpSampleSet ss = SampleSetService.get().getSampleSet(domain.getTypeURI());
-        if (ss != null)
-            SampleSetService.get().indexSampleSet(ss);
+        ExpSampleType st = SampleTypeService.get().getSampleType(domain.getTypeURI());
+        if (st != null)
+            SampleTypeService.get().indexSampleType(st);
     }
 
     @Override
@@ -468,7 +468,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
     @Override
     public SampleTypeDomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
     {
-        ExpSampleSet sampleSet = domain != null ? SampleSetService.get().getSampleSet(domain.getDomainURI()) : null;
-        return new SampleTypeDomainKindProperties(sampleSet);
+        ExpSampleType sampleType = domain != null ? SampleTypeService.get().getSampleType(domain.getDomainURI()) : null;
+        return new SampleTypeDomainKindProperties(sampleType);
     }
 }
