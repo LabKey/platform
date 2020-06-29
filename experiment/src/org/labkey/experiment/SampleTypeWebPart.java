@@ -24,7 +24,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.permissions.DesignSampleSetPermission;
+import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -40,18 +40,18 @@ import java.io.PrintWriter;
  * User: jeckels
  * Date: Oct 20, 2005
  */
-public class SampleSetWebPart extends QueryView
+public class SampleTypeWebPart extends QueryView
 {
     private String _errorMessage;
     private final boolean _narrow;
 
-    public SampleSetWebPart(boolean narrow, ViewContext viewContext)
+    public SampleTypeWebPart(boolean narrow, ViewContext viewContext)
     {
         super(new ExpSchema(viewContext.getUser(), viewContext.getContainer()));
         _narrow = narrow;
         setSettings(createQuerySettings(viewContext, "SampleSet" + (_narrow ? "Narrow" : "")));
-        setTitle("Sample Sets");
-        setTitleHref(new ActionURL(ExperimentController.ListMaterialSourcesAction.class, viewContext.getContainer()));
+        setTitle("Sample Types");
+        setTitleHref(new ActionURL(ExperimentController.ListSampleTypesAction.class, viewContext.getContainer()));
         setShowDetailsColumn(false);
 
         if (_narrow)
@@ -89,21 +89,21 @@ public class SampleSetWebPart extends QueryView
     {
         super.populateButtonBar(view, bar);
 
-        ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, getContainer());
+        ActionURL deleteURL = new ActionURL(ExperimentController.DeleteSampleTypesAction.class, getContainer());
         deleteURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
 
-        ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete", ActionButton.Action.GET);
-        deleteButton.setDisplayPermission(DesignSampleSetPermission.class);
+        ActionButton deleteButton = new ActionButton(ExperimentController.DeleteSampleTypesAction.class, "Delete", ActionButton.Action.GET);
+        deleteButton.setDisplayPermission(DesignSampleTypePermission.class);
         deleteButton.setIconCls("trash");
         deleteButton.setURL(deleteURL);
         deleteButton.setActionType(ActionButton.Action.POST);
         deleteButton.setRequiresSelection(true);
         bar.add(deleteButton);
 
-        ActionURL urlInsert = new ActionURL(ExperimentController.EditSampleSetAction.class, getContainer());
+        ActionURL urlInsert = new ActionURL(ExperimentController.EditSampleTypeAction.class, getContainer());
         urlInsert.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-        ActionButton createNewButton = new ActionButton(urlInsert, "New Sample Set", ActionButton.Action.LINK);
-        createNewButton.setDisplayPermission(DesignSampleSetPermission.class);
+        ActionButton createNewButton = new ActionButton(urlInsert, "New Sample Type", ActionButton.Action.LINK);
+        createNewButton.setDisplayPermission(DesignSampleTypePermission.class);
         createNewButton.setURL(urlInsert);
         bar.add(createNewButton);
 
