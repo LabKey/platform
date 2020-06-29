@@ -23,7 +23,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
-import org.labkey.api.security.permissions.DesignSampleSetPermission;
+import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.security.permissions.Permission;
 
 import java.util.Arrays;
@@ -41,7 +41,7 @@ public class FolderAdminRole extends AbstractRole
         AdminPermission.class,
         FolderExportPermission.class,
         DesignDataClassPermission.class,
-        DesignSampleSetPermission.class
+        DesignSampleTypePermission.class
     );
 
     public FolderAdminRole()

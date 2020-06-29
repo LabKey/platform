@@ -33,11 +33,11 @@
     ExperimentController.DeriveSamplesChooseTargetBean bean = me.getModelBean();
     List<ExpMaterial> sameTypeInputs = new ArrayList<>();
     DerivedSamplePropertyHelper helper = bean.getPropertyHelper();
-    if (helper.getSampleSet() != null)
+    if (helper.getSampleType() != null)
     {
         for (ExpMaterial material : bean.getSourceMaterials().keySet())
         {
-            if (helper.getSampleSet().equals(material.getSampleSet()))
+            if (helper.getSampleType().equals(material.getSampleType()))
             {
                 sameTypeInputs.add(material);
             }

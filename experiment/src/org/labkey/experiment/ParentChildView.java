@@ -25,8 +25,9 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRunItem;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
@@ -145,7 +146,7 @@ public class ParentChildView extends VBox
         }
 
         QueryView queryView = new QueryView(schema, settings, null);
-        // Issue 38018: Sample Set: Multiple data inputs from different containers are not shown in the Parent Data grid
+        // Issue 38018: Sample Type: Multiple data inputs from different containers are not shown in the Parent Data grid
         // Use ContainerFilter.EVERYTHING - We've already set an IN clause that restricts us to showing just data that we have permission to view
         queryView.setContainerFilter(ContainerFilter.EVERYTHING);
         TableInfo table = queryView.getTable();
@@ -202,15 +203,15 @@ public class ParentChildView extends VBox
             }
         }
 
-        final ExpSampleSet ss;
+        final ExpSampleType st;
         if (sameType && typeName != null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(typeName) && !"Sample".equals(typeName))
-            ss = ExperimentService.get().getSampleSet(typeName);
+            st = SampleTypeService.get().getSampleType(typeName);
         else
-            ss = null;
+            st = null;
 
         QuerySettings settings;
         UserSchema schema;
-        if (ss == null)
+        if (st == null)
         {
             schema = new ExpSchema(getUser(), getContainer());
             settings = schema.getSettings(getViewContext(), dataRegionName, ExpSchema.TableType.Materials.toString());
@@ -218,7 +219,7 @@ public class ParentChildView extends VBox
         else
         {
             schema = new SamplesSchema(getUser(), getContainer());
-            settings = schema.getSettings(getViewContext(), dataRegionName, ss.getName());
+            settings = schema.getSettings(getViewContext(), dataRegionName, st.getName());
         }
 
         QueryView queryView = new QueryView(schema, settings, null)
@@ -229,10 +230,10 @@ public class ParentChildView extends VBox
                 // Use ContainerFilter.EVERYTHING - We've already set an IN clause that restricts us to showing just data that we have permission to view
                 ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), getSchema(), ContainerFilter.EVERYTHING);
                 table.setMaterials(materials);
-                table.populate(ss, false);
+                table.populate(st, false);
 
                 List<FieldKey> defaultVisibleColumns = new ArrayList<>();
-                if (ss == null)
+                if (st == null)
                 {
                     // The table columns without any of the active SampleSet property columns
                     defaultVisibleColumns.add(FieldKey.fromParts(ExpMaterialTable.Column.Name));

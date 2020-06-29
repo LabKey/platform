@@ -26,8 +26,8 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
-import org.labkey.experiment.api.ExpSampleSetImpl;
-import org.labkey.experiment.api.SampleSetServiceImpl;
+import org.labkey.experiment.api.ExpSampleTypeImpl;
+import org.labkey.experiment.api.SampleTypeServiceImpl;
 
 /**
  * User: jeckels
@@ -53,12 +53,12 @@ public abstract class AbstractXarImporter
         }
     }
 
-    protected ExpSampleSetImpl checkMaterialCpasType(String declaredType)
+    protected ExpSampleTypeImpl checkMaterialCpasType(String declaredType)
     {
-        ExpSampleSetImpl result = null;
+        ExpSampleTypeImpl result = null;
         if (declaredType != null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(declaredType))
         {
-            result = SampleSetServiceImpl.get().getSampleSet(declaredType);
+            result = SampleTypeServiceImpl.get().getSampleType(declaredType);
             if (result == null)
             {
                 _job.getLogger().warn("Unrecognized CpasType '" + declaredType + "' loaded for Material object.");

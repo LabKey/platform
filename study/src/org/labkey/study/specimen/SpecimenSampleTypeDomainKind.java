@@ -22,11 +22,11 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.experiment.api.SampleSetDomainKind;
+import org.labkey.experiment.api.SampleTypeDomainKind;
 
-public class SpecimenSampleSetDomainKind extends SampleSetDomainKind
+public class SpecimenSampleTypeDomainKind extends SampleTypeDomainKind
 {
-    public SpecimenSampleSetDomainKind()
+    public SpecimenSampleTypeDomainKind()
     {
     }
 

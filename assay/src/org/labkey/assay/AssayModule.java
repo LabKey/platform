@@ -126,7 +126,7 @@ public class AssayModule extends SpringModule
         DefaultSchema.registerProvider(PlateSchema.SCHEMA_NAME, new PlateSchema.Provider(this));
         DefaultSchema.registerProvider(AssaySchemaImpl.NAME, new AssaySchemaImpl.Provider(this));
 
-        PropertyService.get().registerDomainKind(new PlateBasedAssaySampleSetDomainKind());
+        PropertyService.get().registerDomainKind(new PlateBasedAssaySampleTypeDomainKind());
 
         // Register early so file-based assays are available to Java code at upgrade time
         ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());

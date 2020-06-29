@@ -171,7 +171,7 @@ public class QueryImporter implements FolderImporter
 
                 if (!schema.getTableNames().contains(queryName))
                 {
-                    // warn if the table doesn't exist -- it may be created later during the import (e.g., a SampleSet may be created as a part of the import process)
+                    // warn if the table doesn't exist -- it may be created later during the import (e.g., a SampleType may be created as a part of the import process)
                     ctx.getLogger().warn("Importing: " + queryImportMessage(schemaName, queryName, null, metaFileName, "Creating metadata xml override for table that doesn't exist"));
                     qic.unresolvedMetadataFiles.put(metaFileName, queryDoc);//
                 }
@@ -344,7 +344,7 @@ public class QueryImporter implements FolderImporter
 
                     if (!schema.getTableNames().contains(queryName))
                     {
-                        // error if the table doesn't exist -- it wan't created during the import (e.g., a SampleSet may be created as a part of the import process)
+                        // error if the table doesn't exist -- it wan't created during the import (e.g., a SampleType may be created as a part of the import process)
                         ctx.getLogger().error(queryImportMessage(schemaName, queryName, null, metaFileName, "Created metadata xml override for table that doesn't exist"));
                     }
                 }

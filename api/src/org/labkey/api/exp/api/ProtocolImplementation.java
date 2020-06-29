@@ -38,10 +38,10 @@ public class ProtocolImplementation implements ExperimentProtocolHandler
     }
 
     /**
-     * Called when samples in a sample set have one or more properties modified.  Also called when new samples are
-     * created (uploaded).  This is not called when samples are deleted.
+     * Called when samples in a sample type have one or more properties modified. Also called when new samples are
+     * created (uploaded). This is not called when samples are deleted.
      * @param protocol whose {@link org.labkey.api.exp.property.ExperimentProperty#SampleSetLSID} property
-     * is the sampleset that these samples came from.
+     * is the sample type that these samples came from.
      * @param materials materials that were modified.
      */
     public void onSamplesChanged(User user, ExpProtocol protocol, List<? extends ExpMaterial> materials)
