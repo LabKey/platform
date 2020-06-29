@@ -165,7 +165,6 @@ api/src/org/labkey/api/action/DeprecatedActionException.java -text
 api/src/org/labkey/api/action/ExportAction.java -text
 api/src/org/labkey/api/action/ExportException.java -text
 api/src/org/labkey/api/action/ExtendedApiQueryResponse.java -text
-api/src/org/labkey/api/action/ExtFormAction.java -text
 api/src/org/labkey/api/action/ExtFormResponseWriter.java -text
 api/src/org/labkey/api/action/FormArrayList.java -text
 api/src/org/labkey/api/action/FormattedError.java -text
@@ -685,12 +684,12 @@ api/src/org/labkey/api/exp/api/ExpRunAttachmentParent.java -text
 api/src/org/labkey/api/exp/api/ExpRunAttachmentType.java -text
 api/src/org/labkey/api/exp/api/ExpRunInput.java -text
 api/src/org/labkey/api/exp/api/ExpRunItem.java -text
-api/src/org/labkey/api/exp/api/ExpSampleSet.java -text
+api/src/org/labkey/api/exp/api/ExpSampleType.java -text
 api/src/org/labkey/api/exp/api/FilterProtocolInputCriteria.java -text
 api/src/org/labkey/api/exp/api/IAssayDomainType.java -text
 api/src/org/labkey/api/exp/api/ProtocolImplementation.java -text
 api/src/org/labkey/api/exp/api/ProvisionedDbSchema.java -text
-api/src/org/labkey/api/exp/api/SampleSetService.java -text
+api/src/org/labkey/api/exp/api/SampleTypeService.java -text
 api/src/org/labkey/api/exp/api/SimpleRunRecord.java -text
 api/src/org/labkey/api/exp/ChangePropertyDescriptorException.java -text
 api/src/org/labkey/api/exp/DomainDescriptor.java -text
@@ -753,7 +752,7 @@ api/src/org/labkey/api/exp/query/ExpMaterialProtocolInputTable.java -text
 api/src/org/labkey/api/exp/query/ExpMaterialTable.java -text
 api/src/org/labkey/api/exp/query/ExpProtocolTable.java -text
 api/src/org/labkey/api/exp/query/ExpRunTable.java -text
-api/src/org/labkey/api/exp/query/ExpSampleSetTable.java -text
+api/src/org/labkey/api/exp/query/ExpSampleTypeTable.java -text
 api/src/org/labkey/api/exp/query/ExpSchema.java -text
 api/src/org/labkey/api/exp/query/ExpTable.java -text
 api/src/org/labkey/api/exp/query/SamplesSchema.java -text
@@ -1818,7 +1817,7 @@ assay/src/org/labkey/assay/plate/WellGroupCurveImpl.java -text
 assay/src/org/labkey/assay/plate/WellGroupImpl.java -text
 assay/src/org/labkey/assay/plate/WellGroupTemplateImpl.java -text
 assay/src/org/labkey/assay/plate/WellImpl.java -text
-assay/src/org/labkey/assay/PlateBasedAssaySampleSetDomainKind.java -text
+assay/src/org/labkey/assay/PlateBasedAssaySampleTypeDomainKind.java -text
 assay/src/org/labkey/assay/PlateController.java -text
 assay/src/org/labkey/assay/query/AssayListTable.java -text
 assay/src/org/labkey/assay/query/AssaySchemaImpl.java -text
@@ -2209,8 +2208,8 @@ experiment/src/org/labkey/experiment/api/ExpProtocolInputTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpRunImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpRunInputImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpRunTableImpl.java -text
-experiment/src/org/labkey/experiment/api/ExpSampleSetImpl.java -text
-experiment/src/org/labkey/experiment/api/ExpSampleSetTableImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpSampleTypeImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpSampleTypeTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpTableImpl.java -text
 experiment/src/org/labkey/experiment/api/IdentifiableEntity.java -text
 experiment/src/org/labkey/experiment/api/LineagePerfTest.java -text
@@ -2233,7 +2232,7 @@ experiment/src/org/labkey/experiment/api/ProtocolActionPredecessor.java -text
 experiment/src/org/labkey/experiment/api/ProtocolActionStepDetail.java -text
 experiment/src/org/labkey/experiment/api/ProtocolApplication.java -text
 experiment/src/org/labkey/experiment/api/RunItem.java -text
-experiment/src/org/labkey/experiment/api/SampleSetServiceImpl.java -text
+experiment/src/org/labkey/experiment/api/SampleTypeServiceImpl.java -text
 experiment/src/org/labkey/experiment/ArchiveURLRewriter.java -text
 experiment/src/org/labkey/experiment/ChooseExperimentTypeBean.java -text
 experiment/src/org/labkey/experiment/ConfirmDelete.jsp -text
@@ -2246,7 +2245,7 @@ experiment/src/org/labkey/experiment/controllers/exp/ExperimentRunForm.java -tex
 experiment/src/org/labkey/experiment/controllers/exp/ExperimentRunGraphView.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ExperimentRunGroupsView.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ExperimentUpdateView.java -text
-experiment/src/org/labkey/experiment/controllers/exp/exportSampleSetAsXar.jsp -text
+experiment/src/org/labkey/experiment/controllers/exp/exportSampleTypeAsXar.jsp -text
 experiment/src/org/labkey/experiment/controllers/exp/GraphMoreGrid.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ProtocolListView.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ProtocolParametersView.java -text
@@ -2306,9 +2305,9 @@ experiment/src/org/labkey/experiment/RunGroupWebPart.java -text
 experiment/src/org/labkey/experiment/runTypeFilters.jsp -text
 experiment/src/org/labkey/experiment/RunTypeWebPart.java -text
 experiment/src/org/labkey/experiment/samples/UploadSamplesHelper.java -text
-experiment/src/org/labkey/experiment/SampleSetAuditProvider.java -text
-experiment/src/org/labkey/experiment/SampleSetDisplayColumn.java -text
-experiment/src/org/labkey/experiment/SampleSetWebPart.java -text
+experiment/src/org/labkey/experiment/SampleTypeAuditProvider.java -text
+experiment/src/org/labkey/experiment/SampleTypeDisplayColumn.java -text
+experiment/src/org/labkey/experiment/SampleTypeWebPart.java -text
 experiment/src/org/labkey/experiment/StandardAndCustomPropertiesView.java -text
 experiment/src/org/labkey/experiment/summarizeMaterialInputs.jsp -text
 experiment/src/org/labkey/experiment/types/begin.jsp -text
@@ -2436,7 +2435,7 @@ internal/src/org/labkey/api/webdav/FileSystemBatchAuditProvider.java -text
 internal/src/org/labkey/api/webdav/FileSystemResource.java -text
 internal/src/org/labkey/api/webdav/ModuleStaticResolverImpl.java -text
 internal/src/org/labkey/api/webdav/WebdavResolverImpl.java -text
-internal/src/org/labkey/experiment/api/SampleSetDomainKind.java -text
+internal/src/org/labkey/experiment/api/SampleTypeDomainKind.java -text
 internal/src/org/labkey/InternalModule.java -text
 internal/src/org/labkey/remoteapi/RemoteConnections.java -text
 internal/webapp/_images/icons.css -text
@@ -3799,7 +3798,6 @@ study/webapp/study/ParticipantFilterPanel.js -text
 study/webapp/study/ParticipantGroup.js -text
 study/webapp/study/ParticipantList.css -text
 study/webapp/study/ParticipantReport.js -text
-study/webapp/study/redesignUtils.js -text
 study/webapp/study/ReportFilterPanel.css -text
 study/webapp/study/ReportFilterPanel.js -text
 study/webapp/study/sampleRequest.js -text

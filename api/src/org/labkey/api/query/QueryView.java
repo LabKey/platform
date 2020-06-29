@@ -2547,7 +2547,7 @@ public class QueryView extends WebPartView<Object>
         rgn.setShowPagination(false);
 
         // Add explicitly requested columns, even if they don't actually exist on the table.
-        // They may be magic columns supported on the import side, e.g. "MaterialsInputs/Foo" for SampleSets.
+        // They may be magic columns supported on the import side, e.g. "MaterialsInputs/Foo" for SampleTypes.
         List<DisplayColumn> displayColumns = rgn.getDisplayColumns();
         Set<FieldKey> displayColumnFieldKeys = displayColumns.stream()
                 .map(DisplayColumn::getColumnInfo)

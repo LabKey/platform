@@ -19,7 +19,7 @@ package org.labkey.experiment;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -31,30 +31,30 @@ import java.io.IOException;
  * User: jeckels
  * Date: Oct 4, 2007
  */
-public class SampleSetDisplayColumn extends SimpleDisplayColumn
+public class SampleTypeDisplayColumn extends SimpleDisplayColumn
 {
     private final ExpMaterial _material;
 
-    public SampleSetDisplayColumn(ExpMaterial material)
+    public SampleTypeDisplayColumn(ExpMaterial material)
     {
         _material = material;
-        setCaption("Sample Set");
+        setCaption("Sample Type");
     }
 
     @Override
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        ExpSampleSet ss = _material.getSampleSet();
+        ExpSampleType st = _material.getSampleType();
 
-        if (ss == null)
+        if (st == null)
         {
-            out.write("Not a member of a sample set");
+            out.write("Not a member of a sample type");
         }
         else
         {
-            ActionURL url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, ss.getContainer());
-            url.addParameter("rowId", Integer.toString(ss.getRowId()));
-            out.write("<a href=\"" + url.toString() + "\">" + PageFlowUtil.filter(ss.getName()) + "</a>");
+            ActionURL url = new ActionURL(ExperimentController.ShowSampleTypeAction.class, st.getContainer());
+            url.addParameter("rowId", Integer.toString(st.getRowId()));
+            out.write("<a href=\"" + url.toString() + "\">" + PageFlowUtil.filter(st.getName()) + "</a>");
         }
     }
 }
