@@ -11,7 +11,7 @@ module.exports = {
         path: './src/client/DomainDesigner'
     }, {
         name: 'sampleTypeDesigner',
-        title: 'Sample Set Designer',
+        title: 'Sample Type Designer',
         permission: 'admin', // this is admin so that direct access to this view has highest level perm, see ExperimentController.BaseSampleSetAction for main usage
         path: './src/client/SampleTypeDesigner'
     },{

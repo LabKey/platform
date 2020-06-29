@@ -275,8 +275,8 @@
           <description>Contains a description for this sample</description>
       </column>
       <column columnName="CpasType">
-          <columnTitle>Sample Set</columnTitle>
-          <description>If this sample is a member of a sample set, contains a reference to the sample set</description>
+          <columnTitle>Sample Type</columnTitle>
+          <description>If this sample is a member of a sample type, contains a reference to the sample type</description>
       </column>
       <column columnName="SourceApplicationId">
           <description>Contains a reference to the protocol application that created this sample, if available</description>
@@ -324,14 +324,14 @@
     <description>Contains one row per material input in a protocol application for a run in this folder.</description>
   </table>
   <table tableName="MaterialSource" tableDbType="TABLE">
-    <gridUrl>/experiment/listMaterialSources.view</gridUrl>
-    <tableUrl>/experiment/showMaterialSource.view?rowId=${RowId}</tableUrl>
+    <gridUrl>/experiment/listSampleTypes.view</gridUrl>
+    <tableUrl>/experiment/showSampleType.view?rowId=${RowId}</tableUrl>
     <columns>
       <column columnName="RowId">
-          <description>Contains a unique id for this sample set</description>
+          <description>Contains a unique id for this sample type</description>
       </column>
       <column columnName="Name">
-          <description>Contains a short name for this sample set</description>
+          <description>Contains a short name for this sample type</description>
       </column>
       <column columnName="LSID">
           <isReadOnly>true</isReadOnly>
@@ -339,13 +339,13 @@
       </column>
       <column columnName="MaterialLSIDPrefix">
           <isReadOnly>true</isReadOnly>
-          <description>Contains the LSID prefix for all materials that are part of this sample set</description>
+          <description>Contains the LSID prefix for all materials that are part of this sample type</description>
       </column>
       <column columnName="Description">
-          <description>Contains an optional description about the contents or purpose of this sample set</description>
+          <description>Contains an optional description about the contents or purpose of this sample type</description>
       </column>
       <column columnName="Created">
-          <description>Contains the time at which this sample set was created</description>
+          <description>Contains the time at which this sample type was created</description>
       </column>
       <column columnName="IdCol1"/>
       <column columnName="IdCol2"/>
@@ -358,10 +358,10 @@
           <fkTable>Users</fkTable>
           <fkDbSchema>core</fkDbSchema>
         </fk>
-        <description>Contains the user that created this sample set</description>
+        <description>Contains the user that created this sample type</description>
       </column>
       <column columnName="Modified">
-          <description>Contains the time at which this sample set was last modified</description>
+          <description>Contains the time at which this sample type was last modified</description>
       </column>
       <column columnName="ModifiedBy">
         <fk>
@@ -369,10 +369,10 @@
           <fkTable>Users</fkTable>
           <fkDbSchema>core</fkDbSchema>
         </fk>
-        <description>Contains the user that last modified this sample set</description>
+        <description>Contains the user that last modified this sample type</description>
       </column>
       <column columnName="Container">
-        <description>Contains the folder or project in which this sample set is stored</description>
+        <description>Contains the folder or project in which this sample type is stored</description>
       </column>
       <column columnName="LastIndexed">
         <description>Contains the time this material source was last updated in the search index</description>
@@ -385,7 +385,7 @@
           <isHidden>true</isHidden>
       </column>
     </columns>
-    <description>Contains a row per sample set, a collection of samples.</description>
+    <description>Contains a row per sample type, a collection of samples.</description>
   </table>
   <table tableName="DataClass" tableDbType="TABLE">
     <description>Defines categories of data object types, each of which can have its own set of fields.</description>

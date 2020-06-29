@@ -278,7 +278,7 @@ public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeP
         /**
          * To be called by {@link AbstractAuditTypeProvider#getDomainKind()}.
          *
-         * @param eventType This should match it's parent's {@link SecurityEscalationAuditProvider#getEventType()}.
+         * @param eventType This should match its parent's {@link SecurityEscalationAuditProvider#getEventType()}.
          */
         public SecurityEscalationAuditDomainKind(String eventType) {
             super(eventType);

@@ -29,9 +29,10 @@ import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -92,21 +93,21 @@ public class LineageTest extends ExpProvisionedTableTestHelper
     {
         final User user = TestContext.get().getUser();
 
-        // just some properties used in both the SampleSet and DataClass
+        // just some properties used in both the SampleType and DataClass
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("me", "string"));
         props.add(new GWTPropertyDescriptor("age", "string"));
 
-        // Create a SampleSet and some samples
-        final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user, "Samples", null, props, emptyList(), 0, -1, -1, -1, null, null);
+        // Create a SampleType and some samples
+        final ExpSampleType st = SampleTypeService.get().createSampleType(c, user, "Samples", null, props, emptyList(), 0, -1, -1, -1, null, null);
         final ExpMaterial s1 = ExperimentService.get().createExpMaterial(c,
-                ss.generateSampleLSID().setObjectId("S-1").toString(), "S-1");
-        s1.setCpasType(ss.getLSID());
+                st.generateSampleLSID().setObjectId("S-1").toString(), "S-1");
+        s1.setCpasType(st.getLSID());
         s1.save(user);
 
         final ExpMaterial s2 = ExperimentService.get().createExpMaterial(c,
-                ss.generateSampleLSID().setObjectId("S-2").toString(), "S-2");
-        s2.setCpasType(ss.getLSID());
+                st.generateSampleLSID().setObjectId("S-2").toString(), "S-2");
+        s2.setCpasType(st.getLSID());
         s2.save(user);
 
         // Create two DataClasses
@@ -240,22 +241,22 @@ public class LineageTest extends ExpProvisionedTableTestHelper
     {
         final User user = TestContext.get().getUser();
 
-        // setup sample set
+        // setup sample type
         List<GWTPropertyDescriptor> sampleProps = new ArrayList<>();
         sampleProps.add(new GWTPropertyDescriptor("name", "string"));
         sampleProps.add(new GWTPropertyDescriptor("age", "int"));
 
-        final ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
+        final ExpSampleTypeImpl st = SampleTypeServiceImpl.get().createSampleType(c, user,
                 "MySamples", null, sampleProps, Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
         final ExpMaterial s1 = ExperimentService.get().createExpMaterial(c,
-                ss.generateSampleLSID().setObjectId("S-1").toString(), "S-1");
-        s1.setCpasType(ss.getLSID());
+                st.generateSampleLSID().setObjectId("S-1").toString(), "S-1");
+        s1.setCpasType(st.getLSID());
         s1.save(user);
 
         final ExpMaterial s2 = ExperimentService.get().createExpMaterial(c,
-                ss.generateSampleLSID().setObjectId("S-2").toString(), "S-2");
-        s2.setCpasType(ss.getLSID());
+                st.generateSampleLSID().setObjectId("S-2").toString(), "S-2");
+        s2.setCpasType(st.getLSID());
         s2.save(user);
 
         // Create DataClass
@@ -307,7 +308,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         assertEquals(1, updatedRows.size());
 
         // TODO: Is the expected behavior to create a new derivation run from S-2 and leave the existing derivation from S-1 intact?
-        // TODO: Or should the existing derivation run be deleted/updated to match the SampleSet derivation behavior?
+        // TODO: Or should the existing derivation run be deleted/updated to match the SampleType derivation behavior?
         // Verify the lineage
         lineage = ExperimentService.get().getLineage(c, user, bob, options);
         Assert.assertTrue(lineage.getDatas().isEmpty());
@@ -323,11 +324,11 @@ public class LineageTest extends ExpProvisionedTableTestHelper
     {
         final User user = TestContext.get().getUser();
 
-        // setup sample set
+        // setup sample type
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("name", "string"));
         props.add(new GWTPropertyDescriptor("age", "int"));
-        final ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
+        final ExpSampleTypeImpl st = SampleTypeServiceImpl.get().createSampleType(c, user,
                 "MySamples", null, props, Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
 
@@ -345,7 +346,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         if (errors.hasErrors())
             throw errors;
 
-        // setup list with lookup to sample set
+        // setup list with lookup to sample type
         ListDefinition listDef = ListService.get().createList(c, "MyList", ListDefinition.KeyType.AutoIncrementInteger);
 
         Domain listDomain = listDef.getDomain();

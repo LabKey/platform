@@ -789,7 +789,7 @@ DELETE FROM exp.ProtocolAction WHERE
 
 DELETE FROM exp.Protocol WHERE Container NOT IN (SELECT EntityId FROM core.Containers);
 
--- Delete orphaned sample sets/material sources
+-- Delete orphaned sample types/material sources
 DELETE FROM exp.ActiveMaterialSource WHERE MaterialSourceLSID IN (SELECT Lsid FROM exp.MaterialSource WHERE Container NOT IN (SELECT EntityId FROM core.Containers));
 
 DELETE FROM exp.MaterialSource WHERE Container NOT IN (SELECT EntityId FROM core.Containers);

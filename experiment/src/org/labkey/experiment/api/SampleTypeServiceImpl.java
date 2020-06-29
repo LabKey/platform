@@ -58,10 +58,10 @@ import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SampleInventoryUpdateType;
-import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -116,20 +116,19 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
-public class SampleSetServiceImpl extends AuditHandler implements SampleSetService
+public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeService
 {
-    public static SampleSetServiceImpl get()
+    public static SampleTypeServiceImpl get()
     {
-        return (SampleSetServiceImpl)SampleSetService.get();
+        return (SampleTypeServiceImpl) SampleTypeService.get();
     }
 
+    private static final Logger LOG = Logger.getLogger(SampleTypeServiceImpl.class);
 
-    private static final Logger LOG = Logger.getLogger(SampleSetServiceImpl.class);
+    // SampleType -> Container cache
+    private final Cache<String, String> sampleTypeCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleTypeToContainer");
 
-    // SampleSet -> Container cache
-    private Cache<String, String> sampleSetCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleSetToContainer");
-
-    private Cache<String, SortedSet<MaterialSource>> materialSourceCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "MaterialSource", (container, argument) ->
+    private final Cache<String, SortedSet<MaterialSource>> materialSourceCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "MaterialSource", (container, argument) ->
     {
         Container c = ContainerManager.getForId(container);
         if (c == null)
@@ -157,7 +156,7 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
 
     private TableInfo getTinfoMaterialSource()
     {
-        return ExperimentServiceImpl.get().getTinfoMaterialSource();
+        return ExperimentServiceImpl.get().getTinfoSampleType();
     }
 
     private TableInfo getTinfoMaterial()
@@ -201,7 +200,7 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
     }
 
     @Override
-    public void indexSampleSet(ExpSampleSet sampleSet)
+    public void indexSampleType(ExpSampleType sampleType)
     {
         SearchService ss = SearchService.get();
         if (ss == null)
@@ -211,8 +210,8 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
 
         Runnable r = () -> {
 
-            indexSampleSet(sampleSet, task);
-            indexSampleSetMaterials(sampleSet, task);
+            indexSampleType(sampleType, task);
+            indexSampleTypeMaterials(sampleType, task);
 
         };
 
@@ -220,33 +219,33 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
     }
 
 
-    private void indexSampleSet(ExpSampleSet sampleSet, SearchService.IndexTask task)
+    private void indexSampleType(ExpSampleType sampleType, SearchService.IndexTask task)
     {
-        // Index all ExpMaterial that have never been indexed OR where either the ExpSampleSet definition or ExpMaterial itself has changed since last indexed
+        // Index all ExpMaterial that have never been indexed OR where either the ExpSampleType definition or ExpMaterial itself has changed since last indexed
         SQLFragment sql = new SQLFragment("SELECT * FROM ")
                 .append(getTinfoMaterialSource(), "ms")
                 .append(" WHERE ms.LSID NOT LIKE '%:").append(StudyService.SPECIMEN_NAMESPACE_PREFIX).append("%'")
-                .append(" AND ms.LSID = ?").add(sampleSet.getLSID())
+                .append(" AND ms.LSID = ?").add(sampleType.getLSID())
                 .append(" AND (ms.lastIndexed IS NULL OR ms.lastIndexed < ? OR (ms.modified IS NOT NULL AND ms.lastIndexed < ms.modified))")
-                .add(sampleSet.getModified());
+                .add(sampleType.getModified());
 
         MaterialSource materialSource = new SqlSelector(getExpSchema().getScope(), sql).getObject(MaterialSource.class);
         if (materialSource != null)
         {
-            ExpSampleSetImpl impl = new ExpSampleSetImpl(materialSource);
+            ExpSampleTypeImpl impl = new ExpSampleTypeImpl(materialSource);
             impl.index(task);
         }
     }
 
-    private void indexSampleSetMaterials(ExpSampleSet sampleSet, SearchService.IndexTask task)
+    private void indexSampleTypeMaterials(ExpSampleType sampleType, SearchService.IndexTask task)
     {
-        // Index all ExpMaterial that have never been indexed OR where either the ExpSampleSet definition or ExpMaterial itself has changed since last indexed
+        // Index all ExpMaterial that have never been indexed OR where either the ExpSampleType definition or ExpMaterial itself has changed since last indexed
         SQLFragment sql = new SQLFragment("SELECT * FROM ")
                 .append(getTinfoMaterial(), "m")
                 .append(" WHERE m.LSID NOT LIKE '%:").append(StudyService.SPECIMEN_NAMESPACE_PREFIX).append("%'")
-                .append(" AND m.cpasType = ?").add(sampleSet.getLSID())
+                .append(" AND m.cpasType = ?").add(sampleType.getLSID())
                 .append(" AND (m.lastIndexed IS NULL OR m.lastIndexed < ? OR (m.modified IS NOT NULL AND m.lastIndexed < m.modified))")
-                .add(sampleSet.getModified());
+                .add(sampleType.getModified());
 
         new SqlSelector(getExpSchema().getScope(), sql).forEachBatch(batch -> {
             for (Material m : batch)
@@ -259,7 +258,7 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
 
 
     @Override
-    public Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type)
+    public Map<String, ExpSampleType> getSampleTypesForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type)
     {
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT mi.Role, MAX(m.CpasType) AS MaxSampleSetLSID, MIN (m.CpasType) AS MinSampleSetLSID FROM ");
@@ -288,37 +287,37 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
         sql.append(filter.getSQLFragment(getExpSchema(), new SQLFragment("r.Container"), container));
         sql.append(" GROUP BY mi.Role ORDER BY mi.Role");
 
-        Map<String, ExpSampleSet> result = new LinkedHashMap<>();
+        Map<String, ExpSampleType> result = new LinkedHashMap<>();
         for (Map<String, Object> queryResult : new SqlSelector(getExpSchema(), sql).getMapCollection())
         {
-            ExpSampleSet sampleSet = null;
-            String maxSampleSetLSID = (String) queryResult.get("MaxSampleSetLSID");
-            String minSampleSetLSID = (String) queryResult.get("MinSampleSetLSID");
+            ExpSampleType sampleType = null;
+            String maxSampleTypeLSID = (String) queryResult.get("MaxSampleSetLSID");
+            String minSampleTypeLSID = (String) queryResult.get("MinSampleSetLSID");
 
-            // Check if we have a sample set that was being referenced
-            if (maxSampleSetLSID != null && maxSampleSetLSID.equalsIgnoreCase(minSampleSetLSID))
+            // Check if we have a sample type that was being referenced
+            if (maxSampleTypeLSID != null && maxSampleTypeLSID.equalsIgnoreCase(minSampleTypeLSID))
             {
                 // If the min and the max are the same, it means all rows share the same value so we know that there's
-                // a single sample set being targeted
-                sampleSet = getSampleSet(container, maxSampleSetLSID);
+                // a single sample type being targeted
+                sampleType = getSampleType(container, maxSampleTypeLSID);
             }
-            result.put((String) queryResult.get("Role"), sampleSet);
+            result.put((String) queryResult.get("Role"), sampleType);
         }
         return result;
     }
 
     @Override
-    public List<ExpSampleSetImpl> getSampleSets(@NotNull Container container, @Nullable User user, boolean includeOtherContainers)
+    public List<ExpSampleTypeImpl> getSampleTypes(@NotNull Container container, @Nullable User user, boolean includeOtherContainers)
     {
         List<String> containerIds = ExperimentServiceImpl.get().createContainerList(container, user, includeOtherContainers);
 
         // Do the sort on the Java side to make sure it's always case-insensitive, even on Postgres
-        TreeSet<ExpSampleSetImpl> result = new TreeSet<>();
+        TreeSet<ExpSampleTypeImpl> result = new TreeSet<>();
         for (String containerId : containerIds)
         {
             for (MaterialSource source : getMaterialSourceCache().get(containerId))
             {
-                result.add(new ExpSampleSetImpl(source));
+                result.add(new ExpSampleTypeImpl(source));
             }
         }
 
@@ -326,69 +325,69 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
     }
 
     @Override
-    public ExpSampleSetImpl getSampleSet(@NotNull Container c, @NotNull String sampleSetName)
+    public ExpSampleTypeImpl getSampleType(@NotNull Container c, @NotNull String sampleTypeName)
     {
-        return getSampleSet(c, null, false, sampleSetName);
+        return getSampleType(c, null, false, sampleTypeName);
     }
 
     // NOTE: This method used to not take a user or check permissions
     @Override
-    public ExpSampleSetImpl getSampleSet(@NotNull Container c, @NotNull User user, @NotNull String sampleSetName)
+    public ExpSampleTypeImpl getSampleType(@NotNull Container c, @NotNull User user, @NotNull String sampleTypeName)
     {
-        return getSampleSet(c, user, true, sampleSetName);
+        return getSampleType(c, user, true, sampleTypeName);
     }
 
-    private ExpSampleSetImpl getSampleSet(@NotNull Container c, @Nullable User user, boolean includeOtherContainers, String sampleSetName)
+    private ExpSampleTypeImpl getSampleType(@NotNull Container c, @Nullable User user, boolean includeOtherContainers, String sampleTypeName)
     {
-        return getSampleSet(c, user, includeOtherContainers, (materialSource -> materialSource.getName().equalsIgnoreCase(sampleSetName)));
-    }
-
-    @Override
-    public ExpSampleSetImpl getSampleSet(@NotNull Container c, int rowId)
-    {
-        return getSampleSet(c, null, rowId, false);
+        return getSampleType(c, user, includeOtherContainers, (materialSource -> materialSource.getName().equalsIgnoreCase(sampleTypeName)));
     }
 
     @Override
-    public ExpSampleSetImpl getSampleSet(@NotNull Container c, @NotNull User user, int rowId)
+    public ExpSampleTypeImpl getSampleType(@NotNull Container c, int rowId)
     {
-        return getSampleSet(c, user, rowId, true);
+        return getSampleType(c, null, rowId, false);
+    }
+
+    @Override
+    public ExpSampleTypeImpl getSampleType(@NotNull Container c, @NotNull User user, int rowId)
+    {
+        return getSampleType(c, user, rowId, true);
     }
 
 
     @Override
-    public ExpSampleSetImpl getSampleSetByType(@NotNull String lsid, Container hint)
+    public ExpSampleTypeImpl getSampleTypeByType(@NotNull String lsid, Container hint)
     {
         Container c = hint;
-        String id = sampleSetCache.get(lsid);
+        String id = sampleTypeCache.get(lsid);
         if (null != id && (null == hint || !id.equals(hint.getId())))
             c = ContainerManager.getForId(id);
-        ExpSampleSetImpl ss = null;
+        ExpSampleTypeImpl st = null;
         if (null != c)
-            ss = getSampleSet(c, null, false, ms -> lsid.equals(ms.getLSID()) );
-        if (null == ss)
-            ss = _getSampleSet(lsid);
-        if (null != ss && null==id)
-            sampleSetCache.put(lsid,ss.getContainer().getId());
-        return ss;
+            st = getSampleType(c, null, false, ms -> lsid.equals(ms.getLSID()) );
+        if (null == st)
+            st = _getSampleType(lsid);
+        if (null != st && null==id)
+            sampleTypeCache.put(lsid,st.getContainer().getId());
+        return st;
     }
 
 
-    private ExpSampleSetImpl getSampleSet(@NotNull Container c, @Nullable User user, int rowId, boolean includeOtherContainers)
+    private ExpSampleTypeImpl getSampleType(@NotNull Container c, @Nullable User user, int rowId, boolean includeOtherContainers)
     {
-        return getSampleSet(c, user, includeOtherContainers, (materialSource -> materialSource.getRowId() == rowId));
+        return getSampleType(c, user, includeOtherContainers, (materialSource -> materialSource.getRowId() == rowId));
     }
 
-    private ExpSampleSetImpl getSampleSet(@NotNull Container c, @Nullable User user, boolean includeOtherContainers, Predicate<MaterialSource> predicate)
+    private ExpSampleTypeImpl getSampleType(@NotNull Container c, @Nullable User user, boolean includeOtherContainers, Predicate<MaterialSource> predicate)
     {
         List<String> containerIds = ExperimentServiceImpl.get().createContainerList(c, user, includeOtherContainers);
         for (String containerId : containerIds)
         {
-            Collection<MaterialSource> sampleSets = getMaterialSourceCache().get(containerId);
-            for (MaterialSource materialSource : sampleSets)
+            Collection<MaterialSource> sampleTypes = getMaterialSourceCache().get(containerId);
+            for (MaterialSource materialSource : sampleTypes)
             {
                 if (predicate.test(materialSource))
-                    return new ExpSampleSetImpl(materialSource);
+                    return new ExpSampleTypeImpl(materialSource);
             }
         }
 
@@ -397,30 +396,30 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
 
     @Nullable
     @Override
-    public ExpSampleSetImpl getSampleSet(int rowId)
+    public ExpSampleTypeImpl getSampleType(int rowId)
     {
         // TODO: Cache
         MaterialSource materialSource = new TableSelector(getTinfoMaterialSource()).getObject(rowId, MaterialSource.class);
         if (materialSource == null)
             return null;
 
-        return new ExpSampleSetImpl(materialSource);
+        return new ExpSampleTypeImpl(materialSource);
     }
 
     @Nullable
     @Override
-    public ExpSampleSetImpl getSampleSet(String lsid)
+    public ExpSampleTypeImpl getSampleType(String lsid)
     {
-        return getSampleSetByType(lsid, null);
+        return getSampleTypeByType(lsid, null);
     }
 
-    private ExpSampleSetImpl _getSampleSet(String lsid)
+    private ExpSampleTypeImpl _getSampleType(String lsid)
     {
         MaterialSource ms = getMaterialSource(lsid);
         if (ms == null)
             return null;
 
-        return new ExpSampleSetImpl(ms);
+        return new ExpSampleTypeImpl(ms);
     }
 
 
@@ -431,13 +430,13 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
     }
 
     @Override
-    public String getDefaultSampleSetLsid()
+    public String getDefaultSampleTypeLsid()
     {
         return new Lsid.LsidBuilder("SampleSource", "Default").toString();
     }
 
     @Override
-    public String getDefaultSampleSetMaterialLsidPrefix()
+    public String getDefaultSampleTypeMaterialLsidPrefix()
     {
         return new Lsid.LsidBuilder("Sample", ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME).toString() + "#";
     }
@@ -449,14 +448,14 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
     }
 
 
-    public void deleteDefaultSampleSet()
+    public void deleteDefaultSampleType()
     {
         SQLFragment sql = new SQLFragment()
                 .append("SELECT ms.rowId, dd.domainId\n")
-                .append("FROM ").append(ExperimentService.get().getTinfoMaterialSource(), "ms").append("\n")
+                .append("FROM ").append(ExperimentService.get().getTinfoSampleType(), "ms").append("\n")
                 .append("INNER JOIN ").append(OntologyManager.getTinfoDomainDescriptor(), "dd").append("\n")
                 .append("ON ms.lsid = dd.domainUri\n")
-                .append("WHERE ms.lsid = ?").add(getDefaultSampleSetLsid());
+                .append("WHERE ms.lsid = ?").add(getDefaultSampleTypeLsid());
         SqlSelector ss = new SqlSelector(ExperimentService.get().getSchema(), sql);
 
         Map<String, Object> row = ss.getMap();
@@ -467,7 +466,7 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
                 Integer rowId = (Integer) row.get("rowId");
                 Integer domainId = (Integer) row.get("domainId");
 
-                DbSequenceManager.delete(ContainerManager.getSharedContainer(), ExpSampleSetImpl.SEQUENCE_PREFIX, rowId);
+                DbSequenceManager.delete(ContainerManager.getSharedContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, rowId);
 
                 Domain d = PropertyService.get().getDomain(domainId);
                 if (d != null)
@@ -478,28 +477,28 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
                 Table.delete(getTinfoMaterialSource(), rowId);
 
                 tx.commit();
-                LOG.info("Deleted the default " + ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME + " SampleSet");
+                LOG.info("Deleted the default " + ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME + " SampleType");
             }
             catch (DomainNotFoundException e)
             {
-                LOG.info("Failed to delete the default " + ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME + " SampleSet, domain not found");
+                LOG.info("Failed to delete the default " + ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME + " SampleType, domain not found");
             }
         }
     }
 
 
     @Override
-    public Lsid getSampleSetLsid(String sourceName, Container container)
+    public Lsid getSampleTypeLsid(String sourceName, Container container)
     {
-        return Lsid.parse(ExperimentService.get().generateLSID(container, ExpSampleSet.class, sourceName));
+        return Lsid.parse(ExperimentService.get().generateLSID(container, ExpSampleType.class, sourceName));
     }
 
 
     /**
-     * Delete all exp.Material from the SampleSet.  If container is not provided,
-     * all rows from the SampleSet will be deleted regardless of container.
+     * Delete all exp.Material from the SampleType. If container is not provided,
+     * all rows from the SampleType will be deleted regardless of container.
      */
-    public int truncateSampleSet(ExpSampleSet source, User user, @Nullable Container c)
+    public int truncateSampleType(ExpSampleType source, User user, @Nullable Container c)
     {
         assert getExpSchema().getScope().isTransactionActive();
 
@@ -507,7 +506,7 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
         filter.addCondition(FieldKey.fromParts("CpasType"), source.getLSID());
 
         MultiValuedMap<String, Integer> byContainer = new ArrayListValuedHashMap<>();
-        TableSelector ts = new TableSelector(SampleSetServiceImpl.get().getTinfoMaterial(), Sets.newCaseInsensitiveHashSet("container", "rowid"), filter, null);
+        TableSelector ts = new TableSelector(SampleTypeServiceImpl.get().getTinfoMaterial(), Sets.newCaseInsensitiveHashSet("container", "rowid"), filter, null);
         ts.forEachMap(row -> byContainer.put((String)row.get("container"), (Integer)row.get("rowid")));
 
         int count = 0;
@@ -522,22 +521,22 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
     }
 
     @Override
-    public void deleteSampleSet(int rowId, Container c, User user) throws ExperimentException
+    public void deleteSampleType(int rowId, Container c, User user) throws ExperimentException
     {
-        CPUTimer timer = new CPUTimer("delete sampleset");
+        CPUTimer timer = new CPUTimer("delete sample type");
         timer.start();
 
-        ExpSampleSetImpl source = getSampleSet(c, user, rowId);
+        ExpSampleTypeImpl source = getSampleType(c, user, rowId);
         if (null == source)
-            throw new IllegalArgumentException("Can't find SampleSet with rowId " + rowId);
+            throw new IllegalArgumentException("Can't find SampleType with rowId " + rowId);
         if (!source.getContainer().equals(c))
-            throw new ExperimentException("Trying to delete a SampleSet from a different container");
+            throw new ExperimentException("Trying to delete a SampleType from a different container");
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             // TODO: option to skip deleting rows from the materialized table since we're about to delete it anyway
-            // TODO do we need both truncateSampleSet() and deleteDomainObjects()?
-            truncateSampleSet(source, user, null);
+            // TODO do we need both truncateSampleType() and deleteDomainObjects()?
+            truncateSampleType(source, user, null);
 
             Domain d = source.getDomain();
             d.delete(user);
@@ -554,7 +553,7 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
         }
 
         // Delete sequences (genId and the unique counters)
-        DbSequenceManager.deleteLike(c, ExpSampleSet.SEQUENCE_PREFIX, source.getRowId(), getExpSchema().getSqlDialect());
+        DbSequenceManager.deleteLike(c, ExpSampleType.SEQUENCE_PREFIX, source.getRowId(), getExpSchema().getSqlDialect());
 
         SchemaKey samplesSchema = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
         QueryService.get().fireQueryDeleted(user, c, null, samplesSchema, singleton(source.getName()));
@@ -562,7 +561,7 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
         SchemaKey expMaterialsSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, materials.toString());
         QueryService.get().fireQueryDeleted(user, c, null, expMaterialsSchema, singleton(source.getName()));
 
-        // Remove SampleSet from search index
+        // Remove SampleType from search index
         SearchService ss = SearchService.get();
         if (null != ss)
         {
@@ -573,52 +572,52 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
         }
 
         timer.stop();
-        LOG.info("Deleted SampleSet '" + source.getName() + "' from '" + c.getPath() + "' in " + timer.getDuration());
+        LOG.info("Deleted SampleType '" + source.getName() + "' from '" + c.getPath() + "' in " + timer.getDuration());
     }
 
 
     @NotNull
     @Override
-    public ExpSampleSetImpl createSampleSet()
+    public ExpSampleTypeImpl createSampleType()
     {
-        return new ExpSampleSetImpl(new MaterialSource());
+        return new ExpSampleTypeImpl(new MaterialSource());
     }
 
     @NotNull
     @Override
-    public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol, String nameExpression)
+    public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol, String nameExpression)
             throws ExperimentException
     {
-        return createSampleSet(c,u,name,description,properties,indices,idCol1,idCol2,idCol3,parentCol,null, null);
+        return createSampleType(c,u,name,description,properties,indices,idCol1,idCol2,idCol3,parentCol,null, null);
     }
 
     @NotNull
     @Override
-    public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                            String nameExpression, @Nullable TemplateInfo templateInfo)
+    public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
+                                              String nameExpression, @Nullable TemplateInfo templateInfo)
             throws ExperimentException
     {
-        return createSampleSet(c, u, name, description, properties, indices, idCol1, idCol2, idCol3,
+        return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3,
                 parentCol, nameExpression, templateInfo, null);
     }
 
     @NotNull
     @Override
-    public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                            String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases)
+    public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
+                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases)
         throws ExperimentException
     {
         if (name == null)
-            throw new ExperimentException("SampleSet name is required");
+            throw new ExperimentException("SampleType name is required");
 
-        TableInfo materialSourceTable = ExperimentService.get().getTinfoMaterialSource();
+        TableInfo materialSourceTable = ExperimentService.get().getTinfoSampleType();
         int nameMax = materialSourceTable.getColumn("Name").getScale();
         if (name.length() > nameMax)
-            throw new ExperimentException("SampleSet name may not exceed " + nameMax + " characters.");
+            throw new ExperimentException("SampleType name may not exceed " + nameMax + " characters.");
 
-        ExpSampleSet existing = getSampleSet(c, name);
+        ExpSampleType existing = getSampleType(c, name);
         if (existing != null)
-            throw new IllegalArgumentException("SampleSet '" + existing.getName() + "' already exists");
+            throw new IllegalArgumentException("SampleType '" + existing.getName() + "' already exists");
 
         if (properties == null || properties.size() < 1)
             throw new ExperimentException("At least one property is required");
@@ -644,7 +643,7 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
         if (nameExpression != null && nameExpression.length() > nameExpMax)
             throw new ExperimentException("Name expression may not exceed " + nameExpMax + " characters.");
 
-        Lsid lsid = getSampleSetLsid(name, c);
+        Lsid lsid = getSampleTypeLsid(name, c);
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
         DomainKind kind = domain.getDomainKind();
         Set<String> reservedNames = kind.getReservedPropertyNames(domain);
@@ -720,7 +719,7 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
         if (parentUri != null)
             source.setParentCol(parentUri);
 
-        final ExpSampleSetImpl ss = new ExpSampleSetImpl(source);
+        final ExpSampleTypeImpl st = new ExpSampleTypeImpl(source);
 
         try
         {
@@ -729,10 +728,10 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
                 try
                 {
                     domain.save(u);
-                    ss.save(u);
+                    st.save(u);
                     DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
                     transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
-                    return ss;
+                    return st;
                 }
                 catch (ExperimentException eex)
                 {
@@ -746,7 +745,7 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
             throw x;
         }
 
-        return ss;
+        return st;
     }
 
     public String getAliasJson(Map<String, String> importAliases, String currentAliasName)
@@ -780,8 +779,8 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
                 throw new IllegalArgumentException("Parent aliases contain blanks");
 
             //Substitute the currentAliasName for the placeholder value
-            if (trimmedVal.equalsIgnoreCase(NEW_SAMPLE_SET_ALIAS_VALUE) ||
-                trimmedVal.equalsIgnoreCase(MATERIAL_INPUTS_PREFIX + NEW_SAMPLE_SET_ALIAS_VALUE))
+            if (trimmedVal.equalsIgnoreCase(NEW_SAMPLE_TYPE_ALIAS_VALUE) ||
+                trimmedVal.equalsIgnoreCase(MATERIAL_INPUTS_PREFIX + NEW_SAMPLE_TYPE_ALIAS_VALUE))
             {
                 trimmedVal = MATERIAL_INPUTS_PREFIX + currentAliasName;
             }
@@ -838,33 +837,33 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
     }
 
     @Override
-    public ValidationException updateSampleSet(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
+    public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
     {
-        ExpSampleSetImpl ss = new ExpSampleSetImpl(getMaterialSource(update.getDomainURI()));
+        ExpSampleTypeImpl st = new ExpSampleTypeImpl(getMaterialSource(update.getDomainURI()));
 
         String newDescription = StringUtils.trimToNull(update.getDescription());
-        String description = ss.getDescription();
+        String description = st.getDescription();
         if (description == null || !description.equals(newDescription))
         {
-            ss.setDescription(newDescription);
+            st.setDescription(newDescription);
         }
 
         if (options != null)
         {
             String sampleIdPattern = StringUtils.trimToNull(options.getNameExpression());
-            String oldPattern = ss.getNameExpression();
+            String oldPattern = st.getNameExpression();
             if (oldPattern == null || !oldPattern.equals(sampleIdPattern))
             {
-                ss.setNameExpression(sampleIdPattern);
+                st.setNameExpression(sampleIdPattern);
             }
 
-            ss.setImportAliasMap(options.getImportAliases());
+            st.setImportAliasMap(options.getImportAliases());
         }
 
         ValidationException errors;
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            ss.save(user);
+            st.save(user);
             errors = DomainUtil.updateDomainDescriptor(original, update, container, user);
 
             if (!errors.hasErrors())
@@ -880,8 +879,8 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
     @Override
     public boolean parentAliasHasCorrectFormat(String parentAlias)
     {
-        //check if it is of the expected format or targeting the to be created sampleset
-        if (!(UploadSamplesHelper.isInputOutputHeader(parentAlias) || NEW_SAMPLE_SET_ALIAS_VALUE.equals(parentAlias)))
+        //check if it is of the expected format or targeting the to be created sample type
+        if (!(UploadSamplesHelper.isInputOutputHeader(parentAlias) || NEW_SAMPLE_TYPE_ALIAS_VALUE.equals(parentAlias)))
             throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", parentAlias));
 
         return true;
@@ -939,19 +938,19 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
 
         if (row != null)
         {
-            String sampleSetLsid = null;
+            String sampleTypeLsid = null;
             if (row.containsKey(CPAS_TYPE))
-                sampleSetLsid =  String.valueOf(row.get(CPAS_TYPE));
+                sampleTypeLsid =  String.valueOf(row.get(CPAS_TYPE));
             // When a sample is deleted, the LSID is provided via the "sampleset" field instead of "LSID"
-            if (sampleSetLsid == null && row.containsKey("sampleset"))
-                sampleSetLsid = String.valueOf(row.get("sampleset"));
-            if (sampleSetLsid != null)
+            if (sampleTypeLsid == null && row.containsKey("sampleset"))
+                sampleTypeLsid = String.valueOf(row.get("sampleset"));
+            if (sampleTypeLsid != null)
             {
-                ExpSampleSet sampleSet = SampleSetService.get().getSampleSetByType(sampleSetLsid, c);
-                if (sampleSet != null)
+                ExpSampleType sampleType = SampleTypeService.get().getSampleTypeByType(sampleTypeLsid, c);
+                if (sampleType != null)
                 {
-                    event.setSampleType(sampleSet.getName());
-                    event.setSampleTypeId(sampleSet.getRowId());
+                    event.setSampleType(sampleType.getName());
+                    event.setSampleTypeId(sampleType.getRowId());
                 }
             }
             if (row.containsKey(LSID))
@@ -982,7 +981,7 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
         event.setSampleName(sample.getName());
         event.setSampleLsid(sample.getLSID());
         event.setSampleId(sample.getRowId());
-        ExpSampleSet type = sample.getSampleSet();
+        ExpSampleType type = sample.getSampleType();
         if (type != null)
         {
             event.setSampleType(type.getName());

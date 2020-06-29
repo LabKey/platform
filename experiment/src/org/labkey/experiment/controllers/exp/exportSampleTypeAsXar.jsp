@@ -24,7 +24,7 @@
 <table class="lk-fields-table">
     <tr>
         <td>
-            <table class="labkey-export-tab-layout"><tr><td>Export sample set definition as a XAR file</td></tr></table>
+            <table class="labkey-export-tab-layout"><tr><td>Export sample type definition as a XAR file</td></tr></table>
         </td>
     </tr>
     <tr>

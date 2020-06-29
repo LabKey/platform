@@ -855,17 +855,17 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
     {
         User user = TestContext.get().getUser();
 
-        // Create a sample set with name
+        // Create a sample type with name
         String sampleName = "CarLocations";
         String sampleOneLocation = "California";
 
-        ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
+        ExpSampleTypeImpl st = SampleTypeServiceImpl.get().createSampleType(c, user,
                 sampleName, null, List.of(new GWTPropertyDescriptor("name", "string")), Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
 
         UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
 
-        // Insert a sample into sample set
+        // Insert a sample into sample type
         ArrayListMap<String, Object> row = new ArrayListMap<>();
         row.put("name", sampleOneLocation);
 
@@ -876,7 +876,7 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
         var insertedSample = insertedSampleRows.get(0);
         Integer insertedSampleRowId = (Integer)insertedSample.get("RowId");
 
-        // Create a vocab domain with lookup prop to the sample set
+        // Create a vocab domain with lookup prop to the sample type
         String domainName = "LookUpVocabularyDomain";
         String domainDescription = "This is a lookup vocabulary for car locations.";
         String locationPropertyName = "Location";

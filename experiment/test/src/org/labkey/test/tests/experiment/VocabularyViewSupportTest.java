@@ -19,11 +19,11 @@ import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.test.Locator;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.CustomizeView;
-import org.labkey.test.params.experiment.SampleSetDefinition;
+import org.labkey.test.params.experiment.SampleTypeDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.PortalHelper;
-import org.labkey.test.util.SampleSetHelper;
+import org.labkey.test.util.SampleTypeHelper;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -56,7 +56,7 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
         PortalHelper portalHelper = new PortalHelper(this);
         _containerHelper.createProject(getProjectName(), null);
         projectMenu().navigateToProject(getProjectName());
-        portalHelper.addWebPart("Sample Sets");
+        portalHelper.addWebPart("Sample Types");
     }
 
     @Override
@@ -116,8 +116,8 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
         String sampleSetName = "Cars";
 
         goToProjectHome();
-        SampleSetHelper sampleHelper = new SampleSetHelper(this);
-        sampleHelper.createSampleSet(new SampleSetDefinition(sampleSetName));
+        SampleTypeHelper sampleHelper = new SampleTypeHelper(this);
+        sampleHelper.createSampleType(new SampleTypeDefinition(sampleSetName));
 
         log("call to insertRows with a voc property");
         int sampleSetRowCount = 0;
@@ -141,8 +141,8 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
 
         log("goto dataclass grid .. open customize grid panel");
         goToProjectHome();
-        click(Locator.linkWithText("Sample Sets"));
-        sampleHelper.goToSampleSet(sampleSetName);
+        click(Locator.linkWithText("Sample Types"));
+        sampleHelper.goToSampleType(sampleSetName);
         DataRegionTable drt = sampleHelper.getSamplesDataRegionTable();
         CustomizeView sampleSetCustomizeGrid = drt.openCustomizeGrid();
         sampleSetCustomizeGrid.showHiddenItems();

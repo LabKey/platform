@@ -48,7 +48,7 @@ import java.util.Map;
  */
 public abstract class AbstractPipelineStartup
 {
-    private static Logger _log = Logger.getLogger(AbstractPipelineStartup.class);
+    private static final Logger _log = Logger.getLogger(AbstractPipelineStartup.class);
 
     /**
      * @return map from module name to BeanFactory

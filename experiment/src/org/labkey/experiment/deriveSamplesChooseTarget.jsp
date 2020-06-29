@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
 <%@ page import="org.labkey.api.exp.api.ExpMaterial" %>
-<%@ page import="org.labkey.api.exp.api.ExpSampleSet" %>
+<%@ page import="org.labkey.api.exp.api.ExpSampleType" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
@@ -29,11 +29,11 @@
     JspView<ExperimentController.DeriveSamplesChooseTargetBean> me = (JspView<ExperimentController.DeriveSamplesChooseTargetBean>) HttpView.currentView();
     ExperimentController.DeriveSamplesChooseTargetBean bean = me.getModelBean();
 
-    Map<Integer, String> sampleSetOptions = new LinkedHashMap<>();
-    sampleSetOptions.put(0, "Not a member of a sample set");
-    for (ExpSampleSet ss : bean.getSampleSets())
+    Map<Integer, String> sampleTypeOptions = new LinkedHashMap<>();
+    sampleTypeOptions.put(0, "Not a member of a sample type");
+    for (ExpSampleType st : bean.getSampleTypes())
     {
-        sampleSetOptions.put(ss.getRowId(), ss.getName() + " in " + ss.getContainer().getPath());
+        sampleTypeOptions.put(st.getRowId(), st.getName() + " in " + st.getContainer().getPath());
     }
 %>
 
@@ -85,10 +85,10 @@
             </td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Target sample set:</td>
+            <td class="labkey-form-label">Target sample type:</td>
             <td colspan="2">
-                <labkey:select name="targetSampleSetId">
-                    <labkey:options value="<%=bean.getTargetSampleSetId()%>" map="<%=sampleSetOptions%>"/>
+                <labkey:select name="targetSampleTypeId">
+                    <labkey:options value="<%=bean.getTargetSampleTypeId()%>" map="<%=sampleTypeOptions%>"/>
                 </labkey:select>
             </td>
         </tr>

@@ -17,22 +17,22 @@ public class SampleTypeDomainKindProperties implements Cloneable
     {
     }
 
-    public SampleTypeDomainKindProperties(ExpSampleSet ss)
+    public SampleTypeDomainKindProperties(ExpSampleType st)
     {
-        if (ss != null)
+        if (st != null)
         {
-            this.name = ss.getName();
-            this.nameExpression = ss.getNameExpression();
-            this.domainId = ss.getDomain().getTypeId();
-            this.rowId = ss.getRowId();
-            this.lsid = ss.getLSID();
-            this.description = ss.getDescription();
+            this.name = st.getName();
+            this.nameExpression = st.getNameExpression();
+            this.domainId = st.getDomain().getTypeId();
+            this.rowId = st.getRowId();
+            this.lsid = st.getLSID();
+            this.description = st.getDescription();
             this.idCols = new ArrayList<>();
-            ss.getIdCols().forEach(col -> this.idCols.add(col.getPropertyId()));
+            st.getIdCols().forEach(col -> this.idCols.add(col.getPropertyId()));
 
             try
             {
-                this.importAliases = ss.getImportAliasMap();
+                this.importAliases = st.getImportAliasMap();
             }
             catch (IOException e)
             {
