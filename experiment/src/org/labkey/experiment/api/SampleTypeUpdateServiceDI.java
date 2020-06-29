@@ -38,7 +38,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRunItem;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -53,7 +53,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.experiment.ExpDataIterators;
-import org.labkey.experiment.SampleSetAuditProvider;
+import org.labkey.experiment.SampleTypeAuditProvider;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.sql.SQLException;
@@ -74,28 +74,28 @@ import java.util.Set;
  * TODO find remaining shared code and refactor
  *
  */
-public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
+public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 {
-    public static final Logger LOG = Logger.getLogger(SampleSetUpdateServiceDI.class);
+    public static final Logger LOG = Logger.getLogger(SampleTypeUpdateServiceDI.class);
 
     public enum Options {
         SkipDerivation
     }
 
 
-    final ExpSampleSetImpl _sampleset;
+    final ExpSampleTypeImpl _sampleType;
     final UserSchema _schema;
     final TableInfo _samplesTable;
     // super.getRootTable() is UserSchema table
     // getDbTable() is exp.materials
     // getSamplesTable() is the materialized table with row properties
 
-    public SampleSetUpdateServiceDI(ExpMaterialTableImpl table, ExpSampleSetImpl sampleset)
+    public SampleTypeUpdateServiceDI(ExpMaterialTableImpl table, ExpSampleTypeImpl sampleType)
     {
         super(table, table.getRealTable());
-        this._sampleset = sampleset;
-        this._schema = table.getUserSchema();
-        this._samplesTable = sampleset.getTinfo();
+        _sampleType = sampleType;
+        _schema = table.getUserSchema();
+        _samplesTable = sampleType.getTinfo();
     }
 
     UserSchema getSchema()
@@ -129,7 +129,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         }
 
         // MOVE PrepareDataIteratorBuilder into this file
-        return new UploadSamplesHelper.PrepareDataIteratorBuilder(_sampleset, getQueryTable(), in);
+        return new UploadSamplesHelper.PrepareDataIteratorBuilder(_sampleType, getQueryTable(), in);
     }
 
     @Override
@@ -207,7 +207,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
     protected Map<String, Object> _select(Container container, Object[] keys) throws ConversionException
     {
         TableInfo d = getDbTable();
-        TableInfo t = _sampleset.getTinfo();
+        TableInfo t = _sampleType.getTinfo();
 
         SQLFragment sql = new SQLFragment()
                 .append("SELECT t.*, d.RowId, d.Name, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
@@ -236,8 +236,8 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
 
         // update provisioned table -- note that LSID isn't the PK so we need to use the filter to update the correct row instead
         keys = new Object[]{lsid};
-        TableInfo t = _sampleset.getTinfo();
-        // Sampleset Uses FILE_LINK not FILE_ATTACHMENT, use convertTypes() to handle posted files
+        TableInfo t = _sampleType.getTinfo();
+        // Sample type uses FILE_LINK not FILE_ATTACHMENT, use convertTypes() to handle posted files
         convertTypes(c, rowCopy, t, "sampleset");
         if (t.getColumnNameSet().stream().anyMatch(rowCopy::containsKey))
         {
@@ -275,7 +275,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     protected int truncateRows(User user, Container container)
     {
-        int ret = SampleSetServiceImpl.get().truncateSampleSet(_sampleset, user, container);
+        int ret = SampleTypeServiceImpl.get().truncateSampleType(_sampleType, user, container);
         if (ret > 0)
         {
             // NOTE: Not necessary to call onSamplesChanged -- already called by truncateSampleSet
@@ -287,7 +287,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     protected Domain getDomain()
     {
-        return _sampleset.getDomain();
+        return _sampleType.getDomain();
     }
 
     @Override
@@ -324,12 +324,12 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
                 // adding input fields is expensive, skip input fields for delete since deleted samples are not surfaced on Timeline UI
                 Map<String, Object> map = getMaterialMap(rowId, getMaterialLsid(k), user, container, false);
                 if (map == null)
-                    throw new QueryUpdateServiceException("No Sample Set Material found for rowId or LSID");
+                    throw new QueryUpdateServiceException("No Sample Type Material found for rowId or LSID");
 
                 if (rowId == null)
                     rowId = getMaterialRowId(map);
                 if (rowId == null)
-                    throw new QueryUpdateServiceException("RowID is required to delete a Sample Set Material");
+                    throw new QueryUpdateServiceException("RowID is required to delete a Sample Type Material");
 
                 ids.add(rowId);
                 result.add(map);
@@ -380,7 +380,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         else if (lsid != null)
             filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID), lsid);
         else
-            throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Set Material.");
+            throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Type Material.");
 
         Map<String, Object> sampleRow = new TableSelector(getQueryTable(), filter, null).getMap();
 
@@ -415,10 +415,10 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
 
             else if (parent instanceof ExpMaterial)
             {
-                ExpSampleSet sampleset = ((ExpMaterial) parent).getSampleSet();
-                if (sampleset == null)
+                ExpSampleType sampleType = ((ExpMaterial) parent).getSampleType();
+                if (sampleType == null)
                     continue;
-                type = sampleset.getName();
+                type = sampleType.getName();
             }
 
             parentByType.computeIfAbsent(type, k -> new ArrayList<>());
@@ -446,7 +446,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws QueryUpdateServiceException
     {
         return getMaterialMap(getMaterialRowId(keys), getMaterialLsid(keys), user, container, true);
     }
@@ -489,21 +489,21 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         }
         else
         {
-            this.fireSamplesChanged();
+            fireSamplesChanged();
         }
     }
 
     private void fireSamplesChanged()
     {
-        _sampleset.onSamplesChanged(getUser(), null);
+        _sampleType.onSamplesChanged(getUser(), null);
     }
 
     void audit(QueryService.AuditAction auditAction)
     {
-        SampleSetAuditProvider.SampleSetAuditEvent event = new SampleSetAuditProvider.SampleSetAuditEvent(
-                getContainer().getId(), "Samples " + auditAction.getVerbPastTense() + " in: " + _sampleset.getName());
-        event.setSourceLsid(_sampleset.getLSID());
-        event.setSampleSetName(_sampleset.getName());
+        SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(
+                getContainer().getId(), "Samples " + auditAction.getVerbPastTense() + " in: " + _sampleType.getName());
+        event.setSourceLsid(_sampleType.getLSID());
+        event.setSampleTypeName(_sampleType.getName());
         event.setInsertUpdateChoice(auditAction.toString().toLowerCase());
         AuditLogService.get().addEvent(getUser(), event);
     }

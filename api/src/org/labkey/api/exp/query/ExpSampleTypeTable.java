@@ -20,7 +20,7 @@ package org.labkey.api.exp.query;
  * User: jeckels
  * Date: Oct 17, 2007
  */
-public interface ExpSampleSetTable extends ExpTable<ExpSampleSetTable.Column>
+public interface ExpSampleTypeTable extends ExpTable<ExpSampleTypeTable.Column>
 {
     enum Column
     {

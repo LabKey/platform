@@ -25,8 +25,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
@@ -52,13 +53,13 @@ public class SamplesSchema extends AbstractExpSchema
     public static final String SCHEMA_DESCR = "Contains data about the samples used in experiment runs.";
     static final Logger log = Logger.getLogger(SamplesSchema.class);
 
-    static private Map<String, ExpSampleSet> getSampleSetMap(Container container, User user)
+    static private Map<String, ExpSampleType> getSampleTypeMap(Container container, User user)
     {
-        Map<String, ExpSampleSet> map = new CaseInsensitiveTreeMap<>();
+        Map<String, ExpSampleType> map = new CaseInsensitiveTreeMap<>();
         // User can be null if we're running in a background thread, such as doing a study export
-        for (ExpSampleSet ss : ExperimentService.get().getSampleSets(container, user, user != null))
+        for (ExpSampleType st : SampleTypeService.get().getSampleTypes(container, user, user != null))
         {
-            map.put(ss.getName(), ss);
+            map.put(st.getName(), st);
         }
         return map;
     }
@@ -69,7 +70,7 @@ public class SamplesSchema extends AbstractExpSchema
             @Override
             public boolean isAvailable(DefaultSchema schema, Module module)
             {
-                // The 'samples' schema is always available, but will be hidden if there are no SampleSets
+                // The 'samples' schema is always available, but will be hidden if there are no SampleTypes
                 return true;
             }
 
@@ -92,41 +93,41 @@ public class SamplesSchema extends AbstractExpSchema
         this(SchemaKey.fromParts(SCHEMA_NAME), user, container);
     }
 
-    private Map<String, ExpSampleSet> _sampleSetMap = null;
+    private Map<String, ExpSampleType> _sampleTypeMap = null;
 
     /*package*/ SamplesSchema(SchemaKey path, User user, Container container)
     {
         super(path, SCHEMA_DESCR, user, container, ExperimentService.get().getSchema());
     }
 
-    protected Map<String, ExpSampleSet> getSampleSets()
+    protected Map<String, ExpSampleType> getSampleTypes()
     {
-        if (_sampleSetMap == null)
+        if (_sampleTypeMap == null)
         {
-            _sampleSetMap = getSampleSetMap(getContainer(), getUser());
+            _sampleTypeMap = getSampleTypeMap(getContainer(), getUser());
         }
-        return _sampleSetMap;
+        return _sampleTypeMap;
     }
 
     @Override
     public boolean isHidden()
     {
-        return getSampleSets().isEmpty();
+        return getSampleTypes().isEmpty();
     }
 
     @Override
     public Set<String> getTableNames()
     {
-        return getSampleSets().keySet();
+        return getSampleTypes().keySet();
     }
 
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
-        ExpSampleSet ss = getSampleSets().get(name);
-        if (ss == null)
+        ExpSampleType st = getSampleTypes().get(name);
+        if (st == null)
             return null;
-        return getSampleTable(ss, cf);
+        return getSampleTable(st, cf);
     }
 
     @Override
@@ -141,15 +142,15 @@ public class SamplesSchema extends AbstractExpSchema
         return queryView;
     }
 
-    /** Creates a table of materials, scoped to the given sample set and including its custom columns, if provided */
-    public ExpMaterialTable getSampleTable(ExpSampleSet ss, ContainerFilter cf)
+    /** Creates a table of materials, scoped to the given sample type and including its custom columns, if provided */
+    public ExpMaterialTable getSampleTable(ExpSampleType st, ContainerFilter cf)
     {
         if (log.isTraceEnabled())
         {
-            log.trace("CREATE TABLE: " + (null==ss ? "null" : ss.getName()) + " schema=" + System.identityHashCode(this), new Throwable());
+            log.trace("CREATE TABLE: " + (null==st ? "null" : st.getName()) + " schema=" + System.identityHashCode(this), new Throwable());
         }
         ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), this, cf);
-        ret.populate(ss, true);
+        ret.populate(st, true);
         ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
         return ret;
     }
@@ -157,10 +158,10 @@ public class SamplesSchema extends AbstractExpSchema
     /**
      * @param domainProperty the property on which the lookup is configured
      */
-    public ForeignKey materialIdForeignKey(@Nullable final ExpSampleSet ss, @Nullable DomainProperty domainProperty)
+    public ForeignKey materialIdForeignKey(@Nullable final ExpSampleType st, @Nullable DomainProperty domainProperty)
     {
-        final String tableName =  null == ss ? ExpSchema.TableType.Materials.toString() : ss.getName();
-        final String schemaName = null == ss ? ExpSchema.SCHEMA_NAME : SamplesSchema.SCHEMA_NAME;
+        final String tableName =  null == st ? ExpSchema.TableType.Materials.toString() : st.getName();
+        final String schemaName = null == st ? ExpSchema.SCHEMA_NAME : SamplesSchema.SCHEMA_NAME;
 
         return new LookupForeignKey(null, null, schemaName, tableName, "RowId", null)
         {
@@ -168,14 +169,14 @@ public class SamplesSchema extends AbstractExpSchema
             public @Nullable TableInfo getLookupTableInfo()
             {
                 ContainerFilter cf = getLookupContainerFilter();
-                String cacheKey = SamplesSchema.class.getName() + "/" + schemaName + "/" + tableName + "/" + (null==ss ? "" : ss.getMaterialLSIDPrefix()) + "/" + (null==domainProperty ? "" : domainProperty.getPropertyURI()) + cf.getCacheKey();
+                String cacheKey = SamplesSchema.class.getName() + "/" + schemaName + "/" + tableName + "/" + (null==st ? "" : st.getMaterialLSIDPrefix()) + "/" + (null==domainProperty ? "" : domainProperty.getPropertyURI()) + cf.getCacheKey();
                 return SamplesSchema.this.getCachedLookupTableInfo(cacheKey, this::createLookupTableInfo);
             }
 
             private TableInfo createLookupTableInfo()
             {
                 ExpMaterialTable ret = ExperimentService.get().createMaterialTable(tableName, SamplesSchema.this, null);
-                ret.populate(ss, true);
+                ret.populate(st, true);
                 ret.setContainerFilter(getLookupContainerFilter());
                 ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
                 if (domainProperty != null && domainProperty.getPropertyType().getJdbcType().isText())
@@ -190,7 +191,7 @@ public class SamplesSchema extends AbstractExpSchema
             @Override
             protected ContainerFilter getLookupContainerFilter()
             {
-                return new ContainerFilter.SimpleContainerFilter(ExpSchema.getSearchContainers(getContainer(), ss, domainProperty, getUser()));
+                return new ContainerFilter.SimpleContainerFilter(ExpSchema.getSearchContainers(getContainer(), st, domainProperty, getUser()));
             }
 
             @Override
@@ -205,10 +206,10 @@ public class SamplesSchema extends AbstractExpSchema
     public String getDomainURI(String queryName)
     {
         Container container = getContainer();
-        ExpSampleSet ss = getSampleSets().get(queryName);
-        if (ss == null)
-            throw new NotFoundException("Sample set '" + queryName + "' not found in this container '" + container.getPath() + "'.");
+        ExpSampleType st = getSampleTypes().get(queryName);
+        if (st == null)
+            throw new NotFoundException("Sample type '" + queryName + "' not found in this container '" + container.getPath() + "'.");
 
-        return ss.getDomain().getTypeURI();
+        return st.getDomain().getTypeURI();
     }
 }

@@ -83,13 +83,13 @@ public abstract class ExpProtocolInputTableImpl<C extends Enum> extends ExpTable
         return col;
     }
 
-    protected MutableColumnInfo createSampleSetColumn(String alias)
+    protected MutableColumnInfo createSampleTypeColumn(String alias)
     {
         var col = wrapColumn(alias, _rootTable.getColumn("MaterialSourceId"));
         var fk = QueryForeignKey
-                .from(getUserSchema(), getContainerFilter())
-                .schema(ExpSchema.SCHEMA_NAME, getContainer())
-                .to(SampleSets.name(), "RowId", null);
+            .from(getUserSchema(), getContainerFilter())
+            .schema(ExpSchema.SCHEMA_NAME, getContainer())
+            .to(SampleSets.name(), "RowId", null);
         col.setFk( fk );
         return col;
     }

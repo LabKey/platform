@@ -58,8 +58,9 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolInput;
 import org.labkey.api.exp.api.ExpProtocolInputCriteria;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -84,7 +85,7 @@ import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
 import org.labkey.experiment.api.ExpProtocolImpl;
 import org.labkey.experiment.api.ExpRunImpl;
-import org.labkey.experiment.api.ExpSampleSetImpl;
+import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.Experiment;
 import org.labkey.experiment.api.ExperimentRun;
 import org.labkey.experiment.api.ExperimentServiceImpl;
@@ -97,7 +98,7 @@ import org.labkey.experiment.api.ProtocolActionPredecessor;
 import org.labkey.experiment.api.ProtocolActionStepDetail;
 import org.labkey.experiment.api.ProtocolApplication;
 import org.labkey.experiment.api.RunItem;
-import org.labkey.experiment.api.SampleSetServiceImpl;
+import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AbstractXarImporter;
@@ -137,7 +138,7 @@ public class XarReader extends AbstractXarImporter
 
     private boolean _reloadExistingRuns = false;
     private boolean _useOriginalFileUrl = false;
-    private boolean _strictValidateExistingSampleSet = true;
+    private boolean _strictValidateExistingSampleType = true;
 
     private List<ExpRun> _loadedRuns = new ArrayList<>();
 
@@ -166,9 +167,9 @@ public class XarReader extends AbstractXarImporter
         _useOriginalFileUrl = useOriginalFileUrl;
     }
 
-    public void setStrictValidateExistingSampleSet(boolean strictValidateExistingSampleSet)
+    public void setStrictValidateExistingSampleType(boolean strictValidateExistingSampleType)
     {
-        _strictValidateExistingSampleSet = strictValidateExistingSampleSet;
+        _strictValidateExistingSampleType = strictValidateExistingSampleType;
     }
 
     public void parseAndLoad(boolean reloadExistingRuns) throws ExperimentException
@@ -316,7 +317,7 @@ public class XarReader extends AbstractXarImporter
             {
                 for (SampleSetType sampleSet : sampleSets.getSampleSetArray())
                 {
-                    loadSampleSet(sampleSet);
+                    loadSampleType(sampleSet);
                 }
             }
 
@@ -445,13 +446,13 @@ public class XarReader extends AbstractXarImporter
         return dp;
     }
 
-    private ExpSampleSetImpl loadSampleSet(SampleSetType sampleSet) throws XarFormatException
+    private ExpSampleTypeImpl loadSampleType(SampleSetType sampleSet) throws XarFormatException
     {
         String lsid = LsidUtils.resolveLsidFromTemplate(sampleSet.getAbout(), getRootContext(), "SampleSet");
-        ExpSampleSetImpl existingMaterialSource = SampleSetServiceImpl.get().getSampleSet(lsid);
+        ExpSampleTypeImpl existingMaterialSource = SampleTypeServiceImpl.get().getSampleType(lsid);
 
-        getLog().debug("Importing SampleSet with LSID '" + lsid + "'");
-        ExpSampleSetImpl materialSource = SampleSetServiceImpl.get().createSampleSet();
+        getLog().debug("Importing SampleType with LSID '" + lsid + "'");
+        ExpSampleTypeImpl materialSource = SampleTypeServiceImpl.get().createSampleType();
         materialSource.setDescription(sampleSet.getDescription());
         materialSource.setName(sampleSet.getName());
         materialSource.setLSID(lsid);
@@ -466,7 +467,7 @@ public class XarReader extends AbstractXarImporter
             {
                 DomainProperty dp = findPropertyByUriOrName(domain, keyField);
                 if (dp == null)
-                    logErrorAndThrow("Failed to find keyField '" + keyField + " when importing SampleSet with LSID '" + lsid + "' ");
+                    logErrorAndThrow("Failed to find keyField '" + keyField + " when importing SampleType with LSID '" + lsid + "' ");
                 else
                     propertyURIs.add(dp.getPropertyURI());
             }
@@ -487,7 +488,7 @@ public class XarReader extends AbstractXarImporter
 
         if (existingMaterialSource != null)
         {
-            if (_strictValidateExistingSampleSet)
+            if (_strictValidateExistingSampleType)
             {
                 List<IdentifiableEntity.Difference> diffs = new ArrayList<>();
                 IdentifiableEntity.diff(materialSource.getName(), existingMaterialSource.getName(), "Name", diffs);
@@ -1095,14 +1096,14 @@ public class XarReader extends AbstractXarImporter
         {
             declaredType = LsidUtils.resolveLsidFromTemplate(declaredType, context, "SampleSet");
         }
-        ExpSampleSetImpl sampleSet = checkMaterialCpasType(declaredType);
+        ExpSampleTypeImpl sampleSet = checkMaterialCpasType(declaredType);
 
         String materialLSID = LsidUtils.resolveLsidFromTemplate(xbMaterial.getAbout(), context, declaredType, ExpMaterial.DEFAULT_CPAS_TYPE);
 
         ExpMaterialImpl material = ExperimentServiceImpl.get().getExpMaterial(materialLSID);
         if (material == null && sampleSet != null)
         {
-            // Try resolving it by name within the sample set in case we have it under a different LSID
+            // Try resolving it by name within the sample type in case we have it under a different LSID
             material = sampleSet.getSample(context.getContainer(), xbMaterial.getName());
             if (material != null)
             {
@@ -1923,13 +1924,13 @@ public class XarReader extends AbstractXarImporter
     private ExpMaterialProtocolInput loadMaterialProtocolInput(MaterialProtocolInputType pi, boolean input) throws SQLException, XarFormatException
     {
         String name = pi.getName();
-        String sampleSetName = pi.getSampleSet();
-        ExpSampleSet sampleSet = null;
-        if (sampleSetName != null)
+        String sampleTypeName = pi.getSampleSet();
+        ExpSampleType sampleType = null;
+        if (sampleTypeName != null)
         {
-            sampleSet = ExperimentService.get().getSampleSet(getContainer(), getUser(), sampleSetName);
-            if (sampleSet == null)
-                logErrorAndThrow("SampleSet '" + sampleSetName + "' not found for protocol input '" + name + "'");
+            sampleType = SampleTypeService.get().getSampleType(getContainer(), getUser(), sampleTypeName);
+            if (sampleType == null)
+                logErrorAndThrow("SampleSet '" + sampleTypeName + "' not found for protocol input '" + name + "'");
         }
 
         ExpProtocolInputCriteria criteria = null;
@@ -1948,7 +1949,7 @@ public class XarReader extends AbstractXarImporter
         if (pi.isSetMinOccurs())
             maxOccurs = pi.getMaxOccurs();
 
-        ExpMaterialProtocolInput protocolInput = ExperimentServiceImpl.get().createMaterialProtocolInput(getContainer(), name, 0, input, sampleSet, criteria, minOccurs, maxOccurs);
+        ExpMaterialProtocolInput protocolInput = ExperimentServiceImpl.get().createMaterialProtocolInput(getContainer(), name, 0, input, sampleType, criteria, minOccurs, maxOccurs);
 
         savePropertyCollection(pi.getProperties(), protocolInput.getLSID(), protocolInput.getLSID(), null);
 

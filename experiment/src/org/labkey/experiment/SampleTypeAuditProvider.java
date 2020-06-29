@@ -35,12 +35,12 @@ import java.util.Set;
  * User: klum
  * Date: 7/21/13
  */
-public class SampleSetAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
+public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
     public static final String EVENT_TYPE = "SampleSetAuditEvent";
 
     public static final String COLUMN_NAME_SOURCE_LSID = "SourceLsid";
-    public static final String COLUMN_NAME_SAMPLE_SET_NAME = "SampleSetName";
+    public static final String COLUMN_NAME_SAMPLE_TYPE_NAME = "SampleSetName";
     public static final String COLUMN_NAME_INSERT_UPDATE_CHOICE = "InsertUpdateChoice";
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
@@ -50,7 +50,7 @@ public class SampleSetAuditProvider extends AbstractAuditTypeProvider implements
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_SAMPLE_SET_NAME));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_SAMPLE_TYPE_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROJECT_ID));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
@@ -59,7 +59,7 @@ public class SampleSetAuditProvider extends AbstractAuditTypeProvider implements
     @Override
     protected AbstractAuditDomainKind getDomainKind()
     {
-        return new SampleSetAuditDomainKind();
+        return new SampleTypeAuditDomainKind();
     }
 
     @Override
@@ -71,19 +71,19 @@ public class SampleSetAuditProvider extends AbstractAuditTypeProvider implements
     @Override
     public String getLabel()
     {
-        return "Sample Set events";
+        return "Sample Type events";
     }
 
     @Override
     public String getDescription()
     {
-        return "Summarizes events from sample set inserts or updates";
+        return "Summarizes events from sample type inserts or updates";
     }
 
     @Override
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
-        return (Class<K>)SampleSetAuditEvent.class;
+        return (Class<K>) SampleTypeAuditEvent.class;
     }
 
     @Override
@@ -92,18 +92,18 @@ public class SampleSetAuditProvider extends AbstractAuditTypeProvider implements
         return defaultVisibleColumns;
     }
 
-    public static class SampleSetAuditEvent extends AuditTypeEvent
+    public static class SampleTypeAuditEvent extends AuditTypeEvent
     {
         private String _sourceLsid;
-        private String _sampleSetName;
+        private String _sampleTypeName;
         private String _insertUpdateChoice;
 
-        public SampleSetAuditEvent()
+        public SampleTypeAuditEvent()
         {
             super();
         }
 
-        public SampleSetAuditEvent(String container, String comment)
+        public SampleTypeAuditEvent(String container, String comment)
         {
             super(EVENT_TYPE, container, comment);
         }
@@ -118,14 +118,14 @@ public class SampleSetAuditProvider extends AbstractAuditTypeProvider implements
             _sourceLsid = sourceLsid;
         }
 
-        public String getSampleSetName()
+        public String getSampleTypeName()
         {
-            return _sampleSetName;
+            return _sampleTypeName;
         }
 
-        public void setSampleSetName(String sampleSetName)
+        public void setSampleTypeName(String sampleTypeName)
         {
-            _sampleSetName = sampleSetName;
+            _sampleTypeName = sampleTypeName;
         }
 
         public String getInsertUpdateChoice()
@@ -143,26 +143,26 @@ public class SampleSetAuditProvider extends AbstractAuditTypeProvider implements
         {
             Map<String, Object> elements = new LinkedHashMap<>();
             elements.put("sourceLsid", getSourceLsid());
-            elements.put("sampleSetName", getSampleSetName());
+            elements.put("sampleSetName", getSampleTypeName());
             elements.put("insertUpdateChoice", getInsertUpdateChoice());
             elements.putAll(super.getAuditLogMessageElements());
             return elements;
         }
     }
 
-    public static class SampleSetAuditDomainKind extends AbstractAuditDomainKind
+    public static class SampleTypeAuditDomainKind extends AbstractAuditDomainKind
     {
         public static final String NAME = "SampleSetAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
         private final Set<PropertyDescriptor> _fields;
 
-        public SampleSetAuditDomainKind()
+        public SampleTypeAuditDomainKind()
         {
             super(EVENT_TYPE);
 
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
             fields.add(createPropertyDescriptor(COLUMN_NAME_SOURCE_LSID, PropertyType.STRING));
-            fields.add(createPropertyDescriptor(COLUMN_NAME_SAMPLE_SET_NAME, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_SAMPLE_TYPE_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_INSERT_UPDATE_CHOICE, PropertyType.STRING));
             _fields = Collections.unmodifiableSet(fields);
         }

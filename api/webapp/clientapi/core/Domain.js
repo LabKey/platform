@@ -20,7 +20,7 @@
 /**
  * @namespace Domain static class to retrieve and edit domain definitions.
  *
- *        <p>A domain is a collection of fields.  Each data type (e.g., Assays, Lists, Datasets, Sample Sets and
+ *        <p>A domain is a collection of fields.  Each data type (e.g., Assays, Lists, Datasets, Sample Types and
  *        Custom Protein Lists) provides specialized handling for the domains it
  *        defines.   The number of domains defined by a data type varies; for example, Assays
  *        define multiple domains (batch, run, etc.), while Lists
