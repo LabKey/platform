@@ -86,6 +86,9 @@
     String groupsPanelId  = "groupsPanel" + getRequestScopedUID();
 
     String viewObject = "subjectHandler" + bean.getIndex();
+    String param = getViewContext().getRequest().getParameter("pageId");
+    Boolean isParticipantsListPage = param != null && param.equals("study.PARTICIPANTS");
+    String conditionalStyling = (isParticipantsListPage) ? "overflow-y:auto;" : "overflow-y:auto; height: 470px;";
 %>
 <script type="text/javascript">
 <%=viewObject%> = (function()
@@ -741,7 +744,7 @@ Ext4.onReady(<%=viewObject%>.render, <%=viewObject%>);
                     <%= !bean.getWide() ? "<br/>" : "" %>
                     <span id="<%=divId%>.status" name="status" style="margin-bottom: 10px;">Loading...</span>
                 </div>
-                <div style="overflow-y:auto;" id="<%= listDivId %>"></div>
+                <div style="<%=conditionalStyling%>" id="<%= listDivId %>"></div>
             </td>
         </tr>
     </table>
