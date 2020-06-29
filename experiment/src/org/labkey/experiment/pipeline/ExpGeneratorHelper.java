@@ -499,9 +499,6 @@ public class ExpGeneratorHelper
         String lsid = "lsid";
         String datafileurl = "datafileurl";
 
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts(lsid), null, CompareType.NONBLANK);
-
         // skipping the first action as the inputs to first action are attached as run inputs for provenance recording
         for (int i = 1; i < actionsList.size(); i++)
         {
@@ -516,6 +513,7 @@ public class ExpGeneratorHelper
             });
 
             actionsList.get(i).getInputs().forEach(dataFile -> {
+                SimpleFilter filter = SimpleFilter.createContainerFilter(container);
                 filter.addCondition(FieldKey.fromString(datafileurl), dataFile.getURI().toString(), CompareType.EQUAL);
                 Map<String,Object> dataLsidMap = new TableSelector(ExperimentService.get().getTinfoData(), Set.of(lsid), filter, null).getMap();
 
