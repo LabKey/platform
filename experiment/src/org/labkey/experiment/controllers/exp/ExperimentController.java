@@ -572,7 +572,6 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    @ActionNames("showMaterialSource,showSampleType") // Referenced in labkey-ui-components components/src/util/URLResolver.ts TODO: migrate
     public class ShowSampleTypeAction extends SimpleViewAction<ExpObjectForm>
     {
         private ExpSampleTypeImpl _sampleType;
@@ -3358,7 +3357,6 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(DesignSampleTypePermission.class)
-    @ActionNames("deleteSampleTypes,deleteMaterialSource")  // Referenced in labkey-ui-components components/samples/actions.ts TODO: migrate
     public class DeleteSampleTypesAction extends AbstractDeleteAction
     {
         @Override
@@ -3488,8 +3486,8 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    @ActionNames("getSampleTypeApi,getSampleSetApi") // Referenced in labkey-ui-components components/samples/actions.ts TODO: migrate
-    public class GetSampleTypeApiAction extends ReadOnlyApiAction<SampleTypeForm>
+    @ActionNames("getSampleType,getSampleTypeApi") // Referenced in labkey-ui-components components/samples/actions.ts TODO: migrate getSampleTypeApi -> getSampleType
+    public class GetSampleTypeAction extends ReadOnlyApiAction<SampleTypeForm>
     {
         @Override
         public void validateForm(SampleTypeForm form, Errors errors)
@@ -3503,12 +3501,12 @@ public class ExperimentController extends SpringActionController
         {
             ExpSampleTypeImpl st = form.getSampleType(getContainer());
 
-            return getSampleTypeApiResponse(st);
+            return getSampleTypeResponse(st);
         }
     }
 
     @NotNull
-    private static ApiSimpleResponse getSampleTypeApiResponse(ExpSampleType st) throws IOException
+    private static ApiSimpleResponse getSampleTypeResponse(ExpSampleType st) throws IOException
     {
         Map<String,Object> sampleType = new HashMap<>();
         sampleType.put("name", st.getName());
