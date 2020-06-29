@@ -4,11 +4,23 @@ import java.util.Map;
 
 public enum SampleInventoryUpdateType
 {
-    CheckIn,
-    CheckOut,
-    VolumeChange,
-    FreezeThawChange,
-    MetadataChange;
+    CheckIn("Item checked in"),
+    CheckOut("Item checked out"),
+    VolumeChange("Volume updated"),
+    FreezeThawChange("Freeze/Thaw count updated"),
+    MetadataChange("Megadata changed");
+
+    private final String _message;
+
+    SampleInventoryUpdateType(String message)
+    {
+        _message = message;
+    }
+
+    public String getMessage()
+    {
+        return _message;
+    }
 
     public static SampleInventoryUpdateType getUpdateType(Map<String, Object> row, Map<String, Object> updatedRow)
     {

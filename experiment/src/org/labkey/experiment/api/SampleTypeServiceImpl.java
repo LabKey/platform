@@ -1000,7 +1000,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
     @Override
     public void addAuditEvent(User user, Container container, SampleInventoryUpdateType updateType, ExpMaterial sample, Map<String, Object> metadata)
     {
-        SampleTimelineAuditEvent event = createAuditRecord(user, container, "Inventory item updated", sample, metadata);
+        SampleTimelineAuditEvent event = createAuditRecord(user, container, updateType.getMessage(), sample, metadata);
         event.setInventoryUpdateType(updateType.toString());
         AuditLogService.get().addEvent(user, event);
     }
