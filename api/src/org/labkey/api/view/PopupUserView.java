@@ -20,6 +20,7 @@ import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.impersonation.ImpersonationContext;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.PageConfig;
@@ -57,10 +58,11 @@ public class PopupUserView extends PopupMenuView
         NavTree account = new NavTree("My Account", PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), currentURL));
         tree.addChild(account);
 
-        if (allowApiKeyPage(user))
+        ActionURL externalToolsViewURL = PageFlowUtil.urlProvider(SecurityUrls.class).getExternalToolsViewURL(user, currentURL);
+        if (null != externalToolsViewURL)
         {
-            NavTree apikey = new NavTree("API Keys", PageFlowUtil.urlProvider(SecurityUrls.class).getApiKeyURL(currentURL));
-            tree.addChild(apikey);
+            NavTree externalToolSettings = new NavTree("External Tool Settings", externalToolsViewURL);
+            tree.addChild(externalToolSettings);
         }
 
         // Delegate impersonate, stop impersonating, adjust impersonation, and sign out menu items to the current ImpersonationContext
