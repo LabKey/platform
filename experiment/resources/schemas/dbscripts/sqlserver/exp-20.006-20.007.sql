@@ -16,12 +16,10 @@ CREATE TABLE exp.PropertyValidator
 );
 GO
 
-SET IDENTITY_INSERT exp.propertyvalidator ON;
-INSERT INTO exp.propertyvalidator(propertyid, rowid, name, description, typeuri, expression, properties, errormessage, container)
-SELECT VR.propertyid, PV.rowid, PV.name, PV.description, PV.typeuri, PV.expression, PV.properties, PV.errormessage, PV.container
+INSERT INTO exp.propertyvalidator(propertyid, name, description, typeuri, expression, properties, errormessage, container)
+SELECT VR.propertyid, PV.name, PV.description, PV.typeuri, PV.expression, PV.properties, PV.errormessage, PV.container
 FROM exp.pv_old PV INNER JOIN exp.validatorreference VR ON PV.rowid = VR.validatorid
-ORDER BY container, propertyid, rowid;
-SET IDENTITY_INSERT exp.propertyvalidator OFF;
+ORDER BY container, propertyid;
 
 DROP TABLE exp.validatorreference;
 DROP TABLE exp.pv_old;
