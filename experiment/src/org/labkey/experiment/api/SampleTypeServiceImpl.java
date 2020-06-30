@@ -61,7 +61,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
-import org.labkey.api.exp.api.SampleInventoryUpdateType;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -998,10 +997,10 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
     }
 
     @Override
-    public void addAuditEvent(User user, Container container, SampleInventoryUpdateType updateType, ExpMaterial sample, Map<String, Object> metadata)
+    public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata, String updateType)
     {
-        SampleTimelineAuditEvent event = createAuditRecord(user, container, updateType.getMessage(), sample, metadata);
-        event.setInventoryUpdateType(updateType.toString());
+        SampleTimelineAuditEvent event = createAuditRecord(user, container, comment, sample, metadata);
+        event.setInventoryUpdateType(updateType);
         AuditLogService.get().addEvent(user, event);
     }
 }

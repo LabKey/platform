@@ -144,5 +144,5 @@ public interface SampleTypeService
 
     void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata);
 
-    void addAuditEvent(User user, Container container, SampleInventoryUpdateType updateType, ExpMaterial sample, Map<String, Object> metadata);
+    void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata, String updateType);
 }
