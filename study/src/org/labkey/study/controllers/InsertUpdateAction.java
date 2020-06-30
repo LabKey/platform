@@ -83,6 +83,8 @@ import java.util.Objects;
  */
 public abstract class InsertUpdateAction<Form extends DatasetController.EditDatasetRowForm> extends FormViewAction<Form>
 {
+    private static String DEFAULT_INSERT_VALUE_PREFIX = "default.";
+
     protected abstract boolean isInsert();
     protected abstract void addExtraNavTrail(NavTree root);
     protected StudyImpl _study = null;
@@ -193,9 +195,11 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                     }
                 }
 
-                for (Map.Entry<String, Object> typedColEntry : updateForm.getTypedColumns().entrySet())
+                // for the dataset insert view, allow for URL params with a special prefix to be used as "default" values for the form inputs
+                for (Map.Entry<String, String[]> paramEntry : getViewContext().getRequest().getParameterMap().entrySet())
                 {
-                    formDefaults.put(updateForm.getFormFieldName(typedColEntry.getKey()), typedColEntry.getValue());
+                    if (paramEntry.getKey().startsWith(DEFAULT_INSERT_VALUE_PREFIX))
+                        formDefaults.put(paramEntry.getKey().substring(DEFAULT_INSERT_VALUE_PREFIX.length()), paramEntry.getValue());
                 }
 
                 ((InsertView) view).setInitialValues(formDefaults);
