@@ -311,7 +311,7 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     }
 
     render() {
-        const { domain, showAlias, messages, showEditSourceConfirmationModal, showResetConfirmationModal, showViewDataConfirmationModal } = this.state;
+        const { domain, showAlias, messages, showEditSourceConfirmationModal, showResetConfirmationModal, showViewDataConfirmationModal, userDefinedQuery } = this.state;
         const isLoading = domain === undefined;
 
         if (isLoading) {
@@ -335,6 +335,8 @@ export class App extends PureComponent<any, Partial<IAppState>> {
                             hideAddFieldsButton: true,
                             hideTextOptions: true,
                             disableMvEnabled: true,
+                            hideDeleteIcon: userDefinedQuery,
+                            disableNameInput: userDefinedQuery,
                         }}
                     />
                 }

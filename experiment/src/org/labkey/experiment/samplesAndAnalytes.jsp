@@ -16,11 +16,11 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.exp.api.ExpSampleSet" %>
+<%@ page import="org.labkey.api.exp.api.ExpSampleType" %>
 <%@ page import="org.labkey.api.study.SamplesUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.experiment.api.ExpSampleSetImpl" %>
-<%@ page import="org.labkey.experiment.api.SampleSetServiceImpl" %>
+<%@ page import="org.labkey.experiment.api.ExpSampleTypeImpl" %>
+<%@ page import="org.labkey.experiment.api.SampleTypeServiceImpl" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
@@ -33,24 +33,24 @@
     }
     else
     {
-        List<ExpSampleSetImpl> sampleSets = SampleSetServiceImpl.get().getSampleSets(getContainer(), getUser(), true);
+        List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(getContainer(), getUser(), true);
 
         int i = 0;
     %> <table style="width:50px;margin-right:1em" ><tr><td style="vertical-align:top;white-space:nowrap;margin:1em"> <%
-        for (ExpSampleSet sampleSet : sampleSets)
+        for (ExpSampleType sampleType : sampleTypes)
         {
             ActionURL url;
-            boolean isStudySample = SpecimenService.SAMPLE_TYPE_NAME.equals(sampleSet.getName());
+            boolean isStudySample = SpecimenService.SAMPLE_TYPE_NAME.equals(sampleType.getName());
             if (isStudySample)
-                url = urlProvider(SamplesUrls.class).getSamplesURL(sampleSet.getContainer());
+                url = urlProvider(SamplesUrls.class).getSamplesURL(sampleType.getContainer());
             else
-                url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, sampleSet.getContainer()).replaceParameter("rowId", "" + sampleSet.getRowId());
+                url = new ActionURL(ExperimentController.ShowSampleTypeAction.class, sampleType.getContainer()).replaceParameter("rowId", "" + sampleType.getRowId());
             %>
-    <a style="font-weight:bold" href="<%=url%>"><%=h(isStudySample ? sampleSet.getContainer().getName() : sampleSet.getName())%></a>
-                <br><%=h(sampleSet.getDescription() != null ? sampleSet.getDescription() : sampleSet.getContainer().getPath())%>
+    <a style="font-weight:bold" href="<%=url%>"><%=h(isStudySample ? sampleType.getContainer().getName() : sampleType.getName())%></a>
+                <br><%=h(sampleType.getDescription() != null ? sampleType.getDescription() : sampleType.getContainer().getPath())%>
             <br>
     <%
-            if (sampleSets.size() > 1 && ++i == sampleSets.size() / 2)
+            if (sampleTypes.size() > 1 && ++i == sampleTypes.size() / 2)
             { %>
                 </td><td style="vertical-align:top;white-space:nowrap;margin:1em">
         <%  }

@@ -69,11 +69,11 @@
             }
 
             var id = '#' + region.domId;
-            return $(id + ' tr.labkey-row').size() + $(id + ' tr.labkey-alternate-row').size();
+            return $(id + ' tr.labkey-row, ' + id + ' tr.labkey-alternate-row').length;
         }
 
         function getFilterMessageBoxCount() {
-            return $('div.lk-region-context-action').size();
+            return $('div.lk-region-context-action').length;
         }
 
         function resetVariables() {
@@ -496,7 +496,7 @@
                             var paramName = qwp.dataRegionName + '.param.TAG_START';
 
                             // expect form to set parameters
-                            if ($('input[name="' + paramName + '"]').size() !== 1) {
+                            if ($('input[name="' + paramName + '"]').length !== 1) {
                                 alert('Failed test: Parameterized Queries. Expected input form for parameter TAG_START.');
                                 return;
                             }

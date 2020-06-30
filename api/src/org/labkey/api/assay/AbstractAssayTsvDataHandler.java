@@ -42,7 +42,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
@@ -739,8 +739,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         Map<DomainProperty, TableInfo> remappableLookup = new HashMap<>();
         Map<Integer, ExpMaterial> materialCache = new HashMap<>();
 
-        Map<DomainProperty, ExpSampleSet> lookupToSampleSetByName = new HashMap<>();
-        Map<DomainProperty, ExpSampleSet> lookupToSampleSetById = new HashMap<>();
+        Map<DomainProperty, ExpSampleType> lookupToSampleTypeByName = new HashMap<>();
+        Map<DomainProperty, ExpSampleType> lookupToSampleTypeById = new HashMap<>();
         Set<DomainProperty> lookupToAllSamplesByName = new HashSet<>();
         Set<DomainProperty> lookupToAllSamplesById = new HashSet<>();
 
@@ -779,16 +779,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
             else
             {
-                ExpSampleSet ss = DefaultAssayRunCreator.getLookupSampleSet(pd, container, user);
-                if (ss != null)
+                ExpSampleType st = DefaultAssayRunCreator.getLookupSampleType(pd, container, user);
+                if (st != null)
                 {
                     if (pd.getPropertyType().getJdbcType().isText())
                     {
-                        lookupToSampleSetByName.put(pd, ss);
+                        lookupToSampleTypeByName.put(pd, st);
                     }
                     else
                     {
-                        lookupToSampleSetById.put(pd, ss);
+                        lookupToSampleTypeById.put(pd, st);
                     }
                 }
                 else if (DefaultAssayRunCreator.isLookupToMaterials(pd))
@@ -982,9 +982,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     errors.add(new PropertyValidationError(pd.getName() + " must be of type " + ColumnInfo.getFriendlyTypeName(pd.getPropertyDescriptor().getPropertyType().getJavaType()) + ".", pd.getName()));
                 }
 
-                // Collect sample names or ids for each of the SampleSet lookup columns
+                // Collect sample names or ids for each of the SampleType lookup columns
                 // Add any sample inputs to the rowInputLSIDs
-                ExpSampleSet byNameSS = lookupToSampleSetByName.get(pd);
+                ExpSampleType byNameSS = lookupToSampleTypeByName.get(pd);
                 if (o instanceof String && (byNameSS != null || lookupToAllSamplesByName.contains(pd)))
                 {
                     String ssName = byNameSS != null ? byNameSS.getName() : null;
@@ -997,7 +997,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     }
                 }
 
-                if (o instanceof Integer && (lookupToSampleSetById.containsKey(pd) || lookupToAllSamplesById.contains(pd)))
+                if (o instanceof Integer && (lookupToSampleTypeById.containsKey(pd) || lookupToAllSamplesById.contains(pd)))
                 {
                     ExpMaterial material = materialCache.computeIfAbsent((Integer)o, exp::getExpMaterial);
                     if (material != null)

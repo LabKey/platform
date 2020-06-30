@@ -1321,7 +1321,8 @@ Ext4.define('File.panel.Browser', {
                 customProperties: extraColumnNames
             }),
             success: LABKEY.Utils.getCallbackWrapper(function(data) {
-                this.processCustomFileProperties(data.rows, extraColumnNames);
+                if (data)
+                    this.processCustomFileProperties(data.rows, extraColumnNames);
             }),
             scope: this
         });

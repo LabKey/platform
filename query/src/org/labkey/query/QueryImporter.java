@@ -47,6 +47,7 @@ import org.labkey.data.xml.query.QueryType;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -101,8 +102,11 @@ public class QueryImporter implements FolderImporter
                 if (fileName.endsWith(QueryWriter.FILE_EXTENSION))
                 {
                     // make sure a SQL file/input stream exists before adding it to the array
-                    if (null != queriesDir.getInputStream(fileName))
-                        sqlFileNames.add(fileName);
+                    try (InputStream is = queriesDir.getInputStream(fileName))
+                    {
+                        if (null != is)
+                            sqlFileNames.add(fileName);
+                    }
                 }
                 else if (fileName.endsWith(QueryWriter.META_FILE_EXTENSION))
                 {
@@ -142,6 +146,7 @@ public class QueryImporter implements FolderImporter
                 if (null == queryDoc)
                     throw new ServletException("QueryImport: SQL file \"" + sqlFileName + "\" has no corresponding meta data file.");
 
+                // getStreamContentsAsStream() closes the InputStream
                 String sql = PageFlowUtil.getStreamContentsAsString(queriesDir.getInputStream(sqlFileName));
 
                 createQueryDef(ctx, createdQueries, changedQueries, metaFileName, queryDoc, sqlFileName, sql);
@@ -171,7 +176,7 @@ public class QueryImporter implements FolderImporter
 
                 if (!schema.getTableNames().contains(queryName))
                 {
-                    // warn if the table doesn't exist -- it may be created later during the import (e.g., a SampleSet may be created as a part of the import process)
+                    // warn if the table doesn't exist -- it may be created later during the import (e.g., a SampleType may be created as a part of the import process)
                     ctx.getLogger().warn("Importing: " + queryImportMessage(schemaName, queryName, null, metaFileName, "Creating metadata xml override for table that doesn't exist"));
                     qic.unresolvedMetadataFiles.put(metaFileName, queryDoc);//
                 }
@@ -344,7 +349,7 @@ public class QueryImporter implements FolderImporter
 
                     if (!schema.getTableNames().contains(queryName))
                     {
-                        // error if the table doesn't exist -- it wan't created during the import (e.g., a SampleSet may be created as a part of the import process)
+                        // error if the table doesn't exist -- it wan't created during the import (e.g., a SampleType may be created as a part of the import process)
                         ctx.getLogger().error(queryImportMessage(schemaName, queryName, null, metaFileName, "Created metadata xml override for table that doesn't exist"));
                     }
                 }

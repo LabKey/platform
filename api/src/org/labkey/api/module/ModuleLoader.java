@@ -196,16 +196,14 @@ public class ModuleLoader implements Filter, MemTrackerListener
     /** Stash these warnings as a member variable so they can be registered after the WarningService has been initialized */
     private final List<HtmlString> _duplicateModuleErrors = new ArrayList<>();
 
-
     // these four collections are protected by _modulesLock
     // all names start with _modules to make it easier to search for usages
     private final Object _modulesLock = new Object();
-    private Map<String, ModuleContext> _moduleContextMap = new HashMap<>();
-    private Map<String, Module> _moduleMap = new CaseInsensitiveHashMap<>();
-    private Map<Class<? extends Module>, Module> _moduleClassMap = new HashMap<>();
+    private final Map<String, ModuleContext> _moduleContextMap = new HashMap<>();
+    private final Map<String, Module> _moduleMap = new CaseInsensitiveHashMap<>();
+    private final Map<Class<? extends Module>, Module> _moduleClassMap = new HashMap<>();
+
     private List<Module> _modules;
-
-
     private MultiValuedMap<String, ConfigProperty> _configPropertyMap = new HashSetValuedHashMap<>();
 
     public ModuleLoader()
@@ -445,6 +443,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         _webappDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(servletCtx.getRealPath("")));
 
         // load startup configuration information from properties, side-effect may set newinstall=true
+        // Wiki: https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using
         loadStartupProps();
 
         List<Map.Entry<File,File>> explodedModuleDirs = new ArrayList<>();
@@ -898,7 +897,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         // filter by startup properties if specified
         LinkedList<String> includeList = new LinkedList<>();
-        ArrayList<String> exclude = new ArrayList<>();
+        LinkedList<String> excludeList = new LinkedList<>();
         for (ConfigProperty prop : getConfigProperties("ModuleLoader"))
         {
             if (prop.getName().equals("include"))
@@ -908,9 +907,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
                     .forEach(includeList::add);
             if (prop.getName().equals("exclude"))
                 Arrays.stream(StringUtils.split(prop.getValue(), ","))
-                        .map(StringUtils::trimToNull)
-                        .filter(Objects::nonNull)
-                        .forEach(exclude::add);
+                    .map(StringUtils::trimToNull)
+                    .filter(Objects::nonNull)
+                    .forEach(excludeList::add);
         }
 
         CaseInsensitiveTreeMap<Module> includedModules = moduleNameToModule;
@@ -927,7 +926,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             }
         }
 
-        for (String e : exclude)
+        for (String e : excludeList)
             includedModules.remove(e);
 
         return new ArrayList<>(includedModules.values());
@@ -1182,8 +1181,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
             if (!existing.isEmpty())
             {
-//                throw new ConfigurationException("You must delete the following JDBC drivers from " + lib.getAbsolutePath() + ": " + existing);
-                String message = "You must delete the following JDBC drivers from " + lib.getAbsolutePath() + ": " + existing;
+                String path = FileUtil.getAbsoluteCaseSensitiveFile(lib).getAbsolutePath();
+//                throw new ConfigurationException("You must delete the following JDBC drivers from " + path + ": " + existing);
+                String message = "You must delete the following JDBC drivers from " + path + ": " + existing;
                 _log.warn(message);
                 WarningService.get().register(new WarningProvider()
                 {
@@ -2318,6 +2318,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
 
+    /**
+     * Loads startup/bootstrap properties from configuration files.
+     * Wiki: https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using
+     */
     private void loadStartupProps()
     {
         File propsDir = new File(_webappDir.getParent(), "startup");
