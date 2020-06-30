@@ -85,3 +85,7 @@ ul.sso-list > li {
     width: 284px;
     display: inline-block;
 }
+
+.signing-in-msg {
+    padding-top: 10px;
+}

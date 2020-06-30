@@ -16,17 +16,12 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.query.QueryUrls" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page import="java.util.Map" %>
@@ -41,10 +36,8 @@
         dependencies.add("internal/clipboard/clipboard-1.5.9.min.js");
     }
 %>
+<h3>API Keys</h3>
 <%
-    ReturnUrlForm form = ((JspView<ReturnUrlForm>) HttpView.currentView()).getModelBean();
-    ActionURL alternativeURL = urlProvider(ProjectUrls.class).getBeginURL(getContainer());
-    ActionURL returnURL = form.getReturnActionURL(alternativeURL);
     URLHelper baseServerURL = null;
     try
     {
@@ -178,7 +171,6 @@ compliance requirements where interactions require specifying current role &amp;
 <%
     }
 %>
-<%= button("Done").href(returnURL) %>
 <script type="application/javascript">
     (function($) {
         addCopyToClipboard($, '#apikey-token-copy');

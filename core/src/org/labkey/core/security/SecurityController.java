@@ -51,6 +51,8 @@ import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.external.tools.ExternalToolsViewProvider;
+import org.labkey.api.external.tools.ExternalToolsViewService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -269,12 +271,18 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public ActionURL getApiKeyURL(@NotNull URLHelper returnURL)
+        @Nullable
+        public ActionURL getExternalToolsViewURL(User user, @NotNull URLHelper returnURL)
         {
-            ActionURL url = new ActionURL(ApiKeyAction.class, ContainerManager.getRoot());
-            url.addReturnURL(returnURL);
-
-            return url;
+            long viewCount = ExternalToolsViewService.get().getExternalAccessViewProviders().stream().
+                    filter(externalToolsViewProvider -> externalToolsViewProvider.getViews(user).size() > 0).count();
+            if (viewCount > 0)
+            {
+                ActionURL url = new ActionURL(ExternalToolsViewAction.class, ContainerManager.getRoot());
+                url.addReturnURL(returnURL);
+                return url;
+            }
+            return null;
         }
     }
 
@@ -1923,22 +1931,38 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresLogin
-    public class ApiKeyAction extends SimpleViewAction<ReturnUrlForm>
+    public class ExternalToolsViewAction extends SimpleViewAction<ReturnUrlForm>
     {
         @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
-            if (!PopupUserView.allowApiKeyPage(getUser()))
-                throw new UnauthorizedException("API keys are not configured on this site. Contact a site administrator.");
+            VBox view = new VBox();
+            int viewCount = 0;
+            for (ExternalToolsViewProvider externalAccessViewProvider : ExternalToolsViewService.get().getExternalAccessViewProviders())
+            {
+                for (ModelAndView providerView : externalAccessViewProvider.getViews(getUser()))
+                {
+                    view.addView(providerView);
+                    ++viewCount;
+                }
+            }
+
+            //using view.isEmpty() || !view.hasView() wasn't reliable, so resorting to this count approach
+            if (viewCount == 0)
+            {
+                view.addView(new JspView<>("/org/labkey/core/security/nothingEnabled.jsp", form));
+            }
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            return new JspView<>("/org/labkey/core/security/apiKey.jsp", form);
+            view.addView(new JspView<>("/org/labkey/core/security/externalToolsBase.jsp", form));
+
+            return view;
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("API Keys");
+            root.addChild("External Tool Settings");
         }
     }
 

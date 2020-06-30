@@ -156,7 +156,7 @@ public class ExperimentAPITest extends BaseWebDriverTest
                                 new FieldDefinition("StringCol", FieldDefinition.ColumnType.String),
                                 new FieldDefinition("DateCol", FieldDefinition.ColumnType.DateAndTime),
                                 new FieldDefinition("BoolCol", FieldDefinition.ColumnType.Boolean))),
-                TestFileUtils.getSampleData("sampleSet.xlsx"));
+                TestFileUtils.getSampleData("sampleType.xlsx"));
     }
 
     @Test @Ignore(/*TODO*/"35654: Can't reference experiment materials by name if they aren't associated with a sampleset")
