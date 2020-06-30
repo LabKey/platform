@@ -49,6 +49,7 @@ public class PropertyValidator implements Serializable, Cloneable
         _errorMessage = v.getErrorMessage();
         if (v.getContainer() != null)
             _container = v.getContainer().getId();
+        _propertyId = v.getPropertyId();
     }
 
     public int getRowId()

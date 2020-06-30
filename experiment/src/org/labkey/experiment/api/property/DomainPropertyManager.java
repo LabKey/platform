@@ -220,6 +220,7 @@ public class DomainPropertyManager
         {
             try
             {
+                validator.setPropertyId(property.getPropertyId());
                 validator.save(user, property.getContainer());
                 VALIDATOR_CACHE.remove(validator.getContainer().getId());
             }
