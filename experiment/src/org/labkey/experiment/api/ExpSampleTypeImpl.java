@@ -37,10 +37,10 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.ProtocolImplementation;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -59,7 +59,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.SimpleDocumentResource;
@@ -78,7 +77,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> implements ExpSampleSet
+public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource> implements ExpSampleType
 {
     private static final String categoryName = "materialSource";
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory(categoryName, "Set of Samples");
@@ -87,14 +86,14 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     private NameGenerator _nameGen;
 
     // For serialization
-    protected ExpSampleSetImpl() {}
+    protected ExpSampleTypeImpl() {}
 
-    static public Collection<ExpSampleSetImpl> fromMaterialSources(List<MaterialSource> materialSources)
+    static public Collection<ExpSampleTypeImpl> fromMaterialSources(List<MaterialSource> materialSources)
     {
-        return materialSources.stream().map(ExpSampleSetImpl::new).collect(Collectors.toList());
+        return materialSources.stream().map(ExpSampleTypeImpl::new).collect(Collectors.toList());
     }
 
-    public ExpSampleSetImpl(MaterialSource ms)
+    public ExpSampleTypeImpl(MaterialSource ms)
     {
         super(ms);
     }
@@ -108,7 +107,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     @Override
     public ActionURL urlEditDefinition(ContainerUser cu)
     {
-        ActionURL ret = new ActionURL(ExperimentController.EditSampleSetAction.class, getContainer());
+        ActionURL ret = new ActionURL(ExperimentController.EditSampleTypeAction.class, getContainer());
         ret.addParameter("RowId", getRowId());
         return ret;
     }
@@ -197,13 +196,13 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return ExpMaterialTable.Column.Name.name().equals(_object.getIdCol1());
     }
 
-    // NOTE: intentionally not public in ExpSampleSet interface
+    // NOTE: intentionally not public in ExpSampleType interface
     public void setParentCol(@Nullable String parentColumnPropertyURI)
     {
         _object.setParentCol(getPropertyOrThrow(parentColumnPropertyURI).getPropertyURI());
     }
 
-    // NOTE: intentionally not public in ExpSampleSet interface
+    // NOTE: intentionally not public in ExpSampleType interface
     public void setIdCols(@NotNull List<String> propertyURIs)
     {
         if (_object.getNameExpression() != null)
@@ -275,7 +274,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return getDomainProperty(_object.getParentCol());
     }
 
-    // NOTE: intentionally not public in ExpSampleSet interface
+    // NOTE: intentionally not public in ExpSampleType interface
     public void setNameExpression(String expression)
     {
         if (hasIdColumns() && !hasNameAsIdCol())
@@ -475,7 +474,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     {
         TableInfo tinfoProtocol = ExperimentServiceImpl.get().getTinfoProtocol();
         ColumnInfo colLSID = tinfoProtocol.getColumn("LSID");
-        ColumnInfo colSampleLSID = new PropertyColumn(ExperimentProperty.SampleSetLSID.getPropertyDescriptor(), colLSID, getContainer(), user, false);
+        ColumnInfo colSampleLSID = new PropertyColumn(ExperimentProperty.SampleTypeLSID.getPropertyDescriptor(), colLSID, getContainer(), user, false);
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(colSampleLSID, getLSID());
         List<ColumnInfo> selectColumns = new ArrayList<>(tinfoProtocol.getColumns());
@@ -524,11 +523,11 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     @Override
     public void save(User user)
     {
-        if (SampleSetService.get().getDefaultSampleSetLsid().equals(getLSID()))
-            throw new IllegalStateException("Can't create or update the default SampleSet");
+        if (SampleTypeService.get().getDefaultSampleTypeLsid().equals(getLSID()))
+            throw new IllegalStateException("Can't create or update the default SampleType");
 
         boolean isNew = _object.getRowId() == 0;
-        save(user, ExperimentServiceImpl.get().getTinfoMaterialSource(), true);
+        save(user, ExperimentServiceImpl.get().getTinfoSampleType(), true);
         if (isNew)
         {
             Domain domain = PropertyService.get().getDomain(getContainer(), getLSID());
@@ -548,9 +547,9 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
         // NOTE cacheMaterialSource() of course calls transactioncache.put(), which does not alter the shared cache! (BUG?)
         // Just call uncache(), and let normal cache loading do its thing
-        SampleSetServiceImpl.get().clearMaterialSourceCache(getContainer());
+        SampleTypeServiceImpl.get().clearMaterialSourceCache(getContainer());
 
-        SampleSetServiceImpl.get().indexSampleSet(this);
+        SampleTypeServiceImpl.get().indexSampleType(this);
     }
 
     @Override
@@ -558,7 +557,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     {
         try
         {
-            SampleSetService.get().deleteSampleSet(getRowId(), getContainer(), user);
+            SampleTypeService.get().deleteSampleType(getRowId(), getContainer(), user);
         }
         catch (ExperimentException e)
         {
@@ -584,12 +583,12 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     @Override
     public String toString()
     {
-        return "SampleSet " + getName() + " in " + getContainer().getPath();
+        return "SampleType " + getName() + " in " + getContainer().getPath();
     }
 
     public void index(SearchService.IndexTask task)
     {
-        // Big hack to prevent study specimens from being indexed as part of sample sets
+        // Big hack to prevent study specimens from being indexed as part of sample types
         // Check needed on restart, as all documents are enumerated.
         if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()))
         {
@@ -604,21 +603,21 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         }
 
         final SearchService.IndexTask indexTask = task;
-        final ExpSampleSetImpl me = this;
+        final ExpSampleTypeImpl me = this;
         indexTask.addRunnable(
-                () -> me.indexSampleSet(indexTask)
+                () -> me.indexSampleType(indexTask)
                 , SearchService.PRIORITY.bulk
         );
     }
 
-    private void indexSampleSet(SearchService.IndexTask indexTask)
+    private void indexSampleType(SearchService.IndexTask indexTask)
     {
         ExperimentUrls urlProvider = PageFlowUtil.urlProvider(ExperimentUrls.class);
         ActionURL url = null;
 
         if (urlProvider != null)
         {
-            url = urlProvider.getShowSampleSetURL(this);
+            url = urlProvider.getShowSampleTypeURL(this);
             url.setExtraPath(getContainer().getId());
         }
 
@@ -629,11 +628,10 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         identifiersHi.add(getName());
 
         props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
-        props.put(SearchService.PROPERTY.title.toString(), "Sample Set - " + getName());
+        props.put(SearchService.PROPERTY.title.toString(), "Sample Type - " + getName());
         props.put(SearchService.PROPERTY.summary.toString(), getDescription());
 
-        //TODO: Remove 'Set' after completion of naming convention change https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=39257
-        props.put(SearchService.PROPERTY.keywordsLo.toString(), "Sample Set Type");      // Treat the words "Sample Set" as a low priority keyword
+        props.put(SearchService.PROPERTY.keywordsLo.toString(), "Sample Type");      // Treat the words "Sample Type" as a low priority keyword
         props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
 
         String body = StringUtils.isNotBlank(getDescription()) ? getDescription() : "";
@@ -692,6 +690,6 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     @Override
     public void setImportAliasMap(Map<String, String> aliasMap)
     {
-        _object.setMaterialParentImportAliasMap(SampleSetServiceImpl.get().getAliasJson(aliasMap, _object.getName()));
+        _object.setMaterialParentImportAliasMap(SampleTypeServiceImpl.get().getAliasJson(aliasMap, _object.getName()));
     }
 }

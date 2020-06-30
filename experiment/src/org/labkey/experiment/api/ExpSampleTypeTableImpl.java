@@ -22,7 +22,7 @@ import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.exp.query.ExpSampleSetTable;
+import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.UserSchema;
@@ -37,11 +37,11 @@ import java.util.Collections;
  * User: jeckels
  * Date: Oct 17, 2007
  */
-public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column> implements ExpSampleSetTable
+public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Column> implements ExpSampleTypeTable
 {
-    public ExpSampleSetTableImpl(String name, UserSchema schema, ContainerFilter cf)
+    public ExpSampleTypeTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoMaterialSource(), schema, new ExpSampleSetImpl(new MaterialSource()), cf);
+        super(name, ExperimentServiceImpl.get().getTinfoSampleType(), schema, new ExpSampleTypeImpl(new MaterialSource()), cf);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
     }
@@ -53,7 +53,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         {
             case Folder:
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
-                ContainerForeignKey.initColumn(columnInfo, _userSchema, new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer()));
+                ContainerForeignKey.initColumn(columnInfo, _userSchema, new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer()));
                 return columnInfo;
             case Description:
             case LSID:
@@ -76,7 +76,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
                     ExperimentServiceImpl.get().getTinfoMaterial() +
                     " m WHERE m.CpasType = " + ExprColumn.STR_TABLE_ALIAS + ".LSID)");
                 ExprColumn sampleCountColumnInfo = new ExprColumn(this, "SampleCount", sql, JdbcType.INTEGER);
-                sampleCountColumnInfo.setDescription("Contains the number of samples currently stored in this sample set");
+                sampleCountColumnInfo.setDescription("Contains the number of samples currently stored in this sample type");
                 return sampleCountColumnInfo;
             }
             case Properties:
@@ -89,21 +89,21 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
     @Override
     protected void populateColumns()
     {
-        addColumn(ExpSampleSetTable.Column.RowId).setHidden(true);
-        addColumn(ExpSampleSetTable.Column.Name);
-        addColumn(ExpSampleSetTable.Column.Description);
-        addColumn(ExpSampleSetTable.Column.NameExpression).setHidden(true);
-        addColumn(ExpSampleSetTable.Column.LSID).setHidden(true);
-        addColumn(ExpSampleSetTable.Column.MaterialLSIDPrefix).setHidden(true);
-        addColumn(ExpSampleSetTable.Column.Created);
-        addColumn(ExpSampleSetTable.Column.CreatedBy);
-        addColumn(ExpSampleSetTable.Column.Modified);
-        addColumn(ExpSampleSetTable.Column.ModifiedBy);
-        addContainerColumn(ExpSampleSetTable.Column.Folder, new ActionURL(ExperimentController.ListMaterialSourcesAction.class, getContainer()));
-        addColumn(ExpSampleSetTable.Column.SampleCount);
+        addColumn(ExpSampleTypeTable.Column.RowId).setHidden(true);
+        addColumn(ExpSampleTypeTable.Column.Name);
+        addColumn(ExpSampleTypeTable.Column.Description);
+        addColumn(ExpSampleTypeTable.Column.NameExpression).setHidden(true);
+        addColumn(ExpSampleTypeTable.Column.LSID).setHidden(true);
+        addColumn(ExpSampleTypeTable.Column.MaterialLSIDPrefix).setHidden(true);
+        addColumn(ExpSampleTypeTable.Column.Created);
+        addColumn(ExpSampleTypeTable.Column.CreatedBy);
+        addColumn(ExpSampleTypeTable.Column.Modified);
+        addColumn(ExpSampleTypeTable.Column.ModifiedBy);
+        addContainerColumn(ExpSampleTypeTable.Column.Folder, new ActionURL(ExperimentController.ListSampleTypesAction.class, getContainer()));
+        addColumn(ExpSampleTypeTable.Column.SampleCount);
         addColumn(Column.Properties);
 
-        DetailsURL detailsURL = new DetailsURL(new ActionURL(ExperimentController.ShowMaterialSourceAction.class, _userSchema.getContainer()),
+        DetailsURL detailsURL = new DetailsURL(new ActionURL(ExperimentController.ShowSampleTypeAction.class, _userSchema.getContainer()),
                 Collections.singletonMap("rowId", "RowId"));
         detailsURL.setContainerContext(_userSchema.getContainer());
         setDetailsURL(detailsURL);
