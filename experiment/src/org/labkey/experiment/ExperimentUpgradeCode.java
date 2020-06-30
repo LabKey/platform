@@ -40,6 +40,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -50,11 +51,11 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassImpl;
-import org.labkey.experiment.api.ExpSampleSetImpl;
+import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
-import org.labkey.experiment.api.SampleSetDomainKind;
-import org.labkey.experiment.api.SampleSetServiceImpl;
+import org.labkey.experiment.api.SampleTypeDomainKind;
+import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.property.DomainImpl;
 
 import java.util.Arrays;
@@ -86,10 +87,10 @@ public class ExperimentUpgradeCode implements UpgradeCode
         ExperimentServiceImpl.get().rebuildAllEdges();
     }
 
-    private static void materializeSampleSet(ExpSampleSetImpl ss)
+    private static void materializeSampleType(ExpSampleTypeImpl st)
     {
         Logger log = Logger.getLogger(ExperimentUpgradeCode.class);
-        Domain domain = ss.getDomain();
+        Domain domain = st.getDomain();
         DomainKind kind = null;
         try
         {
@@ -104,8 +105,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
             return;
         }
 
-        // skip the 'Unspecified' SampleSet
-        if (ExperimentServiceImpl.get().getDefaultSampleSetLsid().equals(ss.getLSID()))
+        // skip the 'Unspecified' SampleType
+        if (SampleTypeService.get().getDefaultSampleTypeLsid().equals(st.getLSID()))
             return;
 
         DbScope scope = ExperimentServiceImpl.get().getSchema().getScope();
@@ -146,7 +147,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             if (updated)
             {
                 OntologyManager.updatePropertyDescriptor(propertyDescriptor);
-                LOG.debug("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + "), property='" + property.getName() + "' updated");
+                LOG.debug("SampleSet '" + st.getName() + "' (" + st.getRowId() + "), property='" + property.getName() + "' updated");
             }
         }
 
@@ -154,7 +155,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         // refetch the domain which we just updated
         domain = PropertyService.get().getDomain(domain.getTypeId());
         assert(null != domain.getStorageTableName());
-        LOG.debug("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") provisioned");
+        LOG.debug("SampleSet '" + st.getName() + "' (" + st.getRowId() + ") provisioned");
 
 
         // generate SQL to select from exp.material and exp.objectproperty
@@ -197,7 +198,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         insert.append(select);
 
         int count = new SqlExecutor(scope).execute(insert);
-        LOG.info("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") inserted provisioned rows, count=" + count);
+        LOG.info("SampleSet '" + st.getName() + "' (" + st.getRowId() + ") inserted provisioned rows, count=" + count);
 
 
         // handle migration of Description column from property to exp.Material.Description column
@@ -240,7 +241,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         // delete objectproperty rows for samples in the SampleSet, but only for properties of the SampleSet domain
         SQLFragment deleteObjectProperties = new SQLFragment("DELETE FROM exp.objectproperty\n");
         deleteObjectProperties.append("WHERE objectid IN (SELECT objectid FROM exp.object WHERE objecturi IN (SELECT lsid FROM exp.material WHERE CpasType = ?))");
-        deleteObjectProperties.add(ss.getDataObject().getLSID());
+        deleteObjectProperties.add(st.getDataObject().getLSID());
         deleteObjectProperties.append(" AND propertyId IN (");
         comma = "";
         for (DomainProperty dp : domain.getProperties())
@@ -252,7 +253,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (!domain.getProperties().isEmpty())
         {
             new SqlExecutor(scope).execute(deleteObjectProperties);
-            LOG.info("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") deleted ontology properties");
+            LOG.info("SampleSet '" + st.getName() + "' (" + st.getRowId() + ") deleted ontology properties");
         }
     }
 
@@ -264,19 +265,19 @@ public class ExperimentUpgradeCode implements UpgradeCode
             return;
 
         // get all MaterialSource across all containers
-        TableInfo source = ExperimentServiceImpl.get().getTinfoMaterialSource();
+        TableInfo source = ExperimentServiceImpl.get().getTinfoSampleType();
         new TableSelector(source, null, null).stream(MaterialSource.class)
-                .map(ExpSampleSetImpl::new)
-                .forEach(ExperimentUpgradeCode::materializeSampleSet);
+                .map(ExpSampleTypeImpl::new)
+                .forEach(ExperimentUpgradeCode::materializeSampleType);
     }
 
-    private static void addSampleSetGenId(ExpSampleSetImpl ss)
+    private static void addSampleTypeGenId(ExpSampleTypeImpl st)
     {
-        Domain domain = ss.getDomain();
-        SampleSetDomainKind kind = null;
+        Domain domain = st.getDomain();
+        SampleTypeDomainKind kind = null;
         try
         {
-            kind = (SampleSetDomainKind)domain.getDomainKind();
+            kind = (SampleTypeDomainKind)domain.getDomainKind();
         }
         catch (IllegalArgumentException e)
         {
@@ -286,7 +287,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             return;
 
         // skip the 'Unspecified' SampleSet
-        if (ExperimentServiceImpl.get().getDefaultSampleSetLsid().equals(ss.getLSID()))
+        if (SampleTypeService.get().getDefaultSampleTypeLsid().equals(st.getLSID()))
             return;
 
         DbSchema schema = kind.getSchema();
@@ -299,7 +300,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         SchemaTableInfo provisionedTable = schema.getTable(domain.getStorageTableName());
         if (provisionedTable == null)
         {
-            LOG.error("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") has no provisioned table");
+            LOG.error("SampleSet '" + st.getName() + "' (" + st.getRowId() + ") has no provisioned table");
             return;
         }
 
@@ -308,17 +309,17 @@ public class ExperimentUpgradeCode implements UpgradeCode
         {
             PropertyStorageSpec genIdProp = kind.getBaseProperties(domain).stream().filter(p -> "genId".equalsIgnoreCase(p.getName())).findFirst().orElseThrow();
             StorageProvisioner.addStorageProperties(domain, Arrays.asList(genIdProp), true);
-            LOG.info("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") added 'genId' column");
+            LOG.info("SampleSet '" + st.getName() + "' (" + st.getRowId() + ") added 'genId' column");
         }
 
-        addMissingSampleRows(ss, domain, scope);
-        fillGenId(ss, domain, scope);
-        setGenIdCounter(ss, domain, scope);
+        addMissingSampleRows(st, domain, scope);
+        fillGenId(st, domain, scope);
+        setGenIdCounter(st, domain, scope);
     }
 
-    // A previous version of the 'materializeSampleSet' upgrade didn't insert rows into the provisioned table for each exp.material in the sample set.
+    // A previous version of the 'materializeSampleSet' upgrade didn't insert rows into the provisioned table for each exp.material in the sample type.
     // Insert any missing provisioned rows that exist in exp.material but didn't have an exp.object row
-    private static void addMissingSampleRows(ExpSampleSetImpl ss, Domain domain, DbScope scope)
+    private static void addMissingSampleRows(ExpSampleTypeImpl st, Domain domain, DbScope scope)
     {
         SQLFragment insert = new SQLFragment("INSERT INTO expsampleset.")
                 .append(domain.getStorageTableName())
@@ -331,11 +332,11 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         int count = new SqlExecutor(scope).execute(insert);
         if (count > 0)
-            LOG.info("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") inserting missing rows into provisioned table, count=" + count);
+            LOG.info("SampleSet '" + st.getName() + "' (" + st.getRowId() + ") inserting missing rows into provisioned table, count=" + count);
     }
 
     // populate the genId value on an existing provisioned table
-    private static void fillGenId(ExpSampleSetImpl ss, Domain domain, DbScope scope)
+    private static void fillGenId(ExpSampleTypeImpl st, Domain domain, DbScope scope)
     {
         String tableName = domain.getStorageTableName();
         SQLFragment update = new SQLFragment()
@@ -351,18 +352,18 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 .append("WHERE i.lsid = ").append(tableName).append(".lsid");
 
         int count = new SqlExecutor(scope).execute(update);
-        LOG.info("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") updated 'genId' column, count=" + count);
+        LOG.info("SampleSet '" + st.getName() + "' (" + st.getRowId() + ") updated 'genId' column, count=" + count);
     }
 
     // create a genId sequence counter for the SampleSet
-    private static void setGenIdCounter(ExpSampleSetImpl ss, Domain domain, DbScope scope)
+    private static void setGenIdCounter(ExpSampleTypeImpl st, Domain domain, DbScope scope)
     {
         SQLFragment frag = new SQLFragment("SELECT COUNT(*) FROM exp.material WHERE cpasType=?").add(domain.getTypeURI());
         int count = new SqlSelector(scope, frag).getObject(Integer.class);
 
-        DbSequence sequence = DbSequenceManager.get(ss.getContainer(), ExpSampleSetImpl.SEQUENCE_PREFIX, ss.getRowId());
+        DbSequence sequence = DbSequenceManager.get(st.getContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, st.getRowId());
         sequence.ensureMinimum(count);
-        LOG.debug("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") set counter for 'genId' column to " + count);
+        LOG.debug("SampleSet '" + st.getName() + "' (" + st.getRowId() + ") set counter for 'genId' column to " + count);
     }
 
 
@@ -375,10 +376,10 @@ public class ExperimentUpgradeCode implements UpgradeCode
         try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
         {
             // get all MaterialSource across all containers
-            TableInfo source = ExperimentServiceImpl.get().getTinfoMaterialSource();
+            TableInfo source = ExperimentServiceImpl.get().getTinfoSampleType();
             new TableSelector(source, null, null).stream(MaterialSource.class)
-                    .map(ExpSampleSetImpl::new)
-                    .forEach(ExperimentUpgradeCode::addSampleSetGenId);
+                    .map(ExpSampleTypeImpl::new)
+                    .forEach(ExperimentUpgradeCode::addSampleTypeGenId);
 
             tx.commit();
         }
@@ -391,7 +392,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (context != null && context.isNewInstall())
             return;
 
-        TableInfo msTable = ExperimentServiceImpl.get().getTinfoMaterialSource();
+        TableInfo msTable = ExperimentServiceImpl.get().getTinfoSampleType();
         TableInfo objTable = OntologyManager.getTinfoObject();
         SQLFragment sql = new SQLFragment("SELECT ms.*, o.objectid FROM ")
                 .append(msTable.getFromSQL("ms"))
@@ -411,7 +412,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             int rowCount = new SqlExecutor(objTable.getSchema().getScope()).execute(update);
             LOG.info("Updated ownerObjectId for " + rowCount + " materials");
         });
-        SampleSetServiceImpl.get().clearMaterialSourceCache(null);
+        SampleTypeServiceImpl.get().clearMaterialSourceCache(null);
     }
 
     /**

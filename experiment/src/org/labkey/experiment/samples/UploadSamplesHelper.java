@@ -50,9 +50,9 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunItem;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -67,14 +67,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
-import org.labkey.experiment.api.ExpSampleSetImpl;
+import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -288,7 +287,7 @@ public abstract class UploadSamplesHelper
 
     /**
      * support for mapping DataClass or SampleSet objects as a parent input using the column name format:
-     * DataInputs/<data class name> or MaterialInputs/<sample set name>. Either / or . works as a delimiter
+     * DataInputs/<data class name> or MaterialInputs/<sample type name>. Either / or . works as a delimiter
      *
      * @param parentNames set of (parent column name, parent value) pairs.  Parent values that are empty
      *                    indicate tha parent should be removed.
@@ -344,7 +343,7 @@ public abstract class UploadSamplesHelper
                 if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT))
                 {
                     if (!findMaterialSource(c, user, namePart))
-                        throw new ValidationException(String.format("Invalid import alias: parent SampleSet [%1$s] does not exist or may have been deleted", namePart));
+                        throw new ValidationException(String.format("Invalid import alias: parent SampleType [%1$s] does not exist or may have been deleted", namePart));
 
                     if (isEmptyParent)
                     {
@@ -357,7 +356,7 @@ public abstract class UploadSamplesHelper
                         if (sample != null)
                             parentMaterials.put(sample, sampleRole(sample));
                         else
-                            throw new ValidationException("Sample input '" + parentValue + "' in SampleSet '" + namePart + "' not found");
+                            throw new ValidationException("Sample input '" + parentValue + "' in SampleType '" + namePart + "' not found");
 
                     }
                  }
@@ -369,7 +368,7 @@ public abstract class UploadSamplesHelper
                         if (sample != null)
                             childMaterials.put(sample, sampleRole(sample));
                         else
-                            throw new ValidationException("Sample output '" + parentValue + "' in SampleSet '" + namePart + "' not found");
+                            throw new ValidationException("Sample output '" + parentValue + "' in SampleType '" + namePart + "' not found");
                     }
                 }
                 else if (parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT))
@@ -430,9 +429,9 @@ public abstract class UploadSamplesHelper
             {
                 Map<ExpMaterial, String> existingParentMaterials = new HashMap<>();
                 currentParents.second.forEach((materialParent) -> {
-                    ExpSampleSet sampleSet = materialParent.getSampleSet();
+                    ExpSampleType sampleType = materialParent.getSampleType();
                     String role = sampleRole(materialParent);
-                    if (sampleSet != null && !parentMaterials.containsValue(role) && !parentSampleTypesToRemove.contains(role))
+                    if (sampleType != null && !parentMaterials.containsValue(role) && !parentSampleTypesToRemove.contains(role))
                         existingParentMaterials.put(materialParent, role);
                 });
                 parentMaterials.putAll(existingParentMaterials);
@@ -454,8 +453,8 @@ public abstract class UploadSamplesHelper
 
     public static String sampleRole(ExpMaterial material)
     {
-        ExpSampleSet ss = material.getSampleSet();
-        return ss != null ? ss.getName() : "Sample";
+        ExpSampleType st = material.getSampleType();
+        return st != null ? st.getName() : "Sample";
     }
 
     public static String dataRole(ExpData data, User user)
@@ -486,10 +485,10 @@ public abstract class UploadSamplesHelper
     }
 
 
-    private static ExpMaterial findMaterial(Container c, User user, String sampleSetName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
+    private static ExpMaterial findMaterial(Container c, User user, String sampleTypeName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
             throws ValidationException
     {
-        return ExperimentService.get().findExpMaterial(c, user, sampleSetName, sampleName, cache, materialCache);
+        return ExperimentService.get().findExpMaterial(c, user, sampleTypeName, sampleName, cache, materialCache);
     }
 
     private static ExpData findData(Container c, User user, @NotNull String dataClassName, String dataName, RemapCache cache, Map<Integer, ExpData> dataCache)
@@ -501,7 +500,7 @@ public abstract class UploadSamplesHelper
 
     private static boolean findMaterialSource(Container c, User user, String parentName)
     {
-        return SampleSetService.get().getSampleSet(c, user, parentName) != null;
+        return SampleTypeService.get().getSampleType(c, user, parentName) != null;
     }
 
 
@@ -567,16 +566,16 @@ public abstract class UploadSamplesHelper
     {
         private static final int BATCH_SIZE = 100;
 
-        final ExpSampleSetImpl sampleset;
+        final ExpSampleTypeImpl sampletype;
         final DataIteratorBuilder builder;
         final Lsid.LsidBuilder lsidBuilder;
         final ExpMaterialTableImpl materialTable;
 
-        public PrepareDataIteratorBuilder(ExpSampleSetImpl sampleset, TableInfo materialTable, DataIteratorBuilder in)
+        public PrepareDataIteratorBuilder(ExpSampleTypeImpl sampletype, TableInfo materialTable, DataIteratorBuilder in)
         {
-            this.sampleset = sampleset;
+            this.sampletype = sampletype;
             this.builder = in;
-            this.lsidBuilder = generateSampleLSID(sampleset.getDataObject());
+            this.lsidBuilder = generateSampleLSID(sampletype.getDataObject());
             this.materialTable = materialTable instanceof ExpMaterialTableImpl ? (ExpMaterialTableImpl) materialTable : null;       // TODO: should we throw exception if not
         }
 
@@ -612,7 +611,7 @@ public abstract class UploadSamplesHelper
 
 //            CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
 //            TODO check if this covers all the functionality, in particular how is alternateKeyCandidates used?
-            DataIterator c = LoggingDataIterator.wrap(new CoerceDataIterator(source, context, sampleset.getTinfo(), false));
+            DataIterator c = LoggingDataIterator.wrap(new CoerceDataIterator(source, context, sampletype.getTinfo(), false));
 
             // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             SimpleTranslator addGenId = new SimpleTranslator(c, context);
@@ -621,16 +620,16 @@ public abstract class UploadSamplesHelper
 
             ColumnInfo genIdCol = new BaseColumnInfo(FieldKey.fromParts("genId"), JdbcType.INTEGER);
             final int batchSize = context.getInsertOption().batch ? BATCH_SIZE : 1;
-            addGenId.addSequenceColumn(genIdCol, sampleset.getContainer(), ExpSampleSetImpl.SEQUENCE_PREFIX, sampleset.getRowId(), batchSize);
+            addGenId.addSequenceColumn(genIdCol, sampletype.getContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, sampletype.getRowId(), batchSize);
             DataIterator dataIterator = LoggingDataIterator.wrap(addGenId);
 
             // Table Counters
-            DataIteratorBuilder dib = ExpDataIterators.CounterDataIteratorBuilder.create(DataIteratorBuilder.wrap(dataIterator), sampleset.getContainer(), materialTable, ExpSampleSet.SEQUENCE_PREFIX, sampleset.getRowId());
+            DataIteratorBuilder dib = ExpDataIterators.CounterDataIteratorBuilder.create(DataIteratorBuilder.wrap(dataIterator), sampletype.getContainer(), materialTable, ExpSampleType.SEQUENCE_PREFIX, sampletype.getRowId());
             dataIterator = dib.getDataIterator(context);
 
             // sampleset.createSampleNames() + generate lsid
             // TODO does not handle insertIgnore
-            DataIterator names = new _GenerateNamesDataIterator(sampleset, DataIteratorUtil.wrapMap(dataIterator, false), context);
+            DataIterator names = new _GenerateNamesDataIterator(sampletype, DataIteratorUtil.wrapMap(dataIterator, false), context);
 
             return LoggingDataIterator.wrap(names);
         }
@@ -639,7 +638,7 @@ public abstract class UploadSamplesHelper
 
     static class _GenerateNamesDataIterator extends SimpleTranslator
     {
-        final ExpSampleSetImpl sampleset;
+        final ExpSampleTypeImpl sampletype;
         final NameGenerator nameGen;
         final NameGenerator.State nameState;
         final Lsid.LsidBuilder lsidBuilder;
@@ -648,13 +647,13 @@ public abstract class UploadSamplesHelper
         String generatedName = null;
         String generatedLsid = null;
 
-        _GenerateNamesDataIterator(ExpSampleSetImpl sampleset, MapDataIterator source, DataIteratorContext context)
+        _GenerateNamesDataIterator(ExpSampleTypeImpl sampletype, MapDataIterator source, DataIteratorContext context)
         {
             super(source, context);
-            this.sampleset = sampleset;
-            nameGen = sampleset.getNameGenerator();
+            this.sampletype = sampletype;
+            nameGen = sampletype.getNameGenerator();
             nameState = nameGen.createState(true);
-            lsidBuilder = generateSampleLSID(sampleset.getDataObject());
+            lsidBuilder = generateSampleLSID(sampletype.getDataObject());
             CaseInsensitiveHashSet skip = new CaseInsensitiveHashSet();
             skip.addAll("name","lsid");
             selectAll(skip);
@@ -662,7 +661,7 @@ public abstract class UploadSamplesHelper
             addColumn(new BaseColumnInfo("name",JdbcType.VARCHAR), (Supplier)() -> generatedName);
             addColumn(new BaseColumnInfo("lsid",JdbcType.VARCHAR), (Supplier)() -> generatedLsid);
             // Ensure we have a cpasType column and it is of the right value
-            addColumn(new BaseColumnInfo("cpasType",JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleset.getLSID()));
+            addColumn(new BaseColumnInfo("cpasType",JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampletype.getLSID()));
         }
 
         void onFirst()
@@ -686,9 +685,9 @@ public abstract class UploadSamplesHelper
             catch (NameGenerator.NameGenerationException e)
             {
                 // Failed to generate a name due to some part of the expression not in the row
-                if (sampleset.hasNameExpression())
+                if (sampletype.hasNameExpression())
                     addRowError("Failed to generate name for Sample on row " + e.getRowNumber());
-                else if (sampleset.hasNameAsIdCol())
+                else if (sampletype.hasNameAsIdCol())
                     addRowError("Name is required for Sample on row " + e.getRowNumber());
                 else
                     addRowError("All id columns are required for Sample on row " + e.getRowNumber());

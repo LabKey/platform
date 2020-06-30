@@ -151,7 +151,7 @@ import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
 import org.labkey.study.specimen.SpecimenCommentAuditProvider;
-import org.labkey.study.specimen.SpecimenSampleSetDomainKind;
+import org.labkey.study.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.study.specimen.SpecimenSearchWebPart;
 import org.labkey.study.specimen.SpecimenWebPart;
 import org.labkey.study.specimen.settings.RepositorySettings;
@@ -257,7 +257,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new VialDomainKind());
         PropertyService.get().registerDomainKind(new SpecimenEventDomainKind());
         PropertyService.get().registerDomainKind(new StudyPersonnelDomainKind());
-        PropertyService.get().registerDomainKind(new SpecimenSampleSetDomainKind());
+        PropertyService.get().registerDomainKind(new SpecimenSampleTypeDomainKind());
 
         // study design domains
         PropertyService.get().registerDomainKind(new StudyProductDomainKind());
