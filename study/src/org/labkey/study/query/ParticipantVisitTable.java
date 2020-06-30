@@ -24,6 +24,7 @@ import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -55,7 +56,7 @@ public class ParticipantVisitTable extends BaseStudyTable
         _demographicsColumns = new CaseInsensitiveHashMap<>();
         Study study = StudyService.get().getStudy(schema.getContainer());
 
-        BaseColumnInfo participantSequenceNumColumn = null;
+        MutableColumnInfo participantSequenceNumColumn = null;
         for (ColumnInfo col : _rootTable.getColumns())
         {
             if ("Container".equalsIgnoreCase(col.getName()))
@@ -71,6 +72,7 @@ public class ParticipantVisitTable extends BaseStudyTable
                 var visitColumn = new AliasedColumn(this, "Visit", col);
                 LookupForeignKey visitFK = new LookupForeignKey(cf, "RowId", null)
                 {
+                    @Override
                     public TableInfo getLookupTableInfo()
                     {
                         return new VisitTable(_userSchema, getLookupContainerFilter());
@@ -190,6 +192,7 @@ public class ParticipantVisitTable extends BaseStudyTable
             this.dsd = dsd;
         }
         
+        @Override
         public DatasetTableImpl getLookupTableInfo()
         {
             try
@@ -204,6 +207,7 @@ public class ParticipantVisitTable extends BaseStudyTable
             }
         }
 
+        @Override
         public StringExpression getURL(ColumnInfo parent)
         {
             return null;
@@ -227,6 +231,7 @@ public class ParticipantVisitTable extends BaseStudyTable
         _ignoreSessionParticipantGroup = true;
     }
 
+    @Override
     protected SimpleFilter getFilter()
     {
         SimpleFilter sf;

@@ -44,6 +44,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.trigger.PipelineTriggerConfig;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
@@ -451,7 +452,7 @@ public class PipelineManager
             {
                 MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
 
-                ActionURL url = StatusController.urlDetails(_statusFile); 
+                ActionURL url = StatusController.urlDetails(_statusFile);
 
                 _template.setOriginatingUser(user);
                 _template.setDataUrl(url.getURIString());
@@ -530,27 +531,53 @@ public class PipelineManager
         protected static final String DEFAULT_BODY = "Job description: ^jobDescription^\n" +
                 "Created: ^timeCreated^\n" +
                 "Status: ^status^\n" +
-                "Additional details for this job can be obtained by navigating to this link:\n\n^dataURL^";
+                "Additional details for this job can be obtained by navigating to this link:\n\n^dataURL^\n\n" +
+                "Manage your email notifications at\n" +
+                "^setupURL^\n";
 
         protected PipelineEmailTemplate(String name)
         {
             super(name);
 
-            _replacements.add(new ReplacementParam<String>("dataURL", String.class, "Link to the job details for this pipeline job"){
+            _replacements.add(new ReplacementParam<>("dataURL", String.class, "Link to the job details for this pipeline job")
+            {
                 @Override
-                public String getValue(Container c) {return _dataUrl;}
+                public String getValue(Container c)
+                {
+                    return _dataUrl;
+                }
             });
-            _replacements.add(new ReplacementParam<String>("jobDescription", String.class, "The job description"){
+            _replacements.add(new ReplacementParam<>("jobDescription", String.class, "The job description")
+            {
                 @Override
-                public String getValue(Container c) {return _jobDescription;}
+                public String getValue(Container c)
+                {
+                    return _jobDescription;
+                }
             });
-            _replacements.add(new ReplacementParam<Date>("timeCreated", Date.class, "The date and time this job was created"){
+            _replacements.add(new ReplacementParam<>("timeCreated", Date.class, "The date and time this job was created")
+            {
                 @Override
-                public Date getValue(Container c) {return _timeCreated;}
+                public Date getValue(Container c)
+                {
+                    return _timeCreated;
+                }
             });
-            _replacements.add(new ReplacementParam<String>("status", String.class, "The job status"){
+            _replacements.add(new ReplacementParam<>("status", String.class, "The job status")
+            {
                 @Override
-                public String getValue(Container c) {return _status;}
+                public String getValue(Container c)
+                {
+                    return _status;
+                }
+            });
+            _replacements.add(new ReplacementParam<>("setupURL", String.class, "URL to configure the pipeline, including email notifications")
+            {
+                @Override
+                public String getValue(Container c)
+                {
+                    return PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c).getURIString();
+                }
             });
 
             _replacements.addAll(super.getValidReplacements());

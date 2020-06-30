@@ -39,6 +39,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
@@ -63,12 +64,13 @@ import java.util.Set;
 
 public interface QueryService
 {
-    static final String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
+    String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
 
     String MODULE_QUERIES_DIRECTORY = "queries";
     Path MODULE_QUERIES_PATH = Path.parse(MODULE_QUERIES_DIRECTORY);
 
-    Path MODULE_SCHEMAS_PATH = Path.parse("schemas");
+    String MODULE_SCHEMAS_DIRECTORY = "schemas";
+    Path MODULE_SCHEMAS_PATH = Path.parse(MODULE_SCHEMAS_DIRECTORY);
 
     String SCHEMA_TEMPLATE_EXTENSION = ".template.xml";
 
@@ -150,7 +152,6 @@ public interface QueryService
      * NOTE: user is not the owner of the custom views, but is used for container and schema permission checks.
      */
     List<CustomView> getSharedCustomViews(@NotNull User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited);
-    CustomView getSharedCustomView(@NotNull User user, Container container, String schema, String query, String name);
 
     /**
      * Returns custom views stored in the database (not module custom views) that meet the criteria. This is not appropriate
@@ -381,22 +382,40 @@ public interface QueryService
 
     enum AuditAction
     {
-        INSERT("A row was inserted.",
-                "%s row(s) were inserted."),
-        UPDATE("Row was updated.",
-                "%s row(s) were updated."),
-        DELETE("Row was deleted.",
-                "%s row(s) were deleted."),
-        TRUNCATE("Table was truncated.",
-                "All rows were deleted.");
+        INSERT("%s row(s) were inserted.",
+                "%s was inserted.",
+                "inserted"),
+        UPDATE("%s row(s) were updated.",
+                "%s was updated.",
+                "updated"),
+        DELETE("%s row(s) were deleted.",
+                "%s was deleted.",
+                "deleted"),
+        TRUNCATE("All rows were deleted.",
+                "Table was truncated",
+                "deleted"),
+        MERGE("%s row(s) were inserted or updated.",
+                "%s was inserted or updated.",
+                "inserted or updated");
 
         String _commentDetailed;
+        String _commentDetailedFormat;
         String _commentSummary;
+        String _verbPastTense;
+        static String vowels = "aeiou";
 
-        AuditAction(String commentDetailed, String commentSummary)
+        AuditAction(String commentSummary, String commentDetailedFormat, String verbPastTense)
         {
-            _commentDetailed = commentDetailed;
             _commentSummary = commentSummary;
+            _verbPastTense = verbPastTense;
+            _commentDetailedFormat = commentDetailedFormat;
+            _commentDetailed = String.format(commentDetailedFormat, "A row");
+        }
+
+        public String getCommentDetailed(String noun)
+        {
+            String prefix = vowels.contains(noun.substring(0, 1).toLowerCase()) ? "An " : "A ";
+            return String.format(_commentDetailedFormat, prefix + noun);
         }
 
         public String getCommentDetailed()
@@ -408,6 +427,11 @@ public interface QueryService
         {
             return _commentSummary;
         }
+
+        public String getVerbPastTense()
+        {
+            return _verbPastTense;
+        }
     }
 
     /**
@@ -418,7 +442,7 @@ public interface QueryService
      */
     void addAuditEvent(QueryView queryView, String comment, @Nullable Integer dataRowCount);
     void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment, @Nullable Integer dataRowCount);
-    void addAuditEvent(User user, Container c, TableInfo table, AuditAction action, List<Map<String, Object>>... params);
+    void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, AuditAction action, List<Map<String, Object>>... params);
     void addSummaryAuditEvent(User user, Container c, TableInfo table, AuditAction action, Integer dataRowCount);
 
     /**
@@ -528,7 +552,7 @@ public interface QueryService
             ret.put("schemaDisplayName", schemaKey.toDisplayString());
             ret.put("schemaName", schemaKey);   // consistent with GetQuerySchemaTreeAction and GetQueryDetailsAction
             ret.put("name", name);
-            ret.put("url", null==url ? null : url.toLocalString(false));
+            ret.put("url", null==url ? null : url.getLocalURIString(false));
             return ret;
         }
     }

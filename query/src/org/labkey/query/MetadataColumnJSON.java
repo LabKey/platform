@@ -48,6 +48,7 @@ public class MetadataColumnJSON extends GWTPropertyDescriptor
         _wrappedColumnName = wrappedColumnName;
     }
 
+    @Override
     public GWTPropertyDescriptor copy()
     {
         return new MetadataColumnJSON(this);
@@ -77,6 +78,7 @@ public class MetadataColumnJSON extends GWTPropertyDescriptor
         super.setLookupQuery(lookupQuery);
     }
 
+    @Override
     public String getLookupDescription()
     {
         if (_lookupCustom)

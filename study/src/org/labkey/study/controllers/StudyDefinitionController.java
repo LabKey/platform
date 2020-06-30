@@ -94,6 +94,7 @@ public class StudyDefinitionController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class EditCohortDefinitionAction extends EditDefinitionAction
     {
+        @Override
         protected ExtensibleStudyEntity.DomainInfo getDomainInfo()
         {
             return CohortImpl.DOMAIN_INFO;
@@ -103,6 +104,7 @@ public class StudyDefinitionController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class EditStudyDefinitionAction extends EditDefinitionAction
     {
+        @Override
         protected ExtensibleStudyEntity.DomainInfo getDomainInfo()
         {
             return StudyImpl.DOMAIN_INFO;
@@ -117,10 +119,11 @@ public class StudyDefinitionController extends BaseStudyController
 
         protected abstract String getPluralName();
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
-            return root.addChild(getPluralName());
+            _addManageStudy(root);
+            root.addChild(getPluralName());
         }
 
         @Override
@@ -133,12 +136,14 @@ public class StudyDefinitionController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class CohortViewAction extends ViewAction
     {
+        @Override
         protected ExtensibleStudyEntity.DomainInfo getDomainInfo()
         {
             StudyManager.getInstance().assertCohortsViewable(getContainer(), getUser());
             return CohortImpl.DOMAIN_INFO;
         }
 
+        @Override
         protected String getPluralName()
         {
             return "Cohorts";

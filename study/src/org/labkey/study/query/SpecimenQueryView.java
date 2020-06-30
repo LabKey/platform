@@ -369,7 +369,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
             insertActionURL.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, tableInfo.getName());
             // we want a DetailsURL-like string so clear the container
             insertActionURL.setContainer(ContainerManager.getRoot());
-            setInsertURL(insertActionURL.toLocalString(false));
+            setInsertURL(insertActionURL.getLocalURIString(false));
         }
 
         setViewItemFilter((type, label) ->
@@ -920,6 +920,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         _showHistoryLinks = showHistoryLinks;
     }
 
+    @Override
     public void setShowRecordSelectors(boolean showRecordSelectors)
     {
         //assert !(showRecordSelectors && !_detailsView) : "Only details view may show record selectors";

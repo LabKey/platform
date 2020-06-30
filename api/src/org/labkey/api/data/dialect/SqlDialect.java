@@ -79,8 +79,6 @@ public abstract class SqlDialect
     protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
     protected static final int MAX_VARCHAR_SIZE = 4000;  //Any length over this will be set to nvarchar(max)/text
 
-    private int _databaseVersion = 0;
-    private String _productVersion = "0";
     private DialectStringHandler _stringHandler = null;
 
     private final Set<String> _reservedWordSet;
@@ -435,34 +433,14 @@ public abstract class SqlDialect
         return keywordSet;
     }
 
-    // Internal version number
-    public int getDatabaseVersion()
+    // Human readable product version number. Pass through by default; dialects should override this if they can provide
+    // more useful product version information than what's returned from DatabaseMetaData.getDatabaseProductVersion().
+    public @Nullable String getProductVersion(String dbmdProductVersion)
     {
-        return _databaseVersion;
-    }
-
-    public void setDatabaseVersion(int databaseVersion)
-    {
-        _databaseVersion = databaseVersion;
-    }
-
-    // Human readable product version number
-    public String getProductVersion()
-    {
-        return _productVersion;
-    }
-
-    public void setProductVersion(String productVersion)
-    {
-        _productVersion = productVersion;
+        return dbmdProductVersion;
     }
 
     public abstract String getProductName();
-
-    public @Nullable String getProductEdition()
-    {
-        return null;
-    }
 
     public abstract String getSQLScriptPath();
 
@@ -646,8 +624,30 @@ public abstract class SqlDialect
     /** @param part the java.util.Calendar field for the unit of time, such as Calendar.DATE or Calendar.MINUTE */
     public abstract String getDatePart(int part, String value);
 
+    public SQLFragment getDatePart(int part, SQLFragment value)
+    {
+        SQLFragment datePartExpr = new SQLFragment(value);
+        datePartExpr.setRawSQL(getDatePart(part, datePartExpr.getRawSQL()));
+        return datePartExpr;
+    }
+
     /** @param expression The expression with datetime value for which a date value is desired */
     public abstract String getDateTimeToDateCast(String expression);
+
+    /** @param expression The expression with datetime value for which a date value is desired */
+    public SQLFragment getDateTimeToDateCast(SQLFragment expression)
+    {
+        SQLFragment cast = new SQLFragment(expression);
+        cast.setRawSQL(getDateTimeToDateCast(cast.getRawSQL()));
+        return cast;
+    }
+
+    public SQLFragment getVarcharCast(SQLFragment expression)
+    {
+        SQLFragment cast = new SQLFragment(expression);
+        cast.setRawSQL( "CAST(" + cast.getRawSQL() + " AS " + getSqlCastTypeName(JdbcType.VARCHAR) + ")");
+        return cast;
+    }
 
     public abstract String getRoundFunction(String valueToRound);
 
@@ -829,10 +829,10 @@ public abstract class SqlDialect
         Set<String> jdbcKeywords = getJdbcKeywords(executor);
 
         if (!KeywordCandidates.get().containsAll(jdbcKeywords, getProductName()))
-            throw new IllegalStateException("JDBC keywords from " + getProductName() + " are not all in the keyword candidate list (sqlKeywords.txt)");
+            throw new IllegalStateException("JDBC keywords from " + getProductName() + " are not all in the keyword candidate list (sqlKeywords.txt). See log for details.");
 
         if (!KeywordCandidates.get().containsAll(_reservedWordSet, getProductName()))
-            throw new IllegalStateException(getProductName() + " reserved words are not all in the keyword candidate list (sqlKeywords.txt)");
+            throw new IllegalStateException(getProductName() + " reserved words are not all in the keyword candidate list (sqlKeywords.txt). See log for details.");
     }
 
     public int getIdentifierMaxLength()
@@ -1160,6 +1160,32 @@ public abstract class SqlDialect
                 return null;
             }
         }
+
+        public Integer getNumActive()
+        {
+            try
+            {
+                return callGetter("getNumActive");
+            }
+            catch (ServletException e)
+            {
+                LOG.error("Could not extract connection num active from data source \"" + _dsName + "\"");
+                return null;
+            }
+        }
+        public Integer getNumIdle()
+        {
+            try
+            {
+                return callGetter("getNumIdle");
+            }
+            catch (ServletException e)
+            {
+                LOG.error("Could not extract connection num idle from data source \"" + _dsName + "\"");
+                return null;
+            }
+        }
+
     }
 
 

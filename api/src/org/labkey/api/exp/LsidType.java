@@ -16,8 +16,6 @@
 package org.labkey.api.exp;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -25,9 +23,10 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
@@ -41,6 +40,7 @@ public enum LsidType
 {
     Experiment
             {
+                @Override
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
@@ -49,6 +49,7 @@ public enum LsidType
                             PageFlowUtil.urlProvider(ExperimentUrls.class).getExperimentDetailsURL(exp.getContainer(), exp);
                 }
 
+                @Override
                 public ExpExperiment getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getExpExperiment(lsid.toString());
@@ -57,6 +58,7 @@ public enum LsidType
 
     Protocol
             {
+                @Override
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
@@ -65,6 +67,7 @@ public enum LsidType
                             PageFlowUtil.urlProvider(ExperimentUrls.class).getProtocolDetailsURL(protocol);
                 }
 
+                @Override
                 public ExpProtocol getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getExpProtocol(lsid.toString());
@@ -73,6 +76,7 @@ public enum LsidType
 
     ProtocolApplication
             {
+                @Override
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
@@ -81,6 +85,7 @@ public enum LsidType
                             PageFlowUtil.urlProvider(ExperimentUrls.class).getProtocolApplicationDetailsURL(app);
                 }
 
+                @Override
                 public ExpProtocolApplication getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getExpProtocolApplication(lsid.toString());
@@ -89,6 +94,7 @@ public enum LsidType
 
     Material
             {
+                @Override
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
@@ -97,6 +103,7 @@ public enum LsidType
                             PageFlowUtil.urlProvider(ExperimentUrls.class).getMaterialDetailsURL(m);
                 }
 
+                @Override
                 public ExpMaterial getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getExpMaterial(lsid.toString());
@@ -105,22 +112,25 @@ public enum LsidType
 
     MaterialSource
             {
+                @Override
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
-                    ExpSampleSet source = getObject(lsid);
+                    ExpSampleType source = getObject(lsid);
                     return source == null ? null :
-                            PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleSetURL(source);
+                            PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleTypeURL(source);
                 }
 
-                public ExpSampleSet getObject(Lsid lsid)
+                @Override
+                public ExpSampleType getObject(Lsid lsid)
                 {
-                    return ExperimentService.get().getSampleSet(lsid.toString());
+                    return SampleTypeService.get().getSampleType(lsid.toString());
                 }
             },
 
     Data
             {
+                @Override
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
@@ -129,6 +139,7 @@ public enum LsidType
                             PageFlowUtil.urlProvider(ExperimentUrls.class).getDataDetailsURL(data);
                 }
 
+                @Override
                 public ExpData getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getExpData(lsid.toString());
@@ -137,6 +148,7 @@ public enum LsidType
 
     DataClass
             {
+                @Override
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
@@ -145,6 +157,7 @@ public enum LsidType
                             PageFlowUtil.urlProvider(ExperimentUrls.class).getShowDataClassURL(source.getContainer(), source.getRowId());
                 }
 
+                @Override
                 public ExpDataClass getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getDataClass(lsid.toString());
@@ -153,6 +166,7 @@ public enum LsidType
 
     ExperimentRun
             {
+                @Override
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
@@ -161,6 +175,7 @@ public enum LsidType
                             PageFlowUtil.urlProvider(ExperimentUrls.class).getShowRunGraphURL(run);
                 }
 
+                @Override
                 public ExpRun getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getExpRun(lsid.toString());
@@ -169,12 +184,14 @@ public enum LsidType
 
     Fraction
             {
+                @Override
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
                     return Material.getDisplayURL(lsid);
                 }
 
+                @Override
                 public ExpMaterial getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getExpMaterial(lsid.toString());

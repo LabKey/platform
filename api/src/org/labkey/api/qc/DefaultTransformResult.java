@@ -41,21 +41,25 @@ public class DefaultTransformResult implements TransformResult
     private List<File> _files;
     private static final Logger LOG = Logger.getLogger(DefaultTransformResult.class);
 
+    @Override
     public List<File> getFiles()
     {
         return _files;
     }
 
+    @Override
     public void setFiles(List<File> files)
     {
         _files = files;
     }
 
+    @Override
     public String getWarnings()
     {
         return _warnings;
     }
 
+    @Override
     public void setWarnings(String warnings)
     {
         _warnings = warnings;
@@ -80,11 +84,13 @@ public class DefaultTransformResult implements TransformResult
         _assayId = null;
     }
 
+    @Override
     public Map<ExpData, List<Map<String, Object>>> getTransformedData()
     {
         return _dataMap;
     }
 
+    @Override
     public Map<DomainProperty, String> getBatchProperties()
     {
         return _batchProperties;
@@ -95,6 +101,7 @@ public class DefaultTransformResult implements TransformResult
         _batchProperties = batchProperties;
     }
 
+    @Override
     public Map<DomainProperty, String> getRunProperties()
     {
         return _runProperties;
@@ -105,6 +112,7 @@ public class DefaultTransformResult implements TransformResult
         _runProperties = runProperties;
     }
 
+    @Override
     public List<File> getUploadedFiles()
     {
         return _uploadedFiles;
@@ -130,11 +138,13 @@ public class DefaultTransformResult implements TransformResult
 */
     }
 
+    @Override
     public String getAssayId()
     {
         return _assayId;
     }
 
+    @Override
     public void setAssayId(String assayId)
     {
         _assayId = assayId;

@@ -53,6 +53,7 @@ public class SqlBuilder extends Builder
         add(value);
     }
 
+    @Override
     public void addAll(Collection<?> params)
     {
         super.addAll(Arrays.asList(params.toArray()));

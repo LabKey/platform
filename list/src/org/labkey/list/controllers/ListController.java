@@ -27,7 +27,6 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.ReadOnlyApiAction;
@@ -62,7 +61,7 @@ import org.labkey.api.exp.list.ListUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
@@ -112,7 +111,6 @@ import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListManagerSchema;
 import org.labkey.list.model.ListWriter;
 import org.labkey.list.view.ListDefinitionForm;
-import org.labkey.list.view.ListImportServiceImpl;
 import org.labkey.list.view.ListItemAttachmentParent;
 import org.labkey.list.view.ListQueryForm;
 import org.labkey.list.view.ListQueryView;
@@ -147,9 +145,9 @@ public class ListController extends SpringActionController
     }
 
 
-    private NavTree appendRootNavTrail(NavTree root)
+    private void addRootNavTrail(NavTree root)
     {
-        return appendRootNavTrail(root, getContainer(), getUser());
+        addRootNavTrail(root, getContainer(), getUser());
     }
 
     public static class ListUrlsImpl implements ListUrls
@@ -165,29 +163,25 @@ public class ListController extends SpringActionController
         {
             return new ActionURL(EditListDefinitionAction.class, c);
         }
-
     }
 
 
-    public static NavTree appendRootNavTrail(NavTree root, Container c, User user)
+    public static void addRootNavTrail(NavTree root, Container c, User user)
     {
         if (c.hasOneOf(user, DesignListPermission.class, PlatformDeveloperPermission.class))
         {
             root.addChild("Lists", getBeginURL(c));
         }
-        return root;
     }
 
 
-    private NavTree appendListNavTrail(NavTree root, ListDefinition list, @Nullable String title)
+    private void addListNavTrail(NavTree root, ListDefinition list, @Nullable String title)
     {
-        appendRootNavTrail(root);
+        addRootNavTrail(root);
         root.addChild(list.getName(), list.urlShowData());
 
         if (null != title)
             root.addChild(title);
-
-        return root;
     }
 
 
@@ -215,22 +209,11 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Available Lists");
+            root.addChild("Available Lists");
         }
     }
-
-    @RequiresPermission(DesignListPermission.class)
-    public class DomainImportServiceAction extends GWTServiceAction
-    {
-        @Override
-        protected BaseRemoteService createService()
-        {
-            return new ListImportServiceImpl(getViewContext());
-        }
-    }
-
 
     @RequiresPermission(ReadPermission.class)
     public class ShowListDefinitionAction extends SimpleRedirectAction<ListDefinitionForm>
@@ -275,11 +258,11 @@ public class ListController extends SpringActionController
             if (!createList)
                 _list = form.getList();
 
-                return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("list"), "designer");
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("list"), "designer");
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (null == _list)
             {
@@ -287,17 +270,16 @@ public class ListController extends SpringActionController
             }
             else
             {
-                appendListNavTrail(root, _list, listDesignerHeader);
+                addListNavTrail(root, _list, listDesignerHeader);
             }
-            return root;
         }
     }
 
     @RequiresPermission(DesignListPermission.class)
     public class DeleteListDefinitionAction extends ConfirmAction<ListDefinitionForm>
     {
-        private ArrayList<Integer> _listIDs = new ArrayList<>();
-        private ArrayList<Container> _containers = new ArrayList<>();
+        private final ArrayList<Integer> _listIDs = new ArrayList<>();
+        private final ArrayList<Container> _containers = new ArrayList<>();
 
         @Override
         public void validateCommand(ListDefinitionForm form, Errors errors)
@@ -392,9 +374,9 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendListNavTrail(root, _list, _title);
+            addListNavTrail(root, _list, _title);
         }
     }
 
@@ -440,9 +422,8 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -627,9 +608,9 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendListNavTrail(root, _list, "View List Item");
+            addListNavTrail(root, _list, "View List Item");
         }
     }
 
@@ -637,7 +618,7 @@ public class ListController extends SpringActionController
     // Override to ensure that pk value type matches column type.  This is critical for PostgreSQL 8.3.
     public static class ListQueryUpdateForm extends QueryUpdateForm
     {
-        private ListDefinition _list;
+        private final ListDefinition _list;
 
         public ListQueryUpdateForm(TableInfo table, ViewContext ctx, ListDefinition list, BindException errors)
         {
@@ -701,7 +682,7 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType) throws IOException
         {
             int count = _list.insertListItems(getUser(),getContainer() , dl, errors, null, null, false, _importLookupByAlternateKey);
             return count;
@@ -716,9 +697,9 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendListNavTrail(root, _list, "Import Data");
+            addListNavTrail(root, _list, "Import Data");
         }
     }
 
@@ -773,12 +754,12 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (_list != null)
-                return appendListNavTrail(root, _list, _list.getName() + ":History");
+                addListNavTrail(root, _list, _list.getName() + ":History");
             else
-                return root.addChild(":History");
+                root.addChild(":History");
         }
     }
 
@@ -841,12 +822,12 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (_list != null)
-                return appendListNavTrail(root, _list, "List Item Details");
+                addListNavTrail(root, _list, "List Item Details");
             else
-                return root.addChild("List Item Details"); 
+                root.addChild("List Item Details");
         }
     }
 
@@ -975,9 +956,10 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Import List Archive");
+            addRootNavTrail(root);
+            root.addChild("Import List Archive");
         }
     }
 

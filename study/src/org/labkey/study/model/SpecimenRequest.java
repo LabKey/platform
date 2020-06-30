@@ -44,6 +44,7 @@ public class SpecimenRequest extends AbstractStudyCachable<SpecimenRequest> impl
     private Integer _destinationSiteId;     // This is a locationId, but still needs to martch the column in the table
     private boolean _hidden;
 
+    @Override
     public Object getPrimaryKey()
     {
         return getRowId();
@@ -115,11 +116,13 @@ public class SpecimenRequest extends AbstractStudyCachable<SpecimenRequest> impl
         _hidden = hidden;
     }
 
+    @Override
     public Container getContainer()
     {
         return _container;
     }
 
+    @Override
     public void setContainer(Container container)
     {
         verifyMutability();
@@ -182,6 +185,7 @@ public class SpecimenRequest extends AbstractStudyCachable<SpecimenRequest> impl
         return builder.toString();
     }
 
+    @Override
     public String getEntityId()
     {
         return _entityId;

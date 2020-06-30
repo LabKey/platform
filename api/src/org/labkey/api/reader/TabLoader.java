@@ -34,7 +34,6 @@ import org.labkey.api.util.Filter;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.writer.PrintWriters;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -167,15 +166,14 @@ public class TabLoader extends DataLoader
         public FileType getFileType() { return CSV_FILE_TYPE; }
     }
 
-
     protected static char COMMENT_CHAR = '#';
 
     // source data
     private final ReaderFactory _readerFactory;
-    private BufferedReader _reader = null;
+    private final Map<String, String> _comments = new HashMap<>();
 
+    private TabBufferedReader _reader = null;
     private int _commentLines = 0;
-    private Map<String, String> _comments = new HashMap<>();
     private char _chDelimiter = '\t';
     private String _strDelimiter = new String(new char[]{_chDelimiter});
     private String _lineDelimiter = null;
@@ -202,7 +200,7 @@ public class TabLoader extends DataLoader
         this(() -> {
             verifyFile(inputFile);
             // Detect Charset encoding using BOM
-            return Readers.getBOMDetectingReader(inputFile);
+            return new TabBufferedReader(Readers.getBOMDetectingUnbufferedReader(inputFile), inputFile.length());
         }, hasColumnHeaders, mvIndicatorContainer);
 
         setScrollable(true);
@@ -217,7 +215,7 @@ public class TabLoader extends DataLoader
     // This constructor doesn't support MV Indicators:
     public TabLoader(final CharSequence src, Boolean hasColumnHeaders)
     {
-        this(() -> new BufferedReader(new CharSequenceReader(src)), hasColumnHeaders, null);
+        this(() -> new TabBufferedReader(new CharSequenceReader(src)), hasColumnHeaders, null);
 
         if (src == null)
             throw new IllegalArgumentException("src cannot be null");
@@ -245,13 +243,13 @@ public class TabLoader extends DataLoader
             private boolean _closed = false;
 
             @Override
-            public BufferedReader getReader()
+            public TabBufferedReader getReader()
             {
                 if (_closed)
                     throw new IllegalStateException("Reader is closed");
 
                 // Customize close() behavior to track closing and handle closeOnComplete
-                return new BufferedReader(reader)
+                return new TabBufferedReader(reader)
                 {
                     @Override
                     public void close() throws IOException
@@ -280,14 +278,10 @@ public class TabLoader extends DataLoader
     }
 
 
-    protected BufferedReader getReader() throws IOException
+    protected TabBufferedReader getReader() throws IOException
     {
         if (null == _reader)
-        {
             _reader = _readerFactory.getReader();
-            // Issue 23437 - use a reasonably high limit for buffering
-            _reader.mark(10 * 1024 * 1024);
-        }
 
         return _reader;
     }
@@ -337,20 +331,20 @@ public class TabLoader extends DataLoader
 
 
 
-    private CharSequence readLine(BufferedReader r, boolean skipComments, boolean skipBlankLines)
+    private CharSequence readLine(TabBufferedReader r, boolean skipComments, boolean skipBlankLines)
     {
         String line = readOneTextLine(r, skipComments, skipBlankLines);
         if (null == line || null == _lineDelimiter)
             return line;
         if (line.endsWith(_lineDelimiter))
-            return line.substring(0,line.length()-_lineDelimiter.length());
+            return line.substring(0, line.length() - _lineDelimiter.length());
         StringBuilder sb = new StringBuilder(line);
         while (null != (line = readOneTextLine(r, false, false)))
         {
             sb.append("\n");
             if (line.endsWith(_lineDelimiter))
             {
-                sb.append(line.substring(0,line.length()-_lineDelimiter.length()));
+                sb.append(line, 0, line.length()-_lineDelimiter.length());
                 return sb;
             }
             sb.append(line);
@@ -359,7 +353,7 @@ public class TabLoader extends DataLoader
     }
 
 
-    private String readOneTextLine(BufferedReader r, boolean skipComments, boolean skipBlankLines)
+    private String readOneTextLine(TabBufferedReader r, boolean skipComments, boolean skipBlankLines)
     {
         try
         {
@@ -382,22 +376,21 @@ public class TabLoader extends DataLoader
 
     Pattern _replaceDoubleQuotes = null;
 
-    private String[] readFields(BufferedReader r, @Nullable ColumnDescriptor[] columns)
+    private String[] readFields(TabBufferedReader r, @Nullable ColumnDescriptor[] columns)
     {
+        CharSequence line = readLine(r, true, !isIncludeBlankLines());
+
+        if (line == null)
+            return null;
+
         if (!_parseQuotes)
         {
-            CharSequence line = readLine(r, true, !isIncludeBlankLines());
-            if (line == null)
-                return null;
             String[] fields = StringUtils.splitByWholeSeparator(line.toString(), _strDelimiter);
             for (int i = 0; i < fields.length; i++)
                 fields[i] = parseValue(fields[i]);
             return fields;
         }
 
-        CharSequence line = readLine(r, true, !isIncludeBlankLines());
-        if (line == null)
-            return null;
         StringBuilder buf = line instanceof StringBuilder ? (StringBuilder)line : new StringBuilder(line);
 
         String field = null;
@@ -516,7 +509,8 @@ public class TabLoader extends DataLoader
         _mapFilter = mapFilter;
     }
 
-    public CloseableIterator<Map<String, Object>> iterator()
+    @Override
+    public @NotNull CloseableIterator<Map<String, Object>> iterator()
     {
         TabLoaderIterator iter;
         try
@@ -583,7 +577,8 @@ public class TabLoader extends DataLoader
 
     private void readComments() throws IOException
     {
-        BufferedReader reader = getReader();
+        TabBufferedReader reader = getReader();
+        reader.setReadAhead();
 
         try
         {
@@ -615,13 +610,15 @@ public class TabLoader extends DataLoader
         }
         finally
         {
-            reader.reset();
+            reader.resetReadAhead();
         }
     }
 
+    @Override
     public String[][] getFirstNLines(int n) throws IOException
     {
-        BufferedReader reader = getReader();
+        TabBufferedReader reader = getReader();
+        reader.setReadAhead();
 
         try
         {
@@ -643,14 +640,14 @@ public class TabLoader extends DataLoader
         }
         finally
         {
-            reader.reset();
+            reader.resetReadAhead();
         }
     }
 
 
     public class TabLoaderIterator extends DataLoaderIterator
     {
-        private final BufferedReader reader;
+        private final TabBufferedReader reader;
 
         protected TabLoaderIterator() throws IOException
         {
@@ -673,6 +670,7 @@ public class TabLoader extends DataLoader
             }
         }
 
+        @Override
         public void close() throws IOException
         {
             try

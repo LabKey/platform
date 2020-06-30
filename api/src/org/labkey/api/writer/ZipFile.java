@@ -102,11 +102,13 @@ public class ZipFile extends AbstractVirtualFile
         return response.getOutputStream();
     }
 
+    @Override
     public String getLocation()
     {
         return _root != null ? FileUtil.getAbsolutePath(_root) : "ZipFile stream.";
     }
 
+    @Override
     public PrintWriter getPrintWriter(String path) throws IOException
     {
         ZipEntry entry = new ZipEntry(_path + makeLegalName(path));
@@ -115,6 +117,7 @@ public class ZipFile extends AbstractVirtualFile
         return _pw;
     }
 
+    @Override
     public OutputStream getOutputStream(String path) throws IOException
     {
         ZipEntry entry = new ZipEntry(_path + makeLegalName(path));
@@ -123,6 +126,7 @@ public class ZipFile extends AbstractVirtualFile
         return new NonCloseableZipOutputStream(_out);
     }
 
+    @Override
     public void saveXmlBean(String filename, XmlObject doc) throws IOException
     {
         try
@@ -146,11 +150,13 @@ public class ZipFile extends AbstractVirtualFile
         _out.closeEntry();
     }
 
+    @Override
     public VirtualFile getDir(String path)
     {
         return new ZipFile(_out, _pw, _path + makeLegalName(path) + "/", false);
     }
 
+    @Override
     public VirtualFile createZipArchive(String name) throws IOException
     {
         ZipEntry entry = new ZipEntry(_path + makeLegalName(name));
@@ -159,6 +165,7 @@ public class ZipFile extends AbstractVirtualFile
         return new ZipFile(_out, false);
     }
 
+    @Override
     public String makeLegalName(String name)
     {
         return _makeLegalName(name);
@@ -169,6 +176,7 @@ public class ZipFile extends AbstractVirtualFile
         return FileSystemFile.makeLegal(name);
     }
 
+    @Override
     public void close() throws IOException
     {
         _out.finish();            
@@ -214,6 +222,7 @@ public class ZipFile extends AbstractVirtualFile
             _out = out;
         }
 
+        @Override
         public void close()
         {
             try

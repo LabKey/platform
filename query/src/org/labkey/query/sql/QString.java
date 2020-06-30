@@ -57,16 +57,19 @@ public class QString extends QExpr implements IConstant
         setTokenText(quote(value));
     }
 
+    @Override
     public String getValue()
     {
         return unquote(getTokenText());
     }
 
+    @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
         builder.appendStringLiteral(getValue());
     }
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.append(getTokenText());

@@ -76,7 +76,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         nameCol.setURLTargetWindow("_blank");
 
         addTextColumn("ReleaseVersion").setScale(255);
-        BaseColumnInfo schemaVersionColumn = addWrapColumn(getRealTable().getColumn("SchemaVersion"));
+        var schemaVersionColumn = addWrapColumn(getRealTable().getColumn("SchemaVersion"));
         schemaVersionColumn.setDisplayColumnFactory(new SchemaVersionDisplayColumnFactory(schemaVersionColumn.getDisplayColumnFactory()));
         addWrapColumn(getRealTable().getColumn("ClassName"));
 
@@ -182,7 +182,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         cte.append(")\n");
 
         String tableName = alias + "$m";
-        String token = ret.addCommonTableExpression(cte.toString(), tableName, cte);
+        String token = ret.addCommonTableExpression("modulestableconstants", tableName, cte);
 
         // join with core.modules
         ret.append("(SELECT m.name, m.schemaversion, m.classname, m.schemas");

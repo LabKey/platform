@@ -48,6 +48,6 @@ public class SharedDataTable<SchemaType extends UserSchema> extends SimpleUserSc
     @Override
     protected ContainerFilter getDefaultContainerFilter()
     {
-        return new ContainerFilter.CurrentPlusExtras(getUserSchema().getUser(), ContainerManager.getSharedContainer(), getUserSchema().getContainer().getContainerFor(ContainerType.DataType.sharedSchemaOwner));
+        return new ContainerFilter.CurrentPlusExtras(getUserSchema().getContainer(), getUserSchema().getUser(), ContainerManager.getSharedContainer(), getUserSchema().getContainer().getContainerFor(ContainerType.DataType.sharedSchemaOwner));
     }
 }

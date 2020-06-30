@@ -20,6 +20,8 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
@@ -43,7 +45,7 @@ import java.util.Stack;
 public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHandler
 {
     private static final Logger LOG = Logger.getLogger(WebPartSubstitutionHandler.class);
-    private static final ThreadLocal<Stack<Map>> _paramsStack = ThreadLocal.withInitial(Stack::new);
+    private static final ThreadLocal<Stack<Map<String, String>>> _paramsStack = ThreadLocal.withInitial(Stack::new);
 
 
     @Override
@@ -51,10 +53,10 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
     public FormattedHtml getSubstitution(Map<String, String> params)
     {
         params = new CaseInsensitiveHashMap<>(params);
-        Stack<Map> stack = _paramsStack.get();
+        Stack<Map<String, String>> stack = _paramsStack.get();
 
         if (stack.contains(params))
-            return new FormattedHtml("<br><font class='error' color='red'>Error: recursive rendering</font>");
+            return new FormattedHtml(HtmlString.unsafe("<br><font class='error' color='red'>Error: recursive rendering</font>"));
 
         stack.push(params);
 
@@ -64,7 +66,7 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
             WebPartFactory factory = Portal.getPortalPartCaseInsensitive(partName);
 
             if (null == factory)
-                return new FormattedHtml("<br><font class='error' color='red'>Error: Could not find webpart \"" + partName + "\"</font>");
+                return new FormattedHtml(HtmlString.unsafe("<br><font class='error' color='red'>Error: Could not find webpart \"" + PageFlowUtil.filter(partName) + "\"</font>"));
 
             String partLocation = params.get("location");
 
@@ -104,7 +106,7 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
                 StringWriter sw = new StringWriter();
                 view.include(view, sw);
 
-                return new FormattedHtml(sw.toString(), true, dependencies);  // All webparts are considered volatile... CONSIDER: Be more selective (e.g., query & messages, but not search)
+                return new FormattedHtml(HtmlString.unsafe(sw.toString()), true, dependencies);  // All webparts are considered volatile... CONSIDER: Be more selective (e.g., query & messages, but not search)
             }
             catch (Throwable e)
             {
@@ -113,12 +115,12 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
                     LOG.error("Error substituting " + partName, e);
 
                 // Return HTML with error
-                return new FormattedHtml("<br><font class='error' color='red'>Error substituting " + partName + ": " + e.getMessage() + "</font>");
+                return new FormattedHtml(HtmlString.unsafe("<br><font class='error' color='red'>Error substituting " + PageFlowUtil.filter(partName) + ": " + PageFlowUtil.filter(e.getMessage()) + "</font>"));
             }
         }
         finally
         {
-            Map m = stack.pop();
+            Map<String, String> m = stack.pop();
             assert m == params : "Stack problem while checking for recursive webpart rendering: popped params didn't match the params that were pushed";
         }
     }

@@ -28,7 +28,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
@@ -153,7 +153,7 @@ public class ExpSchema extends AbstractExpSchema
             @Override
             public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpSampleSetTable ret = ExperimentService.get().createSampleSetTable(SampleSets.toString(), expSchema, cf);
+                ExpSampleTypeTable ret = ExperimentService.get().createSampleTypeTable(SampleSets.toString(), expSchema, cf);
                 return expSchema.setupTable(ret);
             }
         },
@@ -254,7 +254,7 @@ public class ExpSchema extends AbstractExpSchema
     }
 
     public static final String SCHEMA_NAME = "exp";
-    public static final String SCHEMA_DESCR = "Contains data about experiment runs, data files, materials, sample sets, etc.";
+    public static final String SCHEMA_DESCR = "Contains data about experiment runs, data files, materials, sample types, etc.";
 
     static public void register(final Module module)
     {
@@ -266,6 +266,7 @@ public class ExpSchema extends AbstractExpSchema
                 return true;
             }
 
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new ExpSchema(schema.getUser(), schema.getContainer());
@@ -275,7 +276,7 @@ public class ExpSchema extends AbstractExpSchema
 
     public SamplesSchema getSamplesSchema()
     {
-        SamplesSchema schema = new SamplesSchema(getUser(), getContainer());
+        SamplesSchema schema = new SamplesSchema(this);
         schema.setContainerFilter(_containerFilter);
         return schema;
     }
@@ -285,11 +286,13 @@ public class ExpSchema extends AbstractExpSchema
         super(SCHEMA_NAME, SCHEMA_DESCR, user, container, ExperimentService.get().getSchema());
     }
 
+    @Override
     public Set<String> getTableNames()
     {
         return tableNames;
     }
 
+    @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
         for (TableType tableType : TableType.values())
@@ -370,6 +373,7 @@ public class ExpSchema extends AbstractExpSchema
         return getSchema(schema.name());
     }
 
+    @Override
     public QuerySchema getSchema(String name)
     {
         if (_restricted)
@@ -410,6 +414,7 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.ProtocolApplications.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return getTable(TableType.ProtocolApplications, cf);
@@ -421,6 +426,7 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new LookupForeignKey(targetColumnName)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return getTable(TableType.Protocols.toString(), ContainerFilter.EVERYTHING);
@@ -432,6 +438,7 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.MaterialProtocolInputs.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return getTable(TableType.MaterialProtocolInputs, cf);
@@ -443,6 +450,7 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.DataProtocolInputs.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return getTable(TableType.DataProtocolInputs, cf);
@@ -463,6 +471,7 @@ public class ExpSchema extends AbstractExpSchema
                 return pipeline.getTable("Job", getDefaultContainerFilter());
             }
 
+            @Override
             public StringExpression getURL(ColumnInfo parent)
             {
                 return getURL(parent, true);
@@ -480,6 +489,7 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Runs.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return getTable(TableType.Runs, cf);
@@ -502,7 +512,7 @@ public class ExpSchema extends AbstractExpSchema
             public TableInfo getLookupTableInfo()
             {
                 ContainerFilter cf = getLookupContainerFilter();
-                String key = getClass().getName() + "/RunGroupIdForeignKey/" + includeBatches + "/" + cf.getCacheKey(ExpSchema.this.getContainer());
+                String key = getClass().getName() + "/RunGroupIdForeignKey/" + includeBatches + "/" + cf.getCacheKey();
                 // since getTable(forWrite=true) does not cache, cache this tableinfo using getCachedLookupTableInfo()
                 return ExpSchema.this.getCachedLookupTableInfo(key, this::createLookupTableInfo);
             }
@@ -510,7 +520,7 @@ public class ExpSchema extends AbstractExpSchema
             @Override
             protected ContainerFilter getLookupContainerFilter()
             {
-                return Objects.requireNonNullElse(cf, new ContainerFilter.CurrentPlusProjectAndShared(getUser()));
+                return Objects.requireNonNullElse(cf, ContainerFilter.Type.CurrentPlusProjectAndShared.create(ExpSchema.this));
             }
 
             private TableInfo createLookupTableInfo()
@@ -531,6 +541,7 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Data.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return getTable(TableType.Data, cf);
@@ -542,15 +553,16 @@ public class ExpSchema extends AbstractExpSchema
      * @param domainProperty the property on which the lookup is configured
      */
     @NotNull
-    public ForeignKey getMaterialIdForeignKey(@Nullable ExpSampleSet targetSampleSet, @Nullable DomainProperty domainProperty, ContainerFilter cfParent)
+    public ForeignKey getMaterialIdForeignKey(@Nullable ExpSampleType targetSampleType, @Nullable DomainProperty domainProperty, ContainerFilter cfParent)
     {
-        if (targetSampleSet == null)
+        if (targetSampleType == null)
         {
             return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Materials.name(), "RowId", null)
             {
+                @Override
                 public TableInfo getLookupTableInfo()
                 {
-                    ContainerFilter cf = new ContainerFilter.SimpleContainerFilter(getSearchContainers(getContainer(), targetSampleSet, domainProperty, getUser()));
+                    ContainerFilter cf = new ContainerFilter.SimpleContainerFilter(getSearchContainers(getContainer(), targetSampleType, domainProperty, getUser()));
                     if (null != cfParent)
                         cf = new UnionContainerFilter(cf, cfParent);
                     ExpTable result = getTable(TableType.Materials, cf);
@@ -558,11 +570,11 @@ public class ExpSchema extends AbstractExpSchema
                 }
             };
         }
-        return getSamplesSchema().materialIdForeignKey(targetSampleSet, domainProperty);
+        return getSamplesSchema().materialIdForeignKey(targetSampleType, domainProperty);
     }
 
     @NotNull
-    public static Set<Container> getSearchContainers(Container currentContainer, @Nullable ExpSampleSet ss, @Nullable DomainProperty dp, User user)
+    public static Set<Container> getSearchContainers(Container currentContainer, @Nullable ExpSampleType st, @Nullable DomainProperty dp, User user)
     {
         Set<Container> searchContainers = new LinkedHashSet<>();
         if (dp != null)
@@ -583,7 +595,7 @@ public class ExpSchema extends AbstractExpSchema
         {
             // Default to looking in the current container
             searchContainers.add(currentContainer);
-            if (ss == null || (ss.getContainer().isProject() && !currentContainer.isProject()))
+            if (st == null || (st.getContainer().isProject() && !currentContainer.isProject()))
             {
                 Container c = currentContainer.getParent();
                 // Recurse up the chain to the project
@@ -597,7 +609,7 @@ public class ExpSchema extends AbstractExpSchema
                 }
             }
             Container sharedContainer = ContainerManager.getSharedContainer();
-            if (ss == null || ss.getContainer().equals(sharedContainer))
+            if (st == null || st.getContainer().equals(sharedContainer))
             {
                 if (sharedContainer.hasPermission(user, ReadPermission.class))
                 {

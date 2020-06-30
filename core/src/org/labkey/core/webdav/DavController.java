@@ -167,25 +167,7 @@ import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.TimeZone;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -661,6 +643,7 @@ public class DavController extends SpringActionController
                     write(str, 0, str.length());
                 }
 
+                @Override
                 public void write(char[] cbuf, int off, int len) throws IOException
                 {
                     super.write(cbuf,off,len);
@@ -698,6 +681,7 @@ public class DavController extends SpringActionController
             this.allowDuringUpgrade = allow;
         }
 
+        @Override
         public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response)
         {
             clearLastError();
@@ -839,6 +823,7 @@ public class DavController extends SpringActionController
             super(method, true);
         }
 
+        @Override
         public final WebdavStatus doMethod() throws DavException, IOException
         {
             try
@@ -852,7 +837,7 @@ public class DavController extends SpringActionController
                 // might be a little cleaner to register a javax.servlet.Filter
                 if (x.getStatus() != WebdavStatus.SC_NOT_FOUND || !"GET".equals(method))
                     throw x;
-                Container c = ContainerManager.getForPath(getResourcePath());
+                Container c = ContainerManager.resolveContainerPathAlias(getResourcePath().toString());
                 if (null == c)
                     throw x;
                 throw new RedirectException(c.getStartURL(getUser()));
@@ -895,6 +880,7 @@ public class DavController extends SpringActionController
             super("MD5SUM");
         }
 
+        @Override
         protected WebdavStatus _doMethod() throws DavException, IOException
         {
             WebdavResource resource = resolvePath();
@@ -1401,6 +1387,7 @@ public class DavController extends SpringActionController
         }
 
 
+        @Override
         public WebdavStatus doMethod() throws DavException, IOException
         {
             WebdavResource root = getResource();
@@ -2027,6 +2014,7 @@ public class DavController extends SpringActionController
                 gvfs = true;
         }
 
+        @Override
         public void beginResponse(WebdavResponse response)
         {
             response.setStatus(WebdavStatus.SC_MULTI_STATUS);
@@ -2036,11 +2024,13 @@ public class DavController extends SpringActionController
             xml.writeElement(null, "multistatus" + generateNamespaceDeclarations(), XMLWriter.OPENING);
         }
 
+        @Override
         public void endResponse()
         {
             xml.writeElement(null, "multistatus", XMLWriter.CLOSING);
         }
 
+        @Override
         public void writeProperty(String propertyName, Object propertyValue)
         {
             /* NYI */
@@ -2058,7 +2048,7 @@ public class DavController extends SpringActionController
             xml.writeElement(null, "href", XMLWriter.OPENING);
             String href = resource.getLocalHref(getViewContext());
             if (gvfs)
-                href = href.replace("%40","@"); // gvfs workaround
+                href = href.replace("%40", "@"); // gvfs workaround
             xml.writeText(href);
             xml.writeElement(null, "href", XMLWriter.CLOSING);
 
@@ -2171,15 +2161,15 @@ public class DavController extends SpringActionController
                         //xml.writeElement(null, "directget", XMLWriter.NO_CONTENT);
                     }
                     //xml.writeElement(null, "directput", XMLWriter.NO_CONTENT);
-					xml.writeElement(null, "actions", XMLWriter.NO_CONTENT);
-					xml.writeElement(null, "description", XMLWriter.NO_CONTENT);
-					xml.writeElement(null, "iconHref", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "actions", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "description", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "iconHref", XMLWriter.NO_CONTENT);
                     xml.writeElement(null, "iconFontCls", XMLWriter.NO_CONTENT);
-					xml.writeElement(null, "history", XMLWriter.NO_CONTENT);
-					xml.writeElement(null, "md5sum", XMLWriter.NO_CONTENT);
-					xml.writeElement(null, "href", XMLWriter.NO_CONTENT);
-					xml.writeElement(null, "ishidden", XMLWriter.NO_CONTENT);
-					xml.writeElement(null, "isreadonly", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "history", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "md5sum", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "href", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "ishidden", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "isreadonly", XMLWriter.NO_CONTENT);
                     xml.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
                     xml.writeElement(null, "source", XMLWriter.NO_CONTENT);
                     xml.writeElement(null, "options", XMLWriter.NO_CONTENT);
@@ -2348,32 +2338,32 @@ public class DavController extends SpringActionController
                                     xml.writeProperty(null, "getlastmodified", getHttpDateFormat(modified));
                             }
                         }
-						else if (property.equals("href"))
-						{
-							xml.writeElement(null, "href", XMLWriter.OPENING);
+                        else if (property.equals("href"))
+                        {
+                            xml.writeElement(null, "href", XMLWriter.OPENING);
                             xml.writeText(resource.getLocalHref(getViewContext()));
-							xml.writeElement(null, "href", XMLWriter.CLOSING);
-						}
-						else if (property.equals("iconHref"))
-						{
+                            xml.writeElement(null, "href", XMLWriter.CLOSING);
+                        }
+                        else if (property.equals("iconHref"))
+                        {
                             xml.writeProperty(null, "iconHref", resource.getIconHref());
-						}
+                        }
                         else if (property.equals("iconFontCls"))
                         {
                             xml.writeProperty(null, "iconFontCls", resource.getIconFontCls());
                         }
-						else if (property.equals("ishidden"))
-						{
-							xml.writeElement(null, "ishidden", XMLWriter.OPENING);
-							xml.writeText("0");
-							xml.writeElement(null, "ishidden", XMLWriter.CLOSING);
-						}
-						else if (property.equals("isreadonly"))
-						{
-							xml.writeElement(null, "isreadonly", XMLWriter.OPENING);
-							xml.writeText(resource.canWrite(getUser(),false) ? "0" : "1");
-							xml.writeElement(null, "isreadonly", XMLWriter.CLOSING);
-						}
+                        else if (property.equals("ishidden"))
+                        {
+                            xml.writeElement(null, "ishidden", XMLWriter.OPENING);
+                            xml.writeText("0");
+                            xml.writeElement(null, "ishidden", XMLWriter.CLOSING);
+                        }
+                        else if (property.equals("isreadonly"))
+                        {
+                            xml.writeElement(null, "isreadonly", XMLWriter.OPENING);
+                            xml.writeText(resource.canWrite(getUser(), false) ? "0" : "1");
+                            xml.writeElement(null, "isreadonly", XMLWriter.CLOSING);
+                        }
                         else if (property.equals("resourcetype"))
                         {
                             if (resource.isCollection())
@@ -2421,7 +2411,7 @@ public class DavController extends SpringActionController
                             {
                                 xml.writeElement(null, "entry", XMLWriter.OPENING);
                                 xml.writeElement(null, "date", XMLWriter.OPENING);
-                                  xml.writeText(DateUtil.toISO(history.getDate()));
+                                xml.writeText(DateUtil.toISO(history.getDate()));
                                 xml.writeElement(null, "date", XMLWriter.CLOSING);
                                 xml.writeElement(null, "user", XMLWriter.OPENING);
                                 xml.writeText(history.getUser().getDisplayName(null));
@@ -2467,7 +2457,9 @@ public class DavController extends SpringActionController
 //                        }
                         else
                         {
-                            propertiesNotFound.add(property);
+                            // ignore not well-formed property names, must be a valid XML element
+                            if (XMLWriter.isValidXmlElementName(property))
+                                propertiesNotFound.add(property);
                         }
                     }
 
@@ -2482,9 +2474,7 @@ public class DavController extends SpringActionController
                         xml.writeElement(null, "propstat", XMLWriter.OPENING);
                         xml.writeElement(null, "prop", XMLWriter.OPENING);
                         for (String property : propertiesNotFound)
-                        {
                             xml.writeElement(null, property, XMLWriter.NO_CONTENT);
-                        }
                         xml.writeElement(null, "prop", XMLWriter.CLOSING);
                         xml.writeElement(null, "status", XMLWriter.OPENING);
                         xml.writeText("HTTP/1.1 " + WebdavStatus.SC_NOT_FOUND);
@@ -2664,7 +2654,9 @@ public class DavController extends SpringActionController
                         }
                         else
                         {
-                            propertiesNotFound.add(property);
+                            // ignore not well-formed property names, must be a valid XML element
+                            if (XMLWriter.isValidXmlElementName(property))
+                                propertiesNotFound.add(property);
                         }
 
                     }
@@ -2696,6 +2688,7 @@ public class DavController extends SpringActionController
             xml.writeElement(null, "response", XMLWriter.CLOSING);
         }
 
+        @Override
         public void sendData() throws IOException
         {
             xml.sendData();
@@ -2719,6 +2712,7 @@ public class DavController extends SpringActionController
             extraProps = new HashMap<>();
         }
 
+        @Override
         public void beginResponse(WebdavResponse response)
         {
             response.setContentType("application/json; charset=UTF-8");
@@ -2727,6 +2721,7 @@ public class DavController extends SpringActionController
             json.array();
         }
 
+        @Override
         public void endResponse()
         {
             json.endArray();
@@ -2739,11 +2734,13 @@ public class DavController extends SpringActionController
             json.endObject();
         }
 
+        @Override
         public void writeProperty(String propertyName, Object propertyValue)
         {
             extraProps.put(propertyName, propertyValue);
         }
 
+        @Override
         public void writeProperties(WebdavResource resource, Find type, List<String> propertiesVector) throws Exception
         {
             json.object();
@@ -2880,6 +2877,7 @@ public class DavController extends SpringActionController
             json.endObject();
         }
 
+        @Override
         public void sendData() throws IOException
         {
             out.flush();
@@ -3103,14 +3101,17 @@ public class DavController extends SpringActionController
                     {
                         return lastModified;
                     }
+                    @Override
                     public long getSize()
                     {
                         return _size;
                     }
+                    @Override
                     public InputStream openInputStream()
                     {
                         return is;
                     }
+                    @Override
                     public void closeInputStream()
                     {
                         /* */
@@ -3121,6 +3122,7 @@ public class DavController extends SpringActionController
             return _fis;
         }
 
+        @Override
         WebdavStatus doMethod() throws DavException, IOException, RedirectException
         {
             checkReadOnly();
@@ -3292,6 +3294,7 @@ public class DavController extends SpringActionController
             super("DELETE");
         }
 
+        @Override
         WebdavStatus doMethod() throws DavException, IOException
         {
             checkReadOnly();
@@ -3594,6 +3597,7 @@ public class DavController extends SpringActionController
             super("PROPPATCH");
         }
 
+        @Override
         WebdavStatus doMethod() throws DavException, IOException
         {
             checkReadOnly();
@@ -3819,6 +3823,11 @@ public class DavController extends SpringActionController
                 }
             }
 
+            //Remember source children prior to move so we can remove from index. Issue #39696
+            Collection<? extends WebdavResource> movedChildren = null;
+            if (src.isCollection())
+                movedChildren = src.list();
+
             // File based
             File srcFile = src.getFile();
             File destFile = dest.getFile();
@@ -3884,7 +3893,7 @@ public class DavController extends SpringActionController
             }
             else
             {
-                fireFileMovedEvent(dest, src);
+                fireFileMovedEvent(dest, src, movedChildren);
             }
 
             // Removing any lock-null resource which would be present at
@@ -3895,7 +3904,7 @@ public class DavController extends SpringActionController
         }
     }
 
-    private void fireFileMovedEvent(WebdavResource dest, WebdavResource src)
+    private void fireFileMovedEvent(@NotNull WebdavResource dest, @NotNull WebdavResource src, @Nullable Collection<? extends WebdavResource> movedChildren)
     {
         long start = System.currentTimeMillis();
         src.notify(getViewContext(), null == dest.getFile() ? "deleted" : "deleted: moved to " + dest.getFile().getPath());
@@ -3911,10 +3920,15 @@ public class DavController extends SpringActionController
         }
 
         removeFromIndex(src);
+        if (movedChildren != null)
+            movedChildren.forEach(this::removeFromIndex);
+
         addToIndex(dest);
+        if (dest.isCollection() && dest.list() != null)
+            dest.list().forEach(this::addToIndex);
+
         _log.debug("fireFileMovedEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
-
 
     boolean isSafeCopy(WebdavResource src, WebdavResource dest)
     {
@@ -4708,6 +4722,7 @@ public class DavController extends SpringActionController
             super("OPTIONS");
         }
 
+        @Override
         public WebdavStatus doMethod() throws DavException
         {
             checkRequireLogin(null);
@@ -4918,14 +4933,18 @@ public class DavController extends SpringActionController
     }
 
 
-    Path extPath = new Path(PageFlowUtil.extJsRoot());
-    Path mcePath = new Path("timymce");
+    static final Path jquery = new Path("internal","jQuery");
 
-    boolean alwaysCacheFile(Path p)
+    public static boolean alwaysCacheFile(Path p)
     {
-        return p.startsWith(extPath) || p.startsWith(mcePath);
+        String firstpart = p.get(0);
+        if (firstpart.startsWith("ext-"))
+            return true;
+        if (p.startsWith(jquery))
+            return true;
+        String name = p.getName();
+        return name.contains(".cache.");
     }
-
 
     private WebdavStatus serveResource(WebdavResource resource, boolean content)
             throws DavException, IOException
@@ -4958,12 +4977,11 @@ public class DavController extends SpringActionController
 
             if (!resource.getName().contains(".nocache."))
             {
-                boolean isPerfectCache = resource.getName().contains(".cache.");
                 boolean allowCaching = AppProps.getInstance().isCachingAllowed();
-
-                if (allowCaching || isPerfectCache || alwaysCacheFile(resource.getPath()))
+                boolean alwaysCache = alwaysCacheFile(resource.getPath());
+                if (allowCaching || alwaysCache)
                 {
-                    getResponse().setPublicStatic(isPerfectCache ? 365 : 35);
+                    getResponse().setPublicStatic(alwaysCache ? 365 : 35);
                 }
             }
         }
@@ -5332,8 +5350,8 @@ public class DavController extends SpringActionController
             Path urlDirectory = p.isDirectory() ? p : p.getParent();
             if (StringUtils.equalsIgnoreCase("GET",getViewContext().getActionURL().getAction()))
             {
-            String filename = StringUtils.trimToNull(getRequest().getParameter("filename"));
-            if (null != filename)
+                String filename = StringUtils.trimToNull(getRequest().getParameter("filename"));
+                if (null != filename)
                 {
                     if (!p.isDirectory())
                     {
@@ -6686,6 +6704,20 @@ public class DavController extends SpringActionController
                     "   </D:prop>\n" +
                     " </D:set>\n" +
                     "</D:propertyupdate>").getBytes(StringUtilsLabKey.DEFAULT_CHARSET))));
+        }
+
+        @Test
+        public void testElementName()
+        {
+            assertFalse(XMLWriter.isValidXmlElementName(""));
+            assertFalse(XMLWriter.isValidXmlElementName("na me"));
+            assertFalse(XMLWriter.isValidXmlElementName("na<me"));
+            assertTrue(XMLWriter.isValidXmlElementName("name3"));
+            assertFalse(XMLWriter.isValidXmlElementName("3name"));
+            assertTrue(XMLWriter.isValidXmlElementName("name.3"));
+            assertFalse(XMLWriter.isValidXmlElementName(".name"));
+            assertTrue(XMLWriter.isValidXmlElementName("_xml"));
+            assertFalse(XMLWriter.isValidXmlElementName("xml_"));
         }
 
         @Test

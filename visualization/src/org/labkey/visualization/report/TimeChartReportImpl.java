@@ -86,6 +86,7 @@ public class TimeChartReportImpl extends TimeChartReport implements SvgThumbnail
         }
     }
 
+    @Override
     public void setSvg(String svg)
     {
         _svg = svg;
@@ -97,7 +98,7 @@ public class TimeChartReportImpl extends TimeChartReport implements SvgThumbnail
         // TODO: need to trim the JSON content to just relevant properties (i.e. don't need group IDs or categoryIDs which are currently also include in export/import)
 
         // Content modified if change to the JSON config property
-        return hasDescriptorPropertyChanged(ReportDescriptor.Prop.json.name());
+        return hasDescriptorPropertyChanged(context.getUser(), ReportDescriptor.Prop.json.name());
     }
 
     @Override

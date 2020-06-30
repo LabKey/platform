@@ -38,6 +38,7 @@ public class PipelineJobToJMSMessage extends AbstractEventAwareTransformer
 {
     private ObjectToJMSMessage _transformerToJMS;
 
+    @Override
     public Object transform(Object src, String encoding, UMOEventContext context) throws TransformerException
     {
         try

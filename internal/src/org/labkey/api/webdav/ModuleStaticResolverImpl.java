@@ -65,7 +65,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeListener, CacheListener
 {
-    private static ModuleStaticResolverImpl _instance = new ModuleStaticResolverImpl();
+    private static final ModuleStaticResolverImpl _instance = new ModuleStaticResolverImpl();
 
     static
     {
@@ -311,6 +311,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
     }
 
 
+    @Override
     public void removeLink(Path from)
     {
         WebdavResource rParent = lookup(from.getParent());

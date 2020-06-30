@@ -47,11 +47,13 @@ public class FileBasedModuleDataHandler extends AbstractExperimentDataHandler
         return RAW_DATA_TYPE;
     }
 
+    @Override
     public void deleteData(ExpData data, Container container, User user)
     {
         // We don't import these data files directly so no need to delete them
     }
 
+    @Override
     public ActionURL getContentURL(ExpData data)
     {
         ExpRun run = data.getRun();
@@ -64,6 +66,7 @@ public class FileBasedModuleDataHandler extends AbstractExperimentDataHandler
         return null;
     }
 
+    @Override
     public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context)
     {
     }

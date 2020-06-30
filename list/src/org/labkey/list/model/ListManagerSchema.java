@@ -86,6 +86,7 @@ public class ListManagerSchema extends UserSchema
                 return true;
             }
 
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new ListManagerSchema(schema.getUser(), schema.getContainer());
@@ -146,7 +147,6 @@ public class ListManagerSchema extends UserSchema
                 private ActionButton createCreateNewListButton()
                 {
                     ActionURL urlCreate = new ActionURL(ListController.EditListDefinitionAction.class, getContainer());
-                    urlCreate.addReturnURL(getReturnURL());
                     ActionButton btnCreate = new ActionButton("Create New List", urlCreate);
                     btnCreate.setDisplayPermission(DesignListPermission.class);
                     return btnCreate;

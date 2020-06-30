@@ -15,6 +15,9 @@
  */
 package org.labkey.api.data;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Sort.SortDirection;
@@ -25,7 +28,11 @@ import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -38,7 +45,7 @@ import java.util.regex.Pattern;
  * These are fields used by ColumnInfo and PropertyDescriptor that primarily affect
  * how the field is rendered in the HTML grids, forms, and pickers
  */
-public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperties
+public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderProperties
 {
     protected SortDirection _sortDirection = SortDirection.ASC;
     protected String _inputType;
@@ -75,7 +82,8 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
     protected String _urlTargetWindow;
     protected String _urlCls;
     protected String _onClick;
-    protected Set<String> _importAliases = new LinkedHashSet<>();
+    // methods use Set<>, but I'm using a List<> here because it is simpler and more thread safe and explicitly preserves order
+    protected List<String> _importAliases = List.of();
     protected DefaultValueType _defaultValueType = null;
     protected FacetingBehaviorType _facetingBehaviorType = FacetingBehaviorType.AUTOMATIC;
     protected PHI _phi = PHI.NotPHI;
@@ -85,15 +93,30 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
     protected CrosstabMember _crosstabColumnMember;
 
     abstract public void checkLocked();
-    private void _checkLocked()
+    private boolean _checkLocked()
     {
         checkLocked();
+        return true;
+    }
+
+    /*
+     * ColumnRenderProperties live in caches so its Collection type members need to be immutable.
+     */
+    protected static <T> List<T> copyFixedList(Collection<T> src)
+    {
+        if (null == src)
+            return null;
+        if (src.isEmpty())
+            return List.of();
+        // unmodifiable arraylist does not need to be synchronized
+        return List.copyOf(src);
     }
 
     @Override
+    // TODO MutableColumnRenderProperties
     public void copyTo(ColumnRenderPropertiesImpl to)
     {
-        to._checkLocked();
+        assert to._checkLocked();
         to._sortDirection = _sortDirection;
         to.setInputType(getInputType());
         to.setInputLength(getInputLength());
@@ -117,7 +140,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         to._recommendedVariable = _recommendedVariable;
         to._defaultScale = _defaultScale;
         to._url = _url;
-        to._importAliases = new LinkedHashSet<>(_importAliases);
+        to._importAliases = copyFixedList(_importAliases);
         to._facetingBehaviorType = _facetingBehaviorType;
         to._crosstabColumnMember = _crosstabColumnMember;
         to._phi = _phi;
@@ -147,9 +170,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _sortDirection;
     }
 
+    @Override
     public void setSortDirection(SortDirection sortDirection)
     {
-        _checkLocked();
+        assert _checkLocked();
         _sortDirection = sortDirection;
     }
 
@@ -159,9 +183,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _inputType;
     }
 
+    @Override
     public void setInputType(String inputType)
     {
-        _checkLocked();
+        assert _checkLocked();
         _inputType = inputType;
     }
 
@@ -171,9 +196,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _inputLength;
     }
 
+    @Override
     public void setInputLength(int inputLength)
     {
-        _checkLocked();
+        assert _checkLocked();
         _inputLength = inputLength;
     }
 
@@ -183,9 +209,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _inputRows;
     }
 
+    @Override
     public void setInputRows(int inputRows)
     {
-        _checkLocked();
+        assert _checkLocked();
         _inputRows = inputRows;
     }
 
@@ -195,9 +222,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _displayWidth;
     }
 
+    @Override
     public void setDisplayWidth(String displayWidth)
     {
-        _checkLocked();
+        assert _checkLocked();
         _displayWidth = displayWidth;
     }
 
@@ -207,9 +235,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _format;
     }
 
+    @Override
     public void setFormat(String format)
     {
-        _checkLocked();
+        assert _checkLocked();
         _format = format;
     }
 
@@ -219,9 +248,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _excelFormatString;
     }
 
+    @Override
     public void setExcelFormatString(String excelFormatString)
     {
-        _checkLocked();
+        assert _checkLocked();
         _excelFormatString = excelFormatString;
     }
 
@@ -231,9 +261,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _tsvFormatString;
     }
 
+    @Override
     public void setTsvFormatString(String tsvFormatString)
     {
-        _checkLocked();
+        assert _checkLocked();
         _tsvFormatString = tsvFormatString;
     }
 
@@ -243,9 +274,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _textExpression;
     }
 
+    @Override
     public void setTextExpression(StringExpression expr)
     {
-        _checkLocked();
+        assert _checkLocked();
         _textExpression = expr;
     }
 
@@ -255,6 +287,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _label;
     }
 
+    @Override
     public void setLabel(String label)
     {
         _label = label;
@@ -266,9 +299,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _shortLabel == null ? getLabel() : _shortLabel;
     }
 
+    @Override
     public void setShortLabel(String shortLabel)
     {
-        _checkLocked();
+        assert _checkLocked();
         _shortLabel = shortLabel;
     }
 
@@ -278,9 +312,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _description;
     }
 
+    @Override
     public void setDescription(String description)
     {
-        _checkLocked();
+        assert _checkLocked();
         _description = description;
     }
 
@@ -290,9 +325,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _hidden;
     }
 
+    @Override
     public void setHidden(boolean hidden)
     {
-        _checkLocked();
+        assert _checkLocked();
         _hidden = hidden;
     }
 
@@ -302,9 +338,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _shownInDetailsView;
     }
 
+    @Override
     public void setShownInDetailsView(boolean shownInDetailsView)
     {
-        _checkLocked();
+        assert _checkLocked();
         _shownInDetailsView = shownInDetailsView;
     }
 
@@ -314,9 +351,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _shownInInsertView;
     }
 
+    @Override
     public void setShownInInsertView(boolean shownInInsertView)
     {
-        _checkLocked();
+        assert _checkLocked();
         _shownInInsertView = shownInInsertView;
     }
 
@@ -326,9 +364,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _shownInUpdateView;
     }
 
+    @Override
     public void setShownInUpdateView(boolean shownInUpdateView)
     {
-        _checkLocked();
+        assert _checkLocked();
         _shownInUpdateView = shownInUpdateView;
     }
 
@@ -338,9 +377,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _url;
     }
 
+    @Override
     public void setURL(StringExpression url)
     {
-        _checkLocked();
+        assert _checkLocked();
         _url = url;
     }
 
@@ -350,9 +390,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _urlTargetWindow;
     }
 
+    @Override
     public void setURLTargetWindow(String urlTargetWindow)
     {
-        _checkLocked();
+        assert _checkLocked();
         _urlTargetWindow = urlTargetWindow;
     }
 
@@ -362,9 +403,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _urlCls;
     }
 
+    @Override
     public void setURLCls(String urlCls)
     {
-        _checkLocked();
+        assert _checkLocked();
         _urlCls = urlCls;
     }
 
@@ -374,9 +416,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _onClick;
     }
 
+    @Override
     public void setOnClick(String onClick)
     {
-        _checkLocked();
+        assert _checkLocked();
         _onClick = onClick;
     }
 
@@ -386,9 +429,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _recommendedVariable;
     }
 
+    @Override
     public void setRecommendedVariable(boolean recommendedVariable)
     {
-        _checkLocked();
+        assert _checkLocked();
         _recommendedVariable = recommendedVariable;
     }
 
@@ -398,21 +442,24 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _defaultScale;
     }
 
+    @Override
     public void setDefaultScale(DefaultScaleType defaultScale)
     {
-        _checkLocked();
+        assert _checkLocked();
         _defaultScale = defaultScale;
     }
 
+    @Override
     public void setMeasure(boolean measure)
     {
-        _checkLocked();
+        assert _checkLocked();
         _measure = measure;
     }
 
+    @Override
     public void setDimension(boolean dimension)
     {
-        _checkLocked();
+        assert _checkLocked();
         _dimension = dimension;
     }
 
@@ -488,9 +535,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _nullable;
     }
 
+    @Override
     public void setNullable(boolean nullable)
     {
-        _checkLocked();
+        assert _checkLocked();
         _nullable = nullable;
     }
 
@@ -509,9 +557,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _required;
     }
 
+    @Override
     public void setRequired(boolean required)
     {
-        _checkLocked();
+        assert _checkLocked();
         _required = required;
     }
 
@@ -519,14 +568,28 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
     @NotNull
     public Set<String> getImportAliasSet()
     {
-        return _importAliases;
+        if (_importAliases.isEmpty())
+            return Set.of();
+        return Collections.unmodifiableSet(new LinkedHashSet<>(_importAliases));
     }
 
+    @NotNull
+    @JsonGetter("_importAliases")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @SuppressWarnings("unused")
+    public Set<String> getImportAliasSet_for_jackson_do_not_use()
+    {
+        // Jackson does not like immutable sets
+        return new HashSet<>(_importAliases);
+    }
+
+    @Override
+    @JsonSetter("_importAliases")
     public void setImportAliasesSet(Set<String> importAliases)
     {
-        _checkLocked();
+        assert _checkLocked();
         assert importAliases != null;
-        _importAliases = importAliases;
+        _importAliases = copyFixedList(importAliases);
     }
 
     public static String convertToString(Set<String> set)
@@ -567,9 +630,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _propertyType;
     }
 
+    @Override
     public void setPropertyType(PropertyType propertyType)
     {
-        _checkLocked();
+        assert _checkLocked();
         _propertyType = propertyType;
     }
 
@@ -591,7 +655,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _rangeURI;
     }
 
-    private static Pattern STRING_PATTERN = Pattern.compile("[^,; \\t\\n\\f\"]+|\"[^\"]*\"");
+    private static final Pattern STRING_PATTERN = Pattern.compile("[^,; \\t\\n\\f\"]+|\"[^\"]*\"");
 
     public static Set<String> convertToSet(String s)
     {
@@ -671,9 +735,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return getJdbcType().getJavaClass(isNullable);
     }
 
+    @Override
     public void setFacetingBehaviorType(FacetingBehaviorType type)
     {
-        _checkLocked();
+        assert _checkLocked();
         _facetingBehaviorType = type;
     }
 
@@ -689,9 +754,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _crosstabColumnDimension;
     }
 
+    @Override
     public void setCrosstabColumnDimension(FieldKey crosstabColumnDimension)
     {
-        _checkLocked();
+        assert _checkLocked();
         _crosstabColumnDimension = crosstabColumnDimension;
     }
 
@@ -701,15 +767,17 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _crosstabColumnMember;
     }
 
+    @Override
     public void setCrosstabColumnMember(CrosstabMember member)
     {
-        _checkLocked();
+        assert _checkLocked();
         _crosstabColumnMember = member;
     }
 
+    @Override
     public void setPHI(PHI phi)
     {
-        _checkLocked();
+        assert _checkLocked();
         _phi = phi;
     }
 
@@ -725,9 +793,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _redactedText;
     }
 
+    @Override
     public void setRedactedText(String redactedText)
     {
-        _checkLocked();
+        assert _checkLocked();
         _redactedText = redactedText;
     }
 
@@ -737,9 +806,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _isExcludeFromShifting;
     }
 
+    @Override
     public void setExcludeFromShifting(boolean isExcludeFromShifting)
     {
-        _checkLocked();
+        assert _checkLocked();
         _isExcludeFromShifting = isExcludeFromShifting;
     }
 
@@ -749,9 +819,10 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
         return _scale;
     }
 
+    @Override
     public void setScale(int scale)
     {
-        _checkLocked();
+        assert _checkLocked();
         _scale = scale;
     }
 }

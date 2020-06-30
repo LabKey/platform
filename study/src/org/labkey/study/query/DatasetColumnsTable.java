@@ -48,6 +48,7 @@ public class DatasetColumnsTable extends FilteredTable<StudyQuerySchema>
         var datasetLookupCol = new ExprColumn(this, "DataSet", sql, JdbcType.INTEGER);
         datasetLookupCol.setFk(new LookupForeignKey(cf, "DataSetId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return new DatasetsTable(schema, getLookupContainerFilter());
@@ -97,12 +98,12 @@ public class DatasetColumnsTable extends FilteredTable<StudyQuerySchema>
     @Override
     protected void applyContainerFilter(ContainerFilter filter)
     {
-        assert null == filter || ContainerFilter.CURRENT == filter;
+        assert null == filter || filter.getType() == ContainerFilter.Type.Current;
     }
 
     @Override
     protected ContainerFilter getDefaultContainerFilter()
     {
-        return ContainerFilter.CURRENT;
+        return ContainerFilter.current(getContainer());
     }
 }

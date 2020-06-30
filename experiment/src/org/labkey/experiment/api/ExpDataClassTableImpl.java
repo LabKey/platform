@@ -21,12 +21,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -43,9 +43,8 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -66,12 +65,11 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
     protected ExpDataClassTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
         super(name, ExperimentServiceImpl.get().getTinfoDataClass(), schema, new ExpDataClassImpl(new DataClass()), cf);
-        addAllowablePermission(InsertPermission.class);
-        addAllowablePermission(UpdatePermission.class);
+        addAllowablePermission(DesignDataClassPermission.class);
     }
 
     @Override
-    public BaseColumnInfo createColumn(String alias, Column column)
+    public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
@@ -173,8 +171,8 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
         setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowDataClassAction.class, _userSchema.getContainer()),
                 Collections.singletonMap("rowId", "RowId")));
 
-        setDeleteURL(new DetailsURL(new ActionURL(ExperimentController.DeleteDataClassAction.class, _userSchema.getContainer())));
-        setInsertURL(new DetailsURL(new ActionURL(ExperimentController.InsertDataClassAction.class, _userSchema.getContainer())));
+        setImportURL(AbstractTableInfo.LINK_DISABLER);
+        setUpdateURL(AbstractTableInfo.LINK_DISABLER);
     }
 
     @Override

@@ -603,11 +603,14 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
 
     /** Does not work for file system parents */
+    @Override
     public List<Pair<String,String>> listAttachmentsForIndexing(Collection<String> parents, Date modifiedSince)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Parent"), parents, CompareType.IN);
         SimpleFilter.FilterClause since = new SearchService.LastIndexedClause(coreTables().getTableInfoDocuments(), modifiedSince, null);
-        filter.addClause(since);
+
+        if (!since.toSQLFragment(null, null).isEmpty())
+            filter.addClause(since);
 
         final ArrayList<Pair<String,String>> ret = new ArrayList<>();
 
@@ -628,6 +631,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
 
     /** Collection resource with all attachments for this parent */
+    @Override
     public WebdavResource getAttachmentResource(Path path, AttachmentParent parent)
     {
         // NOTE parent does not supply ACL, but should?
@@ -641,6 +645,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
 
+    @Override
     public WebdavResource getDocumentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat)
     {
         checkSecurityPolicy(parent);
@@ -860,6 +865,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         return null != link ? new ResultSetView(rs, title, 1, link) : new ResultSetView(rs, title);
     }
 
+    @Override
     public @Nullable Attachment getAttachment(AttachmentParent parent, String name)
     {
         checkSecurityPolicy(parent);
@@ -883,15 +889,18 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
 
+    @Override
     public void containerCreated(Container c, User user)
     {
     }
 
 
+    @Override
     public void propertyChange(PropertyChangeEvent propertyChangeEvent)
     {
     }
 
+    @Override
     public void containerDeleted(Container c, User user)
     {
         // TODO: do we need to get each document and remove its security policy?
@@ -912,6 +921,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
     // CONSIDER: Return success/failure notification so caller can take action (render a default document) in all the failure scenarios.
+    @Override
     public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException
     {
         checkSecurityPolicy(parent);
@@ -993,6 +1003,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
 
+    @Override
     @NotNull
     public InputStream getInputStream(AttachmentParent parent, String name) throws FileNotFoundException
     {
@@ -1037,6 +1048,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                 final ResultSet frs = rs;
                 InputStream ret = new FilterInputStream(is)
                 {
+                    @Override
                     public void close() throws IOException
                     {
                         ResultSetUtil.close(frs);
@@ -1046,6 +1058,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                     }
 
                     // slight hack here to get the size cheaply
+                    @Override
                     public int available()
                     {
                         return size;
@@ -1158,6 +1171,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
 
 
+        @Override
         public boolean exists()
         {
             FileContentService svc = FileContentService.get();
@@ -1183,6 +1197,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
 
 
+        @Override
         public WebdavResource find(String name)
         {
             Attachment a = getAttachment(_parent, name);
@@ -1194,6 +1209,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
 
 
+        @Override
         public Collection<String> listNames()
         {
             List<Attachment> attachments = getAttachments(_parent);
@@ -1210,6 +1226,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
 
 
+        @Override
         public Collection<? extends WebdavResource> list()
         {
             List<Attachment> attachments = getAttachments(_parent);
@@ -1329,6 +1346,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             return super.getExecuteHref(context);
         }
 
+        @Override
         public boolean exists()
         {
             Attachment r = getAttachment();
@@ -1339,6 +1357,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             return true;
         }
 
+        @Override
         public boolean isCollection()
         {
             return false;
@@ -1371,6 +1390,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             return files.get(0);
         }
 
+        @Override
         public InputStream getInputStream(User user) throws IOException
         {
             return AttachmentService.get().getInputStream(_parent, _name);
@@ -1391,37 +1411,44 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             super.moveFrom(user, r);
         }
 
+        @Override
         public long copyFrom(User user, final FileStream in) throws IOException
         {
             try
             {
                 AttachmentFile file =  new AttachmentFile()
                 {
+                    @Override
                     public long getSize() throws IOException
                     {
                         return in.getSize();
                     }
 
+                    @Override
                     public String getError()
                     {
                         return null;
                     }
 
+                    @Override
                     public String getFilename()
                     {
                         return getName();
                     }
 
+                    @Override
                     public String getContentType()
                     {
                         return PageFlowUtil.getContentTypeFor(getFilename());
                     }
 
+                    @Override
                     public InputStream openInputStream() throws IOException
                     {
                         return in.openInputStream();
                     }
 
+                    @Override
                     public void closeInputStream() throws IOException
                     {
                         in.closeInputStream();
@@ -1444,11 +1471,13 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             return 0;
         }
 
+        @Override
         public WebdavResource parent()
         {
             return _folder;
         }
 
+        @Override
         public long getCreated()
         {
             return _created;
@@ -1460,6 +1489,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             return _createdBy;
         }
 
+        @Override
         public long getLastModified()
         {
             return getCreated();
@@ -1471,6 +1501,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             return _createdBy;
         }
 
+        @Override
         public long getContentLength()
         {
             Attachment a = getAttachment();
@@ -1552,6 +1583,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
 
 
+        @Override
         @NotNull
         public List<WebdavResolver.History> getHistory()
         {

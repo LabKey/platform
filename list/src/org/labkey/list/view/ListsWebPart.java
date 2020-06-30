@@ -46,6 +46,7 @@ public class ListsWebPart extends WebPartView<ViewContext>
 {
     public static final BaseWebPartFactory FACTORY = new AlwaysAvailableWebPartFactory("Lists", LOCATION_BODY, LOCATION_RIGHT)
     {
+        @Override
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             boolean narrow = webPart.getLocation().equals(LOCATION_RIGHT);
@@ -70,7 +71,7 @@ public class ListsWebPart extends WebPartView<ViewContext>
         if (portalCtx.hasPermission(DesignListPermission.class))
         {
             NavTree menu = new NavTree("");
-            menu.addChild("Create New List", PageFlowUtil.urlProvider(ListUrls.class).getCreateListURL(portalCtx.getContainer()).addReturnURL(getContextURLHelper()));
+            menu.addChild("Create New List", PageFlowUtil.urlProvider(ListUrls.class).getCreateListURL(portalCtx.getContainer()));
             menu.addChild("Manage Lists", PageFlowUtil.urlProvider(ListUrls.class).getManageListsURL(portalCtx.getContainer()));
             setNavMenu(menu);
         }

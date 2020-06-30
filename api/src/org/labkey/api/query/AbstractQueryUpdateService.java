@@ -64,6 +64,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.TabLoader;
@@ -94,6 +95,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
+import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
 
 public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
@@ -123,6 +125,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected abstract Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException;
 
+    @Override
     public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
@@ -161,7 +164,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         DataIteratorBuilder dib = ((UpdateableTableInfo)getQueryTable()).persistRows(etl, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
-        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, QueryService.AuditAction.INSERT, user, container);
+        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption() == InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, container);
 
         return dib;
     }
@@ -431,10 +434,19 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (hasTableScript)
             getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, false, errors, extraScriptContext);
 
-        if (!isBulkLoad())
-            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, result);
+        addAuditEvent(user, container, QueryService.AuditAction.INSERT, null, result);
 
         return result;
+    }
+
+    protected void addAuditEvent(User user, Container container, QueryService.AuditAction auditAction, @Nullable Map<Enum, Object> configParameters, List<Map<String, Object>>... parameters)
+    {
+        if (!isBulkLoad())
+        {
+            AuditBehaviorType auditBehavior = configParameters != null ? (AuditBehaviorType) configParameters.get(AuditBehavior) : null;
+
+            getQueryTable().addAuditEvent(user, container, auditBehavior, auditAction, parameters);
+        }
     }
 
     private Map<String, Object> normalizeColumnNames(Map<String, Object> row)
@@ -466,6 +478,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return newRow;
     }
 
+    @Override
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
@@ -519,6 +532,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected abstract Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException;
 
+    @Override
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
@@ -584,8 +598,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (errors.hasErrors())
             throw errors;
 
-        if (!isBulkLoad())
-            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.UPDATE, oldRows, result);
+        addAuditEvent(user, container, QueryService.AuditAction.UPDATE, configParameters, oldRows, result);
 
         return result;
     }
@@ -593,6 +606,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected abstract Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException;
     
+    @Override
     public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
@@ -648,8 +662,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         // Fire triggers, if any, and also throw if there are any errors
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, false, errors, extraScriptContext);
 
-        if (!isBulkLoad())
-            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.DELETE, result);
+        addAuditEvent(user, container,  QueryService.AuditAction.DELETE, configParameters, result);
 
         return result;
     }
@@ -674,17 +687,18 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         int result = truncateRows(user, container);
 
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.TRUNCATE, false, errors, extraScriptContext);
-        if (!isBulkLoad())
-            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.TRUNCATE);
+        addAuditEvent(user, container,  QueryService.AuditAction.TRUNCATE, configParameters);
 
         return result;
     }
 
+    @Override
     public void setBulkLoad(boolean bulkLoad)
     {
         _bulkLoad = bulkLoad;
     }
 
+    @Override
     public boolean isBulkLoad()
     {
         return _bulkLoad;

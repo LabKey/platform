@@ -62,11 +62,13 @@ import java.util.Objects;
  */
 public class QueryImporter implements FolderImporter
 {
+    @Override
     public String getDataType()
     {
         return FolderArchiveDataTypes.QUERIES;
     }
 
+    @Override
     public String getDescription()
     {
         return FolderArchiveDataTypes.QUERIES.toLowerCase();
@@ -79,6 +81,7 @@ public class QueryImporter implements FolderImporter
         Map<String, QueryDocument> unresolvedMetadataFiles = new LinkedHashMap<>();
     }
 
+    @Override
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws ServletException, IOException, SQLException, ImportException
     {
         if (isValidForImportArchive(ctx))
@@ -168,7 +171,7 @@ public class QueryImporter implements FolderImporter
 
                 if (!schema.getTableNames().contains(queryName))
                 {
-                    // warn if the table doesn't exist -- it may be created later during the import (e.g., a SampleSet may be created as a part of the import process)
+                    // warn if the table doesn't exist -- it may be created later during the import (e.g., a SampleType may be created as a part of the import process)
                     ctx.getLogger().warn("Importing: " + queryImportMessage(schemaName, queryName, null, metaFileName, "Creating metadata xml override for table that doesn't exist"));
                     qic.unresolvedMetadataFiles.put(metaFileName, queryDoc);//
                 }
@@ -307,6 +310,7 @@ public class QueryImporter implements FolderImporter
         return sb.toString();
     }
 
+    @Override
     @NotNull
     public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root)
     {
@@ -340,7 +344,7 @@ public class QueryImporter implements FolderImporter
 
                     if (!schema.getTableNames().contains(queryName))
                     {
-                        // error if the table doesn't exist -- it wan't created during the import (e.g., a SampleSet may be created as a part of the import process)
+                        // error if the table doesn't exist -- it wan't created during the import (e.g., a SampleType may be created as a part of the import process)
                         ctx.getLogger().error(queryImportMessage(schemaName, queryName, null, metaFileName, "Created metadata xml override for table that doesn't exist"));
                     }
                 }
@@ -405,6 +409,7 @@ public class QueryImporter implements FolderImporter
 
     public static class Factory extends AbstractFolderImportFactory
     {
+        @Override
         public FolderImporter create()
         {
             return new QueryImporter();

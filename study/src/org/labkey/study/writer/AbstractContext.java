@@ -40,6 +40,7 @@ public abstract class AbstractContext extends AbstractImportContext<StudyDocumen
     }
 
     // Study node -- interesting to any study writer that needs to set info into study.xml
+    @Override
     public StudyDocument.Study getXml() throws ImportException
     {
         return getDocument().getStudy();

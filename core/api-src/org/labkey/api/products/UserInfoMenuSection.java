@@ -16,8 +16,6 @@
 package org.labkey.api.products;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.security.UserUrls;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
@@ -29,11 +27,11 @@ public class UserInfoMenuSection extends MenuSection
     public static final String NAME = "Your Items";
     public static final String DOCS_KEY = "docs";
 
-    private ProductMenuProvider _provider;
+    private final ProductMenuProvider _provider;
 
     public UserInfoMenuSection(ViewContext context, ProductMenuProvider provider)
     {
-        super(context, NAME, "user", null);
+        super(context, NAME, "user", null, provider != null ? provider.getProductId() : null);
         _provider = provider;
     }
 
@@ -52,7 +50,7 @@ public class UserInfoMenuSection extends MenuSection
         String docUrl = _provider.getDocumentationUrl();
         if (docUrl != null)
         {
-            items.add(new MenuItem(_provider.getDocumentationLabel(), docUrl, 0, DOCS_KEY, null));
+            items.add(new MenuItem(_provider.getDocumentationLabel(), docUrl, 0, DOCS_KEY, null, null));
         }
         items.addAll(_provider.getUserMenuItems(_context));
 

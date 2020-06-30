@@ -56,6 +56,7 @@ public class FileOutput extends DownloadParamReplacement
             return renderAsScriptOutputError();
     }
 
+    @Override
     public HttpView render(ViewContext context)
     {
         if (getReport() instanceof AttachmentParent)

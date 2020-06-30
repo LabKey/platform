@@ -17,7 +17,6 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerForeignKey;
@@ -47,6 +46,7 @@ public class VialTable extends BaseStudyTable
         var specimenCol = wrapColumn("Specimen", getRealTable().getColumn("SpecimenID"));
         specimenCol.setFk(new LookupForeignKey("RowId")
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 TableInfo tableInfo = schema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);

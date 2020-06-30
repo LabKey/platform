@@ -245,10 +245,9 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild(getSettings().getBoardName(), getBeginURL(getContainer()));
-            return root;
         }
     }
 
@@ -274,10 +273,9 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild(getSettings().getBoardName() + " List", getListURL(getContainer()));
-            return root;
         }
     }
 
@@ -482,6 +480,7 @@ public class AnnouncementsController extends SpringActionController
             return "Remove";
         }
 
+        @Override
         @NotNull
         public ActionURL getSuccessURL(MemberListRemovalForm memberListRemovalForm)
         {
@@ -679,11 +678,13 @@ public class AnnouncementsController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class CustomizeAction extends FormViewAction<Settings>
     {
+        @Override
         public URLHelper getSuccessURL(Settings form)
         {
             return form.getReturnURLHelper();
         }
 
+        @Override
         public ModelAndView getView(Settings form, boolean reshow, BindException errors)
         {
             CustomizeBean bean = new CustomizeBean();
@@ -701,6 +702,7 @@ public class AnnouncementsController extends SpringActionController
             return new JspView<>("/org/labkey/announcements/customize.jsp", bean);
         }
 
+        @Override
         public boolean handlePost(Settings form, BindException errors)
         {
             AnnouncementManager.saveMessageBoardSettings(getContainer(), form);
@@ -708,16 +710,16 @@ public class AnnouncementsController extends SpringActionController
             return true;
         }
 
+        @Override
         public void validateCommand(Settings settings, Errors errors)
         {
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root)
-                             .addChild("Customize " + getSettings().getBoardName());
-
-            return root;
+            new BeginAction(getViewContext()).addNavTrail(root);
+            root.addChild("Customize " + getSettings().getBoardName());
         }
     }
 
@@ -883,10 +885,10 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root).addChild("New " + getSettings().getConversationName());
-            return root;
+            new BeginAction(getViewContext()).addNavTrail(root);
+            root.addChild("New " + getSettings().getConversationName());
         }
     }
 
@@ -945,16 +947,15 @@ public class AnnouncementsController extends SpringActionController
 
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            NavTree child = new BeginAction(getViewContext()).appendNavTrail(root);
+            new BeginAction(getViewContext()).addNavTrail(root);
             if (_parent != null)
             {
-                child.addChild(_parent.getTitle(), "thread.view?rowId=" + _parent.getRowId())
+                root.addChild(_parent.getTitle(), "thread.view?rowId=" + _parent.getRowId())
                         .addChild("Respond to " + getSettings().getConversationName());
             }
-            return root;
-        }
+         }
     }
 
 
@@ -1226,11 +1227,13 @@ public class AnnouncementsController extends SpringActionController
             return super.bindParameters(m);
         }
 
+        @Override
         public ActionURL getSuccessURL(AnnouncementForm form)
         {
             throw new IllegalStateException("Shouldn't get here; post handler should have redirected.");
         }
 
+        @Override
         public ModelAndView getView(AnnouncementForm form, boolean reshow, BindException errors)
         {
             AnnouncementModel ann = form.selectAnnouncement();
@@ -1249,6 +1252,7 @@ public class AnnouncementsController extends SpringActionController
             return new AnnouncementUpdateView(form, ann, errors);
         }
 
+        @Override
         public boolean handlePost(AnnouncementForm form, BindException errors)
         {
             AnnouncementModel ann = form.selectAnnouncement();
@@ -1310,17 +1314,18 @@ public class AnnouncementsController extends SpringActionController
                 throw new RedirectException(new ActionURL(ThreadAction.class, getContainer()).addParameter("rowId",ann.getRowId()));
         }
 
+        @Override
         public void validateCommand(AnnouncementForm form, Errors errors)
         {
             form.validate(errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root)
-                .addChild(_ann.getTitle(), "thread.view?rowId=" + _ann.getRowId())
-                .addChild("Respond to " + getSettings().getConversationName());
-            return root;
+            new BeginAction(getViewContext()).addNavTrail(root);
+            root.addChild(_ann.getTitle(), "thread.view?rowId=" + _ann.getRowId());
+            root.addChild("Respond to " + getSettings().getConversationName());
         }
     }
 
@@ -1367,10 +1372,10 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root).addChild(_title, getActionURL());
-            return root;
+            new BeginAction(getViewContext()).addNavTrail(root);
+            root.addChild(_title, getActionURL());
         }
     }
 
@@ -1389,9 +1394,8 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -1418,6 +1422,7 @@ public class AnnouncementsController extends SpringActionController
             super.checkPermissions();
         }
 
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             Container c = getContainer();
@@ -1438,9 +1443,9 @@ public class AnnouncementsController extends SpringActionController
             return v;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
 
         public ActionURL getURL()
@@ -1488,11 +1493,13 @@ public class AnnouncementsController extends SpringActionController
     {
         private String _message = null;
 
+        @Override
         public ActionURL getSuccessURL(EmailOptionsForm form)
         {
             return null;  // Reshow the page with success message
         }
 
+        @Override
         public ModelAndView getView(EmailOptionsForm form, boolean reshow, BindException errors)
         {
             Container c = getContainer();
@@ -1525,6 +1532,7 @@ public class AnnouncementsController extends SpringActionController
             return view;
         }
 
+        @Override
         public boolean handlePost(EmailOptionsForm form, BindException errors)
         {
             int emailOption = form.getResetFolderDefault() ? -1 : form.getEmailOption(errors);
@@ -1544,16 +1552,16 @@ public class AnnouncementsController extends SpringActionController
             return true;
         }
 
+        @Override
         public void validateCommand(EmailOptionsForm target, Errors errors)
         {
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root)
-                             .addChild("Email Preferences");
-
-            return root;
+            new BeginAction(getViewContext()).addNavTrail(root);
+            root.addChild("Email Preferences");
         }
     }
 
@@ -1689,6 +1697,7 @@ public class AnnouncementsController extends SpringActionController
             return _stringValues.get("parentid");
         }
 
+        @SuppressWarnings("unused")
         public void setMemberListInput(String memberListInput)
         {
             _memberListInput = memberListInput;
@@ -1825,14 +1834,14 @@ public class AnnouncementsController extends SpringActionController
 
         public boolean isFromDiscussion()
         {
-            String fromDiscussion = (String)get("fromDiscussion");
+            String fromDiscussion = get("fromDiscussion");
 
             return Boolean.parseBoolean(fromDiscussion);
         }
 
         public boolean allowMultipleDiscussions()
         {
-            String fromDiscussion = (String)get("allowMultipleDiscussions");
+            String fromDiscussion = get("allowMultipleDiscussions");
 
             return Boolean.parseBoolean(fromDiscussion);
         }
@@ -2179,6 +2188,7 @@ public class AnnouncementsController extends SpringActionController
             super(name);
         }
 
+        @Override
         public WebPartView getWebPartView(@NotNull ViewContext parentCtx, @NotNull Portal.WebPart webPart)
         {
             String jsp = "/org/labkey/announcements/announcementWebPartWithExpandos.jsp";
@@ -2733,10 +2743,9 @@ public class AnnouncementsController extends SpringActionController
     public class ModeratorReviewAction extends FormViewAction<ModeratorReviewForm>
     {
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Moderator Review for " + getSettings().getBoardName(), getBeginURL(getContainer()));
-            return root;
         }
 
         @Override

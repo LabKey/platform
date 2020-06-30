@@ -62,7 +62,7 @@ import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.IAssayDomainType;
@@ -196,11 +196,13 @@ public abstract class AbstractAssayProvider implements AssayProvider
         _dataType = dataType;
     }
 
+    @Override
     public AssayProviderSchema createProviderSchema(User user, Container container, Container targetStudy)
     {
         return new AssayProviderSchema(user, container, this, targetStudy);
     }
 
+    @Override
     public ActionURL copyToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors)
     {
         try
@@ -209,7 +211,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             filter.addInClause(getTableMetadata(protocol).getResultRowIdFieldKey(), dataKeys.keySet());
 
             AssayProtocolSchema schema = createProtocolSchema(user, assayDataContainer, protocol, study);
-            TableInfo dataTable = schema.createDataTable(new ContainerFilter.CurrentAndSubfolders(user));
+            TableInfo dataTable = schema.createDataTable(ContainerFilter.Type.CurrentAndSubfolders.create(schema));
 
             FieldKey objectIdFK = getTableMetadata(protocol).getResultRowIdFieldKey();
             FieldKey runLSIDFK = new FieldKey(getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.LSID.toString());
@@ -327,6 +329,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return runLSID;
     }
 
+    @Override
     public void registerLsidHandler()
     {
         LsidManager.get().registerHandler(_runLSIDPrefix, new LsidManager.ExpRunLsidHandler());
@@ -337,6 +340,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
     }
 
+    @Override
     public Priority getPriority(ExpProtocol protocol)
     {
         if (ExpProtocol.ApplicationType.ExperimentRun.equals(protocol.getApplicationType()))
@@ -350,11 +354,13 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return null;
     }
 
+    @Override
     public String getProtocolPattern()
     {
         return "%:" + Lsid.encodePart(_protocolLSIDPrefix).replace("%", "\\%") + ".%";
     }
 
+    @Override
     @NotNull
     public abstract AssayTableMetadata getTableMetadata(@NotNull ExpProtocol protocol);
 
@@ -406,21 +412,25 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return PropertyService.get().getDomain(container, domainURI);
     }
 
+    @Override
     public Domain getResultsDomain(ExpProtocol protocol)
     {
         return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
     }
 
+    @Override
     public void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update)
     {
         // NOTE: this will only be needed in HaplotypeAssayProvider; thus this is no-op.
     }
 
+    @Override
     public Domain getBatchDomain(ExpProtocol protocol)
     {
         return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_BATCH);
     }
 
+    @Override
     public Domain getRunDomain(ExpProtocol protocol)
     {
         return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_RUN);
@@ -560,6 +570,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     /**
      * @return domains and their default property values
      */
+    @Override
     public List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user)
     {
         List<Pair<Domain, Map<DomainProperty, Object>>> result = new ArrayList<>();
@@ -570,6 +581,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return result;
     }
 
+    @Override
     public List<AssayDataCollector> getDataCollectors(@Nullable Map<String, File> uploadedFiles, AssayRunUploadForm context)
     {
         return getDataCollectors(uploadedFiles, context, true);
@@ -700,6 +712,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return new DefaultAssayRunCreator<>(this);
     }
 
+    @Override
     public ExpProtocol createAssayDefinition(User user, Container container, String name, String description)
             throws ExperimentException
     {
@@ -714,6 +727,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return ExperimentService.get().insertSimpleProtocol(protocol, user);
     }
 
+    @Override
     @Nullable
     public Pair<ExpProtocol.AssayDomainTypes, DomainProperty> findTargetStudyProperty(ExpProtocol protocol)
     {
@@ -736,6 +750,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     // CONSIDER: combining with .getTargetStudy()
     // UNDONE: Doesn't look at TargetStudy in Results domain yet.
+    @Override
     public Container getAssociatedStudyContainer(ExpProtocol protocol, Object dataId)
     {
         Pair<ExpProtocol.AssayDomainTypes, DomainProperty> pair = findTargetStudyProperty(protocol);
@@ -783,6 +798,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public abstract ExpData getDataForDataRow(Object dataRowId, ExpProtocol protocol);
 
 
+    @Override
     public ActionURL getImportURL(Container container, ExpProtocol protocol)
     {
         return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, UploadWizardAction.class);
@@ -824,6 +840,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return result;
     }
 
+    @Override
     public List<Pair<Domain, Map<DomainProperty, Object>>> getDomains(ExpProtocol protocol)
     {
         List<Pair<Domain, Map<DomainProperty, Object>>> domains = new ArrayList<>();
@@ -851,6 +868,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return domains;
     }
 
+    @Override
     public Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> getAssayTemplate(User user, Container targetContainer)
     {
         ExpProtocol copy = ExperimentService.get().createExpProtocol(targetContainer, ExpProtocol.ApplicationType.ExperimentRun, "Unknown");
@@ -866,6 +884,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         domains.sort(Comparator.comparingInt(pair -> pair.getKey().getTypeId()));
     }
 
+    @Override
     public Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> getAssayTemplate(User user, Container targetContainer, ExpProtocol toCopy)
     {
         ExpProtocol copy = ExperimentService.get().createExpProtocol(targetContainer, toCopy.getApplicationType(), toCopy.getName());
@@ -904,6 +923,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return new Pair<>(copy, copiedDomains);
     }
 
+    @Override
     public boolean isFileLinkPropertyAllowed(ExpProtocol protocol, Domain domain)
     {
         Lsid domainLsid = new Lsid(domain.getTypeURI());
@@ -945,6 +965,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     private Map<String, Set<String>> _requiredDomainProperties;
+
+    @Override
     public boolean isMandatoryDomainProperty(Domain domain, String propertyName)
     {
         if (_requiredDomainProperties == null)
@@ -970,57 +992,68 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return domainMap;
     }
 
+    @Override
     public boolean allowDefaultValues(Domain domain)
     {
         Lsid domainLsid = new Lsid(domain.getTypeURI());
         return !ExpProtocol.ASSAY_DOMAIN_DATA.equals(domainLsid.getNamespacePrefix());
     }
 
+    @Override
     public DefaultValueType[] getDefaultValueOptions(Domain domain)
     {
         return DefaultValueType.values();
     }
 
+    @Override
     public DefaultValueType getDefaultValueDefault(Domain domain)
     {
         return DefaultValueType.LAST_ENTERED;
     }
 
+    @Override
     public boolean hasCustomView(IAssayDomainType domainType, boolean details)
     {
         return false;
     }
 
+    @Override
     public ModelAndView createBeginView(ViewContext context, ExpProtocol protocol)
     {
         return null;
     }
 
+    @Override
     public ModelAndView createBatchesView(ViewContext context, ExpProtocol protocol)
     {
         return null;
     }
 
+    @Override
     public ModelAndView createBatchDetailsView(ViewContext context, ExpProtocol protocol, ExpExperiment batch)
     {
         return null;
     }
 
+    @Override
     public ModelAndView createRunsView(ViewContext context, ExpProtocol protocol)
     {
         return null;
     }
 
+    @Override
     public ModelAndView createRunDetailsView(ViewContext context, ExpProtocol protocol, ExpRun run)
     {
         return null;
     }
 
+    @Override
     public ModelAndView createResultsView(ViewContext context, ExpProtocol protocol, BindException errors)
     {
         return null;
     }
 
+    @Override
     public ModelAndView createResultDetailsView(ViewContext context, ExpProtocol protocol, ExpData data, Object dataRowId)
     {
         AssayProtocolSchema schema = createProtocolSchema(context.getUser(), context.getContainer(), protocol, null);
@@ -1052,6 +1085,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return new DetailsView(region, dataRowId);
     }
 
+    @Override
     public void deleteProtocol(ExpProtocol protocol, User user) throws ExperimentException
     {
         List<Pair<Domain, Map<DomainProperty, Object>>> domainInfos =  getDomains(protocol);
@@ -1111,6 +1145,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
 
+    @Override
     public Class<? extends Controller> getDesignerAction()
     {
         return DesignerAction.class;
@@ -1143,8 +1178,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     String role = entry.getValue();
                     if (role == null)
                     {
-                        ExpSampleSet ss = newInput.getSampleSet();
-                        role = ss != null ? ss.getName() : "Sample";
+                        ExpSampleType st = newInput.getSampleType();
+                        role = st != null ? st.getName() : "Sample";
                     }
                     protApp.addMaterialInput(user, newInput, role);
                 }
@@ -1152,6 +1187,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
     }
 
+    @Override
     public boolean hasUsefulDetailsPage()
     {
         return true;
@@ -1367,6 +1403,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return protocol.getLSID() + "#" + propertySuffix;
     }
 
+    @Override
     @Nullable public AssayDataType getDataType()
     {
         return _dataType;
@@ -1392,6 +1429,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     /**
      * Return the helper to handle data exchange between the server and external scripts.
      */
+    @Override
     public DataExchangeHandler createDataExchangeHandler()
     {
         return null;
@@ -1513,11 +1551,13 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return container.getPolicy().hasPermissions(viewContext.getUser(), DesignAssayPermission.class, DeletePermission.class);
     }
 
+    @Override
     public String getRunLSIDPrefix()
     {
         return _runLSIDPrefix;
     }
 
+    @Override
     public @Nullable String getResultRowLSIDPrefix()
     {
         return _resultRowLSIDPrefix;
@@ -1591,11 +1631,13 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return false;
     }
 
+    @Override
     public Module getDeclaringModule()
     {
         return _declaringModule;
     }
 
+    @Override
     @NotNull
     public Set<Module> getRequiredModules()
     {

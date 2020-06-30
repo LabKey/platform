@@ -18,9 +18,9 @@ package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -78,6 +78,7 @@ public class QField extends QInternalExpr
     }
 
 
+    @Override
     public void releaseFieldRefs(Object refer)
     {
         if (0 == refCount.count())
@@ -106,6 +107,7 @@ public class QField extends QInternalExpr
     }
 
 
+    @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
         QueryRelation.RelationColumn col = getRelationColumn();
@@ -171,7 +173,16 @@ public class QField extends QInternalExpr
     @Override
     public BaseColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
     {
-        ExprColumn ret = new ExprColumn(table, alias, getRelationColumn().getValueSql(), getRelationColumn().getJdbcType());
+        final QueryRelation.RelationColumn rcol = getRelationColumn();
+        // Delay call to getValueSql() avoid unnecessary work during getTable().
+        ExprColumn ret = new ExprColumn(table, alias, null, getRelationColumn().getJdbcType())
+        {
+            @Override
+            public SQLFragment getValueSql(String tableAlias)
+            {
+                return rcol.getValueSql();
+            }
+        };
         getRelationColumn().copyColumnAttributesTo(ret);
         return ret;
     }

@@ -118,6 +118,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -170,11 +171,10 @@ public class LoginController extends SpringActionController
     public static class LoginUrlsImpl implements LoginUrls
     {
         @Override
-        public NavTree appendAuthenticationNavTrail(NavTree root)
+        public void addAuthenticationNavTrail(NavTree root)
         {
             root.addChild("Admin Console", AdminController.getShowAdminURL());
             root.addChild("Authentication", getConfigureURL());
-            return root;
         }
 
         @Override
@@ -376,18 +376,12 @@ public class LoginController extends SpringActionController
         return false;
     }
 
-    public static boolean deauthenticate(User user, ViewContext context)
-    {
-        SecurityManager.logoutUser(context.getRequest(), user);
-
-        return true;
-    }
-
     @SuppressWarnings("unused")
     @RequiresNoPermission
     @IgnoresTermsOfUse
     public class RegisterAction extends SimpleViewAction<RegisterForm>
     {
+        @Override
         public ModelAndView getView(RegisterForm form, BindException errors)
         {
             ModelAndView redirectView = redirectIfLoggedIn(form);
@@ -410,9 +404,30 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    public class SuccessAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object form, BindException errors)
+        {
+            PageConfig config = getPageConfig();
+            config.setTitle("Success");
+            config.setTemplate(PageConfig.Template.Dialog);
+            config.setIncludeLoginLink(false);
+            config.setIncludeSearch(false);
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getCoreModule(), "success");
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
         }
     }
 
@@ -583,6 +598,7 @@ public class LoginController extends SpringActionController
     @AllowedDuringUpgrade
     public class LoginAction extends SimpleViewAction<LoginForm>
     {
+        @Override
         public ModelAndView getView(LoginForm form, BindException errors)
         {
             ModelAndView redirectView = redirectIfLoggedIn(form);
@@ -598,9 +614,9 @@ public class LoginController extends SpringActionController
             return showLogin(form, errors, request, getPageConfig());
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -975,7 +991,7 @@ public class LoginController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             WikiTermsOfUseProvider.TermsOfUse tou = WikiTermsOfUseProvider.getTermsOfUse(getTermsOfUseProject(form));
-            response.put("termsOfUseContent", tou.getHtml());
+            response.put("termsOfUseContent", HtmlString.toString(tou.getHtml()));
             response.put("termsOfUseType", tou.getType());
             return response;
         }
@@ -1224,9 +1240,8 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1242,7 +1257,7 @@ public class LoginController extends SpringActionController
     public class AgreeToTermsBean
     {
         public final AgreeToTermsForm form;
-        public String termsOfUseHTML = null;
+        public HtmlString termsOfUseHTML = null;
 
         private AgreeToTermsBean(AgreeToTermsForm form)
         {
@@ -1391,20 +1406,35 @@ public class LoginController extends SpringActionController
     @AllowedDuringUpgrade
     public class LogoutAction extends FormHandlerAction<ReturnUrlForm>
     {
+        private URLHelper _redirectURL = null;
+
         @Override
         public void validateCommand(ReturnUrlForm target, Errors errors)
         {
         }
 
         @Override
-        public boolean handlePost(ReturnUrlForm returnUrlForm, BindException errors) throws Exception
+        public boolean handlePost(ReturnUrlForm form, BindException errors) throws Exception
         {
-            return deauthenticate(getUser(), getViewContext());
+            _redirectURL = SecurityManager.logoutUser(getViewContext().getRequest(), getUser(), form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()));
+            return true;
         }
 
         @Override
         public URLHelper getSuccessURL(ReturnUrlForm form)
         {
+            if (null != _redirectURL)
+            {
+                try
+                {
+                    getViewContext().getResponse().sendRedirect(_redirectURL.getURIString());
+                    return null;
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
             return form.getReturnURLHelper(AuthenticationManager.getWelcomeURL());
         }
     }
@@ -1435,7 +1465,6 @@ public class LoginController extends SpringActionController
         {
             return form.getReturnURLHelper(AuthenticationManager.getWelcomeURL());
         }
-
     }
 
 
@@ -1443,12 +1472,16 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public class LogoutApiAction extends MutatingApiAction
+    public class LogoutApiAction extends MutatingApiAction<ReturnUrlForm>
     {
         @Override
-        public Object execute(Object o, BindException errors)
+        public Object execute(ReturnUrlForm form, BindException errors)
         {
-            return new ApiSimpleResponse("success", deauthenticate(getUser(), getViewContext()));
+            URLHelper redirectURL = SecurityManager.logoutUser(getViewContext().getRequest(), getUser(), form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()));
+            ApiSimpleResponse response = new ApiSimpleResponse("success", true);
+            if (null != redirectURL)
+                response.put("redirectUrl", redirectURL.getURIString());
+            return response;
         }
     }
 
@@ -1517,9 +1550,8 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public final NavTree appendNavTrail(NavTree root)
+        public final void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1621,9 +1653,8 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
 
         protected NamedObjectList getNonPasswordInputs(SetPasswordForm form)
@@ -1999,7 +2030,7 @@ public class LoginController extends SpringActionController
         @Override
         protected String getMessage(SetPasswordForm form)
         {
-            return null != form.getMessage() ? form.getMessage() : null;
+            return form.getMessage();
         }
 
         @Override
@@ -2172,11 +2203,13 @@ public class LoginController extends SpringActionController
     {
         private HttpView _finishView = null;
 
+        @Override
         public void validateCommand(LoginForm form, Errors errors)
         {
             // All validation is handled in attemptReset()
         }
 
+        @Override
         public ModelAndView getView(LoginForm form, boolean reshow, BindException errors)
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
@@ -2199,6 +2232,7 @@ public class LoginController extends SpringActionController
             return view;
         }
 
+        @Override
         public boolean handlePost(LoginForm form, BindException errors)
         {
             Pair<Boolean, String> pair = attemptReset(form.getEmail(), form.getProvider());
@@ -2211,14 +2245,16 @@ public class LoginController extends SpringActionController
             return false;
         }
 
+        @Override
         public ActionURL getSuccessURL(LoginForm loginForm)
         {
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Reset Password");
+            root.addChild("Reset Password");
         }
     }
 
@@ -2227,6 +2263,7 @@ public class LoginController extends SpringActionController
     @RequiresLogin
     public class CreateTokenAction extends SimpleViewAction<TokenAuthenticationForm>
     {
+        @Override
         public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
         {
             URLHelper returnUrl = form.getValidReturnUrl();
@@ -2247,9 +2284,9 @@ public class LoginController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -2260,6 +2297,7 @@ public class LoginController extends SpringActionController
     @CSRF(CSRF.Method.NONE)
     public class VerifyTokenAction extends SimpleViewAction<TokenAuthenticationForm>
     {
+        @Override
         public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
         {
             String message = null;
@@ -2301,9 +2339,9 @@ public class LoginController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -2314,6 +2352,7 @@ public class LoginController extends SpringActionController
     // where the caller has a secret (the authentication token).
     public class InvalidateTokenAction extends SimpleRedirectAction<TokenAuthenticationForm>
     {
+        @Override
         public @Nullable URLHelper getRedirectURL(TokenAuthenticationForm form)
         {
             if (null != form.getLabkeyToken())
@@ -2358,10 +2397,10 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("authenticationModule"));
-            return getUrls().appendAuthenticationNavTrail(root);
+            getUrls().addAuthenticationNavTrail(root);
         }
     }
 

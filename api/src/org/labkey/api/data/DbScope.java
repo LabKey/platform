@@ -33,11 +33,8 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
-import org.labkey.api.module.ModuleResourceResolver;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.resource.Resolver;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
@@ -322,6 +319,7 @@ public class DbScope
             DatabaseMetaData dbmd = conn.getMetaData();
             _dsProps = new DataSourceProperties(dsName, dataSource);
             Integer maxTotal = _dsProps.getMaxTotal();
+            _databaseProductVersion = dbmd.getDatabaseProductVersion();
 
             try
             {
@@ -335,7 +333,7 @@ public class DbScope
                         "\n    DataSource Name:          " + dsName +
                         "\n    Server URL:               " + dbmd.getURL() +
                         "\n    Database Product Name:    " + dbmd.getDatabaseProductName() +
-                        "\n    Database Product Version: " + dbmd.getDatabaseProductVersion() +
+                        "\n    Database Product Version: " + (null != _dialect ? _dialect.getProductVersion(_databaseProductVersion) : _databaseProductVersion) +
                         "\n    JDBC Driver Name:         " + dbmd.getDriverName() +
                         "\n    JDBC Driver Version:      " + dbmd.getDriverVersion() +
     (null != _dialect ? "\n    SQL Dialect:              " + _dialect.getClass().getSimpleName() : "") +
@@ -348,7 +346,6 @@ public class DbScope
             _databaseName = _dialect.getDatabaseName(_dsProps);
             _URL = dbmd.getURL();
             _databaseProductName = dbmd.getDatabaseProductName();
-            _databaseProductVersion = dbmd.getDatabaseProductVersion();
             _driverName = dbmd.getDriverName();
             _driverVersion = dbmd.getDriverVersion();
             _labkeyProps = props;
@@ -406,7 +403,8 @@ public class DbScope
 
     public String getDatabaseProductVersion()
     {
-        return _databaseProductVersion;
+        // Dialect may be able to provide more useful version information
+        return _dialect.getProductVersion(_databaseProductVersion);
     }
 
     public String getDriverName()
@@ -983,6 +981,11 @@ public class DbScope
     {
         synchronized (_transaction)
         {
+            log.info("Data source " + toString() +
+                    ". Max connections: " + _dsProps.getMaxTotal() +
+                    ", active: " + _dsProps.getNumActive() +
+                    ", idle: " + _dsProps.getNumIdle());
+
             if (_transaction.isEmpty())
             {
                 log.info("There are no threads holding connections for the data source '" + toString() + "'");
@@ -1088,10 +1091,9 @@ public class DbScope
 
     private void applyMetaDataXML(DbSchema schema, String schemaName)
     {
-        // First try the canonical schema name (which could differ in casing from the requested name)
-        Resource resource = schema.getSchemaResource();
+        TablesDocument tablesDoc = getSchemaXml(schema);
 
-        if (null == resource)
+        if (null == tablesDoc)
         {
             String displayName = DbSchema.getDisplayName(schema.getScope(), schemaName);
             LOG.info("no schema metadata xml file found for schema \"" + displayName + "\"");
@@ -1103,28 +1105,42 @@ public class DbScope
         }
         else
         {
-            String filename = resource.getName();
-
-            // I don't like this... should either improve Resolver (add getModule()?) or revise getResource() to take a Resource
-            Resolver resolver = resource.getResolver();
-            assert resolver instanceof ModuleResourceResolver;
-            Module module = ((ModuleResourceResolver) resolver).getModule();
-
-            TablesDocument tablesDoc = SCHEMA_XML_CACHE.getResourceMap(module).get(filename);
-
-            if (null != tablesDoc)
-                schema.setTablesDocument(tablesDoc);
+            schema.setTablesDocument(tablesDoc);
         }
     }
 
-
-    public static @NotNull List<String> getSchemaNames(Module module)
+    public static @Nullable TablesDocument getSchemaXml(DbSchema schema)
     {
-        return SCHEMA_XML_CACHE.getResourceMap(module).keySet().stream()
-            .map(filename -> filename.substring(0, filename.length() - ".xml".length()))
-            .collect(Collectors.toCollection(ArrayList::new));
+        String filename = schema.getResourcePrefix() + ".xml";
+        return SCHEMA_XML_CACHE.getResourceMap(schema.getModule()).get(filename);
     }
 
+    // Return an unmodifiable, sorted list of schema names in this module
+    public static @NotNull List<String> getSchemaNames(Module module)
+    {
+        // Don't use the cache until startup is complete. The cache registers file listeners with module references,
+        // and that ends up "leaking" modules if we haven't yet pruned them based on supported database, etc.
+        return getSchemaNames(module, ModuleLoader.getInstance().isStartupComplete());
+    }
+
+    private static List<String> getSchemaNames(Module module, boolean useCache)
+    {
+        return (useCache ? SCHEMA_XML_CACHE.getResourceMap(module).keySet() : SchemaXmlCacheHandler.getFilenames(module)).stream()
+            .map(filename -> filename.substring(0, filename.length() - ".xml".length()))
+            .sorted()
+            .collect(Collectors.toUnmodifiableList());
+    }
+
+    // Verify that the two ways for determining schema names yield identical results
+    public static class SchemaNameTestCase extends Assert
+    {
+        @Test
+        public void testSchemaNames()
+        {
+            ModuleLoader.getInstance().getModules()
+                .forEach(m->assertEquals(getSchemaNames(m, true), getSchemaNames(m, false)));
+        }
+    }
 
     @JsonIgnore
     public @NotNull DbSchema getSchema(String schemaName, DbSchemaType type)
@@ -1565,11 +1581,13 @@ public class DbScope
         final _WeakestLinkMap<Connection, Integer> m = new _WeakestLinkMap<>();
 
         return new ConnectionMap() {
+            @Override
             public synchronized Integer get(Connection c)
             {
                 return m.get(c);
             }
 
+            @Override
             public synchronized Integer put(Connection c, Integer spid)
             {
                 return m.put(c,spid);
@@ -1586,6 +1604,7 @@ public class DbScope
         final ReferenceQueue<K> _q = new ReferenceQueue<>();
         LinkedHashMap<_IdentityWrapper, V> _map = new LinkedHashMap<_IdentityWrapper, V>()
         {
+            @Override
             protected boolean removeEldestEntry(Map.Entry<_IdentityWrapper, V> eldest)
             {
                 _purge();
@@ -1749,6 +1768,7 @@ public class DbScope
         <T extends Runnable> T addCommitTask(@NotNull T runnable, @NotNull CommitTaskOption firstOption, CommitTaskOption... additionalOptions);
         @NotNull
         Connection getConnection();
+        @Override
         void close();
         void commit();
 
@@ -1899,6 +1919,7 @@ public class DbScope
             return result;
         }
 
+        @Override
         @NotNull
         public ConnectionWrapper getConnection()
         {

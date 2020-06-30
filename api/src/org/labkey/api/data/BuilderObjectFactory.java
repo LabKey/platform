@@ -157,6 +157,7 @@ public class BuilderObjectFactory<K> implements ObjectFactory<K>
     }
 
 
+    @Override
     public K fromMap(Map<String, ?> m)
     {
         Builder<K> builder = (Builder<K>)newInstance();

@@ -181,6 +181,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
     }
 
 
+    @Override
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart) throws WebPartConfigurationException
     {
         if (null != _loadException)

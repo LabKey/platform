@@ -49,6 +49,7 @@ public abstract class ExperimentAuditColumn<ObjectType extends ExpObject> extend
         setTextAlign("left");
     }
 
+    @Override
     public String getName()
     {
         return getColumnInfo().getLabel();
@@ -82,6 +83,7 @@ public abstract class ExperimentAuditColumn<ObjectType extends ExpObject> extend
         return null;
     }
 
+    @Override
     public void addQueryColumns(Set<ColumnInfo> columns)
     {
         super.addQueryColumns(columns);
@@ -91,6 +93,7 @@ public abstract class ExperimentAuditColumn<ObjectType extends ExpObject> extend
             columns.add(_defaultName);
     }
 
+    @Override
     public boolean isFilterable()
     {
         return false;

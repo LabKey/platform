@@ -48,6 +48,7 @@ public class BoundTextBox extends HorizontalPanel
     public BoundTextBox(String caption, String id, final StringProperty prop, DirtyCallback dirtyCallback)
     {
         this(caption, id, prop.getString(), new WidgetUpdatable(){
+            @Override
             public void update(Widget widget)
             {
                 prop.set(((TextBox)widget).getText());
@@ -67,6 +68,7 @@ public class BoundTextBox extends HorizontalPanel
         _box.setText(StringUtils.trimToEmpty(initialValue));
         _box.addBlurHandler(new BlurHandler()
         {
+            @Override
             public void onBlur(BlurEvent event)
             {
                 _update((Widget)event.getSource());
@@ -74,6 +76,7 @@ public class BoundTextBox extends HorizontalPanel
         });
         _box.addChangeHandler(new ChangeHandler()
         {
+            @Override
             public void onChange(ChangeEvent change)
             {
                 _update((Widget)change.getSource());
@@ -81,6 +84,7 @@ public class BoundTextBox extends HorizontalPanel
         });
         _box.addKeyPressHandler(new KeyPressHandler()
         {
+            @Override
             public void onKeyPress(KeyPressEvent e)
             {
                 _dirty();
@@ -88,6 +92,7 @@ public class BoundTextBox extends HorizontalPanel
         });
         _box.addKeyUpHandler(new KeyUpHandler()
         {
+            @Override
             public void onKeyUp(KeyUpEvent e)
             {
                 _dirty();

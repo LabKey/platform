@@ -49,6 +49,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -108,8 +109,8 @@ public class WikiManager implements WikiService
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("wiki", "Wiki Pages");
 
     /* service/schema dependencies */
-    private CommSchema comm = CommSchema.getInstance();
-    private CoreSchema core = CoreSchema.getInstance();
+    private final CommSchema comm = CommSchema.getInstance();
+    private final CoreSchema core = CoreSchema.getInstance();
 
     private static final List<WikiChangeListener> listeners = new CopyOnWriteArrayList<>();
     private static List<WikiPartFactory> _wikiPartFactories;
@@ -646,7 +647,7 @@ public class WikiManager implements WikiService
         LOG.debug("indexWikiContainerFast(" + wikiName + ")");
 
         SQLFragment f = new SQLFragment();
-        f.append("SELECT P.entityid, P.container, P.name, P.owner, P.createdby, P.created, P.modifiedby, P.modified,")
+        f.append("SELECT P.entityid, P.container, P.name, P.owner, P.createdby, P.created, P.modifiedby, P.modified, P.shouldindex,")
             .append("V.title, V.body, V.renderertype\n");
         f.append("FROM comm.pages P INNER JOIN comm.pageversions V ON P.entityid=V.pageentityid and P.pageversionid=V.rowid\n");
         f.append("WHERE P.container = ?");
@@ -676,6 +677,12 @@ public class WikiManager implements WikiService
 
                 if (WikiTermsOfUseProvider.TERMS_OF_USE_WIKI_NAME.equals(wikiName))
                     continue;
+
+                if (!rs.getBoolean("shouldindex"))
+                {
+                    LOG.debug(String.format("Wiki [%1$s] set to not index, skipping.", wikiName));
+                    continue;
+                }
 
                 String entityId = rs.getString("entityid");
                 assert null != entityId;
@@ -771,7 +778,7 @@ public class WikiManager implements WikiService
     //
 
     @Override
-    public String getHtml(Container c, String name)
+    public HtmlString getHtml(Container c, String name)
     {
         if (null == c || null == name)
             return null;
@@ -821,10 +828,10 @@ public class WikiManager implements WikiService
         {
             if (contentOnly)
             {
-                String html = getHtml(c, name);
+                HtmlString html = getHtml(c, name);
                 return null == html ? null : new HtmlView(html);
             }
-            Wiki wiki = WikiSelectManager.getWiki(c, new String(name));
+            Wiki wiki = WikiSelectManager.getWiki(c, name);
             if (null == wiki)
                 return null;
             WikiVersion version = wiki.getLatestVersion();

@@ -22,11 +22,11 @@ import org.labkey.api.audit.data.ProtocolColumn;
 import org.labkey.api.audit.data.RunColumn;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -99,7 +99,7 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
         DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
         {
             @Override
-            protected void initColumn(BaseColumnInfo col)
+            protected void initColumn(MutableColumnInfo col)
             {
                 if (COLUMN_NAME_PROTOCOL.equalsIgnoreCase(col.getName()))
                 {
@@ -108,6 +108,7 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
                     col.setLabel("Assay/Protocol");
                     col.setDisplayColumnFactory(new DisplayColumnFactory()
                     {
+                        @Override
                         public DisplayColumn createRenderer(ColumnInfo colInfo)
                         {
                             return new ProtocolColumn(colInfo, containerCol, null);
@@ -121,6 +122,7 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
                     col.setLabel("Run");
                     col.setDisplayColumnFactory(new DisplayColumnFactory()
                     {
+                        @Override
                         public DisplayColumn createRenderer(ColumnInfo colInfo)
                         {
                             return new RunColumn(colInfo, containerCol, null);
@@ -130,6 +132,7 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
                 else if (COLUMN_NAME_TARGET_STUDY.equalsIgnoreCase(col.getName()))
                 {
                     LookupForeignKey fk = new LookupForeignKey("Container", "Label") {
+                        @Override
                         public TableInfo getLookupTableInfo()
                         {
                             return StudySchema.getInstance().getTableInfoStudy();

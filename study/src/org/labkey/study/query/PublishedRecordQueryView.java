@@ -32,7 +32,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.study.model.QCStateSet;
-import org.labkey.study.model.StudyManager;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -74,6 +73,7 @@ public class PublishedRecordQueryView extends DatasetQueryView
             return null;
     }
 
+    @Override
     protected TableInfo createTable()
     {
         TableInfo table = getSchema().getTable(getSettings().getQueryName(), getContainerFilter(), true, true);
@@ -85,6 +85,7 @@ public class PublishedRecordQueryView extends DatasetQueryView
         return table;
     }
 
+    @Override
     protected DataRegion createDataRegion()
     {
         DataRegion rgn = new PublishedRecordDataRegion(_recordCount, _protocolId, _sourceLsid);
@@ -117,6 +118,7 @@ public class PublishedRecordQueryView extends DatasetQueryView
             return _count;
         }
 
+        @Override
         protected void renderFormEnd(RenderContext ctx, Writer out) throws IOException
         {
             super.renderFormEnd(ctx, out);

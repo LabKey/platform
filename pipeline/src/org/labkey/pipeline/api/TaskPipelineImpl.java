@@ -65,6 +65,7 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
         _id = id;
     }
 
+    @Override
     public TaskPipeline cloneAndConfigure(SettingsType settings,
                                           TaskId[] taskProgression)
             throws CloneNotSupportedException
@@ -74,6 +75,7 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
         return pipeline.configure(settings, taskProgression);
     }
 
+    @Override
     public String getProtocolIdentifier()
     {
         if (_protocolIdentifier != null)
@@ -84,6 +86,7 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
         return getName();
     }
 
+    @Override
     public String getProtocolShortDescription()
     {
         if (_protocolShortDescription != null)
@@ -133,11 +136,13 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
         return _id.toString();
     }
 
+    @Override
     public TaskId getId()
     {
         return _id;
     }
 
+    @Override
     public TaskId[] getTaskProgression()
     {
         return _taskProgression;
@@ -148,11 +153,13 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
         _taskProgression = taskProgression;
     }
 
+    @Override
     public Module getDeclaringModule()
     {
         return _declaringModule;
     }
 
+    @Override
     public void setDeclaringModule(@NotNull Module declaringModule)
     {
         if (declaringModule == null)
@@ -178,6 +185,7 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
         return _workflowProcessModule;
     }
 
+    @Override
     public boolean isUseUniqueAnalysisDirectory()
     {
         return _useUniqueAnalysisDirectory;

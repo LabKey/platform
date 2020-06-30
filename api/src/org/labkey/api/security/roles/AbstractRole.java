@@ -33,7 +33,9 @@ import org.labkey.api.security.permissions.Permission;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Abstract base class for roles
@@ -77,35 +79,40 @@ public abstract class AbstractRole implements Role
 
         if (null != perms && perms.length > 0)
         {
-            Set<Class<? extends Permission>> p = new HashSet<>(Arrays.asList(perms));
-            _permissions = Collections.unmodifiableSet(p);
+            _permissions = Arrays.stream(perms).filter(Objects::nonNull)
+                    .collect(Collectors.toUnmodifiableSet());
         }
     }
 
+    @Override
     @NotNull
     public String getUniqueName()
     {
         return this.getClass().getName();
     }
 
+    @Override
     @NotNull
     public String getName()
     {
         return _name;
     }
 
+    @Override
     @NotNull
     public String getDescription()
     {
         return _description;
     }
 
+    @Override
     @NotNull
     public synchronized Set<Class<? extends Permission>> getPermissions()
     {
         return Collections.unmodifiableSet(_permissions);
     }
 
+    @Override
     public synchronized void addPermission(@NotNull Class<? extends Permission> perm)
     {
         Set<Class<? extends Permission>> p = new HashSet<>(_permissions);
@@ -113,12 +120,14 @@ public abstract class AbstractRole implements Role
         _permissions = Collections.unmodifiableSet(p);
     }
 
+    @Override
     @NotNull
     public Module getSourceModule()
     {
         return _sourceModule;
     }
 
+    @Override
     public boolean isAssignable()
     {
         return true;
@@ -144,6 +153,7 @@ public abstract class AbstractRole implements Role
         return getUniqueName();
     }
 
+    @Override
     @NotNull
     public Set<UserPrincipal> getExcludedPrincipals()
     {

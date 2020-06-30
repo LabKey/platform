@@ -38,6 +38,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DataType;
@@ -129,20 +130,17 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             ProtocolImplementation impl = protocol.getImplementation();
             if (impl != null)
             {
-                QueryRowReference coords = impl.getQueryRowReference(protocol, this);
-                if (coords != null)
-                    return coords;
+                QueryRowReference ref = impl.getQueryRowReference(protocol, this);
+                if (ref != null)
+                    return ref;
             }
 
-            AssayService assayService = AssayService.get();
-            if (assayService != null)
+            ExperimentRunType type = ExperimentService.get().getExperimentRunType(protocol);
+            if (type != null)
             {
-                AssayProvider provider = assayService.getProvider(this);
-                if (provider != null)
-                {
-                    SchemaKey schemaKey = AssayProtocolSchema.schemaName(provider, protocol);
-                    return new QueryRowReference(getContainer(), schemaKey, ExpSchema.TableType.Runs.name(), FieldKey.fromParts(ExpRunTable.Column.RowId), getRowId());
-                }
+                QueryRowReference ref = type.getQueryRowReference(protocol, this);
+                if (ref != null)
+                    return ref;
             }
         }
 
@@ -311,7 +309,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     @Override
     public String urlFlag(boolean flagged)
     {
-        return AppProps.getInstance().getContextPath() + "/Experiment/" + (flagged ? "flagRun.gif" : "unflagRun.gif");
+        return AppProps.getInstance().getContextPath() + "/experiment/" + (flagged ? "flagRun.gif" : "unflagRun.gif");
     }
 
     @Override

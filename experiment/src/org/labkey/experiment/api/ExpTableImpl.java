@@ -19,10 +19,10 @@ package org.labkey.experiment.api;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
@@ -37,7 +37,6 @@ import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.PropertiesDisplayColumn;
@@ -53,13 +52,16 @@ import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSchema> implements ExpTable<C>
+abstract public class ExpTableImpl<C extends Enum>
+        extends FilteredTable<UserSchema>
+        implements ExpTable<C>
 {
     private final ExpObjectImpl _objectType;
-    private Set<Class<? extends Permission>> _allowablePermissions = new HashSet<>();
+    private final Set<Class<? extends Permission>> _allowablePermissions = new HashSet<>();
     private Domain _domain;
     private ExpSchema _expSchema = null;
 
@@ -75,6 +77,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         _allowablePermissions.add(ReadPermission.class);
     }
 
+    @Override
     public void addAllowablePermission(Class<? extends Permission> permission)
     {
         _allowablePermissions.add(permission);
@@ -151,28 +154,34 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     protected ColumnInfo addContainerColumn(C containerCol, ActionURL url)
     {
         var result = addColumn(containerCol);
-        result.getImportAliasSet().add("container");
+        Set<String> set = new LinkedHashSet(result.getImportAliasSet());
+        set.add("container");
+        result.setImportAliasesSet(set);
         ContainerForeignKey.initColumn(result, _userSchema, url);
         return result;
     }
 
-    final public BaseColumnInfo addColumn(C column)
+    @Override
+    final public MutableColumnInfo addColumn(C column)
     {
         return addColumn(column.toString(), column);
     }
 
-    final public BaseColumnInfo addColumn(String alias, C column)
+    @Override
+    final public MutableColumnInfo addColumn(String alias, C column)
     {
         var ret = createColumn(alias, column);
+        assert ret.getParentTable() == this;
         addColumn(ret);
         return ret;
     }
 
+    @Override
     public ColumnInfo getColumn(C column)
     {
         for (ColumnInfo info : getColumns())
         {
-            if (info instanceof ExprColumn && info.getAlias().equals(column.toString()))
+            if (info.getName().equals(column.toString()))
             {
                 return info;
             }
@@ -180,19 +189,20 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         return null;
     }
 
-    protected BaseColumnInfo doAdd(BaseColumnInfo column)
+    protected MutableColumnInfo doAdd(MutableColumnInfo column)
     {
         addColumn(column);
         return column;
     }
 
-    public BaseColumnInfo createPropertyColumn(String name)
+    @Override
+    public MutableColumnInfo createPropertyColumn(String name)
     {
         return wrapColumn(name, getLSIDColumn());
     }
 
     // Expensive render-time fetching of all ontology properties attached to the object row
-    protected ColumnInfo createPropertiesColumn(String name)
+    protected MutableColumnInfo createPropertiesColumn(String name)
     {
         var col = new AliasedColumn(this, name, getLSIDColumn());
         col.setDescription("Includes all properties set for this row");
@@ -204,7 +214,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         return col;
     }
 
-    public BaseColumnInfo createUserColumn(String name, ColumnInfo userIdColumn)
+    public MutableColumnInfo createUserColumn(String name, ColumnInfo userIdColumn)
     {
         var ret = wrapColumn(name, userIdColumn);
         UserIdQueryForeignKey.initColumn(getUserSchema(), ret, true);
@@ -226,7 +236,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     }
 
     // if you change this, see similar AssayResultTable.createFlagColumn or TSVAssayProvider.createFlagColumn()
-    protected BaseColumnInfo createFlagColumn(String alias)
+    protected MutableColumnInfo createFlagColumn(String alias)
     {
         var ret = wrapColumn(alias, getLSIDColumn());
         ret.setFk(new FlagForeignKey(_userSchema, urlFlag(true), urlFlag(false)));
@@ -242,6 +252,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         return ret;
     }
 
+    @Override
     public void addRowIdCondition(SQLFragment condition)
     {
         SQLFragment sqlCondition = new SQLFragment("RowId ");
@@ -249,6 +260,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         addCondition(sqlCondition);
     }
 
+    @Override
     public void addLSIDCondition(SQLFragment condition)
     {
         SQLFragment sqlCondition = new SQLFragment("LSID ");
@@ -269,9 +281,10 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
      * @param domain the domain from which to add all of the properties
      * @param legacyName if non-null, the name of a hidden node to be added as a FK for backwards compatibility
      */
-    public BaseColumnInfo addColumns(Domain domain, @Nullable String legacyName)
+    @Override
+    public MutableColumnInfo addColumns(Domain domain, @Nullable String legacyName)
     {
-        BaseColumnInfo colProperty = null;
+        MutableColumnInfo colProperty = null;
         if (legacyName != null && !domain.getProperties().isEmpty())
         {
             // Hide because the preferred way to get to these values is to add them directly to the table, instead of having
@@ -303,9 +316,9 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
      * @param lookupColName The column name
      * @return
      */
-    protected BaseColumnInfo addDomainColumns(Domain domain, @NotNull String lookupColName)
+    protected MutableColumnInfo addDomainColumns(Domain domain, @NotNull String lookupColName)
     {
-        BaseColumnInfo colProperty = wrapColumn(lookupColName, getLSIDColumn());
+        var colProperty = wrapColumn(lookupColName, getLSIDColumn());
         colProperty.setFk(new PropertyForeignKey(_userSchema, getContainerFilter(), domain));
         colProperty.setHidden(true);
         colProperty.setUserEditable(false);
@@ -320,11 +333,11 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
 
     protected void addVocabularyDomains()
     {
-        List<? extends Domain> domains = PropertyService.get().getDomains(getContainer(), getUserSchema().getUser(), Set.of(VocabularyDomainKind.KIND_NAME), true);
+        List<? extends Domain> domains = PropertyService.get().getDomains(getContainer(), getUserSchema().getUser(), new VocabularyDomainKind(), true);
         for (Domain domain : domains)
         {
             String columnName = domain.getName().replaceAll(" ", "") + domain.getTypeId();
-            BaseColumnInfo col = this.addDomainColumns(domain, columnName);
+            var col = this.addDomainColumns(domain, columnName);
             col.setLabel(domain.getName());
             col.setDescription("Properties from " + domain.getLabel(getContainer()));
         }
@@ -337,6 +350,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         return _domain;
     }
 
+    @Override
     public void setDomain(Domain domain)
     {
         checkLocked();

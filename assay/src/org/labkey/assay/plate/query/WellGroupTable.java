@@ -64,6 +64,7 @@ public class WellGroupTable extends BasePlateTable
         var plateIdColumn = new AliasedColumn(this, "Plate", _rootTable.getColumn("PlateId"));
         plateIdColumn.setFk(new LookupForeignKey(null, (String) null, "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return new PlateTable(_userSchema, cf);

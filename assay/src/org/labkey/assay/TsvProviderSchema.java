@@ -50,10 +50,10 @@ public class TsvProviderSchema extends AssayProviderSchema
         {
             super(AssayDbSchema.getInstance().getTableInfoPlate(), schema, cf);
 
-            BaseColumnInfo column = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Lsid")));
+            var column = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Lsid")));
             column.setKeyField(true);
 
-            BaseColumnInfo containerCol = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
+            var containerCol = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
             ContainerForeignKey.initColumn(containerCol, schema);
 
             addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Name")));

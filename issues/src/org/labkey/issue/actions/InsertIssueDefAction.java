@@ -117,10 +117,9 @@ public class InsertIssueDefAction extends UserSchemaAction
     }
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
-        super.appendNavTrail(root);
+        super.addNavTrail(root);
         root.addChild("Insert " + _table.getName());
-        return root;
     }
 }

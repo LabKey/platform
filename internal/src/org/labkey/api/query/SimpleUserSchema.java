@@ -23,7 +23,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -34,6 +33,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.StatementUtils;
@@ -72,10 +72,11 @@ import java.util.stream.Collectors;
  */
 public class SimpleUserSchema extends UserSchema
 {
+    private static final Logger _log = Logger.getLogger(SimpleUserSchema.class);
+
     // CaseInsensitiveTreeSet preserves case of the table names (from XML), unlike CaseInsensitiveHashSet
     private final Set<String> _available = new CaseInsensitiveTreeSet();
     protected Set<String> _visible;
-    private static Logger _log = Logger.getLogger(SimpleUserSchema.class);
 
     public SimpleUserSchema(String name, @Nullable String description, User user, Container container, DbSchema dbschema)
     {
@@ -267,9 +268,9 @@ public class SimpleUserSchema extends UserSchema
         }
 
         @Override
-        public BaseColumnInfo wrapColumn(ColumnInfo col)
+        public MutableColumnInfo wrapColumn(ColumnInfo col)
         {
-            BaseColumnInfo wrap = super.wrapColumn(col);
+            var wrap = super.wrapColumn(col);
 
             // 10945: Copy label from the underlying column -- wrapColumn() doesn't copy the label. TODO: This seems incorrect... wrapColumn() does copy it!
             // Copy the underlying value, so auto-generated labels remain auto-generated.
@@ -284,7 +285,7 @@ public class SimpleUserSchema extends UserSchema
             return wrap;
         }
 
-        protected void fixupWrappedColumn(BaseColumnInfo wrap, ColumnInfo col)
+        protected void fixupWrappedColumn(MutableColumnInfo wrap, ColumnInfo col)
         {
             final String colName = col.getName();
 

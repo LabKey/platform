@@ -369,6 +369,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         setScale(size);
     }
 
+    @Override
     public boolean isMvEnabled()
     {
         return _mvEnabled;
@@ -400,7 +401,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     /** Need the string version of this method because it's called by reflection and must match by name */
     public void setImportAliases(String importAliases)
     {
-        _importAliases = ColumnRenderPropertiesImpl.convertToSet(importAliases);
+        super.setImportAliasesSet(ColumnRenderPropertiesImpl.convertToSet(importAliases));
     }
 
     @Override
@@ -448,6 +449,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     }
 
     @Override
+    // TODO MutableColumnRenderProperties
     public void copyTo(ColumnRenderPropertiesImpl to)
     {
         super.copyTo(to);

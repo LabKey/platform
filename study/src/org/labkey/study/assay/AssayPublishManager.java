@@ -141,6 +141,7 @@ public class AssayPublishManager implements AssayPublishService
     /**
      * Studies that the user has permission to.
      */
+    @Override
     public Set<Study> getValidPublishTargets(@NotNull User user, @NotNull Class<? extends Permission> permission)
     {
         Set<? extends Study> studies = StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, permission);
@@ -151,6 +152,7 @@ public class AssayPublishManager implements AssayPublishService
         return result;
     }
 
+    @Override
     public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,
                                       List<Map<String, Object>> dataMaps, Map<String, PropertyType> types, String keyPropertyName, List<String> errors)
     {
@@ -172,6 +174,7 @@ public class AssayPublishManager implements AssayPublishService
         return publishAssayData(user, sourceContainer, targetContainer, assayName, protocol, dataMaps, propertyDescriptors, keyPropertyName, errors);
     }
 
+    @Override
     public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,
                                       List<Map<String, Object>> dataMaps, Map<String, PropertyType> types, List<String> errors)
     {
@@ -211,6 +214,7 @@ public class AssayPublishManager implements AssayPublishService
         return targetPds;
     }
 
+    @Override
     public ActionURL publishAssayData(User user, Container sourceContainer, @Nullable Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
                                       List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors)
     {
@@ -375,7 +379,7 @@ public class AssayPublishManager implements AssayPublishService
 
     private void createProvenanceRun(User user, @NotNull Container targetContainer, String assayName, @Nullable ExpProtocol protocol, List<String> errors, DatasetDefinition dataset, List<String> lsids)
     {
-        if (lsids.isEmpty())
+        if (lsids.isEmpty() || null == protocol)
             return;
 
         // If provenance module is not present, do nothing
@@ -429,7 +433,7 @@ public class AssayPublishManager implements AssayPublishService
 
         try
         {
-            studyPublishProtocol = ensureStudyPublishProtocol(user, targetContainer);
+            studyPublishProtocol = ensureStudyPublishProtocol(user, targetContainer, null, null);
 
             run.setProtocol(studyPublishProtocol);
             ViewBackgroundInfo info = new ViewBackgroundInfo(targetContainer, user, null);
@@ -702,6 +706,15 @@ public class AssayPublishManager implements AssayPublishService
     public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId,
                                                 boolean isDemographicData, String type, @Nullable Integer categoryId, @Nullable ExpProtocol protocol, boolean useTimeKeyField, KeyManagementType managementType)
     {
+        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, type, categoryId, protocol, useTimeKeyField, managementType, true, null, null, null, null, null, null);
+    }
+
+    @NotNull
+    public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId,
+                                                boolean isDemographicData, String type, @Nullable Integer categoryId, @Nullable ExpProtocol protocol, boolean useTimeKeyField, KeyManagementType managementType,
+                                                boolean showByDefault, @Nullable String label, @Nullable String description, @Nullable Integer cohortId,
+                                                @Nullable String tag, String visitDatePropertyName, @Nullable String dataSharing)
+    {
         DbSchema schema = StudySchema.getInstance().getSchema();
         if (useTimeKeyField && (isDemographicData || keyPropertyName != null))
             throw new IllegalStateException("UseTimeKeyField not compatible with iDemographic or other key field.");
@@ -710,19 +723,26 @@ public class AssayPublishManager implements AssayPublishService
             if (null == datasetId)
                 datasetId = new SqlSelector(schema, "SELECT MAX(n) + 1 AS id FROM (SELECT Max(datasetid) AS n FROM study.dataset WHERE container=? UNION SELECT ? As n) x", study.getContainer().getId(), MIN_ASSAY_ID).getObject(Integer.class);
             DatasetDefinition newDataset = new DatasetDefinition(study, datasetId.intValue(), name, name, null, null, null);
-            newDataset.setShowByDefault(true);
+            newDataset.setShowByDefault(showByDefault);
             newDataset.setType(type);
+            newDataset.setDemographicData(isDemographicData);
+            newDataset.setUseTimeKeyField(useTimeKeyField);
+            newDataset.setKeyManagementType(managementType);
+            newDataset.setDescription(description);
+            newDataset.setCohortId(cohortId);
+            newDataset.setTag(tag);
+            newDataset.setVisitDatePropertyName(visitDatePropertyName);
 
+            if (label != null)
+                newDataset.setLabel(label);
             if (categoryId != null)
                 newDataset.setCategoryId(categoryId);
             if (keyPropertyName != null)
                 newDataset.setKeyPropertyName(keyPropertyName);
             if (protocol != null)
                 newDataset.setProtocolId(protocol.getRowId());
-
-            newDataset.setDemographicData(isDemographicData);
-            newDataset.setUseTimeKeyField(useTimeKeyField);
-            newDataset.setKeyManagementType(managementType);
+            if (dataSharing != null)
+                newDataset.setDataSharing(dataSharing);
 
             StudyManager.getInstance().createDatasetDefinition(user, newDataset);
 
@@ -876,11 +896,13 @@ public class AssayPublishManager implements AssayPublishService
         return new TableSelector(getTinfoUpdateLog(), filter, null).getObject(UploadLog.class);
     }
 
+    @Override
     public ActionURL getPublishHistory(Container c, ExpProtocol protocol)
     {
         return getPublishHistory(c, protocol, null);
     }
 
+    @Override
     public ActionURL getPublishHistory(Container container, ExpProtocol protocol, ContainerFilter containerFilter)
     {
         if (protocol != null)
@@ -894,6 +916,7 @@ public class AssayPublishManager implements AssayPublishService
         throw new NotFoundException("Specified protocol is invalid");
     }
 
+    @Override
     public TimepointType getTimepointType(Container container)
     {
         Study study = StudyManager.getInstance().getStudy(container);
@@ -903,6 +926,7 @@ public class AssayPublishManager implements AssayPublishService
         return study.getTimepointType();
     }
 
+    @Override
     public boolean hasMismatchedInfo(List<Integer> dataRowPKs, AssayProtocolSchema schema)
     {
         TableInfo tableInfo = schema.createDataTable(null);
@@ -929,6 +953,7 @@ public class AssayPublishManager implements AssayPublishService
     }
 
     /** Automatically copy assay data to a study if the design is set up to do so */
+    @Override
     @Nullable
     public ActionURL autoCopyResults(ExpProtocol protocol, ExpRun run, User user, Container container, List<String> errors)
     {
@@ -1047,13 +1072,17 @@ public class AssayPublishManager implements AssayPublishService
         return null;
     }
 
-    public ExpProtocol ensureStudyPublishProtocol(User user, Container container) throws ExperimentException
+    @Override
+    public ExpProtocol ensureStudyPublishProtocol(User user, Container container, String name, String lsid) throws ExperimentException
     {
-        ExpProtocol protocol = ExperimentService.get().getExpProtocol(STUDY_PUBLISH_PROTOCOL_LSID);
+        String protocolName = null != name ? name : STUDY_PUBLISH_PROTOCOL_NAME;
+        String protocolLsid = null != lsid ? lsid : STUDY_PUBLISH_PROTOCOL_LSID;
+        ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolLsid);
+
         if (protocol == null)
         {
-            ExpProtocol baseProtocol = ExperimentService.get().createExpProtocol(container, ExpProtocol.ApplicationType.ExperimentRun, STUDY_PUBLISH_PROTOCOL_NAME);
-            baseProtocol.setLSID(STUDY_PUBLISH_PROTOCOL_LSID);
+            ExpProtocol baseProtocol = ExperimentService.get().createExpProtocol(container, ExpProtocol.ApplicationType.ExperimentRun, protocolName);
+            baseProtocol.setLSID(protocolLsid);
             baseProtocol.setMaxInputMaterialPerInstance(0);
             baseProtocol.setProtocolDescription("Simple protocol for publishing study using copy to study.");
             return ExperimentService.get().insertSimpleProtocol(baseProtocol, user);

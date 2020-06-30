@@ -45,6 +45,7 @@ import org.labkey.api.query.CustomViewChangeListener;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.QueryChangeListener.QueryPropertyChange;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
@@ -293,39 +294,48 @@ public class QueryManager
         CustomViewCache.uncache(ContainerManager.getForId(view.getContainerId()));
     }
 
+    @Nullable
     public ExternalSchemaDef getExternalSchemaDef(Container c, int rowId)
     {
         return ExternalSchemaDefCache.getSchemaDef(c, rowId, ExternalSchemaDef.class);
     }
 
+    @NotNull
     public List<ExternalSchemaDef> getExternalSchemaDefs(@Nullable Container container)
     {
         return ExternalSchemaDefCache.getSchemaDefs(container, ExternalSchemaDef.class);
     }
 
+    @Nullable
     public ExternalSchemaDef getExternalSchemaDef(Container container, @Nullable String userSchemaName)
     {
         return ExternalSchemaDefCache.getSchemaDef(container, userSchemaName, ExternalSchemaDef.class);
     }
 
+    @Nullable
     public LinkedSchemaDef getLinkedSchemaDef(Container c, int rowId)
     {
         return ExternalSchemaDefCache.getSchemaDef(c, rowId, LinkedSchemaDef.class);
     }
 
+    @NotNull
     public List<LinkedSchemaDef> getLinkedSchemaDefs(@Nullable Container c)
     {
         return ExternalSchemaDefCache.getSchemaDefs(c, LinkedSchemaDef.class);
     }
 
+    @Nullable
     public LinkedSchemaDef getLinkedSchemaDef(Container c, @Nullable String userSchemaName)
     {
         return ExternalSchemaDefCache.getSchemaDef(c, userSchemaName, LinkedSchemaDef.class);
     }
 
-    public void delete(AbstractExternalSchemaDef def)
+    public void delete(@NotNull AbstractExternalSchemaDef def)
     {
-        Table.delete(getTableInfoExternalSchema(), def.getExternalSchemaId());
+        Container c = def.lookupContainer();
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(getTableInfoExternalSchema().getColumn("ExternalSchemaId"), def.getExternalSchemaId());
+        Table.delete(getTableInfoExternalSchema(), filter);
         updateExternalSchemas(def.lookupContainer());
     }
 
@@ -484,7 +494,7 @@ public class QueryManager
             l.queryCreated(user, container, scope, schema, queries);
     }
 
-    public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryChangeListener.QueryProperty property, @NotNull Collection<QueryChangeListener.QueryPropertyChange> changes)
+    public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryChangeListener.QueryProperty property, @NotNull Collection<QueryPropertyChange> changes)
     {
         QueryService.get().updateLastModified();
         assert checkChanges(property, changes);
@@ -493,7 +503,7 @@ public class QueryManager
     }
 
     // Checks all changes have the correct property and type.
-    private boolean checkChanges(QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes)
+    private boolean checkChanges(QueryChangeListener.QueryProperty property, Collection<QueryPropertyChange> changes)
     {
         if (property == null)
         {
@@ -502,7 +512,7 @@ public class QueryManager
         }
 
         boolean valid = true;
-        for (QueryChangeListener.QueryPropertyChange change : changes)
+        for (QueryPropertyChange change : changes)
         {
             if (change.getProperty() != property)
             {
@@ -579,6 +589,7 @@ public class QueryManager
 
     static public final ContainerManager.ContainerListener CONTAINER_LISTENER = new ContainerManager.AbstractContainerListener()
     {
+        @Override
         public void containerDeleted(Container c, User user)
         {
             QueryManager.get().containerDeleted(c);

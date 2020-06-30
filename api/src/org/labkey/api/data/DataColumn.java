@@ -49,6 +49,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -63,7 +64,7 @@ public class DataColumn extends DisplayColumn
 
     private ColumnInfo _boundColumn;
     private ColumnInfo _displayColumn;
-    private List<ColumnInfo> _sortColumns;
+    private List<FieldKey> _sortFieldKeys;
     private ColumnInfo _filterColumn;
 
     private String _inputType;
@@ -83,7 +84,9 @@ public class DataColumn extends DisplayColumn
         _boundColumn = col;
         _displayColumn = getDisplayField(col, withLookups);
         _nowrap = _displayColumn.isNoWrap();
-        _sortColumns = _displayColumn.getSortFields();
+        _sortFieldKeys = _displayColumn.getSortFieldKeys();
+        if (null == _sortFieldKeys && _displayColumn.isSortable())
+            _sortFieldKeys = Collections.singletonList(_displayColumn.getFieldKey());
         _filterColumn = _displayColumn.getFilterField();
 
         _width = _displayColumn.getWidth();
@@ -209,6 +212,7 @@ public class DataColumn extends DisplayColumn
         _preserveNewlines = preserveNewlines;
     }
 
+    @Override
     public ColumnInfo getColumnInfo()
     {
         return _boundColumn;
@@ -220,16 +224,19 @@ public class DataColumn extends DisplayColumn
         return _displayColumn;
     }
 
+    @Override
     public boolean isFilterable()
     {
         return _filterColumn != null;
     }
 
+    @Override
     public boolean isQueryColumn()
     {
         return true;
     }
 
+    @Override
     public void addQueryFieldKeys(Set<FieldKey> keys)
     {
         super.addQueryFieldKeys(keys);
@@ -239,11 +246,8 @@ public class DataColumn extends DisplayColumn
             keys.add(_displayColumn.getFieldKey());
         if (_filterColumn != null)
             keys.add(_filterColumn.getFieldKey());
-        if (_sortColumns != null)
-        {
-            for (ColumnInfo col : _sortColumns)
-                keys.add(col.getFieldKey());
-        }
+        if (_sortFieldKeys != null)
+            keys.addAll(_sortFieldKeys);
         StringExpression effectiveURL = _boundColumn.getEffectiveURL();
         if (effectiveURL instanceof DetailsURL)
         {
@@ -251,6 +255,7 @@ public class DataColumn extends DisplayColumn
         }
     }
 
+    @Override
     public void addQueryColumns(Set<ColumnInfo> columns)
     {
         if (_boundColumn != null)
@@ -259,15 +264,15 @@ public class DataColumn extends DisplayColumn
             columns.add(_displayColumn);
         if (_filterColumn != null)
             columns.add(_filterColumn);
-        if (_sortColumns != null)
-            columns.addAll(_sortColumns);
     }
 
+    @Override
     public boolean isSortable()
     {
-        return _sortColumns != null && _sortColumns.size() > 0;
+        return _sortFieldKeys != null && _sortFieldKeys.size() > 0;
     }
 
+    @Override
     public Object getValue(RenderContext ctx)
     {
         Object result = ctx.get(_boundColumn.getFieldKey());
@@ -279,6 +284,7 @@ public class DataColumn extends DisplayColumn
         return result;
     }
 
+    @Override
     public Object getDisplayValue(RenderContext ctx)
     {
         Object result = ctx.get(_displayColumn.getFieldKey());
@@ -290,27 +296,32 @@ public class DataColumn extends DisplayColumn
         return result;
     }
 
+    @Override
     public Object getJsonValue(RenderContext ctx)
     {
         return getValue(ctx);
     }
 
+    @Override
     public Class getValueClass()
     {
         return _boundColumn.getJavaClass();
     }
 
+    @Override
     public Class getDisplayValueClass()
     {
         return _displayColumn.getJavaClass();
     }
 
+    @Override
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
         // By default, use the same rendering for both the details and grid views
         renderGridCellContents(ctx, out);
     }
 
+    @Override
     @Nullable
     public FieldKey getFilterKey()
     {
@@ -320,6 +331,7 @@ public class DataColumn extends DisplayColumn
         return _filterColumn.getFieldKey();
     }
 
+    @Override
     public void renderFilterOnClick(RenderContext ctx, Writer out) throws IOException
     {
         if (_filterColumn == null)
@@ -349,6 +361,7 @@ public class DataColumn extends DisplayColumn
         return DataRegion.getJavaScriptObjectReference(regionName) + ".clearSort(" + PageFlowUtil.jsString(fieldKey) + ");";
     }
 
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         Object o = getValue(ctx);
@@ -374,6 +387,7 @@ public class DataColumn extends DisplayColumn
                 {
                     out.write("\" target=\"");
                     out.write(linkTarget);
+                    out.write("\" rel=\"noopener noreferrer\"");
                 }
 
                 String linkCls = getLinkCls();
@@ -396,7 +410,7 @@ public class DataColumn extends DisplayColumn
                     out.write("\" style=\"");
                     out.write(css);
                 }
-                
+
                 out.write("\">");
             }
 
@@ -444,6 +458,7 @@ public class DataColumn extends DisplayColumn
         return super.renderURL(ctx);
     }
 
+    @Override
     protected String getHoverContent(RenderContext ctx)
     {
         ConditionalFormat format = findApplicableFormat(ctx);
@@ -586,6 +601,7 @@ public class DataColumn extends DisplayColumn
         return entry.getObject().toString();
     }
 
+    @Override
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
         if (_boundColumn.isVersionColumn() || _inputType.equalsIgnoreCase("none"))
@@ -854,7 +870,7 @@ public class DataColumn extends DisplayColumn
     @Override
     public String getSortHandler(RenderContext ctx, Sort.SortDirection sort)
     {
-        if (_displayColumn == null || _sortColumns == null || _sortColumns.size() == 0)
+        if (_displayColumn == null || _sortFieldKeys == null || _sortFieldKeys.size() == 0)
             return "";
 
         String regionName = ctx.getCurrentRegion().getName();
@@ -863,6 +879,7 @@ public class DataColumn extends DisplayColumn
                 ".changeSort(" + PageFlowUtil.jsString(fieldKey) + ", '" + h(sort.getDir()) + "')";
     }
 
+    @Override
     public void renderTitle(RenderContext ctx, Writer out) throws IOException
     {
         String title = PageFlowUtil.filter(getTitle(ctx));
@@ -873,6 +890,7 @@ public class DataColumn extends DisplayColumn
         out.write(title);
     }
 
+    @Override
     public String getTitle(RenderContext ctx)
     {
         if (_caption == null)
@@ -880,6 +898,7 @@ public class DataColumn extends DisplayColumn
         return _caption.eval(ctx);
     }
 
+    @Override
     public void renderDetailsCaptionCell(RenderContext ctx, Writer out, @Nullable String cls) throws IOException
     {
         if (null == _caption)
@@ -925,6 +944,7 @@ public class DataColumn extends DisplayColumn
         return true;
     }
 
+    @Override
     public boolean isEditable()
     {
         return _editable;
@@ -935,6 +955,7 @@ public class DataColumn extends DisplayColumn
         _editable = b;
     }
 
+    @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         if (ctx.getMode() == DataRegion.MODE_INSERT || ctx.getMode() == DataRegion.MODE_UPDATE)

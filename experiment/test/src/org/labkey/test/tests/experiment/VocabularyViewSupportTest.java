@@ -11,22 +11,19 @@ import org.labkey.remoteapi.assay.Run;
 import org.labkey.remoteapi.assay.SaveAssayBatchCommand;
 import org.labkey.remoteapi.assay.SaveAssayRunsCommand;
 import org.labkey.remoteapi.assay.SaveAssayRunsResponse;
-import org.labkey.remoteapi.domain.CreateDomainCommand;
 import org.labkey.remoteapi.domain.DomainResponse;
-import org.labkey.remoteapi.domain.GetDomainCommand;
 import org.labkey.remoteapi.domain.PropertyDescriptor;
 import org.labkey.remoteapi.query.InsertRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
-import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.CustomizeView;
-import org.labkey.test.params.experiment.SampleSetDefinition;
+import org.labkey.test.params.experiment.SampleTypeDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.PortalHelper;
-import org.labkey.test.util.SampleSetHelper;
+import org.labkey.test.util.SampleTypeHelper;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,7 +35,7 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.hasItem;
 
 @Category({DailyC.class})
-public class VocabularyViewSupportTest extends BaseWebDriverTest
+public class VocabularyViewSupportTest extends ProvenanceAssayHelper
 {
 
     @BeforeClass
@@ -59,7 +56,7 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
         PortalHelper portalHelper = new PortalHelper(this);
         _containerHelper.createProject(getProjectName(), null);
         projectMenu().navigateToProject(getProjectName());
-        portalHelper.addWebPart("Sample Sets");
+        portalHelper.addWebPart("Sample Types");
     }
 
     @Override
@@ -119,8 +116,8 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
         String sampleSetName = "Cars";
 
         goToProjectHome();
-        SampleSetHelper sampleHelper = new SampleSetHelper(this);
-        sampleHelper.createSampleSet(new SampleSetDefinition(sampleSetName));
+        SampleTypeHelper sampleHelper = new SampleTypeHelper(this);
+        sampleHelper.createSampleType(new SampleTypeDefinition(sampleSetName));
 
         log("call to insertRows with a voc property");
         int sampleSetRowCount = 0;
@@ -144,8 +141,8 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
 
         log("goto dataclass grid .. open customize grid panel");
         goToProjectHome();
-        click(Locator.linkWithText("Sample Sets"));
-        sampleHelper.goToSampleSet(sampleSetName);
+        click(Locator.linkWithText("Sample Types"));
+        sampleHelper.goToSampleType(sampleSetName);
         DataRegionTable drt = sampleHelper.getSamplesDataRegionTable();
         CustomizeView sampleSetCustomizeGrid = drt.openCustomizeGrid();
         sampleSetCustomizeGrid.showHiddenItems();
@@ -251,17 +248,6 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
 
         _listHelper.createList(getProjectName(), listName, ListHelper.ListColumnType.AutoInteger, "Key", columns);
         goToManageLists();
-    }
-
-    private DomainResponse createDomain(String domainKind, String domainName, String description, List<PropertyDescriptor> fields) throws IOException, CommandException
-    {
-        CreateDomainCommand domainCommand = new CreateDomainCommand(domainKind, domainName);
-        domainCommand.getDomainDesign().setFields(fields);
-        domainCommand.getDomainDesign().setDescription(description);
-
-        DomainResponse domainResponse = domainCommand.execute(createDefaultConnection(false), getProjectName());
-        GetDomainCommand getDomainCommand = new GetDomainCommand(domainResponse.getDomain().getDomainId());
-        return getDomainCommand.execute(createDefaultConnection(false), getProjectName());
     }
 
 }

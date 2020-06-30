@@ -64,6 +64,7 @@ public interface ExperimentalFeatureService
         {
         }
 
+        @Override
         public void addFeatureListener(String feature, ExperimentFeatureListener listener)
         {
             if (_listeners == null)
@@ -75,11 +76,13 @@ public interface ExperimentalFeatureService
             _listeners.get(feature).add(listener);
         }
 
+        @Override
         public boolean isFeatureEnabled(String feature)
         {
             return AppProps.getInstance().isExperimentalFeatureEnabled(feature);
         }
 
+        @Override
         public void removeFeatureListener(String feature, ExperimentFeatureListener listener)
         {
             if (_listeners != null && _listeners.containsKey(feature))
@@ -88,6 +91,7 @@ public interface ExperimentalFeatureService
             }
         }
 
+        @Override
         public void setFeatureEnabled(String feature, boolean enabled, User user)
         {
             WriteableAppProps props = AppProps.getWriteableInstance();

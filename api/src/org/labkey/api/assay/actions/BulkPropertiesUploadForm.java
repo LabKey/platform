@@ -21,8 +21,9 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.view.ActionURL;
@@ -123,6 +124,7 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
         return _bulkProperties;
     }
 
+    @Override
     public void saveDefaultRunValues() throws ExperimentException
     {
         if (!isBulkUploadAttempted())
@@ -177,19 +179,19 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
         {
             return materials.get(0);
         }
-        // Couldn't find exactly one match, check if it might be of the form <SAMPLE_SET_NAME>.<SAMPLE_NAME>
+        // Couldn't find exactly one match, check if it might be of the form <SAMPLE_TYPE_NAME>.<SAMPLE_NAME>
         int dotIndex = name.indexOf(".");
         if (dotIndex != -1)
         {
-            String sampleSetName = name.substring(0, dotIndex);
+            String sampleTypeName = name.substring(0, dotIndex);
             String sampleName = name.substring(dotIndex + 1);
             // Could easily do some caching here, but probably not a significant perf issue
-            for (ExpSampleSet sampleSet : ExperimentService.get().getSampleSets(getContainer(), getUser(), true))
+            for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(getContainer(), getUser(), true))
             {
-                // Look for a sample set with the right name
-                if (sampleSetName.equals(sampleSet.getName()))
+                // Look for a sample type with the right name
+                if (sampleTypeName.equals(sampleType.getName()))
                 {
-                    for (ExpMaterial sample : sampleSet.getSamples(sampleSet.getContainer()))
+                    for (ExpMaterial sample : sampleType.getSamples(sampleType.getContainer()))
                     {
                         // Look for a sample with the right name
                         if (sample.getName().equals(sampleName))
@@ -201,13 +203,13 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
             }
         }
 
-        // If we can't find a <SAMPLE_SET_NAME>.<SAMPLE_NAME> match, then fall back on the original results
+        // If we can't find a <SAMPLE_TYPE_NAME>.<SAMPLE_NAME> match, then fall back on the original results
         if (materials.isEmpty())
         {
             throw new ExperimentException("No sample with name '" + name + "' was found.");
         }
         // Must be more than one match
-        throw new ExperimentException("Found samples with name '" + name + "' in multiple sample sets. Please prefix the name with the desired sample set, in the format 'SAMPLE_SET.SAMPLE'.");
+        throw new ExperimentException("Found samples with name '" + name + "' in multiple sample types. Please prefix the name with the desired sample type, in the format 'SAMPLE_TYPE.SAMPLE'.");
     }
 
     public abstract String getHelpPopupHTML();

@@ -21,7 +21,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.pages.DatasetPropertiesPage;
-import org.labkey.test.pages.EditDatasetDefinitionPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.LogMethod;
 
@@ -37,11 +37,13 @@ public class StudyDatasetReloadTest extends StudyBaseTest
     private static final File STUDY_WITH_BIT = TestFileUtils.getSampleData("studies/StudyWithDemoBit.folder.zip");
     private static final File STUDY_WITHOUT_BIT = TestFileUtils.getSampleData("studies/StudyWithoutDemoBit.folder.zip");
 
+    @Override
     protected String getProjectName()
     {
         return "StudyDatasetReloadProject";
     }
 
+    @Override
     protected String getFolderName()
     {
         return "Study Dataset Reload";
@@ -73,7 +75,7 @@ public class StudyDatasetReloadTest extends StudyBaseTest
         assertElementPresent(Locator.tagWithText("td", "Staff Code").append("/../td/input[last()][@checked]"));     // MV
         assertElementPresent(Locator.tagWithText("td", "VisitDay").append("/../td/input[last()][not(@checked)]"));  // MV
 
-        EditDatasetDefinitionPage editDatasetPage = new DatasetPropertiesPage(getDriver()).clickEditDefinition();
+        DatasetDesignerPage editDatasetPage = new DatasetPropertiesPage(getDriver()).clickEditDefinition();
         assertFalse("Study import set demographics bit incorrectly", editDatasetPage.isDemographicsData());
 
         goToManageStudy();

@@ -123,21 +123,21 @@
 
                 if (xlsxExportEl.is(':checked')) {
                     if (isSign) {
-                        exportUrl = <%=PageFlowUtil.jsString(model.getSignXlsxURL().getPath(false))%>;
+                        exportUrl = <%=PageFlowUtil.jsString(model.getSignXlsxURL().getPath())%>;
                         exportParams = <%=text( new JSONObject(model.getSignXlsxURL().getParameterMap()).toString(2) )%>;
                     }
                     else {
-                        exportUrl = <%=PageFlowUtil.jsString(model.getXlsxURL().getPath(false))%>;
+                        exportUrl = <%=PageFlowUtil.jsString(model.getXlsxURL().getPath())%>;
                         exportParams = <%=text( new JSONObject(model.getXlsxURL().getParameterMap()).toString(2) )%>;
                     }
                 }
                 else if (xlsExportEl.is(':checked')) {
                     if (isSign) {
-                        exportUrl = <%=PageFlowUtil.jsString(model.getSignXlsURL().getPath(false))%>;
+                        exportUrl = <%=PageFlowUtil.jsString(model.getSignXlsURL().getPath())%>;
                         exportParams = <%=text( new JSONObject(model.getSignXlsURL().getParameterMap()).toString(2) )%>;
                     }
                     else {
-                        exportUrl = <%=PageFlowUtil.jsString(model.getXlsURL().getPath(false))%>;
+                        exportUrl = <%=PageFlowUtil.jsString(model.getXlsURL().getPath())%>;
                         exportParams = <%=text( new JSONObject(model.getXlsURL().getParameterMap()).toString(2) )%>;
                     }
                 <% if (model.getIqyURL() != null) { %>

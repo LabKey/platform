@@ -35,13 +35,13 @@ import org.labkey.test.components.ChartQueryDialog;
 import org.labkey.test.components.ChartTypeDialog;
 import org.labkey.test.components.DomainDesignerPage;
 import org.labkey.test.components.LookAndFeelTimeChart;
-import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.components.QueryMetadataEditorPage;
 import org.labkey.test.components.SaveChartDialog;
 import org.labkey.test.components.html.SiteNavBar;
 import org.labkey.test.pages.DatasetPropertiesPage;
 import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.pages.search.SearchResultsPage;
+import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
@@ -168,6 +168,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         folder
     }
 
+    @Override
     public void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         super.doCleanup(afterTest);
@@ -220,6 +221,9 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         setUnshiftedDateField(DATE_SHIFT_DATASET, UNSHIFTED_DATE_FIELD.getKey());
 
+        scrollToTop();  // the prior operation leaves the test on the query metadata editor, scrolled down
+
+                            // which pins the project menu under a header
         navigateToFolder(getProjectName(), getFolderName());
 
         //webpart needed for republish test
@@ -1028,6 +1032,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         else if (location == PublishLocation.project)
         {
             Locator projectTreeNode = Locator.tagWithClass("a", "x-tree-node-anchor").withDescendant(Locator.tagWithText("span", getProjectName()));
+            scrollIntoView(projectTreeNode, true);
             doubleClick(projectTreeNode);
         }
         else
@@ -1061,7 +1066,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         List<String> fields = new ArrayList<>(Arrays.asList(phiFields));
         for (String field : fields)
         {
-            designerPage.fieldsPanel().getField(field).setPHILevel(PropertiesEditor.PhiSelectType.PHI);
+            designerPage.fieldsPanel().getField(field).setPHILevel(FieldDefinition.PhiSelectType.PHI);
         }
        designerPage.clickFinish();
     }
@@ -1070,11 +1075,11 @@ public class StudyPublishTest extends StudyPHIExportTest
     {
         goToQueryView("study", dataset, true);
         QueryMetadataEditorPage designerPage = new QueryMetadataEditorPage(getDriver());
-        designerPage.fieldsPanel()
+        designerPage.getFieldsPanel()
                 .getField(fieldName)
-                .setExcludeFromDateShifting(false); // TODO: 40106: UX Query Metadata Editor - doesn't look to be showing initial state as expected for various domain field row properties
+                .setExcludeFromDateShifting(true);
 
-        designerPage.clickFinish();
+        designerPage.clickSave();
         waitForText("Save Successful");
     }
 

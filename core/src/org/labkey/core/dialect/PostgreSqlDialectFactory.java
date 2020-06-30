@@ -80,13 +80,8 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
 
         VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
 
-        // Get the appropriate dialect and stash version information
-        int version = versionNumber.getVersionInt();
-        SqlDialect dialect = getDialect(version, databaseProductVersion, logWarnings);
-        dialect.setDatabaseVersion(version);
-        dialect.setProductVersion(String.valueOf(version/(double)10));
-
-        return dialect;
+        // Return the appropriate dialect based on the version
+        return getDialect(versionNumber.getVersionInt(), databaseProductVersion, logWarnings);
     }
 
     private @NotNull SqlDialect getDialect(int version, String databaseProductVersion, boolean logWarnings)
@@ -150,7 +145,8 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             good("PostgreSQL", 10.0, 11.0, "", connectionUrl, null, PostgreSql_10_Dialect.class);
             good("PostgreSQL", 11.0, 12.0, "", connectionUrl, null, PostgreSql_11_Dialect.class);
             good("PostgreSQL", 12.0, 13.0, "", connectionUrl, null, PostgreSql_12_Dialect.class);
-            good("PostgreSQL", 13.0, 14.0, "", connectionUrl, null, PostgreSql_12_Dialect.class);
+            good("PostgreSQL", 13.0, 14.0, "", connectionUrl, null, PostgreSql_13_Dialect.class);
+            good("PostgreSQL", 14.0, 15.0, "", connectionUrl, null, PostgreSql_13_Dialect.class);
         }
     }
 
@@ -222,8 +218,8 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                 protected Set<String> getBadUrls()
                 {
                     return new CsvSet("jddc:postgresql:database," +
-                            "jdbc:postgres://localhost/database," +
-                            "jdbc:postgresql://www.host.comdatabase");
+                        "jdbc:postgres://localhost/database," +
+                        "jdbc:postgresql://www.host.comdatabase");
                 }
             };
 

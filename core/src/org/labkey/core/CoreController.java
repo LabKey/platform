@@ -29,7 +29,6 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
@@ -191,11 +190,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
 
@@ -318,6 +319,7 @@ public class CoreController extends SpringActionController
             //  when impersonation is limited to a specific project.
         }
 
+        @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             HttpServletRequest request = getViewContext().getRequest();
@@ -358,15 +360,15 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
     @RequiresPermission(ReadPermission.class)
     public class DownloadFileLinkAction extends SimpleViewAction<DownloadFileLinkForm>
     {
+        @Override
         public ModelAndView getView(DownloadFileLinkForm form, BindException errors) throws Exception
         {
             if (form.getPropertyId() == null)
@@ -485,7 +487,8 @@ public class CoreController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException("Not Yet Implemented");
         }
@@ -577,6 +580,7 @@ public class CoreController extends SpringActionController
     @AllowedDuringUpgrade
     public class CustomStylesheetAction extends BaseStylesheetAction
     {
+        @Override
         Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
         {
             return getCustomStylesheetContent(getContainer());
@@ -655,6 +659,7 @@ public class CoreController extends SpringActionController
     @RequiresNoPermission
     public class GetAttachmentIconAction extends SimpleViewAction<GetAttachmentIconForm>
     {
+        @Override
         public ModelAndView getView(GetAttachmentIconForm form, BindException errors) throws Exception
         {
             String path = Attachment.getFileIcon(StringUtils.trimToEmpty(form.getExtension()));
@@ -689,9 +694,9 @@ public class CoreController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -721,12 +726,11 @@ public class CoreController extends SpringActionController
             if (type == null)
                 throw new ApiUsageException("Unknown container type: " + typeName);
 
-            if (type.requiresAdminToCreate())
+            Class<? extends Permission> permClass = type.getPermissionNeededToCreate();
+            if (!getContainer().hasPermission(getUser(), permClass))
             {
-                if (!getContainer().hasPermission(getUser(), AdminPermission.class))
-                {
-                    throw new UnauthorizedException("You must have admin permissions to create subfolders");
-                }
+                Permission perm = RoleManager.getPermission(permClass);
+                throw new UnauthorizedException("Insufficient permissions to create subfolders. " + perm.getName() + " permission required.");
             }
 
             if (name != null && getContainer().getChild(name) != null)
@@ -753,10 +757,32 @@ public class CoreController extends SpringActionController
                     throw new UnauthorizedException("The folder type requires a restricted module for which you do not have permission.");
                 }
 
+                Set<Module> ensureModules = new HashSet<>();
+                if (json.has("ensureModules") && !json.isNull("ensureModules"))
+                {
+                    List<String> requestedModules = Arrays.stream(json.getJSONArray("ensureModules")
+                            .toArray()).map(Object::toString).collect(Collectors.toList());
+                    for (String moduleName : requestedModules)
+                    {
+                        Module module = ModuleLoader.getInstance().getModule(moduleName);
+                        if (module == null)
+                            throw new NotFoundException("'" + moduleName + "' was not found.");
+                        else if (module.getRequireSitePermission() && !getContainer().hasEnableRestrictedModules(getUser()))
+                            throw new UnauthorizedException("'" + moduleName + "' is a restricted module for which you do not have permission.");
+                        else
+                            ensureModules.add(module);
+                    }
+                }
+
                 Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, typeName, getUser());
                 if (folderType != null)
                 {
                     newContainer.setFolderType(folderType, getUser());
+                }
+                if (!ensureModules.isEmpty())
+                {
+                    ensureModules.addAll(newContainer.getActiveModules());
+                    newContainer.setActiveModules(ensureModules);
                 }
 
                 return new ApiSimpleResponse(newContainer.toJSON(getUser()));
@@ -786,12 +812,11 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
         {
-            if (target.requiresAdminToDelete())
+            Class<? extends Permission> permClass = getContainer().getPermissionNeededToDelete();
+            if (!target.hasPermission(getUser(), permClass))
             {
-                if (!target.hasPermission(getUser(), AdminPermission.class))
-                {
-                    throw new UnauthorizedException("You must have admin permissions to delete subfolders");
-                }
+                Permission perm = RoleManager.getPermission(permClass);
+                throw new UnauthorizedException("Insufficient permissions to delete folder. " + perm.getName() + " permission required.");
             }
 
             ContainerManager.deleteAll(target, getUser());
@@ -937,9 +962,10 @@ public class CoreController extends SpringActionController
             return new JspView<>("/org/labkey/core/workbook/createWorkbook.jsp", bean, errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Create New Workbook");
+            root.addChild("Create New Workbook");
         }
     }
 
@@ -961,6 +987,7 @@ public class CoreController extends SpringActionController
     @RequiresPermission(UpdatePermission.class)
     public class UpdateDescriptionAction extends MutatingApiAction<UpdateDescriptionForm>
     {
+        @Override
         public ApiResponse execute(UpdateDescriptionForm form, BindException errors) throws Exception
         {
             String description = StringUtils.trimToNull(form.getDescription());
@@ -987,6 +1014,7 @@ public class CoreController extends SpringActionController
     @RequiresPermission(UpdatePermission.class)
     public class UpdateTitleAction extends MutatingApiAction<UpdateTitleForm>
     {
+        @Override
         public ApiResponse execute(UpdateTitleForm form, BindException errors) throws Exception
         {
             String title = StringUtils.trimToNull(form.getTitle());
@@ -998,6 +1026,7 @@ public class CoreController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class MoveWorkbooksAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             Container parentContainer = getContainer();
@@ -1016,9 +1045,10 @@ public class CoreController extends SpringActionController
             return new JspView<>("/org/labkey/core/workbook/moveWorkbooks.jsp", bean, errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Move Workbooks");
+            root.addChild("Move Workbooks");
         }
     }
 
@@ -1108,6 +1138,7 @@ public class CoreController extends SpringActionController
         protected Class<? extends Permission> _reqPerm = ReadPermission.class;
         protected boolean _move = false;
         
+        @Override
         public ApiResponse execute(ExtContainerTreeForm form, BindException errors) throws Exception
         {
             User user = getUser();
@@ -1372,6 +1403,7 @@ public class CoreController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class MoveWorkbookAction extends MutatingApiAction<MoveWorkbookForm>
     {
+        @Override
         public ApiResponse execute(MoveWorkbookForm form, BindException errors) throws Exception
         {
             if (form.getWorkbookId() < 0)
@@ -1906,6 +1938,7 @@ public class CoreController extends SpringActionController
 
     private class ImporterAlphaComparator implements Comparator<FolderImporter>
     {
+        @Override
         public int compare(FolderImporter o1, FolderImporter o2)
         {
             if (o1.getDataType() == null && o2.getDataType() == null)
@@ -2059,9 +2092,8 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
 
         @Override
@@ -2132,31 +2164,34 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("LabKey Style Guide");
+            root.addChild("LabKey Style Guide");
         }
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class ConfigureReportsAndScriptsAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView("/org/labkey/core/view/configReportsAndScripts.jsp");
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("configureScripting"));
             root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
-            return root.addChild("Views and Scripting Configuration");
+            root.addChild("Views and Scripting Configuration");
         }
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class ScriptEnginesSummaryAction extends ReadOnlyApiAction
     {
+        @Override
         public ApiResponse execute(Object o, BindException errors)
         {
             List<Map<String, Object>> views = new ArrayList<>();
@@ -2225,7 +2260,7 @@ public class CoreController extends SpringActionController
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class ScriptEnginesSaveAction extends ExtFormAction<ExternalScriptEngineDefinitionImpl>
+    public class ScriptEnginesSaveAction extends MutatingApiAction<ExternalScriptEngineDefinitionImpl>
     {
         @Override
         public void validateForm(ExternalScriptEngineDefinitionImpl def, Errors errors)
@@ -2275,6 +2310,7 @@ public class CoreController extends SpringActionController
             }
         }
 
+        @Override
         public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors) throws Exception
         {
             LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
@@ -2345,6 +2381,7 @@ public class CoreController extends SpringActionController
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class ScriptEnginesDeleteAction extends MutatingApiAction<ExternalScriptEngineDefinitionImpl>
     {
+        @Override
         public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors)
         {
             LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
@@ -2498,10 +2535,10 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageQC");
-            return root.addChild("Manage Assay QC States");
+            root.addChild("Manage Assay QC States");
         }
 
         @Override

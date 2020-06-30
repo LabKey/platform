@@ -17,7 +17,6 @@ package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -94,7 +93,7 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
 
     // Override to customize the nav trail on shared pages like edit domain
     @Override
-    public void appendNavTrail(NavTree root, Container c, User user)
+    public void addNavTrail(NavTree root, Container c, User user)
     {
     }
 
@@ -111,7 +110,7 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
     }
 
     @Override
-    public @Nullable T getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
+    public @Nullable T getDomainKindProperties(GWTDomain domain, Container container, User user)
     {
         return null;
     }

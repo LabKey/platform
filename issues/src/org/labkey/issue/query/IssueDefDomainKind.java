@@ -122,6 +122,7 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
         return INDEXES;
     }
 
+    @Override
     public Set<PropertyStorageSpec> getRequiredProperties()
     {
         return REQUIRED_PROPERTIES;
@@ -161,6 +162,7 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
     /**
      * Create the lists for any of the built in lookup fields (priority, type, area and milestone)
      */
+    @Override
     public void createLookupDomains(Container domainContainer, User user, String domainName) throws BatchValidationException
     {
         DomainTemplateGroup templateGroup = DomainTemplateGroup.get(domainContainer, ISSUE_LOOKUP_TEMPLATE_GROUP);

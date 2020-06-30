@@ -97,9 +97,9 @@ import static org.labkey.api.search.SearchService.PROPERTY;
 public class OntologyManager
 {
     private static final Logger _log = Logger.getLogger(OntologyManager.class);
-    private static final Cache<String, Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 5000, "Property maps");
-    private static final Cache<String, Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 1000, "ObjectIds");
-    private static final Cache<Pair<String, GUID>, PropertyDescriptor> propDescCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 10000, CacheManager.UNLIMITED, "Property descriptors"), new CacheLoader<>()
+    private static final Cache<String, Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 10000, "Property maps");
+    private static final Cache<String, Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "ObjectIds");
+    private static final Cache<Pair<String, GUID>, PropertyDescriptor> propDescCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 40000, CacheManager.UNLIMITED, "Property descriptors"), new CacheLoader<>()
     {
         @Override
         public PropertyDescriptor load(@NotNull Pair<String, GUID> key, @Nullable Object argument)
@@ -174,13 +174,15 @@ public class OntologyManager
     }
 
     private static final BlockingCache<Integer, DomainDescriptor> domainDescByIDCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(),2000, CacheManager.UNLIMITED,"Domain descriptors by ID"), new DomainDescriptorLoader());
-    private static final BlockingCache<Pair<String, GUID>, List<Pair<String, Boolean>>> domainPropertiesCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain properties"), new CacheLoader<>()
+    private static final BlockingCache<Pair<String, GUID>, List<Pair<String, Boolean>>> domainPropertiesCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 5000, CacheManager.UNLIMITED, "Domain properties"), new CacheLoader<>()
     {
         @Override
         public List<Pair<String, Boolean>> load(@NotNull Pair<String, GUID> key, @Nullable Object argument)
         {
             String typeURI = key.first;
             Container c = ContainerManager.getForId(key.second);
+            if (null == c)
+                return Collections.emptyList();
             SQLFragment sql = new SQLFragment(" SELECT PD.*,Required " +
                     " FROM " + getTinfoPropertyDescriptor() + " PD " +
                     "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId) " +
@@ -588,7 +590,7 @@ public class OntologyManager
                                 FieldKey mvName = col.getMvColumnName();
                                 if (mvName != null)
                                 {
-                                    String storageName = table.getColumn(mvName).getSelectName();
+                                    String storageName = table.getColumn(mvName).getMetaDataName();
                                     parameterMap.put(storageName, p.second);
                                 }
                             }
@@ -2555,12 +2557,12 @@ public class OntologyManager
         {
             assertNotNull(getExpSchema());
             assertNotNull(getTinfoPropertyDescriptor());
-            assertNotNull(ExperimentService.get().getTinfoMaterialSource());
+            assertNotNull(ExperimentService.get().getTinfoSampleType());
 
             assertEquals(getTinfoPropertyDescriptor().getColumns("PropertyId,PropertyURI,OntologyURI,RangeURI,Name,Description").size(), 6);
             assertEquals(getTinfoObject().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId").size(), 4);
             assertEquals(getTinfoObjectPropertiesView().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId,Name,PropertyURI,RangeURI,TypeTag,StringValue,DateTimeValue,FloatValue").size(), 11);
-            assertEquals(ExperimentService.get().getTinfoMaterialSource().getColumns("RowId,Name,LSID,MaterialLSIDPrefix,Description,Created,CreatedBy,Modified,ModifiedBy,Container").size(), 10);
+            assertEquals(ExperimentService.get().getTinfoSampleType().getColumns("RowId,Name,LSID,MaterialLSIDPrefix,Description,Created,CreatedBy,Modified,ModifiedBy,Container").size(), 10);
         }
 
 

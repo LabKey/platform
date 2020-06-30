@@ -54,11 +54,13 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         super(experiment);
     }
 
+    @Override
     public Container getContainer()
     {
         return _object.getContainer();
     }
 
+    @Override
     public ActionURL detailsURL()
     {
         return PageFlowUtil.urlProvider(ExperimentUrls.class).getExperimentDetailsURL(getContainer(), this);
@@ -70,11 +72,13 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.RunGroups.name(), FieldKey.fromParts(ExpExperimentTable.Column.RowId.name()), getRowId());
     }
 
+    @Override
     public int getRowId()
     {
         return _object.getRowId();
     }
 
+    @Override
     public List<ExpRunImpl> getRuns()
     {
         String sql = "SELECT ER.* FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
@@ -85,6 +89,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         return ExpRunImpl.fromRuns(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql, getLSID()).getArrayList(ExperimentRun.class));
     }
 
+    @Override
     public List<ExpRunImpl> getRuns(@Nullable ExpProtocol parentProtocol, ExpProtocol childProtocol)
     {
         SQLFragment sql = new SQLFragment(" SELECT ER.* "
@@ -107,6 +112,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         return ExpRunImpl.fromRuns(new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
+    @Override
     public ExpProtocol getBatchProtocol()
     {
         if (_object.getBatchProtocolId() == null)
@@ -116,18 +122,21 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         return ExperimentService.get().getExpProtocol(_object.getBatchProtocolId().intValue());
     }
 
+    @Override
     public void setBatchProtocol(ExpProtocol protocol)
     {
         ensureUnlocked();
         _object.setBatchProtocolId(protocol == null ? null : protocol.getRowId());
     }
 
+    @Override
     public List<ExpProtocolImpl> getAllProtocols()
     {
         String sql = "SELECT p.* FROM " + ExperimentServiceImpl.get().getTinfoProtocol() + " p, " + ExperimentServiceImpl.get().getTinfoExperimentRun() + " r WHERE p.LSID = r.ProtocolLSID AND r.RowId IN (SELECT ExperimentRunId FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " WHERE ExperimentId = ?)";
         return ExpProtocolImpl.fromProtocols(new SqlSelector(ExperimentServiceImpl.get().getSchema(), sql, getRowId()).getArrayList(Protocol.class));
     }
 
+    @Override
     public void removeRun(User user, ExpRun run)
     {
         SQLFragment sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoRunList() +
@@ -156,6 +165,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         }
     }
 
+    @Override
     public void addRuns(User user, ExpRun... newRuns)
     {
         try (DbScope.Transaction transaction = ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction())
@@ -212,11 +222,13 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         }
     }
 
+    @Override
     public void save(User user)
     {
         save(user, ExperimentServiceImpl.get().getTinfoExperiment(), false);
     }
 
+    @Override
     public void delete(User user)
     {
         ExperimentServiceImpl.get().deleteExpExperimentByRowId(getContainer(), user, getRowId());
@@ -228,22 +240,26 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         _object.setHidden(hidden);
     }
     
+    @Override
     public boolean isHidden()
     {
         return _object.isHidden();
     }
 
+    @Override
     public void setContainer(Container container)
     {
         ensureUnlocked();
         _object.setContainer(container);
     }
 
+    @Override
     public String getComments()
     {
         return _object.getComments();
     }
 
+    @Override
     public void setComments(String comments)
     {
         ensureUnlocked();

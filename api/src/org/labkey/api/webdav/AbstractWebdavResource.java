@@ -116,6 +116,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return this.getFile() != null && this.getFile().mkdirs();
     }
 
+    @Override
     public WebdavResource parent()
     {
         Path p = getPath();
@@ -125,16 +126,19 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return WebdavService.get().lookup(parent);
     }
 
+    @Override
     public WebdavResource find(String name)
     {
         return null;
     }
 
+    @Override
     public Collection<? extends WebdavResource> list()
     {
         return Collections.emptyList();
     }
 
+    @Override
     public long getCreated()
     {
         return getLastModified();
@@ -147,6 +151,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return data != null && data.size() == 1 ? data.get(0).getCreatedBy() : null;
     }
 
+    @Override
     public String getDescription()
     {
         List<ExpData> data = getExpData();
@@ -161,6 +166,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
 
 
+    @Override
     public void setLastIndexed(long indexed, long modified)
     {
         SearchService ss = SearchService.get();
@@ -168,6 +174,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
             ss.setLastIndexedForPath(getPath(), indexed, modified);
     }
 
+    @Override
     public String getContentType()
     {
         if (isCollection())
@@ -175,11 +182,13 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return PageFlowUtil.getContentTypeFor(getName());
     }
 
+    @Override
     public String getAbsolutePath(User user)
     {
         return null;
     }
 
+    @Override
     @NotNull
     public String getHref(ViewContext context)
     {
@@ -193,6 +202,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
 
 
+    @Override
     @NotNull
     public String getLocalHref(ViewContext context)
     {
@@ -204,6 +214,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
 
 
+    @Override
     public String getExecuteHref(ViewContext context)
     {
         String path = parent().getExecuteHref(context);
@@ -212,6 +223,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
 
 
+    @Override
     public String getIconHref()
     {
         if (isCollection())
@@ -242,6 +254,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return null;
     }
 
+    @Override
     public String getETag(boolean force)
     {
         long len = 0;
@@ -261,6 +274,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
 
 
+    @Override
     public String getETag()
     {
         return getETag(false);
@@ -273,6 +287,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
 
 
+    @Override
     public Map<String, ?> getProperties()
     {
         if (null == _properties)
@@ -282,6 +297,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return ret;
     }
 
+    @Override
     public Map<String, Object> getMutableProperties()
     {
         if (null == _properties)
@@ -289,6 +305,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return _properties;
     }
     
+    @Override
     public InputStream getInputStream() throws IOException
     {
         return getInputStream(null);
@@ -316,12 +333,14 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
 
 
+    @Override
     public boolean canList(User user, boolean forRead)
     {
         return canRead(user, forRead);
     }
 
 
+    @Override
     public boolean canRead(User user, boolean forRead)
     {
         if ("/".equals(getPath()))
@@ -343,6 +362,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
 
 
+    @Override
     public boolean canWrite(User user, boolean forWrite)
     {
         return hasAccess(user) && !user.isGuest() &&
@@ -350,21 +370,25 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
 
 
+    @Override
     public boolean canCreate(User user, boolean forCreate)
     {
         return hasAccess(user) && !user.isGuest() && getPermissions(user).contains(InsertPermission.class);
     }
 
+    @Override
     public boolean canCreateCollection(User user, boolean forCreate)
     {
         return canCreate(user, forCreate);
     }
 
+    @Override
     public boolean canDelete(User user, boolean forDelete)
     {
         return canDelete(user,forDelete,null);
     }
 
+    @Override
     public boolean canDelete(User user, boolean forDelete, /* OUT */ @Nullable List<String> message)
     {
         if (user.isGuest() || !hasAccess(user))
@@ -374,6 +398,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
 
 
+    @Override
     public boolean canRename(User user, boolean forRename)
     {
         return hasAccess(user) && !user.isGuest() && canCreate(user, forRename) && canDelete(user, forRename, null);
@@ -386,23 +411,27 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
 
 
+    @Override
     public boolean delete(User user) throws IOException
     {
         assert null == user || canDelete(user, true, null);
         return false;
     }
     
+    @Override
     public File getFile()
     {
         return null;
     }
 
+    @Override
     public long copyFrom(User user, WebdavResource r) throws IOException, DavException
     {
         return copyFrom(user, r.getFileStream(user));
     }
 
 
+    @Override
     public void moveFrom(User user, WebdavResource src) throws IOException, DavException
     {
         copyFrom(user, src);
@@ -410,6 +439,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
 
 
+    @Override
     @NotNull
     public Collection<WebdavResolver.History> getHistory()
     {
@@ -417,6 +447,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
     
 
+    @Override
     @NotNull
     public Collection<NavTree> getActions(User user)
     {
@@ -474,6 +505,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return s.toString();
     }
 
+    @Override
     public FileStream getFileStream(User user) throws IOException
     {
         return new _FileStream(user);
@@ -489,6 +521,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
             _user = user;
         }
 
+        @Override
         public long getSize()
         {
             try
@@ -501,6 +534,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
             }
         }
 
+        @Override
         public InputStream openInputStream() throws IOException
         {
             if (null == _is)
@@ -508,6 +542,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
             return _is;
         }
 
+        @Override
         public void closeInputStream()
         {
             IOUtils.closeQuietly(_is);
@@ -528,16 +563,27 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     //
     // SearchService
     //
+    @Override
     public String getDocumentId()
     {
-        return "dav:" + getPath().toString();
+        if (null == parent())
+            return "dav:" + getPath();
+        StringBuilder docid = new StringBuilder(parent().getDocumentId());
+        if (docid.charAt(docid.length()-1)!='/')
+            docid.append("/");
+        docid.append(getName());
+        if (isCollection())
+            docid.append('/');
+        return docid.toString();
     }
 
+    @Override
     public String getContainerId()
     {
         return _containerId;
     }
 
+    @Override
     public boolean shouldIndex()
     {
         // TODO would be nice to call DavController.isTempFile()
@@ -551,11 +597,13 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return true;
     }
 
+    @Override
     public Map<String, String> getCustomProperties(User user)
     {
         return Collections.emptyMap();
     }
 
+    @Override
     public void notify(ContainerUser context, String message)
     {
     }

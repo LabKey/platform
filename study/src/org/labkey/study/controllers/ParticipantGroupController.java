@@ -39,6 +39,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -74,6 +75,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.util.HttpUtil.Method.DELETE;
+import static org.labkey.api.util.HttpUtil.Method.POST;
 
 /**
  * User: klum
@@ -289,6 +293,7 @@ public class ParticipantGroupController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class GetParticipantGroupsWithLiveFilters extends ReadOnlyApiAction
     {
+        @Override
         public ApiResponse execute(Object form, BindException errors)
         {
             Container c = getContainer();
@@ -526,8 +531,15 @@ public class ParticipantGroupController extends BaseStudyController
                         }
                         else if (form.getGroupId() != -1)
                         {
-                            // NOTE: this can expose the participant group information to a user that can't otherwise see it via the standard UI in the study module
+                            // NOTE this method reads from the cache (faster), but will not find personal groups that have been shared, for instance
+
                             ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getGroupId());
+                            if (null == group)
+                            {
+                                // NOTE: This can expose the participant group information to a user that can't otherwise see it via the standard UI in the study module.
+                                // NOTE: This is intentional as 'personal' groups are not secured and can be shared.
+                                group = ParticipantGroupManager.getInstance().getParticipantGroupFromGroupRowId(getContainer(), getUser(), form.getGroupId());
+                            }
                             if (group != null)
                             {
                                 ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
@@ -1308,51 +1320,61 @@ public class ParticipantGroupController extends BaseStudyController
             _categoryType = categoryType;
         }
 
+        @Override
         public String getCategoryLabel()
         {
             return _categoryLabel;
         }
 
+        @Override
         public void setCategoryLabel(String categoryLabel)
         {
             _categoryLabel = categoryLabel;
         }
 
+        @Override
         public String[] getParticipantIds()
         {
             return _participantIds;
         }
 
+        @Override
         public void setParticipantIds(String[] participantIds)
         {
             _participantIds = participantIds;
         }
 
+        @Override
         public String getDescription()
         {
             return _description;
         }
 
+        @Override
         public void setDescription(String description)
         {
             _description = description;
         }
 
+        @Override
         public String getFilters()
         {
             return _filters;
         }
 
+        @Override
         public void setFilters(String filters)
         {
             _filters = filters;
         }
 
+        @Override
         public void setCategoryId(int id)
         {
             _categoryId = id;
         }
 
+        @Override
         public int getCategoryId(){
             return _categoryId;
         }
@@ -1384,6 +1406,7 @@ public class ParticipantGroupController extends BaseStudyController
     // CONSIDER: Merge with UpdateParticipantGroupAction
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
+    @MethodsAllowed({POST, DELETE})
     public class SessionParticipantGroupAction extends MutatingApiAction<UpdateParticipantGroupForm>
     {
         @Override

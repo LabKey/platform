@@ -130,6 +130,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String ASSAY_SPECIMEN_TABLE_NAME = "AssaySpecimen";
     public static final String ASSAY_SPECIMEN_VISIT_TABLE_NAME = "AssaySpecimenVisit";
     public static final String VISUALIZATION_VISIT_TAG_TABLE_NAME = "VisualizationVisitTag";
+    public static final String VISIT_MAP_TABLE_NAME = "VisitMap";
 
     // extensible study data tables
     public static final String STUDY_DESIGN_SCHEMA_NAME = "studydesign";
@@ -319,6 +320,7 @@ public class StudyQuerySchema extends UserSchema
                 names.add(SPECIMEN_DERIVATIVE_TABLE_NAME);
                 names.add(SPECIMEN_PRIMARY_TYPE_TABLE_NAME);
                 names.add("SpecimenComment");
+                names.add(VISIT_MAP_TABLE_NAME);
 
                 names.add("DataSets");
                 names.add(DatasetColumnsTable.NAME);
@@ -720,28 +722,28 @@ public class StudyQuerySchema extends UserSchema
             {
                 domain = domainKind.ensureDomain(getContainer(), getUser(), PRODUCT_TABLE_NAME);
             }
-            return StudyProductTable.create(domain, this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : cf);
+            return StudyProductTable.create(domain, this, isDataspaceProject() ? ContainerFilter.Type.Project.create(this) : cf);
         }
         if (PRODUCT_ANTIGEN_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyProductAntigenDomainKind domainKind = new StudyProductAntigenDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PRODUCT_ANTIGEN_TABLE_NAME);
 
-            return StudyProductAntigenTable.create(domain, this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : cf);
+            return StudyProductAntigenTable.create(domain, this, isDataspaceProject() ? ContainerFilter.Type.Project.create(this) : cf);
         }
         if (TREATMENT_PRODUCT_MAP_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyTreatmentProductDomainKind domainKind = new StudyTreatmentProductDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), TREATMENT_PRODUCT_MAP_TABLE_NAME);
 
-            return StudyTreatmentProductTable.create(domain, this, isDataspace() ? new ContainerFilter.AllInProject(getUser()) : cf);
+            return StudyTreatmentProductTable.create(domain, this, isDataspace() ? ContainerFilter.Type.Project.create(this) : cf);
         }
         if (TREATMENT_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyTreatmentDomainKind domainKind = new StudyTreatmentDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), TREATMENT_TABLE_NAME);
 
-            return StudyTreatmentTable.create(domain, this, isDataspace() ? new ContainerFilter.AllInProject(getUser()) : cf);
+            return StudyTreatmentTable.create(domain, this, isDataspace() ? ContainerFilter.Type.Project.create(this) : cf);
         }
         if (TREATMENT_VISIT_MAP_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -769,7 +771,7 @@ public class StudyQuerySchema extends UserSchema
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PERSONNEL_TABLE_NAME);
 
             // TODO ContainerFilter
-            return StudyPersonnelTable.create(domain, this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+            return StudyPersonnelTable.create(domain, this, isDataspaceProject() ? ContainerFilter.Type.Project.create(this) : null);
         }
         if (OBJECTIVE_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -785,11 +787,15 @@ public class StudyQuerySchema extends UserSchema
         }
         if (VISIT_TAG_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new VisitTagTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : cf);
+            return new VisitTagTable(this, isDataspaceProject() ? ContainerFilter.Type.Project.create(this) : cf);
         }
         if (VISIT_TAG_MAP_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new VisitTagMapTable(this, cf);
+        }
+        if (VISIT_MAP_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return new VisitMapTable(this, cf);
         }
         if (name.startsWith(VISUALIZATION_VISIT_TAG_TABLE_NAME))
         {
@@ -998,6 +1004,7 @@ public class StudyQuerySchema extends UserSchema
         return _mustCheckPermissions;
     }
 
+    @Override
     @Nullable
     public String getDomainURI(String queryName)
     {
@@ -1064,9 +1071,10 @@ public class StudyQuerySchema extends UserSchema
     }
 
     /** for tables that support container filter, the default container filter in this study */
+    @Override
     public ContainerFilter getDefaultContainerFilter()
     {
-        return ContainerFilter.CURRENT;
+        return ContainerFilter.current(getContainer());
     }
 
     protected void initSessionParticipantGroup(StudyImpl study, User user)

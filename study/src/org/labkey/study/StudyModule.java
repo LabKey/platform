@@ -51,6 +51,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.qc.export.QCStateImportExportHelper;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
@@ -127,6 +128,7 @@ import org.labkey.study.pipeline.SampleMindedTransform;
 import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.qc.StudyQCImportExportHelper;
+import org.labkey.study.qc.StudyQCStateHandler;
 import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudySchemaProvider;
@@ -136,7 +138,6 @@ import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
 import org.labkey.study.reports.AssayProgressReport;
 import org.labkey.study.reports.DatasetChartReport;
-import org.labkey.study.reports.ExportExcelReport;
 import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ParticipantReportDescriptor;
@@ -150,7 +151,7 @@ import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
 import org.labkey.study.specimen.SpecimenCommentAuditProvider;
-import org.labkey.study.specimen.SpecimenSampleSetDomainKind;
+import org.labkey.study.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.study.specimen.SpecimenSearchWebPart;
 import org.labkey.study.specimen.SpecimenWebPart;
 import org.labkey.study.specimen.settings.RepositorySettings;
@@ -256,7 +257,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new VialDomainKind());
         PropertyService.get().registerDomainKind(new SpecimenEventDomainKind());
         PropertyService.get().registerDomainKind(new StudyPersonnelDomainKind());
-        PropertyService.get().registerDomainKind(new SpecimenSampleSetDomainKind());
+        PropertyService.get().registerDomainKind(new SpecimenSampleTypeDomainKind());
 
         // study design domains
         PropertyService.get().registerDomainKind(new StudyProductDomainKind());
@@ -358,7 +359,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ReportService.get().registerReport(new StudyQueryReport());
         ReportService.get().registerReport(new DatasetChartReport());
         ReportService.get().registerReport(new ExternalReport());
-        ReportService.get().registerReport(new ExportExcelReport());
         ReportService.get().registerReport(new StudyChartQueryReport());
         ReportService.get().registerReport(new CrosstabReport());
         ReportService.get().registerReport(new StudyCrosstabReport());
@@ -368,6 +368,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         ReportService.get().registerDescriptor(new CrosstabReportDescriptor());
         ReportService.get().registerDescriptor(new ParticipantReportDescriptor());
+
+        QCStateManager.getInstance().registerQCHandler(new StudyQCStateHandler());
 
         ReportService.get().addUIProvider(new StudyReportUIProvider());
         ReportService.get().addGlobalItemFilterType(QueryReport.TYPE);
@@ -759,7 +761,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         Container c = context.getContainer();
         Map<String, String> moduleProperties = getDefaultPageContextJson(c);
-        Study study = StudyManager.getInstance().getStudy(c);
+        StudyImpl study = StudyManager.getInstance().getStudy(c);
         StudyService studyService = StudyService.get();
         JSONObject ret = new JSONObject(moduleProperties);
 

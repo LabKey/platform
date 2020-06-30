@@ -239,6 +239,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
         return super.isValid(table, query, type);
     }
 
+    @Override
     protected Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMatchingColumns(Map<QueryDefinition, TableInfo> queries, ColumnMatchType type)
     {
         Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> matches = super.getMatchingColumns(queries, type);

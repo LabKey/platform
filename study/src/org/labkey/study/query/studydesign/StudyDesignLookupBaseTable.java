@@ -54,7 +54,7 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
     // Note: this has a different default container filter than BaseStudyTable
     public StudyDesignLookupBaseTable(StudyQuerySchema schema, TableInfo tableInfo, ContainerFilter cf)
     {
-        super(schema, tableInfo, schema.isDataspaceProject() ? new ContainerFilter.Project(schema.getUser()) : cf);
+        super(schema, tableInfo, schema.isDataspaceProject() ? ContainerFilter.Type.Project.create(schema) : cf);
         setDescription("Contains lookup values for dropdown options in the study designer.");
 
         for (ColumnInfo col : getRealTable().getColumns())

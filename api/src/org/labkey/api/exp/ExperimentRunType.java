@@ -16,11 +16,22 @@
 
 package org.labkey.api.exp;
 
-import org.labkey.api.data.*;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.query.ExpProtocolApplicationTable;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.DataView;
@@ -37,20 +48,30 @@ import java.util.Set;
  * User: jeckels
  * Date: Sep 25, 2006
  */
-public abstract class ExperimentRunType implements Comparable<ExperimentRunType>, Handler<ExpProtocol>
+public abstract class ExperimentRunType implements Comparable<ExperimentRunType>, ExperimentProtocolHandler
 {
-    private final String _description;
-    private final String _schemaName;
-    private final String _tableName;
-    public static final ExperimentRunType ALL_RUNS_TYPE = new ExperimentRunType("All Runs", ExpSchema.SCHEMA_NAME, ExpSchema.TableType.Runs.toString())
+    public static final ExperimentRunType ALL_RUNS_TYPE = new ExperimentRunType("All Runs", ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Runs.toString())
     {
-        public Priority getPriority(ExpProtocol object)
+        @Override
+        public Priority getPriority(ExpProtocol protocol)
         {
-            return Priority.LOW;
+            if (protocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun)
+                return Priority.LOW;
+
+            return null;
         }
     };
 
+    private final String _description;
+    private final SchemaKey _schemaName;
+    private final String _tableName;
+
     public ExperimentRunType(String description, String schemaName, String tableName)
+    {
+        this(description, SchemaKey.fromString(schemaName), tableName);
+    }
+
+    public ExperimentRunType(String description, SchemaKey schemaName, String tableName)
     {
         _description = description;
         _schemaName = schemaName;
@@ -62,7 +83,7 @@ public abstract class ExperimentRunType implements Comparable<ExperimentRunType>
         return _description;
     }
 
-    public String getSchemaName()
+    public SchemaKey getSchemaName()
     {
         return _schemaName;
     }
@@ -70,6 +91,36 @@ public abstract class ExperimentRunType implements Comparable<ExperimentRunType>
     public String getTableName()
     {
         return _tableName;
+    }
+
+    /**
+     * Reference to the row that represents the protocol for this run type.
+     */
+    @Override
+    @Nullable
+    public QueryRowReference getQueryRowReference(ExpProtocol protocol)
+    {
+        return new QueryRowReference(protocol.getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Protocols.name(), ExpProtocolApplicationTable.Column.RowId, protocol.getRowId());
+    }
+
+    /**
+     * Reference to the row that represents the run of for this run type.
+     */
+    @Override
+    @Nullable
+    public QueryRowReference getQueryRowReference(ExpProtocol protocol, ExpRun run)
+    {
+        return new QueryRowReference(run.getContainer(), SchemaKey.fromParts(_schemaName), _tableName, ExpRunTable.Column.RowId, run.getRowId());
+    }
+
+    /**
+     * Reference to the row that represents the protocol application for this run type.
+     */
+    @Override
+    @Nullable
+    public QueryRowReference getQueryRowReference(ExpProtocol protocol, ExpProtocolApplication app)
+    {
+        return new QueryRowReference(app.getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.ProtocolApplications.name(), ExpProtocolApplicationTable.Column.RowId, app.getRowId());
     }
 
     public long getRunCount(User user, Container c)
@@ -87,6 +138,7 @@ public abstract class ExperimentRunType implements Comparable<ExperimentRunType>
         return new TableSelector(table).getRowCount();
     }
 
+    @Override
     public int compareTo(ExperimentRunType o)
     {
         return _description.compareTo(o.getDescription());

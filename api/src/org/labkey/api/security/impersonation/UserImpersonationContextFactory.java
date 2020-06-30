@@ -77,6 +77,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
     }
 
 
+    @Override
     public User getAdminUser()
     {
         return UserManager.getUser(_adminUserId);
@@ -104,7 +105,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
 
         // setAuthenticatedUser clears the session; caller will add the factory (including the admin's session attributes)
         User impersonatedUser = UserManager.getUser(_impersonatedUserId);
-        SecurityManager.setAuthenticatedUser(request, impersonatedUser, false);
+        SecurityManager.setAuthenticatedUser(request, null, impersonatedUser, false);
         User adminUser = getAdminUser();
 
         UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(context.getContainer().getId(),

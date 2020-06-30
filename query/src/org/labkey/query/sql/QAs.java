@@ -35,6 +35,7 @@ public class QAs extends QNode implements SupportsAnnotations
         return (QIdentifier) getLastChild();
     }
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         getFirstChild().appendSource(builder);

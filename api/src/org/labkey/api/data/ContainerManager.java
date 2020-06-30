@@ -1095,11 +1095,13 @@ public class ContainerManager
             _c = c;
         }
 
+        @Override
         public String getEntityId()
         {
             return _c.getId();
         }
 
+        @Override
         public String getContainerId()
         {
             return _c.getId();
@@ -2246,6 +2248,12 @@ public class ContainerManager
     @Nullable
     private static Container resolveContainerPathAlias(String path, boolean top)
     {
+        // Strip any trailing slashes
+        while (path.endsWith("/"))
+        {
+            path = path.substring(0, path.length() - 1);
+        }
+
         // Simple case -- resolve directly (sans alias)
         Container aliased = getForPath(path);
         if (aliased != null)
@@ -2585,11 +2593,13 @@ public class ContainerManager
 
 
         // ContainerListener
+        @Override
         public void propertyChange(PropertyChangeEvent evt)
         {
         }
 
 
+        @Override
         public void containerCreated(Container c, User user)
         {
             if (null == _testRoot || !c.getParsedPath().startsWith(_testRoot.getParsedPath()))
@@ -2598,6 +2608,7 @@ public class ContainerManager
         }
 
 
+        @Override
         public void containerDeleted(Container c, User user)
         {
             _containers.remove(c.getParsedPath());
@@ -2625,21 +2636,25 @@ public class ContainerManager
 
     public static class ContainerFactory implements ObjectFactory<Container>
     {
+        @Override
         public Container fromMap(Map<String, ?> m)
         {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public Container fromMap(Container bean, Map<String, ?> m)
         {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public Map<String, Object> toMap(Container bean, Map<String, Object> m)
         {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public Container handle(ResultSet rs) throws SQLException
         {
             String id;

@@ -45,6 +45,7 @@ public class TemplateGridCell extends FocusPanel
         _activeType = activeType;
         addMouseOverHandler(new MouseOverHandler()
         {
+            @Override
             public void onMouseOver(MouseOverEvent event)
             {
                 GWTWellGroup activeGroup = getActiveGroup();
@@ -57,6 +58,7 @@ public class TemplateGridCell extends FocusPanel
 
         addMouseOutHandler(new MouseOutHandler()
         {
+            @Override
             public void onMouseOut(MouseOutEvent event)
             {
                 _view.setStatus("");
@@ -66,6 +68,7 @@ public class TemplateGridCell extends FocusPanel
 
         addMouseDownHandler(new MouseDownHandler()
         {
+            @Override
             public void onMouseDown(MouseDownEvent event)
             {
                 _view.onMouseDownCell((TemplateGridCell) event.getSource());
@@ -74,12 +77,14 @@ public class TemplateGridCell extends FocusPanel
 
         _view.addGroupListener(new GroupChangeListenerAdapter()
         {
+            @Override
             public void activeGroupTypeChanged(String type)
             {
                 _activeType = type;
                 redraw();
             }
 
+            @Override
             public void groupRemoved(GWTWellGroup group)
             {
                 if (_groups.contains(group))

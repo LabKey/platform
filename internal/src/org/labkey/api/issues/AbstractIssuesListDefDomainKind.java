@@ -16,8 +16,9 @@
 package org.labkey.api.issues;
 
 import com.google.common.collect.Sets;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -36,7 +37,7 @@ import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
-import org.labkey.api.exp.property.BaseAbstractDomainKind;
+import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -48,6 +49,7 @@ import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.Pair;
@@ -68,7 +70,7 @@ import java.util.stream.Collectors;
 /**
  * Created by davebradlee on 8/3/16.
  */
-public abstract class AbstractIssuesListDefDomainKind extends BaseAbstractDomainKind
+public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind<IssuesDomainKindProperties>
 {
     protected static String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
     protected static String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
@@ -268,22 +270,43 @@ public abstract class AbstractIssuesListDefDomainKind extends BaseAbstractDomain
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Class <? extends IssuesDomainKindProperties> getTypeClass()
     {
-        String name = domain.getName();
-        String providerName = arguments.containsKey("providerName") ? (String)arguments.get("providerName") : null;
-        String singularNoun = arguments.containsKey("singularNoun") ? (String)arguments.get("singularNoun") : getDefaultSingularName();
-        String pluralNoun = arguments.containsKey("pluralNoun") ? (String)arguments.get("pluralNoun") : getDefaultPluralName();
+        return IssuesDomainKindProperties.class;
+    }
 
-        if (name == null)
-            throw new IllegalArgumentException("Issue name must not be null");
+    @Override
+    public @Nullable IssuesDomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
+    {
+        return IssuesListDefService.get().getIssueDomainKindProperties(container, domain != null ? domain.getName() : null);
+    }
 
-        if (providerName == null)
-            providerName = getKindName();
+    @Override
+    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                                     @Nullable IssuesDomainKindProperties options, Container container, User user, boolean includeWarnings)
+    {
+        if (options != null && StringUtils.isBlank(options.getIssueDefName()))
+            return new ValidationException("Issue name must not be null.");
 
+        return IssuesListDefService.get().updateIssueDefinition(container, user, original, update, options);
+    }
+
+    @Override
+    public Domain createDomain(GWTDomain domain, IssuesDomainKindProperties arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    {
         int issueDefId;
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(_lock))
         {
+            String name = domain.getName();
+            String providerName = getKindName();
+            String singularNoun = (arguments != null && arguments.getSingularItemName() != null) ? arguments.getSingularItemName() : getDefaultSingularName();
+            String pluralNoun = (arguments != null && arguments.getPluralItemName() != null) ? arguments.getPluralItemName() : getDefaultPluralName();
+
+            if (StringUtils.isBlank(name))
+                throw new IllegalArgumentException("Issue name must not be null.");
+
+            IssuesListDefService.get().saveIssueProperties(container, arguments,  IssuesListDefService.get().getNameFromDomain(domain));
+
             issueDefId = IssuesListDefService.get().createIssueListDef(container, user, providerName, name, singularNoun, pluralNoun);
 
             List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();

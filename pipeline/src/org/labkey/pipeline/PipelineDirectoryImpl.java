@@ -53,16 +53,19 @@ public class PipelineDirectoryImpl implements PipelineDirectory
         _actions = new ArrayList<>();
     }
 
+    @Override
     public ActionURL cloneHref()
     {
         return _href.clone();
     }
 
+    @Override
     public List<PipelineAction> getActions()
     {
         return _actions;
     }
 
+    @Override
     public void addAction(PipelineAction action)
     {
         _actions.add(action);
@@ -95,6 +98,7 @@ public class PipelineDirectoryImpl implements PipelineDirectory
         }
     }
 
+    @Override
     public boolean fileExists(File f)
     {
         ensureFiles();
@@ -154,6 +158,7 @@ public class PipelineDirectoryImpl implements PipelineDirectory
         return listFiles;
     }
 
+    @Override
     public File[] listFiles(FileFilter filter)
     {
         ensureFiles();
@@ -194,6 +199,7 @@ public class PipelineDirectoryImpl implements PipelineDirectory
         });
     }
 
+    @Override
     public String getPathParameter()
     {
         return _href.getParameter("path");
@@ -218,11 +224,13 @@ public class PipelineDirectoryImpl implements PipelineDirectory
             super(f.getPath());
         }
 
+        @Override
         public boolean isFile()
         {
             return !isDirectory();
         }
 
+        @Override
         public boolean isDirectory()
         {
             if (_dir == null)
@@ -232,6 +240,7 @@ public class PipelineDirectoryImpl implements PipelineDirectory
             return _dir.booleanValue();
         }
 
+        @Override
         public FileCached getParentFile()
         {
             if (_parent == null)
@@ -242,6 +251,7 @@ public class PipelineDirectoryImpl implements PipelineDirectory
             return _parent == NULL ? null : _parent;
         }
 
+        @Override
         public File[] listFiles()
         {
             if (_children == null)

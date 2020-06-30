@@ -17,6 +17,7 @@
 package org.labkey.api.assay;
 
 import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ColumnInfo;
@@ -40,8 +41,9 @@ public class AssayDataCollectorDisplayColumn extends SimpleDisplayColumn
     {
         _form = form;
         setCaption("Run Data");
-        _col = new BaseColumnInfo("Run Data");
-        ((BaseColumnInfo)_col).setInputType("file");
+        var col  = new BaseColumnInfo("Run Data");
+        col.setInputType("file");
+        _col = col;
     }
 
     @Override
@@ -51,16 +53,19 @@ public class AssayDataCollectorDisplayColumn extends SimpleDisplayColumn
         out.write(" *");
     }
 
+    @Override
     public boolean isEditable()
     {
         return true;
     }
     
+    @Override
     public ColumnInfo getColumnInfo()
     {
         return _col;
     }
 
+    @Override
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
         HttpView descriptionView = _form.getProvider().getDataDescriptionView(_form);

@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TidyUtil;
 import org.labkey.api.view.template.ClientDependency;
@@ -47,7 +48,7 @@ public class HtmlRenderer implements WikiRenderer
     private final Map<String, String> _nameTitleMap;
     private final Map<String, Attachment> _attachments;
 
-    private static Map<String, SubstitutionHandler> _substitutionHandlers = new HashMap<>();
+    private static final Map<String, SubstitutionHandler> _substitutionHandlers = new HashMap<>();
 
     static
     {
@@ -74,7 +75,7 @@ public class HtmlRenderer implements WikiRenderer
     {
         LinkedList<String> errors = new LinkedList<>();
         if (text == null)
-            return new FormattedHtml("");
+            return new FormattedHtml(HtmlString.EMPTY_STRING);
 
         // Remove degenerate comments (e.g. "<!-->") as Tidy does not handle them properly
         text = text.replaceAll("<!--*>|<!>", "");
@@ -83,7 +84,7 @@ public class HtmlRenderer implements WikiRenderer
         boolean volatilePage = formattedHtml.isVolatile();
         LinkedHashSet<ClientDependency> cds = new LinkedHashSet<>(formattedHtml.getClientDependencies());
 
-        Document doc = TidyUtil.convertHtmlToDocument("<html><body>" + StringUtils.trimToEmpty(formattedHtml.getHtml()) + "</body></html>", false, errors);
+        Document doc = TidyUtil.convertHtmlToDocument("<html><body>" + StringUtils.trimToEmpty(formattedHtml.getHtml().toString()) + "</body></html>", false, errors);
         if (!errors.isEmpty() || doc == null)
         {
             StringBuilder innerHtml = new StringBuilder("<div class=\"labkey-error\"><b>An exception occurred while generating the HTML.  Please correct this content.</b></div><br>The error message was: ");
@@ -92,7 +93,7 @@ public class HtmlRenderer implements WikiRenderer
                 for (String error : errors)
                     innerHtml.append(PageFlowUtil.filter(error)).append("<hr>");
             }
-            return new FormattedHtml(innerHtml.toString(), false, cds);
+            return new FormattedHtml(HtmlString.unsafe(innerHtml.toString()), false, cds);
         }
 
         Set<String> wikiDependencies = new HashSet<>();
@@ -211,14 +212,14 @@ public class HtmlRenderer implements WikiRenderer
     private FormattedHtml handleLabKeySubstitutions(String text)
     {
         if (text == null)
-            return new FormattedHtml("");
+            return new FormattedHtml(HtmlString.EMPTY_STRING);
         
         // Find all substitution templates embedded in wiki text that have the form ${labkey.<type>(<any_stream of characters>)}.
         Matcher webPartMatcher = _substitutionPattern.matcher(text);
 
         // If we find none, return immediately
         if (!webPartMatcher.find())
-            return new FormattedHtml(text);
+            return new FormattedHtml(HtmlString.unsafe(text));
 
         List<Definition> definitions = new ArrayList<>(10);
         Map<Definition, List<String>> wikiErrors = new HashMap<>();
@@ -282,9 +283,9 @@ public class HtmlRenderer implements WikiRenderer
             if (null != handler)
                 substitution = handler.getSubstitution(definition.getParams());
             else
-                substitution = new FormattedHtml("<br><font class='error' color='red'>Error: unknown type, \"labkey." + definition.getType() + "\"</font>");
+                substitution = new FormattedHtml(HtmlString.unsafe("<br><font class='error' color='red'>Error: unknown type, \"labkey." + PageFlowUtil.filter(definition.getType()) + "\"</font>"));
 
-            sb.replace(definition.getStart(), definition.getEnd(), substitution.getHtml());
+            sb.replace(definition.getStart(), definition.getEnd(), substitution.getHtml().toString());
 
             if (substitution.isVolatile())
                 volatilePage = true;
@@ -298,11 +299,11 @@ public class HtmlRenderer implements WikiRenderer
                 for (String error : paramErrors)
                     errorHTML = errorHTML.concat("<font class='error' color='red'>Error with parameter " +
                             error + " in " + definition.getType() + "</font><br><br>");
-                sb.insert(definition.getStart() + substitution.getHtml().length(), errorHTML);
+                sb.insert(definition.getStart() + substitution.getHtml().toString().length(), errorHTML);
             }
         }
 
-        return new FormattedHtml(sb.toString(), volatilePage, cds);
+        return new FormattedHtml(HtmlString.unsafe(sb.toString()), volatilePage, cds);
     }
 
 

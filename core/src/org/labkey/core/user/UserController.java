@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
@@ -379,9 +380,8 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -482,11 +482,11 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
             String title = _active ? "Reactivate Users" : "Deactivate Users";
-            return root.addChild(title);
+            root.addChild(title);
         }
     }
 
@@ -655,10 +655,10 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
-            return root.addChild("Delete Users");
+            root.addChild("Delete Users");
         }
     }
 
@@ -774,17 +774,17 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (getContainer().isRoot())
             {
                 setHelpTopic(new HelpTopic("manageUsers"));
-                return root.addChild("Site Users");
+                root.addChild("Site Users");
             }
             else
             {
                 setHelpTopic(new HelpTopic("manageProjectMembers"));
-                return root.addChild("Project Users");
+                root.addChild("Project Users");
             }
         }
     }
@@ -869,17 +869,17 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (getContainer().isRoot())
             {
                 root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
-                return root.addChild("Site Users History");
+                root.addChild("Site Users History");
             }
             else
             {
                 root.addChild("Project Users", new UserUrlsImpl().getProjectUsersURL(getContainer()));
-                return root.addChild("Project Users History");
+                root.addChild("Project Users History");
             }
         }
     }
@@ -1078,11 +1078,11 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             addUserDetailsNavTrail(root, _pkVal);
             root.addChild("Update");
-            return root.addChild(UserManager.getEmailForId(_pkVal));
+            root.addChild(UserManager.getEmailForId(_pkVal));
         }
     }
 
@@ -1416,15 +1416,14 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (_showNavTrail)
             {
                 addUserDetailsNavTrail(root, _userId);
                 root.addChild("Permissions");
-                return root.addChild("Role Assignments for User: " + UserManager.getEmailForId(_userId));
+                root.addChild("Role Assignments for User: " + UserManager.getEmailForId(_userId));
             }
-            return null;
         }
     }
 
@@ -1649,9 +1648,9 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(UserManager.getEmailForId(_detailsUserId));
+            root.addChild(UserManager.getEmailForId(_detailsUserId));
         }
     }
 
@@ -2008,11 +2007,11 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             addUserDetailsNavTrail(root, _urlUserId);
             String email = UserManager.getEmailForId(_urlUserId);
-            return root.addChild("Change Email Address" + (null != email ? ": " + email : ""));
+            root.addChild("Change Email Address" + (null != email ? ": " + email : ""));
         }
     }
 
@@ -2455,9 +2454,6 @@ public class UserController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetUsersAction extends ReadOnlyApiAction<GetUsersForm>
     {
-        protected static final String PROP_USER_ID = "userId";
-        protected static final String PROP_USER_NAME = "displayName";
-
         @Override
         public ApiResponse execute(GetUsersForm form, BindException errors)
         {
@@ -2471,7 +2467,6 @@ public class UserController extends SpringActionController
             response.put("container", container.getPath());
 
             Collection<User> users;
-            List<Map<String,Object>> userResponseList = new ArrayList<>();
 
             //if requesting users in a specific group...
             if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
@@ -2554,8 +2549,9 @@ public class UserController extends SpringActionController
 
         protected void setUsersList(GetUsersForm form, Collection<User> users, ApiSimpleResponse response)
         {
+            Container container = getContainer();
             User currentUser = getUser();
-            List<Map<String,Object>> userResponseList = new ArrayList<>();
+            List<JSONObject> userResponseList = new ArrayList<>();
             //trim name filter to empty so we are guaranteed a non-null string
             //and convert to lower-case for the compare below
             String nameFilter = StringUtils.trimToEmpty(form.getName()).toLowerCase();
@@ -2563,22 +2559,20 @@ public class UserController extends SpringActionController
             if (nameFilter.length() > 0)
                 response.put("name", nameFilter);
 
-            boolean includeEmail = SecurityManager.canSeeUserDetails(getContainer(), currentUser);
+            boolean includeEmail = SecurityManager.canSeeUserDetails(container, currentUser);
 
             for (User user : users)
             {
                 //according to the docs, startsWith will return true even if nameFilter is empty string
                 if (user.getEmail().toLowerCase().startsWith(nameFilter) || user.getDisplayName(null).toLowerCase().startsWith(nameFilter))
                 {
-                    Map<String,Object> userInfo = new HashMap<>();
-                    userInfo.put(PROP_USER_ID, user.getUserId());
+                    JSONObject userInfo = User.getUserProps(user, currentUser, container, false);
 
-                    //force sanitize of the display name, even for logged-in users
-                    userInfo.put(PROP_USER_NAME, user.getDisplayName(currentUser));
+                    if (!includeEmail)
+                        userInfo.remove("email");
 
-                    //include email address, if user is allowed to see them
-                    if (includeEmail)
-                        userInfo.put("email", user.getEmail());
+                    // Backwards compatibility. This interface specifies "userId" while User.getUserProps() specifies "id"
+                    userInfo.put("userId", user.getUserId());
 
                     userResponseList.add(userInfo);
                 }

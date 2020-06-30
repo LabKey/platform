@@ -75,6 +75,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
         return DATA_TYPE;
     }
 
+    @Override
     public Priority getPriority(ExpData data)
     {
         Lsid lsid = new Lsid(data.getLSID());
@@ -85,6 +86,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
         return null;
     }
 
+    @Override
     protected boolean allowEmptyData()
     {
         return _allowEmptyData;

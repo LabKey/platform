@@ -24,6 +24,7 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -46,6 +47,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+
+import static org.labkey.api.util.HttpUtil.Method.DELETE;
+import static org.labkey.api.util.HttpUtil.Method.POST;
 
 /**
  * Created by matthew on 5/28/15.
@@ -74,9 +78,8 @@ public class SharedStudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -138,6 +141,7 @@ public class SharedStudyController extends BaseStudyController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
+    @MethodsAllowed({POST, DELETE})
     public class SharedStudyContainerFilterAction extends MutatingApiAction<SharedStudyContainerFilterForm>
     {
         private Study _study = null;
@@ -234,9 +238,9 @@ public class SharedStudyController extends BaseStudyController
             else
             {
                 DataspaceContainerFilter dcf = new DataspaceContainerFilter(getUser(), getContainer());
-                Collection<GUID> c = dcf.getIds(getContainer());
+                Collection<GUID> c = dcf.getIds();
                 if (null != c)
-                    data.setContainers(new ArrayList<>(dcf.getIds(getContainer())));
+                    data.setContainers(new ArrayList<>(dcf.getIds()));
             }
             return success(data);
         }

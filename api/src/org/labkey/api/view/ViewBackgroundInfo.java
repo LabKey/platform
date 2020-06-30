@@ -71,6 +71,7 @@ public class ViewBackgroundInfo implements Serializable, ContainerUser
         return _userId;
     }
 
+    @Override
     public Container getContainer()
     {
         if (_container == null && _containerId != null)
@@ -84,6 +85,7 @@ public class ViewBackgroundInfo implements Serializable, ContainerUser
         _container = container;
     }
 
+    @Override
     public User getUser()
     {
         if (_user == null)

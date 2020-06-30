@@ -28,6 +28,13 @@ import java.util.List;
 public class CoreQCStateHandler implements QCStateHandler<CoreController.ManageQCStatesForm>
 {
     protected List<QCState> _states = null;
+    public static final String HANDLER_NAME = "CoreQCStateHandler";
+
+    @Override
+    public String getHandlerType()
+    {
+        return HANDLER_NAME;
+    }
 
     @Override
     public boolean isBlankQCStatePublic(Container container)

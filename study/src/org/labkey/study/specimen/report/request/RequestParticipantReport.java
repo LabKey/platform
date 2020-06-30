@@ -44,6 +44,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<RequestSummary
         _completeRequestsOnly = parameters.isCompletedRequestsOnly();
     }
 
+    @Override
     public Collection<Row> createRows()
     {
         SpecimenManager.SpecimenTypeLevel level = getTypeLevelEnum();
@@ -72,6 +73,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<RequestSummary
         return rows.values();
     }
 
+    @Override
     protected String[] getCellExcelText(VisitImpl visit, RequestSummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
@@ -88,6 +90,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<RequestSummary
         return new String[] { summaryString.toString() };
     }
 
+    @Override
     protected String getCellHtml(VisitImpl visit, RequestSummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
@@ -108,6 +111,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<RequestSummary
         return buildCellHtml(visit, summary, linkHtml);
     }
 
+    @Override
     protected String getFilterQueryString(VisitImpl visit, RequestSummaryByVisitType summary)
     {
         return super.getFilterQueryString(visit, summary)  + "&" +

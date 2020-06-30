@@ -76,6 +76,7 @@ public class RoleAssignment implements Comparable<RoleAssignment>, Cloneable
         _role = role;
     }
 
+    @Override
     public int compareTo(RoleAssignment other)
     {
         if(null == other)

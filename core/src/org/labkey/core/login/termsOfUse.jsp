@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.login.LoginController.AgreeToTermsBean" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -37,10 +38,10 @@
     AgreeToTermsBean bean = me.getModelBean();
 
     URLHelper returnURL = bean.form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL());
-    String termsHtml = bean.termsOfUseHTML;
+    HtmlString termsHtml = bean.termsOfUseHTML;
 
     // Redirect immediately if terms are blank or null
-    if (StringUtils.isBlank(termsHtml))
+    if (HtmlString.isBlank(termsHtml))
         throw new RedirectException(returnURL);
 
     String formURL = buildURL(LoginController.AgreeToTermsAction.class);
@@ -55,7 +56,7 @@
     <form name="login" method="POST" action="<%=h(formURL)%>" accept-charset="UTF-8"><labkey:csrf/>
         <div class="auth-form-body">
             <div class="auth-header auth-item">Terms of Use</div>
-            <div class="toucontent auth-item" ><%=text(bean.termsOfUseHTML)%></div>
+            <div class="toucontent auth-item" ><%=bean.termsOfUseHTML%></div>
             <div class="auth-item">
                 <input type="checkbox" name="approvedTermsOfUse" id="approvedTermsOfUse" class="auth-item">
                 <label for="approvedTermsOfUse">I agree to these terms</label>

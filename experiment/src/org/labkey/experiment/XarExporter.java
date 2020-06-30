@@ -50,9 +50,10 @@ import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpProtocolInput;
 import org.labkey.api.exp.api.ExpProtocolInputCriteria;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -527,7 +528,7 @@ public class XarExporter
     private void populateMaterial(MaterialBaseType xMaterial, ExpMaterial material) throws ExperimentException
     {
         logProgress("Adding material " + material.getLSID());
-        addSampleSet(material.getCpasType());
+        addSampleType(material.getCpasType());
         xMaterial.setAbout(_relativizedLSIDs.relativize(material.getLSID()));
         xMaterial.setCpasType(material.getCpasType() == null ? ExpMaterial.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(material.getCpasType()));
         xMaterial.setName(material.getName());
@@ -540,20 +541,20 @@ public class XarExporter
         }
     }
 
-    private void addSampleSet(String cpasType)
+    private void addSampleType(String cpasType)
     {
         if (_sampleSetLSIDs.contains(cpasType))
         {
             return;
         }
         _sampleSetLSIDs.add(cpasType);
-        ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(cpasType);
-        addSampleSet(sampleSet);
+        ExpSampleType sampleType = SampleTypeService.get().getSampleType(cpasType);
+        addSampleType(sampleType);
     }
 
-    public void addSampleSet(ExpSampleSet sampleSet)
+    public void addSampleType(ExpSampleType sampleType)
     {
-        if (sampleSet == null)
+        if (sampleType == null)
         {
             return;
         }
@@ -562,30 +563,30 @@ public class XarExporter
             _archive.addNewSampleSets();
         }
         SampleSetType xSampleSet = _archive.getSampleSets().addNewSampleSet();
-        xSampleSet.setAbout(_relativizedLSIDs.relativize(sampleSet.getLSID()));
-        xSampleSet.setMaterialLSIDPrefix(_relativizedLSIDs.relativize(sampleSet.getMaterialLSIDPrefix()));
-        xSampleSet.setName(sampleSet.getName());
-        if (sampleSet.getDescription() != null)
+        xSampleSet.setAbout(_relativizedLSIDs.relativize(sampleType.getLSID()));
+        xSampleSet.setMaterialLSIDPrefix(_relativizedLSIDs.relativize(sampleType.getMaterialLSIDPrefix()));
+        xSampleSet.setName(sampleType.getName());
+        if (sampleType.getDescription() != null)
         {
-            xSampleSet.setDescription(sampleSet.getDescription());
+            xSampleSet.setDescription(sampleType.getDescription());
         }
-        if (!sampleSet.hasNameExpression())
+        if (!sampleType.hasNameExpression())
         {
-            for (DomainProperty keyCol : sampleSet.getIdCols())
+            for (DomainProperty keyCol : sampleType.getIdCols())
             {
                 xSampleSet.addKeyField(getPropertyName(keyCol));
             }
         }
-        if (sampleSet.getParentCol() != null)
+        if (sampleType.getParentCol() != null)
         {
-            xSampleSet.setParentField(getPropertyName(sampleSet.getParentCol()));
+            xSampleSet.setParentField(getPropertyName(sampleType.getParentCol()));
         }
-        if (sampleSet.hasNameExpression())
+        if (sampleType.hasNameExpression())
         {
-            xSampleSet.setNameExpression(sampleSet.getNameExpression());
+            xSampleSet.setNameExpression(sampleType.getNameExpression());
         }
 
-        Domain domain = sampleSet.getDomain();
+        Domain domain = sampleType.getDomain();
         queueDomain(domain);
     }
 
@@ -990,9 +991,9 @@ public class XarExporter
         Lsid lsid = Lsid.parse(pi.getLSID());
         xMpi.setGuid(lsid.getObjectId());
 
-        ExpSampleSet ss = pi.getType();
-        if (ss != null)
-            xMpi.setSampleSet(ss.getName());
+        ExpSampleType st = pi.getType();
+        if (st != null)
+            xMpi.setSampleSet(st.getName());
 
         ExpProtocolInputCriteria criteria = pi.getCriteria();
         if (criteria != null)

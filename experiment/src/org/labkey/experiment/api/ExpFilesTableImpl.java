@@ -16,13 +16,13 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.api.ExpData;
@@ -133,13 +133,14 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         return (null != container && SecurityManager.canSeeFilePaths(container, getUserSchema().getUser()));
     }
 
-    private BaseColumnInfo getAbsolutePathColumn()
+    private MutableColumnInfo getAbsolutePathColumn()
     {
         var result = wrapColumn("AbsoluteFilePath", _rootTable.getColumn("RowId"));
         result.setTextAlign("left");
         result.setJdbcType(JdbcType.VARCHAR);
         result.setDisplayColumnFactory(new DisplayColumnFactory()
         {
+            @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
                 return new ExpDataFileColumn(colInfo)
@@ -189,13 +190,14 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         return result;
     }
 
-    private BaseColumnInfo getRelativeFolderColumn()
+    private MutableColumnInfo getRelativeFolderColumn()
     {
         var result = wrapColumn("RelativeFolder", _rootTable.getColumn("RowId"));
         result.setTextAlign("left");
         result.setJdbcType(JdbcType.VARCHAR);
         result.setDisplayColumnFactory(new DisplayColumnFactory()
         {
+            @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
                 return new ExpDataFileColumn(colInfo)

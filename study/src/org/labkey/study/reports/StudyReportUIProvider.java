@@ -55,7 +55,6 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
     {
         _typeToIconMap.put(StudyRReport.TYPE, "/reports/r_logo.svg");
         _typeToIconMap.put(StudyQueryReport.TYPE, "/reports/grid.gif");
-        _typeToIconMap.put(ExportExcelReport.TYPE, "/reports/xls.gif");
         _typeToIconMap.put(ExternalReport.TYPE, "/reports/advanced.png");
         _typeToIconMap.put(ParticipantReport.TYPE, "/reports/participantReport.png");
         _typeToIconMap.put(StudyCrosstabReport.TYPE, "/reports/crosstab.png");
@@ -65,7 +64,6 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         // font icons - some report image icons dont have corresponding font icon replacements yet
 //      _typeToIconClsMap.put(StudyRReport.TYPE, "/reports/r_logo.svg");
         _typeToIconClsMap.put(StudyQueryReport.TYPE, "fa fa-table");
-        _typeToIconClsMap.put(ExportExcelReport.TYPE, "fa fa-file-excel-o");
         _typeToIconClsMap.put(ExternalReport.TYPE, "fa fa-cogs");
         _typeToIconClsMap.put(ParticipantReport.TYPE, "fa fa-clipboard");
 //      _typeToIconClsMap.put(StudyCrosstabReport.TYPE, "/reports/crosstab.png");
@@ -187,6 +185,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         return _typeToIconMap.get(type);
     }
 
+    @Override
     public String getIconPath(Report report)
     {
         if (report != null)
@@ -201,6 +200,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         return _typeToIconClsMap.get(type);
     }
 
+    @Override
     public String getIconCls(Report report)
     {
         if (report != null)

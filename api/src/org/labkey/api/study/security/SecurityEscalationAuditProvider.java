@@ -21,10 +21,9 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -127,7 +126,7 @@ public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeP
     {
         DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, getDefaultVisibleColumns()) {
             @Override
-            protected void initColumn(BaseColumnInfo columnInfo) {
+            protected void initColumn(MutableColumnInfo columnInfo) {
                 // Customize Column Labels
                 for (CustomColumn custom_column : CustomColumn.values()) {
                     if (custom_column.columnName.equalsIgnoreCase(columnInfo.getColumnName())) {
@@ -214,6 +213,7 @@ public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeP
          * @return The same value as its parent Audit Log's value for {@link SecurityEscalationAuditProvider#getEventType()}
          * @see SecurityEscalationAuditProvider#getEventType()
          */
+        @Override
         public abstract String getEventType();
 
         public Date getStartTime() {
@@ -278,7 +278,7 @@ public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeP
         /**
          * To be called by {@link AbstractAuditTypeProvider#getDomainKind()}.
          *
-         * @param eventType This should match it's parent's {@link SecurityEscalationAuditProvider#getEventType()}.
+         * @param eventType This should match its parent's {@link SecurityEscalationAuditProvider#getEventType()}.
          */
         public SecurityEscalationAuditDomainKind(String eventType) {
             super(eventType);

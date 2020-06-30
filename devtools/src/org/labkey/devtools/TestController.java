@@ -24,6 +24,7 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.CSRF;
+import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -38,6 +39,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DOM;
 import static org.labkey.api.util.DOM.Attribute.*;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -47,6 +49,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.springframework.dao.DeadlockLoserDataAccessException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -66,6 +69,10 @@ import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.HttpUtil.Method.DELETE;
+import static org.labkey.api.util.HttpUtil.Method.GET;
+import static org.labkey.api.util.HttpUtil.Method.POST;
+import static org.labkey.api.util.HttpUtil.Method.PUT;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 /**
@@ -80,7 +87,7 @@ import static org.labkey.api.util.PageFlowUtil.filter;
  *  tags
  *  error handling
  *  binding
- *  exceptions 
+ *  exceptions
  */
 public class TestController extends SpringActionController
 {
@@ -92,12 +99,10 @@ public class TestController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    private NavTree navTrail(NavTree root, String currentActionName)
+    private void navTrail(NavTree root, String currentActionName)
     {
-        (new BeginAction()).appendNavTrail(root);
+        (new BeginAction()).addNavTrail(root);
         root.addChild(currentActionName);
-
-        return root;
     }
 
     private ActionURL actionURL(Class<? extends Controller> actionClass)
@@ -116,10 +121,9 @@ public class TestController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Test Actions", actionURL(BeginAction.class));
-            return root;
         }
     }
 
@@ -141,9 +145,9 @@ public class TestController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return navTrail(root, "Leak");
+            navTrail(root, "Leak");
         }
     }
 
@@ -163,9 +167,9 @@ public class TestController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return navTrail(root, "Clear Leaks");
+            navTrail(root, "Clear Leaks");
         }
     }
 
@@ -201,9 +205,9 @@ public class TestController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return navTrail(root, "Form Test (" + _enctype + ")");
+            navTrail(root, "Form Test (" + _enctype + ")");
         }
     }
 
@@ -236,9 +240,9 @@ public class TestController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return navTrail(root, "Spring tags test");
+            navTrail(root, "Spring tags test");
         }
     }
 
@@ -248,7 +252,7 @@ public class TestController extends SpringActionController
     {
         public MultipartFormAction()
         {
-            _enctype ="multipart/form-data";
+            _enctype = "multipart/form-data";
         }
 
         @Override
@@ -266,9 +270,9 @@ public class TestController extends SpringActionController
         public void validateCommand(ComplexForm target, Errors errors)
         {
             ArrayList<TestBean> beans = target.getBeans();
-            for (int i=0 ; i<beans.size(); i++)
+            for (int i = 0; i < beans.size(); i++)
             {
-                errors.pushNestedPath("beans["+i+"]");
+                errors.pushNestedPath("beans[" + i + "]");
                 beans.get(i).validate(errors);
                 errors.popNestedPath();
             }
@@ -301,9 +305,9 @@ public class TestController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return navTrail(root, "Form Test");
+            navTrail(root, "Form Test");
         }
     }
 
@@ -522,9 +526,9 @@ public class TestController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return navTrail(root, "perm " + _action + " test");
+            navTrail(root, "perm " + _action + " test");
         }
     }
 
@@ -620,9 +624,8 @@ public class TestController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -643,9 +646,8 @@ public class TestController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -676,9 +678,8 @@ public class TestController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -699,9 +700,8 @@ public class TestController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -716,9 +716,8 @@ public class TestController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -736,9 +735,8 @@ public class TestController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -756,9 +754,26 @@ public class TestController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class DeadlockAction extends SimpleViewAction<ExceptionForm>
+    {
+        @Override
+        public ModelAndView getView(ExceptionForm form, BindException errors)
+        {
+            if (getViewContext().getRequest().getParameterMap().containsKey("_retry_"))
+                return new HtmlView(HtmlString.of("Second time's a charm"));
+            throw new DeadlockLoserDataAccessException("Try again", null);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
         }
     }
 
@@ -774,9 +789,8 @@ public class TestController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -820,9 +834,8 @@ public class TestController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -962,9 +975,9 @@ public class TestController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return navTrail(root, "DOM Test");
+            navTrail(root, "DOM Test");
         }
     }
 
@@ -991,19 +1004,53 @@ public class TestController extends SpringActionController
         @Override
         public ModelAndView getView(URLForm form, BindException errors) throws Exception
         {
-            var td = TD(at(style,"height:500px;width:500px;"),IFRAME(at(style,"height:100%;width:100%;",src,form.url)));
+            var td = TD(at(style, "height:500px;width:500px;"), IFRAME(at(style, "height:100%;width:100%;", src, form.url)));
             return new HtmlView(
-                DIV(
-                    DOM.LK.FORM(INPUT(at(type,"submit")),INPUT(at(type,"text",name,"url",value,form.url,style,"width:890px;"))),
-                    BR(),
-                    TABLE(at(DOM.Attribute.style,"width:1000px;height:1000px;"),
-                        TR(td,td),TR(td,td))));
+                    DIV(
+                            DOM.LK.FORM(INPUT(at(type, "submit")), INPUT(at(type, "text", name, "url", value, form.url, style, "width:890px;"))),
+                            BR(),
+                            TABLE(at(DOM.Attribute.style, "width:1000px;height:1000px;"),
+                                    TR(td, td), TR(td, td))));
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
+    }
+
+    @RequiresNoPermission
+    @MethodsAllowed(GET)
+    public class GetAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new HtmlView(HtmlString.of(getViewContext().getRequest().getMethod()));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+
+        }
+    }
+
+    @RequiresNoPermission
+    @MethodsAllowed(POST)
+    public class PostAction extends GetAction
+    {
+    }
+
+    @RequiresNoPermission
+    @MethodsAllowed(DELETE)
+    public class DeleteAction extends GetAction
+    {
+    }
+
+    @RequiresNoPermission
+    @MethodsAllowed(PUT)
+    public class PutAction extends GetAction
+    {
     }
 }

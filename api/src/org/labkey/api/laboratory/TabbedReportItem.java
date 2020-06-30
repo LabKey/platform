@@ -55,21 +55,25 @@ public class TabbedReportItem extends AbstractNavItem
         _label = label;
     }
 
+    @Override
     public String getName()
     {
         return _name;
     }
 
+    @Override
     public String getLabel()
     {
         return _label;
     }
 
+    @Override
     public String getRendererName()
     {
         return "";
     }
 
+    @Override
     public boolean getDefaultVisibility(Container c, User u)
     {
         return _visible;

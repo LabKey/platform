@@ -40,6 +40,7 @@ public class RequestLocationReport extends SpecimenTypeVisitReport
         _completeRequestsOnly = completeRequestsOnly;
     }
 
+    @Override
     protected String getFilterQueryString(VisitImpl visit, SpecimenManager.SummaryByVisitType summary)
     {
         return super.getFilterQueryString(visit, summary)  + "&" +

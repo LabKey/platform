@@ -11,6 +11,8 @@ experiment/node_modules
 assay/node_modules
 list/node_modules
 query/node_modules
+study/node_modules
+issues/node_modules
 
 # These files are copied to this location
 core/resources/scripts/Ext.js
@@ -67,8 +69,20 @@ query/resources/views/queryMetadataEditor.view.xml
 query/resources/views/queryMetadataEditorDev.html
 query/resources/views/queryMetadataEditorDev.view.xml
 
+study/resources/web/study/gen
+study/resources/views/datasetDesigner.html
+study/resources/views/datasetDesigner.view.xml
+study/resources/views/datasetDesignerDev.html
+study/resources/views/datasetDesignerDev.view.xml
+
 list/resources/web/list/gen
 list/resources/views/designer.html
 list/resources/views/designer.view.xml
 list/resources/views/designerDev.html
 list/resources/views/designerDev.view.xml
+
+issues/resources/web/issues/gen
+issues/resources/views/designer.html
+issues/resources/views/designer.view.xml
+issues/resources/views/designerDev.html
+issues/resources/views/designerDev.view.xml

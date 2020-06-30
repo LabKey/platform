@@ -341,6 +341,7 @@ public class ExperimentRunGraph
             _roles = roles;
         }
 
+        @Override
         public int compare(Type o1, Type o2)
         {
             String role1 = _roles.get(o1);
@@ -711,7 +712,7 @@ public class ExperimentRunGraph
         }
         catch (IOException e)
         {
-            throw new ExperimentException(DotRunner.getConfigurationErrorHtml(e));
+            throw new ExperimentException(DotRunner.getConfigurationError(e));
         }
 
         DotRunner.testDotPath(dir);
@@ -755,6 +756,7 @@ public class ExperimentRunGraph
             return _imageFile;
         }
 
+        @Override
         protected void finalize() throws Throwable
         {
             super.finalize();

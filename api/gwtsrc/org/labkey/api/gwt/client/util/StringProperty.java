@@ -37,11 +37,13 @@ public class StringProperty implements IPropertyWrapper, IsSerializable
         this.s = s;
     }
 
+    @Override
     public Object get()
     {
         return s;
     }
 
+    @Override
     public void set(Object o)
     {
         s = (String)o;

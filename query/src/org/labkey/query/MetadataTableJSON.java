@@ -22,6 +22,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -51,6 +52,8 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,6 +69,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
     /** If metadata is not stored in the current container, the folder path where it is stored */
     private String _definitionFolder;
 
+    @Override
     public boolean isEditable(MetadataColumnJSON field)
     {
         return true;
@@ -333,6 +337,32 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 xmlColumn.unsetUrl();
             }
 
+            // Set the ImportAliases
+            Set<String> importAliasSet = rawColumnInfo.getImportAliasSet();
+            if (metadataColumnJSON.getImportAliases() != null)
+            {
+                Set<String> passedImportAliasSet = ColumnRenderPropertiesImpl.convertToSet(metadataColumnJSON.getImportAliases());
+
+                if (shouldStoreValue(importAliasSet, passedImportAliasSet))
+                {
+                    // add-to/remove-from existing import aliases set
+                    if (xmlColumn.getImportAliases() != null)
+                    {
+                        xmlColumn.unsetImportAliases();
+                    }
+                    // when there is no existing import aliases, add import aliases xml
+                    if (!metadataColumnJSON.getImportAliases().equals(""))
+                    {
+                        addImportAliases(xmlColumn, metadataColumnJSON.getImportAliases());
+                    }
+                }
+                // wipe off import aliases xml
+                else if (xmlColumn.isSetImportAliases())
+                {
+                    xmlColumn.unsetImportAliases();
+                }
+            }
+
             // Set the FK
             if (!metadataColumnJSON.isLookupCustom() && metadataColumnJSON.getLookupQuery() != null && metadataColumnJSON.getLookupSchema() != null)
             {
@@ -426,6 +456,13 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         }
 
         return getMetadata(schemaName, this.getName(), user, container);
+    }
+
+    private void addImportAliases(ColumnType xmlColumn, String importAliases)
+    {
+        Set<String> aliasesSet = ColumnRenderPropertiesImpl.convertToSet(importAliases);
+        ColumnType.ImportAliases importAliasesXml = xmlColumn.addNewImportAliases();
+        aliasesSet.forEach(importAliasesXml::addImportAlias);
     }
 
     private static TableType getTableType(String name, TablesDocument doc)
@@ -584,6 +621,11 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                             // Omit columns that are in the XML but are no longer in the underlying table/query
                             break;
                         }
+                        if (column.isSetImportAliases())
+                        {
+                            String importAliases = ColumnRenderPropertiesImpl.convertToString(new HashSet<>(Arrays.asList(column.getImportAliases().getImportAliasArray())));
+                            metadataColumnJSON.setImportAliases(importAliases);
+                        }
                         if (column.isSetColumnTitle())
                         {
                             metadataColumnJSON.setLabel(column.getColumnTitle());
@@ -686,7 +728,10 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
 
         Set<String> builtInColumnNames = new CaseInsensitiveHashSet(columnInfos.keySet());
         builtInColumnNames.removeAll(injectedColumnNames);
-        metadataTableJSON.setMandatoryFieldNames(builtInColumnNames);
+        if (!metadataTableJSON.isUserDefinedQuery())
+        {
+            metadataTableJSON.setMandatoryFieldNames(builtInColumnNames);
+        }
         metadataTableJSON.setFields(orderedPDs);
 
         // TODO: figure out something better for defaultValuesURL

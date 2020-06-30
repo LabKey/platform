@@ -16,22 +16,23 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
 
 public class PrincipalIdForeignKey extends LookupForeignKey
 {
     private final UserSchema _userSchema;
 
-    static public ColumnInfo initColumn(BaseColumnInfo column)
+    static public ColumnInfo initColumn(MutableColumnInfo column)
     {
         column.setFk(new PrincipalIdForeignKey(column.getParentTable().getUserSchema()));
         column.setDisplayColumnFactory(new DisplayColumnFactory()
         {
+            @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
                 return new UserIdRenderer(colInfo);
@@ -47,6 +48,7 @@ public class PrincipalIdForeignKey extends LookupForeignKey
         _userSchema = userSchema;
     }
 
+    @Override
     public TableInfo getLookupTableInfo()
     {
         TableInfo tinfoUsersData = CoreSchema.getInstance().getTableInfoPrincipals();

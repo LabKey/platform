@@ -27,6 +27,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -85,7 +86,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         super(realTable, schema);
 
         if (includeSourceStudyData && null != schema._study && !schema._study.isDataspaceStudy())
-            _setContainerFilter(new ContainerFilter.StudyAndSourceStudy(schema.getUser(), skipPermissionChecks));
+            _setContainerFilter(new ContainerFilter.StudyAndSourceStudy(schema.getContainer(), schema.getUser(), skipPermissionChecks));
         else if (null != cf && supportsContainerFilter())
             _setContainerFilter(cf);
         else
@@ -137,7 +138,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     }
 
 
-    protected BaseColumnInfo addWrapParticipantColumn(String rootTableColumnName)
+    protected MutableColumnInfo addWrapParticipantColumn(String rootTableColumnName)
     {
         final String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
         final String subjectTableName = StudyService.get().getSubjectTableName(getContainer());
@@ -152,6 +153,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                 return _userSchema.getTable(subjectTableName);
             }
 
+            @Override
             public StringExpression getURL(ColumnInfo parent)
             {
                 TableInfo table = getLookupTableInfo();
@@ -198,11 +200,12 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     }
 
 
-    protected BaseColumnInfo addWrapLocationColumn(String wrappedName, String rootTableColumnName)
+    protected MutableColumnInfo addWrapLocationColumn(String wrappedName, String rootTableColumnName)
     {
         var locationColumn = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));
         locationColumn.setFk(new LookupForeignKey("RowId")
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 LocationTable result = new LocationTable(_userSchema, _userSchema.allowSetContainerFilter() ? getContainerFilter() : null);
@@ -212,12 +215,12 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         return addColumn(locationColumn);
     }
 
-    protected BaseColumnInfo addContainerColumn()
+    protected MutableColumnInfo addContainerColumn()
     {
         return addContainerColumn(false);
     }
 
-    protected BaseColumnInfo addContainerColumn(boolean isProvisioned)
+    protected MutableColumnInfo addContainerColumn(boolean isProvisioned)
     {
         BaseColumnInfo containerCol;
         if (isProvisioned)
@@ -241,6 +244,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         var typeColumn = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));
         LookupForeignKey fk = new LookupForeignKey(getContainerFilter(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 BaseStudyTable result;
@@ -269,9 +273,9 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         return addSpecimenVisitColumn(timepointType, aliasVisitColumn, isProvisioned);
     }
 
-    protected ColumnInfo addSpecimenVisitColumn(TimepointType timepointType, BaseColumnInfo aliasVisitColumn, boolean isProvisioned)
+    protected ColumnInfo addSpecimenVisitColumn(TimepointType timepointType, MutableColumnInfo aliasVisitColumn, boolean isProvisioned)
     {
-        BaseColumnInfo visitColumn = null;
+        MutableColumnInfo visitColumn = null;
         var visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
 
         // add the sequenceNum column so we have it for later queries
@@ -295,6 +299,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
         LookupForeignKey visitFK = new LookupForeignKey(getContainerFilter(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 VisitTable visitTable = new VisitTable(_userSchema, getLookupContainerFilter());
@@ -451,6 +456,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         var commentsColumn = new AliasedColumn(this, "VialComments", _rootTable.getColumn("GlobalUniqueId"));
         LookupForeignKey commentsFK = new LookupForeignKey(getContainerFilter(), "GlobalUniqueId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 SpecimenCommentTable result = new SpecimenCommentTable(_userSchema, getLookupContainerFilter(), joinBackToSpecimens);
@@ -463,6 +469,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         commentsColumn.setDescription("");
         commentsColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
+            @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
                 return new CommentDisplayColumn(colInfo);
@@ -731,6 +738,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             super(commentColumn);
         }
 
+        @Override
         public Object getDisplayValue(RenderContext ctx)
         {
             Object value = getDisplayColumn().getValue(ctx);
@@ -740,6 +748,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                 return value;
         }
 
+        @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             Object value = getDisplayColumn().getValue(ctx);

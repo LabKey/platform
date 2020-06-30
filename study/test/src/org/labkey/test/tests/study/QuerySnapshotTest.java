@@ -24,11 +24,13 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.BVT;
+import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.components.html.BootstrapMenu;
+import org.labkey.test.pages.study.DatasetDesignerPage;
+import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.APIAssayHelper;
 import org.labkey.test.util.DataRegionTable;
-import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 
@@ -447,15 +449,13 @@ public class QuerySnapshotTest extends StudyBaseTest
         if (keyField != null)
         {
             clickButton("Edit Dataset Definition");
-            waitForElement(Locator.input("dsName"), WAIT_FOR_JAVASCRIPT);
-
-            _listHelper.addField("Dataset Fields", keyField, null, ListHelper.ListColumnType.Integer);
-
-            click(Locator.name("ff_name0"));
-            click(Locator.radioButtonById("button_managedField"));
-            selectOptionByText(Locator.name("list_managedField"), keyField);
-            clickButton("Save", WAIT_FOR_JAVASCRIPT);
+            DatasetDesignerPage datasetDesignerPage = new DatasetDesignerPage(getDriver());
+            DomainFormPanel domainFormPanel = datasetDesignerPage.getFieldsPanel();
+            domainFormPanel.addField(keyField).setType(FieldDefinition.ColumnType.Integer);
+            datasetDesignerPage.setAdditionalKeyColManagedField(keyField);
+            datasetDesignerPage.clickSave();
         }
+
         clickButton("Create Snapshot");
     }
 
@@ -466,7 +466,7 @@ public class QuerySnapshotTest extends StudyBaseTest
                 .selectDatasetByName(datasetName)
                 .clickEditDefinition()
                 .setDatasetLabel(newLabel)
-                .save();
+                .clickSave();
     }
 
     @LogMethod
@@ -475,8 +475,8 @@ public class QuerySnapshotTest extends StudyBaseTest
         _studyHelper.goToManageDatasets()
                 .selectDatasetByName(datasetName)
                 .clickEditDefinition()
-                .setDatasetName(newName)
-                .save();
+                .setName(newName)
+                .clickSave();
     }
 
     @LogMethod

@@ -30,6 +30,7 @@ public class InheritedQueryDataViewProvider extends AbstractQueryDataViewProvide
 {
     public static final DataViewProvider.Type TYPE = new ProviderType("queries (inherited)", "Inherited Custom Views", false);
 
+    @Override
     public DataViewProvider.Type getType()
     {
         return TYPE;

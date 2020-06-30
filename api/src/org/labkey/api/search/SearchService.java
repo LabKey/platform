@@ -49,6 +49,7 @@ import java.io.Reader;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -95,6 +96,12 @@ public interface SearchService
     {
         ServiceRegistry.get().registerService(SearchService.class, impl);
     }
+
+    /**
+     * Delete the index documents for any files in a container then start a new crawler task for just that container
+     * @param c
+     */
+    void reindexContainerFiles(Container c);
 
     enum PRIORITY
     {
@@ -179,6 +186,9 @@ public interface SearchService
         void addResource(@NotNull String identifier, SearchService.PRIORITY pri);
 
         void addResource(@NotNull WebdavResource r, SearchService.PRIORITY pri);
+
+        /* This adds do nothing item to the queue, this is only useful for tracking progress of the queue. see TaskListener. */
+        void addNoop(SearchService.PRIORITY pri);
 
         default <T> void addResourceList(List<T> list, int batchSize, Function<T,WebdavResource> mapper)
         {
@@ -350,6 +360,7 @@ public interface SearchService
     IndexTask createTask(String description, TaskListener l);
 
     void deleteResource(String identifier);
+    void deleteResources(Collection<String> ids);
 
     // Delete all resources whose documentIds starts with the given prefix
     void deleteResourcesForPrefix(String prefix);
@@ -454,7 +465,8 @@ public interface SearchService
 
         public LastIndexedClause(TableInfo info, java.util.Date modifiedSince, String tableAlias)
         {
-            boolean incremental = modifiedSince == null || modifiedSince.compareTo(oldDate) > 0;
+            // Incremental if modifiedSince is set and is more recent than 1967-10-04
+            boolean incremental = modifiedSince != null && modifiedSince.compareTo(oldDate) > 0;
             
             // no filter
             if (!incremental)

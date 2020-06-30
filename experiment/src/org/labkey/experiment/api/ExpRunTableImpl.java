@@ -23,25 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ConditionalFormat;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MultiValuedForeignKey;
-import org.labkey.api.data.RemapCache;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.VirtualTable;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -95,7 +77,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 {
     ExpProtocol _protocol;
     ExpExperiment _experiment;
-    String[] _protocolPatterns;
 
     private ExpMaterial _inputMaterial;
     private ExpData _inputData;
@@ -103,6 +84,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     public ExpRunTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
         super(name, ExperimentServiceImpl.get().getTinfoExperimentRun(), schema, new ExpRunImpl(new ExperimentRun()), cf);
+        Table.checkAllColumns(this, getColumns(), "ExpRunTableImpl");
     }
 
     @Override
@@ -228,12 +210,12 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         else if (getContainer().isProject())
         {
             // If we're in a project, look in subfolders
-            setContainerFilter(new ContainerFilter.CurrentAndSubfolders(_userSchema.getUser()));
+            setContainerFilter(ContainerFilter.Type.CurrentAndSubfolders.create(_userSchema));
         }
     }
 
     @Override
-    public BaseColumnInfo createColumn(String alias, Column column)
+    public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
@@ -338,7 +320,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     {
                         ContainerFilter cf = getLookupContainerFilter();
                         UserSchema schema = getUserSchema();
-                        String key = getClass().getName() + "/RunGroups.RowId.fk/" + cf.getCacheKey(schema.getContainer());
+                        String key = getClass().getName() + "/RunGroups.RowId.fk/" + cf.getCacheKey();
                         // since getTable(forWrite=true) does not cache, cache this tableinfo using getCachedLookupTableInfo()
                         return schema.getCachedLookupTableInfo(key, this::createLookupTableInfo);
                     }
@@ -347,7 +329,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     {
                         // TODO ContainerFilter: getLookupTableInfo() should not mutate table
                         // for now use forWrite==true to get mutable tableinfo
-                        ExpTable result = (ExpTable)getExpSchema().getTable(ExpSchema.TableType.RunGroupMap.name(), getLookupContainerFilter(), true, true);
+                        ExpTable<ExpRunGroupMapTable.Column> result = (ExpTable)getExpSchema().getTable(ExpSchema.TableType.RunGroupMap.name(), getLookupContainerFilter(), true, true);
                         result.getMutableColumn(ExpRunGroupMapTable.Column.RunGroup).setFk(getExpSchema().getRunGroupIdForeignKey(getContainerFilter(), false));
                         result.setLocked(true);
                         return result;
@@ -404,14 +386,14 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 batchIdCol.setFk(getExpSchema().getRunGroupIdForeignKey(getContainerFilter(), true));
                 return batchIdCol;
             case Properties:
-                return (BaseColumnInfo) createPropertiesColumn(alias);
+                return createPropertiesColumn(alias);
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
     }
 
     @Override
-    public BaseColumnInfo addDataInputColumn(String alias, String role)
+    public MutableColumnInfo addDataInputColumn(String alias, String role)
     {
         checkLocked();
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.datainput.dataid)" +
@@ -434,7 +416,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     }
 
     @Override
-    public BaseColumnInfo addDataCountColumn(String alias, String roleName)
+    public MutableColumnInfo addDataCountColumn(String alias, String roleName)
     {
         checkLocked();
         SQLFragment sql = new SQLFragment("(SELECT COUNT(DISTINCT exp.DataInput.DataId) FROM exp.DataInput " +
@@ -480,21 +462,21 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         return ret;
     }
 
-    public BaseColumnInfo createDataInputsColumn(String alias)
+    public MutableColumnInfo createDataInputsColumn(String alias)
     {
         var col = createMultiValueDatasColumn(alias, ExpProtocol.ApplicationType.ExperimentRun);
         col.setDescription("Contains multi-value lookup to each data inputs produced by this run");
         return col;
     }
 
-    public BaseColumnInfo createDataOutputsColumn(String alias)
+    public MutableColumnInfo createDataOutputsColumn(String alias)
     {
         var col = createMultiValueDatasColumn(alias, ExpProtocol.ApplicationType.ExperimentRunOutput);
         col.setDescription("Contains multi-value lookup to each data outputs produced by this run");
         return col;
     }
 
-    protected BaseColumnInfo createMultiValueDatasColumn(String alias, final ExpProtocol.ApplicationType type)
+    protected MutableColumnInfo createMultiValueDatasColumn(String alias, final ExpProtocol.ApplicationType type)
     {
         final String dataIdName = type == ExpProtocol.ApplicationType.ExperimentRun ? "InputDataId" : "OutputDataId";
 
@@ -508,7 +490,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             public TableInfo getLookupTableInfo()
             {
                 final ContainerFilter cf = ExpRunTableImpl.this.getContainerFilter();
-                VirtualTable t = new VirtualTable(ExperimentServiceImpl.get().getSchema(), null)
+                VirtualTable t = new VirtualTable(ExperimentServiceImpl.get().getSchema(), null, getUserSchema(), cf)
                 {
                     @NotNull
                     @Override
@@ -665,7 +647,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
         // 10481: convince ExcelColumn.setSimpleType() that we are actually a string.
         @Override
-        public Class getDisplayValueClass()
+        public Class<?> getDisplayValueClass()
         {
             return String.class;
         }
@@ -731,7 +713,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             if (rowId != null)
             {
                 ActionURL graphURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getRunGraphURL(ctx.getContainer(), ((Number)rowId).intValue());
-                out.write("<a href=\"" + graphURL.getLocalURIString() + "\" title=\"Experiment run graph\"><img src=\"" + AppProps.getInstance().getContextPath() + "/Experiment/images/graphIcon.gif\" height=\"18\" width=\"18\"/></a>");
+                out.write("<a href=\"" + graphURL.getLocalURIString() + "\" title=\"Experiment run graph\"><img src=\"" + AppProps.getInstance().getContextPath() + "/experiment/images/graphIcon.gif\" height=\"18\" width=\"18\"/></a>");
             }
         }
     }
@@ -822,7 +804,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         @Override
         public TableInfo getLookupTableInfo()
         {
-            VirtualTable result = new VirtualTable<>(ExperimentServiceImpl.get().getSchema(), "Experiments", getUserSchema());
+            VirtualTable<?> result = new VirtualTable<>(ExperimentServiceImpl.get().getSchema(), ExpSchema.TableType.RunGroups.name(), getUserSchema());
             for (ExpExperiment experiment : getExperiments())
             {
                 var column = new BaseColumnInfo(experiment.getName(), JdbcType.BOOLEAN);
@@ -832,7 +814,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return result;
         }
 
-        @Override
+        @Override @NotNull
         public NamedObjectList getSelectList(RenderContext ctx)
         {
             // XXX: NYI
@@ -866,7 +848,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
     private static class RunTableUpdateService extends AbstractQueryUpdateService
     {
-        private RemapCache _cache = new RemapCache();       // only used if the experimental feature : EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE is enabled
+        private final RemapCache _cache = new RemapCache();       // only used if the experimental feature : EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE is enabled
 
         RunTableUpdateService(ExpRunTable queryTable)
         {
@@ -1007,7 +989,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return getRow(user, container, oldRow);
         }
 
-        private StringBuilder appendPropertyIfChanged(StringBuilder sb, String label, Object oldValue, Object newValue)
+        private void appendPropertyIfChanged(StringBuilder sb, String label, Object oldValue, Object newValue)
         {
             if (!Objects.equals(oldValue, newValue))
             {
@@ -1019,7 +1001,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 sb.append(newValue == null ? "blank" : "'" + newValue + "'");
                 sb.append(".");
             }
-            return sb;
         }
 
         private ExpRunImpl getRun(Map<String, Object> row)

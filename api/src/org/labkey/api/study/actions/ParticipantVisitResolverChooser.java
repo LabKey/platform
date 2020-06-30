@@ -46,6 +46,7 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
         setCaption("Participant/Visit");
     }
 
+    @Override
     public boolean isEditable()
     {
         return true;
@@ -56,6 +57,7 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
         return _boundColumn.getDefaultValueType() == DefaultValueType.FIXED_NON_EDITABLE;
     }
 
+    @Override
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
         if (_resolvers.isEmpty())
@@ -169,6 +171,7 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
         return RenderSubSelectors.ALL;
     }
 
+    @Override
     protected Object getInputValue(RenderContext ctx)
     {
         TableViewForm viewForm = ctx.getForm();

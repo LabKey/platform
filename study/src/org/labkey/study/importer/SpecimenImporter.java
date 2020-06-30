@@ -43,13 +43,15 @@ import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
@@ -129,7 +131,7 @@ public class SpecimenImporter
         UpdateAllStatistics, CommitTransaction, ClearCaches, PopulateMaterials, PopulateSpecimens, PopulateVials, PopulateSpecimenEvents,
         PopulateTempTable, PopulateLabs, SpecimenTypes, DeleteOldData, PrepareQcComments, NotifyChanged}
 
-    private static MultiPhaseCPUTimer<ImportPhases> TIMER = new MultiPhaseCPUTimer<>(ImportPhases.class, ImportPhases.values());
+    private static final MultiPhaseCPUTimer<ImportPhases> TIMER = new MultiPhaseCPUTimer<>(ImportPhases.class, ImportPhases.values());
 
     public static class ImportableColumn
     {
@@ -282,6 +284,7 @@ public class SpecimenImporter
     {
         SPECIMEN_EVENTS
         {
+            @Override
             public List<String> getTableNames()
             {
                 List<String> names = new ArrayList<>(1);
@@ -289,16 +292,19 @@ public class SpecimenImporter
                 return names;
             }
 
+            @Override
             public boolean isEvents()
             {
                 return true;
             }
 
+            @Override
             public boolean isSpecimens()
             {
                 return false;
             }
 
+            @Override
             public boolean isVials()
             {
                 return false;
@@ -306,6 +312,7 @@ public class SpecimenImporter
         },
         SPECIMENS
         {
+            @Override
             public List<String> getTableNames()
             {
                 List<String> names = new ArrayList<>(1);
@@ -313,16 +320,19 @@ public class SpecimenImporter
                 return names;
             }
 
+            @Override
             public boolean isEvents()
             {
                 return false;
             }
 
+            @Override
             public boolean isSpecimens()
             {
                 return true;
             }
 
+            @Override
             public boolean isVials()
             {
                 return false;
@@ -330,6 +340,7 @@ public class SpecimenImporter
         },
         VIALS
         {
+            @Override
             public List<String> getTableNames()
             {
                 List<String> names = new ArrayList<>(1);
@@ -337,16 +348,19 @@ public class SpecimenImporter
                 return names;
             }
 
+            @Override
             public boolean isEvents()
             {
                 return false;
             }
 
+            @Override
             public boolean isSpecimens()
             {
                 return false;
             }
 
+            @Override
             public boolean isVials()
             {
                 return true;
@@ -354,6 +368,7 @@ public class SpecimenImporter
         },
         SPECIMENS_AND_SPECIMEN_EVENTS
         {
+            @Override
             public List<String> getTableNames()
             {
                 List<String> names = new ArrayList<>(1);
@@ -362,16 +377,19 @@ public class SpecimenImporter
                 return names;
             }
 
+            @Override
             public boolean isEvents()
             {
                 return true;
             }
 
+            @Override
             public boolean isSpecimens()
             {
                 return true;
             }
 
+            @Override
             public boolean isVials()
             {
                 return false;
@@ -379,6 +397,7 @@ public class SpecimenImporter
         },
         VIALS_AND_SPECIMEN_EVENTS
         {
+            @Override
             public List<String> getTableNames()
             {
                 List<String> names = new ArrayList<>(1);
@@ -387,16 +406,19 @@ public class SpecimenImporter
                 return names;
             }
 
+            @Override
             public boolean isEvents()
             {
                 return true;
             }
 
+            @Override
             public boolean isSpecimens()
             {
                 return false;
             }
 
+            @Override
             public boolean isVials()
             {
                 return true;
@@ -576,10 +598,12 @@ public class SpecimenImporter
     {
         EventVialLatest
         {
+            @Override
             public List<String> getPatterns()
             {
                 return Arrays.asList("%", "Latest%");
             }
+            @Override
             public Object getRollupResult(List<SpecimenEvent> events, String eventColName, JdbcType fromType, JdbcType toType)
             {
                 // Input is SpecimenEvent list
@@ -589,6 +613,7 @@ public class SpecimenImporter
                     throw new IllegalStateException("Expected SpecimenEvents.");
                 return SpecimenManager.getInstance().getLastEvent(events).get(eventColName);
             }
+            @Override
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
                 return from.equals(to) || canPromoteNumeric(from, to);
@@ -596,10 +621,12 @@ public class SpecimenImporter
         },
         EventVialFirst
         {
+            @Override
             public List<String> getPatterns()
             {
                 return Arrays.asList("First%");
             }
+            @Override
             public Object getRollupResult(List<SpecimenEvent> events, String eventColName, JdbcType fromType, JdbcType toType)
             {
                 // Input is SpecimenEvent list
@@ -609,6 +636,7 @@ public class SpecimenImporter
                     throw new IllegalStateException("Expected SpecimenEvents.");
                 return SpecimenManager.getInstance().getFirstEvent(events).get(eventColName);
             }
+            @Override
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
                 return from.equals(to) || canPromoteNumeric(from, to);
@@ -616,10 +644,12 @@ public class SpecimenImporter
         },
         EventVialLatestNonBlank
         {
+            @Override
             public List<String> getPatterns()
             {
                 return Arrays.asList("LatestNonBlank%");
             }
+            @Override
             public Object getRollupResult(List<SpecimenEvent> events, String eventColName, JdbcType fromType, JdbcType toType)
             {
                 // Input is SpecimenEvent list
@@ -643,6 +673,7 @@ public class SpecimenImporter
                 }
                 return result;
             }
+            @Override
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
                 return from.equals(to) || canPromoteNumeric(from, to);
@@ -650,10 +681,12 @@ public class SpecimenImporter
         },
         EventVialCombineAll
         {
+            @Override
             public List<String> getPatterns()
             {
                 return Arrays.asList("Combine%");
             }
+            @Override
             public Object getRollupResult(List<SpecimenEvent> events, String eventColName, JdbcType fromType, JdbcType toType)
             {
                 // Input is SpecimenEvent list
@@ -713,6 +746,7 @@ public class SpecimenImporter
                 return result;
             }
 
+            @Override
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
                 return (from.equals(to) || canPromoteNumeric(from, to)) &&
@@ -724,6 +758,7 @@ public class SpecimenImporter
         // Gets the field value from a particular object in the list (used for event -> vial rollups)
         public abstract Object getRollupResult(List<SpecimenEvent> objs, String colName, JdbcType fromType, JdbcType toType);
 
+        @Override
         public boolean match(PropertyDescriptor from, PropertyDescriptor to, boolean allowTypeMismatch)
         {
             for (String pattern : getPatterns())
@@ -739,10 +774,12 @@ public class SpecimenImporter
     {
         VialSpecimenCount
         {
+            @Override
             public List<String> getPatterns()
             {
                 return Arrays.asList("Count%", "%Count");
             }
+            @Override
             public SQLFragment getRollupSql(String fromColName, String toColName)
             {
                 SQLFragment sql = new SQLFragment("SUM(CASE ");
@@ -750,6 +787,7 @@ public class SpecimenImporter
                 sql.add(Boolean.TRUE);
                 return sql;
             }
+            @Override
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
                 return JdbcType.BOOLEAN.equals(from) && to.isInteger();
@@ -757,16 +795,19 @@ public class SpecimenImporter
         },
         VialSpecimenTotal
         {
+            @Override
             public List<String> getPatterns()
             {
                 return Arrays.asList("Total%", "%Total", "SumOf%");
             }
+            @Override
             public SQLFragment getRollupSql(String fromColName, String toColName)
             {
                 SQLFragment sql = new SQLFragment("SUM(");
                 sql.append(fromColName).append(") AS ").append(toColName);
                 return sql;
             }
+            @Override
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
                 return from.isNumeric() && to.isNumeric();
@@ -774,16 +815,19 @@ public class SpecimenImporter
         },
         VialSpecimenMaximum
         {
+            @Override
             public List<String> getPatterns()
             {
                 return Arrays.asList("Max%", "%Max");
             }
+            @Override
             public SQLFragment getRollupSql(String fromColName, String toColName)
             {
                 SQLFragment sql = new SQLFragment("MAX(");
                 sql.append(fromColName).append(") AS ").append(toColName);
                 return sql;
             }
+            @Override
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
                 return !JdbcType.BOOLEAN.equals(from) &&
@@ -792,16 +836,19 @@ public class SpecimenImporter
         },
         VialSpecimenMinimum
         {
+            @Override
             public List<String> getPatterns()
             {
                 return Arrays.asList("Min%", "%Min");
             }
+            @Override
             public SQLFragment getRollupSql(String fromColName, String toColName)
             {
                 SQLFragment sql = new SQLFragment("MIN(");
                 sql.append(fromColName).append(") AS ").append(toColName);
                 return sql;
             }
+            @Override
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
                 return !JdbcType.BOOLEAN.equals(from) &&
@@ -812,6 +859,7 @@ public class SpecimenImporter
         // Gets SQL to calulate rollup (used for vial -> specimen rollups)
         public abstract SQLFragment getRollupSql(String fromColName, String toColName);
 
+        @Override
         public boolean match(PropertyDescriptor from, PropertyDescriptor to, boolean allowTypeMismtach)
         {
             for (String pattern : getPatterns())
@@ -914,6 +962,7 @@ public class SpecimenImporter
             new SpecimenColumn("record_source", "RecordSource", "VARCHAR(20)", TargetTable.SPECIMEN_EVENTS),
             GLOBAL_UNIQUE_ID = new SpecimenColumn(GLOBAL_UNIQUE_ID_TSV_COL, "GlobalUniqueId", "VARCHAR(50)", true, TargetTable.VIALS, true),
             LAB_ID = new SpecimenColumn(LAB_ID_TSV_COL, "LabId", "INT", TargetTable.SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER") {
+                @Override
                 public boolean isUnique() { return true; }
             },
             new SpecimenColumn("originating_location", "OriginatingLocationId", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER"),
@@ -2276,10 +2325,15 @@ public class SpecimenImporter
                 "FROM " + info.getTempTableName() + " T LEFT OUTER JOIN exp.Object O ON T.LSID = O.ObjectURI\n" +
                 "WHERE O.ObjectURI IS NULL\n";
 
-        String insertMaterialSQL = "INSERT INTO exp.Material (LSID, Name, ObjectId, Container, CpasType, Created)  \n" +
-                "SELECT DISTINCT T.LSID, T." + columnName + " AS Name, (SELECT ObjectId FROM exp.Object O where O.ObjectURI=T.LSID) AS ObjectId, ?, ?, CAST(? AS " + _dialect.getDefaultDateTimeDataType()+ ")\n" +
+        String countMaterialToInsertSQL = "SELECT DISTINCT T.LSID\n" +
                 "FROM " + info.getTempTableName() + " T LEFT OUTER JOIN exp.Material M ON T.LSID = M.LSID\n" +
                 "WHERE M.LSID IS NULL\n";
+
+        String insertMaterialSQL = "INSERT INTO exp.Material (RowId, LSID, Name, ObjectId, Container, CpasType, Created)  \n" +
+                "SELECT ? + (ROW_NUMBER() OVER (ORDER BY ObjectId)), LSID, Name, ObjectId, Container, CpasType, Created FROM\n" +
+                "(SELECT DISTINCT T.LSID, T." + columnName + " AS Name, (SELECT ObjectId FROM exp.Object O where O.ObjectURI=T.LSID) AS ObjectId, ? AS Container, ? AS CpasType, CAST(? AS " + _dialect.getDefaultDateTimeDataType()+ ") AS Created\n" +
+                " FROM " + info.getTempTableName() + " T LEFT OUTER JOIN exp.Material M ON T.LSID = M.LSID\n" +
+                " WHERE M.LSID IS NULL) X\n";
 
         /* NOTE: Not really necessary to delete and recreate the object rows
         String deleteObjectSQL = "DELETE FROM exp.Object WHERE ObjectURI IN (SELECT M.LSID FROM exp.Material M\n" +
@@ -2301,22 +2355,22 @@ public class SpecimenImporter
 
         String prefix = new Lsid(StudyService.SPECIMEN_NAMESPACE_PREFIX, "Folder-" + info.getContainer().getRowId(), "").toString();
         String cpasType;
-        ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(info.getContainer(), SpecimenManager.STUDY_SPECIMENS_SAMPLE_SET_NAME);
+        ExpSampleType sampleType = SampleTypeService.get().getSampleType(info.getContainer(), SpecimenService.SAMPLE_TYPE_NAME);
 
-        if (sampleSet == null)
+        if (sampleType == null)
         {
-            ExpSampleSet source = ExperimentService.get().createSampleSet();
+            ExpSampleType source = SampleTypeService.get().createSampleType();
             source.setContainer(info.getContainer());
             source.setMaterialLSIDPrefix(prefix);
-            source.setName(SpecimenManager.STUDY_SPECIMENS_SAMPLE_SET_NAME);
-            source.setLSID(ExperimentService.get().getSampleSetLsid(SpecimenManager.STUDY_SPECIMENS_SAMPLE_SET_NAME, info.getContainer()).toString());
+            source.setName(SpecimenService.SAMPLE_TYPE_NAME);
+            source.setLSID(SampleTypeService.get().getSampleTypeLsid(SpecimenService.SAMPLE_TYPE_NAME, info.getContainer()).toString());
             source.setDescription("Study specimens for " + info.getContainer().getPath());
             source.save(null);
             cpasType = source.getLSID();
         }
         else
         {
-            cpasType = sampleSet.getLSID();
+            cpasType = sampleType.getLSID();
         }
 
         var createdTimestamp = new Parameter.TypedValue(new Timestamp(System.currentTimeMillis()), JdbcType.TIMESTAMP);
@@ -2340,12 +2394,28 @@ public class SpecimenImporter
             logSQLFragment(insertObjectFragment);
         executeSQL(info.getSchema(), insertObjectFragment);
 
-        SQLFragment insertMaterialFragment = new SQLFragment(insertMaterialSQL, info.getContainer().getId(), cpasType, createdTimestamp);
-        if (DEBUG)
-            logSQLFragment(insertMaterialFragment);
-        affected = executeSQL(info.getSchema(), insertMaterialFragment);
-        if (affected >= 0)
-            info("exp.Material: " + affected + " rows inserted.");
+        long count = new SqlSelector(info.getSchema(), countMaterialToInsertSQL).getRowCount();
+        if (count > 0)
+        {
+            // reserve rowids for this insert
+            // NOTE QuerySchema exp.Materials (plural) has dbsequence info, but DbSchema exp.Material (singular) does not
+            TableInfo material = DefaultSchema.get(info.getUser(),info.getContainer(),"exp").getTable("Materials", null);
+            ColumnInfo rowId = material.getColumn("RowId");
+            DbSequence seq = DbSequenceManager.getPreallocatingSequence(rowId.getDbSequenceContainer(null), material.getDbSequenceName(rowId.getName()), 0, 1000);
+
+            /* HACK, we don't do this anywhere else, but we need to get a block of continuous IDS to make this work */
+            // row_number() starts at 1 so subtract 1
+            long start = DbSequenceManager.reserveSequentialBlock(seq, (int)count);
+            start -= 1;
+
+            SQLFragment insertMaterialFragment = new SQLFragment(insertMaterialSQL, start, info.getContainer().getId(), cpasType, createdTimestamp);
+            if (DEBUG)
+                logSQLFragment(insertMaterialFragment);
+            affected = executeSQL(info.getSchema(), insertMaterialFragment);
+            if (affected >= 0)
+                info("exp.Material: " + affected + " rows inserted.");
+        }
+
         info("exp.Material: Update complete.");
     }
 
@@ -2665,7 +2735,9 @@ public class SpecimenImporter
 
     private class EntityIdComputedColumn implements ComputedColumn
     {
+        @Override
         public String getName() { return "EntityId"; }
+        @Override
         public Object getValue(Map<String, Object> row) { return GUID.makeGUID(); }
     }
 
@@ -3156,7 +3228,9 @@ public class SpecimenImporter
 
         ComputedColumn lsidCol = new ComputedColumn()
         {
+            @Override
             public String getName() { return "LSID"; }
+            @Override
             public Object getValue(Map<String, Object> row) throws ValidationException
             {
                 String id = (String) row.get(GLOBAL_UNIQUE_ID_TSV_COL);
@@ -3826,7 +3900,9 @@ public class SpecimenImporter
             final Integer[] counter = new Integer[] { 0 };
             ComputedColumn idCol = new ComputedColumn()
             {
+                @Override
                 public String getName() { return "id"; }
+                @Override
                 public Object getValue(Map<String, Object> row)
                 {
                     return String.valueOf(++counter[0]);

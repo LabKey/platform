@@ -33,10 +33,10 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.DataClassDomainKindProperties;
 import org.labkey.api.exp.api.ExpDataClass;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.DataClassUserSchema;
@@ -47,7 +47,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -70,6 +70,7 @@ import java.util.stream.Collectors;
  */
 public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindProperties>
 {
+    public static final String NAME = "DataClass";
     public static final String PROVISIONED_SCHEMA_NAME = "expdataclass";
 
     private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
@@ -106,7 +107,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     @Override
     public String getKindName()
     {
-        return "DataClass";
+        return NAME;
     }
 
     @Override
@@ -123,9 +124,9 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         // if "sampleSet" is the Name string, look it up and switch the argument map to use the RowId
         if (arguments.containsKey("sampleSet") && !StringUtils.isNumeric(arguments.get("sampleSet").toString()))
         {
-            ExpSampleSet sampleSet = SampleSetService.get().getSampleSet(container, user, (String)arguments.get("sampleSet"));
-            if (sampleSet != null)
-                updatedArguments.put("sampleSet", sampleSet.getRowId());
+            ExpSampleType sampleType = SampleTypeService.get().getSampleType(container, user, (String)arguments.get("sampleSet"));
+            if (sampleType != null)
+                updatedArguments.put("sampleSet", sampleType.getRowId());
         }
 
         return updatedArguments;
@@ -164,11 +165,21 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         return true;
     }
 
+    @Override
+    public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
+    {
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateDataClassURL(container);
+    }
+
     @Nullable
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain);
+        ExpDataClass dataClass = getDataClass(domain);
+        if (dataClass == null)
+            return null;
+
+        return dataClass.urlEditDefinition(containerUser);
     }
 
     @Override
@@ -229,7 +240,19 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     @Override
     public boolean canCreateDefinition(User user, Container container)
     {
-        return container.hasPermission(user, AdminPermission.class);
+        return container.hasPermission(user, DesignDataClassPermission.class);
+    }
+
+    @Override
+    public boolean canEditDefinition(User user, Domain domain)
+    {
+        return domain.getContainer().hasPermission(user, DesignDataClassPermission.class);
+    }
+
+    @Override
+    public boolean canDeleteDefinition(User user, Domain domain)
+    {
+        return domain.getContainer().hasPermission(user, DesignDataClassPermission.class);
     }
 
     @Override
@@ -306,9 +329,9 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
 
     @Nullable
     @Override
-    public DataClassDomainKindProperties getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
+    public DataClassDomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
     {
-        ExpDataClass dc = ExperimentService.get().getDataClass(domain.getDomainURI());
+        ExpDataClass dc = domain != null ? ExperimentService.get().getDataClass(domain.getDomainURI()) : null;
         return new DataClassDomainKindProperties(dc);
     }
 }

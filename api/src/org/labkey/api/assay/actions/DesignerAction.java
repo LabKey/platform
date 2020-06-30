@@ -80,7 +80,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         VBox result = new VBox();
         if (_protocol != null && !form.isCopy())
         {
-            result.addView(new AssayHeaderView(_protocol, form.getProvider(), false, false, ContainerFilter.CURRENT));
+            result.addView(new AssayHeaderView(_protocol, form.getProvider(), false, false, ContainerFilter.current(getViewContext().getContainer())));
         }
 
         result.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("assay"), "assayDesigner"));
@@ -88,16 +88,15 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
     }
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         setHelpTopic("defineAssaySchema");
 
-        NavTree result = super.appendNavTrail(root);
+        super.addNavTrail(root);
         if (!_form.isCopy() && _protocol != null)
         {
-            result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
+            root.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
         }
-        result.addChild(_form.getProviderName() + " Assay Designer", new ActionURL(DesignerAction.class, getContainer()));
-        return result;
+        root.addChild(_form.getProviderName() + " Assay Designer", new ActionURL(DesignerAction.class, getContainer()));
     }
 }

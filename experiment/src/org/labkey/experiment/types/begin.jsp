@@ -18,7 +18,7 @@
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <div>
-<p>This is the admin console for defining types, such as SampleSets or Forms.
+<p>This is the admin console for defining types, such as SampleTypes or Forms.
 Note that creating a type is typically done in the context of another module.
 This page is for troubleshooting and testing purposes.
 </p>

@@ -290,8 +290,11 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                 }
             }
 
+            // get editable versions
+            legacyPortalParts = new ArrayList<>(Portal.getEditableParts(container));
+
             String defaultTabName = folderType.getDefaultTab().getName();
-            List<Portal.WebPart> mergedParts = new ArrayList<>(Portal.getParts(container, defaultTabName));
+            List<Portal.WebPart> mergedParts = new ArrayList<>(Portal.getEditableParts(container, defaultTabName));
             Iterator<Portal.WebPart> i = legacyPortalParts.iterator();
             List<Portal.WebPart> required = getRequiredWebParts();
             boolean changedLegacy = false;

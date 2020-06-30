@@ -66,6 +66,7 @@ public abstract class AbstractStudyEntity<T>
         setContainer(c);
     }
 
+    @Override
     public Container getContainer()
     {
         if (_container == null && _containerId != null)
@@ -73,6 +74,7 @@ public abstract class AbstractStudyEntity<T>
         return _container;
     }
 
+    @Override
     public void setContainer(Container container)
     {
         verifyMutability();
@@ -80,39 +82,46 @@ public abstract class AbstractStudyEntity<T>
         _containerId = container == null ? null : container.getId();
     }
 
+    @Override
     public String getLabel()
     {
         return _label;
     }
 
+    @Override
     public void setLabel(String label)
     {
         verifyMutability();
         _label = label;
     }
 
+    @Override
     public int getDisplayOrder()
     {
         return _displayOrder;
     }
 
+    @Override
     public void setDisplayOrder(int displayOrder)
     {
         verifyMutability();
         _displayOrder = displayOrder;
     }
 
+    @Override
     public boolean isShowByDefault()
     {
         return _showByDefault;
     }
 
+    @Override
     public void setShowByDefault(boolean showByDefault)
     {
         verifyMutability();
         _showByDefault = showByDefault;
     }
 
+    @Override
     public String getDisplayString()
     {
         StringBuilder builder = new StringBuilder();
@@ -122,23 +131,27 @@ public abstract class AbstractStudyEntity<T>
         return builder.toString();
     }
 
+    @Override
     @NotNull
     public String getResourceId()
     {
         return _entityId;
     }
 
+    @Override
     public String getEntityId()
     {
         return _entityId;
     }
 
+    @Override
     public void setEntityId(String entityId)
     {
         _entityId = entityId;
     }
 
 
+    @Override
     @Transient
     public SecurityPolicy getPolicy()
     {
@@ -194,6 +207,7 @@ public abstract class AbstractStudyEntity<T>
         return sb.toString();
     }
 
+    @Override
     public void savePolicy(MutableSecurityPolicy policy, User user)
     {
         if (!supportsPolicyUpdate())
@@ -206,12 +220,14 @@ public abstract class AbstractStudyEntity<T>
         return false;
     }
 
+    @Override
     @NotNull
     public Module getSourceModule()
     {
         return ModuleLoader.getInstance().getModule(StudyModule.MODULE_NAME);
     }
 
+    @Override
     @NotNull
     public List<SecurableResource> getChildResources(User user)
     {
@@ -220,18 +236,21 @@ public abstract class AbstractStudyEntity<T>
         return Collections.emptyList();
     }
 
+    @Override
     @NotNull
     public String getResourceName()
     {
         return getLabel();
     }
 
+    @Override
     @NotNull
     public String getResourceDescription()
     {
         return getDisplayString();
     }
 
+    @Override
     @Transient
     public SecurableResource getParentResource()
     {
@@ -240,12 +259,14 @@ public abstract class AbstractStudyEntity<T>
         return StudyManager.getInstance().getStudy(getContainer());
     }
 
+    @Override
     @NotNull
     public Container getResourceContainer()
     {
         return getContainer();
     }
 
+    @Override
     public boolean mayInheritPolicy()
     {
         return true;

@@ -59,12 +59,16 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 
 /**
@@ -94,7 +98,8 @@ public class ViewServlet extends HttpServlet
     private static String _serverHeader = null;
 
     private static final AtomicInteger _requestCount = new AtomicInteger();
-    private static final AtomicInteger _pendingRequestCount = new AtomicInteger();
+    // NOTE: can't use ThreadLocal for this as you can't inspect the values for other threads
+    private static final Map<Thread,String> _pendingRequests = Collections.synchronizedMap(new WeakHashMap<>());
     private static final ThreadLocal<Boolean> IS_REQUEST_THREAD = new ThreadLocal<>();
 
     private static Map<Class<? extends Controller>, String> _controllerClassToName = null;
@@ -127,14 +132,19 @@ public class ViewServlet extends HttpServlet
             response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "The server is shutting down");
             return;
         }
+        final Thread t = Thread.currentThread();
+        String previousRequestURI = null;
         try
         {
-            _pendingRequestCount.incrementAndGet();
+            previousRequestURI = _pendingRequests.put(t, request.getRequestURI() + "?" + trimToEmpty(request.getQueryString()));
             _service(request, response);
         }
         finally
         {
-            _pendingRequestCount.decrementAndGet();
+            if (null == previousRequestURI)
+                _pendingRequests.remove(t);
+            else
+                _pendingRequests.put(t, previousRequestURI);
         }
     }
 
@@ -322,7 +332,7 @@ public class ViewServlet extends HttpServlet
 
     public static int getPendingRequestCount()
     {
-        return _pendingRequestCount.get();
+        return _pendingRequests.size();
     }
 
     public static void setShuttingDown(long msWaitForRequests)
@@ -330,7 +340,7 @@ public class ViewServlet extends HttpServlet
         _shuttingDown = true;
         while (msWaitForRequests > 0)
         {
-            if (0==_pendingRequestCount.get())
+            if (0==getPendingRequestCount())
                 break;
             try {Thread.sleep(100);}catch(InterruptedException ignored){}
             msWaitForRequests -= 100;
@@ -637,6 +647,7 @@ public class ViewServlet extends HttpServlet
         return request instanceof MockRequest;
     }
 
+    @Override
     public void init(ServletConfig config) throws ServletException
     {
         super.init(config);
@@ -656,7 +667,7 @@ public class ViewServlet extends HttpServlet
             return null;
         Object url = request.getAttribute(ORIGINAL_URL_STRING);
         if (null == url)
-            url = request.getRequestURI() + "?" + StringUtils.trimToEmpty(request.getQueryString());
+            url = request.getRequestURI() + "?" + trimToEmpty(request.getQueryString());
         return String.valueOf(url);
     }
     
@@ -675,12 +686,17 @@ public class ViewServlet extends HttpServlet
         return (ActionURL) request.getAttribute(REQUEST_ACTION_URL);
     }
 
-
     public static void setAsRequestThread()
     {
         // Would rather not use thread local for this, but other HttpView/ViewServlet settings get set later and are
         //  awkward to use.
         IS_REQUEST_THREAD.set(true);
+    }
+
+    /* Similar to getRequestURL(), but can be used by a different thread (e.g. for thread dump) */
+    public static String getRequestURL(Thread t)
+    {
+        return _pendingRequests.get(t);
     }
 
     // Returns true if the current thread is a request thread, false if it's a background thread

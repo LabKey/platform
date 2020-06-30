@@ -23,6 +23,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.UnionContainerFilter;
@@ -55,7 +56,8 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         setDeleteURL(new DetailsURL(deleteExpUrl));
     }
 
-    public BaseColumnInfo createColumn(String alias, Column column)
+    @Override
+    public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
@@ -108,7 +110,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         }
     }
 
-    private BaseColumnInfo setupNonEditableCol (BaseColumnInfo col)
+    private MutableColumnInfo setupNonEditableCol (MutableColumnInfo col)
     {
         col.setUserEditable(false);
         col.setReadOnly(true);
@@ -117,6 +119,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         return col;
     }
 
+    @Override
     public void addExperimentMembershipColumn(ExpRun run)
     {
         checkLocked();
@@ -141,6 +144,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         addColumn(result);
     }
 
+    @Override
     public void setBatchProtocol(@Nullable ExpProtocol protocol)
     {
         SimpleFilter filter = new SimpleFilter();
@@ -193,6 +197,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
 //        getColumn(Column.Name).setURL(detailsURL);
     }
 
+    @Override
     public BaseColumnInfo createRunCountColumn(String alias, ExpProtocol parentProtocol, ExpProtocol childProtocol)
     {
         SQLFragment sql = new SQLFragment("(SELECT COUNT(exp.experimentrun.rowid) FROM exp.experimentrun" +

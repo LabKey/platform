@@ -22,11 +22,12 @@ public class UserIdForeignKey extends LookupForeignKey
 {
     private final UserSchema _userSchema;
 
-    static public ColumnInfo initColumn(BaseColumnInfo column)
+    static public <COL extends MutableColumnInfo> COL initColumn(COL column)
     {
         column.setFk(new UserIdForeignKey(column.getParentTable().getUserSchema()));
         column.setDisplayColumnFactory(new DisplayColumnFactory()
         {
+            @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
                 return new UserIdRenderer(colInfo);
@@ -42,6 +43,7 @@ public class UserIdForeignKey extends LookupForeignKey
         _userSchema = userSchema;
     }
 
+    @Override
     public TableInfo getLookupTableInfo()
     {
         TableInfo tinfoUsersData = CoreSchema.getInstance().getTableInfoUsersData();

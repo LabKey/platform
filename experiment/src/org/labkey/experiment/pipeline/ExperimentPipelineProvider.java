@@ -64,6 +64,7 @@ public class ExperimentPipelineProvider extends PipelineProvider
         setShowActionsIfModuleInactive(true);
     }
 
+    @Override
     public void initSystemDirectory(Path rootDir, Path systemDir)
     {
         locateSystemDir(systemDir, DIR_NAME_MOVE);
@@ -87,6 +88,7 @@ public class ExperimentPipelineProvider extends PipelineProvider
         }
     }
 
+    @Override
     public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll)
     {
         if (!context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
@@ -101,6 +103,7 @@ public class ExperimentPipelineProvider extends PipelineProvider
 
     private static class XarFilenameFilter extends FileEntryFilter
     {
+        @Override
         public boolean accept(File f)
         {
             String lowerCase = f.getName().toLowerCase();

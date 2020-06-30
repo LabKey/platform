@@ -55,11 +55,13 @@ public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
             _useSharedProjectDomain = useSharedDomain;
         }
 
+        @Override
         public String getDomainPrefix()
         {
             return _domainUriPrefix;
         }
 
+        @Override
         public String getDomainURI(final Container c)
         {
             Container p = c.getProject();
@@ -73,6 +75,7 @@ public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
             }
         }
 
+        @Override
         public String getDomainName()
         {
             // for now, the prefix and name happen to be the same

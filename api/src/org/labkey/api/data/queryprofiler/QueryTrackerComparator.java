@@ -28,6 +28,7 @@ import java.util.Comparator;
  */
 abstract class QueryTrackerComparator implements Comparator<QueryTracker>
 {
+    @Override
     public int compare(QueryTracker qt1, QueryTracker qt2)
     {
         // Can use simple subtraction here since we won't have MAX_VALUE, MIN_VALUE, etc.

@@ -151,6 +151,7 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
         return root;
     }
 
+    @Override
     protected File getFileTargetDir(ContextType context) throws ExperimentException
     {
         if (context instanceof AssayRunUploadForm)
@@ -261,6 +262,7 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
         return primaryFile.getName();
     }
 
+    @Override
     public boolean isVisible()
     {
         return true;

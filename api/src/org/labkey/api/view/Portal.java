@@ -16,6 +16,7 @@
 
 package org.labkey.api.view;
 
+import org.apache.commons.collections4.Factory;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
@@ -64,6 +65,7 @@ import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.ModuleChangeListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.springframework.beans.MutablePropertyValues;
@@ -84,8 +86,10 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.util.DOM.*;
 import static org.labkey.api.util.DOM.Attribute.*;
@@ -94,7 +98,7 @@ import static org.labkey.api.util.DOM.Attribute.*;
  * Manages the configuration of portal pages, which can be configured by admins to show
  * a desired set of {@link WebPartView} sections.
  */
-public class Portal
+public class Portal implements ModuleChangeListener
 {
     private static final Logger LOG = Logger.getLogger(Portal.class);
     private static final WebPartBeanLoader FACTORY = new WebPartBeanLoader();
@@ -109,9 +113,9 @@ public class Portal
         ModuleResourceCaches.create("File-based webpart definitions", new SimpleWebPartFactoryCacheHandler(), ResourceRootProvider.getStandard(ModuleHtmlView.VIEWS_PATH));
 
     private static Map<String, WebPartFactory> _viewMap = null;
-    private static List<WebPartFactory> _homeWebParts = new ArrayList<>();
+    private static final List<WebPartFactory> _homeWebParts = new ArrayList<>();
 
-    private static Map<String, NavTreeCustomizer> _navTreeCustomizerMap = new HashMap<>();
+    private static final Map<String, NavTreeCustomizer> _navTreeCustomizerMap = new HashMap<>();
 
 
     public static DbSchema getSchema()
@@ -172,10 +176,17 @@ public class Portal
         }
     }
 
+    @NotNull static ProjectUrls urlProvider()
+    {
+        return Objects.requireNonNull(PageFlowUtil.urlProvider(ProjectUrls.class));
+    }
+
     public static final String WEBPART_PROP_LegacyPageAdded = "legacyPageAdded";
 
-    /** Bean object for persisting web part configurations in the core.portalwebparts table */
-    public static class WebPart implements Serializable
+    /** Bean object for persisting web part configurations in the core.portalwebparts table
+     * NOTE: implements Factory<> so this can be used as a builder for immutable object
+     */
+    public static class WebPart implements Serializable, Factory<WebPart>
     {
         Container container;
         String pageId;
@@ -201,6 +212,11 @@ public class Portal
 
         public WebPart(WebPart copyFrom)
         {
+            this(copyFrom, false);
+        }
+
+        protected WebPart(WebPart copyFrom, boolean readonly)
+        {
             pageId = copyFrom.pageId;
             portalPageId = copyFrom.portalPageId;
             container = copyFrom.container;
@@ -211,8 +227,15 @@ public class Portal
             permanent = copyFrom.permanent;
             permission = copyFrom.permission;
             permissionContainer = copyFrom.permissionContainer;
-            setProperties(copyFrom.getProperties());
-            this.extendedProperties = copyFrom.extendedProperties;
+            propertyMap.putAll(copyFrom.propertyMap);
+            if (readonly)
+                propertyMap = Collections.unmodifiableMap(propertyMap);
+            if (null != copyFrom.extendedProperties)
+            {
+                extendedProperties = new HashMap<>(copyFrom.extendedProperties);
+                if (readonly)
+                    extendedProperties = Collections.unmodifiableMap(extendedProperties);
+            }
         }
 
         public String getPageId()
@@ -225,6 +248,7 @@ public class Portal
             return portalPageId;
         }
 
+        @SuppressWarnings("unused")
         public void setPortalPageId(int portalPageId)
         {
             this.portalPageId = portalPageId;
@@ -324,7 +348,7 @@ public class Portal
         public ActionURL getCustomizePostURL(ViewContext viewContext)
         {
             ActionURL current = viewContext.getActionURL();
-            ActionURL ret = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(container);
+            ActionURL ret = urlProvider().getCustomizeWebPartURL(container);
             ret.addParameter("pageId", getPageId());
             ret.addParameter("index", Integer.toString(getIndex()));
             if (null != current.getReturnURL())
@@ -410,6 +434,99 @@ public class Portal
             result = 31 * result + (extendedProperties != null ? extendedProperties.hashCode() : 0);
             return result;
         }
+
+        // return an immutable webpart
+
+        @Override
+        public WebPart create()
+        {
+            return new WebPart(this, true)
+            {
+                @Override
+                public WebPart create()
+                {
+                    return this;
+                }
+
+                @Override
+                public void setPortalPageId(int portalPageId)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setPageId(String pageId)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setContainer(Container container)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setIndex(int index)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setName(String name)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setLocation(String location)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setProperty(String k, String v)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setProperties(String query)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setExtendedProperties(Map<String, Object> extendedProperties)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setPermanent(boolean permanent)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setRowId(int rowId)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setPermission(String permission)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setPermissionContainer(Container permissionContainer)
+                {
+                    throw new UnsupportedOperationException();
+                }
+            };
+        }
     }
 
 
@@ -432,6 +549,12 @@ public class Portal
     public static List<WebPart> getParts(Container c)
     {
         return getParts(c, DEFAULT_PORTAL_PAGE_ID);
+    }
+
+    @NotNull
+    public static List<WebPart> getEditableParts(Container c)
+    {
+        return getParts(c, DEFAULT_PORTAL_PAGE_ID).stream().map(WebPart::new).collect(Collectors.toList());
     }
 
 
@@ -493,9 +616,13 @@ public class Portal
     public static List<WebPart> getParts(Container c, String pageId)
     {
         Collection<WebPart> parts = WebPartCache.getWebParts(c, pageId);
-        if (parts instanceof List)
-            return Collections.unmodifiableList((List<WebPart>)parts);
-        return Collections.unmodifiableList(new ArrayList<>(parts));
+        return List.copyOf(parts);
+    }
+
+    @NotNull
+    public static List<WebPart> getEditableParts(Container c, String pageId)
+    {
+        return WebPartCache.getWebParts(c, pageId).stream().map(WebPart::new).collect(Collectors.toList());
     }
 
     @NotNull
@@ -543,9 +670,10 @@ public class Portal
     }
 
 
-    // TODO: Should use WebPartCache... but we need pageId to do that. Fortunately, this is used infrequently now (see #13267).
+    /** returns an editable webPart (could rename to getEditablePart() */
     public static WebPart getPart(Container c, int webPartRowId)
     {
+        // TODO: Should use WebPartCache... but we need pageId to do that. Fortunately, this is used infrequently now (see #13267).
         WebPart webPart = new TableSelector(getTableInfoPortalWebParts(), SimpleFilter.createContainerFilter(c), null).getObject(webPartRowId, WebPart.class);
         if (null != webPart)
         {
@@ -559,13 +687,13 @@ public class Portal
         return null;
     }
 
-
+    /** returns an editable webPart (could rename to getEditablePart() */
     @Nullable
     public static WebPart getPart(Container c, String pageId, int index)
     {
-        return WebPartCache.getWebPart(c, pageId, index);
+        WebPart cached = WebPartCache.getWebPart(c, pageId, index);
+        return null==cached ? null : new Portal.WebPart(cached);
     }
-
 
     public static void updatePart(User u, WebPart part)
     {
@@ -610,7 +738,7 @@ public class Portal
         if (null != page)
             pageId = page.getPageId();
         
-        List<WebPart> parts = getParts(c, pageId);
+        List<WebPart> parts = getEditableParts(c, pageId);
 
         WebPart newPart = new Portal.WebPart();
         newPart.setContainer(c);
@@ -625,10 +753,10 @@ public class Portal
 
         if (properties != null)
         {
-            for (Map.Entry prop : properties.entrySet())
+            for (Map.Entry<String,String> prop : properties.entrySet())
             {
-                String propName = prop.getKey().toString();
-                String propValue = prop.getValue().toString();
+                String propName = prop.getKey();
+                String propValue = prop.getValue();
                 newPart.setProperty(propName, propValue);
             }
         }
@@ -724,6 +852,8 @@ public class Portal
                 PortalPage find = Portal.getPortalPage(c, tab.getName());   // Portal uses CaseInsensitiveHashMap, which is important
                 if (null != find)
                 {
+                    // create a copy for modifying
+                    find = find.copy();
                     pageMap.remove(tab.getName());
 
                     if (resetIndexes)
@@ -756,9 +886,8 @@ public class Portal
             allPages.sort(Comparator.comparingInt(PortalPage::getIndex));
 
             // Next add all other pages to allPages (includes custom pages)
-            ArrayList<PortalPage> pagesLeft = new ArrayList<>(pageMap.values());
-            pagesLeft.sort(Comparator.comparingInt(PortalPage::getIndex));
-            allPages.addAll(pagesLeft);
+            // creating copy of PortalPage object
+            allPages.addAll(pageMap.values().stream().map(PortalPage::copy).sorted(Comparator.comparing(PortalPage::getIndex)).collect(Collectors.toList()));
 
             // Now set indexes of all pages by walking in reverse order, assigning indexes down
             Collections.reverse(allPages);
@@ -944,6 +1073,7 @@ public class Portal
                 int index = 0;
                 for (PortalPage page : pagesList)
                 {
+                    page = page.copy();    // writable copy
                     page.setIndex(index++);
                     Portal.updatePortalPage(c, page);
                 }
@@ -961,6 +1091,8 @@ public class Portal
 
             try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
             {
+                page1 = page1.copy();
+                page2 = page2.copy();
                 page2.setIndex(-1);
                 Portal.updatePortalPage(c, page2);
                 page1.setIndex(newIndex);
@@ -1057,7 +1189,7 @@ public class Portal
         public String scope;
     }
 
-    private static void addCustomizeDropdowns(ViewContext context, HttpView template, String id, Collection<String> occupiedLocations, String scope)
+    private static void addCustomizeDropdowns(ViewContext context, HttpView<?> template, String id, Collection<String> occupiedLocations, String scope)
     {
         Set<String> regionNames = new HashSet<>();
 
@@ -1086,11 +1218,11 @@ public class Portal
         }
     }
 
-    public static String addWebPartWidgets(ViewContext viewContext, AddWebParts bean)
+    public static HtmlString addWebPartWidgets(ViewContext viewContext, AddWebParts bean)
     {
         if (WebPartFactory.LOCATION_MENUBAR.equals(bean.location))
         {
-            return addWebPartWidget(bean, viewContext, "", "pull-left").toString();
+            return addWebPartWidget(bean, viewContext, "", "pull-left");
         }
         else if (WebPartFactory.LOCATION_BODY.equals(bean.location))
         {
@@ -1104,10 +1236,10 @@ public class Portal
                 newBean.scope = bean.scope;
                 // Add right webpart dropdown should be hidden on extra small screens
                 HtmlString rightWidget = addWebPartWidget(newBean, viewContext, "hidden-xs", "pull-right");
-                return leftWidget.toString() + rightWidget.toString();
+                return HtmlString.unsafe(leftWidget.toString() + rightWidget.toString());
             }
 
-            return addWebPartWidget(bean, viewContext, "visible-md-inline visible-lg-inline", "pull-left").toString();
+            return addWebPartWidget(bean, viewContext, "visible-md-inline visible-lg-inline", "pull-left");
         }
         else if (WebPartFactory.LOCATION_RIGHT.equals(bean.location) && !bean.rightEmpty)
         {
@@ -1121,12 +1253,12 @@ public class Portal
             HtmlString rightBottomWidget = addWebPartWidget(bean, viewContext, "visible-sm-inline", "pull-right");
             HtmlString rightMainWidget = addWebPartWidget(bean, viewContext, "visible-md-inline visible-lg-inline", "pull-left");
 
-            return leftBottomWidget.toString() + rightBottomWidget.toString() + rightMainWidget.toString();
+            return HtmlString.unsafe(leftBottomWidget.toString() + rightBottomWidget.toString() + rightMainWidget.toString());
         }
         else
         {
             // incorrect usage
-            return "";
+            return HtmlString.EMPTY_STRING;
         }
     }
 
@@ -1140,35 +1272,24 @@ public class Portal
 
         if (null != bean.scope && !"folder".equals(bean.scope))
         {
-            Portal.getPartsToAdd(c, bean.scope, bean.location).entrySet().forEach(entry ->
-            {
-                if (partsSeen.add(entry.getValue()))
-                {
-                    OPTIONS.add(OPTION(
-                            at(value, entry.getValue()),
-                            entry.getKey()));
-                }
+            Portal.getPartsToAdd(c, bean.scope, bean.location).forEach((displayName, name) -> {
+                if (partsSeen.add(name))
+                    OPTIONS.add(OPTION(at(value, name), displayName));
             });
 
             if (OPTIONS.size() > 0)
                 OPTIONS.add(OPTION(at(value, ""), HR()));
         }
 
-        Portal.getPartsToAdd(c, FOLDER_PORTAL_PAGE, bean.location).entrySet().forEach(entry ->
-        {
-            if (partsSeen.add(entry.getValue()))
-            {
-                OPTIONS.add(OPTION(
-                        at(value, entry.getValue()),
-                        entry.getKey()
-                ));
-            }
+        Portal.getPartsToAdd(c, FOLDER_PORTAL_PAGE, bean.location).forEach((displayName, name) -> {
+            if (partsSeen.add(name))
+                OPTIONS.add(OPTION(at(value, name), displayName));
         });
 
        return createHtml(
                 DIV(
                         LK.FORM(
-                                at(method, "POST", action, PageFlowUtil.urlProvider(ProjectUrls.class).getAddWebPartURL(c))
+                                at(method, "POST", action, urlProvider().getAddWebPartURL(c))
                                         .cl("form-inline").cl(pullClass).cl(visibilityClass),
 
                                 INPUT(
@@ -1201,7 +1322,7 @@ public class Portal
         );
     }
 
-    public static void addViewToRegion(HttpView template, String regionName, HttpView view)
+    public static void addViewToRegion(HttpView<?> template, String regionName, HttpView<?> view)
     {
         //place
         ModelAndView region = template.getView(regionName);
@@ -1219,20 +1340,20 @@ public class Portal
     }
 
 
-    public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView)
+    public static void populatePortalView(ViewContext context, String id, HttpView<?> template, boolean printView)
     {
         boolean canCustomize = context.getContainer().hasPermission("populatePortalView",context.getUser(), AdminPermission.class);
         populatePortalView(context, id, template, printView, canCustomize, false, true, FOLDER_PORTAL_PAGE);
     }
 
-    public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView,
+    public static void populatePortalView(ViewContext context, String id, HttpView<?> template, boolean printView,
                                           boolean canCustomize, boolean alwaysShowCustomize, boolean allowHideFrame)
     {
         populatePortalView(context, id, template, printView, canCustomize, false, true, FOLDER_PORTAL_PAGE);
     }
 
 
-    public static int populatePortalView(ViewContext context, String id, HttpView template, boolean printView,
+    public static int populatePortalView(ViewContext context, String id, HttpView<?> template, boolean printView,
                           boolean canCustomize, boolean alwaysShowCustomize, boolean allowHideFrame, String scope)
     {
         int count = 0;
@@ -1363,7 +1484,7 @@ public class Portal
 
     public static String getCustomizeURL(ViewContext context, Portal.WebPart webPart)
     {
-        return PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
+        return urlProvider().getCustomizeWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
     }
 
 
@@ -1379,7 +1500,7 @@ public class Portal
                     "})";
         }
         else
-            return PageFlowUtil.urlProvider(ProjectUrls.class).getMoveWebPartURL(context.getContainer(), webPart, direction, context.getActionURL()).getLocalURIString();
+            return urlProvider().getMoveWebPartURL(context.getContainer(), webPart, direction, context.getActionURL()).getLocalURIString();
     }
 
 
@@ -1393,7 +1514,7 @@ public class Portal
                     "})";
         }
         else
-            return PageFlowUtil.urlProvider(ProjectUrls.class).getDeleteWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
+            return urlProvider().getDeleteWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
     }
 
     public static String getToggleFrameURL(ViewContext context, Portal.WebPart webPart)
@@ -1438,6 +1559,13 @@ public class Portal
             initMaps();
 
         return _viewMap;
+    }
+
+    @Override
+    public void onModuleChanged(Module m)
+    {
+        // force releasing of WebPartFactory objects
+        clearMaps();
     }
 
     private synchronized static void initMaps()
@@ -1553,8 +1681,6 @@ public class Portal
     {
         if (page.isHidden() == hidden)
             return;
-
-
         _hidePage(page, hidden);
     }
 
@@ -1579,7 +1705,8 @@ public class Portal
     public static void deletePage(Container c, String pageId)
     {
         PortalPage page = WebPartCache.getPortalPage(c,pageId);
-        deletePage(page);
+        if (null != page)
+            deletePage(page);
     }
 
     public static void deletePage(Container c, int index)
@@ -1688,6 +1815,8 @@ public class Portal
     public static void addProperties(Container container, String pageId, String properties)
     {
         Portal.PortalPage page = WebPartCache.getPortalPage(container, pageId);
+        if (null == page)
+            return;
         page = page.copy();
         page.setProperties(properties);
         _setProperties(page);
@@ -1696,6 +1825,8 @@ public class Portal
     public static void addProperty(Container container, String pageId, String property)
     {
         Portal.PortalPage page = WebPartCache.getPortalPage(container, pageId);
+        if (null == page)
+            return;
         page = page.copy();
         page.setProperty(property, "true");
         _setProperties(page);
@@ -1723,7 +1854,7 @@ public class Portal
         return _homeWebParts;
     }
 
-    public static class PortalPage implements Cloneable
+    public static class PortalPage implements Cloneable, Factory<PortalPage>
     {
         private GUID entityId;
         private GUID containerId;
@@ -1737,8 +1868,41 @@ public class Portal
         private boolean permanent;   // may not rename,hide,delete
         private int rowId;
 
-        private final Map<String, String> propertyMap = new HashMap<>();
-        private final LinkedHashMap<Integer, WebPart> webparts = new LinkedHashMap<>();
+        private Map<String, String> propertyMap = new HashMap<>();
+        private Map<Integer, WebPart> webparts = new LinkedHashMap<>();
+
+        public PortalPage()
+        {
+        }
+
+        /** copy constructor */
+        public PortalPage(PortalPage copyFrom)
+        {
+            this(copyFrom, false);
+        }
+
+        protected PortalPage(PortalPage copyFrom, boolean readonly)
+        {
+            this.entityId = copyFrom.entityId;
+            this.containerId = copyFrom.containerId;
+            this.pageId = copyFrom.pageId;
+            this.index = copyFrom.index;
+            this.caption = copyFrom.caption;
+            this.hidden = copyFrom.hidden;
+            this.type = copyFrom.type;
+            this.action = copyFrom.action;
+            this.targetFolder = copyFrom.targetFolder;
+            this.permanent = copyFrom.permanent;
+            this.rowId = copyFrom.rowId;
+            this.propertyMap.putAll(copyFrom.propertyMap);
+            if (readonly)
+                this.propertyMap = Collections.unmodifiableMap(propertyMap);
+            // deep copy, note that .create() creates readonly copy
+            for (WebPart wp : copyFrom.webparts.values())
+                webparts.put(wp.index, (readonly ? wp.create() : new WebPart(wp)));
+            if (readonly)
+                this.webparts = Collections.unmodifiableMap(webparts);
+        }
 
         public GUID getEntityId()
         {
@@ -1825,6 +1989,7 @@ public class Portal
             return targetFolder;
         }
 
+        @SuppressWarnings("unused")
         public void setTargetFolder(GUID targetFolder)
         {
             this.targetFolder = targetFolder;
@@ -1872,21 +2037,14 @@ public class Portal
         }
 
         @Transient
-        public LinkedHashMap<Integer, WebPart> getWebParts()
+        public Map<Integer, WebPart> getWebParts()
         {
             return webparts;
         }
 
         public PortalPage copy()
         {
-            try
-            {
-                return (PortalPage)this.clone();
-            }
-            catch (CloneNotSupportedException x)
-            {
-                throw new RuntimeException(x);
-            }
+            return new PortalPage(this);
         }
 
         public boolean isCustomTab()
@@ -1905,6 +2063,98 @@ public class Portal
         public void setRowId(int rowId)
         {
             this.rowId = rowId;
+        }
+
+        /** create a read only copy of this PortalPage suitable for caching */
+        @Override
+        public PortalPage create()
+        {
+            return new PortalPage(this, true)
+            {
+                @Override
+                public PortalPage create()
+                {
+                    return this;
+                }
+
+                @Override
+                public void setEntityId(GUID entityId)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setContainer(GUID containerId)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setPageId(String pageId)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setIndex(int index)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setCaption(String name)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setHidden(boolean hidden)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setType(String type)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setAction(String action)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setTargetFolder(GUID targetFolder)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setPermanent(boolean permanent)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setProperty(String k, String v)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setProperties(String query)
+                {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void setRowId(int rowId)
+                {
+                    throw new UnsupportedOperationException();
+                }
+            };
         }
     }
 

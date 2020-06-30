@@ -83,6 +83,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         private boolean _cleanupOnStartup;
         private String _transferToDirOnFailure = null;
 
+        @Override
         public void afterPropertiesSet()
         {
             if (_tempDirectory == null)
@@ -457,6 +458,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
         }
     }
 
+    @Override
     protected CopyingResource createCopyingLock() throws IOException
     {
         if (_lockDirectory == null)
@@ -560,6 +562,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             _lock = _channel.lock();
         }
 
+        @Override
         protected void finalize() throws Throwable
         {
             super.finalize();

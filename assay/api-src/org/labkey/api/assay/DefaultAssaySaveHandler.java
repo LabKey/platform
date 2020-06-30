@@ -38,6 +38,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;
@@ -58,11 +59,13 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
     protected static final Logger LOG = Logger.getLogger(DefaultAssaySaveHandler.class);
     protected AssayProvider _provider;
 
+    @Override
     public AssayProvider getProvider()
     {
         return _provider;
     }
 
+    @Override
     public void setProvider(AssayProvider provider)
     {
         _provider = provider;
@@ -80,6 +83,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         return _provider.getRunDomain(protocol).getProperties();
     }
 
+    @Override
     protected ExpRun createRun(String name, Container container, ExpProtocol protocol)
     {
         return AssayService.get().createExperimentRun(name, container, protocol, null);
@@ -167,6 +171,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         return materialOutputs;
     }
 
+    @Override
     protected void clearOutputDatas(ViewContext context, ExpRun run)
     {
         for (ExpData data : run.getOutputDatas(_provider.getDataType()))
@@ -263,6 +268,10 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
                     }
                     else
                         dataRow.put(entry.getKey(), entry.getValue());
+                }
+                else if (ProvenanceService.PROVENANCE_INPUT_PROPERTY.equals(entry.getKey()))
+                {
+                    dataRow.put(entry.getKey(), entry.getValue());
                 }
             }
             dataRows.add(dataRow);

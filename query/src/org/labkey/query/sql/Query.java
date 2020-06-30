@@ -135,8 +135,8 @@ public class Query
     // TableInfos handed to Query that will be used if a table isn't found.
     private Map<String, TableInfo> _tableMap;
 
-    private ArrayList<QueryException> _parseErrors = new ArrayList<>();
-    private ArrayList<QueryParseException> _parseWarnings = new ArrayList<>();
+    private final ArrayList<QueryException> _parseErrors = new ArrayList<>();
+    private final ArrayList<QueryParseException> _parseWarnings = new ArrayList<>();
 
     private TablesDocument _metadata = null;
     private ContainerFilter _containerFilter;
@@ -148,10 +148,10 @@ public class Query
     String _debugName = null;
 	String _querySource;
     ArrayList<QParameter> _parameters;
-    private Set<SchemaKey> _resolvedTables = new HashSet<>();
+    private final Set<SchemaKey> _resolvedTables = new HashSet<>();
 
     // for displaying dependency graph in UI
-    private HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject> _dependencies = new HashSetValuedHashMap<>();
+    private final HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject> _dependencies = new HashSetValuedHashMap<>();
 
     final IdentityHashMap<QueryTable, Map<FieldKey, QueryRelation.RelationColumn>> qtableColumnMaps = new IdentityHashMap<>();
 
@@ -857,12 +857,20 @@ public class Query
 		for (String part : parts)
 			names.add(FieldKey.decodePart(part));
 
+		ContainerFilter cf = getContainerFilter();
+
         QuerySchema resolvedSchema = currentSchema;
 		for (int i = 0; i < parts.size() - 1; i ++)
 		{
 			String name = names.get(i);
             resolvedSchema = resolvedSchema.getSchema(name);
-            if (resolvedSchema == null && DbSchema.TEMP_SCHEMA_NAME.equalsIgnoreCase(name))
+            if (resolvedSchema instanceof QuerySchema.ContainerSchema)
+            {
+                // If user explicitly specifies a different folder, don't propagate the default container filter.
+                // Use the default container filter for that schema.
+                cf = null;
+            }
+            else if (resolvedSchema == null && DbSchema.TEMP_SCHEMA_NAME.equalsIgnoreCase(name))
             {
                 resolvedSchema = new QuerySchemaWrapper(DbSchema.getTemp());
                 trackDependency = false;
@@ -882,10 +890,10 @@ public class Query
             {
                 TableType tableType = lookupMetadataTable(key.getName());
                 boolean forWrite = tableType != null;
-                t = ((UserSchema) resolvedSchema)._getTableOrQuery(key.getName(), getContainerFilter(), true, forWrite, resolveExceptions);
+                t = ((UserSchema) resolvedSchema)._getTableOrQuery(key.getName(), cf, true, forWrite, resolveExceptions);
             }
             else
-                t = resolvedSchema.getTable(key.getName(), getContainerFilter());
+                t = resolvedSchema.getTable(key.getName(), cf);
         }
         catch (QueryException ex)
         {
@@ -2144,23 +2152,23 @@ public class Query
             }
 
             GUID testGUID = new GUID("01234567-ABCD-ABCD-ABCD-012345679ABC");
-            ContainerFilter custom = new ContainerFilter()
+            ContainerFilter custom = new ContainerFilter(null, null)
             {
                 @Override
-                public String getCacheKey(Container c)
+                public String getCacheKey()
                 {
                     return " ~~CONTAINERFILTER~~ ";
                 }
 
                 @Override
-                public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, boolean allowNulls)
+                public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, boolean allowNulls)
                 {
                     return new SQLFragment(" ~~CONTAINERFILTER~~ ");
                 }
 
                 @NotNull
                 @Override
-                public Collection<GUID> getIds(Container currentContainer)
+                public Collection<GUID> getIds()
                 {
                     return Collections.singletonList(testGUID);
                 }

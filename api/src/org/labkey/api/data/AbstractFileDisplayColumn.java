@@ -45,11 +45,13 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         _map = new MimeMap();
     }
 
+    @Override
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
         renderIconAndFilename(ctx, out, (String)getValue(ctx), true, true);
     }
 
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         renderIconAndFilename(ctx, out, (String)getValue(ctx), true, true);
@@ -229,6 +231,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         return true;
     }
 
+    @Override
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
         if (hasFileInputHtml())

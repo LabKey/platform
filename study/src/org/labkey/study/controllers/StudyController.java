@@ -16,8 +16,6 @@
 
 package org.labkey.study.controllers;
 
-import gwt.client.org.labkey.study.StudyApplication;
-import gwt.client.org.labkey.study.dataset.client.Designer;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.FactoryUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -38,12 +36,12 @@ import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleErrorView;
@@ -67,15 +65,15 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.FolderTypeManager;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -124,7 +122,6 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
-import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -216,7 +213,6 @@ import org.labkey.study.query.StudyQueryView;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.specimen.settings.RepositorySettings;
-import org.labkey.study.view.StudyGWTView;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.visitmanager.VisitManager.VisitStatistic;
@@ -358,9 +354,9 @@ public class StudyController extends BaseStudyController
         setActionResolver(ACTION_RESOLVER);
     }
 
-    protected NavTree _appendNavTrailVisitAdmin(NavTree root)
+    protected void _addNavTrailVisitAdmin(NavTree root)
     {
-        _appendManageStudy(root);
+        _addManageStudy(root);
 
         StringBuilder sb = new StringBuilder("Manage ");
 
@@ -371,13 +367,13 @@ public class StudyController extends BaseStudyController
         sb.append(getVisitLabelPlural());
 
         root.addChild(sb.toString(), new ActionURL(ManageVisitsAction.class, getContainer()));
-        return root;
     }
 
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
         private Study _study;
+
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
@@ -389,9 +385,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(_study == null ? "No Study In Folder" : _study.getLabel());
+            root.addChild(_study == null ? "No Study In Folder" : _study.getLabel());
         }
     }
 
@@ -415,88 +411,37 @@ public class StudyController extends BaseStudyController
 		}
 	}
 
-
     @RequiresPermission(AdminPermission.class)
-    public class DefineDatasetTypeAction extends FormViewAction<ImportTypeForm>
+    public class DefineDatasetTypeAction extends SimpleViewAction<Object>
     {
-        private Dataset _def;
         @Override
-        public ModelAndView getView(ImportTypeForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new StudyJspView<>(getStudyRedirectIfNull(), "importDataType.jsp", form, errors);
+            getStudyRedirectIfNull();
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("study"), "datasetDesigner");
         }
 
         @Override
-        public void validateCommand(ImportTypeForm form, Errors errors)
+        public void addNavTrail(NavTree root)
         {
-            if (null == form.getDatasetId() && !form.isAutoDatasetId())
-                errors.reject("defineDatasetType", "You must supply an integer Dataset Id");
-            if (null != form.getDatasetId())
-            {
-                Dataset dsd = StudyManager.getInstance().getDatasetDefinition(StudyManager.getInstance().getStudy(getContainer()), form.getDatasetId());
-                if (null != dsd)
-                    errors.reject("defineDatasetType", "There is already a dataset with id " + form.getDatasetId());
-            }
-            if (null == StringUtils.trimToNull(form.getTypeName()))
-                errors.reject("defineDatasetType", "Dataset must have a name.");
+            setHelpTopic("createDataset");
+            _addNavTrailDatasetAdmin(root);
+            root.addChild("Create Dataset Definition");
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetDatasetAction extends ReadOnlyApiAction<DatasetForm>
+    {
+        @Override
+        public Object execute(DatasetForm form, BindException errors) throws Exception
+        {
+            DatasetDomainKindProperties properties = DatasetManager.get().getDatasetDomainKindProperties(getContainer(), form.getDatasetId());
+            if (properties != null)
+                return properties;
             else
-            {
-                // Check if a dataset, query or table exists with the same name
-                StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
-                StudyQuerySchema studySchema = StudyQuerySchema.createSchema(study, getUser(), true);
-                if (null != studySchema.getDatasetDefinitionByName(form.getTypeName())
-                        || studySchema.getTableNames().contains(form.getTypeName())
-                        || QueryService.get().getQueryDef(getUser(), getContainer(), "study", form.getTypeName()) != null)
-                {
-                    errors.reject("defineDatasetType", "There is a dataset or query named \"" + form.getTypeName() + "\" already defined in this folder.");
-                }
-            }
-        }
-
-        @Override
-        public boolean handlePost(ImportTypeForm form, BindException derrors)
-        {
-            Integer datasetId = form.getDatasetId();
-
-            if (form.autoDatasetId)
-                _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudyThrowIfNull(), form.getTypeName(), null, null, false, null);
-            else
-                _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudyThrowIfNull(), form.getTypeName(), null, datasetId, false, null);
-
-
-            if (_def != null)
-            {
-                ((DatasetDefinition)_def).provisionTable();
-                return true;
-            }
-            return false;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(ImportTypeForm form)
-        {
-            if (_def == null)
-            {
-                throw new NotFoundException();
-            }
-            if (!form.isFileImport())
-            {
-                return new ActionURL(EditTypeAction.class, getContainer()).
-                    addParameter(DatasetDefinition.DATASETKEY, _def.getDatasetId());
-            }
-            else
-            {
-                return new ActionURL(DatasetController.DefineAndImportDatasetAction.class, getContainer()).
-                    addParameter(DatasetDefinition.DATASETKEY, _def.getDatasetId());
-            }
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic("importDatasetFromFile");
-            _appendNavTrailDatasetAdmin(root);
-            return root.addChild("Define Dataset");
+                throw new NotFoundException("Dataset does not exist in this container for datasetId " + form.getDatasetIdStr() + ".");
         }
     }
 
@@ -510,17 +455,20 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(DatasetForm form, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
+            if (null == form.getDatasetId())
+                throw new NotFoundException("No datasetId parameter provided.");
+
             DatasetDefinition def = study.getDataset(form.getDatasetId());
             _def = def;
             if (null == def)
-            {
-                throw new NotFoundException();
-            }
+                throw new NotFoundException("No dataset found for datasetId " + form.getDatasetId() + ".");
+
             if (!def.canUpdateDefinition(getUser()))
             {
                 ActionURL details = new ActionURL(DatasetDetailsAction.class,getContainer()).addParameter("id",def.getDatasetId());
                 throw new RedirectException(details);
             }
+
             if (null == def.getTypeURI())
             {
                 def = def.createMutable();
@@ -528,32 +476,17 @@ public class StudyController extends BaseStudyController
                 OntologyManager.ensureDomainDescriptor(domainURI, def.getName(), study.getContainer());
                 def.setTypeURI(domainURI);
             }
-            Map<String,String> props = PageFlowUtil.map(
-                    "studyId", ""+study.getRowId(),
-                    "datasetId", ""+form.getDatasetId(),
-                    "typeURI", def.getTypeURI(),
-                    "timepointType", ""+study.getTimepointType(),
-                    ActionURL.Param.returnUrl.name(), new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", form.getDatasetId()).toString());
 
-            String cancelUrl = getViewContext().getActionURL().getParameter(ActionURL.Param.cancelUrl.name());
-            if (cancelUrl != null)
-                props.put(ActionURL.Param.cancelUrl.name(), cancelUrl);
-
-            HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
-            HttpView view = new StudyGWTView(Designer.class, props);
-
-            // hack for 4404 : Lookup picker performance is terrible when there are many containers
-            ContainerManager.getAllChildren(ContainerManager.getRoot());
-
-            return new VBox(text, view);
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("study"), "datasetDesigner");
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendNavTrailDatasetAdmin(root);
+            setHelpTopic("datasetProperties");
+            _addNavTrailDatasetAdmin(root);
             root.addChild(_def.getName(), new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", _def.getDatasetId()));
-            return root.addChild("Edit Dataset Definition");
+            root.addChild("Edit Dataset Definition");
         }
     }
 
@@ -575,10 +508,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("datasetProperties");
-            return _appendNavTrailDatasetAdmin(root).addChild(_def.getLabel() + " Dataset Properties");
+            _addNavTrailDatasetAdmin(root);
+            root.addChild(_def.getLabel() + " Dataset Properties");
         }
     }
 
@@ -672,10 +606,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("studyDashboard#navigator");
-            return root.addChild("Overview: " + _study.getLabel());
+            root.addChild("Overview: " + _study.getLabel());
         }
     }
 
@@ -727,11 +661,12 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (_report != null)
-                return root.addChild(_report.getDescriptor().getReportName());
-            return root.addChild("Study Query Report");
+                root.addChild(_report.getDescriptor().getReportName());
+            else
+                root.addChild("Study Query Report");
         }
 
         protected Report getReport(QueryReportForm form)
@@ -819,9 +754,8 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1064,10 +998,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("gridBasics");
-            return _appendNavTrail(root, getDatasetDefinition().getDatasetId(), _visitId, _cohortFilter, _encodedQcState);
+            _addNavTrail(root, getDatasetDefinition().getDatasetId(), _visitId, _cohortFilter, _encodedQcState);
         }
     }
 
@@ -1096,9 +1030,8 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1211,11 +1144,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("participantViews");
-            return _appendNavTrail(root, _bean.getDatasetId(), 0, _cohortFilter, _bean.getQCState()).
-                    addChild(StudyService.get().getSubjectNounSingular(getContainer()) + " - " + id(_bean.getParticipantId()));
+            _addNavTrail(root, _bean.getDatasetId(), 0, _cohortFilter, _bean.getQCState());
+            root.addChild(StudyService.get().getSubjectNounSingular(getContainer()) + " - " + id(_bean.getParticipantId()));
         }
     }
 
@@ -1305,9 +1238,8 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1363,11 +1295,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("importVisitMap");
-            _appendNavTrailVisitAdmin(root);
-            return root.addChild("Import Visit Map");
+            _addNavTrailVisitAdmin(root);
+            root.addChild("Import Visit Map");
         }
     }
 
@@ -1443,9 +1375,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Create Study");
+            root.addChild("Create Study");
         }
     }
 
@@ -1508,10 +1440,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageStudy");
-            return _appendManageStudy(root);
+            _addManageStudy(root);
         }
     }
 
@@ -1545,9 +1477,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Confirm Delete Study");
+            root.addChild("Confirm Delete Study");
         }
     }
 
@@ -1627,11 +1559,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageStudy");
-            _appendManageStudy(root);
-            return root.addChild("Study Properties");
+            _addManageStudy(root);
+            root.addChild("Study Properties");
         }
 
         @Override
@@ -1724,11 +1656,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageVisits");
-            _appendNavTrailVisitAdmin(root);
-            return root;
+            _addNavTrailVisitAdmin(root);
         }
 
         private String _jspName(Study study)
@@ -1748,11 +1679,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageDatasets");
-            _appendManageStudy(root);
-            return root.addChild("Manage Datasets");
+            _addManageStudy(root);
+            root.addChild("Manage Datasets");
         }
     }
 
@@ -1766,11 +1697,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("fileWatcher");
-            _appendManageStudy(root);
-            return root.addChild("Manage File Watchers");
+            _addManageStudy(root);
+            root.addChild("Manage File Watchers");
         }
     }
 
@@ -1864,11 +1795,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageLocations");
-            _appendManageStudy(root);
-            return root.addChild("Manage Locations");
+            _addManageStudy(root);
+            root.addChild("Manage Locations");
         }
     }
 
@@ -1937,7 +1868,7 @@ public class StudyController extends BaseStudyController
             String containerFilterName = form.getContainerFilter();
 
             if (null != containerFilterName)
-                return LocationTable.getStudyContainers(getContainer(), ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getUser()));
+                return LocationTable.getStudyContainers(getContainer(), ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getContainer(), getUser()));
             else
                 return Collections.singleton(getContainer());
         }
@@ -2126,11 +2057,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendNavTrailVisitAdmin(root);
+            _addNavTrailVisitAdmin(root);
             root.addChild(_v.getDisplayString());
-            return root;
         }
     }
 
@@ -2159,11 +2089,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("studySchedule");
-            _appendManageStudy(root);
-            return root.addChild("Study Schedule");
+            _addManageStudy(root);
+            root.addChild("Study Schedule");
         }
     }
 
@@ -2325,10 +2255,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendNavTrailVisitAdmin(root);
-            return root.addChild("Delete " + (_timepointType == TimepointType.DATE ? "Timepoints" : "Visits"));
+            _addNavTrailVisitAdmin(root);
+            root.addChild("Delete " + (_timepointType == TimepointType.DATE ? "Timepoints" : "Visits"));
         }
 
         @Override
@@ -2419,10 +2349,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             String noun = _timepointType == TimepointType.DATE ? "Timepoint" : "Visit";
-            return root.addChild("Delete " + noun + " -- " + _visit.getDisplayString());
+            root.addChild("Delete " + noun + " -- " + _visit.getDisplayString());
         }
     }
 
@@ -2483,10 +2413,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendNavTrailVisitAdmin(root);
-            return root.addChild("Create New " + getVisitLabel());
+            _addNavTrailVisitAdmin(root);
+            root.addChild("Create New " + getVisitLabel());
         }
     }
 
@@ -2544,15 +2474,14 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendNavTrailDatasetAdmin(root);
+            _addNavTrailDatasetAdmin(root);
             if (_def != null)
             {
                 VisitManager visitManager = StudyManager.getInstance().getVisitManager(getStudyThrowIfNull());
-                return root.addChild("Edit " + _def.getLabel() + " " + visitManager.getPluralLabel());
+                root.addChild("Edit " + _def.getLabel() + " " + visitManager.getPluralLabel());
             }
-            return root;
         }
     }
 
@@ -2576,6 +2505,8 @@ public class StudyController extends BaseStudyController
             }
 
             _def = StudyManager.getInstance().getDatasetDefinition(_study, form.getDatasetId());
+            if (null == _def && null != form.getName())
+                _def = StudyManager.getInstance().getDatasetDefinitionByName(_study, form.getName());
             if (null == _def)
                throw new NotFoundException("Dataset not found");
             if (null == _def.getTypeURI())
@@ -2618,9 +2549,8 @@ public class StudyController extends BaseStudyController
             return getDefaultImportView(form, errors);
         }
 
-
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors)
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType)
         {
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
             {
@@ -2628,7 +2558,17 @@ public class StudyController extends BaseStudyController
                 return -1;
             }
 
+            // Allow for mapping of the ParticipantId and Sequence Num (i.e. timepoint column),
+            // these are passed in for the "create dataset from a file and import data" case
             Map<String,String> columnMap = new CaseInsensitiveHashMap<>();
+            if (null != _form.getParticipantId())
+                columnMap.put(_form.getParticipantId(),"ParticipantId");
+            if (null != _form.getSequenceNum())
+            {
+                String column = _def.getDomainKind().getKindName().equalsIgnoreCase(DateDatasetDomainKind.KIND_NAME) ? "Date" : "SequenceNum";
+                columnMap.put(_form.getSequenceNum(), column);
+            }
+
             Pair<List<String>, UploadLog> result;
             result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, _importLookupByAlternateKey, file, originalName, columnMap, errors);
 
@@ -2654,14 +2594,13 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild(_study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
             ActionURL datasetURL = new ActionURL(DatasetAction.class, getContainer()).
                     addParameter(DatasetDefinition.DATASETKEY, _form.getDatasetId());
             root.addChild(_def.getName(), datasetURL);
             root.addChild("Import Data");
-            return root;
         }
     }
 
@@ -2711,11 +2650,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("DatasetBulkDefinition"));
-            _appendNavTrailDatasetAdmin(root);
-            return root.addChild("Bulk Import");
+            _addNavTrailDatasetAdmin(root);
+            root.addChild("Bulk Import");
         }
     }
 
@@ -2802,9 +2741,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Upload History" + (null != _datasetLabel ? " for " + _datasetLabel : ""));
+            root.addChild("Upload History" + (null != _datasetLabel ? " for " + _datasetLabel : ""));
         }
     }
 
@@ -2821,9 +2760,8 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -2842,9 +2780,8 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -2906,9 +2843,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Copy-to-Study History Details");
+            root.addChild("Copy-to-Study History Details");
         }
     }
 
@@ -3080,54 +3017,6 @@ public class StudyController extends BaseStudyController
         {
             return new ActionURL(DatasetAction.class, getContainer()).
                     addParameter(DatasetDefinition.DATASETKEY, form.getDatasetId());
-        }
-    }
-
-    public static class ImportTypeForm
-    {
-        private String typeName;
-        private Integer datasetId;
-        private boolean autoDatasetId;
-        private boolean fileImport;
-
-        public String getTypeName()
-        {
-            return typeName;
-        }
-
-        public void setTypeName(String typeName)
-        {
-            this.typeName = typeName;
-        }
-
-        public Integer getDatasetId()
-        {
-            return datasetId;
-        }
-
-        public void setDatasetId(Integer datasetId)
-        {
-            this.datasetId = datasetId;
-        }
-
-        public boolean isAutoDatasetId()
-        {
-            return autoDatasetId;
-        }
-
-        public void setAutoDatasetId(boolean autoDatasetId)
-        {
-            this.autoDatasetId = autoDatasetId;
-        }
-
-        public boolean isFileImport()
-        {
-            return fileImport;
-        }
-
-        public void setFileImport(boolean fileImport)
-        {
-            this.fileImport = fileImport;
         }
     }
 
@@ -3531,11 +3420,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageQC");
-            _appendManageStudy(root);
-            return root.addChild("Manage Dataset QC States");
+            _addManageStudy(root);
+            root.addChild("Manage Dataset QC States");
         }
 
         @Override
@@ -3796,21 +3685,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            root = _appendNavTrail(root, _datasetId, -1);
-            return root.addChild("Change QC State");
-        }
-    }
-
-    // GWT Action
-    @RequiresPermission(AdminPermission.class)
-    public class DatasetServiceAction extends GWTServiceAction
-    {
-        @Override
-        protected BaseRemoteService createService() throws IllegalStateException
-        {
-            return new DatasetServiceImpl(getViewContext(), getStudyThrowIfNull(), StudyManager.getInstance());
+            root = _addNavTrail(root, _datasetId, -1);
+            root.addChild("Change QC State");
         }
     }
 
@@ -3915,10 +3793,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendNavTrailDatasetAdmin(root);
-            return root.addChild("Define Dataset Schemas");
+            _addNavTrailDatasetAdmin(root);
+            root.addChild("Define Dataset Schemas");
         }
     }
 
@@ -3986,9 +3864,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("Set Default"));
+            setHelpTopic(new HelpTopic("customViews"));
 
             root.addChild(_study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
 
@@ -3998,8 +3876,7 @@ public class StudyController extends BaseStudyController
             String label = _def.getLabel() != null ? _def.getLabel() : "" + _def.getDatasetId();
             root.addChild(new NavTree(label, datasetURL.getLocalURIString()));
 
-            root.addChild(new NavTree("Preferences"));
-            return root;
+            root.addChild(new NavTree("View Preferences"));
         }
 
         @Override
@@ -4055,11 +3932,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild(getStudyRedirectIfNull().getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
             root.addChild("Import Study Batch - " + path);
-            return root;
         }
     }
 
@@ -4150,9 +4026,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Type Not Found");
+            root.addChild("Type Not Found");
         }
     }
 
@@ -4195,10 +4071,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendNavTrailVisitAdmin(root);
-            return root.addChild("Recalculate Visit Dates");
+            _addNavTrailVisitAdmin(root);
+            root.addChild("Recalculate Visit Dates");
         }
     }
 
@@ -4215,10 +4091,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendNavTrailVisitAdmin(root);
-            return root.addChild("Visit Order");
+            _addNavTrailVisitAdmin(root);
+            root.addChild("Visit Order");
         }
 
         @Override
@@ -4316,10 +4192,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendNavTrailVisitAdmin(root);
-            return root.addChild("Properties");
+            _addNavTrailVisitAdmin(root);
+            root.addChild("Properties");
         }
 
         @Override
@@ -4422,12 +4298,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Manage Datasets", new ActionURL(ManageTypesAction.class, getContainer()));
             root.addChild("Properties");
-            return root;
         }
 
         @Override
@@ -4589,12 +4464,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Manage Datasets", new ActionURL(ManageTypesAction.class, getContainer()));
             root.addChild("Display Order");
-            return root;
         }
 
         @Override
@@ -4838,11 +4712,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
-            return root.addChild("Customize " + StudyService.get().getSubjectNounSingular(getContainer()) + " View");
+            root.addChild("Customize " + StudyService.get().getSubjectNounSingular(getContainer()) + " View");
         }
     }
 
@@ -5081,32 +4955,7 @@ public class StudyController extends BaseStudyController
             }
             else if (StudySnapshotForm.EDIT_DATASET.equals(form.getAction()))
             {
-                StudyImpl study = getStudyRedirectIfNull();
-                Dataset dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, form.getSnapshotName());
-
-                ActionURL url = getViewContext().cloneActionURL().replaceParameter("ff_snapshotName", form.getSnapshotName()).
-                        replaceParameter("ff_updateDelay", String.valueOf(form.getUpdateDelay())).
-                        replaceParameter("ff_snapshotDatasetId", String.valueOf(form.getSnapshotDatasetId()));
-
-                if (dsDef == null)
-                    throw new NotFoundException("Unable to edit the created DataSet Definition");
-
-                Map<String,String> props = PageFlowUtil.map(
-                        "studyId", String.valueOf(study.getRowId()),
-                        "datasetId", String.valueOf(dsDef.getDatasetId()),
-                        "typeURI", dsDef.getTypeURI(),
-                        "timepointType", String.valueOf(study.getTimepointType()),
-                        ActionURL.Param.returnUrl.name(), url.getLocalURIString(),
-                        ActionURL.Param.cancelUrl.name(), url.getLocalURIString(),
-                        "create", "false");
-
-                HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
-                HttpView view = new StudyGWTView(gwt.client.org.labkey.study.dataset.client.Designer.class, props);
-
-                // hack for 4404 : Lookup picker performance is terrible when there are many containers
-                ContainerManager.getAllChildren(ContainerManager.getRoot());
-
-                return new VBox(text, view);
+                throw new NotFoundException("Unable to edit the created dataset definition.");
             }
             return null;
         }
@@ -5127,7 +4976,7 @@ public class StudyController extends BaseStudyController
             }
         }
 
-        private void createDataset(StudySnapshotForm form, BindException errors) throws Exception
+        private Dataset createDataset(StudySnapshotForm form, BindException errors) throws Exception
         {
             StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             Dataset dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, form.getSnapshotName());
@@ -5197,8 +5046,12 @@ public class StudyController extends BaseStudyController
                         DatasetSnapshotProvider.addAsDomainProperty(d, col);
                     }
                     d.save(getUser());
+
+                    return def;
                 }
             }
+
+            return dsDef;
         }
 
         @Override
@@ -5210,7 +5063,18 @@ public class StudyController extends BaseStudyController
             {
                 if (StudySnapshotForm.EDIT_DATASET.equals(form.getAction()))
                 {
-                    createDataset(form, errors);
+                    Dataset def = createDataset(form, errors);
+                    if (!errors.hasErrors() && def != null)
+                    {
+                        ActionURL returnUrl = getViewContext().cloneActionURL()
+                            .replaceParameter("ff_snapshotName", form.getSnapshotName())
+                            .replaceParameter("ff_updateDelay", String.valueOf(form.getUpdateDelay()))
+                            .replaceParameter("ff_snapshotDatasetId", String.valueOf(form.getSnapshotDatasetId()));
+
+                        _successURL = new ActionURL(StudyController.EditTypeAction.class, getContainer())
+                                .addParameter("datasetId", def.getDatasetId())
+                                .addReturnURL(returnUrl);
+                    }
                 }
                 else if (StudySnapshotForm.CREATE_SNAPSHOT.equals(form.getAction()))
                 {
@@ -5240,10 +5104,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("querySnapshot");
-            return root.addChild("Create Query Snapshot");
+            root.addChild("Create Query Snapshot");
         }
     }
 
@@ -5269,51 +5133,19 @@ public class StudyController extends BaseStudyController
                 form.init(QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName()), getUser());
 
             VBox box = new VBox();
-            QuerySnapshotService.Provider provider = QuerySnapshotService.get(form.getSchemaName());
 
+            QuerySnapshotService.Provider provider = QuerySnapshotService.get(form.getSchemaName());
             if (provider != null)
             {
-                boolean showHistory = BooleanUtils.toBoolean(getViewContext().getActionURL().getParameter("showHistory"));
-                boolean showDataset = BooleanUtils.toBoolean(getViewContext().getActionURL().getParameter("showDataset"));
-
                 box.addView(new JspView<QueryForm>("/org/labkey/study/view/editSnapshot.jsp", form));
                 box.addView(new JspView<QueryForm>("/org/labkey/study/view/createDatasetSnapshot.jsp", form, errors));
 
+                boolean showHistory = BooleanUtils.toBoolean(getViewContext().getActionURL().getParameter("showHistory"));
                 if (showHistory)
                 {
                     HttpView historyView = provider.createAuditView(form);
                     if (historyView != null)
                         box.addView(historyView);
-                }
-
-                if (showDataset)
-                {
-                    // create the GWT dataset designer
-                    StudyImpl study = getStudyRedirectIfNull();
-                    Dataset dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, form.getSnapshotName());
-
-                    if (dsDef == null)
-                        throw new NotFoundException("Unable to edit the created DataSet Definition");
-
-                    ActionURL returnURL = getViewContext().cloneActionURL().replaceParameter("showDataset", "0");
-                    Map<String,String> props = PageFlowUtil.map(
-                            "studyId", String.valueOf(study.getRowId()),
-                            "datasetId", String.valueOf(dsDef.getDatasetId()),
-                            "typeURI", dsDef.getTypeURI(),
-                            "timepointType", String.valueOf(study.getTimepointType()), // XXX: should always be "VISIT" ?
-                            ActionURL.Param.returnUrl.name(), returnURL.toString(),
-                            ActionURL.Param.cancelUrl.name(), returnURL.toString(),
-                            "create", "false");
-
-                    HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.<br>Click the save button to " +
-                            "save any changes, else click the cancel button to complete the snapshot.");
-                    HttpView view = new StudyGWTView(new StudyApplication.DatasetDesigner(), props);
-
-                    // hack for 4404 : Lookup picker performance is terrible when there are many containers
-                    ContainerManager.getAllChildren(ContainerManager.getRoot());
-
-                    box.addView(text);
-                    box.addView(view);
                 }
             }
             return box;
@@ -5359,9 +5191,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Edit Query Snapshot");
+            root.addChild("Edit Query Snapshot");
         }
     }
 
@@ -5544,8 +5376,8 @@ public class StudyController extends BaseStudyController
 
     public static class ViewPrefsBean
     {
-        private List<Pair<String, String>> _views;
-        private Dataset _def;
+        private final List<Pair<String, String>> _views;
+        private final Dataset _def;
 
         public ViewPrefsBean(List<Pair<String, String>> views, Dataset def)
         {
@@ -5959,7 +5791,7 @@ public class StudyController extends BaseStudyController
 
     public static class ReportHeader extends HttpView
     {
-        private Report _report;
+        private final Report _report;
 
         public ReportHeader(Report report)
         {
@@ -6000,11 +5832,11 @@ public class StudyController extends BaseStudyController
      */
     public static class ParticipantNavView extends HttpView
     {
-        private ActionURL _prevURL;
-        private ActionURL _nextURL;
-        private String _display;
-        private String _currentParticipantId;
-        private String _encodedQcState;
+        private final ActionURL _prevURL;
+        private final ActionURL _nextURL;
+        private final String _display;
+        private final String _currentParticipantId;
+        private final String _encodedQcState;
         private boolean _showCustomizeLink = true;
 
         public ParticipantNavView(ActionURL prevURL, ActionURL nextURL, String currentParticipantId, String encodedQCState, String display)
@@ -6084,7 +5916,9 @@ public class StudyController extends BaseStudyController
         private String typeURI;
         private String tsv;
         private String keys;
-
+        private String _participantId;
+        private String _sequenceNum;
+        private String _name;
 
         public int getDatasetId()
         {
@@ -6125,13 +5959,43 @@ public class StudyController extends BaseStudyController
         {
             this.typeURI = typeURI;
         }
+
+        public String getParticipantId()
+        {
+            return _participantId;
+        }
+
+        public void setParticipantId(String participantId)
+        {
+            _participantId = participantId;
+        }
+
+        public String getSequenceNum()
+        {
+            return _sequenceNum;
+        }
+
+        public void setSequenceNum(String sequenceNum)
+        {
+            _sequenceNum = sequenceNum;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
     }
 
     public static class DatasetForm
     {
         private String _name;
         private String _label;
-        private int _datasetId;
+        private Integer _datasetId;
         private String _category;
         private boolean _showByDefault;
         private String _visitDatePropertyName;
@@ -6186,12 +6050,12 @@ public class StudyController extends BaseStudyController
             }
         }
 
-        public int getDatasetId()
+        public Integer getDatasetId()
         {
             return _datasetId;
         }
 
-        public void setDatasetId(int datasetId)
+        public void setDatasetId(Integer datasetId)
         {
             _datasetId = datasetId;
         }
@@ -6297,11 +6161,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendNavTrail(root);
+            _addNavTrail(root);
             root.addChild("Datasets");
-            return root;
         }
     }
 
@@ -6315,13 +6178,12 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             Study study = getStudy();
             if (study != null)
                 root.addChild(study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
             root.addChild("Samples");
-            return root;
         }
     }
 
@@ -6338,9 +6200,8 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -6406,10 +6267,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
-            return root.addChild("Manage External Reloading");
+            _addManageStudy(root);
+            root.addChild("Manage External Reloading");
         }
     }
 
@@ -6545,11 +6406,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("demoMode");
-            _appendManageStudy(root);
-            return root.addChild("Demo Mode");
+            _addManageStudy(root);
+            root.addChild("Demo Mode");
         }
     }
 
@@ -6580,10 +6441,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendNavTrailVisitAdmin(root);
-            return root.addChild("Visit Import Mapping");
+            _addNavTrailVisitAdmin(root);
+            root.addChild("Visit Import Mapping");
         }
     }
 
@@ -6674,10 +6535,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendNavTrailVisitAdmin(root);
-            return root.addChild("Import Visit Aliases");
+            _addNavTrailVisitAdmin(root);
+            root.addChild("Import Visit Aliases");
         }
     }
 
@@ -6750,12 +6611,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("participantGroups");
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Manage " + getStudyRedirectIfNull().getSubjectNounSingular() + " Groups");
-            return root;
         }
     }
 
@@ -6839,13 +6699,12 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("participantGroups");
             String manageGroupsTitle = "Manage " + getStudyRedirectIfNull().getSubjectNounSingular() + " Groups";
             root.addChild(manageGroupsTitle, new ActionURL(ManageParticipantCategoriesAction.class, getContainer()));
             root.addChild("Send Participant Group");
-            return root;
         }
     }
 
@@ -6931,14 +6790,12 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("alternateIDs");
-            _appendManageStudy(root);
+            _addManageStudy(root);
             String subjectNoun = getStudyRedirectIfNull().getSubjectNounSingular();
             root.addChild("Manage Alternate " + subjectNoun + " IDs and " + subjectNoun + " Aliases");
-
-            return root;
         }
     }
 
@@ -6952,13 +6809,12 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
+            _addManageStudy(root);
             String subjectColumnName = getStudyRedirectIfNull().getSubjectColumnName();
             root.addChild("Merge " + subjectColumnName + "s");
-            return root;
-        }
+          }
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -6971,9 +6827,8 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -7135,7 +6990,6 @@ public class StudyController extends BaseStudyController
                 {
                     case defineManually:
                     case placeHolder:
-                    case importFromFile:
                         if (StringUtils.isEmpty(form.getName()))
                             errors.reject(ERROR_MSG, "A Dataset name must be specified.");
                         else if (StudyManager.getInstance().getDatasetDefinitionByName(_study, form.getName()) != null)
@@ -7177,7 +7031,6 @@ public class StudyController extends BaseStudyController
 
                 switch (form.getType())
                 {
-                    case importFromFile:
                     case defineManually:
                         def = AssayPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
                                 null, null, false, Dataset.TYPE_STANDARD, categoryId, null, false, KeyManagementType.None);
@@ -7187,12 +7040,7 @@ public class StudyController extends BaseStudyController
                             def.provisionTable();
                         }
 
-                        ActionURL redirect;
-                        if (form.getType() == DefineDatasetForm.Type.defineManually)
-                            redirect = new ActionURL(EditTypeAction.class, getContainer()). addParameter(DatasetDefinition.DATASETKEY, def.getDatasetId());
-                        else
-                            redirect = new ActionURL(DatasetController.DefineAndImportDatasetAction.class, getContainer()).addParameter(DatasetDefinition.DATASETKEY, def.getDatasetId());
-
+                        ActionURL redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(DatasetDefinition.DATASETKEY, def.getDatasetId());
                         response.put("redirectUrl", redirect.getLocalURIString());
                         break;
                     case placeHolder:
@@ -7206,7 +7054,6 @@ public class StudyController extends BaseStudyController
                         break;
 
                     case linkManually:
-                    case linkImport:
                         def = StudyManager.getInstance().getDatasetDefinition(_study, form.getExpectationDataset());
                         if (def != null)
                         {
@@ -7218,11 +7065,7 @@ public class StudyController extends BaseStudyController
                             // add a cancel url to rollback either the manual link or import from file link
                             ActionURL cancelURL = new ActionURL(CancelDefineDatasetAction.class, getContainer()).addParameter("expectationDataset", form.getExpectationDataset());
 
-                            if (form.getType() == DefineDatasetForm.Type.linkManually)
-                                redirect = new ActionURL(EditTypeAction.class, getContainer()). addParameter(DatasetDefinition.DATASETKEY, form.getExpectationDataset());
-                            else
-                                redirect = new ActionURL(DatasetController.DefineAndImportDatasetAction.class, getContainer()).addParameter(DatasetDefinition.DATASETKEY, form.getExpectationDataset());
-
+                            redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(DatasetDefinition.DATASETKEY, form.getExpectationDataset());
                             redirect.addParameter(ActionURL.Param.cancelUrl.name(), cancelURL.getLocalURIString());
                             response.put("redirectUrl", redirect.getLocalURIString());
                         }
@@ -7272,9 +7115,8 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -7282,12 +7124,10 @@ public class StudyController extends BaseStudyController
     {
         enum Type
         {
-            importFromFile,
             defineManually,
             placeHolder,
             linkToTarget,
             linkManually,
-            linkImport,
         }
 
         private ViewContext _context;
@@ -7527,7 +7367,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException();
         }
@@ -7580,12 +7420,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageLocations");
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Manage Location Types");
-            return root;
         }
     }
 
@@ -7699,7 +7538,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType) throws IOException
         {
             if (null == _study)
                 return 0;
@@ -7707,10 +7546,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Upload " + _study.getSubjectNounSingular() + " Mapping");
-            return root;
         }
 
         @Override
@@ -7744,12 +7582,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("studyPubRefresh");
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild((_study.getStudySnapshotType() != null ? _study.getStudySnapshotType().getTitle() : "") + " Study Settings");
-            return root;
         }
 
         @Override
@@ -7839,9 +7676,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Configure Master Patient Index");
+            root.addChild("Configure Master Patient Index");
         }
     }
 
@@ -7936,13 +7773,13 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             MasterPatientIndexService svc = getService();
             if (svc != null)
-                return root.addChild("Manage " + svc.getName() + " Configuration");
+                root.addChild("Manage " + svc.getName() + " Configuration");
             else
-                return root.addChild("Manage Master Patient Index Configuration");
+                root.addChild("Manage Master Patient Index Configuration");
         }
 
         private MasterPatientIndexService getService()
@@ -8014,7 +7851,7 @@ public class StudyController extends BaseStudyController
 
     public static class DeleteMPIForm implements CustomApiForm
     {
-        private List<Pair<String, String>> _params = new ArrayList<>();
+        private final List<Pair<String, String>> _params = new ArrayList<>();
 
         public List<Pair<String, String>> getParams()
         {

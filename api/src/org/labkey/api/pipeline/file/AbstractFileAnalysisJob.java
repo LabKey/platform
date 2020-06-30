@@ -55,7 +55,7 @@ import java.util.TreeMap;
  */
 abstract public class AbstractFileAnalysisJob extends PipelineJob implements FileAnalysisJobSupport
 {
-    private static Logger _log = Logger.getLogger(AbstractFileAnalysisJob.class);
+    private static final Logger _log = Logger.getLogger(AbstractFileAnalysisJob.class);
 
     protected Integer _experimentRunRowId;
     private String _protocolName;
@@ -185,6 +185,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 //        }
     }
 
+    @Override
     public void clearActionSet(ExpRun run)
     {
         super.clearActionSet(run);
@@ -198,11 +199,13 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _splittable = splittable;
     }
 
+    @Override
     public boolean isSplittable()
     {
         return _splittable && getInputFiles().size() > 1;
     }
 
+    @Override
     public List<PipelineJob> createSplitJobs()
     {
         if (getInputFiles().size() == 1)
@@ -214,6 +217,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return Collections.unmodifiableList(jobs);
     }
 
+    @Override
     public TaskPipeline getTaskPipeline()
     {
         return PipelineJobService.get().getTaskPipeline(getTaskPipelineId());
@@ -223,21 +227,25 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
     abstract public AbstractFileAnalysisJob createSingleFileJob(File file);
 
+    @Override
     public String getProtocolName()
     {
         return _protocolName;
     }
 
+    @Override
     public String getBaseName()
     {
         return _baseName;
     }
 
+    @Override
     public String getJoinedBaseName()
     {
         return _joinedBaseName;
     }
 
+    @Override
     public List<String> getSplitBaseNames()
     {
         ArrayList<String> baseNames = new ArrayList<>();
@@ -270,11 +278,13 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return getBaseName();
     }
 
+    @Override
     public File getDataDirectory()
     {
         return _dirData;
     }
 
+    @Override
     public File getAnalysisDirectory()
     {
         return _dirAnalysis;
@@ -316,22 +326,26 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return new File(dir, fileName);
     }
 
+    @Override
     public List<File> getInputFiles()
     {
         return _filesInput;
     }
 
+    @Override
     @Nullable
     public File getJobInfoFile()
     {
         return _fileJobInfo;
     }
 
+    @Override
     public File getParametersFile()
     {
         return _fileParameters;
     }
 
+    @Override
     public Map<String, String> getParameters()
     {
         HashMap<String, String> params = new HashMap<>(_parametersDefaults);
@@ -386,16 +400,19 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _log.debug("");
     }
 
+    @Override
     public ParamParser createParamParser()
     {
         return PipelineJobService.get().createParamParser();
     }
 
+    @Override
     public String getDescription()
     {
         return getDataDescription(getDataDirectory(), getBaseName(), getJoinedBaseName(), getProtocolName());
     }
 
+    @Override
     public ActionURL getStatusHref()
     {
         if (_experimentRunRowId != null)
@@ -440,6 +457,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
      * we always read .xml.gz, but may also have a
      * preference for producing it in the pipeline
      */
+    @Override
     public FileType.gzSupportLevel getGZPreference()
     {
         String doGZ = getParameters().get("pipeline, gzip outputs");

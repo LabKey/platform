@@ -17,6 +17,7 @@
 package org.labkey.api.wiki;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.Collections;
@@ -34,41 +35,48 @@ public class FormattedHtml
     // renderer uses external resources, for example, URL parameters pulled from ThreadLocal, AppProps, etc.
     // If the formatted HTML is volatile, we shouldn't cache the formatted contents.
     private final boolean _volatile;
-    private final String _html;
+    private final HtmlString _html;
     private final Set<String> _wikiDependencies;
     private final Set<String> _anchors;
     private final Set<ClientDependency> _clientDependencies;
 
-    public FormattedHtml(String html)
+    public FormattedHtml(HtmlString html)
     {
-        this(html, false);
+        this(html, false, Collections.emptySet(), Collections.emptySet(), new LinkedHashSet<>());
     }
 
-    public FormattedHtml(String html, boolean isVolatile)
+    public FormattedHtml(HtmlString html, boolean isVolatile)
     {
-        this(html, isVolatile, Collections.emptySet(), Collections.emptySet());
+        this(html, isVolatile, Collections.emptySet(), Collections.emptySet(), new LinkedHashSet<>());
     }
 
-    public FormattedHtml(String html, boolean isVolatile, @NotNull Set<String> wikiDependencies, @NotNull Set<String> anchors)
+    public FormattedHtml(HtmlString html, boolean isVolatile, @NotNull Set<String> wikiDependencies, @NotNull Set<String> anchors)
     {
         this(html, isVolatile, wikiDependencies, anchors, new LinkedHashSet<>());
     }
 
-    public FormattedHtml(String html, boolean isVolatile, @NotNull LinkedHashSet<ClientDependency> clientDependencies)
+    public FormattedHtml(HtmlString html, boolean isVolatile, @NotNull LinkedHashSet<ClientDependency> clientDependencies)
     {
         this(html, isVolatile, Collections.emptySet(), Collections.emptySet(), clientDependencies);
     }
 
+    @Deprecated // use HtmlString
     public FormattedHtml(String html, boolean isVolatile, @NotNull Set<String> wikiDependencies, @NotNull Set<String> anchors, @NotNull LinkedHashSet<ClientDependency> clientDependencies)
     {
-        _html = html;
+        this(null==html ? null : HtmlString.unsafe(html), isVolatile, wikiDependencies, anchors, clientDependencies);
+    }
+
+    public FormattedHtml(HtmlString html, boolean isVolatile, @NotNull Set<String> wikiDependencies, @NotNull Set<String> anchors, @NotNull LinkedHashSet<ClientDependency> clientDependencies)
+    {
+        _html = null==html ? HtmlString.EMPTY_STRING : html;
         _volatile = isVolatile;
         _wikiDependencies = wikiDependencies;
         _anchors = anchors;
         _clientDependencies = clientDependencies;
     }
 
-    public String getHtml()
+    @NotNull
+    public HtmlString getHtml()
     {
         return _html;
     }

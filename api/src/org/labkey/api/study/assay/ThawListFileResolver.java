@@ -48,6 +48,7 @@ public class ThawListFileResolver implements ParticipantVisitResolver
         return _runContainer;
     }
 
+    @Override
     @NotNull
     public ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date, Container resultDomainTargetStudy) throws ExperimentException
     {

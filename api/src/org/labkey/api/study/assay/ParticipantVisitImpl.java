@@ -59,16 +59,19 @@ public class ParticipantVisitImpl implements ParticipantVisit
         _studyContainer = studyContainer;
     }
 
+    @Override
     public String getParticipantID()
     {
         return _participantID;
     }
 
+    @Override
     public Double getVisitID()
     {
         return _visitID;
     }
 
+    @Override
     public String getSpecimenID()
     {
         return _specimenID;
@@ -79,6 +82,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
         return _runContainer;
     }
 
+    @Override
     public Container getStudyContainer()
     {
         return _studyContainer;
@@ -90,6 +94,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
         return s.length() < maxLength ? s : s.substring(0, maxLength - 1);
     }
 
+    @Override
     public ExpMaterial getMaterial()
     {
         if (_material == null)
@@ -150,6 +155,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
         return _material;
     }
 
+    @Override
     public Date getDate()
     {
         return _date;
@@ -160,6 +166,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
         _date = date;
     }
 
+    @Override
     public Integer getCohortID()
     {
         return _cohortID;

@@ -20,8 +20,8 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -101,11 +101,12 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
         DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
         {
             @Override
-            protected void initColumn(BaseColumnInfo col)
+            protected void initColumn(MutableColumnInfo col)
             {
                 if (COLUMN_NAME_DATASET_ID.equalsIgnoreCase(col.getName()))
                 {
                     LookupForeignKey fk = new LookupForeignKey("DatasetId", "Label") {
+                        @Override
                         public TableInfo getLookupTableInfo()
                         {
                             return StudySchema.getInstance().getTableInfoDataset();

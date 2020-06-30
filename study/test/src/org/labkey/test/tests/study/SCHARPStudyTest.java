@@ -21,6 +21,7 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyA;
+import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PostgresOnlyTest;
 
 import java.io.File;
@@ -36,9 +37,7 @@ public class SCHARPStudyTest extends BaseWebDriverTest implements PostgresOnlyTe
 {
     public static final String PROJECT_NAME="SCHARP Study Test";
 
-    private String _labkeyRoot = TestFileUtils.getLabKeyRoot();
-    private String _pipelinePathMain = new File(_labkeyRoot, "/sampledata/study").getPath();
-    private File _studyZipFile = TestFileUtils.getSampleData("studies/studyshell.zip");
+    private final File _studyZipFile = TestFileUtils.getSampleData("studies/studyshell.zip");
 
     protected static class StatusChecker implements Supplier<Boolean>
     {
@@ -52,6 +51,7 @@ public class SCHARPStudyTest extends BaseWebDriverTest implements PostgresOnlyTe
             _waitForMessage = waitForMessage;
         }
 
+        @Override
         public Boolean get()
         {
             String curMessage = _test.getText(_loc);
@@ -68,21 +68,12 @@ public class SCHARPStudyTest extends BaseWebDriverTest implements PostgresOnlyTe
         _containerHelper.createProject(PROJECT_NAME, "Study");
 
         clickProject(PROJECT_NAME);
-        log("importing study...");
-        setupPipeline();
         importStudy();
 
         log("Study imported and queries validated successfully.");
     }
 
-    protected void setupPipeline()
-    {
-        log("Setting pipeline root to " + _pipelinePathMain + "...");
-        setPipelineRoot(_pipelinePathMain);
-        assertTextPresent("The pipeline root was set");
-        clickProject(PROJECT_NAME);
-    }
-
+    @LogMethod
     protected void importStudy()
     {
         log("Importing study from " + _studyZipFile + "...");
@@ -96,6 +87,7 @@ public class SCHARPStudyTest extends BaseWebDriverTest implements PostgresOnlyTe
         clickProject(PROJECT_NAME);
     }
 
+    @Override
     public List<String> getAssociatedModules()
     {
         return Arrays.asList("study");

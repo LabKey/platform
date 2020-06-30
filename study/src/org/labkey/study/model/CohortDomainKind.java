@@ -30,6 +30,7 @@ import org.labkey.study.controllers.CohortController;
 public class CohortDomainKind extends BaseStudyDomainKind
 {
 
+    @Override
     protected ExtensibleStudyEntity.DomainInfo getDomainInfo()
     {
         return CohortImpl.DOMAIN_INFO;
@@ -41,12 +42,14 @@ public class CohortDomainKind extends BaseStudyDomainKind
         return StudySchema.getInstance().getTableInfoCohort();
     }
 
+    @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
         // This isn't really the edit url, but instead the destination after editing
         return new ActionURL(CohortController.ManageCohortsAction.class, containerUser.getContainer());
     }
 
+    @Override
     public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         return new ActionURL(CohortController.ManageCohortsAction.class, containerUser.getContainer());

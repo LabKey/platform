@@ -41,11 +41,13 @@ public class RunChartReportView extends RunReportView
             _reportId = _report.getDescriptor().getReportId();
     }
     
+    @Override
     protected Report getReport()
     {
         return _report;
     }
 
+    @Override
     public List<NavTree> getTabList()
     {
         URLHelper url = getBaseUrl();
@@ -57,6 +59,7 @@ public class RunChartReportView extends RunReportView
         return tabs;
     }
 
+    @Override
     public HttpView getTabView(String tabId) throws Exception
     {
         if (TAB_VIEW.equals(tabId))

@@ -21,7 +21,6 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObject;
@@ -138,6 +137,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         var issueIdColumn = wrapColumn(_rootTable.getColumn("IssueId"));
         issueIdColumn.setFk(new RowIdForeignKey(issueIdColumn)
         {
+            @Override
             public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
             {
                 if (displayField == null)
@@ -222,6 +222,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
 
         var issueDefId = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("IssueDefId")));
         issueDefId.setHidden(true);
+        issueDefId.setFk(new QueryForeignKey(schema, null, schema, null, "IssueListDef", "RowId", "Name"));
 
         var duplicateCol = addWrapColumn(_rootTable.getColumn("Duplicate"));
         duplicateCol.setURL(new DetailsURL(base, Collections.singletonMap("issueId", "Duplicate")));
@@ -812,6 +813,7 @@ class NotifyListDisplayColumn extends DataColumn
         _user = curUser;
     }
 
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         Object o = getValue(ctx);

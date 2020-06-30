@@ -78,26 +78,31 @@ public class CrawlerTest extends Assert
             _policy = policy;
         }
         
+        @Override
         public boolean requiresLogin()
         {
             return false;
         }
 
+        @Override
         public Path getRootPath()
         {
             return Path.rootPath;
         }
 
+        @Override
         public WebdavResource lookup(Path path)
         {
             return new FileSystemResource(path, new File(_base, path.toString()), _policy);
         }
 
+        @Override
         public LookupResult lookupEx(Path path)
         {
             return new LookupResult(this, lookup(path));
         }
 
+        @Override
         public WebdavResource welcome()
         {
             return null;
@@ -106,47 +111,55 @@ public class CrawlerTest extends Assert
         // SecurableResource
         String _guid = GUID.makeGUID();
 
+        @Override
         @NotNull
         public String getResourceId()
         {
             return _guid;
         }
 
+        @Override
         @NotNull
         public String getResourceName()
         {
             return _base.getName();
         }
 
+        @Override
         @NotNull
         public String getResourceDescription()
         {
             return null;
         }
 
+        @Override
         @NotNull
         public Module getSourceModule()
         {
             return null;
         }
 
+        @Override
         public SecurableResource getParentResource()
         {
             return null;
         }
 
+        @Override
         @NotNull
         public Container getResourceContainer()
         {
             return null;
         }
 
+        @Override
         @NotNull
         public List<SecurableResource> getChildResources(User user)
         {
             return null;
         }
 
+        @Override
         public boolean mayInheritPolicy()
         {
             return false;
@@ -159,6 +172,7 @@ public class CrawlerTest extends Assert
         Map<Path, Pair<Date,Date>> collections = new HashMap<>();
         Map<Path, DavCrawler.ResourceInfo> files = new HashMap<>();
 
+        @Override
         public boolean insertPath(Path path, Date nextCrawl)
         {
             if (collections.containsKey(path))
@@ -167,12 +181,14 @@ public class CrawlerTest extends Assert
             return true;
         }
 
+        @Override
         public synchronized boolean updatePath(Path path, Date lastIndexed, Date nextCrawl, boolean create)
         {
             collections.put(path, new Pair<>(lastIndexed, nextCrawl));
             return true;
         }
 
+        @Override
         public synchronized void updatePrefix(Path path, Date nextCrawl, boolean force)
         {
             for (Map.Entry<Path,Pair<Date,Date>> e : collections.entrySet())
@@ -182,11 +198,13 @@ public class CrawlerTest extends Assert
             }
         }
 
+        @Override
         public synchronized void deletePath(Path path)
         {
             collections.remove(path);
         }
 
+        @Override
         public synchronized Map<Path, Pair<Date,Date>> getPaths(int limit)
         {
             long now = System.currentTimeMillis();
@@ -204,12 +222,14 @@ public class CrawlerTest extends Assert
         }
 
 
+        @Override
         public Date getNextCrawl()
         {
             return new Date(System.currentTimeMillis());
         }
         
 
+        @Override
         public synchronized Map<String, DavCrawler.ResourceInfo> getFiles(Path path)
         {
             Map<String,DavCrawler.ResourceInfo> ret = new TreeMap<>();
@@ -221,12 +241,14 @@ public class CrawlerTest extends Assert
             return ret;
         }
 
+        @Override
         public synchronized boolean updateFile(@NotNull Path path, @NotNull Date lastIndexed, Date modified)
         {
             files.put(path, new DavCrawler.ResourceInfo(lastIndexed,modified));
             return true;
         }
 
+        @Override
         public void clearFailedDocuments()
         {
         }

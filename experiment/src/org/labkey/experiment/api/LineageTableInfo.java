@@ -28,8 +28,9 @@ import org.labkey.api.data.VirtualTable;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.DataClassUserSchema;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -49,11 +50,15 @@ import org.labkey.api.util.StringExpression;
  */
 public class LineageTableInfo extends VirtualTable
 {
-    private @NotNull SQLFragment _objectids;
-    private boolean _parents;
-    private @Nullable Integer _depth;
-    private @Nullable String _expType;
-    private @Nullable String _cpasType;
+    private @NotNull
+    final SQLFragment _objectids;
+    private final boolean _parents;
+    private @Nullable
+    final Integer _depth;
+    private @Nullable
+    final String _expType;
+    private @Nullable
+    final String _cpasType;
 
     public LineageTableInfo(String name, @NotNull UserSchema schema, @NotNull SQLFragment objectids, boolean parents, @Nullable Integer depth, @Nullable String expType, @Nullable String cpasType)
     {
@@ -151,8 +156,8 @@ public class LineageTableInfo extends VirtualTable
     private ForeignKey createCpasTypeFK(String cpasType)
     {
         // TODO: check in scope and has permission
-        ExpSampleSet ss = ExperimentService.get().getSampleSet(cpasType);
-        if (ss != null)
+        ExpSampleType st = SampleTypeService.get().getSampleType(cpasType);
+        if (st != null)
         {
             return new LookupForeignKey("lsid", "Name")
             {
@@ -162,10 +167,10 @@ public class LineageTableInfo extends VirtualTable
                 public TableInfo getLookupTableInfo()
                 {
                     if (null == _table)
-                        _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/Samples/" + ss.getRowId() + "/" + ss.getName(), () ->
+                        _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/Samples/" + st.getRowId() + "/" + st.getName(), () ->
                         {
-                            SamplesSchema samplesSchema = new SamplesSchema(_userSchema.getUser(), _userSchema.getContainer());
-                            var ret = samplesSchema.getSampleTable(ss, null);
+                            SamplesSchema samplesSchema = new SamplesSchema(_userSchema);
+                            var ret = samplesSchema.getSampleTable(st, null);
                             ret.setLocked(true);
                             return ret;
                         });

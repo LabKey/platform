@@ -64,11 +64,13 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
         return _instance;
     }
 
+    @Override
     public boolean requiresLogin()
     {
         return false;
     }
 
+    @Override
     public Path getRootPath()
     {
         return _rootPath;
@@ -76,6 +78,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
 
     WebFolderResource _root = null;
 
+    @Override
     protected synchronized WebdavResource getRoot()
     {
         if (null == _root)
@@ -173,11 +176,21 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
 
     public class WebFolderResource extends AbstractWebFolderResource
     {
+        private final String documentId;
+
         WebFolderResource(WebdavResolver resolver, Container c)
         {
             super(resolver, c);
+            documentId =  "dav:" + _resolver.getRootPath().append(_c.getId()).toString("/","/");
         }
 
+        @Override
+        public String getDocumentId()
+        {
+            return documentId;
+        }
+
+        @Override
         public WebdavResource find(String child)
         {
             String name = null;

@@ -82,7 +82,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
-import java.util.stream.Collectors;
 
 
 /**
@@ -201,9 +200,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return targetContainer != null && targetContainer.getContainerType().allowRowMutationFromContainer(this, targetContainer);
     }
 
-    public boolean requiresAdminToDelete()
+    public Class<? extends Permission> getPermissionNeededToDelete()
     {
-        return _containerType.requiresAdminToDelete();
+        return _containerType.getPermissionNeededToDelete();
     }
 
     public boolean isDuplicatedInContainerFilter()

@@ -33,12 +33,13 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Responsible for showing custom field values (like assay run properties or sample set columns) in experiment module detail pages.
+ * Responsible for showing custom field values (like assay run properties or sample type columns) in experiment module detail pages.
  * User: jeckels
  * Date: Jan 23, 2006
  */
 public class DefaultCustomPropertyRenderer implements CustomPropertyRenderer
 {
+    @Override
     public String getValue(ObjectProperty prop, List<ObjectProperty> siblingProperties, Container c)
     {
         Object o = prop.value();
@@ -73,11 +74,13 @@ public class DefaultCustomPropertyRenderer implements CustomPropertyRenderer
         return PageFlowUtil.filter(value);
     }
 
+    @Override
     public boolean shouldRender(ObjectProperty prop, List<ObjectProperty> siblingProperties)
     {
         return true;
     }
 
+    @Override
     public String getDescription(ObjectProperty prop, List<ObjectProperty> siblingProperties)
     {
         PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(prop.getPropertyURI(), prop.getContainer());

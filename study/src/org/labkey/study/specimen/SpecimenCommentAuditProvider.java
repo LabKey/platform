@@ -20,7 +20,6 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -28,6 +27,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -117,7 +117,7 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
         DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
         {
             @Override
-            protected void initColumn(BaseColumnInfo col)
+            protected void initColumn(MutableColumnInfo col)
             {
                 if (COLUMN_NAME_VIAL_ID.equalsIgnoreCase(col.getName()))
                 {
@@ -126,16 +126,19 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
 
                     col.setDisplayColumnFactory(new DisplayColumnFactory()
                     {
+                        @Override
                         public DisplayColumn createRenderer(final ColumnInfo colInfo)
                         {
                         return new DataColumn(colInfo)
                         {
+                            @Override
                             public void addQueryColumns(Set<ColumnInfo> columns)
                             {
                                 columns.add(containerColumn);
                                 super.addQueryColumns(columns);
                             }
 
+                            @Override
                             public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
                             {
                                 Object containerId = containerColumn.getValue(ctx);

@@ -116,6 +116,7 @@ public class ToursTable extends FilteredTable<AnnouncementSchema>
         var modeCol = getMutableColumn("Mode");
         modeCol.setDisplayColumnFactory(new DisplayColumnFactory()
         {
+            @Override
             public DisplayColumn createRenderer(final ColumnInfo colInfo)
             {
                 DataColumn dc = new DataColumn(colInfo)
@@ -134,7 +135,6 @@ public class ToursTable extends FilteredTable<AnnouncementSchema>
 
                 return dc;
             }
-
         });
 
         setDescription("Contains one row per tour.");

@@ -35,6 +35,7 @@ public class SafeFlushResponseWrapper extends HttpServletResponseWrapper
         super(response);
     }
 
+    @Override
     public ServletOutputStream getOutputStream()
     throws IOException
     {
@@ -55,16 +56,19 @@ public class SafeFlushResponseWrapper extends HttpServletResponseWrapper
             _out = out;
         }
 
+        @Override
         public void write(byte b[]) throws IOException
         {
             _out.write(b);
         }
 
+        @Override
         public void write(byte b[], int off, int len) throws IOException
         {
             _out.write(b, off, len);
         }
 
+        @Override
         public void flush() throws IOException
         {
             if (_canFlush)
@@ -73,11 +77,13 @@ public class SafeFlushResponseWrapper extends HttpServletResponseWrapper
             }
         }
 
+        @Override
         public void write(int b) throws IOException
         {
             _out.write(b);
         }
 
+        @Override
         public void close() throws IOException
         {
             _canFlush = false;

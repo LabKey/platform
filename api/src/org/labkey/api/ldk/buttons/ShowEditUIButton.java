@@ -52,6 +52,7 @@ public class ShowEditUIButton extends SimpleButtonConfigFactory
         _perms = perms;
     }
 
+    @Override
     public boolean isAvailable(TableInfo ti)
     {
         if (!super.isAvailable(ti))

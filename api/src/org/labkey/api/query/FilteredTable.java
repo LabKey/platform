@@ -18,6 +18,7 @@ package org.labkey.api.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.compliance.TableRules;
 import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.AbstractTableInfo;
@@ -28,6 +29,7 @@ import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
@@ -35,6 +37,7 @@ import org.labkey.api.data.SelectQueryAuditProvider;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -59,6 +62,8 @@ import java.util.Set;
  */
 public class FilteredTable<SchemaType extends UserSchema> extends AbstractContainerFilterable implements ContainerFilterable
 {
+    final private static ButtonBarConfig BUTTON_BAR_NOT_SET = new ButtonBarConfig(new JSONObject());
+
     final private SimpleFilter _filter;
     @NotNull protected final TableInfo _rootTable;
     AliasManager _aliasManager = null;
@@ -85,8 +90,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         _description = _rootTable.getDescription();
         _importMsg = _rootTable.getImportMessage();
         _importTemplates = _rootTable.getRawImportTemplates();
-        // UNDONE: lazy load button bar config????
-        _buttonBarConfig = _rootTable.getButtonBarConfig() == null ? null : new ButtonBarConfig(_rootTable.getButtonBarConfig());
+        _buttonBarConfig = BUTTON_BAR_NOT_SET;        // lazy copy button bar when asked
         if (_rootTable.supportsAuditTracking())
             _auditBehaviorType = _rootTable.getAuditBehavior();
 
@@ -125,6 +129,12 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         super.afterConstruct();
         if (getRealTable() instanceof AbstractTableInfo)
             ((AbstractTableInfo)getRealTable()).afterConstruct();
+    }
+
+    @Override
+    public String getDbSequenceName(String columnName)
+    {
+        return (_rootTable.getSchema().getName() + ":" + _rootTable.getName() + ":" + columnName).toLowerCase();
     }
 
     @Override
@@ -172,7 +182,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     {
         for (ColumnInfo col : getRealTable().getColumns())
         {
-            BaseColumnInfo newCol = addWrapColumn(col);
+            var newCol = addWrapColumn(col);
             if (preserveHidden && col.isHidden())
             {
                 newCol.setHidden(col.isHidden());
@@ -287,12 +297,15 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         _filter.addAllClauses(filter);
     }
 
-    public BaseColumnInfo wrapColumnFromJoinedTable(String alias, ColumnInfo underlyingColumn, String tableAlias)
+    public MutableColumnInfo wrapColumnFromJoinedTable(String alias, ColumnInfo underlyingColumn)
     {
-        ExprColumn ret = new ExprColumn(this, alias, underlyingColumn.getValueSql(tableAlias), underlyingColumn.getJdbcType());
-        ret.copyAttributesFrom(underlyingColumn);
-        ret.copyURLFrom(underlyingColumn, null, null);
-        ret.setLabel(null);  // The alias should be used to generate the default label, not whatever was in underlyingColumn; name might be set later (e.g., meta data override)
+        return copyColumnFromJoinedTable(alias, underlyingColumn);
+    }
+
+    // identical to wrapColumnFromJoinedTable, but see FilteredTableDelegating where this is != wrapColumnFromJoinedTable */
+    public MutableColumnInfo copyColumnFromJoinedTable(String alias, ColumnInfo underlyingColumn)
+    {
+        var ret = WrappedColumnInfo.wrapAsCopy(this, new FieldKey(null,alias), underlyingColumn, null, null);
         if (underlyingColumn.isKeyField() && getColumn(underlyingColumn.getName()) != null)
         {
             ret.setKeyField(false);
@@ -301,16 +314,17 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         {
             ret.setColumnLogging(new ColumnLogging(true, underlyingColumn.getFieldKey(), underlyingColumn.getParentTable(), getPHIDataLoggingColumns(), getPHILoggingComment(), getSelectQueryAuditProvider()));
         }
+        assert ret.getParentTable() == this;
         return ret;
     }
 
-    public BaseColumnInfo wrapColumn(String alias, ColumnInfo underlyingColumn)
+    public MutableColumnInfo wrapColumn(String alias, ColumnInfo underlyingColumn)
     {
         assert underlyingColumn.getParentTable() == _rootTable;
-        return wrapColumnFromJoinedTable(alias, underlyingColumn, ExprColumn.STR_TABLE_ALIAS);
+        return wrapColumnFromJoinedTable(alias, underlyingColumn);
     }
 
-    public BaseColumnInfo wrapColumn(ColumnInfo underlyingColumn)
+    public MutableColumnInfo wrapColumn(ColumnInfo underlyingColumn)
     {
         return wrapColumn(underlyingColumn.getName(), underlyingColumn);
     }
@@ -405,6 +419,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     }
     
 
+    @Override
     @NotNull
     public final SQLFragment getFromSQL()
     {
@@ -458,20 +473,26 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return "*";
     }
 
+
+    protected AliasManager getAliasManager()
+    {
+        if (null == _aliasManager)
+            _aliasManager = new AliasManager(getSchema());
+        return _aliasManager;
+    }
+
     @Override
-    public BaseColumnInfo addColumn(BaseColumnInfo column)
+    public MutableColumnInfo addColumn(MutableColumnInfo column)
     {
         checkLocked();
-        BaseColumnInfo ret = column;
+        MutableColumnInfo ret = column;
 
         // Choke point for handling all column filtering and transforming, e.g., respecting PHI annotations
         if (_rules.getColumnInfoFilter().test(column))
         {
             ColumnInfo transformed = _rules.getColumnInfoTransformer().apply(column);
-            if (null == _aliasManager)
-                _aliasManager = new AliasManager(getSchema());
-            _aliasManager.ensureAlias(column);
-            ret = super.addColumn((BaseColumnInfo)transformed);
+            getAliasManager().ensureAlias(column);
+            ret = super.addColumn((MutableColumnInfo)transformed);
         }
 
         return ret;
@@ -488,7 +509,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return result;
     }
 
-    public BaseColumnInfo addWrapColumn(String name, ColumnInfo column)
+    public MutableColumnInfo addWrapColumn(String name, ColumnInfo column)
     {
         assert column.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
         BaseColumnInfo ret = new AliasedColumn(this, name, column);
@@ -520,12 +541,12 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return null;
     }
 
-    public BaseColumnInfo addWrapColumn(ColumnInfo column)
+    public MutableColumnInfo addWrapColumn(ColumnInfo column)
     {
         return addWrapColumn(column.getName(), column);
     }
 
-    public void propagateKeyField(ColumnInfo orig, BaseColumnInfo wrapped)
+    public void propagateKeyField(ColumnInfo orig, MutableColumnInfo wrapped)
     {
         // Use getColumnNameSet() instead of getColumn() because we don't want to go through the resolveColumn()
         // codepath, which is potentially expensive and doesn't reflect the "real" columns that are part of this table
@@ -578,7 +599,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
      */
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
-        return filter.createFilterClause(getSchema(), fieldKey, getContainer());
+        return filter.createFilterClause(getSchema(), fieldKey);
     }
 
     public Container getContainer()
@@ -586,6 +607,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return _userSchema.getContainer();
     }
 
+    @Override
     public boolean needsContainerClauseAdded()
     {
         return false;
@@ -695,5 +717,19 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
             return _userSchema.getContainer().hasPermission(user, perm);
         }
         return super.hasPermission(user, perm);
+    }
+
+    @Override
+    public ButtonBarConfig getButtonBarConfig()
+    {
+        if (_buttonBarConfig == BUTTON_BAR_NOT_SET)
+            _buttonBarConfig = _rootTable.getButtonBarConfig() == null ? null : new ButtonBarConfig(_rootTable.getButtonBarConfig());
+        return _buttonBarConfig;
+    }
+
+    @Override
+    public void setButtonBarConfig(ButtonBarConfig buttonBarConfig)
+    {
+        super.setButtonBarConfig(buttonBarConfig);
     }
 }

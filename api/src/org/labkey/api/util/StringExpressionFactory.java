@@ -70,8 +70,8 @@ public class StringExpressionFactory
 {
     private static final Logger LOG = Logger.getLogger(StringExpressionFactory.class);
 
-    private static Cache<String, StringExpression> templates = CacheManager.getCache(5000, CacheManager.DAY, "StringExpression templates");
-    private static Cache<String, StringExpression> templatesUrl = CacheManager.getCache(5000, CacheManager.DAY, "StringExpression template URLs");
+    private static final Cache<String, StringExpression> templates = CacheManager.getCache(5000, CacheManager.DAY, "StringExpression templates");
+    private static final Cache<String, StringExpression> templatesUrl = CacheManager.getCache(10000, CacheManager.DAY, "StringExpression template URLs");
 
     public static final StringExpression EMPTY_STRING = new ConstantStringExpression("");
 
@@ -295,6 +295,7 @@ public class StringExpressionFactory
         {
             _value = value;
         }
+        @Override
         public String getValue(Map map)
         {
             return _value;
@@ -414,6 +415,7 @@ public class StringExpressionFactory
             return _formats;
         }
 
+        @Override
         public String getValue(Map map)
         {
             String s = applyFormats(map.get(_value));
@@ -441,6 +443,7 @@ public class StringExpressionFactory
             return valueOf(o);
         }
 
+        @Override
         public boolean hasSideEffects()
         {
             for (SubstitutionFormat f : _formats)
@@ -725,6 +728,7 @@ public class StringExpressionFactory
         protected abstract StringPart parsePart(String expr);
 
         
+        @Override
         public String eval(Map context)
         {
             ArrayList<StringPart> parts = getParsedExpression();
@@ -790,6 +794,7 @@ public class StringExpressionFactory
         }
 
 
+        @Override
         public String getSource()
         {
             return _source;
@@ -801,6 +806,7 @@ public class StringExpressionFactory
             return getSource();
         }
 
+        @Override
         public void render(Writer out, Map context) throws IOException
         {
             out.write(eval(context));
@@ -826,6 +832,7 @@ public class StringExpressionFactory
             }
         }
 
+        @Override
         public AbstractStringExpression copy()
         {
             return clone();
@@ -869,6 +876,7 @@ public class StringExpressionFactory
             return JdbcType.VARCHAR;
         }
 
+        @Override
         public StringExpressionType toXML()
         {
             StringExpressionType xurl = StringExpressionType.Factory.newInstance();
@@ -891,6 +899,7 @@ public class StringExpressionFactory
             super(str);
         }
 
+        @Override
         protected StringPart parsePart(String expr)
         {
             throw new IllegalArgumentException(_source);
@@ -920,6 +929,7 @@ public class StringExpressionFactory
             _urlEncodeSubstitutions = urlEncodeSubstitutions;
         }
         
+        @Override
         protected StringPart parsePart(String expr)
         {
             return new SubstitutePart(expr, _urlEncodeSubstitutions);
@@ -953,6 +963,7 @@ public class StringExpressionFactory
             return _key;
         }
 
+        @Override
         public String getValue(Map map)
         {
             Object lookupKey = _key;
@@ -1016,6 +1027,7 @@ public class StringExpressionFactory
             return new FieldKeyStringExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects);
         }
 
+        @Override
         protected StringPart parsePart(String expr)
         {
             // HACK
@@ -1548,6 +1560,7 @@ public class StringExpressionFactory
     /* UNDONE: can't distinguish simple string expression and a custom URL expression */
     public static class Converter implements org.apache.commons.beanutils.Converter
     {
+        @Override
         public Object convert(Class type, Object value)
         {
             if (value == null || value instanceof StringExpression)

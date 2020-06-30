@@ -207,6 +207,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
      * @param id An enum ID that uniquely identifies the pipeline
      * @return the definitive TaskPipeline for this id
      */
+    @Override
     public @Nullable TaskPipeline getTaskPipeline(TaskId id)
     {
         TaskPipeline pipeline;
@@ -249,6 +250,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         }
     }
 
+    @Override
     public void addTaskPipeline(TaskPipelineSettings settings) throws CloneNotSupportedException
     {
         TaskPipeline<TaskPipelineSettings> pipeline = getTaskPipeline(settings.getCloneId());
@@ -259,6 +261,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
                 getTaskProgression(settings.getTaskProgressionSpec())));
     }
 
+    @Override
     public void addTaskPipeline(TaskPipeline pipeline)
     {
         synchronized (_taskPipelineStore)
@@ -341,6 +344,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         return Collections.unmodifiableList(pipelineList);
     }
 
+    @Override
     @Nullable
     public TaskFactory getTaskFactory(TaskId id)
     {
@@ -356,6 +360,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         return module == null ? null : TASK_FACTORY_CACHE.getResourceMap(module).get(id);
     }
 
+    @Override
     public void addTaskFactory(TaskFactorySettings settings) throws CloneNotSupportedException
     {
         TaskFactory factory = getTaskFactory(settings.getCloneId());
@@ -379,6 +384,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
      * Add a TaskFactory defined locally within a pipeline xml file.
      * NOTE: Don't use this for registering standard TaskFactories.
      */
+    @Override
     public void addLocalTaskFactory(TaskId pipelineId, TaskFactory factory)
     {
         if (!factory.getId().getName().startsWith(pipelineId.getName() + LOCAL_TASK_PREFIX))
@@ -416,6 +422,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         return factories;
     }
 
+    @Override
     @NotNull
     public Collection<TaskFactory> getTaskFactories(Container container)
     {
@@ -454,11 +461,13 @@ public class PipelineJobServiceImpl implements PipelineJobService
         }
     }
 
+    @Override
     public ParamParser createParamParser()
     {
         return new ParamParserImpl();
     }
 
+    @Override
     public String getDefaultExecutionLocation()
     {
         return _defaultExecutionLocation;
@@ -469,6 +478,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         _defaultExecutionLocation = defaultExecutionLocation;
     }
 
+    @Override
     public int getDefaultAutoRetry()
     {
         return _defaultAutoRetry;
@@ -505,6 +515,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         _defaultAutoRetry = defaultAutoRetry;
     }
 
+    @Override
     public PipelineStatusFile.StatusWriter getStatusWriter()
     {
         return _statusWriter;
@@ -515,6 +526,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         _statusWriter = statusWriter;
     }
 
+    @Override
     public PipelineStatusFile.JobStore getJobStore()
     {
         return _jobStore;
@@ -525,6 +537,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         _jobStore = jobStore;
     }
 
+    @Override
     public WorkDirFactory getWorkDirFactory()
     {
         return _workDirFactory;
@@ -535,6 +548,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         _workDirFactory = workDirFactory;
     }
 
+    @Override
     public WorkDirFactory getLargeWorkDirFactory()
     {
         return (_largeWorkDirFactory != null ? _largeWorkDirFactory : _workDirFactory);
@@ -545,6 +559,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         _largeWorkDirFactory = largeWorkDirFactory;
     }
 
+    @Override
     public PathMapper getPathMapper()
     {
         return _pathMapper;
@@ -555,6 +570,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         _pathMapper = pathMapper;
     }
 
+    @Override
     public ApplicationProperties getAppProperties()
     {
         return _appProperties;
@@ -565,6 +581,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         _appProperties = appProperties;
     }
 
+    @Override
     public ConfigProperties getConfigProperties()
     {
         return _configProperties;
@@ -575,6 +592,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         _configProperties = configProperties;
     }
 
+    @Override
     public RemoteServerProperties getRemoteServerProperties()
     {
         return _remoteServerProperties;
@@ -585,12 +603,14 @@ public class PipelineJobServiceImpl implements PipelineJobService
         _remoteServerProperties = remoteServerProperties;
     }
 
+    @Override
     @NotNull
     public List<RemoteExecutionEngine<?>> getRemoteExecutionEngines()
     {
         return _remoteExecutionEngines;
     }
 
+    @Override
     public void registerRemoteExecutionEngine(RemoteExecutionEngine engine)
     {
         for (RemoteExecutionEngine existingEngine : _remoteExecutionEngines)
@@ -733,6 +753,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         return toolsDir + File.pathSeparator + path;
     }
 
+    @Override
     public String getExecutablePath(String exeRel, String installPath, String packageName, String ver, Logger jobLogger) throws FileNotFoundException
     {
         return getVersionedOsPath(exeRel, installPath, packageName, ver, true);
@@ -761,6 +782,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         return getVersionedOsPath(exeRel, installPath, packageName, ver, false);
     }
 
+    @Override
     public String getJarPath(String jarRel, String installPath, String packageName, String ver) throws FileNotFoundException
     {
         String toolsDir = installPath == null ? getAppProperties().getToolsDirectory() : installPath;
@@ -773,6 +795,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         return getPathToTool(installPath, getVersionedPath(jarRel, packageName, ver), false);
     }
 
+    @Override
     public String getJavaPath() throws FileNotFoundException
     {
         String javaHome = System.getenv("JAVA_HOME");

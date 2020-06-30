@@ -17,7 +17,7 @@
 package org.labkey.api.exp.query;
 
 import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 
 public interface ExpProtocolApplicationTable extends ExpTable<ExpProtocolApplicationTable.Column>
 {
@@ -27,13 +27,19 @@ public interface ExpProtocolApplicationTable extends ExpTable<ExpProtocolApplica
     {
         RowId,
         Name,
+        Comments,
         LSID,
         Protocol,
         Run,
         ActionSequence,
-        Type
+        Type,
+        ActivityDate,
+        StartTime,
+        EndTime,
+        RecordCount,
+        Properties
     }
 
-    BaseColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleSet sampleSet, String... roleNames);
+    BaseColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleType sampleType, String... roleNames);
     BaseColumnInfo createDataInputColumn(String alias, ExpSchema schema, String... roleNames);
 }

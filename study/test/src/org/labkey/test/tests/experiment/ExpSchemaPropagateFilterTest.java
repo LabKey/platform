@@ -36,8 +36,8 @@ public class ExpSchemaPropagateFilterTest extends BaseWebDriverTest
     private static final String FOLDER_PARENT_DATA_CLASS = "ParentFolderDataClass";
     private static final String FOLDER_A_DATA_CLASS = "FolderADataClass";
 
-    private static final String FOLDER_PARENT_SAMPLE_SET = "ParentFolderSampleSet";
-    private static final String FOLDER_A_SAMPLE_SET = "FolderASampleSet";
+    private static final String FOLDER_PARENT_SAMPLE_TYPE = "ParentFolderSampleSet";
+    private static final String FOLDER_A_SAMPLE_TYPE = "FolderASampleSet";
 
     protected static final String ASSAY_NAME_PARENT = "Parent_Assay_38448";
     protected static final String ASSAY_NAME_SUBFOLDER = "Subfolder_A_Assay_38448";
@@ -47,6 +47,7 @@ public class ExpSchemaPropagateFilterTest extends BaseWebDriverTest
     protected static final String ASSAY_RUN_SUBFOLDER = "Run1_Subfolder";
     protected static final String ASSAY_REIMPORT_RUN_SUBFOLDER = "Run1A_Subfolder";
 
+    @Override
     public List<String> getAssociatedModules()
     {
         return Arrays.asList("experiment");
@@ -86,7 +87,7 @@ public class ExpSchemaPropagateFilterTest extends BaseWebDriverTest
         projectMenu().navigateToProject(PROJECT_NAME);
         portalHelper.doInAdminMode(ph ->
         {
-            ph.addBodyWebPart("Sample Sets");
+            ph.addBodyWebPart("Sample Types");
             ph.addBodyWebPart("Data Classes");
             ph.addBodyWebPart("Assay List");
             ph.addBodyWebPart("Run Groups");
@@ -97,7 +98,7 @@ public class ExpSchemaPropagateFilterTest extends BaseWebDriverTest
         projectMenu().navigateToFolder(PROJECT_NAME, SUB_FOLDER_A);
         portalHelper.doInAdminMode(ph ->
         {
-            ph.addBodyWebPart("Sample Sets");
+            ph.addBodyWebPart("Sample Types");
             ph.addBodyWebPart("Data Classes");
             ph.addBodyWebPart("Assay List");
             ph.addBodyWebPart("Run Groups");
@@ -144,40 +145,40 @@ public class ExpSchemaPropagateFilterTest extends BaseWebDriverTest
     private void createSampleSets()
     {
 
-        // Create Sample Set in the parent folder and populate it.
-        TestDataGenerator dataGen = createEmptySampleSet(FOLDER_PARENT_SAMPLE_SET, PROJECT_NAME);
+        // Create Sample Type in the parent folder and populate it.
+        TestDataGenerator dataGen = createEmptySampleSet(FOLDER_PARENT_SAMPLE_TYPE, PROJECT_NAME);
         List<Map<String, Object>> values = new ArrayList<>();
         values.add(Map.of("name", "SP_1"));
         values.add(Map.of("name", "SP_2"));
         values.add(Map.of("name", "SP_3",
-                "MaterialInputs/" + FOLDER_PARENT_SAMPLE_SET, "SP_2",
+                "MaterialInputs/" + FOLDER_PARENT_SAMPLE_TYPE, "SP_2",
                 "DataInputs/" + FOLDER_PARENT_DATA_CLASS, "DP_2"));
         values.add(Map.of("name", "SP_4",
-                "MaterialInputs/" + FOLDER_PARENT_SAMPLE_SET, "SP_2",
+                "MaterialInputs/" + FOLDER_PARENT_SAMPLE_TYPE, "SP_2",
                 "DataInputs/" + FOLDER_PARENT_DATA_CLASS, "DP_3"));
         values.add(Map.of("name", "SP_5",
-                "MaterialInputs/" + FOLDER_PARENT_SAMPLE_SET, "SP_3",
+                "MaterialInputs/" + FOLDER_PARENT_SAMPLE_TYPE, "SP_3",
                 "DataInputs/" + FOLDER_PARENT_DATA_CLASS, "DP_4"));
         populateDomainWithData(dataGen, values);
 
-        // Create Sample Set in folder A and populate it.
-        dataGen = createEmptySampleSet(FOLDER_A_SAMPLE_SET, PROJECT_NAME + "/" + SUB_FOLDER_A);
+        // Create Sample Type in folder A and populate it.
+        dataGen = createEmptySampleSet(FOLDER_A_SAMPLE_TYPE, PROJECT_NAME + "/" + SUB_FOLDER_A);
         values = new ArrayList<>();
         values.add(Map.of("name", "SA_1"));
         values.add(Map.of("name", "SA_2"));
         values.add(Map.of("name", "SA_3",
-                "MaterialInputs/" + FOLDER_A_SAMPLE_SET, "SA_2",
-                "MaterialInputs/" + FOLDER_PARENT_SAMPLE_SET, "SP_2",
+                "MaterialInputs/" + FOLDER_A_SAMPLE_TYPE, "SA_2",
+                "MaterialInputs/" + FOLDER_PARENT_SAMPLE_TYPE, "SP_2",
                 "MaterialData/" + FOLDER_A_DATA_CLASS, "DA_2",
                 "DataInputs/" + FOLDER_PARENT_DATA_CLASS, "DP_2"));
         values.add(Map.of("name", "SA_4",
-                "MaterialInputs/" + FOLDER_A_SAMPLE_SET, "SA_2",
-                "MaterialInputs/" + FOLDER_PARENT_SAMPLE_SET, "SP_2",
+                "MaterialInputs/" + FOLDER_A_SAMPLE_TYPE, "SA_2",
+                "MaterialInputs/" + FOLDER_PARENT_SAMPLE_TYPE, "SP_2",
                 "MaterialData/" + FOLDER_A_DATA_CLASS, "DA_3",
                 "DataInputs/" + FOLDER_PARENT_DATA_CLASS, "DP_3"));
         values.add(Map.of("name", "SA_5",
-                "MaterialInputs/" + FOLDER_A_SAMPLE_SET, "SA_3",
-                "MaterialInputs/" + FOLDER_PARENT_SAMPLE_SET, "SP_3",
+                "MaterialInputs/" + FOLDER_A_SAMPLE_TYPE, "SA_3",
+                "MaterialInputs/" + FOLDER_PARENT_SAMPLE_TYPE, "SP_3",
                 "MaterialData/" + FOLDER_A_DATA_CLASS, "DA_4",
                 "DataInputs/" + FOLDER_PARENT_DATA_CLASS, "DP_4"));
         populateDomainWithData(dataGen, values);

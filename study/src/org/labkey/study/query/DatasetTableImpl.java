@@ -788,7 +788,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             {
                 ContainerFilter cf = getContainerFilter();
 
-                if (null != cf.getIds(getContainer()))
+                if (null != cf.getIds())
                 {
                     TableInfo tiParticipant = _userSchema.getDbSchema().getTable("Participant");
                     var ciContainer = tiParticipant.getColumn("Container");

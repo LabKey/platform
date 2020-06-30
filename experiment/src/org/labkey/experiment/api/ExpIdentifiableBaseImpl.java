@@ -42,6 +42,7 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
             _objectId = _object.getObjectId();
     }
 
+    @Override
     public String getLSID()
     {
         return _object.getLSID();
@@ -52,23 +53,27 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
         return _object;
     }
 
+    @Override
     public void setLSID(Lsid lsid)
     {
         ensureUnlocked();
         setLSID(lsid == null ? null : lsid.toString());
     }
 
+    @Override
     public void setLSID(String lsid)
     {
         ensureUnlocked();
         _object.setLSID(lsid);
     }
 
+    @Override
     public String getName()
     {
         return _object.getName();
     }
 
+    @Override
     public void setName(String name)
     {
         ensureUnlocked();
@@ -77,7 +82,7 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
 
     /**
      * Get the objectId used as the value in the exp.object.ownerObjectId column
-     * e.g., for Material in a SampleSet, this value is the SampleSet's objectId.
+     * e.g., for Material in a SampleType, this value is the SampleType's objectId.
      */
     public @Nullable Integer getParentObjectId()
     {
@@ -104,7 +109,12 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
 
     protected void save(User user, TableInfo table, boolean ensureObject)
     {
-        if (getRowId() == 0)
+        save(user, table, ensureObject, getRowId() == 0);
+    }
+
+    protected void save(User user, TableInfo table, boolean ensureObject, boolean isInsert)
+    {
+        if (isInsert)
         {
             if (ensureObject)
             {

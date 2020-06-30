@@ -58,6 +58,7 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
 import java.io.File;
@@ -71,6 +72,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.reports.report.ScriptReportDescriptor.REPORT_METADATA_EXTENSION;
+
 /**
  * User: migra
  * Date: Mar 6, 2006
@@ -78,8 +81,9 @@ import java.util.Map;
  */
 public abstract class AbstractReport implements Report, Cloneable // TODO: Remove this and switch to a builder pattern.
 {
-    private ReportDescriptor _descriptor;
+    protected ReportDescriptor _descriptor;
 
+    @Override
     public String getDescriptorType()
     {
         return ReportDescriptor.TYPE;
@@ -95,6 +99,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         getDescriptor().setReportId(reportId);
     }
 
+    @Override
     public void beforeSave(ContainerUser context)
     {
         if (getDescriptor() != null && hasContentModified(context))
@@ -123,7 +128,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return false;
     }
 
-    protected boolean hasDescriptorPropertyChanged(String descriptorPropName)
+    protected boolean hasDescriptorPropertyChanged(User user, String descriptorPropName)
     {
         // Content modified if change to the specified descriptor property
         String newPropStr = getDescriptor().getProperty(descriptorPropName);
@@ -131,7 +136,8 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         String origPropStr = null;
         if (getReportId() != null)
         {
-            Report origReport = ReportService.get().getReport(ContainerManager.getForId(getContainerId()), getReportId().getRowId());
+            Container c = ContainerManager.getForId(getContainerId());
+            Report origReport = getDescriptor().getReportId().getReport(new DefaultContainerUser(c,user));
             origPropStr = origReport != null ? origReport.getDescriptor().getProperty(descriptorPropName) : null;
         }
 
@@ -153,6 +159,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         AttachmentService.get().deleteAttachments(this);
     }
 
+    @Override
     public ReportDescriptor getDescriptor()
     {
         if (_descriptor == null)
@@ -163,6 +170,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return _descriptor;
     }
 
+    @Override
     public void setDescriptor(ReportDescriptor descriptor)
     {
         _descriptor = descriptor;
@@ -180,6 +188,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return null;
     }
 
+    @Override
     @Nullable
     public ActionURL getEditReportURL(ViewContext context)
     {
@@ -188,22 +197,26 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
 
     // Callers should pass in the "after save" redirect location; report might not be able to figure this out
     // (e.g., when manage views call this method, context.getActionURL() is a JSON API action)
+    @Override
     public @Nullable ActionURL getEditReportURL(ViewContext context, ActionURL returnURL)
     {
         ActionURL url = getEditReportURL(context);
         return null != url ? url.addReturnURL(returnURL) : null;
     }
 
+    @Override
     public HttpView renderDataView(ViewContext context) throws Exception
     {
         return new HtmlView("No Data view available for this report");
     }
 
+    @Override
     public HttpView getRunReportView(ViewContext context) throws Exception
     {
         return renderReport(context);
     }
 
+    @Override
     public ActionURL getDownloadDataURL(ViewContext context)
     {
         ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlDownloadData(context.getContainer());
@@ -221,6 +234,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return url;
     }
 
+    @Override
     public void clearCache()
     {
     }
@@ -246,6 +260,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return props;
     }
 
+    @Override
     public void serialize(ImportContext context, VirtualFile dir, String filename) throws IOException
     {
         ReportDescriptor descriptor = getDescriptor();
@@ -256,6 +271,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
             throw new IllegalArgumentException("Cannot serialize a report that hasn't been saved yet");
     }
 
+    @Override
     public void serializeToFolder(ImportContext context, VirtualFile dir) throws IOException
     {
         ReportDescriptor descriptor = getDescriptor();
@@ -267,7 +283,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
 
             serializeThumbnail(serializedName, dir, new ReportThumbnailLarge(context.getContainer(), this));
             serializeThumbnail(serializedName, dir, new ReportThumbnailSmall(context.getContainer(), this));
-            serialize(context, dir, String.format("%s.report.xml", serializedName));
+            serialize(context, dir, serializedName + REPORT_METADATA_EXTENSION);
         }
         else
             throw new IllegalArgumentException("Cannot serialize a report that hasn't been saved yet");
@@ -288,6 +304,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         }
     }
 
+    @Override
     public void afterDeserializeFromFile(File reportFile) throws IOException
     {
     }
@@ -383,8 +400,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     }
 
 
-    @Override
-    public boolean canEdit(User user, Container container, List<ValidationError> errors)
+    protected final boolean hasEditPermissions(User user, Container container, List<ValidationError> errors)
     {
         if (getDescriptor().isInherited(container))
         {
@@ -406,12 +422,30 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return errors.isEmpty();
     }
 
-    public boolean canEdit(User user, Container container)
-    {
-        return !getDescriptor().isModuleBased() && canEdit(user, container, new ArrayList<>());
 
+    /*
+     * By default this method will return canEdit()==false for module based reports.
+     * Sub-class can override this method, and call hasEditPermissions()
+     * instead of super.canEdit() to avoid this check.
+     */
+    @Override
+    public boolean canEdit(User user, Container container, List<ValidationError> errors)
+    {
+        if (getDescriptor().isModuleBased())
+        {
+            errors.add(new SimpleValidationError("This module report is not editable"));
+            return false;
+        }
+        return hasEditPermissions(user, container, errors);
     }
 
+    @Override
+    public final boolean canEdit(User user, Container container)
+    {
+        return canEdit(user, container, new ArrayList<>());
+    }
+
+    @Override
     public boolean canShare(User user, Container container, List<ValidationError> errors)
     {
         if (getDescriptor().isInherited(container))
@@ -435,6 +469,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return errors.isEmpty();
     }
 
+    @Override
     public boolean canShare(User user, Container container)
     {
         return canShare(user, container, new ArrayList<>());
@@ -447,11 +482,13 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return false;
     }
 
+    @Override
     public boolean canDelete(User user, Container container)
     {
         return canDelete(user, container, new ArrayList<>());
     }
 
+    @Override
     public boolean canDelete(User user, Container container, List<ValidationError> errors)
     {
         if (getDescriptor().isInherited(container))

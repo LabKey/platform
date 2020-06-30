@@ -100,11 +100,13 @@ public abstract class FolderTab
             super(pageId, caption);
         }
 
+        @Override
         public ActionURL getURL(Container container, User user)
         {
             return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(container, getName());
         }
 
+        @Override
         public boolean isSelectedPage(ViewContext viewContext)
         {
             if (super.isSelectedPage(viewContext))

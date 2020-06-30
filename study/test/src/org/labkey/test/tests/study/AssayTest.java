@@ -26,18 +26,16 @@ import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.CustomizeView;
 import org.labkey.test.components.domain.DomainFieldRow;
 import org.labkey.test.components.domain.DomainFormPanel;
-import org.labkey.test.components.labkey.ui.samples.SampleTypeDesigner;
 import org.labkey.test.pages.ReactAssayDesignerPage;
 import org.labkey.test.pages.assay.AssayBeginPage;
 import org.labkey.test.params.FieldDefinition;
-import org.labkey.test.params.experiment.SampleSetDefinition;
+import org.labkey.test.params.experiment.SampleTypeDefinition;
 import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.tests.AuditLogTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
-import org.labkey.test.util.SampleSetHelper;
+import org.labkey.test.util.SampleTypeHelper;
 import org.labkey.test.util.StudyHelper;
-import org.labkey.test.util.exp.SampleSetAPIHelper;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -62,6 +60,7 @@ public class AssayTest extends AbstractAssayTest
     /**
      * Cleanup entry point.
      */
+    @Override
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         //should also delete the groups
@@ -129,15 +128,15 @@ public class AssayTest extends AbstractAssayTest
         assertElementPresent(Locator.LinkLocator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
 
         log("Create new Sample Types to verify against");
-        String targetSetName = "Target Sample Set";
-        SampleSetDefinition targetDefinition = new SampleSetDefinition(targetSetName).setFields(new ArrayList<>());
-        SampleSetHelper ssHelper = SampleSetHelper.beginAtSampleSetsList(this, getCurrentContainerPath());
-        ssHelper.createSampleSet(targetDefinition, "Name\nS_1\nS_2\nS_3");
+        String targetTypeName = "Target Sample Type";
+        SampleTypeDefinition targetDefinition = new SampleTypeDefinition(targetTypeName).setFields(new ArrayList<>());
+        SampleTypeHelper ssHelper = SampleTypeHelper.beginAtSampleTypesList(this, getCurrentContainerPath());
+        ssHelper.createSampleType(targetDefinition, "Name\nS_1\nS_2\nS_3");
 
-        String otherSetName = "Other Sample Set";
-        SampleSetDefinition otherDefinition = new SampleSetDefinition(otherSetName).setFields(new ArrayList<>());
-        ssHelper = SampleSetHelper.beginAtSampleSetsList(this, getCurrentContainerPath());
-        ssHelper.createSampleSet(otherDefinition, "Name\nOS_1\nOS_2");
+        String otherTypeName = "Other Sample Type";
+        SampleTypeDefinition otherDefinition = new SampleTypeDefinition(otherTypeName).setFields(new ArrayList<>());
+        ssHelper = SampleTypeHelper.beginAtSampleTypesList(this, getCurrentContainerPath());
+        ssHelper.createSampleType(otherDefinition, "Name\nOS_1\nOS_2");
 
         importSampleAssayData(TEST_RUN1, "OS_1");
         goToManageAssays().clickAndWait(Locator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
@@ -151,7 +150,7 @@ public class AssayTest extends AbstractAssayTest
         ReactAssayDesignerPage designerPage = _assayHelper.clickEditAssayDesign();
         designerPage.expandFieldsPanel("Results")
                 .getField(sampleFieldName)
-                .setSampleType(targetSetName);
+                .setSampleType(targetTypeName);
         designerPage.clickFinish();
 
         log("Verify updates saved successfully");
@@ -266,8 +265,8 @@ public class AssayTest extends AbstractAssayTest
         setFormElement(Locator.name("quf_Flags"), "This Flag Has Been Edited");
         clickButton("Submit");
         assertTextPresent("EditedSpecimenID", "601.5", "514801");
-        assertElementPresent(Locator.xpath("//img[@src='/labkey/Experiment/flagDefault.gif'][@title='This Flag Has Been Edited']"), 1);
-        assertElementPresent(Locator.xpath("//img[@src='/labkey/Experiment/unflagDefault.gif'][@title='Flag for review']"), 9);
+        assertElementPresent(Locator.xpath("//img[@src='/labkey/experiment/flagDefault.gif'][@title='This Flag Has Been Edited']"), 1);
+        assertElementPresent(Locator.xpath("//img[@src='/labkey/experiment/unflagDefault.gif'][@title='Flag for review']"), 9);
 
         // Try a delete
         dataTable.checkCheckbox(table.getRowIndex("Specimen ID", "EditedSpecimenID"));

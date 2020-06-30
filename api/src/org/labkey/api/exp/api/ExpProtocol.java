@@ -16,11 +16,12 @@
 
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.ProtocolParameter;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.AbstractAssayProvider;
 
 import java.util.Collection;
 import java.util.List;
@@ -53,16 +54,19 @@ public interface ExpProtocol extends ExpObject
             this.prefix = ASSAY_DOMAIN_PREFIX + prefixName;
         }
 
+        @Override
         public String getName()
         {
             return name();
         }
 
+        @Override
         public String getPrefix()
         {
             return this.prefix;
         }
 
+        @Override
         public String getLsidTemplate()
         {
             return AbstractAssayProvider.getPresubstitutionLsid(getPrefix());
@@ -105,7 +109,8 @@ public interface ExpProtocol extends ExpObject
     ApplicationType getApplicationType();
     void setApplicationType(ApplicationType type);
 
-    ProtocolImplementation getImplementation();
+    @Nullable String getImplementationName();
+    @Nullable ProtocolImplementation getImplementation();
 
     String getDescription();
     void setDescription(String description);

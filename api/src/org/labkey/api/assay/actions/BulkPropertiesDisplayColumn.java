@@ -45,16 +45,19 @@ public class BulkPropertiesDisplayColumn extends SimpleDisplayColumn
         setWidth("100%");
     }
 
+    @Override
     public boolean isEditable()
     {
         return true;
     }
 
+    @Override
     public ColumnInfo getColumnInfo()
     {
         return _col;
     }
 
+    @Override
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
         JspView<BulkPropertiesUploadForm> view = new JspView<>("/org/labkey/api/assay/bulkPropertiesInput.jsp", _form);

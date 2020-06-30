@@ -27,6 +27,8 @@ import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -34,6 +36,7 @@ import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.ContainerUser;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -57,6 +60,8 @@ public class ScriptReportDesignBean extends ScriptReportBean
     private String _rmarkdownOutputOptions = null; // pandoc only
     private Boolean _useGetDataApi;
     private LinkedHashSet<ClientDependency> _clientDependencies;
+
+    private final ArrayList<HtmlString> _warnings = new ArrayList<>();
 
     // Bean has been populated and is about to be used in a view... initialize unset values and properties.
     // This is redundant with RunScriptReportView.populateReportForm(), but we're trying to move all this handling into
@@ -102,6 +107,7 @@ public class ScriptReportDesignBean extends ScriptReportBean
         return _includedReports;
     }
 
+    @Override
     public ScriptReport getReport(ContainerUser cu) throws Exception
     {
         Report report = super.getReport(cu);
@@ -152,6 +158,7 @@ public class ScriptReportDesignBean extends ScriptReportBean
         }
     }
 
+    @Override
     public List<Pair<String, String>> getParameters()
     {
         List<Pair<String, String>> list = super.getParameters();
@@ -179,6 +186,7 @@ public class ScriptReportDesignBean extends ScriptReportBean
         return list;
     }
 
+    @Override
     void populateFromDescriptor(ReportDescriptor descriptor)
     {
         super.populateFromDescriptor(descriptor);
@@ -335,5 +343,21 @@ public class ScriptReportDesignBean extends ScriptReportBean
             if (!set.contains(p.first))
                 url.addParameter(p.first, p.second);
         });
+    }
+
+    public List<HtmlString> getWarnings()
+    {
+        return _warnings;
+    }
+
+    public void addWarning(String warning)
+    {
+        _warnings.add(HtmlString.unsafe(PageFlowUtil.filter(warning, true)));
+    }
+
+    /* expect only simple formatting (e.g. <br>) */
+    public void addWarning(HtmlString warning)
+    {
+        _warnings.add(warning);
     }
 }

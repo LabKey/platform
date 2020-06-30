@@ -75,6 +75,7 @@ import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.specimen.settings.RepositorySettings;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -230,11 +231,11 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
-    public Map<String, Double> getVisitAliases()
+    public Map<String, BigDecimal> getVisitAliases()
     {
         return StudyManager.getInstance().getCustomVisitImportMapping(this)
-                .stream()
-                .collect(Collectors.toMap(StudyManager.VisitAlias::getName, StudyManager.VisitAlias::getSequenceNum));
+            .stream()
+            .collect(Collectors.toMap(StudyManager.VisitAlias::getName, StudyManager.VisitAlias::getSequenceNum));
     }
 
     @Override
@@ -430,6 +431,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _securityType = securityType;
     }
 
+    @Override
     public Date getStartDate()
     {
         return _startDate;
@@ -495,12 +497,14 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return true;
     }
 
+    @Override
     public void initLsid()
     {
         Lsid lsid = new Lsid(getDomainURIPrefix(), "Folder-" + getContainer().getRowId(), String.valueOf(getContainer().getRowId()));
         setLsid(lsid.toString());
     }
 
+    @Override
     public String getLsid()
     {
         return _lsid;
@@ -591,6 +595,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _lastReload = lastReload;
     }
 
+    @Override
     public boolean isAdvancedCohorts()
     {
         return _advancedCohorts;
@@ -641,6 +646,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _participantVisitCommentProperty = participantVisitCommentProperty;
     }
 
+    @Override
     public String getSubjectNounSingular()
     {
         return _subjectNounSingular;
@@ -651,6 +657,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _subjectNounSingular = subjectNounSingular;
     }
 
+    @Override
     public String getSubjectNounPlural()
     {
         return _subjectNounPlural;
@@ -661,6 +668,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _subjectNounPlural = subjectNounPlural;
     }
 
+    @Override
     public String getSubjectColumnName()
     {
         return _subjectColumnName;
@@ -671,6 +679,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _subjectColumnName = ColumnInfo.legalNameFromName(subjectColumnName);
     }
 
+    @Override
     public String getDescription()
     {
         return _description;
@@ -681,6 +690,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _description = description;
     }
 
+    @Override
     public String getDescriptionRendererType()
     {
         return _descriptionRendererType;
@@ -691,6 +701,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _descriptionRendererType = descriptionRendererType;
     }
 
+    @Override
     public String getDescriptionHtml()
     {
         String description = getDescription();
@@ -736,6 +747,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _protocolDocumentEntityId = protocolDocumentEntityId;
     }
 
+    @Override
     public void attachProtocolDocument(List<AttachmentFile> files, User user) throws IOException
     {
         AttachmentService.get().addAttachments(getProtocolDocumentAttachmentParent(), files, user);
@@ -744,6 +756,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             StudyManager._enumerateProtocolDocuments(ss.defaultTask(), this);
     }
 
+    @Override
     public String getInvestigator()
     {
         return _investigator;
@@ -754,6 +767,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _investigator = investigator;
     }
 
+    @Override
     public String getGrant()
     {
         return _grant;
@@ -764,6 +778,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _grant = grant;
     }
 
+    @Override
     public List<Attachment> getProtocolDocuments()
     {
         return new ArrayList<>(AttachmentService.get().getAttachments(getProtocolDocumentAttachmentParent()));
@@ -801,6 +816,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return getStudySnapshot() != null;
     }
 
+    @Override
     @Nullable
     public StudyImpl getSourceStudy()
     {
@@ -812,6 +828,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return StudyManager.getInstance().getStudy(sourceContainer);
     }
 
+    @Override
     public StudySnapshotType getStudySnapshotType()
     {
         if (_studySnapshotType == null && getStudySnapshot() != null)
@@ -834,6 +851,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return _studySnapshotType;
     }
 
+    @Override
     public boolean isEmptyStudy()
     {
         List<DatasetDefinition> datasets = getDatasets();
@@ -841,6 +859,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return visits.size() < 1 && datasets.size() < 1;
     }
 
+    @Override
     public void removeProtocolDocument(String name, User user)
     {
         AttachmentService.get().deleteAttachment(getProtocolDocumentAttachmentParent(), name, user);
@@ -849,11 +868,13 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             ss.deleteResource("attachment:/" + _protocolDocumentEntityId + "/" + PageFlowUtil.encode(name));
     }
 
+    @Override
     public String getAlternateIdPrefix()
     {
         return _alternateIdPrefix;
     }
 
+    @Override
     public int getAlternateIdDigits()
     {
         return _alternateIdDigits;
@@ -871,6 +892,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _alternateIdDigits = alternateIdDigits;
     }
 
+    @Override
     public boolean isAllowReqLocRepository()
     {
         return _allowReqLocRepository;
@@ -882,6 +904,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _allowReqLocRepository = allowReqLocRepository;
     }
 
+    @Override
     public boolean isAllowReqLocClinic()
     {
         return _allowReqLocClinic;
@@ -893,6 +916,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _allowReqLocClinic = allowReqLocClinic;
     }
 
+    @Override
     public boolean isAllowReqLocSal()
     {
         return _allowReqLocSal;
@@ -904,6 +928,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _allowReqLocSal = allowReqLocSal;
     }
 
+    @Override
     public boolean isAllowReqLocEndpoint()
     {
         return _allowReqLocEndpoint;
@@ -946,6 +971,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _species = species;
     }
 
+    @Override
     public String getAssayPlan()
     {
         return _assayPlan;
@@ -1070,6 +1096,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         }
     }
 
+    @Override
     public int getDefaultTimepointDuration()
     {
         return _defaultTimepointDuration;
@@ -1130,6 +1157,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _participantAliasProperty = participantAliasProperty;
     }
 
+    @Override
     @NotNull
     public Boolean getShareDatasetDefinitions()
     {
@@ -1143,6 +1171,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
 
+    @Override
     @NotNull
     public Boolean getShareVisitDefinitions()
     {

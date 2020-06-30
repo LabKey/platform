@@ -32,6 +32,7 @@
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("dataviews");
@@ -86,7 +87,6 @@
     if (bean.entrySet().size() == 0)
     {
         ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, getContainer());
-        createURL.addParameter("autoDatasetId", "true");
 %>
     No datasets have been created in this study.<br><br>
     <%= button("Create New Dataset").href(createURL) %>&nbsp;<%= button("Cancel").href(StudyController.ManageTypesAction.class, getContainer()) %>

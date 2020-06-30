@@ -73,6 +73,7 @@ public abstract class BaseStudyController extends SpringActionController
         return new SpecimenUtils(this);
     }
 
+    @Override
     public PageConfig defaultPageConfig()
     {
         PageConfig page =  super.defaultPageConfig();
@@ -143,28 +144,27 @@ public abstract class BaseStudyController extends SpringActionController
         return action;
     }
 
-    protected NavTree _appendManageStudy(NavTree root)
+    protected void _addManageStudy(NavTree root)
     {
-        return _appendManageStudy(root, getContainer(), getUser());
+        _addManageStudy(root, getContainer(), getUser());
     }
 
-    public static NavTree _appendManageStudy(NavTree root, Container container, User user)
+    public static void _addManageStudy(NavTree root, Container container, User user)
     {
-        appendRootNavTrail(root, container, user);
+        addRootNavTrail(root, container, user);
 
         if (container.hasPermission(user, ManageStudyPermission.class))
             root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, container));
-        return root;
     }
 
     @NotNull
-    protected Study appendRootNavTrail(NavTree root)
+    protected Study addRootNavTrail(NavTree root)
     {
-        return appendRootNavTrail(root, getContainer(), getUser());
+        return addRootNavTrail(root, getContainer(), getUser());
     }
 
     @NotNull
-    public static Study appendRootNavTrail(NavTree root, Container container, User user)
+    public static Study addRootNavTrail(NavTree root, Container container, User user)
     {
         Study study = getStudyRedirectIfNull(container);
         ActionURL rootURL;
@@ -181,27 +181,25 @@ public abstract class BaseStudyController extends SpringActionController
         return study;
     }
 
-    protected NavTree _appendNavTrailDatasetAdmin(NavTree root)
+    protected void _addNavTrailDatasetAdmin(NavTree root)
     {
-        _appendManageStudy(root);
+        _addManageStudy(root);
         root.addChild("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, getContainer()));
-        return root;
     }
 
-    protected NavTree _appendNavTrail(NavTree root)
+    protected void _addNavTrail(NavTree root)
     {
-        appendRootNavTrail(root);
-        return root;
+        addRootNavTrail(root);
     }
 
-    protected NavTree _appendNavTrail(NavTree root, int datasetId, int visitId)
+    protected NavTree _addNavTrail(NavTree root, int datasetId, int visitId)
     {
-        return _appendNavTrail(root, datasetId, visitId, null, null);
+        return _addNavTrail(root, datasetId, visitId, null, null);
     }
 
-    protected NavTree _appendNavTrail(NavTree root, int datasetId, int visitId, CohortFilter cohortFilter, String qcStateSetFormValue)
+    protected NavTree _addNavTrail(NavTree root, int datasetId, int visitId, CohortFilter cohortFilter, String qcStateSetFormValue)
     {
-        Study study = appendRootNavTrail(root);
+        Study study = addRootNavTrail(root);
         _appendDataset(root, study, datasetId, visitId, cohortFilter, qcStateSetFormValue);
         return root;
     }

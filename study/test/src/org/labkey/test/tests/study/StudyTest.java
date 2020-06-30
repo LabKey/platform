@@ -31,10 +31,9 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.Specimen;
-import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.pages.DatasetPropertiesPage;
-import org.labkey.test.pages.EditDatasetDefinitionPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
@@ -122,6 +121,7 @@ public class StudyTest extends StudyBaseTest
         isManualTest = true;
     }
 
+    @Override
     protected File[] getTestFiles()
     {
         return new File[]{TestFileUtils.getSampleData("api/study-api.xml")};
@@ -132,6 +132,7 @@ public class StudyTest extends StudyBaseTest
         return false;
     }
 
+    @Override
     protected void doCreateSteps()
     {
         if (!isQuickTest()) // StudyShortTest doesn't test alternate IDs
@@ -144,6 +145,7 @@ public class StudyTest extends StudyBaseTest
         waitForPipelineJobsToComplete(2, "study import", false);
     }
 
+    @Override
     protected void doCleanup(boolean afterTest) throws TestTimeoutException //child class cleanup method throws Exception
     {
         super.doCleanup(afterTest);
@@ -162,6 +164,7 @@ public class StudyTest extends StudyBaseTest
         }
     }
 
+    @Override
     protected void doVerifySteps()
     {
         manageSubjectClassificationTest();
@@ -337,7 +340,7 @@ public class StudyTest extends StudyBaseTest
         // test creating a participant group directly from a data grid
         clickFolder(STUDY_NAME);
         waitAndClickAndWait(Locator.linkWithText(datasetLink));
-        clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
+        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_TITLE));
 
         // verify warn on no selection
         if(!isQuickTest())
@@ -698,12 +701,12 @@ public class StudyTest extends StudyBaseTest
 
             // Test Bad Field Names -- #13607
             clickButton("Manage");
-            EditDatasetDefinitionPage editDatasetPage = new DatasetPropertiesPage(getDriver()).clickEditDefinition();
-            editDatasetPage.getFieldsEditor()
+            DatasetDesignerPage editDatasetPage = new DatasetPropertiesPage(getDriver()).clickEditDefinition();
+            editDatasetPage.getFieldsPanel()
                     .addField(new FieldDefinition("Bad Name").setLabel("Bad Name").setType(FieldDefinition.ColumnType.String));
-            editDatasetPage
-                    .save()
-                    .clickViewData();
+            editDatasetPage.clickSave();
+            new DatasetPropertiesPage(getDriver())
+                .clickViewData();
             _customizeViewsHelper.openCustomizeViewPanel();
             _customizeViewsHelper.addColumn("Bad Name", "Bad Name");
             _customizeViewsHelper.applyCustomView();
@@ -774,42 +777,35 @@ public class StudyTest extends StudyBaseTest
     {
         log("creating the participant/visit comment dataset");
         clickFolder(getFolderName());
-        clickAndWait(Locator.linkWithText("Manage Study"));
-        clickAndWait(Locator.linkWithText("Manage Datasets"));
-        clickAndWait(Locator.linkWithText("Create New Dataset"));
-
-        setFormElement(Locator.name("typeName"), PARTICIPANT_CMT_DATASET);
-        clickButton("Next");
-        waitForElement(Locator.input("dsName"), WAIT_FOR_JAVASCRIPT);
+        DatasetDesignerPage editDatasetPage = goToManageStudy()
+                .manageDatasets()
+                .clickCreateNewDataset()
+                .setName(PARTICIPANT_CMT_DATASET);
 
         // set the demographic data checkbox
-        checkCheckbox(Locator.xpath("//input[@name='demographicData']"));
+        editDatasetPage.setIsDemographicData(true);
 
         // add a comment field
-        PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Dataset Fields").find();
-        PropertiesEditor.FieldRow row = editor.selectField(0);
-        row.setName(COMMENT_FIELD_NAME);
-        row.setLabel(PARTICIPANT_COMMENT_LABEL);
-        row.setType(FieldDefinition.ColumnType.MultiLine);
-        clickButton("Save");
+        editDatasetPage.getFieldsPanel()
+                .manuallyDefineFields(COMMENT_FIELD_NAME)
+                .setLabel(PARTICIPANT_COMMENT_LABEL)
+                .setType(FieldDefinition.ColumnType.MultiLine);
+        DatasetPropertiesPage propertiesPage = editDatasetPage.clickSave();
 
         if(isVisitBased)
         {
             log("creating the participant/visit comment dataset");
-            clickAndWait(Locator.linkWithText("Manage Datasets"));
-            clickAndWait(Locator.linkWithText("Create New Dataset"));
-
-            setFormElement(Locator.name("typeName"), PARTICIPANT_VISIT_CMT_DATASET);
-            clickButton("Next");
-            waitForElement(Locator.input("dsName"), WAIT_FOR_JAVASCRIPT);
+            editDatasetPage = propertiesPage.clickManageDatasets()
+                    .clickCreateNewDataset()
+                    .setName(PARTICIPANT_VISIT_CMT_DATASET);
 
             // add a comment field
-            editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Dataset Fields").find();
-            row = editor.selectField(0);
-            row.setName(COMMENT_FIELD_NAME);
-            row.setLabel(PARTICIPANT_VISIT_COMMENT_LABEL);
-            row.setType(FieldDefinition.ColumnType.MultiLine);
-            clickButton("Save");
+            editDatasetPage.getFieldsPanel()
+                    .manuallyDefineFields(COMMENT_FIELD_NAME)
+                    .setLabel(PARTICIPANT_VISIT_COMMENT_LABEL)
+                    .setType(FieldDefinition.ColumnType.MultiLine);
+
+            editDatasetPage.clickSave();
         }
         log("configure comments");
         clickTab("Manage");
@@ -1030,12 +1026,12 @@ public class StudyTest extends StudyBaseTest
 
         // Verify that "Demographics Data" is checked and description is set
         clickAndWait(Locator.linkWithText("Manage Datasets"));
-        clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
+        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_TITLE));
         assertTableCellTextEquals("details", 4, 1, "true");
         assertTableCellTextEquals("details", 4, 3, getDemographicsDescription());
 
         // "Demographics Data" bit needs to be false for the rest of the test
-        setDemographicsBit("DEM-1: Demographics", false)
+        setDemographicsBit(DEMOGRAPHICS_TITLE, false)
                 .clickViewData();
 
         log("verify ");
@@ -1186,15 +1182,18 @@ public class StudyTest extends StudyBaseTest
     protected void verifyParticipantVisitDay()
     {
         clickFolder(getFolderName());
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+        DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .selectDatasetByLabel(DEMOGRAPHICS_TITLE)
                 .clickEditDefinition();
         editDatasetPage
-                .getFieldsEditor()
+                .getFieldsPanel()
                 .addField(new FieldDefinition("VisitDay").setLabel("VisitDay").setType(FieldDefinition.ColumnType.Integer));
-        editDatasetPage.setVisitDate("DEMdt")
-                .save()
-                .clickViewData();
+        editDatasetPage.openAdvancedDatasetSettings()
+                .selectVisitDateColumn("DEMdt")
+                .clickApply()
+                .clickSave();
+        new DatasetPropertiesPage(getDriver())
+            .clickViewData();
 
         // Edit 1 item changing sequence from 101; then edit again and change back and set VisitDay to something
         clickAndWait(Locator.tagWithAttribute("a", "data-original-title","edit").index(0));

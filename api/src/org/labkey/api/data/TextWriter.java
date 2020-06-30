@@ -137,6 +137,7 @@ public abstract class TextWriter implements AutoCloseable
         write();
     }
 
+    @Override
     public void close() throws IOException
     {
         if (_pw == null)

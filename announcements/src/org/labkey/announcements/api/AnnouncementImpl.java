@@ -38,11 +38,13 @@ public class AnnouncementImpl implements Announcement
         _model = model;
     }
 
+    @Override
     public Collection<Attachment> getAttachments()
     {
         return _model.getAttachments();
     }
 
+    @Override
     public Date getExpires()
     {
         return _model.getExpires();
@@ -53,6 +55,7 @@ public class AnnouncementImpl implements Announcement
         _model.setExpires(expires);
     }
 
+    @Override
     public int getRowId()
     {
         return _model.getRowId();
@@ -63,6 +66,13 @@ public class AnnouncementImpl implements Announcement
         _model.setRowId(rowId);
     }
 
+    @Override
+    public String getEntityId()
+    {
+        return _model.getEntityId();
+    }
+
+    @Override
     public String getTitle()
     {
         return _model.getTitle();
@@ -73,6 +83,7 @@ public class AnnouncementImpl implements Announcement
         _model.setTitle(title);
     }
 
+    @Override
     public String getBody()
     {
         return _model.getBody();
@@ -88,11 +99,13 @@ public class AnnouncementImpl implements Announcement
         _model.setContainer(container.getId());
     }
 
+    @Override
     public Container getContainer()
     {
         return _model.lookupContainer();
     }
 
+    @Override
     public String getStatus()
     {
         return _model.getStatus();
@@ -103,6 +116,7 @@ public class AnnouncementImpl implements Announcement
         _model.setStatus(status);
     }
 
+    @Override
     public Date getCreated()
     {
         return _model.getCreated();
@@ -113,6 +127,7 @@ public class AnnouncementImpl implements Announcement
         _model.setCreated(created);
     }
 
+    @Override
     public Date getModified()
     {
         return _model.getModified();
@@ -123,6 +138,7 @@ public class AnnouncementImpl implements Announcement
         _model.setModified(modified);
     }
 
+    @Override
     public WikiRendererType getRendererType()
     {
         return WikiRendererType.valueOf(_model.getRendererType()); 

@@ -17,6 +17,8 @@ package org.labkey.core.wiki;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.FormattedHtml;
 
@@ -32,16 +34,16 @@ public class ClientDependencySubstitutionHandler implements HtmlRenderer.Substit
         params = new CaseInsensitiveHashMap<>(params);
         if (!params.containsKey("path"))
         {
-            return new FormattedHtml("<br><font class='error' color='red'>Error: must provide the path of the client dependencies</font>");
+            return new FormattedHtml(HtmlString.unsafe("<br><font class='error' color='red'>Error: must provide the path of the client dependencies</font>"));
         }
 
         LinkedHashSet<ClientDependency> cds = new LinkedHashSet<>();
         ClientDependency cd = ClientDependency.fromPath(params.get("path"));
         if (cd == null)
-            return new FormattedHtml("<br><font class='error' color='red'>Error: unknown path: " + params.get("path") + "</font>");
+            return new FormattedHtml(HtmlString.unsafe("<br><font class='error' color='red'>Error: unknown path: " + PageFlowUtil.filter(params.get("path")) + "</font>"));
 
         cds.add(cd);
 
-        return new FormattedHtml("", false, cds);
+        return new FormattedHtml(HtmlString.EMPTY_STRING, false, cds);
     }
 }

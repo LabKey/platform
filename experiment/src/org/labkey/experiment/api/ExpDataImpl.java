@@ -139,7 +139,9 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         DataType dataType = getDataType();
         if (dataType != null)
         {
-            return dataType.getDetailsURL(this);
+            ActionURL url = dataType.getDetailsURL(this);
+            if (url != null)
+                return url;
         }
 
         return _object.detailsURL();
@@ -148,15 +150,20 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     @Override
     public @Nullable QueryRowReference getQueryRowReference()
     {
-        DataType type = getDataType();
-        if (type != null)
-            return type.getQueryRowReference(this);
-
         ExpDataClassImpl dc = getDataClass();
         if (dc != null)
             return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP_DATA, dc.getName(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
-        else
-            return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Data.name(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
+
+        // Issue 40123: see MedImmuneDataHandler MEDIMMUNE_DATA_TYPE, this claims the "Data" namespace
+        DataType type = getDataType();
+        if (type != null)
+        {
+            QueryRowReference queryRowReference = type.getQueryRowReference(this);
+            if (queryRowReference != null)
+                return queryRowReference;
+        }
+
+        return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Data.name(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
     }
 
     @Override
@@ -295,9 +302,9 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         }
         if (flagged)
         {
-            return AppProps.getInstance().getContextPath() + "/Experiment/flagData.png";
+            return AppProps.getInstance().getContextPath() + "/experiment/flagData.png";
         }
-        return AppProps.getInstance().getContextPath() + "/Experiment/images/unflagData.png";
+        return AppProps.getInstance().getContextPath() + "/experiment/images/unflagData.png";
     }
 
     @Override
@@ -937,17 +944,16 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
+        public void addNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
         {
-            NavTree tree = SearchResultTemplate.super.appendNavTrail(root, ctx, scope, category);
+            SearchResultTemplate.super.addNavTrail(root, ctx, scope, category);
 
             String dataclass = ctx.getActionURL().getParameter(PROPERTY);
             if (dataclass != null)
             {
-                String text = tree.getText();
-                tree.setText(text + " - " + dataclass);
+                String text = root.getText();
+                root.setText(text + " - " + dataclass);
             }
-            return tree;
         }
     }
 }

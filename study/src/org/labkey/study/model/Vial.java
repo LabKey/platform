@@ -74,11 +74,13 @@ public class Vial extends AbstractStudyCachable<Vial>
         return 0;
     }
 
+    @Override
     public Container getContainer()
     {
         return _container;
     }
 
+    @Override
     public void setContainer(Container container)
     {
         throw new IllegalStateException("Container should be set in constructor");
@@ -109,6 +111,7 @@ public class Vial extends AbstractStudyCachable<Vial>
         return (String)get("ptid");
     }
 
+    @Override
     public Object getPrimaryKey()
     {
         return getRowId();

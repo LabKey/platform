@@ -16,7 +16,12 @@
 
 package org.labkey.api.reports.report;
 
-import java.util.*;
+import org.labkey.api.admin.ImportContext;
+import org.labkey.query.xml.ReportDescriptorDocument;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 /*
 * User: adam
@@ -65,6 +70,7 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
         _props.put(Prop.scriptDependencies.toString(), scriptDependencies);
     }
 
+    @Override
     public boolean isArrayType(String prop)
     {
         if (!super.isArrayType(prop))
@@ -72,5 +78,15 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
             return Prop.includedReports.toString().equals(prop);
         }
         return true;
+    }
+
+    @Override
+    public ReportDescriptorDocument getDescriptorDocument(ImportContext context)
+    {
+        // if we are doing folder export (or module file save), we don't want to double save the script property
+        if (null != context)
+            return getDescriptorDocument(context.getContainer(), context, true, Set.of(Prop.script.name()));
+        else
+            return getDescriptorDocument(context.getContainer(), context, true, Collections.emptySet());
     }
 }

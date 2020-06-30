@@ -69,6 +69,7 @@ public class ListWrapper<E> implements List<E>
         return _list.toArray();
     }
 
+    @Override
     public <T> T[] toArray(T[] a)
     {
         return _list.toArray(a);
@@ -86,6 +87,7 @@ public class ListWrapper<E> implements List<E>
         return _list.remove(o);
     }
 
+    @Override
     public boolean containsAll(Collection<?> c)
     {
         return _list.containsAll(c);
@@ -103,11 +105,13 @@ public class ListWrapper<E> implements List<E>
         return _list.addAll(index, c);
     }
 
+    @Override
     public boolean removeAll(Collection<?> c)
     {
         return _list.removeAll(c);
     }
 
+    @Override
     public boolean retainAll(Collection<?> c)
     {
         return _list.retainAll(c);

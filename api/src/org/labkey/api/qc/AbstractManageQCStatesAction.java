@@ -49,6 +49,7 @@ public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageQC
         _qcStateHandler.updateQcState(container, form, user);
     }
 
+    @Override
     public void validateCommand(FORM form, Errors errors)
     {
         Set<String> labels = new HashSet<>();
@@ -78,6 +79,7 @@ public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageQC
         }
     }
 
+    @Override
     public boolean handlePost(FORM form, BindException errors)
     {
         if (form.getIds() != null)

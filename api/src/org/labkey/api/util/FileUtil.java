@@ -63,8 +63,9 @@ import java.util.stream.Stream;
  */
 public class FileUtil
 {
+    private static final Logger LOG = Logger.getLogger(FileUtil.class);
+
     private static File _tempDir = null;
-    private static Logger LOG = Logger.getLogger(FileUtil.class);
 
     public static boolean deleteDirectoryContents(File dir)
     {
@@ -78,7 +79,7 @@ public class FileUtil
             String[] children = dir.list();
 
             if (null == children) // 17562
-                return false;
+                return true;
 
             for (String aChildren : children)
             {
@@ -127,33 +128,25 @@ public class FileUtil
         // http://commons.apache.org/proper/commons-io/apidocs/org/apache/commons/io/FileUtils.html
         if (!Files.isSymbolicLink(dir.toPath()))
         {
+            // this returns true if !dir.isDirectory()
             boolean success = deleteDirectoryContents(dir, log);
             if (!success)
                 return false;
         }
 
         // The directory is now either a sym-link or empty, so delete it
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 5 ; i++)
         {
-            if (dir.delete())
+            if (dir.delete() || !dir.exists())
                 return true;
 
             // Issue 39579: Folder import sometimes fails to delete temp directory
             // wait a little then try again
-            try
-            {
-                log.warn("Failed to delete file.  Sleep and try to delete again: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
-                Thread.sleep(1000);
-            }
-            catch (InterruptedException e)
-            {
-                // give up
-                log.warn("Failed to delete file after 5 attempts: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
-                return false;
-            }
+            log.warn("Failed to delete file.  Sleep and try to delete again: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
+            try {Thread.sleep(1000);} catch (InterruptedException x) {/* pass */}
         }
-
-        return dir.delete();
+        log.error("Failed to delete file after 5 attempts: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
+        return false;
     }
 
     public static void deleteDir(@NotNull Path dir) throws IOException

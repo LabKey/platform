@@ -93,6 +93,7 @@ public class StatusController extends SpringActionController
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "pipeline", url, ReadPermission.class);
     }
 
+    @Override
     public PageConfig defaultPageConfig()
     {
         PageConfig p = super.defaultPageConfig();
@@ -117,6 +118,7 @@ public class StatusController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleRedirectAction
     {
+        @Override
         public ActionURL getRedirectURL(Object o)
         {
             return urlShowList(getContainer(), false);
@@ -142,12 +144,14 @@ public class StatusController extends SpringActionController
 
     abstract public class ShowListBaseAction<FORM extends ReturnUrlWithErrorForm> extends FormViewAction<FORM>
     {
+        @Override
         public ActionURL getSuccessURL(FORM form)
         {
             // Success leads to a reshow of this page with lastfilter=true
             return form.getReturnActionURL(urlShowList(getContainer(), true));
         }
 
+        @Override
         public ModelAndView getView(FORM form, boolean reshow, BindException errors)
         {
             Container c = getContainerCheckAdmin();
@@ -199,9 +203,10 @@ public class StatusController extends SpringActionController
             return result;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Data Pipeline");
+            root.addChild("Data Pipeline");
         }
     }
 
@@ -238,11 +243,13 @@ public class StatusController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowListAction extends ShowListBaseAction<ReturnUrlWithErrorForm>
     {
+        @Override
         public void validateCommand(ReturnUrlWithErrorForm target, Errors errors)
         {
             // Direct posts do nothing
         }
 
+        @Override
         public boolean handlePost(ReturnUrlWithErrorForm o, BindException errors)
         {
             return true;    // Direct posts do nothing
@@ -252,6 +259,7 @@ public class StatusController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowListRegionAction extends ReadOnlyApiAction<ReturnUrlForm>
     {
+        @Override
         public ApiResponse execute(ReturnUrlForm form, BindException errors) throws Exception
         {
             Container c = getContainerCheckAdmin();
@@ -267,6 +275,7 @@ public class StatusController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowPartRegionAction extends ReadOnlyApiAction<ReturnUrlForm>
     {
+        @Override
         public ApiResponse execute(ReturnUrlForm form, BindException errors) throws Exception
         {
             PipelineQueryView gridView = new PipelineQueryView(getViewContext(), errors, null, PipelineService.PipelineButtonOption.Minimal, form.getReturnActionURL(new ActionURL(ShowListAction.class, getContainer())));
@@ -360,10 +369,11 @@ public class StatusController extends SpringActionController
             return result;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Pipeline Jobs", new ActionURL(BeginAction.class, getContainer()));
-            return root.addChild(_statusFile == null ? "Job Status" : _statusFile.getDescription());
+            root.addChild(_statusFile == null ? "Job Status" : _statusFile.getDescription());
         }
     }
 
@@ -398,6 +408,7 @@ public class StatusController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowDataAction extends SimpleRedirectAction<RowIdForm>
     {
+        @Override
         public ActionURL getRedirectURL(RowIdForm form)
         {
             Container c = getContainerCheckAdmin();
@@ -420,6 +431,7 @@ public class StatusController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowFolderAction extends SimpleRedirectAction<RowIdForm>
     {
+        @Override
         public ActionURL getRedirectURL(RowIdForm form)
         {
             Container c = getContainerCheckAdmin();
@@ -477,6 +489,7 @@ public class StatusController extends SpringActionController
             return false;
         }
 
+        @Override
         public ActionURL getSuccessURL(ProviderActionForm form)
         {
             // Just to be safe, return to the details page, if there is no success URL from
@@ -512,6 +525,7 @@ public class StatusController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowFileAction extends SimpleStreamAction<ShowFileForm>
     {
+        @Override
         public void render(ShowFileForm form, BindException errors, PrintWriter out) throws Exception
         {
             Container c = getContainerCheckAdmin();
@@ -616,6 +630,7 @@ public class StatusController extends SpringActionController
     abstract public class PerformStatusActionBase<FORM extends SelectStatusForm>
             extends ShowListBaseAction<FORM>
     {
+        @Override
         public void validateCommand(FORM target, Errors errors)
         {
             Set<String> runs = DataRegionSelection.getSelected(getViewContext(), true);
@@ -637,6 +652,7 @@ public class StatusController extends SpringActionController
             target.setRowIds(rowIds);
         }
 
+        @Override
         public boolean handlePost(FORM form, BindException errors) throws Exception
         {
             getContainerCheckAdmin();
@@ -675,6 +691,7 @@ public class StatusController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class RunActionAction extends PerformStatusActionBase<ActionForm>
     {
+        @Override
         public boolean handlePost(ActionForm form, BindException errors) throws Exception
         {
             // The method prototype for this method is used to determine the form type,
@@ -683,6 +700,7 @@ public class StatusController extends SpringActionController
             return super.handlePost(form, errors);
         }
 
+        @Override
         public void handleSelect(ActionForm form) throws PipelineProvider.HandlerException
         {
             // Let the provider handle the action, if it can.
@@ -805,15 +823,16 @@ public class StatusController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Confirm Deletion");
+            root.addChild("Confirm Deletion");
         }
     }
 
     @RequiresPermission(ReadPermission.class)
     public class CancelStatusAction extends PerformStatusActionBase
     {
+        @Override
         public void handleSelect(SelectStatusForm form) throws PipelineProvider.HandlerException
         {
             cancelStatus(getViewBackgroundInfo(), DataRegionSelection.getSelectedIntegers(getViewContext(), true));
@@ -823,6 +842,7 @@ public class StatusController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class CompleteStatusAction extends PerformStatusActionBase
     {
+        @Override
         public void handleSelect(SelectStatusForm form)
         {
             completeStatus(getUser(), DataRegionSelection.getSelectedIntegers(getViewContext(), true));
@@ -833,6 +853,7 @@ public class StatusController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class EscalateJobFailureAction extends SimpleViewAction<RowIdForm>
     {
+        @Override
         public ModelAndView getView(RowIdForm form, BindException errors)
         {
             DataRegion rgn = new DataRegion();
@@ -860,19 +881,22 @@ public class StatusController extends SpringActionController
             return view;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Escalate Pipeline Job Failure");
+            root.addChild("Escalate Pipeline Job Failure");
         }
     }
 
     @RequiresPermission(ReadPermission.class)
     public class EscalateAction extends ShowListBaseAction<EscalateMessageForm>
     {
+        @Override
         public void validateCommand(EscalateMessageForm target, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(EscalateMessageForm form, BindException errors)
         {
             String recipients = "";
@@ -1116,16 +1140,19 @@ public class StatusController extends SpringActionController
 
     public static class PipelineStatusUrlsImp implements PipelineStatusUrls
     {
+        @Override
         public ActionURL urlBegin(Container container)
         {
             return urlShowList(container, false);
         }
 
+        @Override
         public ActionURL urlDetails(Container container, int rowId)
         {
             return StatusController.urlDetails(container, rowId);
         }
 
+        @Override
         public ActionURL urlBegin(Container container, boolean notComplete)
         {
             ActionURL url = urlBegin(container);
@@ -1146,13 +1173,15 @@ public class StatusController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class ForceRefreshAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             PipelineServiceImpl.get().refreshLocalJobs();
             throw new RedirectException(new ActionURL(ShowListAction.class, ContainerManager.getRoot()));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException();
         }

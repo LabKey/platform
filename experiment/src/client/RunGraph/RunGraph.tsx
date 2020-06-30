@@ -1,18 +1,22 @@
 import React from 'react';
 import {
     initQueryGridState,
+    LineageFilter,
     LineageGraph,
     LineageURLResolvers,
 } from '@labkey/components';
-
-import { AppContext } from './util'
 
 import '@labkey/components/dist/components.css';
 
 initQueryGridState();
 
+export interface AppContext {
+    lsid: string;
+    rowId: number;
+}
+
 interface RunGraphProps {
-    context: AppContext
+    context: AppContext;
 }
 
 export class RunGraph extends React.Component<RunGraphProps> {
@@ -21,11 +25,31 @@ export class RunGraph extends React.Component<RunGraphProps> {
             <LineageGraph
                 distance={1}
                 filterIn={false}
+                filters={[new LineageFilter('expType', null)]}
                 lsid={this.props.context.lsid}
+                request={{
+                    includeInputsAndOutputs: true,
+                    includeRunSteps: true,
+                }}
                 urlResolver={LineageURLResolvers.Server}
                 navigate={(node) => {
-                    if (node && node.lineageNode && node.lineageNode.links.lineage) {
-                        window.location.href = node.lineageNode.links.lineage;
+                    if (node?.lineageNode?.links) {
+                        let target = node.lineageNode.links.lineage ?? node.lineageNode.links.overview;
+
+                        if (target) {
+                            if (target.indexOf('showRunGraph.view') > -1) {
+                                try {
+                                    const url = new URL(target, location.origin);
+                                    url.searchParams.append('betaGraph', '1');
+
+                                    target = url.href;
+                                } catch (e) {
+                                    // whatever, I tried...
+                                }
+                            }
+
+                            window.location.href = target;
+                        }
                     }
                 }}
             />

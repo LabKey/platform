@@ -24,6 +24,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.ExperimentProtocolHandler;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataProtocolInput;
@@ -32,8 +33,13 @@ import org.labkey.api.exp.api.ExpMaterialProtocolInput;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.ProvenanceService;
+import org.labkey.api.exp.query.ExpProtocolApplicationTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -61,45 +67,67 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         super(app);
     }
 
+    @Override
     public ActionURL detailsURL()
     {
         return null;
     }
 
+    @Override
+    public @Nullable QueryRowReference getQueryRowReference()
+    {
+        ExpProtocolImpl protocol = getProtocol();
+        if (protocol != null)
+        {
+            QueryRowReference ref = protocol.getCustomQueryRowReference();
+            if (ref != null)
+                return ref;
+        }
+
+        return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.ProtocolApplications.name(), FieldKey.fromParts(ExpProtocolApplicationTable.Column.RowId), getRowId());
+    }
+
+    @Override
     public Date getCreated()
     {
         ExpRun run = getRun();
         return null == run ? null : run.getCreated();
     }
 
+    @Override
     public User getCreatedBy()
     {
         ExpRun run = getRun();
         return null == run ? null : run.getCreatedBy();
     }
 
+    @Override
     public User getModifiedBy()
     {
         ExpRun run = getRun();
         return null == run ? null : run.getModifiedBy();
     }
 
+    @Override
     public Date getModified()
     {
         ExpRun run = getRun();
         return null == run ? null : run.getModified();
     }
 
+    @Override
     public Container getContainer()
     {
         return getRun().getContainer();
     }
     
+    @Override
     public void setContainer(Container container)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     @NotNull
     public List<ExpDataRunInputImpl> getDataInputs()
     {
@@ -113,6 +141,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         return ExpDataRunInputImpl.fromInputs(ExperimentServiceImpl.get().getDataOutputsForApplication(getRowId()));
     }
 
+    @Override
     @NotNull
     public List<ExpDataImpl> getInputDatas()
     {
@@ -129,6 +158,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         return _inputDatas;
     }
 
+    @Override
     @NotNull
     public List<ExpMaterialImpl> getInputMaterials()
     {
@@ -145,6 +175,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         return _inputMaterials;
     }
 
+    @Override
     @NotNull
     public List<ExpDataImpl> getOutputDatas()
     {
@@ -156,6 +187,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         return _outputDatas;
     }
 
+    @Override
     @NotNull
     public List<ExpMaterialRunInputImpl> getMaterialInputs()
     {
@@ -169,6 +201,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         return ExpMaterialRunInputImpl.fromInputs(ExperimentServiceImpl.get().getMaterialOutputsForApplication(getRowId()));
     }
 
+    @Override
     @NotNull
     public List<ExpMaterialImpl> getOutputMaterials()
     {
@@ -180,34 +213,40 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         return _outputMaterials;
     }
 
+    @Override
     public ExpProtocolImpl getProtocol()
     {
         return ExperimentServiceImpl.get().getExpProtocol(_object.getProtocolLSID());
     }
 
+    @Override
     public int getRowId()
     {
         return _object.getRowId();
     }
 
+    @Override
     public ExpRunImpl getRun()
     {
         Integer runId = _object.getRunId();
         return runId == null ? null : ExperimentServiceImpl.get().getExpRun(runId.intValue());
     }
 
+    @Override
     public void setRun(ExpRun run)
     {
         ensureUnlocked();
         _object.setRunId(run.getRowId());
     }
 
+    @Override
     public void setActionSequence(int actionSequence)
     {
         ensureUnlocked();
         _object.setActionSequence(actionSequence);
     }
 
+    @Override
     public void setProtocol(ExpProtocol protocol)
     {
         ensureUnlocked();
@@ -215,76 +254,90 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         _object.setCpasType(protocol.getApplicationType().toString());
     }
 
+    @Override
     public void setActivityDate(Date date)
     {
         ensureUnlocked();
         _object.setActivityDate(date);
     }
 
+    @Override
     public void setStartTime(Date date)
     {
         ensureUnlocked();
         _object.setStartTime(date);
     }
 
+    @Override
     public void setEndTime(Date date)
     {
         ensureUnlocked();
         _object.setEndTime(date);
     }
 
+    @Override
     public void setRecordCount(Integer recordCount)
     {
         ensureUnlocked();
         _object.setRecordCount(recordCount);
     }
 
+    @Override
     public void setComments(String comments)
     {
         ensureUnlocked();
         _object.setComments(comments);
     }
 
+    @Override
     public int getActionSequence()
     {
         return _object.getActionSequence();
     }
 
+    @Override
     public ExpProtocol.ApplicationType getApplicationType()
     {
         return ExpProtocol.ApplicationType.valueOf(_object.getCpasType());
     }
 
+    @Override
     public Date getActivityDate()
     {
         return _object.getActivityDate();
     }
 
+    @Override
     public Date getStartTime()
     {
         return _object.getStartTime();
     }
 
+    @Override
     public Date getEndTime()
     {
         return _object.getEndTime();
     }
 
+    @Override
     public Integer getRecordCount()
     {
         return _object.getRecordCount();
     }
 
+    @Override
     public String getComments()
     {
         return _object.getComments();
     }
 
+    @Override
     public void save(User user)
     {
         save(user, ExperimentServiceImpl.get().getTinfoProtocolApplication(), false);
     }
 
+    @Override
     public void delete(User user)
     {
         if (getRowId() != 0)

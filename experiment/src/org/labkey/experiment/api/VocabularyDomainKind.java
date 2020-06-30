@@ -87,6 +87,7 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
         return reservedProperties;
     }
 
+    @Override
     public boolean canEditDefinition(User user, Domain domain)
     {
         return domain.getContainer().hasPermission(user, DesignVocabularyPermission.class);
@@ -121,6 +122,8 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
     @Override
     public Priority getPriority(String domainURI)
     {
+        if (!domainURI.contains(getKindName()))
+            return null;
         Lsid lsid = new Lsid(domainURI);
         return getKindName().equals(lsid.getNamespacePrefix()) ? Priority.MEDIUM : null;
     }

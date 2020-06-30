@@ -22,9 +22,9 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.dialect.MockSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.TableInfo;
@@ -62,9 +62,7 @@ public class AliasManager
             return true;
         if (first)
             return false;
-        if (ch >= '0' && ch <= '9')
-            return true;
-        return false;
+        return ch >= '0' && ch <= '9';
     }
 
     public static boolean isLegalName(String str)
@@ -101,7 +99,7 @@ public class AliasManager
         }
         else
         {
-            sb.append(str.substring(0, i));
+            sb.append(str, 0, i);
         }
 
         for ( ; i < length ; i ++)
@@ -129,7 +127,7 @@ public class AliasManager
                 }
             }
         }
-        return null == sb ? str : sb.toString();
+        return sb.toString();
     }
 
 
@@ -279,7 +277,7 @@ public class AliasManager
     /* assumes won't be called on same columninfo twice
      * does not assume that names are unique (e.g. might be fieldkey.toString() or just fieldKey.getname())
      */
-    public void ensureAlias(BaseColumnInfo column, @Nullable String extra)          // TODO: any external modules use this?
+    public void ensureAlias(MutableColumnInfo column, @Nullable String extra)          // TODO: any external modules use this?
     {
         if (column.isAliasSet())
         {
@@ -291,13 +289,18 @@ public class AliasManager
             column.setAlias(decideAlias(column.getName() + StringUtils.defaultString(extra,"")));
     }
 
-    public void ensureAlias(BaseColumnInfo column)
+    public void ensureAlias(MutableColumnInfo column)
     {
         if (column.isAliasSet())
         {
-            if (_aliases.get(column.getAlias()) != null)
-                throw new IllegalStateException("alias '" + column.getAlias() + "' is already in use!  the column name and alias are: " + column.getName() + " / " + column.getAlias() + ".  The full set of aliases are: " + _aliases.toString()); // SEE BUG 13682 and 15475
-            claimAlias(column.getAlias(), column.getName());
+            String name;
+            if (null != (name = _aliases.get(column.getAlias())))
+            {
+                if (!name.equals(column.getName()))
+                    throw new IllegalStateException("alias '" + column.getAlias() + "' is already in use!  the column name and alias are: " + column.getName() + " / " + column.getAlias() + ".  The full set of aliases are: " + _aliases.toString()); // SEE BUG 13682 and 15475
+            }
+            else
+                claimAlias(column.getAlias(), column.getName());
         }
         else
             column.setAlias(decideAlias(column.getName()));

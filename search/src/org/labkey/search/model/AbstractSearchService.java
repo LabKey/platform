@@ -54,6 +54,7 @@ import org.labkey.search.view.DefaultSearchResultTemplate;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -90,7 +91,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     enum OPERATION
     {
-        add, delete
+        add, delete, noop
     }
 
     static final Comparator<Item> itemCompare = Comparator.comparing(o -> o._pri);
@@ -183,10 +184,19 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
 
         @Override
-        public void completeItem(Object item, boolean success)
+        public void addNoop(PRIORITY pri)
         {
-            if (item instanceof Item)
-                ((Item)item)._complete = HeartBeat.currentTimeMillis();
+            final Item i = new Item( this, OPERATION.noop, "noop://noop", null, pri);
+            addItem(i);
+            final Item r = new Item(this, () -> queueItem(i), pri);
+            queueItem(r);
+        }
+
+
+        @Override
+        public void completeItem(Item item, boolean success)
+        {
+            item._complete = HeartBeat.currentTimeMillis();
             super.completeItem(item, success);
         }
 
@@ -250,6 +260,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             _id = String.valueOf(r);
         }
 
+        OPERATION getOperation()
+        {
+            return _op;
+        }
+
         WebdavResource getResource()
         {
             if (null == _res)
@@ -302,7 +317,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         @Override
         public String toString()
         {
-            return "Item{" + (null != _res ? _res.toString() : _run.toString()) + '}';
+            return "Item{" + (null != _res ? _res.toString() : null != _run ? _run.toString() : _op.name()) + '}';
         }
     }
 
@@ -361,7 +376,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         _savePaths.updateFile(path, new Date(time), new Date(indexed));
     }
 
-
     @Override
     public final void deleteContainer(final String id)
     {
@@ -374,7 +388,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         };
         queueItem(new Item(defaultTask(), r, PRIORITY.background));
     }
-
 
     @Override
     public void clearLastIndexed()
@@ -399,7 +412,25 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         DavCrawler.getInstance().startFull(WebdavService.getPath(), true);
     }
 
-    
+    /**
+     * Delete any existing index file documents, and start a new indexing task for container
+     * @param c Container to reindex
+     */
+    @Override
+    public void reindexContainerFiles(Container c)
+    {
+        //Create new runnable instead of using existing methods so they can be run within the same job.
+        Runnable r = () -> {
+            //Remove old items
+            clearIndexedFileSystemFiles(c);
+
+            //TODO: make DavCrawler (or a wrapper) a DocumentProvider instead
+            //Recrawl files as the container name may be used in paths & Urls. Issue #39696
+            DavCrawler.getInstance().startFull(WebdavService.getPath().append(c.getParsedPath()), true);
+        };
+        queueItem(new Item(defaultTask(), r, PRIORITY.delete));
+    }
+
     private void queueItem(Item i)
     {
         // UNDONE: this is not 100% correct, consider passing in a scope with Item
@@ -487,6 +518,16 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         synchronized (_commitLock)
         {
             _countIndexedSinceCommit++;
+        }
+    }
+
+    @Override
+    public void deleteResources(Collection<String> ids)
+    {
+        this.deleteDocuments(ids);
+        synchronized (_commitLock)
+        {
+            _countIndexedSinceCommit += ids.size();
         }
     }
 
@@ -630,8 +671,23 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             return null;
         String prefix = resourceIdentifier.substring(0, i);
         ResourceResolver res = _resolvers.get(prefix);
+
         if (null == res)
+        {
+            // Special case to allow customizing docs whose docId does not starting with category.
+            // For example, assay design doc id is of "containerId:assays:rowId"
+            if (resourceIdentifier.matches(".+[:].+[:].+"))
+            {
+                String[] idParts = resourceIdentifier.split(":");
+                String resolverName = idParts[1];
+                res = _resolvers.get(resolverName);
+                if (res != null)
+                    return res.getCustomSearchJson(user, idParts[2]);
+            }
+
             return null;
+        }
+
         return res.getCustomSearchJson(user, resourceIdentifier.substring(i+1));
     }
 
@@ -831,6 +887,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         while (!_shuttingDown)
         {
             Item i = null;
+            boolean success = true;
 
             try
             {
@@ -838,6 +895,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 //                    if (!waitForRunning())
 //                        continue;
 
+                success = true;
                 i = _runQueue.poll(30, TimeUnit.SECONDS);
 
                 if (null != i)
@@ -854,6 +912,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
             catch (Throwable x)
             {
+                success = false;
                 try
                 {
                     ExceptionUtil.logExceptionToMothership(null, x);
@@ -870,7 +929,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 {
                     try
                     {
-                        i.complete(false);
+                        i.complete(success);
                     }
                     catch (Throwable t)
                     {
@@ -974,6 +1033,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             if (null == i || _commitItem == i)
             {
                 commitCheck(ms);
+                success = true;
+                return;
+            }
+
+            if (i.getOperation() == OPERATION.noop)
+            {
+                success = true;
                 return;
             }
 
@@ -985,6 +1051,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 // see 34102: Search indexing is unreliable for wiki attachments
                 i.complete(true);
                 commitCheck(ms);
+                success = true;
                 return;
             }
 
@@ -1104,8 +1171,16 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     protected abstract void commitIndex();
     protected abstract void deleteDocument(String id);
+    protected abstract void deleteDocuments(Collection<String> ids);
     protected abstract void deleteDocumentsForPrefix(String prefix);
     protected abstract void deleteIndexedContainer(String id);
+
+    /**
+     * Delete the index documents for file system files within a container
+     * @param container target container
+     */
+    protected abstract void clearIndexedFileSystemFiles(Container container);
+
     protected abstract void shutDown();
 
     public boolean processAndIndex(String id, WebdavResource r, Throwable[] handledException)

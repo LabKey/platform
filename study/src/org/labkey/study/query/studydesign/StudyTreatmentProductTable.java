@@ -94,6 +94,7 @@ public class StudyTreatmentProductTable extends DefaultStudyDesignTable
         {
             col.setFk(new LookupForeignKey("Name")
             {
+                @Override
                 public TableInfo getLookupTableInfo()
                 {
                     return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME);

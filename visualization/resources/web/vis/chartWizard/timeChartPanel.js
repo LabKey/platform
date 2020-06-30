@@ -114,7 +114,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         var params = LABKEY.ActionURL.getParameters();
         this.editMode = params.edit == "true" || !this.getSavePanel().isSavedReport();
-        this.useRaphael = params.useRaphael != null ? params.useRaphael : false;
 
         // issue 21418: support for parameterized queries
         var urlQueryParams = LABKEY.Filter.getQueryParamsFromUrl(params['filterUrl']);
@@ -1356,10 +1355,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             height: this.chartInfo.height || (chartHeight - 20), // -20 prevents vertical scrollbars in cases with one chart.
             data: individualData ? individualData : aggregateData
         };
-
-        if(this.supportedBrowser && !this.useRaphael) {
-            plotConfig.rendererType = 'd3';
-        }
 
         var plot = new LABKEY.vis.Plot(plotConfig);
         plot.render();

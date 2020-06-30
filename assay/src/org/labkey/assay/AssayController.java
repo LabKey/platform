@@ -62,7 +62,6 @@ import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -72,12 +71,12 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -213,11 +212,10 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Assays", new ActionURL(BeginAction.class, getContainer()));
             root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
-            return root;
         }
     }
 
@@ -324,6 +322,7 @@ public class AssayController extends SpringActionController
         assayProperties.put("protocolSchemaName", provider.createProtocolSchema(user, c, protocol, null).getSchemaName());
         assayProperties.put("importController", provider.getImportURL(c, protocol).getController());
         assayProperties.put("importAction", provider.getImportURL(c, protocol).getAction());
+        assayProperties.put("reRunSupport", provider.getReRunSupport());
         assayProperties.put("templateLink", PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(c, protocol, TemplateAction.class));
         if (provider instanceof PlateBasedAssayProvider)
             assayProperties.put("plateTemplate", ((PlateBasedAssayProvider)provider).getPlateTemplate(c, protocol));
@@ -410,7 +409,7 @@ public class AssayController extends SpringActionController
             {
                 Object defaultValue = defaults.get(column.getFieldKey());
                 if (defaultValue != null)
-                    ((BaseColumnInfo)column).setDefaultValue(defaultValue.toString());
+                    ((MutableColumnInfo)column).setDefaultValue(defaultValue.toString());
 
                 displayColumns.add(column.getDisplayColumnFactory().createRenderer(column));
             }
@@ -483,6 +482,7 @@ public class AssayController extends SpringActionController
     {
         private ExpProtocol _protocol;
 
+        @Override
         public ModelAndView getView(ProtocolIdForm form, BindException errors)
         {
             _protocol = form.getProtocol(false);
@@ -518,13 +518,12 @@ public class AssayController extends SpringActionController
             return new VBox(bbar, fileTree, bbar);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
             root.addChild(_protocol.getName(), new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId()));
             root.addChild("Copy Assay Design");
-
-            return root;
         }
     }
 
@@ -538,7 +537,7 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException("Redirects should not show nav trails");
         }
@@ -562,9 +561,12 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return _hasCustomView ? root.addChild(_protocol.getName() + " Overview") : new AssayRunsAction(getViewContext(), _protocol).appendNavTrail(root);
+            if (_hasCustomView)
+                root.addChild(_protocol.getName() + " Overview");
+            else
+                new AssayRunsAction(getViewContext(), _protocol).addNavTrail(root);
         }
     }
 
@@ -621,10 +623,12 @@ public class AssayController extends SpringActionController
     {
         private Container _createIn;
 
+        @Override
         public void validateCommand(CreateAssayForm form, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(CreateAssayForm form, BindException errors)
         {
             if (form.getProviderName() == null || PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), form.getProviderName(), null) == null)
@@ -637,12 +641,14 @@ public class AssayController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(CreateAssayForm form)
         {
             ActionURL returnURL = form.getReturnActionURL();
             return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(_createIn, form.getProviderName(), returnURL);
         }
 
+        @Override
         public ModelAndView getView(CreateAssayForm form, boolean reshow, BindException errors)
         {
             ChooseAssayBean bean = new ChooseAssayBean();
@@ -650,12 +656,12 @@ public class AssayController extends SpringActionController
             return new JspView<>("/org/labkey/assay/view/chooseAssayType.jsp", bean, errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
             root.addChild("New Assay Design");
             setHelpTopic(new HelpTopic("defineAssaySchema"));
-            return root;
         }
     }
 
@@ -665,7 +671,7 @@ public class AssayController extends SpringActionController
         @Override
         protected BaseRemoteService createService()
         {
-            return new AssayServiceImpl(getViewContext());
+            return new AssayDomainServiceImpl(getViewContext());
         }
     }
 
@@ -744,16 +750,16 @@ public class AssayController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public class AssayFileUploadAction extends AbstractFileUploadAction<AssayFileUploadForm>
     {
+        @Override
         protected File getTargetFile(String filename) throws IOException
         {
             if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
                 throw new UploadException("Pipeline root must be configured before uploading assay files", HttpServletResponse.SC_NOT_FOUND);
-            
-            AssayFileWriter writer = new AssayFileWriter();
+
             try
             {
-                File targetDirectory = writer.ensureUploadDirectory(getContainer());
-                return writer.findUniqueFileName(filename, targetDirectory);
+                File targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
+                return AssayFileWriter.findUniqueFileName(filename, targetDirectory);
             }
             catch (ExperimentException e)
             {
@@ -761,6 +767,7 @@ public class AssayController extends SpringActionController
             }
         }
 
+        @Override
         public String getResponse(AssayFileUploadForm form, Map<String, Pair<File, String>> files)
         {
             JSONObject fullMap = new JSONObject();
@@ -831,6 +838,7 @@ public class AssayController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public class DownloadSampleQCDataAction extends SimpleViewAction<ProtocolIdForm>
     {
+        @Override
         public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
         {
             ExpProtocol protocol = form.getProtocol(true);
@@ -890,14 +898,15 @@ public class AssayController extends SpringActionController
             return tempFolder;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
     public static class AssayUrlsImpl implements AssayUrls
     {
+        @Override
         public ActionURL getProtocolURL(Container container, @Nullable ExpProtocol protocol, Class<? extends Controller> action)
         {
             ActionURL url = new ActionURL(action, container);
@@ -906,12 +915,14 @@ public class AssayController extends SpringActionController
             return url;
         }
 
+        @Override
         public @Nullable ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy, @Nullable ActionURL returnURL)
         {
             AssayProvider provider = AssayService.get().getProvider(protocol);
             return getDesignerURL(container, provider, protocol, copy, returnURL);
         }
 
+        @Override
         public @Nullable ActionURL getDesignerURL(Container container, String providerName, ActionURL returnURL)
         {
             AssayProvider provider = AssayService.get().getProvider(providerName);
@@ -938,11 +949,13 @@ public class AssayController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getAssayRunsURL(Container container, ExpProtocol protocol)
         {
             return getAssayRunsURL(container, protocol, null);
         }
 
+        @Override
         public ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter containerFilter, int... batchIds)
         {
             ActionURL result = getProtocolURL(container, protocol, AssayRunsAction.class);
@@ -968,11 +981,13 @@ public class AssayController extends SpringActionController
             return result;
         }
 
+        @Override
         public ActionURL getAssayListURL(Container container)
         {
             return getProtocolURL(container, null, BeginAction.class);
         }
 
+        @Override
         public ActionURL getAssayBatchesURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter)
         {
             ActionURL url = getProtocolURL(container, protocol, AssayBatchesAction.class);
@@ -983,12 +998,19 @@ public class AssayController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, int... runIds)
         {
-            return getAssayResultsURL(container, protocol, null, runIds);
+            return getAssayResultsURL(container, protocol, (ContainerFilter.Type)null, runIds);
         }
 
+        @Override
         public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter containerFilter, int... runIds)
+        {
+            return getAssayResultsURL(container, protocol, null==containerFilter?null:containerFilter.getType(), runIds);
+        }
+        @Override
+        public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter.Type containerFilterType, int... runIds)
         {
             ActionURL result = getProtocolURL(container, protocol, AssayResultsAction.class);
             AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -1031,8 +1053,8 @@ public class AssayController extends SpringActionController
                 result.addFilter(resultsTableName,
                         tableMetadata.getRunRowIdFieldKeyFromResults(), CompareType.EQUAL, runIds[0]);
             }
-            if (containerFilter != null && containerFilter.getType() != null)
-                result.addParameter("Data." + QueryParam.containerFilterName, containerFilter.getType().name());
+            if (containerFilterType != null)
+                result.addParameter("Data." + QueryParam.containerFilterName, containerFilterType.name());
             return result;
         }
 
@@ -1050,6 +1072,7 @@ public class AssayController extends SpringActionController
             return getProtocolURL(container, protocol, AssayResultsAction.class);
         }
 
+        @Override
         public ActionURL getShowUploadJobsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter)
         {
             ActionURL result = getProtocolURL(container, protocol, ShowUploadJobsAction.class);
@@ -1058,6 +1081,7 @@ public class AssayController extends SpringActionController
             return result;
         }
 
+        @Override
         public ActionURL getChooseCopyDestinationURL(ExpProtocol protocol, Container container)
         {
             // Check if the provider supports designing before handing out copy URL
@@ -1068,11 +1092,13 @@ public class AssayController extends SpringActionController
             return getProtocolURL(container, protocol, ChooseCopyDestinationAction.class);
         }
 
+        @Override
         public ActionURL getDeleteDesignURL(ExpProtocol protocol)
         {
             return getProtocolURL(protocol.getContainer(), protocol, DeleteAction.class);
         }
 
+        @Override
         public ActionURL getImportURL(Container container, ExpProtocol protocol, String path, File[] files)
         {
             ActionURL url = new ActionURL(PipelineDataCollectorRedirectAction.class, container);
@@ -1220,12 +1246,10 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            NavTree result = super.appendNavTrail(root);
-            result.addChild(_protocol.getName() + " Upload Jobs");
-
-            return result;
+            super.addNavTrail(root);
+            root.addChild(_protocol.getName() + " Upload Jobs");
         }
     }
 
@@ -1297,7 +1321,7 @@ public class AssayController extends SpringActionController
                     else
                     {
                         int i = lsid.lastIndexOf(":");
-                        int rowid = Integer.parseInt(lsid.substring(i+1,lsid.length()));
+                        int rowid = Integer.parseInt(lsid.substring(i+1));
                         ret.add(rowid);
                     }
                 }
@@ -1492,9 +1516,9 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Change QC State");
+            root.addChild("Change QC State");
         }
     }
 
@@ -1560,16 +1584,14 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             Container c = getContainer();
             ActionURL batchListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(c, _protocol, null);
 
-            NavTree ret = super.appendNavTrail(root);
-            ret.addChild(_protocol.getName() + " Batches", batchListURL);
-            ret.addChild("Data Import");
-
-            return ret;
+            super.addNavTrail(root);
+            root.addChild(_protocol.getName() + " Batches", batchListURL);
+            root.addChild("Data Import");
         }
     }
 

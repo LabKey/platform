@@ -137,6 +137,7 @@ public class DomainImporter
             fileUpload.setName("uploadFormElement");
             fileUpload.addChangeListener(new ChangeListener()
             {
+                @Override
                 public void onChange(Widget sender)
                 {
                     form.submit();
@@ -156,6 +157,7 @@ public class DomainImporter
         {
             _cancelButton = new ImageButton("Cancel", new ClickHandler()
             {
+                @Override
                 public void onClick(ClickEvent e)
                 {
                     handleCancel();
@@ -214,11 +216,13 @@ public class DomainImporter
     {
         service.getDomainDescriptor(getTypeURI(), new ErrorDialogAsyncCallback<GWTDomain>()
         {
+            @Override
             public void handleFailure(String message, Throwable caught)
             {
                 onCancel();
             }
 
+            @Override
             public void onSuccess(GWTDomain result)
             {
                 createColumnsOnServer(result);
@@ -251,11 +255,13 @@ public class DomainImporter
 
         service.updateDomainDescriptor(domain, newDomain, new ErrorDialogAsyncCallback<List<String>>()
         {
+            @Override
             public void handleFailure(String message, Throwable caught)
             {
                 onCancel();
             }
 
+            @Override
             public void onSuccess(List<String> errors)
             {
                 if (errors == null || errors.isEmpty())
@@ -281,6 +287,7 @@ public class DomainImporter
     {
         service.getDomainDescriptor(domain.getDomainURI(), new ErrorDialogAsyncCallback<GWTDomain>()
         {
+            @Override
             public void handleFailure(String message, Throwable caught)
             {
                 onCancel();
@@ -288,12 +295,14 @@ public class DomainImporter
                     callback.onFailure(caught);
             }
 
+            @Override
             public void onSuccess(GWTDomain result)
             {
                 final GWTDomain newDomain = new GWTDomain(result);
                 newDomain.getFields().clear();
                 service.updateDomainDescriptor(result, newDomain, new ErrorDialogAsyncCallback<List<String>>()
                 {
+                    @Override
                     public void handleFailure(String message, Throwable caught)
                     {
                         onCancel();
@@ -301,6 +310,7 @@ public class DomainImporter
                             callback.onFailure(caught);
                     }
 
+                    @Override
                     public void onSuccess(List<String> errors){
                         if(callback != null)
                             callback.onSuccess(errors);
@@ -328,12 +338,14 @@ public class DomainImporter
 
         service.importData(domain, columnMap, new ErrorDialogAsyncCallback<ImportStatus>()
         {
+            @Override
             public void handleFailure(String message, Throwable caught)
             {
                 resetDomainFields(domain);
                 onCancel();
             }
 
+            @Override
             public void onSuccess(ImportStatus status)
             {
                 if (!status.isComplete())
@@ -352,10 +364,12 @@ public class DomainImporter
         this.jobId = jobId;
 
         statusTimer = new Timer() {
+            @Override
             public void run()
             {
                 service.getStatus(jobId, new ErrorDialogAsyncCallback<ImportStatus>()
                 {
+                    @Override
                     public void handleFailure(String message, Throwable caught)
                     {
                         resetDomainFields(domain);
@@ -363,6 +377,7 @@ public class DomainImporter
                         cancel();
                     }
 
+                    @Override
                     public void onSuccess(ImportStatus status)
                     {
                         updateStatus(status);
@@ -388,7 +403,7 @@ public class DomainImporter
         if (grid == null)
         {
             needGridAndButtons = true;
-            grid = new DomainImportGrid(service, _domain);
+            grid = new DomainImportGrid(_domain);
             VerticalPanel gridPanel = new VerticalPanel();
             gridPanel.add(new HTML("Uncheck a column to ignore it during import.<br/>"
                     + "Showing first " + columns.get(0).getData().size() + " rows:<p>"));
@@ -411,6 +426,7 @@ public class DomainImporter
             HorizontalPanel buttons = new HorizontalPanel();
             importButton = new ImageButton("Import", new ClickHandler()
             {
+                @Override
                 public void onClick(ClickEvent e)
                 {
                     if (doColumnsHaveDups())
@@ -419,18 +435,12 @@ public class DomainImporter
                         Window.alert("You must select all required Server Columns before importing.");
                     else
                         handleImport();
-/*
-                    importButton.setEnabled(false);
-                    progressBarText = new ProgressBarText("Creating columns...");
-                    progressBar = new ProgressBar(0, 100, 0, progressBarText);  // Placeholder to display the first couple messages
-                    mainPanel.add(progressBar);
-                    importData();
-*/
                 }
             });
             buttons.add(importButton);
             buttons.add(new ImageButton("Cancel", new ClickHandler()
             {
+                @Override
                 public void onClick(ClickEvent e)
                 {
                     handleCancel();
@@ -514,8 +524,10 @@ public class DomainImporter
         {
             resetDomainFields(domain, new AsyncCallback<List<String>>()
             {
+                @Override
                 public void onFailure(Throwable caught){}
 
+                @Override
                 public void onSuccess(List<String> result)
                 {
                     handleServerFailure(errors);
@@ -554,6 +566,7 @@ public class DomainImporter
             cancelRequested = true;
             statusTimer.cancel();
             service.cancelImport(jobId, new ErrorDialogAsyncCallback<String>("Cancel failure") {
+                @Override
                 public void onSuccess(String result)
                 {
                     navigate(result);
@@ -578,6 +591,7 @@ public class DomainImporter
     
     private class UploadFormHandler extends ErrorDialogAsyncCallback<List<InferencedColumn>> implements FormHandler
     {
+        @Override
         public void onSubmit(FormSubmitEvent event)
         {
             if (fileUpload.getFilename().length() == 0)
@@ -590,6 +604,7 @@ public class DomainImporter
             uploadStatusLabel.setText("Uploading...");
         }
 
+        @Override
         public void onSubmitComplete(FormSubmitCompleteEvent event)
         {
             if (event.getResults() != null && event.getResults().toLowerCase().contains("success"))
@@ -604,11 +619,13 @@ public class DomainImporter
             }
         }
 
+        @Override
         public void handleFailure(String message, Throwable caught)
         {
             uploadStatusLabel.setHTML("&nbsp;");
         }
 
+        @Override
         public void onSuccess(List<InferencedColumn> result)
         {
             if (_cancelButton != null)
@@ -631,6 +648,7 @@ public class DomainImporter
             _text = text;
         }
 
+        @Override
         protected String getText(ProgressBar bar, double curProgress)
         {
             if (0.0 == curProgress)

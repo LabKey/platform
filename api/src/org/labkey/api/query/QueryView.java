@@ -334,7 +334,7 @@ public class QueryView extends WebPartView<Object>
     {
         out.write("<p class=\"labkey-error\">");
         out.print(PageFlowUtil.filter(message));
-        if (getQueryDef() != null && getQueryDef().canEdit(getUser()) && getContainer().equals(getQueryDef().getDefinitionContainer()))
+        if (getQueryDef() != null && getQueryDef().canEdit(getUser()))
             out.write("&nbsp;<a href=\"" + getSchema().urlFor(QueryAction.sourceQuery, getQueryDef()) + "\">Edit Query</a>");
         out.write("</p>");
 
@@ -397,7 +397,7 @@ public class QueryView extends WebPartView<Object>
             String label = getCaption();
             menu.setId(getDataRegionName() + ".Menu." + label);
 
-            if (getQueryDef() != null && getQueryDef().canEdit(getUser()) && getContainer().equals(getQueryDef().getDefinitionContainer()))
+            if (getQueryDef() != null && getQueryDef().canEdit(getUser()))
             {
                 NavTree editQueryItem;
                 if (getQueryDef().isSqlEditable())
@@ -1647,6 +1647,7 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
+        @Override
         public boolean accept(String type, String label)
         {
             if (_filter.accept(type, label))
@@ -2546,7 +2547,7 @@ public class QueryView extends WebPartView<Object>
         rgn.setShowPagination(false);
 
         // Add explicitly requested columns, even if they don't actually exist on the table.
-        // They may be magic columns supported on the import side, e.g. "MaterialsInputs/Foo" for SampleSets.
+        // They may be magic columns supported on the import side, e.g. "MaterialsInputs/Foo" for SampleTypes.
         List<DisplayColumn> displayColumns = rgn.getDisplayColumns();
         Set<FieldKey> displayColumnFieldKeys = displayColumns.stream()
                 .map(DisplayColumn::getColumnInfo)
@@ -2891,7 +2892,7 @@ public class QueryView extends WebPartView<Object>
                     Set<Container> containers = new HashSet<>();
                     if (ContainerFilter.Type.AllFolders != filter.getType())
                     {
-                        Collection<GUID> containerIds = filter.getIds(getContainer());
+                        Collection<GUID> containerIds = filter.getIds();
                         if (null != containerIds)
                         {
                             for (GUID id : containerIds)
@@ -2932,7 +2933,7 @@ public class QueryView extends WebPartView<Object>
             filterName = _customView.getContainerFilterName();
 
         if (filterName != null)
-            return ContainerFilter.getContainerFilterByName(filterName, getUser());
+            return ContainerFilter.getContainerFilterByName(filterName, getContainer(), getUser());
 
         return null;
     }

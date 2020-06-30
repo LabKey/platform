@@ -102,6 +102,7 @@ public class DesignerLookupConfigDialog extends DialogBox
         HorizontalPanel hp = new HorizontalPanel();
         hp.add(new ImageButton("Done", new ClickListener()
         {
+            @Override
             public void onClick(Widget sender)
             {
                 DesignerLookupConfigDialog.this.hide();

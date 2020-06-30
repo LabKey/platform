@@ -103,6 +103,7 @@ public class DbSequence
             ContextListener.removeShutdownListener(this);
         }
 
+        @Override
         public synchronized long current()
         {
             if (null != _currentValue)
@@ -110,18 +111,27 @@ public class DbSequence
             return DbSequenceManager.current(this);
         }
 
+        @Override
         public synchronized long next()
         {
-            if (null == _lastReservedValue || _currentValue >= _lastReservedValue)
+            return reserveSequentialBlock(1);
+        }
+
+        /* package */
+        synchronized long reserveSequentialBlock(int count)
+        {
+            if (null == _lastReservedValue || _currentValue+count > _lastReservedValue)
             {
-                Pair<Long, Long> reserved = DbSequenceManager.reserve(this, _batchSize);
+                Pair<Long, Long> reserved = DbSequenceManager.reserve(this, Math.max(count,_batchSize));
                 _currentValue = reserved.first;
                 _lastReservedValue = reserved.second;
             }
-            _currentValue += 1;
-            return _currentValue;
+            long ret = _currentValue+1;
+            _currentValue = _currentValue + count;
+            return ret;
         }
 
+        @Override
         public synchronized void ensureMinimum(long minimum)
         {
             if (null != _lastReservedValue && minimum <= _lastReservedValue)

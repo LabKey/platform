@@ -99,7 +99,6 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.AssayProgressReport;
-import org.labkey.study.reports.ExportExcelReport;
 import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ReportManager;
@@ -112,6 +111,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.PrintWriter;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -149,7 +149,7 @@ public class ReportsController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (_study == null)
                 root.addChild("No Study In Folder");
@@ -157,15 +157,19 @@ public class ReportsController extends BaseStudyController
                 root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
             else
                 root.addChild("Views");
-
-            return root;
         }
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class DeleteReportAction extends SimpleViewAction
+    public class DeleteReportAction extends FormHandlerAction<Object>
     {
-        public ModelAndView getView(Object o, BindException errors)
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
             String reportIdParam = getRequest().getParameter(ReportDescriptor.Prop.reportId.name());
             ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdParam, getViewContext().getUser(), getViewContext().getContainer());
@@ -179,22 +183,34 @@ public class ReportsController extends BaseStudyController
             {
                 ReportManager.get().deleteReport(getViewContext(), report);
             }
-            String redirectUrl = getRequest().getParameter(ReportDescriptor.Prop.redirectUrl.name());
-            if (redirectUrl != null)
-                return HttpView.redirect(redirectUrl);
-            else
-                return HttpView.redirect(PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+
+            return true;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public URLHelper getSuccessURL(Object o)
         {
-            return null;
+            String redirectUrl = getRequest().getParameter(ReportDescriptor.Prop.redirectUrl.name());
+            if (redirectUrl != null)
+            {
+                try
+                {
+                    return new URLHelper(redirectUrl);
+                }
+                catch (URISyntaxException e)
+                {
+                    // ignore bad URI
+                }
+            }
+
+            return PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer());
         }
     }
 
     @RequiresPermission(AdminPermission.class)
     public class DeleteCustomQueryAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             String viewName = getRequest().getParameter("reportView");
@@ -218,9 +234,9 @@ public class ReportsController extends BaseStudyController
             return HttpView.redirect(PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -239,6 +255,7 @@ public class ReportsController extends BaseStudyController
 
         private ExternalReportForm _postedForm = new ExternalReportForm();
 
+        @Override
         public ModelAndView getView(ExternalReportForm doNotUse, boolean reshow, BindException errors)
         {
             ExternalReport extReport = _postedForm.getBean();
@@ -251,25 +268,29 @@ public class ReportsController extends BaseStudyController
             return v;
         }
 
+        @Override
         public void validateCommand(ExternalReportForm form, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(ExternalReportForm form, BindException errors)
         {
             _postedForm = form;
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(ExternalReportForm externalReportForm)
         {
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("advancedReport");
-            return _appendNavTrail(root, "External Report Builder");
+            _addNavTrail(root, "External Report Builder");
         }
     }
 
@@ -292,6 +313,7 @@ public class ReportsController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class StreamFileAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             String sessionKey = (String) getViewContext().get("sessionKey");
@@ -310,9 +332,9 @@ public class ReportsController extends BaseStudyController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -393,6 +415,7 @@ public class ReportsController extends BaseStudyController
     {
         private int _savedReportId = -1;
 
+        @Override
         public ModelAndView getView(SaveReportViewForm form, boolean reshow, BindException errors)
         {
             form.setErrors(errors);
@@ -406,6 +429,7 @@ public class ReportsController extends BaseStudyController
             }
         }
 
+        @Override
         public void validateCommand(SaveReportViewForm form, Errors errors)
         {
             if (ReportService.get().reportNameExists(getViewContext(), form.getLabel(), ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName())))
@@ -413,6 +437,7 @@ public class ReportsController extends BaseStudyController
                         "'. Please specify a different name.");
         }
 
+        @Override
         public boolean handlePost(SaveReportViewForm form, BindException errors)
         {
             Report report = form.getReport(getViewContext());
@@ -424,6 +449,7 @@ public class ReportsController extends BaseStudyController
             return false;
         }
 
+        @Override
         public ActionURL getSuccessURL(SaveReportViewForm form)
         {
             if (!StringUtils.isBlank(form.getRedirectUrl()))
@@ -437,15 +463,16 @@ public class ReportsController extends BaseStudyController
                 return getViewContext().cloneActionURL().deleteParameters().setAction(BeginAction.class);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
     @RequiresPermission(ReadPermission.class)
     public class ShowReportAction extends SimpleViewAction<ShowReportForm>
     {
+        @Override
         public ModelAndView getView(ShowReportForm form, BindException errors) throws Exception
         {
             Report report = null;
@@ -462,9 +489,9 @@ public class ReportsController extends BaseStudyController
             return report.renderReport(getViewContext());
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -538,6 +565,7 @@ public class ReportsController extends BaseStudyController
             _stats = stats;
         }
 
+        @Override
         public CrosstabReport getReport(ContainerUser cu) throws Exception
         {
             CrosstabReport report = super.getReport(cu);
@@ -560,6 +588,7 @@ public class ReportsController extends BaseStudyController
     @Action(ActionType.SelectData.class)
     public class ParticipantCrosstabAction extends FormViewAction<CrosstabDesignBean>
     {
+        @Override
         public ModelAndView getView(CrosstabDesignBean form, boolean reshow, BindException errors) throws Exception
         {
             form.setColumns(getColumns(form));
@@ -621,21 +650,25 @@ public class ReportsController extends BaseStudyController
             return colMap;
         }
 
+        @Override
         public boolean handlePost(CrosstabDesignBean crosstabDesignBean, BindException errors)
         {
             return false;
         }
 
+        @Override
         public void validateCommand(CrosstabDesignBean target, Errors errors)
         {
         }
 
+        @Override
         public ActionURL getSuccessURL(CrosstabDesignBean crosstabDesignBean)
         {
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
 /*
             ViewContext context = getViewContext();
@@ -645,7 +678,7 @@ public class ReportsController extends BaseStudyController
             return _appendNavTrail(root, "Crosstab View Builder", datasetId, visitRowId);
 */
             setHelpTopic("crosstabReports");
-            return root.addChild("Crosstab Report Builder");
+            root.addChild("Crosstab Report Builder");
         }
     }
 
@@ -675,59 +708,11 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public class ExportExcelConfigureAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            setHelpTopic(new HelpTopic("exportExcel"));
-
-            return new JspView<>("/org/labkey/study/reports/configureExportExcel.jsp", getStudyRedirectIfNull());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return _appendNavTrail(root, "Export study data to spreadsheet");
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class ExportExcelAction extends SimpleViewAction<ExportForm>
-    {
-        public ModelAndView getView(ExportForm form, BindException errors) throws Exception
-        {
-            ExportExcelReport report;
-            if (form.getReportId() != null)
-            {
-                Report r = form.getReportId().getReport(getViewContext());
-                if (!(r instanceof ExportExcelReport))
-                {
-                    throw new NotFoundException();
-                }
-                report = (ExportExcelReport) r;
-            }
-            else
-            {
-                report = new ExportExcelReport();
-                report.setLocationId(form.getLocationId());
-            }
-
-            User user = getUser();
-            StudyImpl study = getStudyRedirectIfNull();
-
-            report.runExportToExcel(getViewContext(), study, user, errors);
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
 
     @RequiresPermission(AdminPermission.class)
     public class CreateQueryReportAction extends SimpleViewAction<QueryReportForm>
     {
+        @Override
         public ModelAndView getView(QueryReportForm form, BindException errors)
         {
             setHelpTopic(new HelpTopic("datasetViews"));
@@ -735,9 +720,10 @@ public class ReportsController extends BaseStudyController
                     new CreateQueryReportBean(getViewContext(), form.getQueryName()));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return _appendNavTrail(root, "Create Grid View");
+            _addNavTrail(root, "Create Grid View");
         }
     }
 
@@ -745,6 +731,7 @@ public class ReportsController extends BaseStudyController
     public class CreateCrosstabReportAction extends SimpleViewAction
     {
 
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             setHelpTopic(new HelpTopic("crosstabReports"));
@@ -752,9 +739,10 @@ public class ReportsController extends BaseStudyController
                     new CreateCrosstabBean(getViewContext()));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return _appendNavTrail(root, "Create Crosstab Report");
+            _addNavTrail(root, "Create Crosstab Report");
         }
     }
 
@@ -1120,6 +1108,7 @@ public class ReportsController extends BaseStudyController
             reportType = report.getDescriptor().getReportType();
         }
 
+        @Override
         @Nullable
         public Report getReport(ContainerUser cu)
         {
@@ -1153,7 +1142,9 @@ public class ReportsController extends BaseStudyController
         public String getQueryName(){return _queryName;}
         public void setViewName(String viewName){_viewName = viewName;}
         public String getViewName(){return _viewName;}
+        @Override
         public void setDataRegionName(String dataRegionName){_dataRegionName = dataRegionName;}
+        @Override
         public String getDataRegionName(){return _dataRegionName;}
 
         public String getRedirectUrl()
@@ -1247,6 +1238,7 @@ public class ReportsController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class PlotChartAction extends SimpleViewAction<PlotForm>
     {
+        @Override
         public ModelAndView getView(PlotForm form, BindException errors) throws Exception
         {
             final ViewContext context = getViewContext();
@@ -1261,9 +1253,9 @@ public class ReportsController extends BaseStudyController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1327,6 +1319,7 @@ public class ReportsController extends BaseStudyController
             return null;
         }
 
+        @Override
         public ModelAndView getView(ScriptReportBean form, BindException errors) throws Exception
         {
             _report = getReport(form);
@@ -1363,41 +1356,39 @@ public class ReportsController extends BaseStudyController
             return _def;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             Dataset def = getDatasetDefinition();
 
             if (def != null)
             {
                 String qcState = getViewContext().getActionURL().getParameter(SharedFormParameters.QCState);
-                _appendNavTrail(root, def.getDatasetId(), 0, null, qcState);
+                _addNavTrail(root, def.getDatasetId(), 0, null, qcState);
             }
-            return root;
         }
     }
 
-    private NavTree _appendNavTrail(NavTree root, String name)
+    private void _addNavTrail(NavTree root, String name)
     {
         try
         {
-            appendRootNavTrail(root);
-
+            addRootNavTrail(root);
 
             if (getContainer().hasPermission(getUser(), AdminPermission.class))
                 root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
         }
         catch (Exception e)
         {
-            return root.addChild(name);
         }
-        return root.addChild(name);
+        root.addChild(name);
     }
 
-    private NavTree _appendNavTrail(NavTree root, String name, int datasetId, int visitRowId)
+    private void _addNavTrail(NavTree root, String name, int datasetId, int visitRowId)
     {
         try
         {
-            Study study = appendRootNavTrail(root);
+            Study study = addRootNavTrail(root);
 
             if (getContainer().hasPermission(getUser(), AdminPermission.class))
                 root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
@@ -1430,9 +1421,8 @@ public class ReportsController extends BaseStudyController
         }
         catch (Exception e)
         {
-            return root.addChild(name);
         }
-        return root.addChild(name);
+        root.addChild(name);
     }
 
     public static class ReportsWebPart extends JspView<Object>
@@ -1461,6 +1451,7 @@ public class ReportsController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class ParticipantReportAction extends SimpleViewAction<ParticipantReportForm>
     {
+        @Override
         public ModelAndView getView(ParticipantReportForm form, BindException errors)
         {
             form.setComponentId("participant-report-panel-" + UniqueID.getRequestScopedUID(getRequest()));
@@ -1490,10 +1481,11 @@ public class ReportsController extends BaseStudyController
                 return new HtmlView("A study does not exist in this folder");
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("participantReport");
-            return _appendNavTrail(root, StudyService.get().getSubjectNounSingular(getContainer()) + " Report");
+            _addNavTrail(root, StudyService.get().getSubjectNounSingular(getContainer()) + " Report");
         }
     }
 
@@ -1728,11 +1720,10 @@ public class ReportsController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(_actionName + AssayProgressReport.REPORT_LABEL);
+            root.addChild(_actionName + AssayProgressReport.REPORT_LABEL);
         }
-
     }
 
     @RequiresLogin
@@ -1787,6 +1778,7 @@ public class ReportsController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ExportAssayProgressReportAction extends ExportAction<ProgressReportForm>
     {
+        @Override
         public void export(ProgressReportForm form, HttpServletResponse response, BindException errors)
         {
             ReportIdentifier identifier = form.getReportId();

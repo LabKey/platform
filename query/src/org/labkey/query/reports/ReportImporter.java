@@ -42,6 +42,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import static org.labkey.api.reports.report.ScriptReportDescriptor.REPORT_METADATA_EXTENSION;
+
 /**
  * User: adam
  * Date: May 16, 2009
@@ -55,11 +57,13 @@ public class ReportImporter implements FolderImporter
         return FolderArchiveDataTypes.REPORTS_AND_CHARTS;
     }
 
+    @Override
     public String getDescription()
     {
         return getDataType().toLowerCase();
     }
 
+    @Override
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws IOException, SQLException, ImportException
     {
         if (isValidForImportArchive(ctx))
@@ -75,7 +79,7 @@ public class ReportImporter implements FolderImporter
             for (String reportFileName : reportsDir.list())
             {
                 // skip over any files that don't end with the expected extension
-                if (!reportFileName.endsWith(".report.xml"))
+                if (!reportFileName.endsWith(REPORT_METADATA_EXTENSION))
                     continue;
 
                 if (null == reportsDir.getXmlBean(reportFileName))
@@ -83,7 +87,7 @@ public class ReportImporter implements FolderImporter
 
                 try
                 {
-                    if (ReportService.get().importReport(ctx, reportsDir.getXmlBean(reportFileName), reportsDir) != null)
+                    if (ReportService.get().importReport(ctx, reportsDir.getXmlBean(reportFileName), reportsDir, reportFileName) != null)
                         count++;
                     else
                         ctx.getLogger().warn("Unable to import report file: " + reportFileName);
@@ -99,6 +103,7 @@ public class ReportImporter implements FolderImporter
         }
     }
 
+    @Override
     @NotNull
     public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root)
     {
@@ -144,6 +149,7 @@ public class ReportImporter implements FolderImporter
 
     public static class Factory extends AbstractFolderImportFactory
     {
+        @Override
         public FolderImporter create()
         {
             return new ReportImporter();

@@ -38,16 +38,18 @@ public class StudyContainerFilter extends ContainerFilter
 
     public StudyContainerFilter(AssaySchema schema)
     {
+        super(schema.getContainer(), schema.getUser());
         _schema = schema;
     }
 
     @Override
-    public String getCacheKey(Container c)
+    public String getCacheKey()
     {
-        return super.getDefaultCacheKey(c);
+        return super.getDefaultCacheKey(_container, _user);
     }
 
-    public Collection<GUID> getIds(Container currentContainer)
+    @Override
+    public Collection<GUID> getIds()
     {
         if (_ids == null)
         {
@@ -76,6 +78,7 @@ public class StudyContainerFilter extends ContainerFilter
         return _ids;
     }
 
+    @Override
     public Type getType()
     {
         return null;

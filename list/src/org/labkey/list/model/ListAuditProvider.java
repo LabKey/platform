@@ -18,13 +18,14 @@ package org.labkey.list.model;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -98,7 +99,7 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
         {
             @Override
-            protected void initColumn(BaseColumnInfo col)
+            protected void initColumn(MutableColumnInfo col)
             {
                 if (COLUMN_NAME_LIST_DOMAIN_URI.equalsIgnoreCase(col.getName()))
                 {
@@ -108,6 +109,7 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
                     col.setLabel("List");
                     col.setDisplayColumnFactory(new DisplayColumnFactory()
                     {
+                        @Override
                         public DisplayColumn createRenderer(ColumnInfo colInfo)
                         {
                             return new DomainAuditProvider.DomainColumn(colInfo, containerCol, nameCol);
@@ -153,14 +155,12 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         return (Class<K>)ListAuditEvent.class;
     }
 
-    public static class ListAuditEvent extends AuditTypeEvent
+    public static class ListAuditEvent extends DetailedAuditTypeEvent
     {
         private int _listId;
         private String _listDomainUri;
         private String _listItemEntityId;
         private String _listName;
-        private String _oldRecordMap;
-        private String _newRecordMap;
 
         public ListAuditEvent()
         {
@@ -210,26 +210,6 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         public void setListName(String listName)
         {
             _listName = listName;
-        }
-
-        public String getOldRecordMap()
-        {
-            return _oldRecordMap;
-        }
-
-        public void setOldRecordMap(String oldRecordMap)
-        {
-            _oldRecordMap = oldRecordMap;
-        }
-
-        public String getNewRecordMap()
-        {
-            return _newRecordMap;
-        }
-
-        public void setNewRecordMap(String newRecordMap)
-        {
-            _newRecordMap = newRecordMap;
         }
 
         @Override

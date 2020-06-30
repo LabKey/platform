@@ -47,6 +47,7 @@ public class TitleForeignKey extends AbstractForeignKey
         _cc = cc;
     }
 
+    @Override
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
         if (displayField != null)
@@ -54,11 +55,13 @@ public class TitleForeignKey extends AbstractForeignKey
         return LookupColumn.create(parent, _lookupKey, _displayColumn, false);
     }
 
+    @Override
     public TableInfo getLookupTableInfo()
     {
         return null;
     }
 
+    @Override
     public StringExpression getURL(ColumnInfo parent)
     {
         if (_baseURL == null)

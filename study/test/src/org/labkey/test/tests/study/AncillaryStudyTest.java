@@ -108,6 +108,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         clickButton("Change", 0);
         Locator projectTreeNode = Locator.tagWithClass("a", "x-tree-node-anchor").withDescendant(Locator.tagWithText("span", PROJECT_NAME));
         sleep(1000); // sleep while the tree expands
+        scrollIntoView(projectTreeNode);
         doubleClick(projectTreeNode);
         clickButton("Next", 0);
 
@@ -292,7 +293,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         waitForElement(Locator.name("Label"), WAIT_FOR_JAVASCRIPT);
         setFormElement(Locator.name("Label"), "Extra " + STUDY_NAME);
         setFormElement(Locator.name("Description"), "Extra " + STUDY_DESCRIPTION);
-        click(Locator.tag("img").withAttribute("src", "/labkey/_images/paperclip.gif")); //Attach a file
+        click(Locator.tag("img").withAttributeContaining("src", "/labkey/_images/paperclip.gif")); //Attach a file
         waitForElement(Locator.xpath("//div[contains(@class, 'protocolPanel')]//input[@type='file']"), WAIT_FOR_JAVASCRIPT);
         setFormElement(Locator.xpath("//div[contains(@class, 'protocolPanel')]//input[@type='file']"), PROTOCOL_DOC2.toString());
         clickButton("Submit");
@@ -412,6 +413,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         _extHelper.waitForExtDialogToDisappear("Error");
     }
 
+    @Override
     public String getProjectName()
     {
         return PROJECT_NAME;

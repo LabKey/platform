@@ -43,6 +43,7 @@ public class ReportsWebPartFactory extends AlwaysAvailableWebPartFactory
         super("Report", true, true);
     }
     
+    @Override
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         ReportsWebPart wp = new ReportsWebPart(portalCtx, webPart);
@@ -51,6 +52,7 @@ public class ReportsWebPartFactory extends AlwaysAvailableWebPartFactory
         return wp;
     }
 
+    @Override
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
         return new ReportsWebPartConfig(webPart);

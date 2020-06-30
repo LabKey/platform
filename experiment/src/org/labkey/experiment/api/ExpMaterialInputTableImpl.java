@@ -15,10 +15,10 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
@@ -40,7 +40,8 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
         super(name, ExperimentServiceImpl.get().getTinfoMaterialInput(), schema, null, cf);
     }
 
-    public BaseColumnInfo createColumn(String alias, Column column)
+    @Override
+    public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {

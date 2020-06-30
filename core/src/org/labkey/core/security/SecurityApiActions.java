@@ -126,6 +126,7 @@ public class SecurityApiActions
     @RequiresPermission(SeeGroupDetailsPermission.class)
     public static class GetGroupPermsAction extends ReadOnlyApiAction<GetGroupPermsForm>
     {
+        @Override
         public ApiResponse execute(GetGroupPermsForm form, BindException errors)
         {
             Container container = getContainer();
@@ -276,6 +277,7 @@ public class SecurityApiActions
     @RequiresPermission(ReadPermission.class)
     public static class GetUserPermsAction extends ReadOnlyApiAction<GetUserPermsForm>
     {
+        @Override
         public ApiResponse execute(GetUserPermsForm form, BindException errors) throws Exception
         {
             User currentUser = getUser();
@@ -401,6 +403,7 @@ public class SecurityApiActions
     @RequiresPermission(ReadPermission.class)
     public static class GetGroupsForCurrentUserAction extends ReadOnlyApiAction
     {
+        @Override
         public ApiResponse execute(Object o, BindException errors)
         {
             List<Map<String, Object>> groupInfos = new ArrayList<>();
@@ -424,6 +427,7 @@ public class SecurityApiActions
     @IgnoresTermsOfUse
     public static class EnsureLoginAction extends ReadOnlyApiAction
     {
+        @Override
         public ApiResponse execute(Object o, BindException errors)
         {
             User user = getUser();
@@ -451,6 +455,7 @@ public class SecurityApiActions
     {
         private Set<Permission> _allPermissions = new HashSet<>();
 
+        @Override
         public ApiResponse execute(Object o, BindException errors)
         {
             ArrayList<Map<String, Object>> rolesProps = new ArrayList<>();
@@ -546,6 +551,7 @@ public class SecurityApiActions
         private boolean _includeSubfolders = false;
         private boolean _includePermissions = false;
 
+        @Override
         public ApiResponse execute(GetSecurableResourcesForm form, BindException errors)
         {
             _includeSubfolders = form.isIncludeSubfolders();
@@ -632,6 +638,7 @@ public class SecurityApiActions
     @RequiresPermission(AdminPermission.class)
     public static class GetPolicyAction extends ReadOnlyApiAction<PolicyIdForm>
     {
+        @Override
         public ApiResponse execute(PolicyIdForm form, BindException errors)
         {
             if (null == form.getResourceId())
@@ -697,6 +704,7 @@ public class SecurityApiActions
     {
         private Map<String, Object> _props;
 
+        @Override
         public void bindProperties(Map<String, Object> props)
         {
             _props = props;
@@ -724,6 +732,7 @@ public class SecurityApiActions
             Removed
         }
 
+        @Override
         public ApiResponse execute(SavePolicyForm form, BindException errors)
         {
             Container container = getContainer();
@@ -931,6 +940,7 @@ public class SecurityApiActions
     @RequiresPermission(AdminPermission.class)
     public static class DeletePolicyAction extends MutatingApiAction<PolicyIdForm>
     {
+        @Override
         public ApiResponse execute(PolicyIdForm form, BindException errors)
         {
             Container container = getContainer();
@@ -1023,6 +1033,7 @@ public class SecurityApiActions
                 errors.reject("roleClassName", "No such role: " + form.getRoleClassName());
         }
 
+        @Override
         public ApiResponse execute(RoleAssignmentForm form, BindException errors) throws Exception
         {
             Container container = getContainer();
@@ -1056,6 +1067,7 @@ public class SecurityApiActions
     @ApiVersion(16.1)
     public static class AddAssignmentAction extends BaseUpdateAssignmentAction
     {
+        @Override
         public ApiResponse execute(RoleAssignmentForm form, BindException errors) throws Exception
         {
             return super.execute(form, errors);
@@ -1072,6 +1084,7 @@ public class SecurityApiActions
     @ApiVersion(16.1)
     public static class RemoveAssignmentAction extends BaseUpdateAssignmentAction
     {
+        @Override
         public ApiResponse execute(RoleAssignmentForm form, BindException errors) throws Exception
         {
             return super.execute(form, errors);
@@ -1095,6 +1108,7 @@ public class SecurityApiActions
             super.validateForm(form, errors);
         }
 
+        @Override
         public ApiResponse execute(RoleAssignmentForm form, BindException errors) throws Exception
         {
             return super.execute(form, errors);
@@ -1188,6 +1202,7 @@ public class SecurityApiActions
     @RequiresPermission(AdminPermission.class)
     public static class CreateGroupAction extends MutatingApiAction<NameForm>
     {
+        @Override
         public ApiResponse execute(NameForm form, BindException errors)
         {
             Container container = getContainer();
@@ -1718,6 +1733,7 @@ public class SecurityApiActions
     @RequiresPermission(AdminPermission.class)
     public static class DeleteGroupAction extends MutatingApiAction<IdForm>
     {
+        @Override
         public ApiResponse execute(IdForm form, BindException errors)
         {
             if (form.getId() < 0)
@@ -1751,6 +1767,7 @@ public class SecurityApiActions
     @RequiresPermission(UserManagementPermission.class)
     public static class DeleteUserAction extends MutatingApiAction<IdForm>
     {
+        @Override
         public ApiResponse execute(IdForm form, BindException errors) throws Exception
         {
             if (form.getId() < 0)
@@ -1818,6 +1835,7 @@ public class SecurityApiActions
             return group;
         }
 
+        @Override
         public ModelAndView getView(RenameForm form, BindException errors)
         {
             group = getGroup(form);
@@ -1828,15 +1846,15 @@ public class SecurityApiActions
             return new JspView<>("/org/labkey/core/security/renameGroup.jsp", group, errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Permissions", new ActionURL(SecurityController.PermissionsAction.class, getContainer()));
             root.addChild("Manage Group", new ActionURL(SecurityController.GroupAction.class, getContainer()).addParameter("id",group.getUserId()));
             root.addChild("Rename Group: " + group.getName());
-            return root;
-
         }
 
+        @Override
         public ApiResponse execute(RenameForm form, BindException errors)
         {
             if (form.getId() < 0)
@@ -1940,6 +1958,7 @@ public class SecurityApiActions
     @RequiresPermission(AdminPermission.class)
     public static class AddGroupMemberAction extends BaseGroupMemberAction
     {
+        @Override
         public ApiResponse execute(GroupMemberForm form, BindException errors)
         {
             Group group = getGroup(form);
@@ -1967,6 +1986,7 @@ public class SecurityApiActions
     @RequiresPermission(AdminPermission.class)
     public static class RemoveGroupMemberAction extends BaseGroupMemberAction
     {
+        @Override
         public ApiResponse execute(GroupMemberForm form, BindException errors)
         {
             Group group = getGroup(form);
@@ -2040,6 +2060,7 @@ public class SecurityApiActions
     @RequiresPermission(AdminPermission.class)
     public static class CreateNewUserAction extends MutatingApiAction<CreateNewUserForm>
     {
+        @Override
         public ApiResponse execute(CreateNewUserForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();

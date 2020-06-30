@@ -91,6 +91,7 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
         return StudyModule.getWebPartSubjectNoun(container) + " Details";
     }
 
+    @Override
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         String participantId = webPart.getPropertyMap().get(PARTICIPANT_ID_KEY);
@@ -170,26 +171,31 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
         {
             private Map<String, String> aliases = StudyManager.getInstance().getAliasMap(StudyManager.getInstance().getStudy(container), user, participantId);
 
+            @Override
             public String getParticipantId()
             {
                 return participantId;
             }
 
+            @Override
             public Map<String, String> getAliases()
             {
                 return aliases;
             }
 
+            @Override
             public int getDatasetId()
             {
                 return sourceDatasetId;
             }
 
+            @Override
             public String getRedirectUrl()
             {
                 return currentUrl;
             }
 
+            @Override
             public QCStateSet getQCStateSet()
             {
                 if (QCStateManager.getInstance().showQCStates(container))

@@ -60,6 +60,7 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
         return _instance;
     }
 
+    @Override
     public void enumerateDocuments(SearchService.IndexTask t, final @NotNull Container c, Date since)
     {
         SearchService ss = SearchService.get();
@@ -165,6 +166,7 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
     }
 
 
+    @Override
     public void indexDeleted()
     {
     }

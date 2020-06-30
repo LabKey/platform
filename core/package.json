@@ -3,17 +3,14 @@
   "version": "0.0.0",
   "scripts": {
     "setup": "npm ci",
-    "prebuild": "bnr clean",
-    "build": "bnr build-themes:dev && bnr build-pages:prod",
-    "prebuild-prod": "bnr clean",
-    "build-prod": "bnr build-themes:prod && bnr build-pages:prod",
+    "build": "bnr clean && bnr build-themes:dev && bnr build-pages:prod",
+    "build-dev": "bnr clean && bnr build-themes:dev && bnr build-pages:dev",
+    "build-prod": "bnr clean && bnr build-themes:prod && bnr build-pages:prod",
     "clean": "bnr clean",
     "start": "bnr build-pages:watch",
     "build-pages": "bnr build-pages:prod",
-    "prebuild-themes": "bnr clean",
-    "build-themes": "bnr build-themes:dev",
-    "prebuild-themes-prod": "bnr clean",
-    "build-themes-prod": "bnr build-themes:prod",
+    "build-themes": "bnr clean && bnr build-themes:dev",
+    "build-themes-prod": "bnr clean && bnr build-themes:prod",
     "test": "bnr build:jest-test",
     "teamcity": "bnr build:jest-teamcity",
     "lint": "eslint --ext '*.ts,*.tsx'",
@@ -42,6 +39,13 @@
         "NODE_ENV": "production"
       }
     },
+    "build-pages:dev": {
+      "command": "webpack --config ../webpack/dev.config.js --progress --profile --colors",
+      "env": {
+        "LK_MODULE": "core",
+        "NODE_ENV": "development"
+      }
+    },
     "build-pages:prod": {
       "command": "webpack --config ../webpack/prod.config.js --progress --profile --colors",
       "env": {
@@ -50,7 +54,7 @@
       }
     },
     "build-pages:watch": {
-      "command": "webpack-dev-server --config ../webpack/dev.config.js",
+      "command": "webpack-dev-server --config ../webpack/watch.config.js",
       "env": {
         "LK_MODULE": "core",
         "NODE_ENV": "development"
@@ -90,9 +94,9 @@
     }
   },
   "dependencies": {
-    "@labkey/api": "0.1.1",
-    "@labkey/components": "0.47.0",
-    "@labkey/eslint-config-react": "0.0.5",
+    "@labkey/api": "0.3.2",
+    "@labkey/components": "0.70.5",
+    "@labkey/eslint-config-react": "0.0.8",
     "react-toggle-button": "2.2.0"
   },
   "devDependencies": {
@@ -101,7 +105,7 @@
     "@types/enzyme": "3.10.5",
     "@types/enzyme-adapter-react-16": "1.0.6",
     "@types/jest": "24.0.18",
-    "@types/react-hot-loader": "4.1.0",
+    "@types/react": "16.8.19",
     "@typescript-eslint/eslint-plugin": "2.12.0",
     "@typescript-eslint/parser": "2.12.0",
     "better-npm-run": "0.1.1",
@@ -122,14 +126,14 @@
     "mixin-deep": "2.0.1",
     "optimize-css-assets-webpack-plugin": "5.0.3",
     "prettier": "1.19.1",
-    "react-hot-loader": "4.12.20",
+    "react-hot-loader": "4.12.21",
     "react-test-renderer": "16.8.6",
     "rimraf": "3.0.2",
     "ts-jest": "24.0.2",
     "typescript": "3.7.3",
     "uglifyjs-webpack-plugin": "2.2.0",
-    "webpack": "4.42.0",
+    "webpack": "4.43.0",
     "webpack-cli": "3.3.11",
-    "webpack-dev-server": "3.10.3"
+    "webpack-dev-server": "3.11.0"
   }
 }

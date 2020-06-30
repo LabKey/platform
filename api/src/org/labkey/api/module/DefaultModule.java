@@ -26,7 +26,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -37,11 +36,9 @@ import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.UpgradeCode;
-import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.ModuleXml.ModuleXmlCacheHandler;
 import org.labkey.api.query.OlapSchemaInfo;
-import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -165,10 +162,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     final public void initialize()
     {
-        SupportedDatabase coreType = SupportedDatabase.get(CoreSchema.getInstance().getSqlDialect());
-        if (!getSupportedDatabasesSet().contains(coreType))
-            throw new DatabaseNotSupportedException("This module does not support " + CoreSchema.getInstance().getSqlDialect().getProductName());
-
         for (String dsName : ModuleLoader.getInstance().getModuleDataSourceNames(this))
         {
             Throwable t = DbScope.getDataSourceFailure(dsName);
@@ -846,38 +839,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _vcsTag = vcsTag;
     }
 
-    /** @deprecated Use getVcsRevision() instead. */
-    @Deprecated
-    public final String getSvnRevision()
-    {
-        return _vcsRevision;
-    }
-
-    /** @deprecated Use setVcsRevision() instead. Available only for initializing from module.properties and config/module.xml file. */
-    @Deprecated
-    @SuppressWarnings({"UnusedDeclaration"})
-    public final void setSvnRevision(String svnRevision)
-    {
-        checkLocked();
-        _vcsRevision = svnRevision;
-    }
-
-    /** @deprecated  Use getVcsUrl() instead. */
-    @Deprecated
-    public final String getSvnUrl()
-    {
-        return _vcsUrl;
-    }
-
-    /** @deprecated Use setVcsUrl() instead. Available only for initializing from module.properties and config/module.xml file. */
-    @Deprecated
-    @SuppressWarnings({"UnusedDeclaration"})
-    public final void setSvnUrl(String svnUrl)
-    {
-        checkLocked();
-        _vcsUrl = svnUrl;
-    }
-
     public final String getBuildUser()
     {
         return _buildUser;
@@ -920,7 +881,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     public final void setSourcePath(String sourcePath)
     {
-        _sourcePath = sourcePath;
+        if (!AppProps.getInstance().isIgnoreModuleSource())
+        {
+            _sourcePath = sourcePath;
+        }
     }
 
     @Override
@@ -932,7 +896,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @SuppressWarnings({"UnusedDeclaration"})
     public final void setBuildPath(String buildPath)
     {
-        _buildPath = buildPath;
+        if (!AppProps.getInstance().isIgnoreModuleSource())
+        {
+            _buildPath = buildPath;
+        }
     }
 
     @Override
@@ -1083,7 +1050,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    public final Resolver getModuleResolver()
+    public final ModuleResourceResolver getModuleResolver()
     {
         if (_resolver == null)
             _resolver = new ModuleResourceResolver(this, getResourceDirectory());
@@ -1243,7 +1210,20 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return l;
     }
 
+    File _resourceDirectory;
+    File NULL_FILE = new File("....");
+
     public File getResourceDirectory()
+    {
+        if (null == _resourceDirectory)
+        {
+            File dir = computeResourceDirectory();
+            _resourceDirectory = null==dir ? NULL_FILE : dir;
+        }
+        return NULL_FILE==_resourceDirectory ? null : _resourceDirectory;
+    }
+
+    protected File computeResourceDirectory()
     {
         // We load resources from the module's source directory if all of the following conditions are true:
         //
@@ -1556,6 +1536,38 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         _log.warn("Module \"" + getName() + "\" still specifies the \"labkeyVersion\" property; this module needs to be recompiled.");
         _releaseVersion = labkeyVersion;
+    }
+
+    /** @deprecated Use getVcsRevision() instead. */
+    @Deprecated
+    public final String getSvnRevision()
+    {
+        return _vcsRevision;
+    }
+
+    /** @deprecated Use setVcsRevision() instead. Available only for initializing from module.properties and config/module.xml file. */
+    @Deprecated
+    @SuppressWarnings({"UnusedDeclaration"})
+    public final void setSvnRevision(String svnRevision)
+    {
+        checkLocked();
+        _vcsRevision = svnRevision;
+    }
+
+    /** @deprecated  Use getVcsUrl() instead. */
+    @Deprecated
+    public final String getSvnUrl()
+    {
+        return _vcsUrl;
+    }
+
+    /** @deprecated Use setVcsUrl() instead. Available only for initializing from module.properties and config/module.xml file. */
+    @Deprecated
+    @SuppressWarnings({"UnusedDeclaration"})
+    public final void setSvnUrl(String svnUrl)
+    {
+        checkLocked();
+        _vcsUrl = svnUrl;
     }
 
     public void copyPropertiesFrom(DefaultModule from)

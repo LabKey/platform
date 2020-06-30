@@ -238,6 +238,7 @@ abstract public class QNode implements Cloneable
     }
 
 
+    @Override
     public QNode clone()
     {
         try

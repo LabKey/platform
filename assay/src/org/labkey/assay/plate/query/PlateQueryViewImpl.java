@@ -88,6 +88,7 @@ public class PlateQueryViewImpl extends PlateQueryView
         return region;
     }
 
+    @Override
     public void addHiddenFormField(String key, String value)
     {
         if (_hiddenFormFields == null)
@@ -95,11 +96,13 @@ public class PlateQueryViewImpl extends PlateQueryView
         _hiddenFormFields.put(key, value);
     }
 
+    @Override
     public void setButtons(List<ActionButton> buttons)
     {
         _buttons = buttons;
     }
 
+    @Override
     public boolean hasRecords() throws SQLException, IOException
     {
         DataView view = createDataView();
@@ -111,6 +114,7 @@ public class PlateQueryViewImpl extends PlateQueryView
         }
     }
 
+    @Override
     public void setSort(Sort sort)
     {
         _sort = sort;

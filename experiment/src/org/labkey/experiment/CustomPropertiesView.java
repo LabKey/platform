@@ -16,7 +16,6 @@
 
 package org.labkey.experiment;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -24,12 +23,11 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.view.JspView;
 import org.labkey.experiment.api.ExpMaterialImpl;
-import org.labkey.experiment.api.ExpSampleSetImpl;
+import org.labkey.experiment.api.ExpSampleTypeImpl;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +42,7 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
     private static final CustomPropertyRenderer DEFAULT_RENDERER = new DefaultCustomPropertyRenderer();
     private static final Map<String, CustomPropertyRenderer> _renderers = new HashMap<String, CustomPropertyRenderer>()
     {
+        @Override
         public CustomPropertyRenderer get(Object key)
         {
             CustomPropertyRenderer result = super.get(key);
@@ -116,11 +115,11 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
                 map.put(pd.getName(), entry.getValue());
             }
         }
-        ExpSampleSetImpl ss = (ExpSampleSetImpl)m.getSampleSet();
-        if (null != ss)
+        ExpSampleTypeImpl st = (ExpSampleTypeImpl)m.getSampleType();
+        if (null != st)
         {
-            Domain d = ss.getDomain();
-            TableInfo ti = ss.getTinfo();
+            Domain d = st.getDomain();
+            TableInfo ti = st.getTinfo();
             if (null != ti)
             {
                 SimpleFilter filter = new SimpleFilter("lsid", parentLSID);

@@ -278,7 +278,7 @@ public class IssuesQuerySchema extends UserSchema
 
                 if (!getUser().isGuest())
                 {
-                    filter = new SimpleFilter(FieldKey.fromString("AssignedTo/DisplayName"), "~me~");
+                    filter = new SimpleFilter(FieldKey.fromString("AssignedTo/DisplayName"), CompareType.ME_FILTER_PARAM_VALUE);
                     filter.addCondition(FieldKey.fromString("Status"), "closed", CompareType.NEQ_OR_NULL);
                     customViews.add(new IssuesBuiltInCustomView(qd, "mine", filter.getClauses(), sort));
                 }

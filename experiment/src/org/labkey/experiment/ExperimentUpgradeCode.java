@@ -18,6 +18,7 @@ package org.labkey.experiment;
 import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
@@ -39,20 +40,22 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassImpl;
-import org.labkey.experiment.api.ExpSampleSetImpl;
+import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
-import org.labkey.experiment.api.SampleSetDomainKind;
-import org.labkey.experiment.api.SampleSetServiceImpl;
+import org.labkey.experiment.api.SampleTypeDomainKind;
+import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.property.DomainImpl;
 
 import java.util.Arrays;
@@ -84,10 +87,10 @@ public class ExperimentUpgradeCode implements UpgradeCode
         ExperimentServiceImpl.get().rebuildAllEdges();
     }
 
-    private static void materializeSampleSet(ExpSampleSetImpl ss)
+    private static void materializeSampleType(ExpSampleTypeImpl st)
     {
         Logger log = Logger.getLogger(ExperimentUpgradeCode.class);
-        Domain domain = ss.getDomain();
+        Domain domain = st.getDomain();
         DomainKind kind = null;
         try
         {
@@ -102,8 +105,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
             return;
         }
 
-        // skip the 'Unspecified' SampleSet
-        if (ExperimentServiceImpl.get().getDefaultSampleSetLsid().equals(ss.getLSID()))
+        // skip the 'Unspecified' SampleType
+        if (SampleTypeService.get().getDefaultSampleTypeLsid().equals(st.getLSID()))
             return;
 
         DbScope scope = ExperimentServiceImpl.get().getSchema().getScope();
@@ -144,7 +147,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             if (updated)
             {
                 OntologyManager.updatePropertyDescriptor(propertyDescriptor);
-                LOG.debug("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + "), property='" + property.getName() + "' updated");
+                LOG.debug("SampleSet '" + st.getName() + "' (" + st.getRowId() + "), property='" + property.getName() + "' updated");
             }
         }
 
@@ -152,7 +155,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         // refetch the domain which we just updated
         domain = PropertyService.get().getDomain(domain.getTypeId());
         assert(null != domain.getStorageTableName());
-        LOG.debug("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") provisioned");
+        LOG.debug("SampleSet '" + st.getName() + "' (" + st.getRowId() + ") provisioned");
 
 
         // generate SQL to select from exp.material and exp.objectproperty
@@ -195,7 +198,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         insert.append(select);
 
         int count = new SqlExecutor(scope).execute(insert);
-        LOG.info("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") inserted provisioned rows, count=" + count);
+        LOG.info("SampleSet '" + st.getName() + "' (" + st.getRowId() + ") inserted provisioned rows, count=" + count);
 
 
         // handle migration of Description column from property to exp.Material.Description column
@@ -238,7 +241,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         // delete objectproperty rows for samples in the SampleSet, but only for properties of the SampleSet domain
         SQLFragment deleteObjectProperties = new SQLFragment("DELETE FROM exp.objectproperty\n");
         deleteObjectProperties.append("WHERE objectid IN (SELECT objectid FROM exp.object WHERE objecturi IN (SELECT lsid FROM exp.material WHERE CpasType = ?))");
-        deleteObjectProperties.add(ss.getDataObject().getLSID());
+        deleteObjectProperties.add(st.getDataObject().getLSID());
         deleteObjectProperties.append(" AND propertyId IN (");
         comma = "";
         for (DomainProperty dp : domain.getProperties())
@@ -250,7 +253,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (!domain.getProperties().isEmpty())
         {
             new SqlExecutor(scope).execute(deleteObjectProperties);
-            LOG.info("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") deleted ontology properties");
+            LOG.info("SampleSet '" + st.getName() + "' (" + st.getRowId() + ") deleted ontology properties");
         }
     }
 
@@ -262,19 +265,19 @@ public class ExperimentUpgradeCode implements UpgradeCode
             return;
 
         // get all MaterialSource across all containers
-        TableInfo source = ExperimentServiceImpl.get().getTinfoMaterialSource();
+        TableInfo source = ExperimentServiceImpl.get().getTinfoSampleType();
         new TableSelector(source, null, null).stream(MaterialSource.class)
-                .map(ExpSampleSetImpl::new)
-                .forEach(ExperimentUpgradeCode::materializeSampleSet);
+                .map(ExpSampleTypeImpl::new)
+                .forEach(ExperimentUpgradeCode::materializeSampleType);
     }
 
-    private static void addSampleSetGenId(ExpSampleSetImpl ss)
+    private static void addSampleTypeGenId(ExpSampleTypeImpl st)
     {
-        Domain domain = ss.getDomain();
-        SampleSetDomainKind kind = null;
+        Domain domain = st.getDomain();
+        SampleTypeDomainKind kind = null;
         try
         {
-            kind = (SampleSetDomainKind)domain.getDomainKind();
+            kind = (SampleTypeDomainKind)domain.getDomainKind();
         }
         catch (IllegalArgumentException e)
         {
@@ -284,7 +287,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             return;
 
         // skip the 'Unspecified' SampleSet
-        if (ExperimentServiceImpl.get().getDefaultSampleSetLsid().equals(ss.getLSID()))
+        if (SampleTypeService.get().getDefaultSampleTypeLsid().equals(st.getLSID()))
             return;
 
         DbSchema schema = kind.getSchema();
@@ -297,7 +300,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         SchemaTableInfo provisionedTable = schema.getTable(domain.getStorageTableName());
         if (provisionedTable == null)
         {
-            LOG.error("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") has no provisioned table");
+            LOG.error("SampleSet '" + st.getName() + "' (" + st.getRowId() + ") has no provisioned table");
             return;
         }
 
@@ -306,17 +309,17 @@ public class ExperimentUpgradeCode implements UpgradeCode
         {
             PropertyStorageSpec genIdProp = kind.getBaseProperties(domain).stream().filter(p -> "genId".equalsIgnoreCase(p.getName())).findFirst().orElseThrow();
             StorageProvisioner.addStorageProperties(domain, Arrays.asList(genIdProp), true);
-            LOG.info("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") added 'genId' column");
+            LOG.info("SampleSet '" + st.getName() + "' (" + st.getRowId() + ") added 'genId' column");
         }
 
-        addMissingSampleRows(ss, domain, scope);
-        fillGenId(ss, domain, scope);
-        setGenIdCounter(ss, domain, scope);
+        addMissingSampleRows(st, domain, scope);
+        fillGenId(st, domain, scope);
+        setGenIdCounter(st, domain, scope);
     }
 
-    // A previous version of the 'materializeSampleSet' upgrade didn't insert rows into the provisioned table for each exp.material in the sample set.
+    // A previous version of the 'materializeSampleSet' upgrade didn't insert rows into the provisioned table for each exp.material in the sample type.
     // Insert any missing provisioned rows that exist in exp.material but didn't have an exp.object row
-    private static void addMissingSampleRows(ExpSampleSetImpl ss, Domain domain, DbScope scope)
+    private static void addMissingSampleRows(ExpSampleTypeImpl st, Domain domain, DbScope scope)
     {
         SQLFragment insert = new SQLFragment("INSERT INTO expsampleset.")
                 .append(domain.getStorageTableName())
@@ -329,11 +332,11 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         int count = new SqlExecutor(scope).execute(insert);
         if (count > 0)
-            LOG.info("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") inserting missing rows into provisioned table, count=" + count);
+            LOG.info("SampleSet '" + st.getName() + "' (" + st.getRowId() + ") inserting missing rows into provisioned table, count=" + count);
     }
 
     // populate the genId value on an existing provisioned table
-    private static void fillGenId(ExpSampleSetImpl ss, Domain domain, DbScope scope)
+    private static void fillGenId(ExpSampleTypeImpl st, Domain domain, DbScope scope)
     {
         String tableName = domain.getStorageTableName();
         SQLFragment update = new SQLFragment()
@@ -349,18 +352,18 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 .append("WHERE i.lsid = ").append(tableName).append(".lsid");
 
         int count = new SqlExecutor(scope).execute(update);
-        LOG.info("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") updated 'genId' column, count=" + count);
+        LOG.info("SampleSet '" + st.getName() + "' (" + st.getRowId() + ") updated 'genId' column, count=" + count);
     }
 
     // create a genId sequence counter for the SampleSet
-    private static void setGenIdCounter(ExpSampleSetImpl ss, Domain domain, DbScope scope)
+    private static void setGenIdCounter(ExpSampleTypeImpl st, Domain domain, DbScope scope)
     {
         SQLFragment frag = new SQLFragment("SELECT COUNT(*) FROM exp.material WHERE cpasType=?").add(domain.getTypeURI());
         int count = new SqlSelector(scope, frag).getObject(Integer.class);
 
-        DbSequence sequence = DbSequenceManager.get(ss.getContainer(), ExpSampleSetImpl.SEQUENCE_PREFIX, ss.getRowId());
+        DbSequence sequence = DbSequenceManager.get(st.getContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, st.getRowId());
         sequence.ensureMinimum(count);
-        LOG.debug("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") set counter for 'genId' column to " + count);
+        LOG.debug("SampleSet '" + st.getName() + "' (" + st.getRowId() + ") set counter for 'genId' column to " + count);
     }
 
 
@@ -373,10 +376,10 @@ public class ExperimentUpgradeCode implements UpgradeCode
         try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
         {
             // get all MaterialSource across all containers
-            TableInfo source = ExperimentServiceImpl.get().getTinfoMaterialSource();
+            TableInfo source = ExperimentServiceImpl.get().getTinfoSampleType();
             new TableSelector(source, null, null).stream(MaterialSource.class)
-                    .map(ExpSampleSetImpl::new)
-                    .forEach(ExperimentUpgradeCode::addSampleSetGenId);
+                    .map(ExpSampleTypeImpl::new)
+                    .forEach(ExperimentUpgradeCode::addSampleTypeGenId);
 
             tx.commit();
         }
@@ -389,7 +392,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (context != null && context.isNewInstall())
             return;
 
-        TableInfo msTable = ExperimentServiceImpl.get().getTinfoMaterialSource();
+        TableInfo msTable = ExperimentServiceImpl.get().getTinfoSampleType();
         TableInfo objTable = OntologyManager.getTinfoObject();
         SQLFragment sql = new SQLFragment("SELECT ms.*, o.objectid FROM ")
                 .append(msTable.getFromSQL("ms"))
@@ -409,7 +412,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             int rowCount = new SqlExecutor(objTable.getSchema().getScope()).execute(update);
             LOG.info("Updated ownerObjectId for " + rowCount + " materials");
         });
-        SampleSetServiceImpl.get().clearMaterialSourceCache(null);
+        SampleTypeServiceImpl.get().clearMaterialSourceCache(null);
     }
 
     /**
@@ -501,6 +504,117 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         int count = new SqlExecutor(scope).execute(update);
         LOG.info("DataClass '" + ds.getName() + "' (" + ds.getRowId() + ") updated 'name' and 'classId' column, count=" + count);
+    }
+
+    // called from exp-20.003-20.004
+    // Changes from an autoIncrement column as the RowId to a DBSequence so the rowId can be more readily available
+    // during creation of materials (particularly during file import).
+    //
+    // This needs to be run after startup because we are altering the primary key column for exp.Materials, and for SQL Server
+    // this means we need to remove some foreign key constraints in other schemas.
+     @DeferredUpgrade
+    public static void addDbSequenceForMaterialsRowId(ModuleContext context)
+    {
+        _addDbSequenceForMaterialRowId();
+    }
+
+    // called from exp-20.004-20.005
+    // The previous method originally mistakenly did not update RowId column for new installs,
+    // leaving databases bootstrapped after the previous upgrade script was implemented in a strange state.
+    // This method will fix up the databases where that removal of autoIncrement was missed.
+    @DeferredUpgrade
+    public static void addDbSequenceForMaterialsRowIdIfMissed(ModuleContext context)
+    {
+        if (ExperimentService.get().getTinfoMaterial().getColumn("RowId").isAutoIncrement())
+            _addDbSequenceForMaterialRowId();
+    }
+
+    private static void _addDbSequenceForMaterialRowId()
+    {
+        SQLFragment frag = new SQLFragment("SELECT MAX(rowId) FROM exp.material");
+        Integer maxId = new SqlSelector(ExperimentService.get().getSchema(), frag).getObject(Integer.class);
+
+        DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), ExperimentService.get().getTinfoMaterial().getDbSequenceName("RowId"));
+        if (maxId != null)
+            sequence.ensureMinimum(maxId);
+
+        DbScope scope = DbScope.getLabKeyScope();
+        try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+        {
+            SQLFragment sql;
+            if (scope.getSqlDialect().isPostgreSQL())
+            {
+                sql = new SQLFragment("ALTER SEQUENCE exp.material_rowid_seq owned by NONE;\n");
+                sql.append("ALTER TABLE exp.material ALTER COLUMN rowId DROP DEFAULT;\n");
+                sql.append("DROP SEQUENCE exp.material_rowid_seq;");
+                new SqlExecutor(scope).execute(sql);
+            }
+            else
+            {
+                // For SQLServer We can't do this modification in place for the RowId column, so we make a copy of the column, drop the original
+                // column then rename the copy and add back the constraints.
+                sql = new SQLFragment();
+
+                sql.append("ALTER TABLE exp.material ADD RowId_copy INT NULL;\n");
+                // Drop foreign keys before dropping the original column.  First materialInput
+                sql.append("ALTER TABLE exp.materialInput DROP CONSTRAINT fk_materialinput_material;\n");
+                // now ms2
+                sql.append("EXEC core.fn_dropifexists 'ExpressionData', 'ms2', 'constraint', 'FK_ExpressionData_SampleId';\n");
+                // and labbook
+                sql.append("EXEC core.fn_dropifexists 'LabBookExperimentMaterial', 'labbook', 'constraint', 'FK_LabBookExperimentMaterial_MaterialId';\n");
+                // and microarray
+                sql.append("EXEC core.fn_dropifexists 'FeatureData', 'microarray', 'constraint', 'FK_FeatureData_SampleId';\n");
+                // and idri
+                sql.append("EXEC core.fn_dropifexists 'concentrations', 'idri', 'constraint', 'FK_Compounds';\n");
+                sql.append("EXEC core.fn_dropifexists 'concentrations', 'idri', 'constraint', 'FK_Materials';\n");
+                sql.append("EXEC core.fn_dropifexists 'concentrations', 'idri', 'constraint', 'FK_Lot';\n");
+                // Remove primary key constraint
+                sql.append("ALTER TABLE exp.Material DROP CONSTRAINT PK_Material;\n");
+
+                new SqlExecutor(scope).execute(sql);
+
+                sql = new SQLFragment();
+                // Copy RowId to the new column
+                sql.append("UPDATE exp.material SET RowId_copy = RowId;\n");
+
+                // Now drop the original column
+                sql.append("ALTER TABLE exp.material DROP COLUMN RowId;\n");
+
+                new SqlExecutor(scope).execute(sql);
+
+                sql = new SQLFragment();
+                // Rename the copy to the original name and restore it as a Non-Null PK
+                sql.append("EXEC sp_rename 'exp.material.RowId_copy', 'RowId', 'COLUMN';\n");
+                sql.append("ALTER TABLE exp.Material ALTER COLUMN RowId INT NOT NULL;\n");
+                sql.append("ALTER TABLE exp.Material ADD CONSTRAINT PK_Material PRIMARY KEY (RowId);\n");
+                // Add the foreign key constraints back again
+                sql.append("ALTER TABLE exp.materialInput ADD CONSTRAINT FK_MaterialInput_Material FOREIGN KEY (MaterialId) REFERENCES exp.Material (RowId);\n");
+                sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE Name = 'ms2') \n" +
+                        "       ALTER TABLE ms2.ExpressionData ADD CONSTRAINT FK_ExpressionData_SampleId FOREIGN KEY (SampleId) REFERENCES exp.material (RowId);\n"
+                );
+                sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE NAME = 'microarray')\n" +
+                        "   ALTER TABLE microarray.FeatureData ADD CONSTRAINT FK_FeatureData_SampleId FOREIGN KEY (SampleId) REFERENCES exp.material (RowId);\n");
+                sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE NAME = 'idri')\n" +
+                        " BEGIN" +
+                        "   ALTER TABLE idri.concentrations ADD CONSTRAINT FK_Compounds FOREIGN KEY (Compound) REFERENCES exp.Material(RowId);\n" +
+                        "   ALTER TABLE idri.concentrations ADD CONSTRAINT FK_Materials FOREIGN KEY (Material) REFERENCES exp.Material(RowId);\n" +
+                        "   ALTER TABLE idri.concentrations ADD CONSTRAINT FK_Lot FOREIGN KEY (Lot) REFERENCES exp.Material(RowId);\n" +
+                        " END; "
+                );
+                new SqlExecutor(scope).execute(sql);
+            }
+            tx.commit();
+        }
+    }
+
+    // called from exp-20.005-20.006
+    // Issue 40443: For SQL Server, if modifying a table that is used in a view, the views need to get recreated after that
+    // modification happens.  So we need to do that after the previous deferred upgrade scripts happen since
+    // the createViews scripts run at the end of the regular upgrade scripts and thus before the deferred ones.
+    @DeferredUpgrade
+    public static void recreateViewsAfterMaterialRowIdDbSequence(ModuleContext context)
+    {
+        ModuleLoader.getInstance().recreateViews();
     }
 
 }

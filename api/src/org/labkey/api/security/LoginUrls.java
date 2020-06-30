@@ -46,5 +46,5 @@ public interface LoginUrls extends UrlProvider
     ActionURL getAgreeToTermsURL(Container c, URLHelper returnURL);
     ActionURL getSSORedirectURL(SSOAuthenticationConfiguration<?> configuration, URLHelper returnURL, boolean skipProfile);
 
-    NavTree appendAuthenticationNavTrail(NavTree root);
+    void addAuthenticationNavTrail(NavTree root);
 }

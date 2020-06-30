@@ -69,7 +69,7 @@ public class TempQuerySettings extends QuerySettings
         qdef = QueryService.get().createQueryDef(schema.getUser(), _container, schema, getQueryName());
         qdef.setSql(_sql);
         if (getContainerFilterName() != null)
-            qdef.setContainerFilter(ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getUser()));
+            qdef.setContainerFilter(ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getContainer(), schema.getUser()));
         return qdef;
     }
 }

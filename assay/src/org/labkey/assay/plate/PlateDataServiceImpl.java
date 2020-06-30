@@ -56,6 +56,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
         super(context);
     }
 
+    @Override
     public GWTPlate getTemplateDefinition(String templateName, int plateId, String assayTypeName, String templateTypeName, int rowCount, int columnCount, boolean copyTemplate) throws Exception
     {
         try
@@ -142,6 +143,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
         return types;
     }
 
+    @Override
     public int saveChanges(GWTPlate gwtPlate, boolean replaceIfExisting) throws Exception
     {
         try

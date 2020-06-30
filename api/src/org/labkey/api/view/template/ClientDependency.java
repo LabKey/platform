@@ -322,10 +322,10 @@ public abstract class ClientDependency
         if (StringUtils.isEmpty(FileUtil.getExtension(requestedPath)))
             requestedPath = requestedPath + TYPE.lib.getExtension();
 
-        // When experimental @labkey/api flag is enabled replace requests for clientapi_core with labkey_api_js.
+        // When experimental @labkey/api flag is disabled replace requests for clientapi_core with labkey_api_js.
         // The results are cached so this can only take effect upon a cleared cache.
         if ("clientapi_core.lib.xml".equalsIgnoreCase(requestedPath) &&
-            ExperimentalFeatureService.get().isFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_API))
+            !ExperimentalFeatureService.get().isFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_API))
         {
             requestedPath = "labkey_api_js.lib.xml";
         }

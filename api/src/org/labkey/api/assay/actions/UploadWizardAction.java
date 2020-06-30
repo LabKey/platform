@@ -43,6 +43,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.TableInfo;
@@ -132,7 +133,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     protected AssayProtocolSchema _protocolSchema;
     protected ExpRun _run;
 
-    private Map<String, StepHandler<FormType>> _stepHandlers = new HashMap<>();
+    private final Map<String, StepHandler<FormType>> _stepHandlers = new HashMap<>();
 
     protected String _stepDescription;
 
@@ -792,7 +793,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     @Override
     @Nullable
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         if (null != _protocol)
         {
@@ -805,9 +806,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 finalChild = finalChild + ": " + _stepDescription;
             }
             root.addChild(finalChild, helper);
-            return root;
         }
-        return null;
     }
 
     protected DataRegion createDataRegionForInsert(TableInfo baseTable, String lsidCol, List<? extends DomainProperty> domainProperties, Map<String, String> columnNameToPropertyName)
@@ -828,7 +827,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             // Allow registered AssayColumnInfoRenderer to replace display column for the given domain properties
             AssayColumnInfoRenderer renderer = AssayService.get().getAssayColumnInfoRenderer(_protocol, col, getContainer(), getUser());
             if (renderer != null)
-                renderer.fixupColumnInfo(_protocol, (BaseColumnInfo)col);
+                renderer.fixupColumnInfo(_protocol, (MutableColumnInfo)col);
 
             rgn.addColumn(col);
             if (columnNameToPropertyName != null)
@@ -1135,7 +1134,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 if (list == null || list.size() == 0)
                     return HtmlString.EMPTY_STRING;
 
-                Set<HtmlString> uniqueErrorStrs = new TreeSet<>(Comparator.comparing(HtmlString::toString));
+                Set<HtmlString> uniqueErrorStrs = new TreeSet<>();
                 HtmlStringBuilder sb = HtmlStringBuilder.of("");
                 StringBuilder msgBox = new StringBuilder();
                 HtmlString br = HtmlString.unsafe("<font class=\"labkey-error\">");
@@ -1188,7 +1187,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     private static class PlateMetadataDisplayColumn extends SimpleDisplayColumn
     {
         private final AssayRunUploadForm<AbstractTsvAssayProvider> _form;
-        private ColumnInfo _col;
+        private final ColumnInfo _col;
 
         public PlateMetadataDisplayColumn(AssayRunUploadForm form)
         {
@@ -1205,16 +1204,19 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             out.write(" *");
         }
 
+        @Override
         public boolean isEditable()
         {
             return true;
         }
 
+        @Override
         public ColumnInfo getColumnInfo()
         {
             return _col;
         }
 
+        @Override
         public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
         {
             AssayDataCollector collector = _form.getProvider().getPlateMetadataDataCollector(_form);
@@ -1226,7 +1228,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 }
                 catch (Exception e)
                 {
-                    throw (IOException)new IOException().initCause(e);
+                    throw (IOException) new IOException(e);
                 }
             }
         }

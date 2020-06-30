@@ -42,6 +42,7 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
 {
     private Integer _enrollmentSiteId;
 
+    @Override
     protected List<? extends SpecimenVisitReport> createReports()
     {
         List<VisitImpl> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());

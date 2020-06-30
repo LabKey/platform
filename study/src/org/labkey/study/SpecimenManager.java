@@ -51,8 +51,9 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.query.CustomView;
@@ -62,6 +63,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyCachable;
 import org.labkey.api.study.StudyService;
@@ -136,8 +138,6 @@ import java.util.concurrent.locks.ReentrantLock;
 public class SpecimenManager implements ContainerManager.ContainerListener
 {
     private final static SpecimenManager _instance = new SpecimenManager();
-
-    public static final String STUDY_SPECIMENS_SAMPLE_SET_NAME = "Study Specimens";
 
     private final QueryHelper<SpecimenRequestEvent> _requestEventHelper;
 //    private final QueryHelper<AdditiveType> _additiveHelper;
@@ -347,6 +347,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             throw new IllegalStateException("Can only tiebreak events with at least one date present.");
         }
 
+        @Override
         public int compare(SpecimenEvent event1, SpecimenEvent event2)
         {
             // Obsolete always < non-obsolete
@@ -1669,21 +1670,25 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             _cacheKey = cacheKey;
         }
 
+        @Override
         public StudyCachable createMutable()
         {
             throw new UnsupportedOperationException("DistinctValueList objects are never mutable.");
         }
 
+        @Override
         public Container getContainer()
         {
             return _container;
         }
 
+        @Override
         public Object getPrimaryKey()
         {
             return _cacheKey;
         }
 
+        @Override
         public void lock()
         {
         }
@@ -2037,9 +2042,9 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         DbSchema expSchema = ExperimentService.get().getSchema();
         TableInfo tinfoMaterial = expSchema.getTable("Material");
 
-        ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(c, SpecimenManager.STUDY_SPECIMENS_SAMPLE_SET_NAME);
+        ExpSampleType sampleType = SampleTypeService.get().getSampleType(c, SpecimenService.SAMPLE_TYPE_NAME);
 
-        if (sampleSet != null)
+        if (sampleType != null)
         {
             // Check if any of the samples are referenced in an experiment run
             SQLFragment sql = new SQLFragment("SELECT m.RowId FROM ");
@@ -2047,18 +2052,18 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             sql.append(" INNER JOIN ");
             sql.append(ExperimentService.get().getTinfoMaterialInput(), "mi");
             sql.append(" ON m.RowId = mi.MaterialId AND m.CpasType = ?");
-            sql.add(sampleSet.getLSID());
+            sql.add(sampleType.getLSID());
 
             if (new SqlSelector(ExperimentService.get().getSchema(), sql).exists())
             {
                 // If so, do the slow version of the delete that tears down runs
-                sampleSet.delete(user);
+                sampleType.delete(user);
             }
             else
             {
                 // If not, do the quick version that just kills the samples themselves in the exp.Material table
                 SimpleFilter materialFilter = new SimpleFilter(containerFilter);
-                materialFilter.addCondition(FieldKey.fromParts("CpasType"), sampleSet.getLSID());
+                materialFilter.addCondition(FieldKey.fromParts("CpasType"), sampleType.getLSID());
                 Table.delete(tinfoMaterial, materialFilter);
             }
         }
@@ -2243,6 +2248,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     {
         PrimaryType()
         {
+            @Override
             public List<SpecimenTypeBeanProperty> getGroupingColumns()
             {
                 List<SpecimenTypeBeanProperty> list = new ArrayList<>();
@@ -2250,17 +2256,20 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                 return list;
             }
 
+            @Override
             public String[] getTitleHierarchy(SummaryByVisitType summary)
             {
                 return new String[] { summary.getPrimaryType() };
             }
 
+            @Override
             public String getLabel()
             {
                 return "Primary Type";
             }},
         Derivative()
         {
+            @Override
             public List<SpecimenTypeBeanProperty> getGroupingColumns()
             {
                 List<SpecimenTypeBeanProperty> parent = SpecimenTypeLevel.PrimaryType.getGroupingColumns();
@@ -2268,16 +2277,19 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                 return parent;
             }
 
+            @Override
             public String[] getTitleHierarchy(SummaryByVisitType summary)
             {
                 return new String[] { summary.getPrimaryType(), summary.getDerivative() };
             }
+            @Override
             public String getLabel()
             {
                 return "Derivative";
             }},
         Additive()
         {
+            @Override
             public List<SpecimenTypeBeanProperty> getGroupingColumns()
             {
                 List<SpecimenTypeBeanProperty> parent = SpecimenTypeLevel.Derivative.getGroupingColumns();
@@ -2285,11 +2297,13 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                 return parent;
             }
 
+            @Override
             public String[] getTitleHierarchy(SummaryByVisitType summary)
             {
                 return new String[] { summary.getPrimaryType(), summary.getDerivative(), summary.getAdditive() };
             }
 
+            @Override
             public String getLabel()
             {
                 return "Additive";

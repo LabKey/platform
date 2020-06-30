@@ -108,11 +108,13 @@ public class AbsoluteDateVisitManager extends RelativeDateVisitManager
         return sql;
     }
 
+    @Override
     public VisitImpl findVisitBySequence(double seq)
     {
         return null;
     }
 
+    @Override
     public boolean isVisitOverlapping(VisitImpl visit)
     {
         throw new UnsupportedOperationException("Study has no timepoints");

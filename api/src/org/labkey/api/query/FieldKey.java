@@ -216,6 +216,7 @@ public class FieldKey extends QueryKey<FieldKey>
         return ret;
     }
 
+    @Override
     public int compareTo(FieldKey o)
     {
         return CASE_INSENSITIVE_ORDER.compare(this, o);

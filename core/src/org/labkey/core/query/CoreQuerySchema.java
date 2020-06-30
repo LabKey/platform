@@ -106,6 +106,7 @@ public class CoreQuerySchema extends UserSchema
         return super.createView(context, settings, errors);
     }
 
+    @Override
     public Set<String> getTableNames()
     {
         Set<String> names = PageFlowUtil.set(
@@ -125,6 +126,7 @@ public class CoreQuerySchema extends UserSchema
     }
 
 
+    @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (USERS_TABLE_NAME.equalsIgnoreCase(name))
@@ -347,6 +349,7 @@ public class CoreQuerySchema extends UserSchema
         final boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
         col.setFk(new LookupForeignKey("UserId", "DisplayName")
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return isUserManager ? getSiteUsers() : getUsers();
@@ -358,6 +361,7 @@ public class CoreQuerySchema extends UserSchema
         col.setKeyField(true);
         col.setFk(new LookupForeignKey("UserId", "Name")
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return getGroups();
@@ -446,7 +450,7 @@ public class CoreQuerySchema extends UserSchema
 
     private void addGroupsColumn(UsersTable users)
     {
-        BaseColumnInfo groupsCol;
+        MutableColumnInfo groupsCol;
         if (users.isCanSeeDetails())
         {
             groupsCol = users.wrapColumn("Groups", users.getRealTable().getColumn("userid"));
@@ -595,6 +599,7 @@ public class CoreQuerySchema extends UserSchema
             {
                 return new DataColumn(colInfo, false)
                 {
+                    @Override
                     public String renderURL(RenderContext ctx)
                     {
                         Object type = ctx.get(FieldKey.fromParts("Type"));

@@ -73,6 +73,7 @@ public class StudyProductTable extends DefaultStudyDesignTable
         {
             col.setFk(new LookupForeignKey("Name")
             {
+                @Override
                 public TableInfo getLookupTableInfo()
                 {
                     return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);

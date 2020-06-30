@@ -125,9 +125,8 @@ public class AssayModule extends SpringModule
         addController("plate", PlateController.class);
         DefaultSchema.registerProvider(PlateSchema.SCHEMA_NAME, new PlateSchema.Provider(this));
         DefaultSchema.registerProvider(AssaySchemaImpl.NAME, new AssaySchemaImpl.Provider(this));
-        FolderTypeManager.get().registerFolderType(this, new AssayFolderType(this));
 
-        PropertyService.get().registerDomainKind(new PlateBasedAssaySampleSetDomainKind());
+        PropertyService.get().registerDomainKind(new PlateBasedAssaySampleTypeDomainKind());
 
         // Register early so file-based assays are available to Java code at upgrade time
         ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
@@ -148,6 +147,8 @@ public class AssayModule extends SpringModule
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
+        FolderTypeManager.get().registerFolderType(this, new AssayFolderType(this));
+
         PipelineJobService.get().registerTaskFactoryFactory(AssayImportRunTaskType.type, new AssayImportRunTask.FactoryFactory());
         AssayService.get().registerAssayProvider(new TsvAssayProvider());
         ExperimentService.get().registerExperimentRunTypeSource(container -> {
@@ -167,6 +168,7 @@ public class AssayModule extends SpringModule
         if (null != ss)
         {
             ss.addSearchCategory(AssayManager.ASSAY_CATEGORY);
+            ss.addResourceResolver(AssayManager.ASSAY_CATEGORY.getName(), AssayDocumentProvider.getSearchResolver());
             ss.addDocumentProvider(new AssayDocumentProvider());
         }
 

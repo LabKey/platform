@@ -10,9 +10,9 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
@@ -42,7 +42,7 @@ public class ExperimentStressTest
         }
     }
 
-    private Random random;
+    private final Random random;
 
     public ExperimentStressTest()
     {
@@ -59,7 +59,7 @@ public class ExperimentStressTest
         return random.nextInt(max);
     }
 
-    private List<String> insertSamples(User user, Container c, String sampleSetName, List<String> existingNames, int rowCount)
+    private List<String> insertSamples(User user, Container c, String sampleTypeName, List<String> existingNames, int rowCount)
             throws Exception
     {
         LOG.info("** inserting " + rowCount + " samples " + (existingNames != null ? "with lineage" : "without lineage") + "...");
@@ -80,13 +80,13 @@ public class ExperimentStressTest
             Map<String, Object> row = CaseInsensitiveHashMap.of("age", 100);
             if (parentName != null)
             {
-                row.put("MaterialInputs/" + sampleSetName, parentName);
+                row.put("MaterialInputs/" + sampleTypeName, parentName);
             }
             samples.add(row);
         }
 
         // perform the insert
-        TableInfo ssTable = QueryService.get().getUserSchema(user, c, "samples").getTable(sampleSetName);
+        TableInfo ssTable = QueryService.get().getUserSchema(user, c, "samples").getTable(sampleTypeName);
         try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
         {
             BatchValidationException errors = new BatchValidationException();
@@ -103,42 +103,42 @@ public class ExperimentStressTest
     }
 
     @Test
-    public void sampleSetInsertsWithoutLineage() throws Throwable
+    public void sampleTypeInsertsWithoutLineage() throws Throwable
     {
-        _sampleSetInserts(false);
+        _sampleTypeInserts(false);
     }
 
     // Issue 37518: deadlock when concurrently inserting samples with lineage
     @Test
-    public void sampleSetInsertsWithLineage() throws Throwable
+    public void sampleTypeInsertsWithLineage() throws Throwable
     {
         Assume.assumeFalse("Issue 37518: Test does not yet pass on SQL Server. Skipping.", CoreSchema.getInstance().getSqlDialect().isSqlServer());
-        _sampleSetInserts(true);
+        _sampleTypeInserts(true);
     }
 
-    private void _sampleSetInserts(boolean withLineage) throws Throwable
+    private void _sampleTypeInserts(boolean withLineage) throws Throwable
     {
-        LOG.info("** starting sample set insert test " + (withLineage ? "with lineage" : "without lineage"));
+        LOG.info("** starting sample type insert test " + (withLineage ? "with lineage" : "without lineage"));
         final User user = TestContext.get().getUser();
         final Container c = JunitUtil.getTestContainer();
 
-        final String sampleSetName = "MySamples";
+        final String sampleTypeName = "MySamples";
 
-        // create a target sampleset
+        // create a target sampletype
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("name", "string"));
         props.add(new GWTPropertyDescriptor("age", "int"));
-        ExpSampleSet ss = SampleSetService.get().createSampleSet(c, user, sampleSetName, null, props, Collections.emptyList(), -1, -1, -1, -1, "S-${genId}", null);
+        ExpSampleType st = SampleTypeService.get().createSampleType(c, user, sampleTypeName, null, props, Collections.emptyList(), -1, -1, -1, -1, "S-${genId}", null);
 
         // seed samples
         final int rowsToInsert = 50;
-        final List<String> firstInsertedNames = insertSamples(user, c, sampleSetName, null, rowsToInsert);
+        final List<String> firstInsertedNames = insertSamples(user, c, sampleTypeName, null, rowsToInsert);
 
         // if we are inserting without lineage, just ignore the parent names
         final List<String> parentNames = withLineage ? firstInsertedNames : null;
 
-        // first level - ensures we have an objectId for the SampleSet when inserting with lineage
-        insertSamples(user, c, sampleSetName, parentNames, 5);
+        // first level - ensures we have an objectId for the SampleType when inserting with lineage
+        insertSamples(user, c, sampleTypeName, parentNames, 5);
 
         final int threads = 5;
         final int races = 5;
@@ -148,7 +148,7 @@ public class ExperimentStressTest
             try
             {
                 Thread.sleep(randomInt(10) * 200);
-                insertSamples(user, c, sampleSetName, parentNames, rowsToInsert);
+                insertSamples(user, c, sampleTypeName, parentNames, rowsToInsert);
             }
             catch (Exception e)
             {

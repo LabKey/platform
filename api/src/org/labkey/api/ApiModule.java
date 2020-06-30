@@ -17,6 +17,7 @@ package org.labkey.api;
 
 import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.assay.ReplacedRunFilter;
@@ -42,6 +43,7 @@ import org.labkey.api.dataiterator.ResultSetDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StatementDataIterator;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.files.FileSystemWatcherImpl;
 import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.jsp.LabKeyJspFactory;
 import org.labkey.api.markdown.MarkdownService;
@@ -67,6 +69,7 @@ import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportType;
 import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
+import org.labkey.api.security.AuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationLogoType;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AvatarType;
@@ -83,6 +86,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -229,12 +233,14 @@ public class ApiModule extends CodeOnlyModule
             DbSchema.TableSelectTestCase.class,
             DbSchema.TransactionTestCase.class,
             DbScope.GroupConcatTestCase.class,
+            DbScope.SchemaNameTestCase.class,
             DbScope.TransactionTestCase.class,
             DbSequenceManager.TestCase.class,
             DomTestCase.class,
             Encryption.TestCase.class,
             ExcelColumn.TestCase.class,
             ExceptionUtil.TestCase.class,
+            FileSystemWatcherImpl.TestCase.class,
             FolderTypeManager.TestCase.class,
             GroupManager.TestCase.class,
             JspTemplate.TestCase.class,
@@ -280,5 +286,15 @@ public class ApiModule extends CodeOnlyModule
         return super.getJarFilenames().stream()
             .filter(fn->!fn.startsWith("labkey-client-api-"))
             .collect(Collectors.toList());
+    }
+
+    @Override
+    public JSONObject getPageContextJson(ContainerUser context)
+    {
+        JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
+        AuthenticationConfiguration.SSOAuthenticationConfiguration config = AuthenticationManager.getAutoRedirectSSOAuthConfiguration();
+        if (config != null)
+            json.put("AutoRedirectSSOAuthConfiguration", config.getDescription());
+        return json;
     }
 }

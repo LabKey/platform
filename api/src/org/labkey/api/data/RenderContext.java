@@ -62,7 +62,7 @@ public class RenderContext implements Map<String, Object>, Serializable
     private DataRegion _currentRegion;
     private Filter _baseFilter;
     private Map<String, Object> _row;
-    private Map<String, Object> _extra = new HashMap<>();
+    private final Map<String, Object> _extra = new HashMap<>();
     private Sort _baseSort;
     private int _mode = DataRegion.MODE_NONE;
     private boolean _cache = true;
@@ -835,7 +835,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         if (list == null || list.size() == 0)
             return HtmlString.EMPTY_STRING;
 
-        Set<HtmlString> uniqueErrorStrs = new TreeSet<>(Comparator.comparing(HtmlString::toString));
+        Set<HtmlString> uniqueErrorStrs = new TreeSet<>();
         HtmlStringBuilder builder = HtmlStringBuilder.of("");
         HtmlString br = HtmlString.unsafe("<font class=\"labkey-error\">");
         for (Object m : list)

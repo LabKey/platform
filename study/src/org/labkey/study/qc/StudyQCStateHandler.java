@@ -32,6 +32,13 @@ import java.util.List;
 public class StudyQCStateHandler implements QCStateHandler<StudyController.ManageQCStatesForm>
 {
     protected List<QCState> _states = null;
+    public static final String HANDLER_NAME = "StudyQCStateHandler";
+
+    @Override
+    public String getHandlerType()
+    {
+        return HANDLER_NAME;
+    }
 
     @Override
     public List<QCState> getQCStates(Container container)
@@ -85,6 +92,7 @@ public class StudyQCStateHandler implements QCStateHandler<StudyController.Manag
         }
     }
 
+    @Override
     public boolean isBlankQCStatePublic(Container container)
     {
         StudyImpl study = StudyController.getStudyThrowIfNull(container);

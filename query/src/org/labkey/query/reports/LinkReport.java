@@ -36,11 +36,13 @@ public class LinkReport extends BaseRedirectReport
 {
     public static final String TYPE = ReportService.LINK_REPORT_TYPE;
 
+    @Override
     public String getType()
     {
         return TYPE;
     }
 
+    @Override
     public String getTypeDescription()
     {
         return "Link Report";
@@ -87,7 +89,7 @@ public class LinkReport extends BaseRedirectReport
     public boolean hasContentModified(ContainerUser context)
     {
         // Content modified if change to the link URL string property
-        return hasDescriptorPropertyChanged(REDIRECT_URL);
+        return hasDescriptorPropertyChanged(context.getUser(), REDIRECT_URL);
     }
 
     @Override

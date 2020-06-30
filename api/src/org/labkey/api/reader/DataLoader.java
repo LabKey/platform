@@ -98,7 +98,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     protected Map<String, ColumnInfo> _columnInfoMap = Collections.emptyMap();
     protected ColumnDescriptor[] _columns;
     private boolean _initialized = false;
-    protected int _scanAheadLineCount = 1000; // number of lines to scan trying to infer data types
+    protected int _scanAheadLineCount = 7500; // number of lines to scan trying to infer data types
     // CONSIDER: explicit flags for hasHeaders, inferHeaders, skipLines etc.
     protected int _skipLines = -1;      // -1 means infer headers
     private boolean _inferTypes = true;
@@ -150,6 +150,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         _includeBlankLines = includeBlankLines;
     }
 
+    @Override
     public final ColumnDescriptor[] getColumns() throws IOException
     {
         ensureInitialized();
@@ -423,6 +424,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     /**
      * Returns an iterator over the data
      */
+    @Override
     public abstract CloseableIterator<Map<String, Object>> iterator();
 
 
@@ -431,11 +433,13 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
      */
     // Caution: Using this instead of iterating directly has lead to many scalability problems in the past.
     // TODO: Migrate usages to iterator()
+    @Override
     public List<Map<String, Object>> load()
     {
         return IteratorUtils.toList(iterator());
     }
 
+    @Override
     public abstract void close();
 
 

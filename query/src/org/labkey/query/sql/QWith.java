@@ -25,6 +25,7 @@ public class QWith extends QNode
         from(n);
     }
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.pushPrefix("WITH ");

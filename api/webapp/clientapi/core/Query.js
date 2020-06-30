@@ -43,7 +43,9 @@ LABKEY.Query = new function()
             queryName : config.queryName,
             rows : config.rows || config.rowDataArray,
             transacted : config.transacted,
-            extraContext : config.extraContext
+            auditBehavior: config.auditBehavior,
+            extraContext : config.extraContext,
+            provenance : config.provenance
         };
 
         var requestConfig = {
@@ -701,7 +703,9 @@ LABKEY.Query = new function()
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
         * @param {boolean} [config.transacted] Whether all of the updates should be done in a single transaction, so they all succeed or all fail. Defaults to true
-        * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
+         * @param {string} [config.auditBehavior] Audit behavior for this particular action, used to override behavio
+         * set on the underlying table.
+         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -758,6 +762,8 @@ LABKEY.Query = new function()
         * will be invoked instead in the event of a validation failure.
         * @param {boolean} [config.transacted] Whether all of the row changes for all of the tables
         * should be done in a single transaction, so they all succeed or all fail. Defaults to true
+        * @param {string} [config.auditBehavior] Audit behavior for this particular action, used to override behavio
+        * set on the underlying table.
         * @param {boolean} [config.validateOnly] Whether or not the server should attempt proceed through all of the
         * commands, but not actually commit them to the database. Useful for scenarios like giving incremental
         * validation feedback as a user fills out a UI form, but not actually save anything until they explicitly request
@@ -780,6 +786,7 @@ LABKEY.Query = new function()
                 containerPath: config.containerPath,
                 validateOnly : config.validateOnly,
                 transacted : config.transacted,
+                auditBehavior: config.auditBehavior,
                 extraContext : config.extraContext,
                 apiVersion : config.apiVersion
             };
@@ -827,7 +834,9 @@ LABKEY.Query = new function()
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
         * @param {boolean} [config.transacted] Whether all of the inserts should be done in a single transaction, so they all succeed or all fail. Defaults to true
-        * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
+         * @param {string} [config.auditBehavior] Audit behavior for this particular action, used to override behavio
+         * set on the underlying table.
+         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
@@ -890,7 +899,9 @@ LABKEY.Query = new function()
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
         * @param {boolean} [config.transacted] Whether all of the deletes should be done in a single transaction, so they all succeed or all fail. Defaults to true
-        * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
+         * @param {string} [config.auditBehavior] Audit behavior for this particular action, used to override behavio
+         * set on the underlying table.
+         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).

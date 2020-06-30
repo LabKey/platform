@@ -8,8 +8,8 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.components.CustomizeView;
-import org.labkey.test.components.PropertiesEditor;
-import org.labkey.test.pages.EditDatasetDefinitionPage;
+import org.labkey.test.components.domain.DomainFormPanel;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -65,16 +65,14 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
         portalHelper.addWebPart("Datasets");
 
         log("Creating a new dataset");
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper
+        DatasetDesignerPage editDatasetPage = _studyHelper
                 .goToManageDatasets()
                 .clickCreateNewDataset()
-                .setName(datasetName)
-                .submit();
+                .setName(datasetName);
 
-        PropertiesEditor fieldsEditor = editDatasetPage.getFieldsEditor();
-        fieldsEditor.selectField(0).markForDeletion();
-        fieldsEditor.addField(new FieldDefinition("TestDate").setLabel("TestDate").setType(FieldDefinition.ColumnType.DateAndTime));
-        editDatasetPage.save();
+        DomainFormPanel fieldsEditor = editDatasetPage.getFieldsPanel();
+        fieldsEditor.manuallyDefineFields(new FieldDefinition("TestDate").setLabel("TestDate").setType(FieldDefinition.ColumnType.DateAndTime));
+        editDatasetPage.clickSave();
 
         log("Inserting rows in the dataset");
         goToProjectHome();

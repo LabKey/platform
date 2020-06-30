@@ -42,16 +42,19 @@ public enum TemplateResourceHandler
 {
     LOGO
     {
+        @Override
         protected String getResourceName()
         {
             return "logo.image";
         }
 
+        @Override
         protected String getDefaultLink(Container c)
         {
             return "/_images/lk-noTAG-" + resolveLogoThemeName(c) + ".svg";
         }
 
+        @Override
         protected CacheableWriter getWriterForContainer(Container c) throws IOException, ServletException
         {
             // container will be null if the database isn't bootstrapped yet
@@ -80,16 +83,19 @@ public enum TemplateResourceHandler
 
     LOGO_MOBILE
     {
+        @Override
         protected String getResourceName()
         {
             return "logo-mobile.image";
         }
 
+        @Override
         protected String getDefaultLink(Container c)
         {
             return "/_images/mobile-logo-" + resolveLogoThemeName(c) + ".svg";
         }
 
+        @Override
         protected CacheableWriter getWriterForContainer(Container c) throws IOException, ServletException
         {
             // container will be null if the database isn't bootstrapped yet
@@ -118,16 +124,19 @@ public enum TemplateResourceHandler
 
     FAVICON
     {
+        @Override
         protected String getResourceName()
         {
             return "favicon.image";
         }
 
+        @Override
         protected String getDefaultLink(Container c)
         {
             return "/_images/favicon.ico";
         }
 
+        @Override
         protected CacheableWriter getWriterForContainer(Container c) throws IOException, ServletException
         {
             // rootContainer will be null if the database isn't bootstrapped yet

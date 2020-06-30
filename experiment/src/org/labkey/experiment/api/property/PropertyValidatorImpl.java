@@ -49,26 +49,31 @@ public class PropertyValidatorImpl implements IPropertyValidator
         _validator = validator;
     }
 
+    @Override
     public String getName()
     {
         return _validator.getName();
     }
 
+    @Override
     public void setName(String name)
     {
         edit().setName(name);
     }
 
+    @Override
     public String getDescription()
     {
         return _validator.getDescription();
     }
 
+    @Override
     public void setDescription(String description)
     {
         edit().setDescription(description);
     }
 
+    @Override
     public String getTypeURI()
     {
         return _validator.getTypeURI();
@@ -79,16 +84,19 @@ public class PropertyValidatorImpl implements IPropertyValidator
         edit().setTypeURI(typeURI);
     }
 
+    @Override
     public String getExpressionValue()
     {
         return _validator.getExpression();
     }
 
+    @Override
     public void setExpressionValue(String expression)
     {
         edit().setExpression(expression);
     }
 
+    @Override
     public Container getContainer()
     {
         return ContainerManager.getForId(_validator.getContainer());
@@ -104,26 +112,31 @@ public class PropertyValidatorImpl implements IPropertyValidator
         edit().setRowId(rowId);
     }
 
+    @Override
     public int getRowId()
     {
         return _validator.getRowId();
     }
 
+    @Override
     public String getErrorMessage()
     {
         return _validator.getErrorMessage();
     }
 
+    @Override
     public Map<String, String> getProperties()
     {
         return PageFlowUtil.mapFromQueryString(_validator.getProperties());
     }
 
+    @Override
     public void setErrorMessage(String message)
     {
         edit().setErrorMessage(message);
     }
 
+    @Override
     public void setProperty(String key, String value)
     {
         Map<String, String> props = getProperties();
@@ -131,11 +144,13 @@ public class PropertyValidatorImpl implements IPropertyValidator
         edit().setProperties(PageFlowUtil.toQueryString(props.entrySet()));
     }
 
+    @Override
     public ValidatorKind getType()
     {
         return PropertyService.get().getValidatorKind(getTypeURI());
     }
 
+    @Override
     public IPropertyValidator save(User user, Container container) throws ValidationException
     {
         ValidatorKind kind = getType();
@@ -165,6 +180,7 @@ public class PropertyValidatorImpl implements IPropertyValidator
         return _deleted;
     }
     
+    @Override
     public boolean validate(PropertyDescriptor prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache)
     {
         // Don't validate null values, #15683

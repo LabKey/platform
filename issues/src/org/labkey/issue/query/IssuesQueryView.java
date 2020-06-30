@@ -17,6 +17,7 @@
 package org.labkey.issue.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.DataRegion;
@@ -31,6 +32,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.issue.IssueUpdateEmailTemplate;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.view.IssuesListView;
@@ -63,6 +65,7 @@ public class IssuesQueryView extends QueryView
         return resources;
     }
 
+    @Override
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         super.populateButtonBar(view, bar);
@@ -94,6 +97,11 @@ public class IssuesQueryView extends QueryView
                 adminButton.setDisplayPermission(AdminPermission.class);
 
                 bar.add(adminButton);
+
+                ActionURL customEmailTemplateUrl = PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), IssueUpdateEmailTemplate.class, getViewContext().getActionURL());
+                ActionButton customEmailTemplateButton = new ActionButton(customEmailTemplateUrl, "Customize Email Template", ActionButton.Action.LINK);
+                customEmailTemplateButton.setDisplayPermission(AdminPermission.class);
+                bar.add(customEmailTemplateButton);
             }
 
             if (!getUser().isGuest())

@@ -40,6 +40,7 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
         super(name, rootTable, schema, objectType, cf);
     }
 
+    @Override
     public void setRun(ExpRun run, ExpProtocol.ApplicationType type)
     {
         checkLocked();
@@ -73,7 +74,7 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
         {
             // We're not filtering to a single run, so we need to filter based on all of the containers that the user
             // has permission to see, subject to the container filter
-            addCondition(getContainerFilter().getSQLFragment(getSchema(), sqlFragment, getContainer(), false), FieldKey.fromParts("FolderRunType"));
+            addCondition(getContainerFilter().getSQLFragment(getSchema(), sqlFragment, false), FieldKey.fromParts("FolderRunType"));
         }
         else
         {

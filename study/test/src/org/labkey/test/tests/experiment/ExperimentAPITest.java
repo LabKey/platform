@@ -52,10 +52,10 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.pages.ReactAssayDesignerPage;
 import org.labkey.test.params.FieldDefinition;
-import org.labkey.test.params.experiment.SampleSetDefinition;
+import org.labkey.test.params.experiment.SampleTypeDefinition;
 import org.labkey.test.util.APIAssayHelper;
 import org.labkey.test.util.Maps;
-import org.labkey.test.util.SampleSetHelper;
+import org.labkey.test.util.SampleTypeHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -147,16 +147,16 @@ public class ExperimentAPITest extends BaseWebDriverTest
 
     private void createSampleSet(String sampleSetName)
     {
-        log("Create sample set");
+        log("Create sample type");
         goToModule("Experiment");
-        SampleSetHelper sampleHelper = new SampleSetHelper(this);
-        sampleHelper.createSampleSet(new SampleSetDefinition(sampleSetName)
+        SampleTypeHelper sampleHelper = new SampleTypeHelper(this);
+        sampleHelper.createSampleType(new SampleTypeDefinition(sampleSetName)
                         .setFields(List.of(
                                 new FieldDefinition("IntCol", FieldDefinition.ColumnType.Integer),
                                 new FieldDefinition("StringCol", FieldDefinition.ColumnType.String),
                                 new FieldDefinition("DateCol", FieldDefinition.ColumnType.DateAndTime),
                                 new FieldDefinition("BoolCol", FieldDefinition.ColumnType.Boolean))),
-                TestFileUtils.getSampleData("sampleSet.xlsx"));
+                TestFileUtils.getSampleData("sampleType.xlsx"));
     }
 
     @Test @Ignore(/*TODO*/"35654: Can't reference experiment materials by name if they aren't associated with a sampleset")

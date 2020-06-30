@@ -327,6 +327,7 @@ class ScriptReferenceImpl implements ScriptReference
         return "[" + _module.getName() + "] " + _path.toString();
     }
 
+    @Override
     public ScriptContext getContext()
     {
         if (_context == null)
@@ -334,11 +335,13 @@ class ScriptReferenceImpl implements ScriptReference
         return _context;
     }
 
+    @Override
     public <T> T eval(Class<T> resultType) throws ScriptException
     {
         return eval(resultType, null);
     }
 
+    @Override
     public <T> T eval(Class<T> resultType, Map<String, ?> map) throws ScriptException
     {
         Context ctx = Context.enter();
@@ -355,11 +358,13 @@ class ScriptReferenceImpl implements ScriptReference
         }
     }
 
+    @Override
     public Object eval() throws ScriptException
     {
         return eval((Map<String, ?>)null);
     }
 
+    @Override
     public Object eval(Map<String, ?> map) throws ScriptException
     {
         Context ctx = Context.enter();
@@ -387,8 +392,10 @@ class ScriptReferenceImpl implements ScriptReference
         }
     }
 
+    @Override
     public boolean evaluated() { return _evaluated; }
 
+    @Override
     public boolean hasFn(String name) throws ScriptException
     {
         ScriptContext ctxt = getContext();
@@ -396,6 +403,7 @@ class ScriptReferenceImpl implements ScriptReference
         return hasFn(scope, name);
     }
 
+    @Override
     public boolean hasFn(Object thiz, String name) throws ScriptException
     {
         if (!(thiz instanceof Scriptable))
@@ -407,6 +415,7 @@ class ScriptReferenceImpl implements ScriptReference
         return ScriptableObject.getProperty((Scriptable)thiz, name) instanceof Function;
     }
 
+    @Override
     public <T> T invokeFn(Class<T> resultType, Object thiz, String name, Object... args) throws ScriptException, NoSuchMethodException
     {
         // compile and evaluate if necessary
@@ -428,11 +437,13 @@ class ScriptReferenceImpl implements ScriptReference
         }
     }
 
+    @Override
     public Object invokeFn(String name, Object... args) throws ScriptException, NoSuchMethodException
     {
         return invokeFn(Object.class, name, args);
     }
 
+    @Override
     public <T> T invokeFn(Class<T> resultType, String name, Object... args) throws ScriptException, NoSuchMethodException
     {
         // compile and evaluate if necessary
@@ -456,6 +467,7 @@ class ScriptReferenceImpl implements ScriptReference
         }
     }
 
+    @Override
     public Object invokeFn(Object thiz, String name, Object... args) throws ScriptException, NoSuchMethodException
     {
         return invokeFn(Object.class, thiz, name, args);
@@ -629,6 +641,7 @@ class RhinoEngine extends RhinoScriptEngine
     // topLevel is cached in a WeakReference so can be shared with other
     // instances of RhinoService and across threads.  The topLevel won't
     // be gc'd until all of the ScriptResourceRef in the SCRIPT_CACHE are gone.
+    @Override
     protected ScriptableObject createTopLevel()
     {
         synchronized (sharedTopLevelLock)

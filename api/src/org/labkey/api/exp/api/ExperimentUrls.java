@@ -69,6 +69,8 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getDomainEditorURL(Container container, Domain domain);
 
+    ActionURL getCreateDataClassURL(Container c);
+
     ActionURL getShowDataClassURL(Container container, int rowId);
 
     ActionURL getShowFileURL(ExpData data, boolean inline);
@@ -77,9 +79,9 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getMaterialDetailsURL(Container c, int materialRowId);
 
-    ActionURL getCreateSampleSetURL(Container c);
+    ActionURL getCreateSampleTypeURL(Container c);
 
-    ActionURL getImportSamplesURL(Container c, String sampleSetName);
+    ActionURL getImportSamplesURL(Container c, String sampleTypeName);
 
     ActionURL getImportDataURL(Container c, String dataClassName);
 
@@ -89,9 +91,9 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getSetFlagURL(Container container);
 
-    ActionURL getShowSampleSetListURL(Container container);
+    ActionURL getShowSampleTypeListURL(Container container);
 
-    ActionURL getShowSampleSetURL(ExpSampleSet sampleSet);
+    ActionURL getShowSampleTypeURL(ExpSampleType sampleType);
 
     ActionURL getDataClassListURL(Container container);
 

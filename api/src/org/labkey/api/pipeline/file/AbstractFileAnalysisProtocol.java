@@ -229,6 +229,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
 
     public abstract List<FileType> getInputTypes();
     
+    @Override
     public abstract AbstractFileAnalysisProtocolFactory getFactory();
 
     public abstract JOB createPipelineJob(ViewBackgroundInfo info,

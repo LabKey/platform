@@ -194,7 +194,7 @@ public class AssayManager implements AssayService
     @Nullable
     public AssayProvider getProvider(ExpProtocol protocol)
     {
-        return Handler.Priority.findBestHandler(getAssayProviders(), protocol);
+        return null == protocol ? null : Handler.Priority.findBestHandler(getAssayProviders(), protocol);
     }
 
     @Override
@@ -602,6 +602,7 @@ public class AssayManager implements AssayService
             indexAssay(task, c, protocol);
     }
 
+    @Override
     public void indexAssay(SearchService.IndexTask task, Container c, ExpProtocol protocol)
     {
         AssayProvider provider = getProvider(protocol);

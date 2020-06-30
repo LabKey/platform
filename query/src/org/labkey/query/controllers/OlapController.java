@@ -44,7 +44,6 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
@@ -67,8 +66,8 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ConfigurationException;
@@ -461,11 +460,10 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("OLAP Browser", new ActionURL(TestBrowserAction.class, getContainer()));
             root.addChild("Create Custom OLAP Definition");
-            return root;
         }
     }
 
@@ -486,11 +484,10 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("OLAP Browser", new ActionURL(TestBrowserAction.class, getContainer()));
             root.addChild("Update Custom OLAP Definition");
-            return root;
         }
     }
 
@@ -863,7 +860,7 @@ public class OlapController extends SpringActionController
             String containerFilterName = getAnnotation(_cube,"ContainerFilter");
             if (null != containerFilterName)
             {
-                cf = ContainerFilter.getContainerFilterByName(containerFilterName, getUser());
+                cf = ContainerFilter.getContainerFilterByName(containerFilterName, getContainer(), getUser());
                 if (null == cf)
                     throw new ConfigurationException("Container filter from olap configuration file not found : " + containerFilterName);
             }
@@ -945,9 +942,8 @@ public class OlapController extends SpringActionController
     public class XmlaAction extends SimpleViewAction<OlapForm>
     {
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
 
         @Override
@@ -1017,9 +1013,8 @@ public class OlapController extends SpringActionController
 
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -1043,9 +1038,8 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -1069,9 +1063,8 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -1228,14 +1221,14 @@ public class OlapController extends SpringActionController
         if (cf instanceof DataspaceContainerFilter)
         {
             DataspaceContainerFilter dscf = (DataspaceContainerFilter)cf;
-            Collection<GUID> guids = dscf.getIds(getContainer(),ReadPermission.class, null);
+            Collection<GUID> guids = dscf.generateIds(getContainer(),ReadPermission.class, null);
             List<String> ret = guids.stream().map(GUID::toString).collect(Collectors.toList());
             return Collections.unmodifiableCollection(ret);
         }
         // TODO optimize, this is round-about since cf probabaly implements getIds() internally
         DbSchema core = CoreSchema.getInstance().getSchema();
         SQLFragment sqlf = new SQLFragment("SELECT entityid FROM core.containers WHERE ");
-        sqlf.append(cf.getSQLFragment(core, new FieldKey(null, "entityid"), getContainer(), new HashMap<FieldKey,ColumnInfo>()));
+        sqlf.append(cf.getSQLFragment(core, new FieldKey(null, "entityid"), new HashMap<>()));
         ArrayList<String> list = new SqlSelector(core, sqlf).getArrayList(String.class);
         return Collections.unmodifiableCollection(list);
     }
@@ -1500,9 +1493,9 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Manage Application");
+            root.addChild("Manage Application");
         }
     }
 
@@ -1532,11 +1525,10 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Manage Application", new ActionURL(ManageAppsAction.class, getContainer()));
             root.addChild(_contextName == null ? "Insert New App Context" : "Update App Context '" + _contextName + "'");
-            return root;
         }
     }
 

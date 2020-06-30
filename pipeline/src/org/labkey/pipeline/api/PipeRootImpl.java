@@ -70,6 +70,7 @@ public class PipeRootImpl implements PipeRoot
     {
         files
         {
+            @Override
             String getDavName()
             {
                 return FileContentService.FILES_LINK;
@@ -77,6 +78,7 @@ public class PipeRootImpl implements PipeRoot
         },
         pipeline
         {
+            @Override
             String getDavName()
             {
                 return FileContentService.PIPELINE_LINK;
@@ -84,6 +86,7 @@ public class PipeRootImpl implements PipeRoot
         },
         cloud
         {
+            @Override
             String getDavName()
             {
                 return FileContentService.CLOUD_LINK;
@@ -143,6 +146,7 @@ public class PipeRootImpl implements PipeRoot
         _searchable = root.isSearchable();
     }
 
+    @Override
     @NotNull
     public File ensureSystemDirectory()
     {
@@ -152,6 +156,7 @@ public class PipeRootImpl implements PipeRoot
         return path.toFile();
     }
 
+    @Override
     @NotNull
     public Path ensureSystemDirectoryPath()
     {
@@ -184,11 +189,13 @@ public class PipeRootImpl implements PipeRoot
         return systemDir;
     }
 
+    @Override
     public Container getContainer()
     {
         return ContainerManager.getForId(_containerId);
     }
 
+    @Override
     @NotNull
     public URI getUri()
     {
@@ -197,6 +204,7 @@ public class PipeRootImpl implements PipeRoot
         return _uris.get(0);
     }
 
+    @Override
     @NotNull
     public File getRootPath()
     {
@@ -205,6 +213,7 @@ public class PipeRootImpl implements PipeRoot
         return getRootPaths().get(0);
     }
 
+    @Override
     @NotNull
     public Path getRootNioPath()
     {
@@ -217,6 +226,7 @@ public class PipeRootImpl implements PipeRoot
             return getRootPath().toPath();
     }
 
+    @Override
     @NotNull
     public File getLogDirectory()
     {
@@ -308,6 +318,7 @@ public class PipeRootImpl implements PipeRoot
         return null;
     }
 
+    @Override
     @Nullable
     public File resolvePath(String path)
     {
@@ -340,6 +351,7 @@ public class PipeRootImpl implements PipeRoot
         return file;
     }
 
+    @Override
     @Nullable
     public Path resolveToNioPath(String path)
     {
@@ -390,6 +402,7 @@ public class PipeRootImpl implements PipeRoot
         return null;
     }
 
+    @Override
     @NotNull
     public File getImportDirectory()
     {
@@ -400,6 +413,7 @@ public class PipeRootImpl implements PipeRoot
         return new File(root, PipelineService.UNZIP_DIR);
     }
 
+    @Override
     public File getImportDirectoryPathAndEnsureDeleted() throws DirectoryNotDeletedException
     {
         File importDir = getImportDirectory();
@@ -410,15 +424,17 @@ public class PipeRootImpl implements PipeRoot
         return importDir;
     }
 
+    @Override
     public void deleteImportDirectory(@Nullable Logger logger) throws DirectoryNotDeletedException
     {
         File importDir = getImportDirectory();
-        if (importDir.exists() && !FileUtil.deleteDir(importDir))
+        if (importDir.exists() && !FileUtil.deleteDir(importDir, logger))
         {
             throw new DirectoryNotDeletedException("Could not delete the directory \"" + PipelineService.UNZIP_DIR + "\"");
         }
     }
 
+    @Override
     public String relativePath(File file)
     {
         File root = findRootPath(file);
@@ -439,6 +455,7 @@ public class PipeRootImpl implements PipeRoot
         return ret;
     }
 
+    @Override
     public String relativePath(Path path)
     {
         Path root = findRootPath(path);
@@ -459,23 +476,27 @@ public class PipeRootImpl implements PipeRoot
         return ret;
     }
 
+    @Override
     public boolean isUnderRoot(File file)
     {
         return findRootPath(file) != null;
     }
 
+    @Override
     public boolean isUnderRoot(Path path)
     {
         return findRootPath(path) != null;
     }
 
     // UNDONE: need wrappers for file download/upload permissions
+    @Override
     public boolean hasPermission(Container container, User user, Class<? extends Permission> perm)
     {
         return getContainer().hasPermission(user, perm) && container.hasPermission(user, perm);
     }
 
     // UNDONE: need wrappers for file download/upload permissions
+    @Override
     public void requiresPermission(Container container, User user, Class<? extends Permission> perm)
     {
         if (!hasPermission(container, user, perm))
@@ -484,11 +505,13 @@ public class PipeRootImpl implements PipeRoot
         }
     }
 
+    @Override
     public String getEntityId()
     {
         return _entityId;
     }
 
+    @Override
     @NotNull
     public String getResourceId()
     {
@@ -511,52 +534,61 @@ public class PipeRootImpl implements PipeRoot
         return ROOT_BASE.cloud.equals(_defaultRoot);
     }
 
+    @Override
     @NotNull
     public String getResourceName()
     {
         return FileUtil.getFileName(getRootNioPath());
     }
 
+    @Override
     @NotNull
     public String getResourceDescription()
     {
         return "The pipeline root directory " + getResourceName();
     }
 
+    @Override
     @NotNull
     public Module getSourceModule()
     {
         return ModuleLoader.getInstance().getModule(PipelineService.MODULE_NAME);
     }
 
+    @Override
     public SecurableResource getParentResource()
     {
         return getContainer();
     }
 
+    @Override
     @NotNull
     public List<SecurableResource> getChildResources(User user)
     {
         return Collections.emptyList();
     }
 
+    @Override
     @NotNull
     public Container getResourceContainer()
     {
         return getContainer();
     }
 
+    @Override
     public boolean mayInheritPolicy()
     {
         // configured pipeline roots should not inherit policies from the container, but default pipeline root does
         return isFileRoot();
     }
 
+    @Override
     public boolean isSearchable()
     {
         return _searchable;
     }
 
+    @Override
     public String getWebdavURL()
     {
         String davName = _defaultRoot.getDavName();

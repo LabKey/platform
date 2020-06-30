@@ -58,6 +58,7 @@ import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.products.ProductRegistry;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
@@ -107,6 +108,7 @@ import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.ExperimentalFeatureService.ExperimentalFeatureServiceImpl;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
+import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
@@ -121,6 +123,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.UsageReportingLevel;
@@ -197,6 +200,7 @@ import org.labkey.core.portal.ProjectController;
 import org.labkey.core.portal.UtilController;
 import org.labkey.core.products.ProductController;
 import org.labkey.core.project.FolderNavigationForm;
+import org.labkey.core.qc.CoreQCStateHandler;
 import org.labkey.core.qc.QCStateImporter;
 import org.labkey.core.qc.QCStateWriter;
 import org.labkey.core.query.AttachmentAuditProvider;
@@ -229,7 +233,7 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
-import javax.servlet.ServletException;
+import javax.servlet.ServletContext;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -344,7 +348,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         catch (Exception e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
 
         WarningService.get().register(new CoreWarningProvider());
@@ -571,7 +575,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
                     {
                         NavTree customize = new NavTree("");
-                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", '" + webPart.getPageId() + "', " + webPart.getIndex() + ");");
+                        customize.setScript("customizeProjectWebpart" + webPart.getRowId() + "(" + webPart.getRowId() + ", " + PageFlowUtil.jsString(webPart.getPageId()) + ", " + webPart.getIndex() + ");");
                         view.setCustomize(customize);
                     }
                     return view;
@@ -582,23 +586,22 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
-                    JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
-
                     if (webPart.getPropertyMap().isEmpty())
                     {
                         // Configure to show subfolders if not previously configured
+                        webPart = new WebPart(webPart);
                         webPart.getPropertyMap().put("title", "Subfolders");
                         webPart.getPropertyMap().put("containerFilter", ContainerFilter.Type.CurrentAndFirstChildren.name());
                         webPart.getPropertyMap().put("containerTypes", "folder");
                     }
 
-                    String title = webPart.getPropertyMap().get("title");
-                    view.setTitle(title);
+                    JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
+                    view.setTitle(webPart.getPropertyMap().get("title"));
 
                     if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
                     {
                         NavTree customize = new NavTree("");
-                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", '" + webPart.getPageId() + "', " + webPart.getIndex() + ");");
+                        customize.setScript("customizeProjectWebpart" + webPart.getRowId() + "(" + webPart.getRowId() + ", " + PageFlowUtil.jsString(webPart.getPageId()) + ", " + webPart.getIndex() + ");");
                         view.setCustomize(customize);
                     }
                     return view;
@@ -708,10 +711,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContainerManager.bootstrapContainer("/", noPermsRole, noPermsRole, devRole);
         Container rootContainer = ContainerManager.getRoot();
 
-        MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer, rootContainer.getPolicy());
         Group devs = SecurityManager.getGroup(Group.groupDevelopers);
-        policy.addRoleAssignment(devs, PlatformDeveloperRole.class);
-        SecurityPolicyManager.savePolicy(policy, false);
+        if (null != devs)
+        {
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer, rootContainer.getPolicy());
+            policy.addRoleAssignment(devs, PlatformDeveloperRole.class);
+            SecurityPolicyManager.savePolicy(policy, false);
+        }
 
         // Create all the standard containers (Home, Home/support, Shared) using an empty Collaboration folder type
         FolderType collaborationType = new CollaborationFolderType(Collections.emptyList());
@@ -788,6 +794,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AuditLogService.get().registerAuditType(new FileSystemBatchAuditProvider());
             AuditLogService.get().registerAuditType(new ClientApiAuditProvider());
             AuditLogService.get().registerAuditType(new AuthenticationSettingsAuditTypeProvider());
+
+            QCStateManager.getInstance().registerQCHandler(new CoreQCStateHandler());
         }
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());
@@ -857,7 +865,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         // populate look and feel settings and site settings with values read from startup properties as appropriate for not bootstrap
-        populateSiteSettingsWithStartupProps();
         populateLookAndFeelWithStartupProps();
         WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps();
         WriteableAppProps.populateSiteSettingsWithStartupProps();
@@ -865,6 +872,21 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         SecurityManager.populateGroupRolesWithStartupProps();
         SecurityManager.populateUserRolesWithStartupProps();
         SecurityManager.populateUserGroupsWithStartupProps();
+        // This method depends on resources (FolderType) from other modules, so handle in afterstartup()
+        ContextListener.addStartupListener(new StartupListener()
+        {
+            @Override
+            public String getName()
+            {
+                return "CoreModule.populateSiteSettingsWithStartupProps";
+            }
+
+            @Override
+            public void moduleStartupComplete(ServletContext servletContext)
+            {
+                populateSiteSettingsWithStartupProps();
+            }
+        });
 
         LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
         // populate script engine definitions values read from startup properties as appropriate for not bootstrap
@@ -912,8 +934,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_API,
-                "Use @labkey/api on the client-side",
-                "Serve @labkey/api as the default client-side implementation of JavaScript API.",
+                "Use clientapi_core.lib.xml instead of @labkey/api on the client-side",
+                "As of LabKey Server v20.5 @labkey/api as the default client-side implementation of JavaScript API.",
                 false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP,
                 "Client-side Exception Logging To Mothership",
@@ -1005,7 +1027,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         catch (SchedulerException e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
 
         // On bootstrap in production mode, this will send an initial ping with very little information, as the admin will
@@ -1254,33 +1276,21 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 MutableSecurityPolicy homePolicy = new MutableSecurityPolicy(ContainerManager.getHomeContainer());
                 SecurityPolicyManager.savePolicy(homePolicy);
                 // remove the guest role assignment from the support subfolder
-                MutableSecurityPolicy supportPolicy = new MutableSecurityPolicy(ContainerManager.getDefaultSupportContainer().getPolicy());
                 Group guests = SecurityManager.getGroup(Group.groupGuests);
-                for (Role assignedRole : supportPolicy.getAssignedRoles(guests))
-                    supportPolicy.removeRoleAssignment(guests, assignedRole);
-                SecurityPolicyManager.savePolicy(supportPolicy);
+                if (null != guests)
+                {
+                    MutableSecurityPolicy supportPolicy = new MutableSecurityPolicy(ContainerManager.getDefaultSupportContainer().getPolicy());
+                    for (Role assignedRole : supportPolicy.getAssignedRoles(guests))
+                        supportPolicy.removeRoleAssignment(guests, assignedRole);
+                    SecurityPolicyManager.savePolicy(supportPolicy);
+                }
             }
         }
     }
 
     private @Nullable SiteResourceHandler getResourceHandler(@NotNull String name)
     {
-        switch (name)
-        {
-            case "logoImage":
-                return LookAndFeelPropertiesManager.get()::handleLogoFile;
-            case "iconImage":
-                return LookAndFeelPropertiesManager.get()::handleIconFile;
-            case "customStylesheet":
-                return LookAndFeelPropertiesManager.get()::handleCustomStylesheetFile;
-            default:
-                return null;
-        }
-    }
-
-    @FunctionalInterface
-    public interface SiteResourceHandler {
-        void accept(Resource resource, Container container, User user) throws ServletException, IOException;
+        return LookAndFeelPropertiesManager.get().getResourceHandler(name);
     }
 
     private boolean setSiteResource(SiteResourceHandler resourceHandler, ConfigProperty prop, User user)

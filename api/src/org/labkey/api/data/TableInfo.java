@@ -45,6 +45,7 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -113,6 +114,18 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     /** Gets all of the indices from the underlying table. This includes PRIMARY KEY and UNIQUE constraints, as well as non-unique INDEX */
     @NotNull
     Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices();
+
+    /** Log an audit event to capture a data change made to this table */
+    default void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, QueryService.AuditAction auditAction, List<Map<String, Object>>[] parameters)
+    {
+        QueryService.get().addAuditEvent(user, container, this, auditBehavior, auditAction, parameters);
+    }
+
+    @SuppressWarnings("unchecked")
+    default void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, QueryService.AuditAction auditAction, Map<String, Object> parameters)
+    {
+        QueryService.get().addAuditEvent(user, container, this, auditBehavior, auditAction, Collections.singletonList(parameters));
+    }
 
     enum IndexType
     {
@@ -195,6 +208,11 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
 
     Set<String> getColumnNameSet();
 
+    default String getDbSequenceName(String columnName)
+    {
+        return (this.getSchema().getName() + ":" + this.getName() + ":" + columnName).toLowerCase();
+    }
+
     /**
      * Return a list of ColumnInfos that make up the extended set of
      * columns that could be considered a part of this table by default.
@@ -209,6 +227,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * @return All columns.
      */
     Map<FieldKey, ColumnInfo> getExtendedColumns(boolean includeHidden);
+
 
     /**
      * @return the {@link org.labkey.api.query.FieldKey}s that should be part of the default view of the table,
@@ -557,7 +576,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         return AuditBehaviorType.NONE;
     }
 
-    /* Can be used to dinstinguish AuditBehaviorType.NONE vs absent xml audit config */
+    /* Can be used to distinguish AuditBehaviorType.NONE vs absent xml audit config */
     default AuditBehaviorType getXmlAuditBehaviorType()
     {
         return null;

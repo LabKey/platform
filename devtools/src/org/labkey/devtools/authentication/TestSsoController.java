@@ -61,9 +61,8 @@ public class TestSsoController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -94,7 +93,7 @@ public class TestSsoController extends SpringActionController
             if (null == configuration)
                 throw new NotFoundException("Invalid TestSso configuration");
 
-            return AuthenticationResponse.createSuccessResponse(configuration.getAuthenticationProvider(), new ValidEmail(form.getEmail()));
+            return AuthenticationResponse.createSuccessResponse(configuration, new ValidEmail(form.getEmail()));
         }
     }
 

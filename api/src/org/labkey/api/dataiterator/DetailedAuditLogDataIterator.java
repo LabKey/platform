@@ -26,7 +26,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 
 import java.io.IOException;
-import java.util.Collections;
 
 import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
 
@@ -38,6 +37,10 @@ import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
  */
 public class DetailedAuditLogDataIterator extends AbstractDataIterator
 {
+    public enum AuditConfigs {
+        AuditBehavior;
+    }
+
     final DataIterator _data;
     final User _user;
     final Container _container;
@@ -75,10 +78,14 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         if (_table.supportsAuditTracking())
         {
             AuditConfigurable auditConfigurable = (AuditConfigurable) _table;
-            AuditBehaviorType auditType = auditConfigurable.getAuditBehavior();
+
+            // configParameter value overrides value from the tableInfo
+            AuditBehaviorType auditType = (AuditBehaviorType) _context.getConfigParameter(AuditConfigs.AuditBehavior);
+            if (auditType == null || auditConfigurable.getXmlAuditBehaviorType() != null)
+                auditType = auditConfigurable.getAuditBehavior();
 
             if (auditType == DETAILED)
-                QueryService.get().addAuditEvent(_user, _container, _table, _auditAction, Collections.singletonList(((MapDataIterator) _data).getMap()));
+                _table.addAuditEvent(_user, _container, auditType, _auditAction, ((MapDataIterator) _data).getMap());
         }
 
         return true;

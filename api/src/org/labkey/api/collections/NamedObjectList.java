@@ -45,6 +45,7 @@ public class NamedObjectList implements Collection<NamedObject>
         _map.put(obj.getName(), obj);
     }
 
+    @Override
     public int size()
     {
         return _map.size();
@@ -62,61 +63,73 @@ public class NamedObjectList implements Collection<NamedObject>
         return null == n ? null : n.getObject();
     }
 
+    @Override
     public <NamedObject> NamedObject[] toArray(NamedObject[] array)
     {
         return _map.values().toArray(array);
     }
 
+    @Override
     public NamedObject[] toArray()
     {
         return _map.values().toArray(new NamedObject[size()]);
     }
 
+    @Override
     public boolean add(NamedObject arg0)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean addAll(Collection arg0)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void clear()
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean contains(Object arg0)
     {
         return _map.containsValue(arg0);
     }
 
+    @Override
     public boolean containsAll(Collection arg0)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean isEmpty()
     {
         return _map.isEmpty();
     }
 
+    @Override
     public Iterator<NamedObject> iterator()
     {
         return _map.values().iterator();
     }
 
+    @Override
     public boolean remove(Object arg0)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean removeAll(Collection arg0)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean retainAll(Collection arg0)
     {
         throw new UnsupportedOperationException();

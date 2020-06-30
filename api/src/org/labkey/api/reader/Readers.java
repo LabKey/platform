@@ -74,16 +74,24 @@ public class Readers
      */
     public static BufferedReader getBOMDetectingReader(InputStream in) throws IOException
     {
-        BOMInputStream bos = new BOMInputStream(in, ByteOrderMark.UTF_8, ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_32BE, ByteOrderMark.UTF_32LE);
-        Charset charset = bos.hasBOM() ? Charset.forName(bos.getBOM().getCharsetName()) : StringUtilsLabKey.DEFAULT_CHARSET;
-        return new BufferedReader(new InputStreamReader(bos, charset));
+        return new BufferedReader(getBOMDetectingUnbufferedReader(in));
     }
 
     /**
      * Detects text file character encoding based on BOM... falling back on UTF-8 if no BOM present
      */
-    public static BufferedReader getBOMDetectingReader(File file) throws IOException
+    private static Reader getBOMDetectingUnbufferedReader(InputStream in) throws IOException
     {
-        return getBOMDetectingReader(new FileInputStream(file));
+        BOMInputStream bos = new BOMInputStream(in, ByteOrderMark.UTF_8, ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_32BE, ByteOrderMark.UTF_32LE);
+        Charset charset = bos.hasBOM() ? Charset.forName(bos.getBOM().getCharsetName()) : StringUtilsLabKey.DEFAULT_CHARSET;
+        return new InputStreamReader(bos, charset);
+    }
+
+    /**
+     * Detects text file character encoding based on BOM... falling back on UTF-8 if no BOM present
+     */
+    public static Reader getBOMDetectingUnbufferedReader(File file) throws IOException
+    {
+        return getBOMDetectingUnbufferedReader(new FileInputStream(file));
     }
 }

@@ -28,6 +28,7 @@ import org.labkey.test.pages.core.admin.logger.ManagerPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.tests.issues.IssuesTest;
 import org.labkey.test.util.ApiPermissionsHelper;
+import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.IssuesHelper;
 import org.labkey.test.util.Log4jUtils;
 import org.labkey.test.util.LogMethod;
@@ -84,6 +85,7 @@ public abstract class SearchTest extends StudyBaseTest
         return BrowserType.CHROME;
     }
 
+    @Override
     protected String getFolderName()
     {
         return FOLDER_NAME;
@@ -104,12 +106,13 @@ public abstract class SearchTest extends StudyBaseTest
         initTest.doSetup();
     }
 
+    @LogMethod
     private void doSetup()
     {
         Log4jUtils.setLogLevel("org.labkey.search", ManagerPage.LoggingLevel.DEBUG);
         Log4jUtils.setLogLevel("org.labkey.wiki", ManagerPage.LoggingLevel.DEBUG);
-        SearchAdminAPIHelper.pauseCrawler(getDriver()); //necessary for the alternate ID testing
         _searchHelper.initialize();
+        SearchAdminAPIHelper.startCrawler(getDriver());
         enableEmailRecorder();
     }
 
@@ -121,6 +124,7 @@ public abstract class SearchTest extends StudyBaseTest
         doVerifySteps();
     }
 
+    @Override
     protected void doCreateSteps()
     {
         // TODO: move these out someday into separate tests, like DataClassSearchTest
@@ -161,6 +165,7 @@ public abstract class SearchTest extends StudyBaseTest
         _searchHelper.enqueueSearchItem("Garfield");
     }
 
+    @Override
     @LogMethod
     protected void doVerifySteps()
     {
@@ -238,6 +243,7 @@ public abstract class SearchTest extends StudyBaseTest
     private void renameFolderAndReSearch()
     {
         _containerHelper.renameFolder(getProjectName(), getFolderName(), FOLDER_C, true);
+        SearchAdminAPIHelper.waitForIndexerBackground();
         FOLDER_NAME = FOLDER_C;
         _searchHelper.verifySearchResults("/" + getProjectName() + "/" + getFolderName(), "searchAfterFolderRename");
     }
@@ -248,6 +254,7 @@ public abstract class SearchTest extends StudyBaseTest
         try
         {
             _containerHelper.moveFolder(getProjectName(), getFolderName(), getProjectName() + "/" + FOLDER_B, true);
+            SearchAdminAPIHelper.waitForIndexerBackground();
         }
         catch (CommandException fail)
         {
@@ -284,10 +291,12 @@ public abstract class SearchTest extends StudyBaseTest
     private void deleteFolderAndVerifyNoResults()
     {
         _containerHelper.deleteProject(getProjectName());
+        SearchAdminAPIHelper.waitForIndexerBackground();
         goToHome(); // Need to leave deleted project
         _searchHelper.verifyNoSearchResults();
     }
 
+    @Override
     public void runApiTests()
     {
         /* No API tests */
@@ -414,5 +423,8 @@ public abstract class SearchTest extends StudyBaseTest
     public static void resetLogger()
     {
         Log4jUtils.resetAllLogLevels();
+
+        //Turn crawler off after test is finished
+        SearchAdminAPIHelper.pauseCrawler(getCurrentTest().getWrappedDriver());
     }
 }

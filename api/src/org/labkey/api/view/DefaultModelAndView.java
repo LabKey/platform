@@ -42,6 +42,7 @@ public class DefaultModelAndView<ModelBean> extends ModelAndView
         _model = m;
     }
 
+    @Override
     public void setView(View view)
     {
         _view = view;
@@ -52,6 +53,7 @@ public class DefaultModelAndView<ModelBean> extends ModelAndView
         _model = model;
     }
 
+    @Override
     public View getView()
     {
         return _view;

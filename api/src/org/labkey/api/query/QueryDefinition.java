@@ -118,6 +118,11 @@ public interface QueryDefinition
 
     boolean canEdit(User user);
 
+    default boolean canDelete(User user)
+    {
+        return canEdit(user);
+    }
+
     /**
      * Save a new QueryDefinition or update an existing QueryDefinition.
      * TableQueryDefinition and file-based queries cannot be deleted.

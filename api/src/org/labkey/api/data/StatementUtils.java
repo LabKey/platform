@@ -726,6 +726,10 @@ public class StatementUtils
             if (done.contains(name))
                 continue;
             done.add(name);
+            ColumnInfo updatableColumn = updatable.getColumn(column.getName());
+            if (updatableColumn != null && updatableColumn.hasDbSequence())
+                _dontUpdateColumnNames.add(column.getName());
+
 
             SQLFragment valueSQL = new SQLFragment();
             if (column.getName().equalsIgnoreCase(objectIdColumnName))
@@ -1073,7 +1077,7 @@ public class StatementUtils
                 ret.setObjectIdIndex(selectIndex++);
         }
 
-        if (Operation.merge == _operation)
+        if (_selectObjectUri && null != objectURIVar)
             ret.setObjectUriIndex(selectIndex);
 
         return ret;

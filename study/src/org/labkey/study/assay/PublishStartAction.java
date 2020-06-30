@@ -213,10 +213,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             DataRegionSelection.clearAll(getViewContext(), null);
             // Get the assay results table
             UserSchema schema = provider.createProtocolSchema(getUser(), getContainer(), _protocol, null);
-            ContainerFilter cf = null;
-            if (publishForm.getContainerFilterName() != null)
-                cf = ContainerFilter.getContainerFilterByName(publishForm.getContainerFilterName(), getUser());
-            TableInfo table = schema.getTable(AssayProtocolSchema.DATA_TABLE_NAME, cf);
+            TableInfo table = schema.getTableCFF(AssayProtocolSchema.DATA_TABLE_NAME, ContainerFilter.getType(publishForm.getContainerFilterName()));
             final ColumnInfo dataRowIdColumn = QueryService.get().getColumns(table, Collections.singleton(tableMetadata.getResultRowIdFieldKey())).get(tableMetadata.getResultRowIdFieldKey());
             assert dataRowIdColumn  != null : "Could not find dataRowId column in assay results table";
             FieldKey runFieldKey = tableMetadata.getRunRowIdFieldKeyFromResults();
@@ -298,13 +295,12 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
     }
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         getPageConfig().setHelpTopic(new HelpTopic("publishAssayData"));
-        NavTree result = super.appendNavTrail(root);
-        result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
-        result.addChild("Copy to Study: Choose Target");
-        return result;
+        super.addNavTrail(root);
+        root.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
+        root.addChild("Copy to Study: Choose Target");
     }
 
     /**
