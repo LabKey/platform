@@ -1,6 +1,5 @@
 package org.labkey.api.external.tools;
 
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.security.User;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -13,5 +12,5 @@ public interface ExternalToolsViewProvider
      * @param user with access to the views
      * @return a list of views to be accessed via 'External Tools Setting'
      */
-    public List<ModelAndView> getViews(User user);
+    List<ModelAndView> getViews(User user);
 }
