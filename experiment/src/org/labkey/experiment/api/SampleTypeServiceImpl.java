@@ -972,8 +972,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         return event;
     }
 
-    @Override
-    public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata)
+    private SampleTimelineAuditEvent createAuditRecord(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(container.getId(), comment);
         if (container.getProject() != null)
@@ -988,6 +987,20 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
             event.setSampleTypeId(type.getRowId());
         }
         event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(container, metadata));
+        return event;
+    }
+
+    @Override
+    public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata)
+    {
+        AuditLogService.get().addEvent(user, createAuditRecord(user, container, comment, sample, metadata));
+    }
+
+    @Override
+    public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata, String updateType)
+    {
+        SampleTimelineAuditEvent event = createAuditRecord(user, container, comment, sample, metadata);
+        event.setInventoryUpdateType(updateType);
         AuditLogService.get().addEvent(user, event);
     }
 }
