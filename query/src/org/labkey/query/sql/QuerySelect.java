@@ -1256,6 +1256,8 @@ groupByLoop:
                 else
                     markAllSelected(_query);
                 SQLFragment s = getSql();
+                if (!getParseErrors().isEmpty())
+                    throw getParseErrors().get(0);
                 SQLFragment f = new SQLFragment();
                 f.append("(").append(s).append(") ").append(alias);
 
