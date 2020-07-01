@@ -36,7 +36,6 @@
         dependencies.add("internal/clipboard/clipboard-1.5.9.min.js");
     }
 %>
-<h3>API Keys</h3>
 <%
     URLHelper baseServerURL = null;
     try
