@@ -728,10 +728,6 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
 
         Set<String> builtInColumnNames = new CaseInsensitiveHashSet(columnInfos.keySet());
         builtInColumnNames.removeAll(injectedColumnNames);
-        if (!metadataTableJSON.isUserDefinedQuery())
-        {
-            metadataTableJSON.setMandatoryFieldNames(builtInColumnNames);
-        }
         metadataTableJSON.setFields(orderedPDs);
 
         // TODO: figure out something better for defaultValuesURL
