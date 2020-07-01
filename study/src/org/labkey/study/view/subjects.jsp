@@ -87,7 +87,7 @@
 
     String viewObject = "subjectHandler" + bean.getIndex();
     String param = getViewContext().getRequest().getParameter("pageId");
-    Boolean isParticipantsListPage = param != null && param.equals("study.PARTICIPANTS");
+    boolean isParticipantsListPage = StudyFolderTabs.ParticipantsPage.PAGE_ID.equalsIgnoreCase(param);
     String conditionalStyling = (isParticipantsListPage) ? "overflow-y:auto;" : "overflow-y:auto; height: 470px;";
 %>
 <script type="text/javascript">
