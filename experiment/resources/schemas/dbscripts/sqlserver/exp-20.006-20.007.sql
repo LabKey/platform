@@ -4,12 +4,12 @@ GO
 CREATE TABLE exp.PropertyValidator
 (
     RowId        int identity(1,1) not null,
-    Name         varchar(50) not null,
-    Description  varchar(200),
-    TypeURI      varchar(200) not null,
-    Expression   text,
-    ErrorMessage text,
-    Properties   text,
+    Name         NVARCHAR(50) not null,
+    Description  NVARCHAR(200),
+    TypeURI      NVARCHAR(200) not null,
+    Expression   NVARCHAR(MAX),
+    ErrorMessage NVARCHAR(MAX),
+    Properties   NVARCHAR(MAX),
     Container    entityid not null constraint fk_pv_container references core.containers (entityid),
     PropertyId   int not null constraint fk_pv_descriptor references exp.propertydescriptor,
     constraint pk_propertyvalidator primary key (container, propertyid, rowid)
