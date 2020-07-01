@@ -57,6 +57,9 @@ public class ProductController extends SpringActionController
             if (menuItemsForm.getCurrentProductId() == null)
                 errors.reject(ERROR_REQUIRED, "currentProductId is required");
 
+            if (menuItemsForm.getUserMenuProductId() == null)
+                errors.reject(ERROR_REQUIRED, "userMenuProductId is required");
+
             ProductRegistry registry = ProductRegistry.get();
             if (!StringUtils.isEmpty(menuItemsForm.getProductIds()))
             {
@@ -70,10 +73,7 @@ public class ProductController extends SpringActionController
         @Override
         public Object execute(MenuItemsForm menuItemsForm, BindException errors) throws Exception
         {
-            if (_productIds != null)
-                return ProductRegistry.get().getProductMenuSections(getViewContext(), menuItemsForm.getCurrentProductId(), _productIds, menuItemsForm.getItemLimit());
-            else
-                return ProductRegistry.get().getProductMenuSections(getViewContext(), menuItemsForm.getCurrentProductId(), getContainer(), menuItemsForm.getItemLimit());
+            return ProductRegistry.get().getProductMenuSections(getViewContext(), menuItemsForm.getUserMenuProductId(), _productIds, menuItemsForm.getItemLimit());
         }
     }
 
@@ -82,6 +82,7 @@ public class ProductController extends SpringActionController
         private String _productIds; // comma-separated list of productIds
         private Integer _itemLimit;
         private String _currentProductId;
+        private String _userMenuProductId;
 
         public String getProductIds()
         {
@@ -111,6 +112,16 @@ public class ProductController extends SpringActionController
         public void setCurrentProductId(String currentProductId)
         {
             _currentProductId = currentProductId;
+        }
+
+        public String getUserMenuProductId()
+        {
+            return _userMenuProductId;
+        }
+
+        public void setUserMenuProductId(String userMenuProductId)
+        {
+            _userMenuProductId = userMenuProductId;
         }
     }
 }
