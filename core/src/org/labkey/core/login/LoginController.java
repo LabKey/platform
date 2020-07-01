@@ -2639,6 +2639,7 @@ public class LoginController extends SpringActionController
 
     @SuppressWarnings("unused")
     @RequiresNoPermission
+    @AllowedOutsideImpersonationProject
     public class WhoAmIAction extends ReadOnlyApiAction
     {
         @Override
