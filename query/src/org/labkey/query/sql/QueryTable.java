@@ -62,6 +62,7 @@ public class QueryTable extends QueryRelation
 {
     private static final Logger _log = Logger.getLogger(QueryTable.class);
 
+    private final String _originalAlias;        // as passed in from QuerySelect for error messages
     private final int _uniqueAliasCounter;
 
     private AliasManager _aliasManager;
@@ -82,6 +83,7 @@ public class QueryTable extends QueryRelation
     {
         // For recursive queries we need to create this object before we create the TableInfo
         super(query, schema, alias);
+        _originalAlias = alias;
 
         // call this now so we it doesn't change if _getSql() is called more than once
         _uniqueAliasCounter = _query.incrementAliasCounter();
@@ -424,8 +426,16 @@ public class QueryTable extends QueryRelation
         public SQLFragment getValueSql()
         {
             assert ref.count() > 0;
-            assert null != _generateSelectSQL : "Select SQL has not been generated";
-            if (null != _generateSelectSQL && _generateSelectSQL.booleanValue())
+
+            // _generateSelectSQL indicates whether to wrap the _tableInfo.getFromSql() in another SELECT statement.
+            // If _generateSelectSQL==null, that means _getSql() has not been called, which probably means there
+            // is an error in the user's FROM clause.
+            if (_generateSelectSQL == null)
+            {
+                _query.getParseErrors().add(new QueryParseException("Missing from-clause entry: " + _originalAlias, null, 0, 0));
+                return new SQLFragment("NULL");
+            }
+            else if (_generateSelectSQL)
                 return super.getValueSql();
             else
                 return _col.getValueSql(_innerAlias);
