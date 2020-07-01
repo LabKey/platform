@@ -19,5 +19,7 @@ SELECT VR.propertyid, PV.name, PV.description, PV.typeuri, PV.expression, PV.pro
 FROM exp.pv_old PV INNER JOIN exp.validatorreference VR ON PV.rowid = VR.validatorid
 ORDER BY container, propertyid;
 
+CREATE INDEX ix_propertyvalidator_propertyid on exp.PropertyValidator(PropertyId);
+
 DROP TABLE exp.validatorreference;
 DROP TABLE exp.pv_old;
