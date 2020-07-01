@@ -40,7 +40,7 @@ public interface SecurityUrls extends UrlProvider
     ActionURL getShowRegistrationEmailURL(Container container, ValidEmail email, String mailPrefix);
     ActionURL getAddUsersURL();
     ActionURL getFolderAccessURL(Container container);
-    ActionURL getApiKeyURL(URLHelper returnURL); // Always root
+    ActionURL getExternalToolsViewURL(User user, URLHelper returnURL); // Always root
     String getCompleteUserURLPrefix(Container container);
     String getCompleteUserReadURLPrefix(Container container);
 }
