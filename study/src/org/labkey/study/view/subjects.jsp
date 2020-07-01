@@ -744,7 +744,7 @@ Ext4.onReady(<%=viewObject%>.render, <%=viewObject%>);
                     <%= !bean.getWide() ? "<br/>" : "" %>
                     <span id="<%=divId%>.status" name="status" style="margin-bottom: 10px;">Loading...</span>
                 </div>
-                <div style="<%=conditionalStyling%>" id="<%= listDivId %>"></div>
+                <div style="<%=h(conditionalStyling)%>" id="<%= listDivId %>"></div>
             </td>
         </tr>
     </table>
