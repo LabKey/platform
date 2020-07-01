@@ -80,8 +80,14 @@
             _toggleDelay();
         }
 
+        // update the button text for "Sign In"
         $('.signin-btn > span').html('Sign' + (submitting ? 'ing' : '') + ' In');
-        document.getElementsByClassName('signing-in-msg')[0].hidden = !submitting;
+
+        // hide/show the Signing In message (if element is present)
+        var msgEl = document.getElementsByClassName('signing-in-msg');
+        if (msgEl && msgEl.length > 0) {
+            msgEl[0].hidden = !submitting;
+        }
 
         _setErrors(errorMsg);
     }
