@@ -229,10 +229,10 @@
                 <tr><td class="labkey-column-header">User</td><td class="labkey-column-header">Last Activity</td></tr>
                 <%
                     int count = 0;
-                    for (Pair<String, Long> pair : bean.active)
+                    for (var activeUser : bean.active)
                     {
                 %>
-                <tr class="<%=getShadeRowClass(count)%>"><td><%=h(pair.getKey())%></td><td><%=pair.getValue()%> minutes ago</td></tr>
+                <tr class="<%=getShadeRowClass(count)%>"><td><%=h(activeUser.email)%></td><td><%=activeUser.minutes%> minutes ago</td></tr>
                 <%
                         count++;
                     } %>
