@@ -46,6 +46,8 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
 
     private boolean _isComplete = true;
 
+    protected int _size;
+
     // for resource tracking
     private StackTraceElement[] _debugCreated = null;
     protected boolean _wasClosed = false;
@@ -95,7 +97,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     @Override
     public int getSize()
     {
-        return -1;
+        return _size;
     }
 
     @Override
@@ -107,6 +109,11 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
         if (getRow() == _maxRows + 1)
         {
             _isComplete = false;
+        }
+        else
+        {
+            // Keep track of all of the rows that we've iterated
+            _size = Math.max(_size, getRow());
         }
         return getRow() <= _maxRows;
     }
@@ -139,15 +146,6 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
             _wasClosed = true;
         }
     }
-
-
-    public int size()
-    {
-        if (resultset instanceof CachedRowSet)
-            return ((CachedRowSet) resultset).size();
-        return -1;
-    }
-
 
     @Override
     public @NotNull Iterator<Map<String, Object>> iterator()
