@@ -538,6 +538,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             columnInfos.put(metadataColumnJSON.getName(), metadataColumnJSON);
             orderedPDs.add(metadataColumnJSON);
 
+            metadataColumnJSON.setLockExistingField(true);
             metadataColumnJSON.setRequired(!columnInfo.isNullable());
             metadataColumnJSON.setLabel(columnInfo.getLabel());
             metadataColumnJSON.setFormat(columnInfo.getFormat());
