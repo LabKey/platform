@@ -125,7 +125,9 @@
                     },{
                         xtype: 'button',
                         text: 'Export',
-                        handler: function() {window.location = <%= PageFlowUtil.jsString(new ActionURL(StudyController.ExportParticipantTransformsAction.class, getContainer()).toString())%>;}
+                        handler: function() {
+                            LABKEY.Utils.postToAction(<%=PageFlowUtil.jsString(new ActionURL(StudyController.ExportParticipantTransformsAction.class, getContainer()).toString())%>);
+                        }
                     },{
                         xtype: 'button',
                         text: 'Import',

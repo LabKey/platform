@@ -1322,9 +1322,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public void setType(String typeString)
     {
-        _containerType = ContainerTypeRegistry.get().getType(typeString);
-        if (_containerType == null)
-            throw new IllegalArgumentException("Unknown container type: " + typeString);
+        ContainerType type = ContainerTypeRegistry.get().getType(typeString);
+        if (type == null)
+            Logger.getLogger(Container.class).warn("Unknown container type: " + typeString);
+        else
+            _containerType = type;
     }
 
     public static class ContainerException extends Exception
