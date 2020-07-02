@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
@@ -120,6 +121,7 @@ public class RenderContextDecorator extends RenderContext
         _ctx.setBaseSort(sort);
     }
 
+    @NotNull
     @Override
     public List<AnalyticsProviderItem> getBaseSummaryStatsProviders()
     {
@@ -145,6 +147,7 @@ public class RenderContextDecorator extends RenderContext
         return _ctx.getResults(fieldMap, displayColumns, tinfo, settings, parameters, maxRows, offset, name, async);
     }
 
+    @NotNull
     @Override
     public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName,
                                                              List<Aggregate> aggregatesIn, Map<String, Object> parameters, boolean async)
