@@ -5,6 +5,9 @@
  */
 
 (function($) {
+    var submitting = false, delay = false;
+    var DELAY_MS = 500;
+
     // bind triggers, page init, etc
     function onReady() {
         // on document ready
@@ -28,6 +31,8 @@
         //the intent of this is to allow custom login pages to supply an element where id=returnUrl, which will always redirect the user after login
         var returnUrlElement = document.getElementById('returnUrl');
 
+        setSubmitting(true, '');
+
         LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL('login', 'loginApi.api', this.containerPath),
             method: 'POST',
@@ -42,19 +47,65 @@
                 urlhash: document.getElementById('urlhash').value
             },
             success: LABKEY.Utils.getCallbackWrapper(function(response) {
+                setSubmitting(false, '');
                 if (response && response.returnUrl) {
                     window.location = response.returnUrl;
                 }
             }, this),
             failure: LABKEY.Utils.getCallbackWrapper(function(response) {
-                if (document.getElementById('errors') && response && response.exception) {
-                    document.getElementById('errors').innerHTML = response.exception;
-                }
+                setSubmitting(false, response ? response.exception : '');
                 if (response && response.returnUrl) {
                     window.location = response.returnUrl;
                 }
             }, this)
         });
+    }
+
+    function setSubmitting(isSubmitting, errorMsg) {
+        // no-op if already submitting
+        if (submitting && isSubmitting) {
+            return;
+        }
+        // and if we are in the delay, re-queue this call to setSubmitting
+        else if (delay) {
+            setTimeout(function() {
+                setSubmitting(isSubmitting, errorMsg);
+            }, DELAY_MS);
+            return;
+        }
+
+        submitting = isSubmitting;
+
+        if (submitting) {
+            _toggleDelay();
+        }
+
+        // update the button text for "Sign In"
+        $('.signin-btn > span').html('Sign' + (submitting ? 'ing' : '') + ' In');
+
+        // hide/show the Signing In message (if element is present)
+        var msgEl = document.getElementsByClassName('signing-in-msg');
+        if (msgEl && msgEl.length > 0) {
+            msgEl[0].hidden = !submitting;
+        }
+
+        _setErrors(errorMsg);
+    }
+
+    function _toggleDelay() {
+        delay = !delay;
+
+        // enable the delay for a min set time to prevent flashing of buttons/spinner
+        if (delay) {
+            setTimeout(_toggleDelay, DELAY_MS);
+        }
+    }
+
+    function _setErrors(text) {
+        var el = document.getElementById('errors');
+        if (el) {
+            el.innerHTML = text;
+        }
     }
 
     function acceptTermsOfUse() {
@@ -72,8 +123,8 @@
                 window.location = LABKEY.ActionURL.getParameter("returnUrl")
             },
             failure: LABKEY.Utils.getCallbackWrapper(function (response) {
-                if (document.getElementById('errors') && response && response.exception) {
-                    document.getElementById('errors').innerHTML = response.exception;
+                if (response && response.exception) {
+                    _setErrors(response.exception);
                 }
             }, this)
         });

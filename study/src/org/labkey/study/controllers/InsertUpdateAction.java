@@ -83,6 +83,8 @@ import java.util.Objects;
  */
 public abstract class InsertUpdateAction<Form extends DatasetController.EditDatasetRowForm> extends FormViewAction<Form>
 {
+    private static String DEFAULT_INSERT_VALUE_PREFIX = "default.";
+
     protected abstract boolean isInsert();
     protected abstract void addExtraNavTrail(NavTree root);
     protected StudyImpl _study = null;
@@ -175,11 +177,13 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         {
             if (!reshow)
             {
+                Map<String, Object> formDefaults = new HashMap<>();
+
                 Domain domain = PropertyService.get().getDomain(getContainer(), _ds.getTypeURI());
                 if (domain != null)
                 {
                     Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(getContainer(), domain, getUser());
-                    Map<String, Object> formDefaults = new HashMap<>();
+
                     for (Map.Entry<DomainProperty, Object> entry : defaults.entrySet())
                     {
                         if (entry.getValue() != null)
@@ -189,8 +193,16 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                             formDefaults.put(updateForm.getFormFieldName(temp), stringValue);
                         }
                     }
-                    ((InsertView) view).setInitialValues(formDefaults);
                 }
+
+                // for the dataset insert view, allow for URL params with a special prefix to be used as "default" values for the form inputs
+                for (Map.Entry<String, String[]> paramEntry : getViewContext().getRequest().getParameterMap().entrySet())
+                {
+                    if (paramEntry.getKey().startsWith(DEFAULT_INSERT_VALUE_PREFIX))
+                        formDefaults.put(paramEntry.getKey().substring(DEFAULT_INSERT_VALUE_PREFIX.length()), paramEntry.getValue());
+                }
+
+                ((InsertView) view).setInitialValues(formDefaults);
             }
         }
         DataRegion dataRegion = view.getDataRegion();
