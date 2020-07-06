@@ -32,7 +32,9 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.security.StudySecurityEscalator;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.api.qc.QCState;
@@ -81,6 +83,16 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         Domain domain = _dataset.getDomain();
         if (null != domain)
             _columnMapping = createMVMapping(domain);
+    }
+
+    protected boolean hasPermission(User user, Class<? extends Permission> acl)
+    {
+        if (StudySecurityEscalator.isEscalated()) {
+            return true;
+        }
+        else {
+            return super.hasPermission(user, acl);
+        }
     }
 
     @Override

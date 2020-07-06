@@ -22,13 +22,18 @@ import org.apache.poi.ss.format.CellGeneralFormatter;
 import org.apache.poi.ss.formula.FormulaParseException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.Comment;
+import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.Drawing;
 import org.apache.poi.ss.usermodel.FormulaError;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.RichTextString;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -133,6 +138,7 @@ public class ExcelFactory
     public static Workbook createFromArray(JSONArray sheetsArray, ExcelWriter.ExcelDocumentType docType)
     {
         Workbook workbook = docType.createWorkbook();
+        CreationHelper factory = workbook.getCreationHelper();
 
         Map<String, CellStyle> customStyles = new HashMap<>();
 
@@ -174,6 +180,11 @@ public class ExcelFactory
                     }
 
                     boolean forceString = metadataObject != null && metadataObject.has("forceString") && Boolean.TRUE.equals(metadataObject.get("forceString"));
+
+                    String cellComment = null;
+                    if ( metadataObject != null && metadataObject.has("cellComment")){
+                        cellComment = metadataObject.getString("cellComment");
+                    }
 
                     Cell cell = row.createCell(colIndex);
                     if (value instanceof java.lang.Number)
@@ -228,6 +239,45 @@ public class ExcelFactory
                     if (cell != null)
                     {
                         cell.setCellStyle(cellStyle);
+                    }
+                    if (cell != null && cellComment != null)
+                    {
+                        //Determine the size of the comment box based on the length of the comment
+                        int commentBoxWidth = 3;
+                        int commentBoxHeight = 4;
+
+                        if (cellComment.length() > 30 )
+                        {
+                            commentBoxHeight= 5;
+                        }
+                        if (cellComment.length() > 45 && cellComment.length() < 60)
+                        {
+                            commentBoxWidth= 4;
+                            commentBoxHeight= 4;
+                        }
+                        if (cellComment.length() >= 60)
+                        {
+                            commentBoxHeight = 5;
+                        }
+                        if (cellComment.length() > 70)
+                        {
+                            commentBoxHeight = 6;
+                            commentBoxWidth = 4;
+                        }
+                        ClientAnchor anchor = factory.createClientAnchor();
+                        Drawing drawing = sheet.createDrawingPatriarch();
+
+                        anchor.setCol1(cell.getColumnIndex()+1);
+                        anchor.setCol2(cell.getColumnIndex()+commentBoxWidth);
+                        anchor.setRow1(row.getRowNum()+1);
+                        anchor.setRow2(row.getRowNum()+commentBoxHeight);
+
+                        Comment comment = drawing.createCellComment(anchor);
+                        RichTextString str = factory.createRichTextString(cellComment);
+                        comment.setString(str);
+                        comment.setAuthor("LabKey Server");
+
+                        cell.setCellComment(comment);
                     }
                 }
             }
