@@ -30,7 +30,7 @@ function toggleNestedGrid(dataRegionName, url, elementName)
     {
         if (requestedURLs[url] == null)
         {
-            Ext.Ajax.request(
+            LABKEY.Ajax.request(
             {
                 url: url,
                 method: "GET",
