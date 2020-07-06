@@ -530,7 +530,7 @@
         <description>A randomly generated date offset for this participant. This can be used to shift each participant's date values when publishing a study.</description>
       </column>
       <column columnName="AlternateId">
-        <description>A randomly generated alternate participant ID. This can be used in place of internal particiapnt IDs when publishing a study.</description>
+        <description>A randomly generated alternate participant ID. This can be used in place of internal participant IDs when publishing a study.</description>
       </column>
       <column columnName="LastIndexed"/>
       <column columnName="Modified"/>

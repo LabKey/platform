@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.collections.NullPreventingSet;
@@ -65,7 +66,7 @@ public class RenderContext implements Map<String, Object>, Serializable
     private final Map<String, Object> _extra = new HashMap<>();
     private Sort _baseSort;
     private int _mode = DataRegion.MODE_NONE;
-    private boolean _cache = true;
+    private boolean _cache = false;
     protected Set<FieldKey> _ignoredColumnFilters = new LinkedHashSet<>();
     private Set<String> _selected = null;
     private ShowRows _showRows = ShowRows.PAGINATED;
@@ -170,6 +171,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         _baseSort = sort;
     }
 
+    @NotNull
     public List<AnalyticsProviderItem> getBaseSummaryStatsProviders()
     {
         List<AnalyticsProviderItem> summaryStatsProviders = new ArrayList<>();
@@ -183,7 +185,7 @@ public class RenderContext implements Map<String, Object>, Serializable
             }
         }
 
-        return !summaryStatsProviders.isEmpty() ? summaryStatsProviders : null;
+        return Collections.unmodifiableList(summaryStatsProviders);
     }
 
     public List<AnalyticsProviderItem> getBaseAnalyticsProviders()
@@ -324,6 +326,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         return _results;
     }
 
+    @NotNull
     public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName, List<Aggregate> aggregatesIn, Map<String, Object> parameters, boolean async) throws IOException
     {
         if (aggregatesIn == null || aggregatesIn.isEmpty())

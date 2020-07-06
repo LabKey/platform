@@ -40,6 +40,14 @@ public class PairSerializer<Type1, Type2> extends StdSerializer<Pair<Type1, Type
     @Override
     public void serialize(Pair<Type1, Type2> pair, JsonGenerator gen, SerializerProvider provider) throws IOException
     {
+        gen.writeStartObject();
+        _serialize(pair, gen, provider);
+        gen.writeEndObject();
+    }
+
+
+    public void _serialize(Pair<Type1, Type2> pair, JsonGenerator gen, SerializerProvider provider) throws IOException
+    {
         gen.writeFieldName("first");
         gen.getCodec().writeValue(gen, pair.first);
         gen.writeFieldName("second");
@@ -50,7 +58,7 @@ public class PairSerializer<Type1, Type2> extends StdSerializer<Pair<Type1, Type
     public void serializeWithType(Pair<Type1, Type2> map, JsonGenerator gen, SerializerProvider provider, TypeSerializer typeSer) throws IOException
     {
         WritableTypeId typeIdDef = typeSer.writeTypePrefix(gen, typeSer.typeId(map, JsonToken.START_OBJECT));
-        serialize(map, gen, provider);
+        _serialize(map, gen, provider);
         typeSer.writeTypeSuffix(gen, typeIdDef);
     }
 }

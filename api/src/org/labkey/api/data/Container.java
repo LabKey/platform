@@ -94,6 +94,8 @@ import java.util.function.BooleanSupplier;
  */
 public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext, HasPermission, Parameter.JdbcParameterValue
 {
+    private static final Logger LOG = Logger.getLogger(Container.class);
+
     private GUID _id;
     private Path _path;
     private Date _created;
@@ -1322,9 +1324,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public void setType(String typeString)
     {
-        _containerType = ContainerTypeRegistry.get().getType(typeString);
-        if (_containerType == null)
-            throw new IllegalArgumentException("Unknown container type: " + typeString);
+        ContainerType type = ContainerTypeRegistry.get().getType(typeString);
+        if (type == null)
+            LOG.warn("Unknown container type: " + typeString);
+        else
+            _containerType = type;
     }
 
     public static class ContainerException extends Exception
@@ -1571,7 +1575,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 iconFile = dir.getFile();
             if (!NetworkDrive.exists(iconFile))
             {
-                Logger.getLogger(Container.class).warn("Could not find specified icon: "+iconPath);
+                LOG.warn("Could not find specified icon: " + iconPath);
                 iconPath = FolderType.NONE.getFolderIconPath();
             }
             if (!iconPath.startsWith("/"))
