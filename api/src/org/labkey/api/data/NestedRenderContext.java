@@ -140,6 +140,7 @@ public class NestedRenderContext extends RenderContext
         return result;
     }
 
+    @NotNull
     @Override
     public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName, List<Aggregate> aggregatesIn,
             Map<String, Object> parameters, boolean async) throws IOException
