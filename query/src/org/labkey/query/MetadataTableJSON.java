@@ -701,6 +701,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         }
                         if (column.getWrappedColumnName() != null)
                         {
+                            metadataColumnJSON.setLockExistingField(false);
                             injectedColumnNames.add(column.getColumnName());
                             metadataColumnJSON.setWrappedColumnName(column.getWrappedColumnName());
                             ColumnInfo tableColumn = table.getColumn(column.getWrappedColumnName());
