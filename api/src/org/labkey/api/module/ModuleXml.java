@@ -1,6 +1,7 @@
 package org.labkey.api.module;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlOptions;
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,7 +35,7 @@ import java.util.stream.Stream;
  */
 public class ModuleXml
 {
-    private static final Logger LOG = Logger.getLogger(ModuleXml.class);
+    private static final Logger LOG = LogManager.getLogger(ModuleXml.class);
     private static final String XML_FILENAME = "module.xml";
 
     private final Map<String, ModuleProperty> _moduleProperties;

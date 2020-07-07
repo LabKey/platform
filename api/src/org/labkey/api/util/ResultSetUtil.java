@@ -17,7 +17,8 @@ package org.labkey.api.util;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -42,7 +43,7 @@ import java.util.Map;
 
 public class ResultSetUtil
 {
-    private static final Logger _log = Logger.getLogger(ResultSetUtil.class);
+    private static final Logger _log = LogManager.getLogger(ResultSetUtil.class);
     public static final boolean STRICT_CHECKING = false;  // If true, throws when ResultSets are closed more than once. Clean up ResultSet closing for #34406.
 
     private ResultSetUtil()

@@ -15,7 +15,8 @@
  */
 package org.apache.commons.validator.routines;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * Adds non-standard TLDs to allowable values for Apache Commons Validator. See issue 25041.
@@ -25,7 +26,7 @@ import org.apache.log4j.Logger;
  */
 public class CustomTLDEnabler
 {
-    private static final Logger LOG = Logger.getLogger(CustomTLDEnabler.class);
+    private static final Logger LOG = LogManager.getLogger(CustomTLDEnabler.class);
 
     static
     {

@@ -22,9 +22,10 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.spi.LoggingEvent;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -282,9 +283,9 @@ public class AdminController extends SpringActionController
         FileListAction.class
     );
 
-    private static final Logger LOG = Logger.getLogger(AdminController.class);
+    private static final Logger LOG = LogManager.getLogger(AdminController.class);
     @SuppressWarnings("LoggerInitializedWithForeignClass")
-    private static final Logger CLIENT_LOG = Logger.getLogger(LogAction.class);
+    private static final Logger CLIENT_LOG = LogManager.getLogger(LogAction.class);
     private static final String HEAP_MEMORY_KEY = "Total Heap Memory";
 
     private static long _errorMark = 0;
@@ -4321,7 +4322,7 @@ public class AdminController extends SpringActionController
             FolderWriterImpl writer = new FolderWriterImpl();
             FolderExportContext ctx = new FolderExportContext(getUser(), container, PageFlowUtil.set(form.getTypes()),
                     form.getFormat(), form.isIncludeSubfolders(), form.getExportPhiLevel(), form.isShiftDates(),
-                    form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
+                    form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
 
             switch(form.getLocation())
             {
@@ -4566,7 +4567,7 @@ public class AdminController extends SpringActionController
                 // the source template folder so that the zip file can be passed to the pipeline processes.
                 FolderExportContext ctx = new FolderExportContext(getUser(), sourceContainer,
                         getRegisteredFolderWritersForImplicitExport(sourceContainer), "new", false,
-                        PHI.NotPHI, false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
+                        PHI.NotPHI, false, false, false, new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
                 FolderWriterImpl writer = new FolderWriterImpl();
                 String zipFileName = FileUtil.makeFileNameWithTimestamp(sourceContainer.getName(), "folder.zip");
                 try (ZipFile zip = new ZipFile(pipelineUnzipDir, zipFileName))
@@ -6759,7 +6760,7 @@ public class AdminController extends SpringActionController
 
                         FolderExportContext exportCtx = new FolderExportContext(getUser(), sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), "new",
                                 form.getTemplateIncludeSubfolders(), PHI.NotPHI, false, false, false,
-                                new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
+                                new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
 
                         c = ContainerManager.createContainerFromTemplate(parent, folderName, folderTitle, sourceContainer, getUser(), exportCtx);
                     }
@@ -7627,9 +7628,9 @@ public class AdminController extends SpringActionController
                     eventId = Integer.parseInt(s);
             }
             catch (NumberFormatException x) {}
-            LoggingEvent[] events = SessionAppender.getLoggingEvents(getViewContext().getRequest());
+            LogEvent[] events = SessionAppender.getLoggingEvents(getViewContext().getRequest());
             ArrayList<Map<String, Object>> list = new ArrayList<>(events.length);
-            for (LoggingEvent e : events)
+            for (LogEvent e : events)
             {
                 // TODO - find replacement - maybe a ThreadLocal using a WeakHashMap of Event->EventId?
 //                if (eventId==0 || eventId<Integer.parseInt(e.getProperty("eventId")))
@@ -7638,7 +7639,7 @@ public class AdminController extends SpringActionController
                     HashMap<String, Object> m = new HashMap<>();
                     m.put("level", e.getLevel().toString());
                     m.put("message", e.getMessage());
-                    m.put("timestamp", new Date(e.timeStamp));
+                    m.put("timestamp", new Date(e.getTimeMillis()));
                     list.add(m);
                 }
             }
@@ -7754,10 +7755,10 @@ public class AdminController extends SpringActionController
             if (form.logging != on)
             {
                 if (!form.logging)
-                    Logger.getLogger(AdminController.class).info("turn session logging OFF");
+                    LogManager.getLogger(AdminController.class).info("turn session logging OFF");
                 SessionAppender.setLoggingForSession(getViewContext().getRequest(), form.logging);
                 if (form.logging)
-                    Logger.getLogger(AdminController.class).info("turn session logging ON");
+                    LogManager.getLogger(AdminController.class).info("turn session logging ON");
             }
             return true;
         }

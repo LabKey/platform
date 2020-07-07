@@ -15,7 +15,8 @@
  */
 package org.labkey.api.view.template;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
@@ -41,7 +42,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 public class ClientDependencyCacheLoader implements CacheLoader<Pair<Path, ModeTypeEnum.Enum>, ClientDependency>
 {
-    private static final Logger LOG = Logger.getLogger(ClientDependencyCacheLoader.class);
+    private static final Logger LOG = LogManager.getLogger(ClientDependencyCacheLoader.class);
     private static final Set<Path> EXISTING_LISTENERS = new ConcurrentHashSet<>();
 
     public ClientDependencyCacheLoader()

@@ -17,7 +17,8 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
@@ -57,7 +58,7 @@ public class SchemaColumnMetaData
     private boolean _hasDefaultTitleColumn = true;
     private Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> _uniqueIndices;
     private Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> _allIndices;
-    private static Logger _log = Logger.getLogger(SchemaColumnMetaData.class);
+    private static Logger _log = LogManager.getLogger(SchemaColumnMetaData.class);
 
     SchemaColumnMetaData(SchemaTableInfo tinfo, boolean load) throws SQLException
     {

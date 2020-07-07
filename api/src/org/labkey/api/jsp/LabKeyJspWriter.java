@@ -15,7 +15,8 @@
  */
 package org.labkey.api.jsp;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HasHtmlString;
@@ -28,8 +29,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class LabKeyJspWriter extends JspWriterWrapper
 {
-    private static final Logger LOG = Logger.getLogger(LabKeyJspWriter.class);
-    private static final Logger LOGSTRING = Logger.getLogger(LabKeyJspWriter.class.getName()+".string");
+    private static final Logger LOG = LogManager.getLogger(LabKeyJspWriter.class);
+    private static final Logger LOGSTRING = LogManager.getLogger(LabKeyJspWriter.class.getName()+".string");
 
 
     private static final AtomicInteger CHAR_ARRAY_INVOCATIONS = new AtomicInteger();

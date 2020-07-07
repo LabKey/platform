@@ -16,7 +16,8 @@
 
 package org.labkey.api.util.emailTemplate;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -51,7 +52,7 @@ import java.util.regex.Pattern;
  */
 public abstract class EmailTemplate
 {
-    private static final Logger LOG = Logger.getLogger(EmailTemplate.class);
+    private static final Logger LOG = LogManager.getLogger(EmailTemplate.class);
     /** Pattern for recognizing substitution syntax, which is of the form ^TOKEN^ */
     private static final Pattern SCRIPT_PATTERN = Pattern.compile("\\^(.*?)\\^");
     private static final List<ReplacementParam> REPLACEMENT_PARAMS = new ArrayList<>();

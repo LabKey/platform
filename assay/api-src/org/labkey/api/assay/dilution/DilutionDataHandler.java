@@ -16,7 +16,8 @@
 package org.labkey.api.assay.dilution;
 
 import org.apache.commons.lang3.EnumUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.nab.NabSpecimen;
@@ -76,7 +77,7 @@ import java.util.Set;
  */
 public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 {
-    public static final Logger LOG = Logger.getLogger(DilutionDataHandler.class);
+    public static final Logger LOG = LogManager.getLogger(DilutionDataHandler.class);
 
     public static final String NAB_PROPERTY_LSID_PREFIX = "NabProperty";
 

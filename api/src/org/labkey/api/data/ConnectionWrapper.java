@@ -16,7 +16,10 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbScope.ConnectionType;
@@ -64,11 +67,13 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ConnectionWrapper implements java.sql.Connection
 {
-    private static final Logger LOG = Logger.getLogger(ConnectionWrapper.class);
+    private static final Logger LOG = LogManager.getLogger(ConnectionWrapper.class);
     private static final Map<ConnectionWrapper, Pair<Thread, Throwable>> _openConnections = Collections.synchronizedMap(new IdentityHashMap<>());
     private static final Set<ConnectionWrapper> _loggedLeaks = new HashSet<>();
-    private static final Logger _logDefault = Logger.getLogger(ConnectionWrapper.class);
-    private static final boolean _explicitLogger = _logDefault.getLevel() != null || _logDefault.getParent() != null  && _logDefault.getParent().getName().equals("org.labkey.api.data");
+    private static final Logger _logDefault = LogManager.getLogger(ConnectionWrapper.class);
+    private static final LoggerContext _loggerContext = (LoggerContext) LogManager.getContext(false);
+    private static final LoggerConfig _loggerConfig = _loggerContext.getConfiguration().getLoggerConfig(_logDefault.getName());
+    private static final boolean _explicitLogger = _logDefault.getLevel() != null || _loggerConfig.getParent() != null  && _loggerConfig.getParent().getName().equals("org.labkey.api.data");
     private static final AtomicLong COUNTER = new AtomicLong(0);
 
     private final Connection _connection;
@@ -124,7 +129,7 @@ public class ConnectionWrapper implements java.sql.Connection
             if (className.equals("org.labkey.api.view.ViewServlet") || className.equals("org.labkey.api.action.SpringActionController"))
                 break;
             if (className.endsWith("Controller") && !className.startsWith("org.labkey.api.view"))
-                return Logger.getLogger(className);
+                return LogManager.getLogger(className);
         }
         return _logDefault;
     }

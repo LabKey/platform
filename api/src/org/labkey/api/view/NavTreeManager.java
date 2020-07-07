@@ -16,7 +16,8 @@
 
 package org.labkey.api.view;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
@@ -38,7 +39,7 @@ import java.util.concurrent.Callable;
  */
 public class NavTreeManager
 {
-    private static final Logger _log = Logger.getLogger(NavTreeManager.class);
+    private static final Logger _log = LogManager.getLogger(NavTreeManager.class);
     private static final String EXPAND_CONTAINERS_KEY = NavTreeManager.class.getName() + "/expandedContainers";
     private static final String CACHE_PREFIX = NavTreeManager.class.getName() + "/";
     private static final String NULL_MARKER = "__null marker representing the root__";   // ConcurrentHashMap does not support null keys

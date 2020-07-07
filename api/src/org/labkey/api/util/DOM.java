@@ -4,7 +4,8 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Iterators;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.SpringActionController;
@@ -728,7 +729,7 @@ public class DOM
                     catch (NoSuchMessageException nsme)
                     {
                         ExceptionUtil.logExceptionToMothership(context.getRequest(), nsme);
-                        Logger log = Logger.getLogger(ErrorsTag.class);
+                        Logger log = LogManager.getLogger(ErrorsTag.class);
                         log.error("Failed to find a message: " + error, nsme);
                         return createHtmlFragment("Unknown error: " + error, BR());
                     }

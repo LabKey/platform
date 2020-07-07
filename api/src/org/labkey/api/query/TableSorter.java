@@ -15,7 +15,8 @@
  */
 package org.labkey.api.query;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
@@ -41,7 +42,7 @@ import java.util.stream.Stream;
  */
 public final class TableSorter
 {
-    private static final Logger LOG = Logger.getLogger(TableSorter.class);
+    private static final Logger LOG = LogManager.getLogger(TableSorter.class);
 
     /**
      * Get a topologically sorted list of TableInfos within this schema.

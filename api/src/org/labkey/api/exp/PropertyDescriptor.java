@@ -15,7 +15,8 @@
  */
 package org.labkey.api.exp;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
@@ -72,7 +73,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     private boolean _mvEnabled;
     private String _mvIndicatorStorageColumnName;        // only valid if mvEnabled
 
-    private static final Logger LOG = Logger.getLogger(PropertyDescriptor.class);
+    private static final Logger LOG = LogManager.getLogger(PropertyDescriptor.class);
 
     @Override
     public void checkLocked()

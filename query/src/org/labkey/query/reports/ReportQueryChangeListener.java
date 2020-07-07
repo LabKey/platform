@@ -16,7 +16,8 @@
 package org.labkey.query.reports;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -61,7 +62,7 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
         }
         catch (Exception e)
         {
-            Logger.getLogger(ReportQueryChangeListener.class).error("An error occurred uncaching dependent reports", e);
+            LogManager.getLogger(ReportQueryChangeListener.class).error("An error occurred uncaching dependent reports", e);
         }
     }
 
@@ -118,7 +119,7 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
 
     private void _updateReportQueryNameChange(User user, Container container, SchemaKey schemaKey, Collection<QueryPropertyChange> changes)
     {
-        Logger logger = Logger.getLogger(ReportQueryChangeListener.class);
+        Logger logger = LogManager.getLogger(ReportQueryChangeListener.class);
 
         // most property updates only care about the query name old value string and new value string
         Map<String, String> queryNameChangeMap = new HashMap<>();

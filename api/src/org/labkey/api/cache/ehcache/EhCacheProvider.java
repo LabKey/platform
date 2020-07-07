@@ -18,7 +18,8 @@ package org.labkey.api.cache.ehcache;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.config.CacheConfiguration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.cache.CacheProvider;
 import org.labkey.api.cache.SimpleCache;
 import org.labkey.api.util.MemTracker;
@@ -38,7 +39,7 @@ import java.util.concurrent.atomic.AtomicLong;
 // Do not use CacheProvider implementations directly; use CacheManager.getCache() to get a cache
 public class EhCacheProvider implements CacheProvider
 {
-    private static final Logger LOG = Logger.getLogger(EhCacheProvider.class);
+    private static final Logger LOG = LogManager.getLogger(EhCacheProvider.class);
     private static final EhCacheProvider INSTANCE = new EhCacheProvider();
 
     private final AtomicLong cacheCount = new AtomicLong(0);

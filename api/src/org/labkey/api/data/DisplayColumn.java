@@ -20,7 +20,8 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
@@ -59,7 +60,7 @@ import java.util.Set;
  */
 public abstract class DisplayColumn extends RenderColumn
 {
-    private static final Logger LOG = Logger.getLogger(DisplayColumn.class);
+    private static final Logger LOG = LogManager.getLogger(DisplayColumn.class);
 
     protected String _textAlign = null;
     protected boolean _nowrap = false;

@@ -19,7 +19,8 @@ package org.labkey.survey;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -86,7 +87,7 @@ import java.util.stream.Stream;
 
 public class SurveyManager
 {
-    private static final Logger _log = Logger.getLogger(SurveyManager.class);
+    private static final Logger _log = LogManager.getLogger(SurveyManager.class);
     private static final SurveyManager _instance = new SurveyManager();
     private static final List<SurveyListener> _surveyListeners = new CopyOnWriteArrayList<>();
     private static final ModuleResourceCache<MultiValuedMap<String, SurveyDesign>> MODULE_SURVEY_DESIGN_CACHE = ModuleResourceCaches.create("Module Survey Design Cache", new SurveyDesignResourceCacheHandler(), ResourceRootProvider.getSubdirectories(Path.parse("surveys")));

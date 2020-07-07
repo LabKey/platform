@@ -26,7 +26,8 @@
 package org.labkey.api.script;
 
 import com.sun.phobos.script.util.ExtendedScriptException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.util.ExceptionUtil;
 import org.mozilla.javascript.*;
 
@@ -45,7 +46,7 @@ import javax.script.ScriptException;
 // kevink: Essentially the same as the original, with changes marked with kevink
 final class RhinoCompiledScript extends CompiledScript
 {
-    private final Logger _log = Logger.getLogger(RhinoCompiledScript.class);
+    private final Logger _log = LogManager.getLogger(RhinoCompiledScript.class);
 
     private RhinoScriptEngine engine;
     private Script script;

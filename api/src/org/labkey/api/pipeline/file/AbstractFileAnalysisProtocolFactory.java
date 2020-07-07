@@ -17,7 +17,8 @@ package org.labkey.api.pipeline.file;
 
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipeRoot;
@@ -47,7 +48,7 @@ import java.util.List;
  */
 abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFileAnalysisProtocol> extends PipelineProtocolFactory<T>
 {
-    private static Logger _log = Logger.getLogger(AbstractFileAnalysisProtocolFactory.class);
+    private static Logger _log = LogManager.getLogger(AbstractFileAnalysisProtocolFactory.class);
 
     public static final String DEFAULT_PARAMETERS_NAME = "default";
 

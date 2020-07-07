@@ -6,7 +6,7 @@
 
 var Logger = org.apache.log4j.Logger;
 
-var logger = Logger.getLogger(org.labkey.api.script.ScriptService.Console);
+var logger = LogManager.getLogger(org.labkey.api.script.ScriptService.Console);
 
 function formatPart(o)
 {

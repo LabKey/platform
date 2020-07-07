@@ -29,7 +29,8 @@ import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.CompressedXarSource;
 import org.labkey.api.exp.FileXarSource;
 import org.labkey.api.util.PageFlowUtil;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,7 +43,7 @@ import java.util.List;
  */
 public class ExperimentPipelineJob extends PipelineJob
 {
-    private static Logger _log = Logger.getLogger(ExperimentPipelineJob.class);
+    private static Logger _log = LogManager.getLogger(ExperimentPipelineJob.class);
 
     private static final Object _experimentLock = new Object();
 

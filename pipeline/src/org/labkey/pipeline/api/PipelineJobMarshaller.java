@@ -21,7 +21,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Test;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -161,7 +162,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
         }
     }
 
-    private static Logger LOG = Logger.getLogger(PipelineJobMarshaller.class);
+    private static Logger LOG = LogManager.getLogger(PipelineJobMarshaller.class);
 
     public static class TestCase extends PipelineJob.TestSerialization
     {

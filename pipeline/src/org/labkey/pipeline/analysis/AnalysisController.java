@@ -20,7 +20,8 @@ import com.google.common.collect.Collections2;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
@@ -86,7 +87,7 @@ import java.util.Set;
  */
 public class AnalysisController extends SpringActionController
 {
-    private static final Logger LOG = Logger.getLogger(AnalysisController.class);
+    private static final Logger LOG = LogManager.getLogger(AnalysisController.class);
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(AnalysisController.class);
 
     public AnalysisController()

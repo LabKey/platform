@@ -16,8 +16,9 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.MessageAuditProvider;
@@ -69,7 +70,7 @@ import java.util.StringTokenizer;
  */
 public class MailHelper
 {
-    private static Logger _log = Logger.getLogger(MailHelper.class);
+    private static Logger _log = LogManager.getLogger(MailHelper.class);
     private static Session _session = null;
     public static final String MESSAGE_AUDIT_EVENT = "MessageAuditEvent";
 

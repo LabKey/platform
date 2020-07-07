@@ -16,7 +16,8 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.miniprofiler.MiniProfiler;
@@ -35,7 +36,7 @@ import java.util.concurrent.Callable;
 
 public class AsyncQueryRequest<T>
 {
-    private static final Logger _log = Logger.getLogger(AsyncQueryRequest.class);
+    private static final Logger _log = LogManager.getLogger(AsyncQueryRequest.class);
 
     private static class CancelledException extends RuntimeException
     {

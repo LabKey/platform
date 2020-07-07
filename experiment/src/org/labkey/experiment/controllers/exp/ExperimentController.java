@@ -19,7 +19,8 @@ package org.labkey.experiment.controllers.exp;
 import au.com.bytecode.opencsv.CSVWriter;
 import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.jetbrains.annotations.NotNull;
@@ -276,7 +277,7 @@ import static org.labkey.api.util.DOM.cl;
  */
 public class ExperimentController extends SpringActionController
 {
-    private static final Logger _log = Logger.getLogger(ExperimentController.class);
+    private static final Logger _log = LogManager.getLogger(ExperimentController.class);
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ExperimentController.class);
     private static final String GUEST_DIRECTORY_NAME = "guest";
 

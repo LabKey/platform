@@ -18,7 +18,8 @@ package org.labkey.api.data;
 
 import org.apache.commons.collections4.ComparatorUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
@@ -62,7 +63,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
  */
 public class FileSqlScriptProvider implements SqlScriptProvider
 {
-    private static final Logger _log = Logger.getLogger(FileSqlScriptProvider.class);
+    private static final Logger _log = LogManager.getLogger(FileSqlScriptProvider.class);
 
     private final Module _module;
 

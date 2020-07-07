@@ -15,7 +15,8 @@
  */
 package org.labkey.announcements.model;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
@@ -53,7 +54,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 {
     private static final CommSchema _comm = CommSchema.getInstance();
     private static final CoreSchema _core = CoreSchema.getInstance();
-    private static final Logger _log = Logger.getLogger(AnnouncementDigestProvider.class);
+    private static final Logger _log = LogManager.getLogger(AnnouncementDigestProvider.class);
 
     // Retrieve from this container all messages with a body or attachments that were marked as "approved" during the given
     // timespan. Messages are grouped by thread and threads are sorted by earliest post within each thread.

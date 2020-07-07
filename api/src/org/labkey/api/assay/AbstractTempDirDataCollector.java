@@ -16,7 +16,8 @@
 package org.labkey.api.assay;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
@@ -43,7 +44,7 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
     protected boolean _uploadComplete = false;
     private static final String TMPFILE = "tmp";
 
-    private static final Logger LOG = Logger.getLogger(AbstractTempDirDataCollector.class);
+    private static final Logger LOG = LogManager.getLogger(AbstractTempDirDataCollector.class);
 
     private void removeTempDir(ContextType context) throws ExperimentException
     {

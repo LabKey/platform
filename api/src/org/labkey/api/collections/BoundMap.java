@@ -18,7 +18,8 @@ package org.labkey.api.collections;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -309,7 +310,7 @@ public class BoundMap extends AbstractMap<String, Object> implements Serializabl
                 }
                 catch (IntrospectionException e)
                 {
-                    Logger.getLogger(this.getClass()).error("error creating BoundMap", e);
+                    LogManager.getLogger(this.getClass()).error("error creating BoundMap", e);
                     throw new RuntimeException(e);
                 }
 

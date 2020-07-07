@@ -19,7 +19,8 @@ package org.labkey.core;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
@@ -207,7 +208,7 @@ import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNE
 public class CoreController extends SpringActionController
 {
     private static final Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<>();
-    private static final Logger _log = Logger.getLogger(CoreController.class);
+    private static final Logger _log = LogManager.getLogger(CoreController.class);
 
     private static ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
     private static final PropertyStore _normalStore = PropertyManager.getNormalStore();

@@ -15,7 +15,8 @@
  */
 package org.labkey.pipeline.api;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ConnectionWrapper;
@@ -47,7 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class PipelineQueueImpl extends AbstractPipelineQueue
 {
-    private static final Logger LOG = Logger.getLogger(PipelineQueueImpl.class);
+    private static final Logger LOG = LogManager.getLogger(PipelineQueueImpl.class);
     private static final int MAX_RUNNING_JOBS = 10;
 
     private final List<PipelineJob> _pending = new ArrayList<>();

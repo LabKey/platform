@@ -17,8 +17,9 @@
 package org.labkey.study.visitmanager;
 
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -84,7 +85,7 @@ import java.util.TreeMap;
  */
 public abstract class VisitManager
 {
-    private static final Logger LOGGER = Logger.getLogger(VisitManager.class);
+    private static final Logger LOGGER = LogManager.getLogger(VisitManager.class);
 
     protected StudyImpl _study;
     private TreeMap<Double, VisitImpl> _sequenceMap;

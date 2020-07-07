@@ -15,7 +15,8 @@
  */
 package org.labkey.api.mbean;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import javax.management.DynamicMBean;
 import javax.management.InstanceNotFoundException;
@@ -60,7 +61,7 @@ public class LabKeyManagement
         }
         catch (Exception x)
         {
-            Logger.getLogger(LabKeyManagement.class).error("error registering mbean : " + String.valueOf(name), x);
+            LogManager.getLogger(LabKeyManagement.class).error("error registering mbean : " + String.valueOf(name), x);
         }
         register(bean, oname);
     }
@@ -88,7 +89,7 @@ public class LabKeyManagement
         }
         catch (Exception x)
         {
-            Logger.getLogger(LabKeyManagement.class).error("error registering mbean : " + String.valueOf(name), x);
+            LogManager.getLogger(LabKeyManagement.class).error("error registering mbean : " + String.valueOf(name), x);
         }
     }
 }

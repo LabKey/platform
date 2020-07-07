@@ -16,7 +16,8 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -48,7 +49,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     private @Nullable AsyncQueryRequest _asyncRequest = null;
     private @Nullable StackTraceElement[] _loggingStacktrace = null;
     private final QueryLogging _queryLogging;
-    private static final Logger LOGGER = Logger.getLogger(SqlExecutingSelector.class);
+    private static final Logger LOGGER = LogManager.getLogger(SqlExecutingSelector.class);
 
     // SQL factory used for the duration of a single query execution. This allows reuse of instances, since query-specific
     // optimizations won't mutate the ExecutingSelector's externally set state.

@@ -15,7 +15,8 @@
  */
 package org.labkey.api.util;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -38,7 +39,7 @@ import java.util.concurrent.Callable;
  */
 public class SystemMaintenanceJob implements org.quartz.Job, Callable<String>
 {
-    private static final Logger LOG = Logger.getLogger(SystemMaintenanceJob.class);
+    private static final Logger LOG = LogManager.getLogger(SystemMaintenanceJob.class);
 
     private final @Nullable String _taskName;
     private final @Nullable User _user;

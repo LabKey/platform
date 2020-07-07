@@ -15,7 +15,8 @@
  */
 package org.labkey.api.module;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -108,7 +109,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
 
     private void loadDefinition(Resource webPartResource)
     {
-        Logger log = Logger.getLogger(SimpleWebPartFactory.class);
+        Logger log = LogManager.getLogger(SimpleWebPartFactory.class);
 
         try (InputStream is = webPartResource.getInputStream())
         {

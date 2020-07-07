@@ -15,7 +15,8 @@
  */
 package org.labkey.api.util;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.settings.AppProps;
 
 import java.lang.management.ManagementFactory;
@@ -29,7 +30,7 @@ import java.lang.management.MemoryPoolMXBean;
  */
 public class MemoryUsageLogger implements Runnable
 {
-    private static final Logger LOG = Logger.getLogger(MemTracker.class);
+    private static final Logger LOG = LogManager.getLogger(MemTracker.class);
 
     private static final Object LOGGER_LOCK_OBJECT = new Object();
 

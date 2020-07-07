@@ -17,7 +17,8 @@ package org.labkey.api.cache.ehcache;
 
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.Element;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheType;
@@ -35,7 +36,7 @@ import java.util.Set;
 */
 class EhSimpleCache<K, V> implements SimpleCache<K, V>
 {
-    private static final Logger LOG = Logger.getLogger(EhSimpleCache.class);
+    private static final Logger LOG = LogManager.getLogger(EhSimpleCache.class);
 
     private final Cache _cache;
 

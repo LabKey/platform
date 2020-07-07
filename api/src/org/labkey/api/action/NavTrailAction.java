@@ -16,7 +16,8 @@
 
 package org.labkey.api.action;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.view.NavTree;
 
 /**
@@ -26,7 +27,7 @@ import org.labkey.api.view.NavTree;
  */
 public interface NavTrailAction
 {
-    Logger LOG = Logger.getLogger(NavTrailAction.class);
+    Logger LOG = LogManager.getLogger(NavTrailAction.class);
 
     @Deprecated()  // Implement addNavTrail() instead
     default NavTree appendNavTrail(NavTree root)

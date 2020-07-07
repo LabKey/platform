@@ -26,7 +26,8 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.ContentEncodingHttpClient;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.ExecutionContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
@@ -53,7 +54,7 @@ import java.util.regex.Pattern;
  */
 public class HttpUtil
 {
-    private static final Logger LOG = Logger.getLogger(HttpUtil.class);
+    private static final Logger LOG = LogManager.getLogger(HttpUtil.class);
 
     private static final Pattern _metaRefreshRegex = Pattern.compile("<meta http-equiv=['\"]refresh['\"] content=['\"].*URL=(.*)['\"]>", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 

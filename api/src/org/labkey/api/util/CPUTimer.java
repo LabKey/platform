@@ -15,7 +15,8 @@
  */
 package org.labkey.api.util;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.util.*;
 
@@ -24,7 +25,7 @@ import java.util.*;
  */
 public class CPUTimer
 {
-    private static final Logger _log = Logger.getLogger(CPUTimer.class);
+    private static final Logger _log = LogManager.getLogger(CPUTimer.class);
 
 
 	//

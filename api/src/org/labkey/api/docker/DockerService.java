@@ -16,7 +16,8 @@
 package org.labkey.api.docker;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -545,7 +546,7 @@ public interface DockerService
             }
             catch (Exception e)
             {
-                Logger.getLogger(DockerService.class).error(e.getMessage());
+                LogManager.getLogger(DockerService.class).error(e.getMessage());
             }
             throw new UnauthorizedException("User does not have a home directory");
         }

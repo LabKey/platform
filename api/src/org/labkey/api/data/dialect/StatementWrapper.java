@@ -17,8 +17,9 @@
 package org.labkey.api.data.dialect;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.OneBasedList;
@@ -2875,7 +2876,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             _conn.logAndCheckException(x);
         }
 
-        if (!_log.isEnabledFor(Level.DEBUG) && !isAssertEnabled)
+        if (!_log.isEnabled(Level.DEBUG) && !isAssertEnabled)
             return;
 
         StringBuilder logEntry = new StringBuilder(sql.length() * 2);

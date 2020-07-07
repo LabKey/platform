@@ -15,7 +15,8 @@
  */
 package org.labkey.study.reports;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BaseColumnInfo;
@@ -72,7 +73,7 @@ public class ReportManager implements DatasetManager.DatasetListener
     public static final String ALL_DATASETS_KEY = StudySchema.getInstance().getSchemaName() + "/*";
 
     private static final ReportManager instance = new ReportManager();
-    private static final Logger _log = Logger.getLogger(ReportManager.class);
+    private static final Logger _log = LogManager.getLogger(ReportManager.class);
 
     public static ReportManager get()
     {

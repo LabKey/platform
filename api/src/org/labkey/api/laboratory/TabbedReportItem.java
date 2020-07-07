@@ -15,7 +15,8 @@
  */
 package org.labkey.api.laboratory;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
@@ -46,7 +47,7 @@ public class TabbedReportItem extends AbstractNavItem
     protected FieldKey _allProjectsFieldKey = null;
 
     public static final String OVERRIDES_PROP_KEY = "laboratory.tabItemOverride";
-    protected static final Logger _log = Logger.getLogger(TabbedReportItem.class);
+    protected static final Logger _log = LogManager.getLogger(TabbedReportItem.class);
 
     public TabbedReportItem(DataProvider provider, String name, String label, String reportCategory)
     {

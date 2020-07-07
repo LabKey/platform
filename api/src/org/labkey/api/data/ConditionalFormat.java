@@ -15,7 +15,8 @@
  */
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,7 +48,7 @@ import java.util.List;
  */
 public class ConditionalFormat extends GWTConditionalFormat
 {
-    private static final Logger LOG = Logger.getLogger(ConditionalFormat.class);
+    private static final Logger LOG = LogManager.getLogger(ConditionalFormat.class);
 
     public ConditionalFormat(GWTConditionalFormat f)
     {

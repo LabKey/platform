@@ -15,7 +15,8 @@
  */
 package org.labkey.api.laboratory;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -36,7 +37,7 @@ import java.util.Map;
  */
 abstract public class AbstractNavItem implements NavItem
 {
-    protected static final Logger _log = Logger.getLogger(AbstractNavItem.class);
+    protected static final Logger _log = LogManager.getLogger(AbstractNavItem.class);
     protected QueryCache _queryCache = new QueryCache();
 
     private String _ownerKey = null;

@@ -15,7 +15,8 @@
  */
 package org.labkey.api.ldk.table;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
@@ -37,7 +38,7 @@ import java.util.WeakHashMap;
  */
 abstract public class AbstractTableCustomizer implements TableCustomizer
 {
-    protected static final Logger _log = Logger.getLogger(AbstractTableCustomizer.class);
+    protected static final Logger _log = LogManager.getLogger(AbstractTableCustomizer.class);
 
     /**
      * Rely on DefaultSchema's caching of schema creation, and just track the minimum number of DefaultSchemas to

@@ -16,7 +16,8 @@
 package org.labkey.wiki;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -96,7 +97,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class WikiManager implements WikiService
 {
-    private static final Logger LOG = Logger.getLogger(WikiManager.class);
+    private static final Logger LOG = LogManager.getLogger(WikiManager.class);
     private static final WikiManager _instance = new WikiManager();
 
     public static final WikiRendererType DEFAULT_WIKI_RENDERER_TYPE = WikiRendererType.HTML;

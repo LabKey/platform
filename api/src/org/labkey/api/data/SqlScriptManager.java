@@ -16,7 +16,8 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
@@ -201,9 +202,9 @@ public abstract class SqlScriptManager
         try
         {
             dialect.checkSqlScript(contents);
-            Logger.getLogger(SqlScriptManager.class).info("start running script : " + script.getDescription());
+            LogManager.getLogger(SqlScriptManager.class).info("start running script : " + script.getDescription());
             dialect.runSql(schema, contents, script.getProvider().getUpgradeCode(), moduleContext, conn);
-            Logger.getLogger(SqlScriptManager.class).info("finished running script : " + script.getDescription());
+            LogManager.getLogger(SqlScriptManager.class).info("finished running script : " + script.getDescription());
         }
         catch(Throwable t)
         {

@@ -16,7 +16,8 @@
 package org.labkey.core.login;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.SecurityManager;
@@ -345,6 +346,6 @@ public enum PasswordRule
                 strong++;
         }
 
-        Logger.getLogger(PasswordRule.class).info("Total number: " + passwords.length + " Allowed by Weak: " + weak + " Allowed by Strong: " + strong);
+        LogManager.getLogger(PasswordRule.class).info("Total number: " + passwords.length + " Allowed by Weak: " + weak + " Allowed by Strong: " + strong);
     }
 }

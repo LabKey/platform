@@ -17,7 +17,8 @@ package org.labkey.api.util;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConvertHelper;
@@ -41,7 +42,7 @@ import java.util.stream.Collectors;
  */
 public class ReturnURLString
 {
-    private static final Logger LOG = Logger.getLogger(ReturnURLString.class);
+    private static final Logger LOG = LogManager.getLogger(ReturnURLString.class);
 
     private final @Nullable URLHelper _url;
 

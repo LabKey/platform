@@ -23,7 +23,8 @@ import com.jayway.jsonpath.PathNotFoundException;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jfree.chart.ChartColor;
 import org.jfree.chart.ChartFactory;
@@ -112,7 +113,7 @@ import java.util.stream.Collectors;
 public class MothershipController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(MothershipController.class);
-    private static final Logger _log = Logger.getLogger(MothershipController.class);
+    private static final Logger _log = LogManager.getLogger(MothershipController.class);
 
     public MothershipController()
     {

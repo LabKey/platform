@@ -16,7 +16,8 @@
 
 package org.labkey.study.visitmanager;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -480,9 +481,9 @@ public class SequenceVisitManager extends VisitManager
             sqlUpdateVisitRowId.append(" AND VisitRowId=-1");
 
         long start = System.currentTimeMillis();
-        (null==logger?Logger.getLogger(SequenceVisitManager.class):logger).trace("START UPDATE", new Throwable());
+        (null==logger?LogManager.getLogger(SequenceVisitManager.class):logger).trace("START UPDATE", new Throwable());
         new SqlExecutor(schema).execute(sqlUpdateVisitRowId);
-        (null==logger?Logger.getLogger(SequenceVisitManager.class):logger).trace("DONE UPDATE " + DateUtil.formatDuration(System.currentTimeMillis()-start));
+        (null==logger?LogManager.getLogger(SequenceVisitManager.class):logger).trace("DONE UPDATE " + DateUtil.formatDuration(System.currentTimeMillis()-start));
     }
 
 

@@ -15,7 +15,8 @@
  */
 package org.labkey.api.message.digest;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.util.ExceptionUtil;
 import org.quartz.Job;
@@ -45,7 +46,7 @@ public abstract class MessageDigest
 
     private final List<Provider> _providers = new CopyOnWriteArrayList<>();
 
-    private static final Logger _log = Logger.getLogger(MessageDigest.class);
+    private static final Logger _log = LogManager.getLogger(MessageDigest.class);
 
     public interface Provider
     {

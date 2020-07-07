@@ -18,7 +18,8 @@ package org.labkey.study.designer;
 
 import gwt.client.org.labkey.study.designer.client.model.GWTCohort;
 import gwt.client.org.labkey.study.designer.client.model.GWTTimepoint;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.ValidationException;
@@ -58,7 +59,7 @@ import java.util.List;
  */
 public class StudyDefinitionServiceImpl extends BaseRemoteService implements StudyDefinitionService
 {
-    private static Logger _log = Logger.getLogger(StudyDefinitionServiceImpl.class);
+    private static Logger _log = LogManager.getLogger(StudyDefinitionServiceImpl.class);
 
     public StudyDefinitionServiceImpl(ViewContext context)
     {

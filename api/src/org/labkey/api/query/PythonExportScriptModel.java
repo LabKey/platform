@@ -16,7 +16,8 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DisplayColumn;
@@ -36,7 +37,7 @@ public class PythonExportScriptModel extends ExportScriptModel
 {
     private int _indentSpaces = 4;
 
-    private static final Logger _log = Logger.getLogger(PythonExportScriptModel.class);
+    private static final Logger _log = LogManager.getLogger(PythonExportScriptModel.class);
 
     public PythonExportScriptModel(QueryView view)
     {

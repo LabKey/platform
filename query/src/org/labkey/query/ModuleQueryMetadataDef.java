@@ -15,7 +15,8 @@
  */
 package org.labkey.query;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.resource.Resource;
@@ -40,7 +41,7 @@ import java.io.IOException;
  */
 public class ModuleQueryMetadataDef
 {
-    private static final Logger LOG = Logger.getLogger(ModuleQueryMetadataDef.class);
+    private static final Logger LOG = LogManager.getLogger(ModuleQueryMetadataDef.class);
 
     private String _name;
     private Path _path;

@@ -23,7 +23,8 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -175,7 +176,7 @@ import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
 
 public class ExperimentServiceImpl implements ExperimentService
 {
-    private static final Logger LOG = Logger.getLogger(ExperimentServiceImpl.class);
+    private static final Logger LOG = LogManager.getLogger(ExperimentServiceImpl.class);
 
     private Cache<String, Protocol> protocolCache;
 
@@ -7091,7 +7092,7 @@ public class ExperimentServiceImpl implements ExperimentService
             final User user = TestContext.get().getUser();
             final Container c = JunitUtil.getTestContainer();
             final ViewBackgroundInfo info = new ViewBackgroundInfo(c, user, null);
-            final Logger log = Logger.getLogger(ExperimentServiceImpl.class);
+            final Logger log = LogManager.getLogger(ExperimentServiceImpl.class);
 
             // assert no MaterialInput exp.object exist
             assertEquals(0L, countMaterialInputObjects(c));

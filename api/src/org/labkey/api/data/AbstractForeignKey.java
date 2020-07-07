@@ -15,7 +15,8 @@
  */
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
@@ -271,7 +272,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         catch (CloneNotSupportedException e)
         {
             assert false : "Silly programmer, clone not supported for " + this.getClass().getName();
-            Logger.getLogger(AbstractForeignKey.class).error(e);
+            LogManager.getLogger(AbstractForeignKey.class).error(e);
             return null;
         }
     }

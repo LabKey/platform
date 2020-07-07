@@ -15,7 +15,8 @@
  */
 package org.labkey.study.writer;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
@@ -41,7 +42,7 @@ import java.util.List;
  */
 public class DatasetWriter implements InternalStudyWriter
 {
-    private static final Logger LOG = Logger.getLogger(DatasetWriter.class);
+    private static final Logger LOG = LogManager.getLogger(DatasetWriter.class);
     protected static final String DEFAULT_DIRECTORY = "datasets";
     protected static final String MANIFEST_FILENAME = "datasets_manifest.xml";
 

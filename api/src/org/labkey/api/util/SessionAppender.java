@@ -15,7 +15,12 @@
  */
 package org.labkey.api.util;
 
-import org.apache.log4j.spi.LoggingEvent;
+import org.apache.logging.log4j.core.Filter;
+import org.apache.logging.log4j.core.Layout;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Property;
+import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.util.ConcurrentReferenceHashMap;
 
@@ -31,8 +36,14 @@ import java.util.Map;
  * Date: Aug 18, 2009
  * Time: 2:18:21 PM
  */
-public class SessionAppender extends org.apache.log4j.AppenderSkeleton
+@Plugin(name = "SessionAppender", category = "Core", elementType = "appender", printObject = true)
+public class SessionAppender extends AbstractAppender
 {
+    protected SessionAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties)
+    {
+        super(name, filter, layout, ignoreExceptions, properties);
+    }
+
     static class AppenderInfo implements Serializable
     {
         AppenderInfo(String key, boolean on)
@@ -43,7 +54,7 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
 
         final String key;
         boolean on;
-        final List<LoggingEvent> list = new LinkedList<>();
+        final List<LogEvent> list = new LinkedList<>();
         int eventId=0;
     }
 
@@ -74,7 +85,7 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
     }
 
     @Override
-    protected void append(LoggingEvent event)
+    public void append(LogEvent event)
     {
         AppenderInfo info = localInfo.get();
         if (null == info || !info.on)
@@ -90,27 +101,14 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
     }
 
 
-    @Override
-    public void close()
-    {
-    }
-
-
-    @Override
-    public boolean requiresLayout()
-    {
-        return false;
-    }
-
-
-    public static LoggingEvent[] getLoggingEvents(HttpServletRequest request)
+    public static LogEvent[] getLoggingEvents(HttpServletRequest request)
     {
         AppenderInfo info = _getLoggingForSession(request);
         if (null == info)
-            return new LoggingEvent[0];
+            return new LogEvent[0];
         synchronized (info.list)
         {
-            return info.list.toArray(new LoggingEvent[info.list.size()]);
+            return info.list.toArray(new LogEvent[0]);
         }
     }
 

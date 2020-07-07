@@ -15,7 +15,8 @@
  */
 package org.labkey.query;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
@@ -34,7 +35,7 @@ import org.labkey.query.persist.QueryManager;
 
 public class QueryUpgradeCode implements UpgradeCode
 {
-    private static final Logger _log = Logger.getLogger(QueryUpgradeCode.class);
+    private static final Logger _log = LogManager.getLogger(QueryUpgradeCode.class);
 
     /**
      * Migrate the legacy chart views to the new json-based versions

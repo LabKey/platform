@@ -15,7 +15,8 @@
  */
 package org.labkey.api.files;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -50,7 +51,7 @@ import java.util.Set;
  */
 public class TableUpdaterFileListener implements FileListener
 {
-    private static final Logger LOG = Logger.getLogger(TableUpdaterFileListener.class);
+    private static final Logger LOG = LogManager.getLogger(TableUpdaterFileListener.class);
 
     public static final String TABLE_ALIAS = "x";
 

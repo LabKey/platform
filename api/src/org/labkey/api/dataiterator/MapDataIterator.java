@@ -15,7 +15,8 @@
  */
 package org.labkey.api.dataiterator;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -55,7 +56,7 @@ public interface MapDataIterator extends DataIterator
                 String name = in.getColumnInfo(i).getName();
                 if (_findMap.containsKey(name))
                 {
-                    Logger.getLogger(MapDataIterator.class).warn("Map already has column named '" + name + "'");
+                    LogManager.getLogger(MapDataIterator.class).warn("Map already has column named '" + name + "'");
                     continue;
                 }
                 _findMap.put(in.getColumnInfo(i).getName(),i);

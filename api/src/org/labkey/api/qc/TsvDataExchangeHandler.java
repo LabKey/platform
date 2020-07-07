@@ -17,7 +17,8 @@ package org.labkey.api.qc;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -124,7 +125,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
     private Map<String, String> _formFields = new HashMap<>();
     private Map<String, List<Map<String, Object>>> _sampleProperties = new HashMap<>();
-    private static final Logger LOG = Logger.getLogger(TsvDataExchangeHandler.class);
+    private static final Logger LOG = LogManager.getLogger(TsvDataExchangeHandler.class);
     private DataSerializer _serializer = new TsvDataSerializer();
 
     /** Files that shouldn't be considered part of the run's output, such as the transform script itself */

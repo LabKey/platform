@@ -18,7 +18,8 @@ package org.labkey.study.importer;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
@@ -208,7 +209,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
 
     public void process(List<Map<String, Object>> rows, boolean merge) throws IOException, ValidationException
     {
-        _process(rows, merge, Logger.getLogger(getClass()));
+        _process(rows, merge, LogManager.getLogger(getClass()));
     }
 
     // Avoid conflict with SpecimenImporter.process() (has similar signature)

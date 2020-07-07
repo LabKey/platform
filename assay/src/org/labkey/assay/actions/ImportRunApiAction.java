@@ -16,7 +16,8 @@
 
 package org.labkey.assay.actions;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
@@ -78,7 +79,7 @@ import static org.labkey.api.assay.AssayFileWriter.createFile;
 @ApiVersion(12.3)
 public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.ImportRunApiForm>
 {
-    static Logger LOG = Logger.getLogger(ImportRunApiAction.class);
+    static Logger LOG = LogManager.getLogger(ImportRunApiAction.class);
 
     @Override
     public ApiResponse execute(ImportRunApiForm form, BindException errors) throws Exception

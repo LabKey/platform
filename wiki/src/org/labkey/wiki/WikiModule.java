@@ -16,7 +16,8 @@
 package org.labkey.wiki;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderSerializationRegistry;
@@ -66,9 +67,9 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
     public static final String WEB_PART_NAME = "Wiki";
 
     // package logger for use with logger-manage.view
-    private static final Logger _logPackage = Logger.getLogger(WikiModule.class.getPackage().getName());
+    private static final Logger _logPackage = LogManager.getLogger(WikiModule.class.getPackage().getName());
 
-    private static final Logger _log = Logger.getLogger(WikiModule.class);
+    private static final Logger _log = LogManager.getLogger(WikiModule.class);
 
     @Override
     public String getName()

@@ -17,7 +17,8 @@
 package org.labkey.api.security;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
@@ -83,7 +84,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class UserManager
 {
-    private static final Logger LOG = Logger.getLogger(UserManager.class);
+    private static final Logger LOG = LogManager.getLogger(UserManager.class);
     private static final CoreSchema CORE = CoreSchema.getInstance();
 
     // NOTE: This static map will slowly grow, since user IDs & timestamps are added and never removed. It's a trivial amount of data, though.

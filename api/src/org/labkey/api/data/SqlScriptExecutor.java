@@ -15,7 +15,8 @@
  */
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
@@ -59,7 +60,7 @@ import java.util.zip.GZIPInputStream;
  */
 public class SqlScriptExecutor
 {
-    private static final Logger _log = Logger.getLogger(SqlScriptExecutor.class);
+    private static final Logger _log = LogManager.getLogger(SqlScriptExecutor.class);
 
     private final String _sql;
     private final Pattern _splitPattern;

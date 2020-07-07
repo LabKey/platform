@@ -17,7 +17,9 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -93,7 +95,7 @@ public class ExceptionUtil
     public static final String REQUEST_EXCEPTION_ATTRIBUTE = ExceptionUtil.class.getName() + "$exception";
 
     private static final JobRunner JOB_RUNNER = new JobRunner("Mothership Reporting", 1);
-    private static final Logger LOG = Logger.getLogger(ExceptionUtil.class);
+    private static final Logger LOG = LogManager.getLogger(ExceptionUtil.class);
     // Allow 10 report submissions to mothership per minute
     private static final RateLimiter _reportingRateLimiter = new RateLimiter("exception reporting", 10, TimeUnit.MINUTES);
 
@@ -1023,7 +1025,7 @@ public class ExceptionUtil
                 return null;
             };
             SearchService dummySearch = (SearchService) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{SearchService.class}, h);
-            Logger dummyLog = new Logger("mock logger")
+            Logger dummyLog = new org.apache.logging.log4j.core.Logger((LoggerContext) LogManager.getContext(), "mock logger", LogManager.getLogger("mock logger").getMessageFactory())
             {
                 @Override
                 public void debug(Object message)

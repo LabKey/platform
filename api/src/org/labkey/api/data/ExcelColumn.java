@@ -19,7 +19,8 @@ package org.labkey.api.data;
 import jxl.format.Colour;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
 import org.apache.poi.hssf.usermodel.HSSFPicture;
 import org.apache.poi.ss.usermodel.Cell;
@@ -90,7 +91,7 @@ import java.util.stream.Collectors;
 
 public class ExcelColumn extends RenderColumn
 {
-    private static Logger _log = Logger.getLogger(ExcelColumn.class);
+    private static Logger _log = LogManager.getLogger(ExcelColumn.class);
 
     private static final int TYPE_UNKNOWN = 0;
     private static final int TYPE_INT = 1;

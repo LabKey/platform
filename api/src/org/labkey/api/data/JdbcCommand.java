@@ -15,8 +15,9 @@
  */
 package org.labkey.api.data;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,7 +32,7 @@ import java.sql.SQLException;
  */
 public abstract class JdbcCommand<COMMAND extends JdbcCommand>
 {
-    private static final Logger LOG = Logger.getLogger(JdbcCommand.class);
+    private static final Logger LOG = LogManager.getLogger(JdbcCommand.class);
 
     private final @NotNull DbScope _scope;
     protected final @Nullable Connection _conn;

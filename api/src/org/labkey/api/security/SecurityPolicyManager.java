@@ -15,7 +15,8 @@
  */
 package org.labkey.api.security;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
@@ -62,7 +63,7 @@ import java.util.Set;
  */
 public class SecurityPolicyManager
 {
-    private static final Logger logger = Logger.getLogger(SecurityPolicyManager.class);
+    private static final Logger logger = LogManager.getLogger(SecurityPolicyManager.class);
     private static final CoreSchema core = CoreSchema.getInstance();
     private static final Cache<String, SecurityPolicy> CACHE = new DatabaseCache<>(core.getSchema().getScope(), CacheManager.UNLIMITED, "SecurityPolicies");
 

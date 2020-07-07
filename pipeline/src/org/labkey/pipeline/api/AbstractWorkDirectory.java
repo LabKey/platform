@@ -18,7 +18,8 @@ package org.labkey.pipeline.api;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.WorkDirFactory;
@@ -50,7 +51,7 @@ import java.util.Set;
  */
 public abstract class AbstractWorkDirectory implements WorkDirectory
 {
-    private static final Logger LOG = Logger.getLogger(AbstractWorkDirectory.class);
+    private static final Logger LOG = LogManager.getLogger(AbstractWorkDirectory.class);
 
     protected static final String WORK_DIR_SUFFIX = ".work";
     protected static final FileType FT_WORK_DIR = new FileType(WORK_DIR_SUFFIX);

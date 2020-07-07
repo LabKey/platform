@@ -15,7 +15,8 @@
  */
 package org.labkey.api.security;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
@@ -55,7 +56,7 @@ import java.util.TreeSet;
  */
 public class SecurityPolicy implements HasPermission
 {
-    private static final Logger LOG = Logger.getLogger(SecurityPolicy.class);
+    private static final Logger LOG = LogManager.getLogger(SecurityPolicy.class);
 
     protected final SortedSet<RoleAssignment> _assignments = new TreeSet<>();
     protected final String _resourceId;

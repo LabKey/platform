@@ -16,7 +16,8 @@
 
 package org.labkey.api.reader;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.BeanObjectFactory;
 
 import javax.xml.stream.XMLInputFactory;
@@ -34,7 +35,7 @@ import java.util.HashMap;
  */
 public class SimpleXMLStreamReader extends XMLStreamReaderWrapper
 {
-    private static Logger _log = Logger.getLogger(SimpleXMLStreamReader.class);
+    private static Logger _log = LogManager.getLogger(SimpleXMLStreamReader.class);
     private static Pattern _blankPattern = Pattern.compile("");
 
     public SimpleXMLStreamReader(InputStream stream) throws XMLStreamException

@@ -15,7 +15,8 @@
  */
 package org.labkey.api.webdav;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -72,7 +73,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         ServiceRegistry.get().registerService(WebdavResolver.class, _instance);
     }
 
-    private static final Logger _log = Logger.getLogger(ModuleStaticResolverImpl.class);
+    private static final Logger _log = LogManager.getLogger(ModuleStaticResolverImpl.class);
 
     /** System property name for an extra directory of static content */
     private static final String EXTRA_WEBAPP_DIR = "extrawebappdir";

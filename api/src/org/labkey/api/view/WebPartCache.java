@@ -15,7 +15,8 @@
  */
 package org.labkey.api.view;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
@@ -48,7 +49,7 @@ import java.util.Map;
  */
 public class WebPartCache
 {
-    private static final Logger LOG = Logger.getLogger(WebPartCache.class);
+    private static final Logger LOG = LogManager.getLogger(WebPartCache.class);
     private static final Cache<String, Map<String, Portal.PortalPage>> CACHE = CacheManager.getStringKeyCache(10000, CacheManager.DAY, "Webparts");
 
     static public Portal.PortalPage getPortalPage(@NotNull Container c, @NotNull String pageId)

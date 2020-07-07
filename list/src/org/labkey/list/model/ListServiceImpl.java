@@ -16,7 +16,8 @@
 
 package org.labkey.list.model;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
@@ -129,7 +130,7 @@ public class ListServiceImpl implements ListService
 
         try
         {
-            li.processMany(new FileSystemFile(dir), c, user, errorList, Logger.getLogger(ListController.class));
+            li.processMany(new FileSystemFile(dir), c, user, errorList, LogManager.getLogger(ListController.class));
 
             for (String error : errorList)
                 errors.reject(ERROR_MSG, error);

@@ -17,7 +17,8 @@
 package org.labkey.pipeline.status;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpRun;
@@ -62,7 +63,7 @@ import static org.labkey.pipeline.api.PipelineStatusManager.*;
 
 public class StatusController extends SpringActionController
 {
-    private static final Logger _log = Logger.getLogger(StatusController.class);
+    private static final Logger _log = LogManager.getLogger(StatusController.class);
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(StatusController.class);
 
     protected static final String _newline = System.getProperty("line.separator");

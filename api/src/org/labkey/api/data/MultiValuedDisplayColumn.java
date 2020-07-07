@@ -15,7 +15,8 @@
  */
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.query.FieldKey;
 
 import java.io.IOException;
@@ -36,7 +37,7 @@ import java.util.stream.Collectors;
  */
 public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements IMultiValuedDisplayColumn
 {
-    private static final Logger LOG = Logger.getLogger(MultiValuedDisplayColumn.class);
+    private static final Logger LOG = LogManager.getLogger(MultiValuedDisplayColumn.class);
 
     private final Set<FieldKey> _fieldKeys = new HashSet<>();
     private final Set<FieldKey> _additionalFieldKeys = new HashSet<>();

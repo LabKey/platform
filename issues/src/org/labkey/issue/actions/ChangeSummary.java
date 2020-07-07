@@ -16,7 +16,8 @@
 package org.labkey.issue.actions;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
@@ -79,7 +80,7 @@ import static org.labkey.api.action.SpringActionController.getActionName;
  */
 public class ChangeSummary
 {
-    private static final Logger _log = Logger.getLogger(ChangeSummary.class);
+    private static final Logger _log = LogManager.getLogger(ChangeSummary.class);
 
     private final Issue.Comment _comment;
     private final String _textChanges;

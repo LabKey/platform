@@ -16,7 +16,8 @@
 
 package org.labkey.api.query;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
@@ -47,7 +48,7 @@ import java.util.TreeMap;
  */
 public class PropertyForeignKey extends AbstractForeignKey implements PropertyColumnDecorator
 {
-    private static final Logger LOG = Logger.getLogger(PropertyForeignKey.class);
+    private static final Logger LOG = LogManager.getLogger(PropertyForeignKey.class);
 
     Map<String, PropertyDescriptor> _pdMap;
     protected QuerySchema _schema;

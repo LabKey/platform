@@ -16,7 +16,8 @@
 
 package org.labkey.assay.query;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
@@ -41,7 +42,7 @@ import java.util.Set;
  */
 public class TypeDisplayColumn extends DataColumn
 {
-    private static final Logger LOG = Logger.getLogger(TypeDisplayColumn.class);
+    private static final Logger LOG = LogManager.getLogger(TypeDisplayColumn.class);
 
     private static final FieldKey LSID_FIELD_KEY = new FieldKey(null, "LSID");
 

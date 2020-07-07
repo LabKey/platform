@@ -15,7 +15,8 @@
  */
 package org.labkey.pipeline.api;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.data.ContainerManager;
@@ -41,7 +42,7 @@ import java.util.stream.Collectors;
  */
 public abstract class AbstractPipelineQueue implements PipelineQueue
 {
-    private static final Logger LOG = Logger.getLogger(AbstractPipelineQueue.class);
+    private static final Logger LOG = LogManager.getLogger(AbstractPipelineQueue.class);
 
     @Override
     public void addJob(final PipelineJob job) throws PipelineValidationException

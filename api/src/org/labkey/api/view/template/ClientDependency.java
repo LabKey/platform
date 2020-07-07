@@ -16,7 +16,8 @@
 package org.labkey.api.view.template;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
@@ -63,7 +64,7 @@ import java.util.stream.Collectors;
  */
 public abstract class ClientDependency
 {
-    private static final Logger LOG = Logger.getLogger(ClientDependency.class);
+    private static final Logger LOG = LogManager.getLogger(ClientDependency.class);
     static final Cache<Pair<Path, ModeTypeEnum.Enum>, ClientDependency> CACHE = CacheManager.getBlockingCache(10000, CacheManager.MONTH, "Client dependencies", new ClientDependencyCacheLoader());
 
     static

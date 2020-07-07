@@ -16,7 +16,8 @@
 
 package org.labkey.study.importer;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.FolderImportContext;
@@ -55,7 +56,7 @@ import java.util.concurrent.BlockingQueue;
 */
 public class StudyReload
 {
-    private static final Logger LOG = Logger.getLogger(StudyReload.class);
+    private static final Logger LOG = LogManager.getLogger(StudyReload.class);
 
     private static String getDescription(Study study)
     {

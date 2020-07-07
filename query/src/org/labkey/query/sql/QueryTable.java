@@ -16,7 +16,8 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
@@ -60,7 +61,7 @@ import java.util.TreeSet;
 
 public class QueryTable extends QueryRelation
 {
-    private static final Logger _log = Logger.getLogger(QueryTable.class);
+    private static final Logger _log = LogManager.getLogger(QueryTable.class);
 
     private final String _originalAlias;        // as passed in from QuerySelect for error messages
     private final int _uniqueAliasCounter;

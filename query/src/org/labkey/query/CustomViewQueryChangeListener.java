@@ -15,7 +15,8 @@
  */
 package org.labkey.query;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.AnalyticsProviderItem;
 import org.labkey.api.data.Container;
@@ -119,7 +120,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
             }
             catch (URISyntaxException e)
             {
-                Logger.getLogger(CustomViewQueryChangeListener.class).error("An error occurred finding custom view dependents: ", e);
+                LogManager.getLogger(CustomViewQueryChangeListener.class).error("An error occurred finding custom view dependents: ", e);
                 continue VIEW_LOOP;
             }
 
@@ -262,7 +263,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
             }
             catch (Exception e)
             {
-                Logger.getLogger(CustomViewQueryChangeListener.class).error("An error occurred upgrading custom view properties: ", e);
+                LogManager.getLogger(CustomViewQueryChangeListener.class).error("An error occurred upgrading custom view properties: ", e);
             }
         }
     }

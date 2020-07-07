@@ -15,10 +15,15 @@
  */
 package org.labkey.api.action;
 
-import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.spi.LoggingEvent;
+import org.apache.logging.log4j.core.Filter;
+import org.apache.logging.log4j.core.Layout;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Property;
+import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -29,25 +34,20 @@ import java.util.*;
  * User: adam
  * Date: Jun 27, 2010
  */
-public class StatusAppender extends AppenderSkeleton
+@Plugin(name = "StatusAppender", category = "Core", elementType = "appender", printObject = true)
+public class StatusAppender extends AbstractAppender
 {
     private final List<String> _status = Collections.synchronizedList(new ArrayList<>());
 
+    public StatusAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties)
+    {
+        super(name, filter, layout, ignoreExceptions, properties);
+    }
+
     @Override
-    protected void append(LoggingEvent event)
+    public void append(LogEvent event)
     {
         _status.add(event.getMessage().toString());
-    }
-
-    @Override
-    public void close()
-    {
-    }
-
-    @Override
-    public boolean requiresLayout()
-    {
-        return false;
     }
 
     public Collection<String> getStatus(@Nullable Integer offset)

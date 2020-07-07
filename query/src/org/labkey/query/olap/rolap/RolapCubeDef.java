@@ -18,7 +18,8 @@ package org.labkey.query.olap.rolap;
 import org.apache.commons.lang3.StringUtils;
 import static org.apache.commons.lang3.StringUtils.*;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -901,7 +902,7 @@ public class RolapCubeDef
             JdbcType j = JdbcType.valueOf(columnType);
             if (j.isText() != jdbcType.isText() || j.isDateOrTime() != jdbcType.isDateOrTime())
             {
-                Logger.getLogger(RolapCubeDef.class).info("jdbc types do not match, expected: " + jdbcType + " found: " + j + ". Alias: \"" + keyAlias + "\"");
+                LogManager.getLogger(RolapCubeDef.class).info("jdbc types do not match, expected: " + jdbcType + " found: " + j + ". Alias: \"" + keyAlias + "\"");
             }
             return jdbcType;
         }

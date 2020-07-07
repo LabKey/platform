@@ -15,7 +15,8 @@
  */
 package org.labkey.study.query;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
@@ -175,7 +176,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     {
         super(tinfo, schema);
 
-        Logger.getLogger(BaseSpecimenPivotTable.class).debug("creating specimen pivot\n" +
+        LogManager.getLogger(BaseSpecimenPivotTable.class).debug("creating specimen pivot\n" +
                 "SCHEMA=" + schema.getName() + " " + schema.getClass().getSimpleName()+"@"+System.identityHashCode(schema) + "\n" +
                 "TABLE=" + tinfo.getName() + " " + this.getClass().getSimpleName() + "@" + System.identityHashCode(this),
                 new Throwable("stack trace")

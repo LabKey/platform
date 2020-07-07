@@ -17,7 +17,8 @@
 package org.labkey.api.data;
 
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -46,7 +47,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 {
     public static final Set<String> ALL_COLUMNS = Collections.unmodifiableSet(Collections.emptySet());
 
-    private static final Logger LOG = Logger.getLogger(TableSelector.class);
+    private static final Logger LOG = LogManager.getLogger(TableSelector.class);
 
     private final TableInfo _table;
     private final Collection<ColumnInfo> _columns;
@@ -424,7 +425,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                 // Issue 17536: Issue a warning instead of blowing up if there is no result row containing the aggregate values.
                 if (!rs.next())
                 {
-                    Logger.getLogger(TableSelector.class).warn("Expected a non-empty resultset from aggregate query.");
+                    LogManager.getLogger(TableSelector.class).warn("Expected a non-empty resultset from aggregate query.");
                 }
                 else
                 {

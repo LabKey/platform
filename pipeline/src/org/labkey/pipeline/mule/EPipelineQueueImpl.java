@@ -16,7 +16,8 @@
 package org.labkey.pipeline.mule;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobData;
@@ -59,7 +60,7 @@ import java.util.Map;
  */
 public class EPipelineQueueImpl extends AbstractPipelineQueue
 {
-    private static Logger _log = Logger.getLogger(EPipelineQueueImpl.class);
+    private static Logger _log = LogManager.getLogger(EPipelineQueueImpl.class);
     private static final String PIPELINE_QUEUE_NAME = "PipelineQueue";
 
     private static ThreadLocal<List<PipelineJob>> _outboundJobs = new ThreadLocal<>();

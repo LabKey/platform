@@ -15,7 +15,8 @@
  */
 package org.labkey.api.dataiterator;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.query.BatchValidationException;
 
@@ -26,7 +27,7 @@ import java.io.IOException;
  */
 public class Pump implements Runnable
 {
-    static Logger log = Logger.getLogger(Pump.class);
+    static Logger log = LogManager.getLogger(Pump.class);
     DataIterator _it;
     DataIteratorBuilder _builder;
     final DataIteratorContext _context;

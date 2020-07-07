@@ -15,7 +15,8 @@
  */
 package org.labkey.api.websocket;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 
@@ -49,7 +50,7 @@ import java.util.Map;
 
 public abstract class BrowserEndpoint
 {
-    static Logger LOG = Logger.getLogger(BrowserEndpoint.class);
+    static Logger LOG = LogManager.getLogger(BrowserEndpoint.class);
 
     protected Session browserSession;
     ServerEndpoint serverEndpoint = null;

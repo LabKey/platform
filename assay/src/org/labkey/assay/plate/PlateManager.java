@@ -16,7 +16,8 @@
 
 package org.labkey.assay.plate;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
@@ -100,7 +101,7 @@ import static org.labkey.api.data.CompareType.IN;
  */
 public class PlateManager implements PlateService
 {
-    private static final Logger LOG = Logger.getLogger(PlateManager.class);
+    private static final Logger LOG = LogManager.getLogger(PlateManager.class);
     private static final String LSID_CLASS_OBJECT_ID = "objectType";
 
     private List<PlateService.PlateDetailsResolver> _detailsLinkResolvers = new ArrayList<>();

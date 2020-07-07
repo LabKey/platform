@@ -16,7 +16,8 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -58,7 +59,7 @@ public abstract class DataView extends WebPartView<RenderContext>
 {
     private DataRegion _dataRegion = null;
 
-    private static final Logger _log = Logger.getLogger(DataView.class);
+    private static final Logger _log = LogManager.getLogger(DataView.class);
 
     // Call this constructor if you need to subclass the RenderContext
     public DataView(DataRegion dataRegion, RenderContext ctx)

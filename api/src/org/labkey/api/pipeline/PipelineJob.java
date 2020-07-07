@@ -22,14 +22,14 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Appender;
-import org.apache.log4j.Category;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
-import org.apache.log4j.spi.HierarchyEventListener;
-import org.apache.log4j.spi.LoggerFactory;
-import org.apache.log4j.spi.LoggerRepository;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.FileAppender;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
@@ -100,14 +100,14 @@ abstract public class PipelineJob extends Job implements Serializable
     public static final String PIPELINE_TASK_INFO_PARAM = "pipeline, taskInfo";
     public static final String PIPELINE_TASK_OUTPUT_PARAMS_PARAM = "pipeline, taskOutputParams";
 
-    protected static Logger _log = Logger.getLogger(PipelineJob.class);
+    protected static Logger _log = LogManager.getLogger(PipelineJob.class);
     // Send start/stop messages to a separate logger because the default logger for this class is set to
     // only write ERROR level events to the system log
-    private static final Logger _logJobStopStart = Logger.getLogger(Job.class);
+    private static final Logger _logJobStopStart = LogManager.getLogger(Job.class);
 
     public static Logger getJobLogger(Class clazz)
     {
-        return Logger.getLogger(PipelineJob.class.getName() + ".." + clazz.getName());
+        return LogManager.getLogger(PipelineJob.class.getName() + ".." + clazz.getName());
     }
 
     public RecordedActionSet getActionSet()
@@ -1363,7 +1363,7 @@ abstract public class PipelineJob extends Job implements Serializable
      * logs to the weblog for the PipelineJob class, allowing administrators
      * to collect whatever level of logging they want from PipelineJobs.
      */
-    private static class OutputLogger extends Logger
+    private static class OutputLogger extends org.apache.logging.log4j.core.Logger
     {
         private final PipelineJob _job;
         private boolean _isSettingStatus;
@@ -1378,10 +1378,9 @@ abstract public class PipelineJob extends Job implements Serializable
 
         protected OutputLogger(PipelineJob job, String name)
         {
-            super(name);
+            super((LoggerContext) LogManager.getContext(), name, LogManager.getLogger(name).getMessageFactory());
 
             _job = job;
-            repository = new OutputLoggerRepository(name, this);
         }
 
         @Override
@@ -1489,107 +1488,6 @@ abstract public class PipelineJob extends Job implements Serializable
         }
     }
 
-    private static class OutputLoggerRepository implements LoggerRepository
-    {
-        private final String _name;
-        private final OutputLogger _outputLogger;
-
-        protected OutputLoggerRepository(String name, OutputLogger logger)
-        {
-            _name = name;
-            _outputLogger = logger;
-        }
-
-        @Override
-        public void addHierarchyEventListener(HierarchyEventListener listener)
-        {
-        }
-
-        @Override
-        public boolean isDisabled(int level)
-        {
-            return false;
-        }
-
-        @Override
-        public void setThreshold(Level level)
-        {
-        }
-
-        @Override
-        public void setThreshold(String val)
-        {
-        }
-
-        @Override
-        public void emitNoAppenderWarning(Category cat)
-        {
-        }
-
-        @Override
-        public Level getThreshold()
-        {
-            return null;
-        }
-
-        @Override
-        public Logger getLogger(String name)
-        {
-            if (_name.equals(name))
-                return _outputLogger;
-            return null;
-        }
-
-        @Override
-        public Logger getLogger(String name, LoggerFactory factory)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Logger getRootLogger()
-        {
-            return _outputLogger;
-        }
-
-        @Override
-        public Logger exists(String name)
-        {
-            if (_name.equals(name))
-                return _outputLogger;
-            return null;
-        }
-
-        @Override
-        public void shutdown()
-        {
-        }
-
-        @Override
-        public Enumeration<OutputLogger> getCurrentLoggers()
-        {
-            Vector<OutputLogger> v = new Vector<>();
-            v.add(_outputLogger);
-            return v.elements();
-        }
-
-        @Override
-        public Enumeration<OutputLogger> getCurrentCategories()
-        {
-            return getCurrentLoggers();
-        }
-
-        @Override
-        public void fireAddAppenderEvent(Category logger, Appender appender)
-        {
-        }
-
-        @Override
-        public void resetConfiguration()
-        {
-        }
-    }
-
     public String getLogLevel()
     {
         return _loggerLevel;
@@ -1620,11 +1518,13 @@ abstract public class PipelineJob extends Job implements Serializable
             File logFile = null != _logFile ? _logFile : new File(_logFilePathName);
             // Create appending logger.
             _logger = new OutputLogger(this, PipelineJob.class.getSimpleName() + ".Logger." + _logFilePathName);
-            _logger.removeAllAppenders();
-            SafeFileAppender appender = new SafeFileAppender(logFile);
-            appender.setLayout(new PatternLayout("%d{DATE} %-5p: %m%n"));
-            _logger.addAppender(appender);
-            _logger.setLevel(Level.toLevel(_loggerLevel));
+            LoggerContext loggerContext = (LoggerContext) LogManager.getContext(true);
+            Configuration configuration = loggerContext.getConfiguration();
+            LoggerConfig loggerConfig = configuration.getLoggerConfig(_logger.getName());
+            loggerConfig.getAppenders().forEach((key, value) -> loggerConfig.removeAppender(value.getName()));
+
+            SafeFileAppender appender = SafeFileAppender.createAppender("SafeFile", false, PatternLayout.newBuilder().withPattern("%d{DATE} %-5p: %m%n").build(), null, logFile);
+            loggerConfig.addAppender(appender, Level.toLevel(_loggerLevel), null);
         }
 
         return _logger;

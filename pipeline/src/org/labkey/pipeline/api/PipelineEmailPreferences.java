@@ -19,7 +19,8 @@ package org.labkey.pipeline.api;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -49,7 +50,7 @@ import java.util.TimerTask;
 public class PipelineEmailPreferences
 {
     private static final String PIPELINE_NOTIFICATION_TASKS = "PipelineNotificationTasks";
-    private static final Logger _log = Logger.getLogger(PipelineEmailPreferences.class);
+    private static final Logger _log = LogManager.getLogger(PipelineEmailPreferences.class);
 
     public static final String PREF_NOTIFY_OWNER_ON_SUCCESS = "notifyOwnerOnSuccess";
     public static final String PREF_NOTIFY_USERS_ON_SUCCESS = "notifyUsersOnSuccess";

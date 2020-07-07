@@ -17,7 +17,8 @@ package org.labkey.api.module;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.resource.Resource;
@@ -57,7 +58,7 @@ import java.util.function.Supplier;
  */
 public class ModuleHtmlViewDefinition
 {
-    private static final Logger _log = Logger.getLogger(ModuleHtmlViewDefinition.class);
+    private static final Logger _log = LogManager.getLogger(ModuleHtmlViewDefinition.class);
 
     public static final String HTML_VIEW_EXTENSION = ".html";
     public static final String VIEW_METADATA_EXTENSION = ".view.xml";

@@ -15,7 +15,8 @@
  */
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.DefaultScaleType;
@@ -41,7 +42,7 @@ import java.util.Map;
  */
 public class ReportingWriter
 {
-    private static final Logger LOG = Logger.getLogger(ReportingWriter.class);
+    private static final Logger LOG = LogManager.getLogger(ReportingWriter.class);
 
     public static Map<String, Object> getMetaData(DisplayColumn dc, boolean useFriendlyAsType, boolean includeLookup, boolean includeDomainFormat)
     {

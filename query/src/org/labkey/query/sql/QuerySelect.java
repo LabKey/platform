@@ -16,7 +16,8 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -63,7 +64,7 @@ import java.util.stream.Collectors;
 
 public class QuerySelect extends QueryRelation implements Cloneable
 {
-    private static final Logger _log = Logger.getLogger(QuerySelect.class);
+    private static final Logger _log = LogManager.getLogger(QuerySelect.class);
 
     String _queryText;
     private Map<FieldKey, SelectColumn> _columns;

@@ -19,7 +19,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.labkey.api.data.Container;
@@ -492,7 +493,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
 
     public static class TestCase extends PipelineJob.TestSerialization
     {
-        private static Logger LOG = Logger.getLogger(CopyFileRootPipelineJob.class);
+        private static Logger LOG = LogManager.getLogger(CopyFileRootPipelineJob.class);
 
         @Test
         public void testSerialize()

@@ -17,8 +17,9 @@
 package org.labkey.issue.query;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -91,7 +92,7 @@ import java.util.stream.Collectors;
 
 public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements UpdateableTableInfo
 {
-    private static final Logger LOG = Logger.getLogger(IssuesTable.class);
+    private static final Logger LOG = LogManager.getLogger(IssuesTable.class);
 
     private Set<Class<? extends Permission>> _allowablePermissions = new HashSet<>();
     private IssueListDef _issueDef;

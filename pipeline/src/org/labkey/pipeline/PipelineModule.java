@@ -15,7 +15,8 @@
  */
 package org.labkey.pipeline;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
@@ -93,7 +94,7 @@ import java.util.Set;
  */
 public class PipelineModule extends SpringModule implements ContainerManager.ContainerListener
 {
-    private static final Logger _log = Logger.getLogger(PipelineModule.class);
+    private static final Logger _log = LogManager.getLogger(PipelineModule.class);
 
     @Override
     public String getName()

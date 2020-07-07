@@ -18,7 +18,8 @@ package org.labkey.search.model;
 import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
@@ -141,7 +142,7 @@ import java.util.stream.Stream;
  */
 public class LuceneSearchServiceImpl extends AbstractSearchService
 {
-    private static final Logger _log = Logger.getLogger(LuceneSearchServiceImpl.class);
+    private static final Logger _log = LogManager.getLogger(LuceneSearchServiceImpl.class);
 
     // Changes to _index are rare (only when admin changes the index path), but we want any changes to be visible to
     // other threads immediately. Initialize to Noop class to prevent rare NPE (e.g., system maintenance runs before index

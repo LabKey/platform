@@ -17,7 +17,8 @@
 package org.labkey.api.data;
 
 import com.google.common.primitives.Ints;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
@@ -55,7 +56,7 @@ import java.util.concurrent.Callable;
 
 public class Parameter implements AutoCloseable
 {
-    static Logger LOG = Logger.getLogger(Parameter.class);
+    static Logger LOG = LogManager.getLogger(Parameter.class);
 
     public interface JdbcParameterValue
     {

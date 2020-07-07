@@ -17,7 +17,8 @@ package org.labkey.core.view.template.bootstrap;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
@@ -211,7 +212,7 @@ public class PageTemplate extends JspView<PageConfig>
         private final ViewContext _context;
         private final List<Portal.WebPart> _menus;
 
-        private static final Logger LOG = Logger.getLogger(NavigationModel.class);
+        private static final Logger LOG = LogManager.getLogger(NavigationModel.class);
 
         private NavigationModel(ViewContext context, PageConfig page)
         {

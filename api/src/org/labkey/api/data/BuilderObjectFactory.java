@@ -19,7 +19,8 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -44,7 +45,7 @@ import java.util.Map;
 
 public class BuilderObjectFactory<K> implements ObjectFactory<K>
 {
-    private static Logger _log = Logger.getLogger(BuilderObjectFactory.class);
+    private static Logger _log = LogManager.getLogger(BuilderObjectFactory.class);
 
     private final Class<K> _class;
     private final Class<? extends Builder> _classBuilder;

@@ -17,8 +17,9 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.converters.IntegerConverter;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -76,7 +77,7 @@ import java.util.Set;
  */
 public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 {
-    public static final Logger LOG = Logger.getLogger(SampleTypeUpdateServiceDI.class);
+    public static final Logger LOG = LogManager.getLogger(SampleTypeUpdateServiceDI.class);
 
     public enum Options {
         SkipDerivation

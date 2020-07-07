@@ -16,7 +16,8 @@
 
 package org.labkey.api.reports.report.r.view;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ScriptEngineReport;
@@ -49,7 +50,7 @@ public class ROutputView extends HttpView
     private boolean _isRemote = false;
     private List<File> _files = new ArrayList<>();
     private Map<String, String> _properties;
-    protected static Logger LOG = Logger.getLogger(ROutputView.class);
+    protected static Logger LOG = LogManager.getLogger(ROutputView.class);
     private static boolean ALLOW_REMOTE_FILESIZE_BYPASS = false;
 
     public ROutputView(ParamReplacement param)

@@ -19,7 +19,8 @@ package org.labkey.filecontent;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -112,7 +113,7 @@ import java.util.regex.Pattern;
  */
 public class FileContentServiceImpl implements FileContentService
 {
-    private static final Logger _log = Logger.getLogger(FileContentServiceImpl.class);
+    private static final Logger _log = LogManager.getLogger(FileContentServiceImpl.class);
     private static final String UPLOAD_LOG = ".upload.log";
     private static final FileContentServiceImpl INSTANCE = new FileContentServiceImpl();
 

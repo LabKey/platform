@@ -17,7 +17,8 @@
 package org.labkey.list.model;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -81,7 +82,7 @@ import static org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI;
 public class ListTable extends FilteredTable<ListQuerySchema> implements UpdateableTableInfo
 {
     private final ListDefinition _list;
-    private static final Logger LOG = Logger.getLogger(ListTable.class);
+    private static final Logger LOG = LogManager.getLogger(ListTable.class);
     private final boolean _allowMaxPhi;
     private final PHI _maxUserPhi;
 

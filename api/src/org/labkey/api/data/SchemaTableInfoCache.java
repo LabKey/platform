@@ -16,7 +16,8 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
@@ -33,7 +34,7 @@ import org.labkey.api.util.ExceptionUtil;
 */
 public class SchemaTableInfoCache
 {
-    private static final Logger LOG = Logger.getLogger(SchemaTableInfoCache.class);
+    private static final Logger LOG = LogManager.getLogger(SchemaTableInfoCache.class);
 
     private final BlockingCache<String, SchemaTableInfo> _blockingCache;
 

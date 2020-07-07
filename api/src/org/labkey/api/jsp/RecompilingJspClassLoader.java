@@ -18,7 +18,8 @@ package org.labkey.api.jsp;
 import org.apache.jasper.JspC;
 import org.apache.jasper.servlet.JspCServletContext;
 import org.apache.jasper.servlet.TldScanner;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.tomcat.JarScanner;
 import org.apache.tomcat.util.scan.StandardJarScanner;
 import org.labkey.api.annotations.JavaRuntimeVersion;
@@ -54,7 +55,7 @@ import java.util.Set;
  */
 public class RecompilingJspClassLoader extends JspClassLoader
 {
-    private static final Logger _log = Logger.getLogger(RecompilingJspClassLoader.class);
+    private static final Logger _log = LogManager.getLogger(RecompilingJspClassLoader.class);
     private static final String JSP_JAVA_PATH = "/jspTempDir/classes";
     private static final String JSP_CLASSES_DIR = "/classes/java/jsp";
     private static final String JSP_PACKAGE_PATH = JSP_PACKAGE.replaceAll("\\.", "/");

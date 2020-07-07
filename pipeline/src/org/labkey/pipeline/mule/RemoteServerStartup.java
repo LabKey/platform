@@ -26,7 +26,8 @@ import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.BreakpointThread;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import javax.jms.*;
 import java.io.*;
@@ -39,7 +40,7 @@ import java.util.*;
 */
 public class RemoteServerStartup extends AbstractPipelineStartup
 {
-    private static Logger _log = Logger.getLogger(RemoteServerStartup.class);
+    private static Logger _log = LogManager.getLogger(RemoteServerStartup.class);
     private static final String JOB_QUEUE_ADDRESS = "job.queue";
 
     /**
@@ -47,8 +48,7 @@ public class RemoteServerStartup extends AbstractPipelineStartup
      */
     public void run(List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, File webappDir, String[] args) throws Exception
     {
-        Map<String, BeanFactory> factories = initContext("log4j.xml", moduleFiles, moduleConfigFiles, customConfigFiles, webappDir, PipelineJobService.LocationType.RemoteServer);
-        LoggerUtil.rollErrorLogFile(_log);
+        Map<String, BeanFactory> factories = initContext("RemoteServerStartup", "log4j.xml", moduleFiles, moduleConfigFiles, customConfigFiles, webappDir, PipelineJobService.LocationType.RemoteServer);
 
         _log.info("Starting up LabKey Remote Server");
 

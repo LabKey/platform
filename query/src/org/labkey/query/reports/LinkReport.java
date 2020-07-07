@@ -15,7 +15,8 @@
  */
 package org.labkey.query.reports;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.thumbnail.Thumbnail;
@@ -64,7 +65,7 @@ public class LinkReport extends BaseRedirectReport
         }
         catch (UnknownHostException uhe)
         {
-            Logger.getLogger(LinkReport.class).warn("Error rendering link report thumbnail: " + uhe.getMessage());
+            LogManager.getLogger(LinkReport.class).warn("Error rendering link report thumbnail: " + uhe.getMessage());
         }
         catch (Exception e)
         {

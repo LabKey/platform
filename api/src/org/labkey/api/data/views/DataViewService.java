@@ -15,7 +15,8 @@
  */
 package org.labkey.api.data.views;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -44,7 +45,7 @@ public class DataViewService
 {
     private final Map<DataViewProvider.Type, DataViewProvider> _providers = new ConcurrentHashMap<>();
 
-    private static final Logger _log = Logger.getLogger(DataViewService.class);
+    private static final Logger _log = LogManager.getLogger(DataViewService.class);
     private static final DataViewService _instance = new DataViewService();
     private static final Map<String, Boolean> _providerInitialized = new HashMap<>();
 

@@ -16,7 +16,8 @@
 
 package org.labkey.pipeline.api;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.CompareType;
@@ -73,7 +74,7 @@ public class PipelineStatusManager
     public static final DbScope.TransactionKind TRANSACTION_KIND = () -> "PIPELINESTATUS";
 
     private static PipelineSchema _schema = PipelineSchema.getInstance();
-    private static final Logger LOG = Logger.getLogger(PipelineStatusManager.class);
+    private static final Logger LOG = LogManager.getLogger(PipelineStatusManager.class);
 
     public static TableInfo getTableInfo()
     {

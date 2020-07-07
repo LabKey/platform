@@ -16,7 +16,8 @@
 
 package org.labkey.api.view;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -34,7 +35,7 @@ import java.io.IOException;
  */
 public class FileServlet extends HttpServlet
 {
-    static Logger _log = Logger.getLogger(FileServlet.class);
+    static Logger _log = LogManager.getLogger(FileServlet.class);
     private static final String PAGE_FLOW_ATTR = FileServlet.class.getName() + ".pageFlow";
 
     @Override

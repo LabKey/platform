@@ -18,8 +18,9 @@ package org.labkey.api.data;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -111,7 +112,7 @@ import java.util.stream.Collectors;
  */
 public class DbScope
 {
-    private static final Logger LOG = Logger.getLogger(DbScope.class);
+    private static final Logger LOG = LogManager.getLogger(DbScope.class);
     private static final ConnectionMap _initializedConnections = newConnectionMap();
     private static final Map<String, DbScope> _scopes = new LinkedHashMap<>();
     private static final Map<Thread, Thread> _sharedConnections = new WeakHashMap<>();

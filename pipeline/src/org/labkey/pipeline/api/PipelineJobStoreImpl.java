@@ -17,7 +17,8 @@
 package org.labkey.pipeline.api;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -39,7 +40,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class PipelineJobStoreImpl extends PipelineJobMarshaller
 {
-    private static Logger _log = Logger.getLogger(PipelineJobStoreImpl.class);
+    private static Logger _log = LogManager.getLogger(PipelineJobStoreImpl.class);
 
     @Override
     public Object deserializeFromJSON(String json, Class<?> cls)

@@ -19,7 +19,8 @@ package org.labkey.query.reports;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -197,7 +198,7 @@ import static org.labkey.api.util.HtmlString.NBSP;
  */
 public class ReportsController extends SpringActionController
 {
-    private static final Logger _log = Logger.getLogger(ReportsController.class);
+    private static final Logger _log = LogManager.getLogger(ReportsController.class);
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ReportsController.class);
     private static final MimeMap _mimeMap = new MimeMap();
 

@@ -16,7 +16,8 @@
 package org.labkey.api.script;
 
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.junit.Assert;
@@ -104,7 +105,7 @@ import static org.labkey.api.script.RhinoService.LOG;
 
 public final class RhinoService
 {
-    public static final Logger LOG = Logger.getLogger(ScriptService.Console.class);
+    public static final Logger LOG = LogManager.getLogger(ScriptService.Console.class);
     static final RhinoFactory RHINO_FACTORY = new RhinoFactory();
 
     public static void register()
@@ -847,7 +848,7 @@ class RhinoEngine extends RhinoScriptEngine
  */
 class SandboxContextFactory extends ContextFactory
 {
-    private static final Logger log = Logger.getLogger(SandboxContextFactory.class);
+    private static final Logger log = LogManager.getLogger(SandboxContextFactory.class);
 
     static final ContextFactory SANDBOX = new SandboxContextFactory();
 

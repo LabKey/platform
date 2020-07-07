@@ -15,7 +15,8 @@
  */
 package org.labkey.pipeline.mule.transformers;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.mule.providers.jms.transformers.JMSMessageToObject;
@@ -31,7 +32,7 @@ import javax.jms.TextMessage;
  */
 public class JMSMessageToPipelineJob extends AbstractEventAwareTransformer
 {
-    private static final Logger LOG = Logger.getLogger(JMSMessageToPipelineJob.class);
+    private static final Logger LOG = LogManager.getLogger(JMSMessageToPipelineJob.class);
 
     private JMSMessageToObject _transformerFromJMS;
 

@@ -20,7 +20,8 @@ import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.JsonPathException;
 import com.jayway.jsonpath.PathNotFoundException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
@@ -32,7 +33,7 @@ import java.util.Collection;
 
 public class MetricJSONDisplayColumn extends DataColumn
 {
-    private static final Logger _log = Logger.getLogger(MetricJSONDisplayColumn.class);
+    private static final Logger _log = LogManager.getLogger(MetricJSONDisplayColumn.class);
 
     private String _jsonProp;
 

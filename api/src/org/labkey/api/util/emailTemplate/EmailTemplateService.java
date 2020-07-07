@@ -16,7 +16,8 @@
 
 package org.labkey.api.util.emailTemplate;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
@@ -37,7 +38,7 @@ import java.util.Set;
  */
 public class EmailTemplateService
 {
-    static Logger _log = Logger.getLogger(EmailTemplateService.class);
+    static Logger _log = LogManager.getLogger(EmailTemplateService.class);
 
     private static final String EMAIL_TEMPLATE_PROPERTIES_MAP_NAME = "emailTemplateProperties";
     private static final String MESSAGE_SUBJECT_PART = "subject";

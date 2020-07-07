@@ -20,7 +20,8 @@ import org.apache.commons.collections4.Factory;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -100,7 +101,7 @@ import static org.labkey.api.util.DOM.Attribute.*;
  */
 public class Portal implements ModuleChangeListener
 {
-    private static final Logger LOG = Logger.getLogger(Portal.class);
+    private static final Logger LOG = LogManager.getLogger(Portal.class);
     private static final WebPartBeanLoader FACTORY = new WebPartBeanLoader();
 
     public static final String FOLDER_PORTAL_PAGE = "folder";

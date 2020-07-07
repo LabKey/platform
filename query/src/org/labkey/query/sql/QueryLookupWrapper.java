@@ -15,7 +15,8 @@
  */
 package org.labkey.query.sql;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -44,7 +45,7 @@ import java.util.*;
  */
 public class QueryLookupWrapper extends QueryRelation
 {
-    private static final Logger _log = Logger.getLogger(QueryLookupWrapper.class);
+    private static final Logger _log = LogManager.getLogger(QueryLookupWrapper.class);
 
     final AliasManager _aliasManager;
     final QueryRelation _source;

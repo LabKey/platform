@@ -16,7 +16,8 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -79,7 +80,7 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
  */
 public class ViewServlet extends HttpServlet
 {
-    private static final Logger _log = Logger.getLogger(ViewServlet.class);
+    private static final Logger _log = LogManager.getLogger(ViewServlet.class);
 
     public static final String ORIGINAL_URL_STRING = "LABKEY.OriginalURL";           // String
     public static final String ORIGINAL_URL_URLHELPER = "LABKEY.OriginalURLHelper";  // URLHelper

@@ -15,7 +15,8 @@
  */
 package org.labkey.experiment;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
@@ -64,7 +65,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class ExperimentRunGraph
 {
     private static File baseDirectory;
-    private static Logger _log = Logger.getLogger(ExperimentRunGraph.class);
+    private static Logger _log = LogManager.getLogger(ExperimentRunGraph.class);
     private static int MAX_WIDTH_SMALL_FONT = 8;
     private static int MAX_WIDTH_BIG_FONT = 3;
     private static int MAX_SIBLINGS = 5;

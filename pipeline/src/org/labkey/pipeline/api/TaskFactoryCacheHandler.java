@@ -15,7 +15,8 @@
  */
 package org.labkey.pipeline.api;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.Nullable;
@@ -43,7 +44,7 @@ import java.util.stream.Stream;
  */
 /* package */ class TaskFactoryCacheHandler implements ModuleResourceCacheHandler<Map<TaskId, TaskFactory>>
 {
-    private static final Logger LOG = Logger.getLogger(TaskFactoryCacheHandler.class);
+    private static final Logger LOG = LogManager.getLogger(TaskFactoryCacheHandler.class);
     private static final String TASK_CONFIG_EXTENSION = ".task.xml";
 
     @Override

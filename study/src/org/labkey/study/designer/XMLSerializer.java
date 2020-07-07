@@ -16,7 +16,8 @@
 
 package org.labkey.study.designer;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
@@ -38,7 +39,7 @@ import java.util.List;
  */
 public class XMLSerializer
 {
-    private static Logger _log = Logger.getLogger(XMLSerializer.class);
+    private static Logger _log = LogManager.getLogger(XMLSerializer.class);
 
     public static GWTStudyDefinition fromXML(String xml, User user, Container c)
     {

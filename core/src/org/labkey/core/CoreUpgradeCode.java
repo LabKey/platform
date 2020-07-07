@@ -17,7 +17,8 @@ package org.labkey.core;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -71,7 +72,7 @@ import static org.labkey.core.reports.ScriptEngineManagerImpl.SCRIPT_ENGINE_MAP;
  */
 public class CoreUpgradeCode implements UpgradeCode
 {
-    private static final Logger LOG = Logger.getLogger(CoreUpgradeCode.class);
+    private static final Logger LOG = LogManager.getLogger(CoreUpgradeCode.class);
 
     // We don't call ContainerManager.getRoot() during upgrade code since the container table may not yet match
     // ContainerManager's assumptions. For example, older installations don't have a description column until

@@ -16,7 +16,8 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -42,7 +43,7 @@ import java.util.List;
  */
 public class SimpleFolderTab extends FolderTab.PortalPage
 {
-    private static final Logger LOGGER = Logger.getLogger(SimpleFolderTab.class);
+    private static final Logger LOGGER = LogManager.getLogger(SimpleFolderTab.class);
     private List<Portal.WebPart> _requiredWebParts = new ArrayList<>();
     private List<Portal.WebPart> _preferredWebParts = new ArrayList<>();
     private List<TabSelector> _selectors = new ArrayList<>();

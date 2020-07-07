@@ -15,7 +15,8 @@
  */
 package org.labkey.api.util;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ import static java.lang.Math.min;
 
 public class RateLimiter
 {
-    static final Logger _log = Logger.getLogger(RateLimiter.class);
+    static final Logger _log = LogManager.getLogger(RateLimiter.class);
 
     final String _name;
     final Rate _target;

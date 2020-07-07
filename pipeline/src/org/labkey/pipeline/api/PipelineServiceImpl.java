@@ -19,7 +19,8 @@ package org.labkey.pipeline.api;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -109,7 +110,7 @@ import static org.labkey.api.pipeline.file.AbstractFileAnalysisJob.ANALYSIS_PARA
 
 public class PipelineServiceImpl implements PipelineService
 {
-    private static final Logger LOG = Logger.getLogger(PipelineService.class);
+    private static final Logger LOG = LogManager.getLogger(PipelineService.class);
 
     private static final String PREF_LASTPROTOCOL = "lastprotocol";
     private static final String PREF_LASTSEQUENCEDB = "lastsequencedb";

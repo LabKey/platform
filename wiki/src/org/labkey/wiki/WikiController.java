@@ -19,7 +19,8 @@ package org.labkey.wiki;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -117,7 +118,7 @@ import java.util.stream.Collectors;
 
 public class WikiController extends SpringActionController
 {
-    private static final Logger LOG = Logger.getLogger(WikiController.class);
+    private static final Logger LOG = LogManager.getLogger(WikiController.class);
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(WikiController.class);
     private static final boolean SHOW_CHILD_REORDERING = false;
 

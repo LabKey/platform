@@ -17,7 +17,8 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -287,7 +288,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
             {
                 ft = FolderType.NONE;
                 iconPath = Path.parse(ft.getFolderIconPath());
-                Logger.getLogger(ContainerTable.class).warn("Could not find specified icon: "+iconPath);
+                LogManager.getLogger(ContainerTable.class).warn("Could not find specified icon: "+iconPath);
             }
             return AppProps.getInstance().getContextPath() + iconPath.toString("/","");
         }

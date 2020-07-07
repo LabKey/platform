@@ -21,7 +21,8 @@ import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.TableCustomizer;
 import org.labkey.api.data.TableInfo;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
@@ -56,7 +57,7 @@ import java.util.stream.Collectors;
  */
 public class CountOfUniqueValueTableCustomizer implements TableCustomizer
 {
-    private static final Logger _log = Logger.getLogger(CountOfUniqueValueTableCustomizer.class);
+    private static final Logger _log = LogManager.getLogger(CountOfUniqueValueTableCustomizer.class);
 
     private final CounterDefinition _counterDefinition;
 

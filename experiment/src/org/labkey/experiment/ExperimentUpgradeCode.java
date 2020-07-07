@@ -16,7 +16,8 @@
 package org.labkey.experiment;
 
 import com.google.common.collect.Sets;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -68,7 +69,7 @@ import java.util.Set;
  */
 public class ExperimentUpgradeCode implements UpgradeCode
 {
-    private static final Logger LOG = Logger.getLogger(ExperimentUpgradeCode.class);
+    private static final Logger LOG = LogManager.getLogger(ExperimentUpgradeCode.class);
 
     /**
      * Called from multiple experiment upgrade scripts,
@@ -89,7 +90,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
     private static void materializeSampleType(ExpSampleTypeImpl st)
     {
-        Logger log = Logger.getLogger(ExperimentUpgradeCode.class);
+        Logger log = LogManager.getLogger(ExperimentUpgradeCode.class);
         Domain domain = st.getDomain();
         DomainKind kind = null;
         try

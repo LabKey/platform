@@ -16,7 +16,8 @@
 
 package org.labkey.assay;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
@@ -66,7 +67,7 @@ import java.util.Set;
 public class PlateController extends SpringActionController
 {
     private static final SpringActionController.DefaultActionResolver _actionResolver = new DefaultActionResolver(PlateController.class);
-    private static final Logger _log = Logger.getLogger(PlateController.class);
+    private static final Logger _log = LogManager.getLogger(PlateController.class);
 
     public PlateController()
     {

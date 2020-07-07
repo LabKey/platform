@@ -16,7 +16,8 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
@@ -34,7 +35,7 @@ import org.labkey.api.module.ModuleLoader;
 // Every scope has its own cache of DbSchemas
 public class DbSchemaCache
 {
-    private static final Logger LOG = Logger.getLogger(DbSchemaCache.class);
+    private static final Logger LOG = LogManager.getLogger(DbSchemaCache.class);
 
     private final DbScope _scope;
     private final BlockingCache<String, DbSchema> _cache;

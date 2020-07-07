@@ -16,7 +16,8 @@
 
 package org.labkey.assay;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
@@ -91,7 +92,7 @@ import java.util.Set;
  */
 public class ModuleAssayProvider extends TsvAssayProvider
 {
-    private static final Logger LOG = Logger.getLogger(ModuleAssayProvider.class);
+    private static final Logger LOG = LogManager.getLogger(ModuleAssayProvider.class);
     private static final String DOMAINS_DIR_NAME = "domains";
 
     public static class ModuleAssayException extends RuntimeException

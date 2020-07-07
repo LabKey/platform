@@ -15,7 +15,8 @@
  */
 package org.labkey.pipeline.mule;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.pipeline.CancelledException;
 import org.mule.impl.DefaultComponentExceptionStrategy;
 import org.mule.impl.RequestContext;
@@ -30,7 +31,7 @@ import org.labkey.api.pipeline.PipelineJobService;
 */
 public class PipelineJobExceptionStrategy extends DefaultComponentExceptionStrategy
 {
-    private static final Logger LOGGER = Logger.getLogger(PipelineJobExceptionStrategy.class);
+    private static final Logger LOGGER = LogManager.getLogger(PipelineJobExceptionStrategy.class);
 
     @Override
     protected void defaultHandler(Throwable t)

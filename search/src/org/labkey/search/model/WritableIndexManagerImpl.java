@@ -17,7 +17,8 @@ package org.labkey.search.model;
 
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
@@ -65,7 +66,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 // Adds synchronization for writing, in addition to searching synchronization provided by IndexManager
 class WritableIndexManagerImpl extends IndexManager implements WritableIndexManager
 {
-    private static final Logger _log = Logger.getLogger(WritableIndexManagerImpl.class);
+    private static final Logger _log = LogManager.getLogger(WritableIndexManagerImpl.class);
     private static final AtomicInteger _maybeRefreshRequests = new AtomicInteger();
 
     private final Object _writerLock = new Object();

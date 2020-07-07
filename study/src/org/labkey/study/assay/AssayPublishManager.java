@@ -19,7 +19,8 @@ package org.labkey.study.assay;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
@@ -125,7 +126,7 @@ import static org.labkey.study.query.DatasetTableImpl.ASSAY_RESULT_LSID;
 public class AssayPublishManager implements AssayPublishService
 {
     private static final int MIN_ASSAY_ID = 5000;
-    private static final Logger LOG = Logger.getLogger(AssayPublishManager.class);
+    private static final Logger LOG = LogManager.getLogger(AssayPublishManager.class);
 
     public synchronized static AssayPublishManager getInstance()
     {

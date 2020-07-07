@@ -17,7 +17,8 @@ package org.labkey.api.security;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -112,7 +113,7 @@ public class AuthenticationManager
 {
     public static final String ALL_DOMAINS = "*";
 
-    private static final Logger _log = Logger.getLogger(AuthenticationManager.class);
+    private static final Logger _log = LogManager.getLogger(AuthenticationManager.class);
     // All registered authentication providers (DbLogin, LDAP, SSO, etc.)
     private static final List<AuthenticationProvider> _allProviders = new CopyOnWriteArrayList<>();
 

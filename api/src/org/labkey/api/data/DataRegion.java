@@ -19,7 +19,8 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -86,7 +87,7 @@ import java.util.stream.Collectors;
  * about buttons that might appear in the view, the columns to be shown, etc. */
 public class DataRegion extends DisplayElement
 {
-    private static final Logger _log = Logger.getLogger(DataRegion.class);
+    private static final Logger _log = LogManager.getLogger(DataRegion.class);
 
     private String _name = null;
     private QuerySettings _settings = null;

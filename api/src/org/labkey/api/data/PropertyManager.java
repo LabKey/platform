@@ -17,7 +17,8 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -52,7 +53,7 @@ public class PropertyManager
 {
     public static final User SHARED_USER = User.guest;  // Shared properties are saved with the guest user
 
-    private static final Logger _log = Logger.getLogger(PropertyManager.class);
+    private static final Logger _log = LogManager.getLogger(PropertyManager.class);
     private static final PropertySchema prop = PropertySchema.getInstance();
     private static final NormalPropertyStore STORE = new NormalPropertyStore();
     private static final EncryptedPropertyStore ENCRYPTED_STORE = new EncryptedPropertyStore();

@@ -16,7 +16,8 @@
 package org.labkey.api.module;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -47,7 +48,7 @@ import static org.labkey.api.settings.ConfigProperty.modifier.bootstrap;
  */
 public class FolderTypeManager
 {
-    private static final Logger LOG = Logger.getLogger(FolderTypeManager.class);
+    private static final Logger LOG = LogManager.getLogger(FolderTypeManager.class);
     private static final FolderTypeManager INSTANCE = new FolderTypeManager();
     private static final String SIMPLE_TYPE_DIR_NAME = "folderTypes";
     private static final String SIMPLE_TYPE_FILE_EXTENSION = ".foldertype.xml";

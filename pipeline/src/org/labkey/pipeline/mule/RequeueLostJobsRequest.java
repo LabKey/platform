@@ -15,7 +15,8 @@
  */
 package org.labkey.pipeline.mule;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.NoSuchJobException;
 import org.labkey.api.pipeline.PipelineJob;
@@ -36,7 +37,7 @@ import java.util.Collection;
  */
 public class RequeueLostJobsRequest implements StatusRequest
 {
-    private static final Logger _log = Logger.getLogger(RequeueLostJobsRequest.class);
+    private static final Logger _log = LogManager.getLogger(RequeueLostJobsRequest.class);
 
     private Collection<String> _locations;
     private Collection<String> _jobIds;

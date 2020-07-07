@@ -15,7 +15,8 @@
  */
 package org.labkey.study.controllers;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
@@ -65,7 +66,7 @@ import java.util.List;
 @RequiresPermission(AdminPermission.class)
 public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefinition>
 {
-    private static final Logger LOG = Logger.getLogger(CreateChildStudyAction.class);
+    private static final Logger LOG = LogManager.getLogger(CreateChildStudyAction.class);
     public static final String CREATE_SPECIMEN_STUDY = "CreateSpecimenStudy";
 
     private Container _dstContainer;

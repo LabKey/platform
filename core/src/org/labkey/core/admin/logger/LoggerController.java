@@ -16,11 +16,16 @@
 package org.labkey.core.admin.logger;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Category;
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-import org.apache.log4j.xml.DOMConfigurator;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.ConfigurationSource;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.config.NullConfiguration;
+import org.apache.logging.log4j.core.config.xml.XmlConfiguration;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
@@ -60,7 +65,7 @@ public class LoggerController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(LoggerController.class);
 
-    private static final Logger LOG = Logger.getLogger(LoggerController.class);
+    private static final Logger LOG = LogManager.getLogger(LoggerController.class);
 
     public static void registerAdminConsoleLinks()
     {
@@ -81,11 +86,11 @@ public class LoggerController extends SpringActionController
         private String level;
         private boolean inherited;
 
-        public static LoggerLevel fromLogger(Logger log)
+        public static LoggerLevel fromLogger(LoggerConfig log)
         {
-            Category parent = log.getParent();
+            LoggerConfig parent = log.getParent();
             Level level = log.getLevel();
-            Level effectiveLevel = log.getEffectiveLevel();
+            Level effectiveLevel = log.getLevel();
 
             LoggerLevel loggerLevel = new LoggerLevel();
             loggerLevel.setName(log.getName());
@@ -182,20 +187,23 @@ public class LoggerController extends SpringActionController
             Level filterLevel = filter.getLevel() != null ? Level.toLevel(filter.getLevel()) : null;
 
             Collection<LoggerLevel> loggers = new ArrayList<>();
-            Enumeration<Logger> currentLoggers = (Enumeration<Logger>) LogManager.getCurrentLoggers();
-            while (currentLoggers.hasMoreElements())
+            LoggerContext loggerContext = (LoggerContext) LogManager.getContext(true);
+            Configuration configuration = loggerContext.getConfiguration();
+
+
+            Collection<LoggerConfig> currentLoggers = configuration.getLoggers().values();
+            for (LoggerConfig currentLogger: currentLoggers)
             {
-                Logger log = currentLoggers.nextElement();
-                if (!filter.isInherited() && log.getLevel() == null)
+                if (!filter.isInherited() && currentLogger.getLevel() == null)
                     continue;
 
-                if (filterLevel != null && !(filterLevel.equals(log.getLevel()) || filterLevel.equals(log.getEffectiveLevel())))
+                if (filterLevel != null && !(filterLevel.equals(currentLogger.getLevel())))
                     continue;
 
-                if (filter.getContains() != null && !StringUtils.containsIgnoreCase(log.getName(), filter.getContains()))
+                if (filter.getContains() != null && !StringUtils.containsIgnoreCase(currentLogger.getName(), filter.getContains()))
                     continue;
 
-                loggers.add(LoggerLevel.fromLogger(log));
+                loggers.add(LoggerLevel.fromLogger(currentLogger));
             }
 
             return success(loggers);
@@ -208,9 +216,10 @@ public class LoggerController extends SpringActionController
         @Override
         public SimpleResponse execute(Object o, BindException errors)
         {
-            LogManager.resetConfiguration();
+            LoggerContext.getContext(true).setConfiguration(new NullConfiguration());
             URL url = getClass().getResource("/log4j.xml");
-            DOMConfigurator.configure(url);
+            // TODO : log4j
+//            DOMConfigurator.configure(url);
             return success();
         }
     }
@@ -228,10 +237,13 @@ public class LoggerController extends SpringActionController
             // Update the logger level
             if (loggerLevel.level != null && (logger.getLevel() == null || !loggerLevel.level.equals(logger.getLevel().toString())))
             {
-                logger.setLevel(Level.toLevel(loggerLevel.level));
+                Configurator.setLevel(logger.getName(), Level.toLevel(loggerLevel.level));
             }
 
-            return success(LoggerLevel.fromLogger(logger));
+            LoggerContext loggerContext = (LoggerContext) LogManager.getContext(true);
+            Configuration configuration = loggerContext.getConfiguration();
+
+            return success(LoggerLevel.fromLogger(configuration.getLoggerConfig(logger.getName())));
         }
     }
 

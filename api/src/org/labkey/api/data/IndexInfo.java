@@ -16,7 +16,8 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.util.Collections;
 import java.util.List;
@@ -27,7 +28,7 @@ import java.util.List;
 public class IndexInfo
 {
 
-    private static final Logger _log = Logger.getLogger(IndexInfo.class);
+    private static final Logger _log = LogManager.getLogger(IndexInfo.class);
 
 
     private TableInfo.IndexType _type;

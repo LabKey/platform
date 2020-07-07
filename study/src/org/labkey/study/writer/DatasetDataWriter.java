@@ -15,7 +15,8 @@
  */
 package org.labkey.study.writer;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.BaseColumnInfo;
@@ -75,7 +76,7 @@ import java.util.Set;
  */
 public class DatasetDataWriter implements InternalStudyWriter
 {
-    private static final Logger LOG = Logger.getLogger(DatasetDataWriter.class);
+    private static final Logger LOG = LogManager.getLogger(DatasetDataWriter.class);
 
     @Override
     public String getDataType()

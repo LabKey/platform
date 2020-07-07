@@ -16,7 +16,8 @@
 package org.labkey.study.dataset;
 
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
@@ -56,7 +57,7 @@ import java.util.Map;
  */
 public abstract class SnapshotDependency
 {
-    private static final Logger _log = Logger.getLogger(SnapshotDependency.class);
+    private static final Logger _log = LogManager.getLogger(SnapshotDependency.class);
 
     protected boolean isContainerValid(Container c)
     {

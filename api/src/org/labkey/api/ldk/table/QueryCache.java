@@ -15,7 +15,8 @@
  */
 package org.labkey.api.ldk.table;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -43,7 +44,7 @@ import java.util.Set;
  */
 public class QueryCache
 {
-    private static final Logger _log = Logger.getLogger(QueryCache.class);
+    private static final Logger _log = LogManager.getLogger(QueryCache.class);
 
     private Map<String, AssayProtocolSchema> _cachedAssaySchemas = new HashMap<>();
     private Map<String, UserSchema> _cachedUserSchemas = new HashMap<>();

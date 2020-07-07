@@ -16,7 +16,8 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -68,7 +69,7 @@ import static org.labkey.api.data.AbstractTableInfo.LINK_DISABLER;
  */
 public class StringExpressionFactory
 {
-    private static final Logger LOG = Logger.getLogger(StringExpressionFactory.class);
+    private static final Logger LOG = LogManager.getLogger(StringExpressionFactory.class);
 
     private static final Cache<String, StringExpression> templates = CacheManager.getCache(5000, CacheManager.DAY, "StringExpression templates");
     private static final Cache<String, StringExpression> templatesUrl = CacheManager.getCache(10000, CacheManager.DAY, "StringExpression template URLs");

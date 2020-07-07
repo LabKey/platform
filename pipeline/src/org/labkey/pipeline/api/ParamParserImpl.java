@@ -15,7 +15,8 @@
  */
 package org.labkey.pipeline.api;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.w3c.dom.Document;
@@ -51,7 +52,7 @@ import java.util.*;
 
 public class ParamParserImpl implements ParamParser
 {
-    private static Logger _log = Logger.getLogger(ParamParserImpl.class);
+    private static Logger _log = LogManager.getLogger(ParamParserImpl.class);
 
     private static String TAG_BIOML = "bioml";
     private static String TAG_NOTE = "note";

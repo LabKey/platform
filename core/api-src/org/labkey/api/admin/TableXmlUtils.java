@@ -15,7 +15,8 @@
  */
 package org.labkey.api.admin;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.admin.sitevalidation.SiteValidationResult;
 import org.labkey.api.admin.sitevalidation.SiteValidationResultList;
 import org.labkey.api.data.DbSchema;
@@ -38,7 +39,7 @@ import java.util.TreeMap;
  */
 public class TableXmlUtils
 {
-    private static final Logger _log = Logger.getLogger(TableXmlUtils.class);
+    private static final Logger _log = LogManager.getLogger(TableXmlUtils.class);
 
     // Careful: don't use DbSchema.get(), schema.getTable(), or schema.getTables() -- we don't want schema.xml applied
     // and we don't want to cache these TableInfos (because schema.xml hasn't been applied).
@@ -516,7 +517,7 @@ public class TableXmlUtils
         catch (Exception e)
         {
             rlOut.addError("ERROR: Exception in compare: ").append(e.getMessage());
-            Logger.getLogger(TableXmlUtils.class).warn(e);
+            LogManager.getLogger(TableXmlUtils.class).warn(e);
         }
     }
 

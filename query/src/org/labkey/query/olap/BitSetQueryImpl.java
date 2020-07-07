@@ -16,7 +16,8 @@
 package org.labkey.query.olap;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
@@ -82,7 +83,7 @@ public class BitSetQueryImpl
 {
     private final boolean mondrianCompatibleNullHandling = false;
 
-    private static Logger _log = Logger.getLogger(BitSetQueryImpl.class);
+    private static Logger _log = LogManager.getLogger(BitSetQueryImpl.class);
     private final static User olapServiceUser = new LimitedUser(User.guest, new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
     static
     {

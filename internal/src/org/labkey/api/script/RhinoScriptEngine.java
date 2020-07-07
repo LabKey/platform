@@ -27,7 +27,8 @@ package org.labkey.api.script;
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import com.sun.phobos.script.util.*;
 import com.sun.phobos.script.util.ExtendedScriptException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.reports.LabKeyScriptEngine;
 import org.labkey.api.util.ExceptionUtil;
 import org.mozilla.javascript.*;
@@ -58,7 +59,7 @@ import java.util.Map;
 // kevink: Essentially the same as the original, with changes marked with kevink
 public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScriptEngine, Invocable, Compilable
 {
-    private final Logger _log = Logger.getLogger(RhinoScriptEngine.class);
+    private final Logger _log = LogManager.getLogger(RhinoScriptEngine.class);
 
     public static final boolean DEBUG = false;
     private static final String TOPLEVEL_SCRIPT_NAME = "META-INF/toplevel.js";

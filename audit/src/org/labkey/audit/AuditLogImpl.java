@@ -16,7 +16,7 @@
 
 package org.labkey.audit;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
@@ -54,7 +54,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
 {
     private static final AuditLogImpl _instance = new AuditLogImpl();
 
-    private static final Logger _log = Logger.getLogger(AuditLogImpl.class);
+    private static final Logger _log = org.apache.logging.log4j.LogManager.getLogger(AuditLogImpl.class);
 
     private Queue<Pair<User, AuditTypeEvent>> _eventTypeQueue = new LinkedList<>();
     private AtomicBoolean  _logToDatabase = new AtomicBoolean(false);

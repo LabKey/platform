@@ -17,8 +17,8 @@ package org.labkey.api.util;
 
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.log4j.Logger;
-import org.apache.log4j.Priority;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.thumbnail.Thumbnail;
@@ -53,47 +53,47 @@ import java.util.logging.Level;
  */
 public class ImageUtil
 {
-    private static Logger LOG = Logger.getLogger(ImageUtil.class);
+    private static Logger LOG = LogManager.getLogger(ImageUtil.class);
 
     static
     {
         XRLog.setLoggerImpl(new XRLogger()
         {
-            Priority toPriority(Level level)
+            org.apache.logging.log4j.Level toPriority(Level level)
             {
                 int l = level.intValue();
                 if (l == Level.SEVERE.intValue())
-                    return org.apache.log4j.Level.ERROR;
+                    return org.apache.logging.log4j.Level.ERROR;
                 if (l == Level.WARNING.intValue())
-                    return org.apache.log4j.Level.WARN;
+                    return org.apache.logging.log4j.Level.WARN;
                 if (l == Level.INFO.intValue())
-                    return org.apache.log4j.Level.INFO;
+                    return org.apache.logging.log4j.Level.INFO;
                 if (l == Level.CONFIG.intValue())
-                    return org.apache.log4j.Level.INFO;
+                    return org.apache.logging.log4j.Level.INFO;
                 if (l == Level.FINE.intValue())
-                    return org.apache.log4j.Level.DEBUG;
+                    return org.apache.logging.log4j.Level.DEBUG;
                 if (l == Level.FINER.intValue())
-                    return org.apache.log4j.Level.DEBUG;
+                    return org.apache.logging.log4j.Level.DEBUG;
                 if (l == Level.FINEST.intValue())
-                    return org.apache.log4j.Level.TRACE;
+                    return org.apache.logging.log4j.Level.TRACE;
                 if (l == Level.ALL.intValue())
-                    return org.apache.log4j.Level.ALL;
+                    return org.apache.logging.log4j.Level.ALL;
                 if (l == Level.OFF.intValue())
-                    return org.apache.log4j.Level.OFF;
-                return org.apache.log4j.Level.DEBUG;
+                    return org.apache.logging.log4j.Level.OFF;
+                return org.apache.logging.log4j.Level.DEBUG;
             }
 
             @Override
             public void log(String where, Level level, String msg)
             {
-                LOG.log(where, toPriority(level), msg, null);
+                LOG.log(toPriority(level), msg);
 
             }
 
             @Override
             public void log(String where, Level level, String msg, Throwable t)
             {
-                LOG.log(where, toPriority(level), msg, t);
+                LOG.log(toPriority(level), msg, t);
             }
 
             @Override

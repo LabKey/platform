@@ -24,7 +24,8 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -250,7 +251,7 @@ import static org.labkey.api.util.PageFlowUtil.filter;
  */
 public class StudyController extends BaseStudyController
 {
-    private static final Logger _log = Logger.getLogger(StudyController.class);
+    private static final Logger _log = LogManager.getLogger(StudyController.class);
 
     private static final String PARTICIPANT_CACHE_PREFIX = "Study_participants/participantCache";
     private static final String EXPAND_CONTAINERS_KEY = StudyController.class.getName() + "/expandedContainers";

@@ -19,7 +19,8 @@ package org.labkey.api.dataiterator;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -68,7 +69,7 @@ public class DataIteratorUtil
     public static final String DATA_SOURCE = "dataSource";
     public static final String ETL_DATA_SOURCE = "etl";
 
-    private static final Logger LOG = Logger.getLogger(DataIteratorUtil.class);
+    private static final Logger LOG = LogManager.getLogger(DataIteratorUtil.class);
 
     public static Map<FieldKey, ColumnInfo> createFieldKeyMap(DataIterator di)
     {
@@ -346,7 +347,7 @@ public class DataIteratorUtil
         }
         catch (Exception x)
         {
-            Logger.getLogger(it.getClass()).warn("Unexpected error closing DataIterator", x);
+            LogManager.getLogger(it.getClass()).warn("Unexpected error closing DataIterator", x);
         }
     }
 

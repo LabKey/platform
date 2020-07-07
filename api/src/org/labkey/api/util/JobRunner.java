@@ -16,7 +16,8 @@
 
 package org.labkey.api.util;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.DbScope;
 
 import java.util.HashMap;
@@ -40,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class JobRunner implements Executor
 {
-    static final Logger _log = Logger.getLogger(JobRunner.class);
+    static final Logger _log = LogManager.getLogger(JobRunner.class);
 
     private static final JobRunner _defaultJobRunner = new JobRunner("Default", 1);
 

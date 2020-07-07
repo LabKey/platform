@@ -25,7 +25,8 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlValidationError;
@@ -200,7 +201,7 @@ import static org.labkey.api.util.DOM.cl;
 
 public class QueryController extends SpringActionController
 {
-    private static final Logger LOG = Logger.getLogger(QueryController.class);
+    private static final Logger LOG = LogManager.getLogger(QueryController.class);
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryController.class,
             ValidateQueryAction.class,
@@ -957,7 +958,7 @@ public class QueryController extends SpringActionController
                     //
                 }
                 errors.reject("ERROR_MSG", e.toString());
-                Logger.getLogger(QueryController.class).error("Error", e);
+                LogManager.getLogger(QueryController.class).error("Error", e);
             }
 
             Renderable moduleWarning = null;
@@ -5271,7 +5272,7 @@ public class QueryController extends SpringActionController
                 }
                 catch (Exception e)
                 {
-                    Logger.getLogger(QueryController.class).error("Error", e);
+                    LogManager.getLogger(QueryController.class).error("Error", e);
                     errors.reject(ERROR_MSG, "An exception occurred: " + e);
                     return false;
                 }
@@ -6045,7 +6046,7 @@ public class QueryController extends SpringActionController
                 if (null != x.getCause() && x != x.getCause())
                     x = x.getCause();
                 html.add("<br>" + PageFlowUtil.filter(x.toString()));
-                Logger.getLogger(QueryController.class).debug(expr,x);
+                LogManager.getLogger(QueryController.class).debug(expr,x);
             }
             if (null != e)
             {

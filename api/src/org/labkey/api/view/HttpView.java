@@ -16,7 +16,8 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
@@ -143,7 +144,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
                 response.flushBuffer();
             }
             if (!ExceptionUtil.isIgnorable(e))
-                Logger.getLogger(HttpView.class).error("Exception while rendering view; creation stacktrace:" + ExceptionUtil.renderStackTrace(_creationStackTrace));
+                LogManager.getLogger(HttpView.class).error("Exception while rendering view; creation stacktrace:" + ExceptionUtil.renderStackTrace(_creationStackTrace));
             throw e;
         }
         finally
@@ -428,7 +429,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         }
         catch (Exception x)
         {
-            Logger.getLogger(HttpView.class).error(x);
+            LogManager.getLogger(HttpView.class).error(x);
         }
         return null;
     }

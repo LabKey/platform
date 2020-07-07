@@ -17,7 +17,8 @@
 package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AnalyticsProviderItem;
@@ -92,7 +93,7 @@ public class CustomViewXmlReader
 
     private List<String> _errors;
 
-    private static final Logger LOG = Logger.getLogger(CustomViewXmlReader.class);
+    private static final Logger LOG = LogManager.getLogger(CustomViewXmlReader.class);
 
     private CustomViewXmlReader()
     {

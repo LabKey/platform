@@ -19,7 +19,8 @@ package org.labkey.api.data;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -131,7 +132,7 @@ import java.util.stream.Collectors;
  */
 public class ContainerManager
 {
-    private static final Logger LOG = Logger.getLogger(ContainerManager.class);
+    private static final Logger LOG = LogManager.getLogger(ContainerManager.class);
     private static final CoreSchema CORE = CoreSchema.getInstance();
 
     private static final String CONTAINER_PREFIX = ContainerManager.class.getName() + "/";
@@ -353,7 +354,7 @@ public class ContainerManager
         if (folderXml instanceof FolderDocument)
         {
             FolderDocument folderDoc = (FolderDocument)folderXml;
-            FolderImportContext importCtx = new FolderImportContext(user, c, folderDoc, null, new StaticLoggerGetter(Logger.getLogger(FolderImporterImpl.class)), vf);
+            FolderImportContext importCtx = new FolderImportContext(user, c, folderDoc, null, new StaticLoggerGetter(LogManager.getLogger(FolderImporterImpl.class)), vf);
 
             FolderImporterImpl importer = new FolderImporterImpl();
             importer.process(null, importCtx, vf);

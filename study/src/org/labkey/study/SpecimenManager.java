@@ -19,7 +19,8 @@ package org.labkey.study;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.collections4.comparators.ComparableComparator;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
@@ -2727,7 +2728,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                 }
                 catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
                 {
-                    Logger.getLogger(SpecimenManager.class).error(e);
+                    LogManager.getLogger(SpecimenManager.class).error(e);
                 }
             }
             ret.add(summary);

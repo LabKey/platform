@@ -15,15 +15,23 @@
  */
 package org.labkey.api.util;
 
-import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.Layout;
-import org.apache.log4j.Logger;
-import org.apache.log4j.spi.LoggingEvent;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Layout;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Property;
+import org.apache.logging.log4j.core.config.plugins.Plugin;
+import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
+import org.apache.logging.log4j.core.config.plugins.PluginElement;
+import org.apache.logging.log4j.core.config.plugins.PluginFactory;
+import org.apache.logging.log4j.core.Filter;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * Custom Log4J appender that opens the log file and closes it for each logging operation, thus ensuring
@@ -31,35 +39,39 @@ import java.io.IOException;
  * Created: Oct 18, 2005
  * @author bmaclean
  */
-public class SafeFileAppender extends AppenderSkeleton
+@Plugin(name = "SafeFile", category = "Core", elementType = "appender", printObject = true)
+public class SafeFileAppender extends AbstractAppender
 {
-    private static Logger _log = Logger.getLogger(SafeFileAppender.class);
+    private static Logger _log = LogManager.getLogger(SafeFileAppender.class);
+    private final String LINE_SEP = System.getProperty("line.separator");
+    private static File _file;
 
-    private File _file;
+    public SafeFileAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties)
+    {
+        super(name, filter, layout, ignoreExceptions, properties);
+    }
 
-    public SafeFileAppender(File file)
+    @PluginFactory
+    public static SafeFileAppender createAppender(@PluginAttribute("name") String name,
+                                                  @PluginAttribute("ignoreExceptions") boolean ignoreExceptions,
+                                                  @PluginElement("Layout") Layout layout,
+                                                  @PluginElement("Filters") Filter filter,
+                                                  File file)
     {
         _file = file;
 
         // Make sure that we try to mount the drive (if needed) before using the file
         NetworkDrive.exists(_file);
+        return new SafeFileAppender(name, filter, layout, ignoreExceptions, null);
     }
 
     @Override
-    public void append(LoggingEvent loggingEvent)
+    public void append(LogEvent loggingEvent)
     {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(_file, true)))
         {
-            writer.write(getLayout().format(loggingEvent));
-            String[] exceptionStrings = loggingEvent.getThrowableStrRep();
-            if (exceptionStrings != null)
-            {
-                for (String exceptionString : exceptionStrings)
-                {
-                    writer.write(exceptionString);
-                    writer.write(Layout.LINE_SEP);
-                }
-            }
+            writer.write(loggingEvent.getMessage().getFormattedMessage());
+            writer.write(LINE_SEP);
         }
         catch (IOException e)
         {
@@ -71,15 +83,4 @@ public class SafeFileAppender extends AppenderSkeleton
         }
     }
 
-    @Override
-    public void close()
-    {
-        // Nothing to do, since nothing stays open.
-    }
-
-    @Override
-    public boolean requiresLayout()
-    {
-        return true;
-    }
 }

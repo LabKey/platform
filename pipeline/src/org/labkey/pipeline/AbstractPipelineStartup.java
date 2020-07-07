@@ -15,7 +15,8 @@
  */
 package org.labkey.pipeline;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleDependencySorter;
@@ -48,14 +49,14 @@ import java.util.Map;
  */
 public abstract class AbstractPipelineStartup
 {
-    private static final Logger _log = Logger.getLogger(AbstractPipelineStartup.class);
+    private static final Logger _log = LogManager.getLogger(AbstractPipelineStartup.class);
 
     /**
      * @return map from module name to BeanFactory
      */
-    protected Map<String, BeanFactory> initContext(String log4JConfigPath, List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, File webappDir, PipelineJobService.LocationType locationType) throws IOException
+    protected Map<String, BeanFactory> initContext(String name, String log4JConfigPath, List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, File webappDir, PipelineJobService.LocationType locationType) throws IOException
     {
-        LoggerUtil.initLogging(log4JConfigPath);
+        LoggerUtil.initLogging(name, log4JConfigPath);
 
         //load the modules and sort them by dependencies
         ModuleLoader moduleLoader = new ModuleLoader();

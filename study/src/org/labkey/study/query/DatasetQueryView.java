@@ -17,7 +17,8 @@
 package org.labkey.study.query;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
@@ -116,7 +117,7 @@ public class DatasetQueryView extends StudyQueryView
     private QCStateSet _qcStateSet;
     private ExpProtocol _protocol;
     private AssayProvider _provider;
-    protected static Logger _systemLog = Logger.getLogger(DatasetQueryView.class);
+    protected static Logger _systemLog = LogManager.getLogger(DatasetQueryView.class);
 
     public DatasetQueryView(UserSchema schema, DatasetQuerySettings settings, BindException errors)
     {

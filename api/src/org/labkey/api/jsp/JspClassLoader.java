@@ -15,7 +15,8 @@
  */
 package org.labkey.api.jsp;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.ConfigurationException;
@@ -41,7 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class JspClassLoader
 {
-    private static final Logger _log = Logger.getLogger(JspClassLoader.class);
+    private static final Logger _log = LogManager.getLogger(JspClassLoader.class);
     protected static final String JSP_PACKAGE = "org.labkey.jsp.compiled";
 
     private transient AtomicReference<ClassLoader> _loader = new AtomicReference<>();

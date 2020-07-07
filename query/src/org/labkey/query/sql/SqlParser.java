@@ -28,7 +28,8 @@ import org.antlr.runtime.tree.CommonTreeAdaptor;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -90,7 +91,7 @@ import static org.labkey.query.sql.antlr.SqlBaseParser.*;
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored","ThrowableInstanceNeverThrown"})
 public class SqlParser
 {
-    private static final Logger _log = Logger.getLogger(SqlParser.class);
+    private static final Logger _log = LogManager.getLogger(SqlParser.class);
 
     ArrayList<Exception> _parseErrors;
     List<QueryParseException> _parseWarnings;

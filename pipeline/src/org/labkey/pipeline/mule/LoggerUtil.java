@@ -15,16 +15,18 @@
  */
 package org.labkey.pipeline.mule;
 
-import org.apache.log4j.Appender;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.log4j.RollingFileAppender;
-import org.apache.log4j.xml.DOMConfigurator;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.ConfigurationSource;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.config.properties.PropertiesConfiguration;
+import org.apache.logging.log4j.core.config.properties.PropertiesConfigurationFactory;
+
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
-import java.util.Enumeration;
-import java.util.Properties;
 
 /**
 * User: jeckels
@@ -32,50 +34,28 @@ import java.util.Properties;
 */
 public class LoggerUtil
 {
-    public static void initLogging(String classloaderResource) throws IOException
+    public static void initLogging(String name, String classloaderResource) throws IOException
     {
         InputStream in = null;
         try
         {
             if (classloaderResource.toLowerCase().endsWith(".properties"))
             {
-                in = LoggerUtil.class.getClassLoader().getResourceAsStream(classloaderResource);
-                Properties props = new Properties();
-                props.load(in);
-                PropertyConfigurator.configure(props);
+                ConfigurationSource source = new ConfigurationSource(new FileInputStream(classloaderResource));
+                PropertiesConfigurationFactory factory = new PropertiesConfigurationFactory();
+                LoggerContext context = (LoggerContext) LogManager.getContext();
+                PropertiesConfiguration propertiesConfiguration = factory.getConfiguration(context, source);
+                context.setConfiguration(propertiesConfiguration);
+                Configurator.initialize(propertiesConfiguration);
             }
             else
             {
-                DOMConfigurator.configure(LoggerUtil.class.getClassLoader().getResource(classloaderResource));
+                Configurator.initialize(name, LoggerUtil.class.getClassLoader(), classloaderResource);
             }
         }
         finally
         {
             if (in != null) { try { in.close(); } catch (IOException e) {} }
-        }
-    }
-
-    /** We want to roll the file every time the server starts, which isn't directly supported by Log4J so we do it manually */
-    public static void rollErrorLogFile(Logger logger)
-    {
-        while (logger != null && !logger.getAllAppenders().hasMoreElements())
-        {
-            logger = (Logger)logger.getParent();
-        }
-
-        if (logger == null)
-        {
-            return;
-        }
-
-        for (Enumeration e2 = logger.getAllAppenders(); e2.hasMoreElements();)
-        {
-            final Appender appender = (Appender)e2.nextElement();
-            if (appender instanceof RollingFileAppender && "ERRORS".equals(appender.getName()))
-            {
-                RollingFileAppender rfa = (RollingFileAppender)appender;
-                rfa.rollOver();
-            }
         }
     }
 

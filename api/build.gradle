@@ -62,7 +62,9 @@ List caching = [
 ]
 
 List logging = [
-        "org.apache.logging.log4j:log4j-core:${log4jVersion}"
+        "org.apache.logging.log4j:log4j-core:${log4jVersion}",
+        "org.apache.logging.log4j:log4j-api:${log4jVersion}",
+        "org.apache.logging.log4j:log4j-1.2-api:${log4jVersion}"
 ]
 
 List r = [
@@ -84,7 +86,6 @@ List others = [
         "flyingsaucer:core-renderer:${flyingsaucerVersion}",
         "com.google.guava:guava:${guavaVersion}",
         "net.sf.jtidy:jtidy:${jtidyVersion}",
-        "net.sourceforge.jexcelapi:jxl:${jxlVersion}",
         "com.google.code.kaptcha:kaptcha:${kaptchaVersion}",
         "org.objenesis:objenesis:${objenesisVersion}",
         "com.opencsv:opencsv:${opencsvVersion}",
@@ -169,6 +170,10 @@ dependencies {
         // Issue 33146: Later versions of xmlbeans introduce some encoding problems, so we exclude the transitive
         // dependency here in favor of the explicit dependency with a different version.
         exclude group: "org.apache.xmlbeans", module: "xmlbeans"
+    }
+    external("net.sourceforge.jexcelapi:jxl:${jxlVersion}") {
+        // exclude this because it brings older version of log4j
+        exclude group: "log4j", module:"log4j"
     }
     external apache,caching,charting,gwt,jackson,javax,logging,others,r,spring
 

@@ -19,7 +19,8 @@ package org.labkey.mothership;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
@@ -71,7 +72,7 @@ public class MothershipManager
     private static final String ISSUES_CONTAINER_PROP = "issuesContainer";
     private static final ReentrantLock INSERT_EXCEPTION_LOCK = new ReentrantLock();
 
-    private static final Logger log = Logger.getLogger(MothershipManager.class);
+    private static final Logger log = LogManager.getLogger(MothershipManager.class);
 
     public static MothershipManager get()
     {

@@ -24,8 +24,9 @@ import org.apache.commons.fileupload.InvalidFileNameException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -189,7 +190,7 @@ import static org.labkey.api.action.ApiJsonWriter.CONTENT_TYPE_JSON;
  */
 public class DavController extends SpringActionController
 {
-    private static final Logger _log = Logger.getLogger(DavController.class);
+    private static final Logger _log = LogManager.getLogger(DavController.class);
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(DavController.class);
 
     public static final String name = "_dav_";
@@ -687,7 +688,7 @@ public class DavController extends SpringActionController
             clearLastError();
 
             long start=0;
-            if (_log.isEnabledFor(Level.DEBUG))
+            if (_log.isEnabled(Level.DEBUG))
             {
                 long modified = getRequest().getDateHeader("If-Modified-Since");
                 boolean isBasicAuthentication = SecurityManager.isBasicAuthentication(getRequest());

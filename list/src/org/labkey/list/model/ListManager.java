@@ -19,7 +19,8 @@ package org.labkey.list.model;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -89,7 +90,7 @@ import java.util.Set;
 
 public class ListManager implements SearchService.DocumentProvider
 {
-    private static final Logger LOG = Logger.getLogger(ListManager.class);
+    private static final Logger LOG = LogManager.getLogger(ListManager.class);
     private static final String LIST_SEQUENCE_NAME = "org.labkey.list.Lists";
     private static final ListManager INSTANCE = new ListManager();
 

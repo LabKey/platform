@@ -26,7 +26,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.module.ModuleLoader;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -42,7 +43,7 @@ import java.io.IOException;
  */
 public abstract class BaseRemoteService extends RemoteServiceServlet
 {
-    private static Logger _log = Logger.getLogger(BaseRemoteService.class);
+    private static Logger _log = LogManager.getLogger(BaseRemoteService.class);
 
     protected ViewContext _context;
     public BaseRemoteService(ViewContext context)

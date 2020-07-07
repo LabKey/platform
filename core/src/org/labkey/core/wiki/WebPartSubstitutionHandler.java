@@ -16,7 +16,8 @@
 
 package org.labkey.core.wiki;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.settings.AppProps;
@@ -44,7 +45,7 @@ import java.util.Stack;
  */
 public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHandler
 {
-    private static final Logger LOG = Logger.getLogger(WebPartSubstitutionHandler.class);
+    private static final Logger LOG = LogManager.getLogger(WebPartSubstitutionHandler.class);
     private static final ThreadLocal<Stack<Map<String, String>>> _paramsStack = ThreadLocal.withInitial(Stack::new);
 
 

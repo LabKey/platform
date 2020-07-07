@@ -16,7 +16,8 @@
 package org.labkey.core.admin;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.Attachment;
@@ -54,7 +55,7 @@ import java.util.Map;
  */
 public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettingsForm> extends FormViewAction<FormType>
 {
-    private static Logger _log = Logger.getLogger(FilesSiteSettingsAction.class);
+    private static Logger _log = LogManager.getLogger(FilesSiteSettingsAction.class);
     protected FileContentService _svc = FileContentService.get();
 
     public AbstractFileSiteSettingsAction(Class<FormType> commandClass)

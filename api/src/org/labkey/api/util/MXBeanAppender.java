@@ -15,13 +15,19 @@
  */
 package org.labkey.api.util;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.spi.LoggingEvent;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.Filter;
+import org.apache.logging.log4j.core.Layout;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Property;
+import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.labkey.api.mbean.ErrorsMXBean;
 import org.labkey.api.mbean.LabKeyManagement;
 
 import javax.management.DynamicMBean;
 import javax.management.StandardMBean;
+import java.io.Serializable;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
@@ -31,12 +37,20 @@ import java.util.concurrent.TimeUnit;
  * Date: 2012-02-28
  * Time: 4:10 PM
  */
-public class MXBeanAppender extends org.apache.log4j.AppenderSkeleton implements ErrorsMXBean
+@Plugin(name = "SessionAppender", category = "Core", elementType = "appender", printObject = true)
+public class MXBeanAppender extends AbstractAppender implements ErrorsMXBean
 {
+    public MXBeanAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties)
+    {
+        super(name, filter, layout, ignoreExceptions, properties);
+        DynamicMBean mbean = new StandardMBean(this, ErrorsMXBean.class, true);
+        LabKeyManagement.register(mbean, "Errors", "recent");
+    }
+
     private static class _Error implements Error
     {
-        final LoggingEvent _event;
-        _Error(LoggingEvent e)
+        final LogEvent _event;
+        _Error(LogEvent e)
         {
             _event = e;
         }
@@ -44,7 +58,7 @@ public class MXBeanAppender extends org.apache.log4j.AppenderSkeleton implements
         @Override
         public Date getTime()
         {
-            return new Date(_event.timeStamp);
+            return new Date(_event.getTimeMillis());
         }
 
         @Override
@@ -74,16 +88,10 @@ public class MXBeanAppender extends org.apache.log4j.AppenderSkeleton implements
 
     LinkedList<_Error> _events = new LinkedList<>();
 
-    public MXBeanAppender()
-    {
-        DynamicMBean mbean = new StandardMBean(this, ErrorsMXBean.class, true);
-        LabKeyManagement.register(mbean, "Errors", "recent");
-    }
-
     @Override
-    protected synchronized void append(LoggingEvent loggingEvent)
+    public synchronized void append(LogEvent loggingEvent)
     {
-        if (loggingEvent.getLevel().toInt() == Level.DEBUG.toInt())
+        if (loggingEvent.getLevel().intLevel() == Level.DEBUG.intLevel())
             return;
         clean();
         _events.addFirst(new _Error(loggingEvent));
@@ -92,25 +100,9 @@ public class MXBeanAppender extends org.apache.log4j.AppenderSkeleton implements
     private synchronized void clean()
     {
         long yesterday = HeartBeat.currentTimeMillis() - TimeUnit.DAYS.toMillis(1);
-        while (_events.size() > 100 || !_events.isEmpty() && _events.getLast()._event.timeStamp < yesterday)
+        while (_events.size() > 100 || !_events.isEmpty() && _events.getLast()._event.getTimeMillis() < yesterday)
             _events.removeLast();
     }
-
-
-    @Override
-    public synchronized void close()
-    {
-        _events.clear();
-    }
-
-
-    @Override
-    public boolean requiresLayout()
-    {
-        return false;
-    }
-
-
     /* ErrorsMXBean */
 
     @Override

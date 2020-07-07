@@ -16,7 +16,8 @@
 package org.labkey.query.controllers;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.Action;
@@ -81,7 +82,7 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 @Action(ActionType.SelectMetaData.class)
 public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsAction.Form>
 {
-    private static final Logger LOG = Logger.getLogger(GetQueryDetailsAction.class);
+    private static final Logger LOG = LogManager.getLogger(GetQueryDetailsAction.class);
 
     @Override
     protected long getLastModified(Form form)

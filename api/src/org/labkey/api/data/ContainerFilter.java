@@ -16,7 +16,8 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -1302,7 +1303,7 @@ public abstract class ContainerFilter
     }
 
 
-    static final Logger _log = Logger.getLogger(ContainerFilter.class);
+    static final Logger _log = LogManager.getLogger(ContainerFilter.class);
 
     // helper so that ContainerFilter logging can be traced using one logger class
     public static void logSetContainerFilter(ContainerFilter cf, String... parts)

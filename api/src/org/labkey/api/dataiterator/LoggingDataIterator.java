@@ -15,8 +15,9 @@
  */
 package org.labkey.api.dataiterator;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
@@ -33,7 +34,7 @@ import java.util.function.Supplier;
  */
 public class LoggingDataIterator extends AbstractDataIterator implements ScrollableDataIterator, MapDataIterator
 {
-    static Logger _staticLog = Logger.getLogger(LoggingDataIterator.class);
+    static Logger _staticLog = LogManager.getLogger(LoggingDataIterator.class);
     Logger _log = _staticLog;
     Level _pri = Level.DEBUG;
 
@@ -43,7 +44,7 @@ public class LoggingDataIterator extends AbstractDataIterator implements Scrolla
     {
         if (dib instanceof Wrapper)
             return dib;
-        if (_staticLog.isEnabledFor(Level.DEBUG))
+        if (_staticLog.isEnabled(Level.DEBUG))
             return new Wrapper(dib);
         return dib;
     }
@@ -69,7 +70,7 @@ public class LoggingDataIterator extends AbstractDataIterator implements Scrolla
     {
         if (in instanceof LoggingDataIterator)
             return in;
-        if (_staticLog.isEnabledFor(Level.DEBUG))
+        if (_staticLog.isEnabled(Level.DEBUG))
             return new LoggingDataIterator(in, _staticLog);
         return in;
     }

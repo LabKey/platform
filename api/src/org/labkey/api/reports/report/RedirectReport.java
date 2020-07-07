@@ -15,7 +15,8 @@
  */
 package org.labkey.api.reports.report;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.AppProps;
@@ -34,7 +35,7 @@ import java.net.URL;
  */
 public abstract class RedirectReport extends AbstractReport
 {
-    private static final Logger LOG = Logger.getLogger(RedirectReport.class);
+    private static final Logger LOG = LogManager.getLogger(RedirectReport.class);
 
     public static final String REDIRECT_URL = ReportDescriptor.Prop.redirectUrl.name();
     public static final String TARGET = "target";

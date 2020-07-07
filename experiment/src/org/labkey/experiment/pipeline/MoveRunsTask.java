@@ -36,7 +36,8 @@ import org.labkey.experiment.DataURLRelativizer;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlException;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveType;
@@ -144,7 +145,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
 
     public static class MoveRunsXarSource extends XarSource
     {
-        private static final Logger _log = Logger.getLogger(MoveRunsXarSource.class);
+        private static final Logger _log = LogManager.getLogger(MoveRunsXarSource.class);
 
         private final String _xml;
         private File _logFile;

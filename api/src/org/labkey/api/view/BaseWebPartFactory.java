@@ -18,7 +18,8 @@ package org.labkey.api.view;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
@@ -42,7 +43,7 @@ import java.util.Set;
  */
 public abstract class BaseWebPartFactory implements WebPartFactory
 {
-    private static final Logger LOG = Logger.getLogger(Portal.class);
+    private static final Logger LOG = LogManager.getLogger(Portal.class);
     private static final Set<String> defaultAllowableScopes = PageFlowUtil.set("folder");
 
     private final boolean _editable;
