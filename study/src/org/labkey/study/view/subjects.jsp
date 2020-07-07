@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.Cohort" %>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.StudyFolderTabs" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -86,6 +87,9 @@
     String groupsPanelId  = "groupsPanel" + getRequestScopedUID();
 
     String viewObject = "subjectHandler" + bean.getIndex();
+    String param = getViewContext().getRequest().getParameter("pageId");
+    boolean isParticipantsListPage = StudyFolderTabs.ParticipantsPage.PAGE_ID.equalsIgnoreCase(param);
+    String conditionalStyling = (isParticipantsListPage) ? "overflow-y:auto;" : "overflow-y:auto; height: 470px;";
 %>
 <script type="text/javascript">
 <%=viewObject%> = (function()
@@ -714,9 +718,6 @@
             highlightGroupsForPart(-1);
         });
 
-        // we don't want ptidDiv to change height as it filters, so set height explicitly after first layout
-        ptidDiv.setHeight(ptidDiv.getHeight());
-
         // the groups panel starts with a height of 500, but make that bigger to match the ptid div
         var groupsPanel = Ext4.ComponentQuery.query('participantfilter[id=<%=(groupsPanelId)%>]');
         if (groupsPanel.length == 1 && groupsPanel[0].getHeight() < ptidDiv.getHeight())
@@ -744,7 +745,7 @@ Ext4.onReady(<%=viewObject%>.render, <%=viewObject%>);
                     <%= !bean.getWide() ? "<br/>" : "" %>
                     <span id="<%=divId%>.status" name="status" style="margin-bottom: 10px;">Loading...</span>
                 </div>
-                <div style="overflow-y:auto; height: 470px;" id="<%= listDivId %>"></div>
+                <div style="<%=h(conditionalStyling)%>" id="<%= listDivId %>"></div>
             </td>
         </tr>
     </table>
