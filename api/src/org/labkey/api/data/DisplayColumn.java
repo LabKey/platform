@@ -1013,7 +1013,7 @@ public abstract class DisplayColumn extends RenderColumn
 
         // 34871: Support for column display width
         if (!StringUtils.isBlank(getWidth()))
-            style += "word-break:break-all;";
+            style += "word-break:break-word;";
 
         return style;
     }
