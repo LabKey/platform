@@ -802,7 +802,6 @@ public class DataRegion extends DisplayElement
                 }
             }
 
-            getAggregateResults(ctx);
             success = true;
             return results;
         }
@@ -828,62 +827,57 @@ public class DataRegion extends DisplayElement
         // no extra query columns added by default
     }
 
+    @NotNull
     public Map<String, List<Aggregate.Result>> getAggregateResults(RenderContext ctx) throws IOException
     {
-        Results results = ctx.getResults();
-        assert results != null;
-        _complete = results.isComplete();
-
-        boolean countAggregate = getMaxRows() > 0 && !_complete && _showPagination && _showPaginationCount;
-        countAggregate = countAggregate || (getMaxRows() == Table.ALL_ROWS && getTable() != null);
-
-        _summaryStatsProviders = ctx.getBaseSummaryStatsProviders();
-        List<Aggregate> baseAggregates = getSummaryStatsAggregates();
-
-        if (countAggregate)
+        if (_aggregateResults == null)
         {
-            List<Aggregate> newAggregates = new LinkedList<>();
+            Results results = ctx.getResults();
+            assert results != null;
+            _complete = results.isComplete();
 
-            if (baseAggregates != null)
-                newAggregates.addAll(baseAggregates);
+            boolean countAggregate = getMaxRows() > 0 && !_complete && _showPagination && _showPaginationCount;
+            countAggregate = countAggregate || (getMaxRows() == Table.ALL_ROWS && getTable() != null);
 
-            newAggregates.add(Aggregate.createCountStar());
-            _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getSettings(), getName(), newAggregates, getQueryParameters(), isAllowAsync());
-            List<Aggregate.Result> result = _aggregateResults.remove(Aggregate.STAR);
+            List<Aggregate> baseAggregates = getSummaryStatsAggregates(ctx.getBaseSummaryStatsProviders());
 
-            //Issue 14863: add null check
-            if (result != null && result.size() > 0)
+            if (countAggregate)
             {
-                Aggregate.Result countStarResult = result.get(0);
-                _totalRows = 0L;
-                if (countStarResult.getValue() instanceof Number)
-                    _totalRows = ((Number) countStarResult.getValue()).longValue();
-            }
-        }
-        else
-        {
-            _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getSettings(), getName(), baseAggregates, getQueryParameters(), isAllowAsync());
-        }
+                List<Aggregate> newAggregates = new LinkedList<>(baseAggregates);
 
-        // TODO: Move this into RenderContext?
-        ActionURL url = ctx.getSortFilterURLHelper();
-        PageFlowUtil.saveLastFilter(ctx.getViewContext(), url, getSettings() == null ? "" : getSettings().getLastFilterScope());
+                newAggregates.add(Aggregate.createCountStar());
+                _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getSettings(), getName(), newAggregates, getQueryParameters(), isAllowAsync());
+                List<Aggregate.Result> result = _aggregateResults.remove(Aggregate.STAR);
+
+                //Issue 14863: add null check
+                if (result != null && result.size() > 0)
+                {
+                    Aggregate.Result countStarResult = result.get(0);
+                    _totalRows = 0L;
+                    if (countStarResult.getValue() instanceof Number)
+                        _totalRows = ((Number) countStarResult.getValue()).longValue();
+                }
+            }
+            else
+            {
+                _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getSettings(), getName(), baseAggregates, getQueryParameters(), isAllowAsync());
+            }
+
+            // TODO: Move this into RenderContext?
+            ActionURL url = ctx.getSortFilterURLHelper();
+            PageFlowUtil.saveLastFilter(ctx.getViewContext(), url, getSettings() == null ? "" : getSettings().getLastFilterScope());
+        }
 
         return _aggregateResults;
     }
 
-    @Nullable
-    private List<Aggregate> getSummaryStatsAggregates()
+    @NotNull
+    private List<Aggregate> getSummaryStatsAggregates(List<AnalyticsProviderItem> providers)
     {
-        if (_summaryStatsProviders != null && !_summaryStatsProviders.isEmpty())
-        {
-            List<Aggregate> aggregates = new ArrayList<>();
-            for (AnalyticsProviderItem summaryStatsProvider : _summaryStatsProviders)
-                aggregates.addAll(summaryStatsProvider.createAggregates());
-            return aggregates;
-        }
-
-        return null;
+        List<Aggregate> aggregates = new ArrayList<>();
+        for (AnalyticsProviderItem summaryStatsProvider : providers)
+            aggregates.addAll(summaryStatsProvider.createAggregates());
+        return Collections.unmodifiableList(aggregates);
     }
 
     //TODO: total number of rows should be pushed down to a property of the TableResultSet
@@ -1067,13 +1061,6 @@ public class DataRegion extends DisplayElement
         if (showRecordSelectors)
             colCount++;
 
-        if (usesResultSet() && rs instanceof TableResultSet && ((TableResultSet) rs).getSize() != -1)
-        {
-            _rowCount = ((TableResultSet) rs).getSize();
-            if (_complete && _totalRows == null)
-                _totalRows = getOffset() + _rowCount.intValue();
-        }
-
         // TODO: This needs to be migrated to new UI
 //        if (!_showPagination && rs instanceof TableResultSet)
 //        {
@@ -1111,6 +1098,13 @@ public class DataRegion extends DisplayElement
         }
         if (useTableWrap)
             out.write("</tbody></table>");
+
+        if (usesResultSet() && rs instanceof TableResultSet && ((TableResultSet) rs).getSize() != -1)
+        {
+            _rowCount = ((TableResultSet) rs).getSize();
+            if (_complete && _totalRows == null)
+                _totalRows = getOffset() + _rowCount.intValue();
+        }
 
         renderHeaderScript(ctx, out, messages, showRecordSelectors);
         renderAnalyticsProvidersScripts(ctx, out);
@@ -1310,7 +1304,7 @@ public class DataRegion extends DisplayElement
     protected boolean shouldRenderHeader(boolean renderButtons)
     {
         return ((renderButtons && _buttonBarPosition.atTop() && _gridButtonBar.getList().size() > 0)
-                || (_showPagination && _buttonBarPosition.atTop() && !isSmallResultSet()));
+                || (_showPagination && _buttonBarPosition.atTop()));
     }
 
     protected void renderButtons(RenderContext ctx, Writer out) throws IOException
@@ -1422,15 +1416,6 @@ public class DataRegion extends DisplayElement
             dataRegionJSON.put("buttonBarOnRenders", getButtonBarOnRenders());
 
         return dataRegionJSON;
-    }
-
-    protected boolean isSmallResultSet()
-    {
-        if (_totalRows != null && _totalRows < 5)
-            return true;
-        if (_complete && getOffset() == 0 && _rowCount != null && _rowCount.intValue() < 5)
-            return true;
-        return false;
     }
 
     protected void renderNoRowsMessage(RenderContext ctx, Writer out, int colCount) throws IOException
@@ -1545,7 +1530,9 @@ public class DataRegion extends DisplayElement
 
     protected void renderAggregatesTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
     {
-        if (_aggregateResults != null && !_aggregateResults.isEmpty())
+        Map<String, List<Aggregate.Result>> aggregateResults = getAggregateResults(ctx);
+
+        if (!aggregateResults.isEmpty())
         {
             out.write("<tr class=\"labkey-col-total labkey-row\">");
 
@@ -1574,9 +1561,9 @@ public class DataRegion extends DisplayElement
                     List<Aggregate.Result> result = null;
                     if (col != null)
                     {
-                        result = _aggregateResults.get(renderer.getColumnInfo().getFieldKey().toString());
+                        result = aggregateResults.get(renderer.getColumnInfo().getFieldKey().toString());
                         if (result == null)
-                            _aggregateResults.get(renderer.getColumnInfo().getAlias());
+                            aggregateResults.get(renderer.getColumnInfo().getAlias());
                     }
                     if (result != null)
                     {

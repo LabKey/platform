@@ -7331,10 +7331,15 @@ public class StudyController extends BaseStudyController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class ExportParticipantTransformsAction extends SimpleViewAction<Object>
+    public class ExportParticipantTransformsAction extends FormHandlerAction<Object>
     {
         @Override
-        public ModelAndView getView(Object form, BindException errors) throws Exception
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
             Study study = StudyManager.getInstance().getStudy(getContainer());
             if (study != null)
@@ -7360,16 +7365,16 @@ public class StudyController extends BaseStudyController
                     writer.write(getViewContext().getResponse());
                 }
 
-                return null;
+                return false;  // Don't redirect
             }
             else
                 throw new IllegalStateException("A study does not exist in this folder");
         }
 
         @Override
-        public void addNavTrail(NavTree root)
+        public URLHelper getSuccessURL(Object o)
         {
-            throw new UnsupportedOperationException();
+            throw new IllegalStateException();
         }
     }
 
@@ -7542,7 +7547,17 @@ public class StudyController extends BaseStudyController
         {
             if (null == _study)
                 return 0;
-            return StudyManager.getInstance().setImportedAlternateParticipantIds(_study, dl, errors);
+            int rows = StudyManager.getInstance().setImportedAlternateParticipantIds(_study, dl, errors);
+
+            // Insert a clear warning at the top that the mappings have not been imported, #36517
+            if (errors.hasErrors())
+            {
+                List<ValidationException> rowErrors = errors.getRowErrors();
+                int count = rowErrors.size();
+                rowErrors.add(0, new ValidationException("Warning: NONE of participant mappings have been imported because this mapping file contains " + (1 == count ? "an error" : "errors") + "! Please correct the following:"));
+            }
+
+            return rows;
         }
 
         @Override
