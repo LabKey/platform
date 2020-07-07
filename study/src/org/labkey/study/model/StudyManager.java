@@ -3365,7 +3365,7 @@ public class StudyManager
     public int setImportedAlternateParticipantIds(Study study, DataLoader dl, BatchValidationException errors) throws IOException
     {
         // Use first line to determine order of columns we care about
-        // The first columcn in the data must contain the ones we are seeking
+        // The first column in the data must contain the ones we are seeking
         String[][] firstline = dl.getFirstNLines(1);
         if (null == firstline || 0 == firstline.length)
             return 0;       // Unexpected but just in case
