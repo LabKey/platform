@@ -60,4 +60,16 @@ public interface WikiService
 
     /** For columns that want a lookup to the canonical RendererType column. Be sure to null check WikiService before adding your FK. */
     TableInfo getRendererTypeTable(User user, Container container);
+
+    /**
+     * Returns the raw (unformatted) content
+     */
+    String getContent(Container c, String name);
+
+    /**
+     * Update the content of a wiki
+     */
+    void updateContent(Container c, User user, String name, String content);
+
+    void deleteWiki(Container c, User user, String name, boolean deleteSubtree);
 }

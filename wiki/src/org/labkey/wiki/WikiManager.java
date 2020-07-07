@@ -898,6 +898,24 @@ public class WikiManager implements WikiService
             l.wikiDeleted(user, c, name);
     }
 
+    @Override
+    public String getContent(Container c, String name)
+    {
+        return null;
+    }
+
+    @Override
+    public void updateContent(Container c, User user, String name, String content)
+    {
+
+    }
+
+    @Override
+    public void deleteWiki(Container c, User user, String name, boolean deleteSubtree)
+    {
+
+    }
+
     public static class TestCase extends Assert
     {
         WikiManager _m = null;
