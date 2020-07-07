@@ -15,8 +15,8 @@
  */
 package org.labkey.query.jdbc;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;

@@ -15,8 +15,8 @@
  */
 package org.labkey.pipeline.mule;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.NoSuchJobException;
 import org.labkey.api.pipeline.PipelineJob;

@@ -29,7 +29,6 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeEvent;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;

@@ -15,8 +15,8 @@
  */
 package org.labkey.api.dataiterator;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.query.BatchValidationException;
 

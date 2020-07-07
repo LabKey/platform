@@ -16,14 +16,14 @@
 package org.labkey.api.assay;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.util.NetworkDrive;
 
 import java.io.File;

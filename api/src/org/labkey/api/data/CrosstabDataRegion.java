@@ -16,8 +16,8 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.query.CrosstabView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;

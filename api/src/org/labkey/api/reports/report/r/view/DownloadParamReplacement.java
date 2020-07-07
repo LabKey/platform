@@ -21,7 +21,6 @@ import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.util.FileUtil;
 
 import java.io.File;
-import java.io.IOException;
 
 /**
  * User: Dax Hawkins

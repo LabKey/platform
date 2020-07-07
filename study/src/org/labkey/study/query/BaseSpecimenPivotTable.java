@@ -15,20 +15,17 @@
  */
 package org.labkey.study.query;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
-import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.SpecimenManager;

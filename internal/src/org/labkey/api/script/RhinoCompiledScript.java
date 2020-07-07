@@ -26,10 +26,14 @@
 package org.labkey.api.script;
 
 import com.sun.phobos.script.util.ExtendedScriptException;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.util.ExceptionUtil;
-import org.mozilla.javascript.*;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.JavaScriptException;
+import org.mozilla.javascript.RhinoException;
+import org.mozilla.javascript.Script;
+import org.mozilla.javascript.Scriptable;
 
 import javax.script.CompiledScript;
 import javax.script.ScriptContext;

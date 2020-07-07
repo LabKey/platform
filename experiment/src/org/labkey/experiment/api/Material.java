@@ -16,7 +16,6 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 

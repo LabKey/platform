@@ -16,13 +16,13 @@
 
 package org.labkey.api.data;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.commons.beanutils.DynaClass;
 import org.apache.commons.beanutils.DynaProperty;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Set;
 
 public abstract class StringWrapperDynaClass implements DynaClass
 {

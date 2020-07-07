@@ -17,8 +17,8 @@ package org.labkey.api.cache.ehcache;
 
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.Element;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheType;

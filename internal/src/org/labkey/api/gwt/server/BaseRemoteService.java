@@ -17,24 +17,24 @@
 package org.labkey.api.gwt.server;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.module.ModuleLoader;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Vector;
-import java.io.IOException;
 
 /**
  * User: brittp

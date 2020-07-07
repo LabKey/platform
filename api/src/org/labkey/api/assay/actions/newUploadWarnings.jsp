@@ -15,17 +15,16 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.assay.AssayProvider" %>
 <%@ page import="org.labkey.api.assay.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.api.assay.actions.AssayRunsAction" %>
 <%@ page import="org.labkey.api.study.actions.TransformResultsAction" %>
-<%@ page import="org.labkey.api.assay.AssayProvider" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.io.File" %>
-<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override

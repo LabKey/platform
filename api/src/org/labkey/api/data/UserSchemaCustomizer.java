@@ -15,7 +15,6 @@
  */
 package org.labkey.api.data;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.UserSchema;

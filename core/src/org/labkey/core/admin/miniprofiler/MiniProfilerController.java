@@ -16,8 +16,8 @@
 package org.labkey.core.admin.miniprofiler;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.IgnoresAllocationTracking;

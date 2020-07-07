@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 import React from 'react'
-import { ActionURL, Domain, getServerContext, PermissionTypes, Security } from '@labkey/api';
+import {ActionURL, Domain, getServerContext, PermissionTypes, Security} from '@labkey/api';
 import {
     Alert,
-    LoadingSpinner,
+    BeforeUnload,
+    ConfirmModal,
+    fetchListDesign,
     ListDesignerPanels,
     ListModel,
-    fetchListDesign,
-    ConfirmModal,
-    BeforeUnload
+    LoadingSpinner
 } from "@labkey/components";
 
 import "@labkey/components/dist/components.css"

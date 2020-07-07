@@ -19,7 +19,11 @@ package org.labkey.api.view;
 import com.google.gwt.core.client.EntryPoint;
 import org.labkey.api.compliance.ComplianceService;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Wrapper around a GWT (Google Web Toolkit) module that knows how to render into the overall HTML of the page.

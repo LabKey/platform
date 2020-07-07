@@ -19,8 +19,8 @@ package org.labkey.query.reports;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -61,8 +61,6 @@ import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
-import org.labkey.api.module.Module;
-import org.labkey.api.moduleeditor.api.ModuleEditorService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -87,7 +85,6 @@ import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.ChartReport;
-import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportJob;
@@ -189,8 +186,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.labkey.api.util.DOM.*;
-import static org.labkey.api.util.HtmlString.NBSP;
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.cl;
 
 /**
  * User: Karl Lum

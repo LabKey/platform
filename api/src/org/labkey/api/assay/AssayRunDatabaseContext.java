@@ -17,7 +17,6 @@ package org.labkey.api.assay;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;

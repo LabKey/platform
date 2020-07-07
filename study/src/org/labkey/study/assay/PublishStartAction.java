@@ -16,7 +16,13 @@
 
 package org.labkey.study.assay;
 
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayQCService;
+import org.labkey.api.assay.AssayTableMetadata;
+import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.assay.actions.BaseAssayAction;
+import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -36,12 +42,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.StudyUrls;
-import org.labkey.api.assay.actions.BaseAssayAction;
-import org.labkey.api.assay.actions.ProtocolIdForm;
-import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayTableMetadata;
-import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;

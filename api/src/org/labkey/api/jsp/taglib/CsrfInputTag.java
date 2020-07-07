@@ -18,8 +18,6 @@ package org.labkey.api.jsp.taglib;
 
 import org.labkey.api.util.CSRFUtil;
 
-import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.PageContext;
 import java.io.IOException;
 
 public class CsrfInputTag extends SimpleTagBase

@@ -17,7 +17,6 @@ package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Set;
 

@@ -23,9 +23,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.query.AbstractQueryUpdateService;
-import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.InvalidKeyException;
-import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
@@ -35,7 +33,6 @@ import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 

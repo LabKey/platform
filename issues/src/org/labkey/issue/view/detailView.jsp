@@ -20,7 +20,8 @@
 <%@ page import="org.labkey.api.issues.IssueDetailHeaderLinkProvider" %>
 <%@ page import="org.labkey.api.issues.IssuesListDefService" %>
 <%@ page import="org.labkey.api.security.User"%>
-<%@ page import="org.labkey.api.security.permissions.InsertPermission"%>
+<%@ page import="org.labkey.api.security.UserManager"%>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -44,7 +45,6 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.stream.Stream" %>
-<%@ page import="org.labkey.api.security.UserManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!

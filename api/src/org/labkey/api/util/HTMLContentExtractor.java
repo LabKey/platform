@@ -16,13 +16,13 @@
 
 package org.labkey.api.util;
 
-import javax.swing.text.html.HTMLEditorKit;
-import javax.swing.text.html.HTML;
-import javax.swing.text.html.parser.ParserDelegator;
 import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.html.HTML;
+import javax.swing.text.html.HTMLEditorKit;
+import javax.swing.text.html.parser.ParserDelegator;
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.IOException;
 
 public abstract class HTMLContentExtractor extends HTMLEditorKit.ParserCallback
 {

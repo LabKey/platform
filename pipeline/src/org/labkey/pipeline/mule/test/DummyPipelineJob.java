@@ -16,9 +16,7 @@
 package org.labkey.pipeline.mule.test;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
@@ -30,7 +28,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.pipeline.api.TaskPipelineImpl;
 
 import java.io.File;
 import java.io.IOException;

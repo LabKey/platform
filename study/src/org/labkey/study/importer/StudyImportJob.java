@@ -17,8 +17,8 @@ package org.labkey.study.importer;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;

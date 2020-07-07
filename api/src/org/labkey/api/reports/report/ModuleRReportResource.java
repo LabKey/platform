@@ -15,7 +15,6 @@
  */
 package org.labkey.api.reports.report;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.reports.RScriptEngine;

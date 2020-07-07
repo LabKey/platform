@@ -15,9 +15,6 @@
  */
 package org.labkey.announcements.model;
 
-import org.jetbrains.annotations.NotNull;
-import org.labkey.announcements.AnnouncementModule;
-import org.labkey.api.module.Module;
 import org.labkey.api.security.permissions.AbstractPermission;
 
 /**

@@ -14,8 +14,15 @@
  * limitations under the License.
  */
 import React from 'react'
-import { ActionURL, getServerContext } from "@labkey/api";
-import { Alert, BeforeUnload, DataClassDesigner, DataClassModel, fetchDataClass, LoadingSpinner } from "@labkey/components";
+import {ActionURL, getServerContext} from "@labkey/api";
+import {
+    Alert,
+    BeforeUnload,
+    DataClassDesigner,
+    DataClassModel,
+    fetchDataClass,
+    LoadingSpinner
+} from "@labkey/components";
 
 import "@labkey/components/dist/components.css"
 

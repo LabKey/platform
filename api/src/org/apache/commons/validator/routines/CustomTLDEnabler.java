@@ -15,8 +15,8 @@
  */
 package org.apache.commons.validator.routines;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Adds non-standard TLDs to allowable values for Apache Commons Validator. See issue 25041.

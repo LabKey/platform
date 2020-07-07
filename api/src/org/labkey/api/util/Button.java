@@ -25,10 +25,17 @@ import java.io.Writer;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute;
-import static org.labkey.api.util.DOM.*;
-import static org.labkey.api.util.DOM.LK.*;
-import static org.labkey.api.util.DOM.Attribute.*;
+import static org.labkey.api.util.DOM.Attribute.onclick;
+import static org.labkey.api.util.DOM.Attribute.tabindex;
+import static org.labkey.api.util.DOM.Attribute.title;
+import static org.labkey.api.util.DOM.Attribute.type;
+import static org.labkey.api.util.DOM.INPUT;
+import static org.labkey.api.util.DOM.LK.FA;
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.createHtmlFragment;
 
 
 /**

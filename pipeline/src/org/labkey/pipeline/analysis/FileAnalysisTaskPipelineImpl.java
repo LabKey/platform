@@ -15,7 +15,6 @@
  */
 package org.labkey.pipeline.analysis;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;

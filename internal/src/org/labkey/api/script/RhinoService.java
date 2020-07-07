@@ -16,8 +16,8 @@
 package org.labkey.api.script;
 
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.junit.Assert;

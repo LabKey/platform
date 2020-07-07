@@ -24,7 +24,11 @@ import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * An appender that can be added to any log4j Logger to help accumulate and report status; meant to be used within a

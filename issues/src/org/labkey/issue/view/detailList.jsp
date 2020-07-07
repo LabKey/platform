@@ -41,7 +41,6 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="java.util.function.Function" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.stream.Stream" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>

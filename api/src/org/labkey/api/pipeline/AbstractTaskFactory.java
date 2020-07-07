@@ -16,7 +16,6 @@
 package org.labkey.api.pipeline;
 
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;

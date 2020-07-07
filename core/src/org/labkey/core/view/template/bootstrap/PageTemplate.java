@@ -17,8 +17,8 @@ package org.labkey.core.view.template.bootstrap;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
@@ -29,7 +29,6 @@ import org.labkey.api.settings.BannerProperties;
 import org.labkey.api.settings.FooterProperties;
 import org.labkey.api.settings.TemplateProperties;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;

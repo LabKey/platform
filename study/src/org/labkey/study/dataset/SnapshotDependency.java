@@ -16,8 +16,8 @@
 package org.labkey.study.dataset;
 
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
@@ -26,8 +26,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.HasResolvedTables;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionTableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;

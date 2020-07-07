@@ -17,8 +17,8 @@
 package org.labkey.api.query;
 
 import org.labkey.api.util.EnumHasHtmlString;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 
 public enum QueryParam implements EnumHasHtmlString<QueryParam>
 {

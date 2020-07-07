@@ -20,7 +20,6 @@ import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 
-import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
 import java.io.Writer;
 

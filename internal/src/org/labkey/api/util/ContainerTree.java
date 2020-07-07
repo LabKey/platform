@@ -16,8 +16,8 @@
 package org.labkey.api.util;
 
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;

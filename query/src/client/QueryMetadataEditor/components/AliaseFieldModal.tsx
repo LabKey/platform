@@ -1,5 +1,5 @@
 import React, {PureComponent} from "react";
-import {Button, Modal, Row, Col} from "react-bootstrap";
+import {Button, Col, Modal, Row} from "react-bootstrap";
 import {List} from "immutable";
 import {DomainField, SelectInput} from "@labkey/components";
 

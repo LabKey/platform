@@ -16,7 +16,6 @@
 package org.labkey.api.security.roles;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;

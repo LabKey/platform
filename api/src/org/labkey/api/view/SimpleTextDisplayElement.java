@@ -19,8 +19,8 @@ package org.labkey.api.view;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.PageFlowUtil;
 
-import java.io.Writer;
 import java.io.IOException;
+import java.io.Writer;
 
 /**
  * Just renders the text directly into the page, HTML-encoding as needed.

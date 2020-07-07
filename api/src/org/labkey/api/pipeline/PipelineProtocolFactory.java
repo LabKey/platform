@@ -15,8 +15,8 @@
  */
 package org.labkey.api.pipeline;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.pipeline.protocol.xml.PipelineProtocolPropsDocument;
 import org.labkey.api.util.FileUtil;

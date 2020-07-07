@@ -17,7 +17,6 @@
 package org.labkey.core.wiki;
 
 import org.apache.commons.lang3.StringUtils;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
@@ -25,14 +24,23 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TidyUtil;
 import org.labkey.api.view.template.ClientDependency;
-import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.FormattedHtml;
+import org.labkey.api.wiki.WikiRenderer;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

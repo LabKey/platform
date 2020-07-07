@@ -16,9 +16,11 @@
 package org.labkey.api.assay.pipeline;
 
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayRunUploadContext;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ExperimentException;
@@ -32,9 +34,6 @@ import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayRunUploadContext;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;

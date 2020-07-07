@@ -16,9 +16,10 @@
  */
 %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.query.controllers.InternalNewViewForm" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.query.controllers.QueryController.*" %>
+<%@ page import="org.labkey.query.controllers.InternalNewViewForm" %>
+<%@ page import="org.labkey.query.controllers.QueryController.InternalNewViewAction" %>
+<%@ page import="org.labkey.query.controllers.QueryController.ManageViewsAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%

@@ -15,8 +15,8 @@
  */
 package org.labkey.api.data.dialect;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.SqlScanner;
 

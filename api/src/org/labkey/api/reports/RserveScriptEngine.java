@@ -16,8 +16,8 @@
 package org.labkey.api.reports;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.util.FileUtil;

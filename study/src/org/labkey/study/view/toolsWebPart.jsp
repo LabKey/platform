@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.view.StudyToolsWebPart" %>
-<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.view.StudyToolsWebPart" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyToolsWebPart.StudyToolsBean> me = (JspView<StudyToolsWebPart.StudyToolsBean>) HttpView.currentView();

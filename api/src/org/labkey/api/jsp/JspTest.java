@@ -16,7 +16,6 @@
 
 package org.labkey.api.jsp;
 
-import org.labkey.api.action.HasViewContext;
 import org.labkey.api.util.TestContext;
 
 /**

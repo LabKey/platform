@@ -18,8 +18,8 @@
 <%@ page buffer="none" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PageConfig> me = (JspView<PageConfig>) HttpView.currentView();

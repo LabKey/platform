@@ -16,8 +16,12 @@
 
 package org.labkey.assay.query;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
@@ -26,10 +30,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.AssayUrls;
-import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;

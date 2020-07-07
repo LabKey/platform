@@ -16,7 +16,6 @@
 package org.labkey.api.admin;
 
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.labkey.api.pipeline.PipelineJob;
 
 /**

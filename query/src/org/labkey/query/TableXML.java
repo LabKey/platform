@@ -16,14 +16,14 @@
 
 package org.labkey.query;
 
-import org.labkey.api.query.QueryParseException;
-import org.labkey.data.xml.TableType;
-import org.labkey.data.xml.ColumnType;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ForeignKey;
-import org.labkey.api.query.RowIdForeignKey;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.RowIdForeignKey;
+import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.TableType;
 
 import java.util.Collection;
 import java.util.Collections;

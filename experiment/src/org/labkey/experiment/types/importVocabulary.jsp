@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.experiment.types.TypesController" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.experiment.types.TypesController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%

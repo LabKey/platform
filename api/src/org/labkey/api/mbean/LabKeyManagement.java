@@ -15,7 +15,6 @@
  */
 package org.labkey.api.mbean;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import javax.management.DynamicMBean;

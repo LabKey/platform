@@ -16,7 +16,6 @@
 package org.labkey.api.module;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;

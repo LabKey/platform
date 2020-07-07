@@ -15,8 +15,8 @@
  */
 package org.labkey.study.importer;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
@@ -31,7 +31,6 @@ import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

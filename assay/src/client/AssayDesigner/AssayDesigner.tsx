@@ -15,8 +15,16 @@
  */
 import React from 'react'
 import {Panel} from "react-bootstrap";
-import { ActionURL, Security, Utils, getServerContext, PermissionTypes } from '@labkey/api';
-import { Alert, LoadingSpinner, DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol, BeforeUnload } from '@labkey/components';
+import {ActionURL, getServerContext, PermissionTypes, Security, Utils} from '@labkey/api';
+import {
+    Alert,
+    AssayDesignerPanels,
+    AssayProtocolModel,
+    BeforeUnload,
+    DomainFieldsDisplay,
+    fetchProtocol,
+    LoadingSpinner
+} from '@labkey/components';
 
 import "@labkey/components/dist/components.css"
 

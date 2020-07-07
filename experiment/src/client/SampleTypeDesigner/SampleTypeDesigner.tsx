@@ -15,7 +15,7 @@
  */
 
 import React from 'react'
-import { ActionURL, getServerContext } from "@labkey/api";
+import {ActionURL, getServerContext} from "@labkey/api";
 import {
     Alert,
     BeforeUnload,

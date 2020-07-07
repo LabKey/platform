@@ -15,21 +15,40 @@
  */
 package org.labkey.study.designer;
 
-import org.apache.logging.log4j.Logger;
+import gwt.client.org.labkey.study.designer.client.model.GWTAdjuvant;
+import gwt.client.org.labkey.study.designer.client.model.GWTAntigen;
+import gwt.client.org.labkey.study.designer.client.model.GWTAssayDefinition;
+import gwt.client.org.labkey.study.designer.client.model.GWTAssayNote;
+import gwt.client.org.labkey.study.designer.client.model.GWTAssaySchedule;
+import gwt.client.org.labkey.study.designer.client.model.GWTCohort;
+import gwt.client.org.labkey.study.designer.client.model.GWTImmunization;
+import gwt.client.org.labkey.study.designer.client.model.GWTImmunizationSchedule;
+import gwt.client.org.labkey.study.designer.client.model.GWTImmunogen;
+import gwt.client.org.labkey.study.designer.client.model.GWTSampleMeasure;
+import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
+import gwt.client.org.labkey.study.designer.client.model.GWTTimepoint;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
-import org.apache.xmlbeans.XmlError;
-import gwt.client.org.labkey.study.designer.client.model.*;
-import org.labkey.study.xml.*;
 import org.json.JSONObject;
+import org.labkey.study.xml.Adjuvant;
+import org.labkey.study.xml.AdjuvantRef;
+import org.labkey.study.xml.Antigen;
+import org.labkey.study.xml.AssayEvent;
+import org.labkey.study.xml.AssaySchedule;
+import org.labkey.study.xml.Cohort;
+import org.labkey.study.xml.ImmunizationEvent;
+import org.labkey.study.xml.Immunogen;
+import org.labkey.study.xml.ImmunogenRef;
+import org.labkey.study.xml.SampleMeasure;
+import org.labkey.study.xml.StudyDesign;
+import org.labkey.study.xml.StudyDesignDocument;
+import org.labkey.study.xml.Timepoint;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.ArrayList;/*
- * User: marki
- * Date: Jun 15, 2009
- * Time: 2:55:48 PM
- */
 
 public class JSONSerializer
 {

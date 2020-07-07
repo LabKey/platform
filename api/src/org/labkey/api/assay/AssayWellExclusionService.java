@@ -16,14 +16,13 @@
 package org.labkey.api.assay;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.assay.query.ResultsQueryView;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.query.ResultsQueryView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 

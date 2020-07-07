@@ -28,8 +28,8 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="java.util.List" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%

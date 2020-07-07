@@ -16,8 +16,8 @@
 package org.labkey.pipeline.api;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.SchemaType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

@@ -15,15 +15,14 @@
  */
 package org.labkey.pipeline.mule;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.pipeline.CancelledException;
+import org.labkey.api.pipeline.PipelineJob;
 import org.mule.impl.DefaultComponentExceptionStrategy;
 import org.mule.impl.RequestContext;
-import org.mule.umo.UMOEvent;
 import org.mule.umo.ComponentException;
-import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobService;
+import org.mule.umo.UMOEvent;
 
 /*
 * User: jeckels

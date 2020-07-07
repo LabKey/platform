@@ -1,12 +1,12 @@
 <%@ page import="org.json.JSONObject" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.view.ViewServlet" %>
 <%@ page import="org.junit.Test" %>
-<%@ page import="static org.junit.Assert.*" %>
-<%@ page import="org.labkey.api.util.TestContext" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.JunitUtil" %>
+<%@ page import="org.labkey.api.util.TestContext" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="static org.junit.Assert.*" %>
+<%@ page import="org.labkey.api.view.ViewServlet" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 
 <%!

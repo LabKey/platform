@@ -16,8 +16,8 @@
 package org.labkey.api.security.roles;
 
 import org.apache.commons.beanutils.Converter;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /*
 * User: Dave

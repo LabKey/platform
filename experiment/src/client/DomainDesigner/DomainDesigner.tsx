@@ -16,16 +16,16 @@
 
 import React from 'react'
 import {Button, Panel} from "react-bootstrap";
-import { ActionURL, getServerContext } from "@labkey/api";
+import {ActionURL, getServerContext} from "@labkey/api";
 import {
-    LoadingSpinner,
     Alert,
+    BeforeUnload,
     ConfirmModal,
-    DomainForm,
     DomainDesign,
+    DomainForm,
     fetchDomain,
-    saveDomain,
-    BeforeUnload
+    LoadingSpinner,
+    saveDomain
 } from "@labkey/components"
 
 import "@labkey/components/dist/components.css"

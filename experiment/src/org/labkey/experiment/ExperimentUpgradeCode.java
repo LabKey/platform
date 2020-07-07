@@ -16,8 +16,8 @@
 package org.labkey.experiment;
 
 import com.google.common.collect.Sets;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;

@@ -15,8 +15,8 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.IdentifiableBase;
+import org.labkey.api.exp.api.ExpProtocol;
 
 import java.util.Date;
 

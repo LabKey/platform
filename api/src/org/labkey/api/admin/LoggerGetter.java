@@ -16,7 +16,6 @@
 package org.labkey.api.admin;
 
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
 /**
  * Simple interface that lets import/export contexts get access to a Logger. Pipeline jobs can't hold on to the Logger

@@ -15,24 +15,32 @@
  */
 package org.labkey.pipeline.mule;
 
-import org.mule.config.builders.MuleXmlConfigurationBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.pipeline.AbstractPipelineStartup;
+import org.labkey.pipeline.api.PipelineJobServiceImpl;
+import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.mule.extras.client.MuleClient;
 import org.mule.impl.RequestContext;
 import org.springframework.beans.factory.BeanFactory;
-import org.labkey.pipeline.api.PipelineJobServiceImpl;
-import org.labkey.pipeline.AbstractPipelineStartup;
-import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
-import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.util.BreakpointThread;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
-import javax.jms.*;
-import java.io.*;
-import java.lang.IllegalStateException;
-import java.util.*;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.QueueBrowser;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import java.io.File;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /*
 * User: jeckels

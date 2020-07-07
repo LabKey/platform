@@ -16,7 +16,12 @@
 package org.labkey.assay.view;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.view.*;
+import org.labkey.api.view.AlwaysAvailableWebPartFactory;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 
 /**
  * User: Mark Igra

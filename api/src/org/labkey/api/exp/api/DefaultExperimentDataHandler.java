@@ -17,9 +17,7 @@
 package org.labkey.api.exp.api;
 
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.security.User;

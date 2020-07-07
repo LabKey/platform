@@ -16,13 +16,12 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.TableCustomizer;
 import org.labkey.api.data.TableInfo;
-
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;

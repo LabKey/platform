@@ -23,7 +23,6 @@ import org.labkey.api.exp.ProtocolParameter;
 import org.labkey.api.exp.api.ExpProtocolInput;
 
 import java.lang.reflect.InvocationTargetException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;

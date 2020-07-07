@@ -16,7 +16,6 @@
 
 package org.labkey.query;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
@@ -29,8 +28,8 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExternalSchemaCustomizer;
-import org.labkey.api.data.UserSchemaCustomizer;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UserSchemaCustomizer;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;

@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-    initQueryGridState,
-    LineageFilter,
-    LineageGraph,
-    LineageURLResolvers,
-} from '@labkey/components';
+import {initQueryGridState, LineageFilter, LineageGraph, LineageURLResolvers,} from '@labkey/components';
 
 import '@labkey/components/dist/components.css';
 

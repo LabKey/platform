@@ -15,12 +15,11 @@
  */
 package org.labkey.api.pipeline;
 
-import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
+import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 
-import java.io.IOException;
 import java.io.File;
+import java.io.IOException;
 
 /**
  * <code>WorkDirFactory</code>

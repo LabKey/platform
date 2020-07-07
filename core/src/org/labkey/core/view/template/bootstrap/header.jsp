@@ -40,7 +40,6 @@
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.Header" %>
 <%@ page import="static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY" %>
-<%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!

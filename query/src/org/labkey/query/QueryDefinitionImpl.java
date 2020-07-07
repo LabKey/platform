@@ -18,8 +18,8 @@ package org.labkey.query;
 
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
@@ -62,7 +62,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
-import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.queryCustomView.NamedFiltersType;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.QueryDef;

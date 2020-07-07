@@ -16,8 +16,8 @@
 package org.labkey.api.files;
 
 import org.apache.commons.lang3.SystemUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.imca_cat.pollingwatchservice.PathWatchService;
 import org.imca_cat.pollingwatchservice.PollingWatchService;
 import org.junit.Assert;

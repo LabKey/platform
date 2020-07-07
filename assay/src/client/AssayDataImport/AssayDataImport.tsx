@@ -1,27 +1,27 @@
 import React from 'react';
-import { Button, ButtonToolbar, Panel } from "react-bootstrap";
-import {Map, List, fromJS} from 'immutable';
-import { ActionURL, getServerContext, PermissionTypes, Security, Utils } from '@labkey/api';
+import {Button, ButtonToolbar, Panel} from "react-bootstrap";
+import {fromJS, List, Map} from 'immutable';
+import {ActionURL, getServerContext, PermissionTypes, Security, Utils} from '@labkey/api';
 import {
     Alert,
-    Cards,
-    FileAttachmentForm,
-    LoadingSpinner,
-    Progress,
     AssayDefinitionModel,
-    InferDomainResponse,
-    QueryColumn,
-    User,
-    fetchAllAssays,
-    importAssayRun,
-    naturalSort,
-    hasAllPermissions,
-    AssayProtocolModel,
     AssayPropertiesPanel,
+    AssayProtocolModel,
+    Cards,
     DomainDesign,
-    saveAssayDesign,
+    fetchAllAssays,
     fetchProtocol,
-    setDomainFields
+    FileAttachmentForm,
+    hasAllPermissions,
+    importAssayRun,
+    InferDomainResponse,
+    LoadingSpinner,
+    naturalSort,
+    Progress,
+    QueryColumn,
+    saveAssayDesign,
+    setDomainFields,
+    User
 } from '@labkey/components'
 
 import "@labkey/components/dist/components.css"

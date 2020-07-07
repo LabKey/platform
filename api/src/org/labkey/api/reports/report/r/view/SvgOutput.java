@@ -16,7 +16,6 @@
 package org.labkey.api.reports.report.r.view;
 
 import org.apache.batik.transcoder.TranscoderException;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.reader.Readers;

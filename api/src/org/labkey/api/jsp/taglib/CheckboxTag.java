@@ -20,7 +20,6 @@ import org.labkey.api.action.SpringActionController;
 
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
-import java.util.Set;
 
 public class CheckboxTag extends SimpleTagBase
 {

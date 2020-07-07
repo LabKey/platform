@@ -17,8 +17,8 @@ package org.labkey.api.pipeline.file;
 
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipeRoot;

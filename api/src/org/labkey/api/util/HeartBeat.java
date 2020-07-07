@@ -15,8 +15,8 @@
  */
 package org.labkey.api.util;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * HeatBeatThread is faster than using System.currentTimeMillis() for

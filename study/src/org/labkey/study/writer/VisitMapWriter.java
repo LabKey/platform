@@ -21,7 +21,6 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 
 import java.io.IOException;
-import java.sql.SQLException;
 
 /**
  * User: adam

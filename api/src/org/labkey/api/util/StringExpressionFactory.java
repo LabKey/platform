@@ -16,8 +16,8 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -37,7 +37,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.StringExpressionType;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.Writer;
 import java.net.URISyntaxException;

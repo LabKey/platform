@@ -16,8 +16,8 @@
 package org.labkey.api.util;
 
 import org.apache.commons.logging.LogFactory;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.NullConfiguration;
 import org.labkey.api.cache.CacheManager;
