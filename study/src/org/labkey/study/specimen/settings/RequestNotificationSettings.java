@@ -15,17 +15,17 @@
  */
 package org.labkey.study.specimen.settings;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
-import org.labkey.api.data.Container;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.EnumHasHtmlString;
 
 import javax.mail.Address;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.List;
-import java.util.ArrayList;
 
 /*
  * User: brittp

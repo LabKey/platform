@@ -18,8 +18,8 @@ package org.labkey.study;
 
 import org.apache.commons.collections4.bag.HashBag;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.junit.Assert;

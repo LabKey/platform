@@ -16,7 +16,6 @@
 package org.labkey.study;
 
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;

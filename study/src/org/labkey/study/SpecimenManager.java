@@ -19,7 +19,6 @@ package org.labkey.study;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.collections4.comparators.ComparableComparator;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

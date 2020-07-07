@@ -15,8 +15,8 @@
  */
 package org.labkey.study.controllers;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;

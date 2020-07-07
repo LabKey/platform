@@ -15,7 +15,6 @@
  */
 package org.labkey.study.specimen.report;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.jsp.taglib.AutoCompleteTextTag;
 import org.labkey.api.query.CustomView;
