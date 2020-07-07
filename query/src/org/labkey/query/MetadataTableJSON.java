@@ -711,7 +711,6 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         }
                         else
                         {
-                            metadataColumnJSON.setLockType(LockedPropertyType.PartiallyLocked.name());
                             ColumnInfo tableColumn = table.getColumn(column.getColumnName());
                             if (tableColumn != null)
                             {

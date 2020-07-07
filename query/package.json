@@ -37,7 +37,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.71.3-20.7-fb-Issue40795.1"
+    "@labkey/components": "0.71.3-20.7-fb-Issue40795.2"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.13.0",
