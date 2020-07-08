@@ -126,10 +126,8 @@
                         rel = path.subpath(1, path.size());
                     if (rel.startsWith(files) || rel.startsWith(pipeline))
                     {
-                        if (path.size() > 0) path = path.getParent();
-                        text = path.toString("/","");
-
-                        if (rel.size() > 0) rel = rel.getParent();
+                        rel = rel.getParent();
+                        text = c.getParsedPath().append(rel).toString("/","");
                         url = urlProvider(ProjectUrls.class).getFileBrowserURL(c, rel.toString("/",""));
                     }
                 }
