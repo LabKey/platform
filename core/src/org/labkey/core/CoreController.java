@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.MutatingApiAction;
@@ -2635,6 +2636,91 @@ public class CoreController extends SpringActionController
             response.put("body", newBody);
 
             return response;
+        }
+    }
+
+    @RequiresNoPermission
+    public class TestLoggerAction extends BaseApiAction
+    {
+        private String[] nouns = { "LabKey", "Beaker", "Lab", "San Diego", "Seattle",
+                "Server", "Java", "Science", "Maths" };
+
+        private String[] verbs = { "kept", "developed", "made",
+                "found", "coined" };
+
+        private String[] phrases = { "tech is cool",
+                "computers and corn",
+                "One or two things that money can't buy",
+                "that's true about home grown tomatoes",
+                "drove my chevy to the levy but the levy was dry",
+                "them good old boys were drinking whiskey and rye",
+                "we're waxing down out surf boards, we can't wait for June",
+                "tell the teacher we are surfing",
+                "it's a 59,60,61,62,63,64,65,66,67,68,69 automobile..",
+                "beers and horn" };
+
+        private Logger log = LogManager.getLogger(TestLoggerAction.class);
+
+        void randomSentence()
+        {
+            for (int i=0; i<50; i++)
+            {
+                randomSimpleSentence();
+
+                if (Math.random() > 0.5)
+                {
+                    log.info(" and ");
+                    randomSimpleSentence();
+                }
+            }
+        }
+
+        void randomSimpleSentence()
+        {
+            if (Math.random() > 0.5)
+            {
+                log.info("the Bus Is Outta Control! ");
+                randomNounPhrase();
+            }
+            else
+                log.info("these pretzels are making me thirsty");
+        }
+
+        void randomNounPhrase()
+        {
+            int n = (int)(Math.random()*nouns.length);
+            log.info(phrases[n]);
+
+            if (Math.random() > 0.5)
+            {
+                int m = (int)(Math.random()*phrases.length);
+                log.info(" " + nouns[m]);
+            }
+            else
+            {
+                int v = (int) (Math.random() * verbs.length);
+                log.info(" that " + verbs[v] + " ");
+            }
+
+        }
+
+
+        @Override
+        protected ModelAndView handleGet()
+        {
+            Runnable testThread = this::randomSentence;
+
+            for (int i=0; i < 4000; i++)
+            {
+                (new Thread(testThread)).start();
+            }
+            return null;
+        }
+
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            return null;
         }
     }
 }
