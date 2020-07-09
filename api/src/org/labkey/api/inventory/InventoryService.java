@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -45,5 +46,5 @@ public interface InventoryService
     @NotNull
     List<Map<String, Object>> getSampleStorageLocationData(User user, Container container, int sampleId);
 
-    void addInventoryStatusColumns(ExpMaterialTable table, Container container);
+    List<FieldKey> addInventoryStatusColumns(ExpMaterialTable table, Container container);
 }
