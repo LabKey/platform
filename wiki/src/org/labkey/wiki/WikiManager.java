@@ -901,6 +901,13 @@ public class WikiManager implements WikiService
     @Override
     public String getContent(Container c, String name)
     {
+        Wiki wiki = WikiSelectManager.getWiki(c, name);
+        if (null == wiki)
+            return null;
+        WikiVersion version = wiki.getLatestVersion();
+        if (version != null)
+            return version.getBody();
+
         return null;
     }
 
