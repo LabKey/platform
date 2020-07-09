@@ -58,6 +58,7 @@ import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -539,6 +540,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Flag));
             setSampleType(st, filter);
             addSampleTypeColumns(st, defaultCols);
+            if (InventoryService.get() != null)
+                InventoryService.get().addInventoryStatusColumns(this, getContainer());
             setName(_ss.getName());
 
             ActionURL gridUrl = new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer());
@@ -635,6 +638,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             addColumn(propColumn);
         }
+
         setDefaultVisibleColumns(visibleColumns);
     }
 
