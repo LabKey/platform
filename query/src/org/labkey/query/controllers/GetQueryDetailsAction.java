@@ -171,8 +171,10 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         if (auditHistoryUrl != null)
             resp.put("auditHistoryUrl", auditHistoryUrl);
 
-        // Ensure name is correct case
-        resp.put("name", tinfo.getName());
+        // If name is the same name just not the right casing, update response to what is stored on the server. Don't
+        // change name if the query is a wrapper around the tinfo
+        if (form.getQueryName().toLowerCase().equals(tinfo.getName().toLowerCase()))
+            resp.put("name", tinfo.getName());
 
         resp.put("title", tinfo.getTitle());
         resp.put("titleColumn", tinfo.getTitleColumn());
