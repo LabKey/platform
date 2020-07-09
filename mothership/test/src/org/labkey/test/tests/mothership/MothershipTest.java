@@ -15,6 +15,7 @@
  */
 package org.labkey.test.tests.mothership;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -160,13 +161,14 @@ public class MothershipTest extends BaseWebDriverTest
     @Test
     public void testAssignException()
     {
+        final String assigneeDisplayName = _userHelper.getDisplayNameForEmail(ASSIGNEE);
         Integer stackTraceId = ensureUnassignedException();
 
         ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
         ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
         exceptionSummary.uncheckAll();
         exceptionSummary.checkCheckboxByPrimaryKey(stackTraceId);
-        exceptionSummary.assignSelectedTo(_userHelper.getDisplayNameForEmail(ASSIGNEE));
+        exceptionSummary.assignSelectedTo(assigneeDisplayName);
 
         impersonate(ASSIGNEE);
         {
@@ -175,7 +177,7 @@ public class MothershipTest extends BaseWebDriverTest
             assertEquals("Should be only one issue assigned to user", 1, exceptionSummary.getDataRowCount());
             StackTraceDetailsPage detailsPage = exceptionSummary.clickStackTrace(stackTraceId);
             assertElementPresent(Locator.linkWithText("#" + stackTraceId));
-            assertEquals(_userHelper.getDisplayNameForEmail(ASSIGNEE), detailsPage.assignedTo().getFirstSelectedOption().getText());
+            assertEquals(assigneeDisplayName, detailsPage.assignedTo().getFirstSelectedOption().getText());
         }
         stopImpersonating();
     }
