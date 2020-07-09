@@ -171,6 +171,9 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         if (auditHistoryUrl != null)
             resp.put("auditHistoryUrl", auditHistoryUrl);
 
+        // Ensure name is correct case
+        resp.put("name", tinfo.getName());
+
         resp.put("title", tinfo.getTitle());
         resp.put("titleColumn", tinfo.getTitleColumn());
 
