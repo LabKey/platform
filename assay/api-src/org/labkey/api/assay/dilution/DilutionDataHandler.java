@@ -504,8 +504,13 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     public PropertyDescriptor getStringPropertyDescriptor(Container container, ExpProtocol protocol, String propertyName)
     {
+        return getTypedPropertyDescriptor(container, protocol, propertyName, PropertyType.STRING);
+    }
+
+    public PropertyDescriptor getTypedPropertyDescriptor(Container container, ExpProtocol protocol, String propertyName, PropertyType type)
+    {
         Lsid propertyURI = new Lsid(NAB_PROPERTY_LSID_PREFIX, protocol.getName(), propertyName);
-        PropertyDescriptor pd = new PropertyDescriptor(propertyURI.toString(), PropertyType.STRING, propertyName, propertyName, container);
+        PropertyDescriptor pd = new PropertyDescriptor(propertyURI.toString(), type, propertyName, propertyName, container);
         pd.setFormat(null);
         return pd;
     }
