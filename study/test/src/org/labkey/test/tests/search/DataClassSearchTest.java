@@ -118,7 +118,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
     public void testSearch() throws Exception
     {
         SearchAdminAPIHelper.setDirectoryType(directoryType(), getDriver());
-        connection = createDefaultConnection(true);
+        connection = createDefaultConnection();
         // NOTE: the following test methods all depend on state from each other
         addSearchableDataClasses();
         modifySearchableDataClasses();
