@@ -37,7 +37,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.70.5"
+    "@labkey/components": "0.75.0-fb-sampleTypeLabelColor.0"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.13.0",
