@@ -113,8 +113,7 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
     {
         return new SQLFragment("(SELECT MAX(PercentNeutralization) FROM ")
             .append(DilutionManager.getTableInfoDilutionData(), "dd")
-            .append(" WHERE dd.RunDataId = ").append(ExprColumn.STR_TABLE_ALIAS + ".RowId")
-            .append(" GROUP BY dd.RunDataId)");
+            .append(" WHERE dd.RunDataId = ").append(ExprColumn.STR_TABLE_ALIAS + ".RowId)");
     }
 
     private SQLFragment getPercentNeutralizationInitialDilution()
