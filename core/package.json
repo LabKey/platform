@@ -74,7 +74,12 @@
           "formats": {
             "dateFormat": "yyyy-MM-dd"
           }
-        }
+        },
+        "user": {
+          "id": 1004
+        },
+        "project": {},
+        "moduleContext": {}
       }
     },
     "moduleFileExtensions": [
