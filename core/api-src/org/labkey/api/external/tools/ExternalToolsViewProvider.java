@@ -10,7 +10,7 @@ public interface ExternalToolsViewProvider
     /**
      *
      * @param user with access to the views
-     * @return a list of views to be accessed via 'External Tools Setting'
+     * @return a list of views to be accessed via 'External Tool Access'
      */
     List<ModelAndView> getViews(User user);
 }
