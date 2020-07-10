@@ -3511,6 +3511,7 @@ public class ExperimentController extends SpringActionController
         Map<String,Object> sampleType = new HashMap<>();
         sampleType.put("name", st.getName());
         sampleType.put("nameExpression", st.getNameExpression());
+        sampleType.put("labelColor", st.getLabelColor());
         sampleType.put("description", st.getDescription());
         sampleType.put("importAliases", st.getImportAliasMap());
         sampleType.put("lsid", st.getLSID());
