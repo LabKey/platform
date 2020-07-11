@@ -199,7 +199,7 @@ public class SecondaryAuthenticationTest extends BaseWebDriverTest
 
     protected SelectRowsResponse getLatestAuditEntries()
     {
-        Connection cn = createDefaultConnection(true);
+        Connection cn = createDefaultConnection();
         SelectRowsCommand selectCmd = new SelectRowsCommand("auditLog", "AuthenticationProviderConfiguration");
         selectCmd.setSorts(Arrays.asList(new Sort("Created", Sort.Direction.DESCENDING)));
 

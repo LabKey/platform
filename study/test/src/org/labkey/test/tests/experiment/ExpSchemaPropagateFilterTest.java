@@ -208,7 +208,7 @@ public class ExpSchemaPropagateFilterTest extends BaseWebDriverTest
 
         try
         {
-            dgen.createDomain(createDefaultConnection(true), domainKind);
+            dgen.createDomain(createDefaultConnection(), domainKind);
         }
         catch (IOException | CommandException rethrow)
         {
@@ -222,7 +222,7 @@ public class ExpSchemaPropagateFilterTest extends BaseWebDriverTest
     {
         try
         {
-            dataGen.insertRows(createDefaultConnection(true), dataValues);
+            dataGen.insertRows(createDefaultConnection(), dataValues);
         }
         catch (IOException | CommandException rethrow)
         {

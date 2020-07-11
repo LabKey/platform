@@ -518,7 +518,7 @@ public class StudyPublishTest extends StudyPHIExportTest
                 Filter.Operator filterOperator = removePhiColumns ? Filter.Operator.NONBLANK : Filter.Operator.ISBLANK;
                 SelectRowsCommand command = new SelectRowsCommand("study", "SpecimenEvent");
                 command.setFilters(Arrays.asList(new Filter(field, null, filterOperator)));
-                Connection connection = createDefaultConnection(true);
+                Connection connection = createDefaultConnection();
                 SelectRowsResponse response;
 
                 try
