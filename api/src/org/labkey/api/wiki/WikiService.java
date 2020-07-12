@@ -25,6 +25,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -64,12 +65,12 @@ public interface WikiService
     /**
      * Returns the raw (unformatted) content
      */
-    String getContent(Container c, String name);
+    String getContent(Container c, String wikiName);
 
     /**
      * Update the content of a wiki
      */
-    void updateContent(Container c, User user, String name, String content);
+    boolean updateContent(Container c, User user, String wikiName, String content);
 
-    void deleteWiki(Container c, User user, String name, boolean deleteSubtree);
+    void deleteWiki(Container c, User user, String wikiName, boolean deleteSubtree) throws SQLException;
 }

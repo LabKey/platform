@@ -899,9 +899,9 @@ public class WikiManager implements WikiService
     }
 
     @Override
-    public String getContent(Container c, String name)
+    public String getContent(Container c, String wikiName)
     {
-        Wiki wiki = WikiSelectManager.getWiki(c, name);
+        Wiki wiki = WikiSelectManager.getWiki(c, wikiName);
         if (null == wiki)
             return null;
         WikiVersion version = wiki.getLatestVersion();
@@ -912,15 +912,36 @@ public class WikiManager implements WikiService
     }
 
     @Override
-    public void updateContent(Container c, User user, String name, String content)
+    public boolean updateContent(Container c, User user, String wikiName, String content)
     {
-
+        if (content != null)
+        {
+            Wiki wiki = WikiSelectManager.getWiki(c, wikiName);
+            if (wiki != null)
+            {
+                WikiVersion version = wiki.getLatestVersion();
+                if (version != null)
+                {
+                    // only update if something has changed
+                    if (!content.equals(version.getBody()))
+                    {
+                        version.setBody(content);
+                        return updateWiki(user, wiki, version, false);
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     @Override
-    public void deleteWiki(Container c, User user, String name, boolean deleteSubtree)
+    public void deleteWiki(Container c, User user, String wikiName, boolean deleteSubtree) throws SQLException
     {
-
+        Wiki wiki = WikiSelectManager.getWiki(c, wikiName);
+        if (wiki != null)
+        {
+            deleteWiki(user, c, wiki, true);
+        }
     }
 
     public static class TestCase extends Assert
