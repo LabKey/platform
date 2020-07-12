@@ -26,7 +26,7 @@ public class Select extends Input
 {
     private final boolean _multiple;
     private final List<Option> _options;
-    private List<String> _styles;
+    private final List<String> _styles;
 
     private Select(SelectBuilder builder)
     {
@@ -98,9 +98,10 @@ public class Select extends Input
 
     public static class SelectBuilder extends InputBuilder<SelectBuilder>
     {
+        private final List<String> _styles = new ArrayList<>();
+
         private boolean _multiple;
         private List<Option> _options;
-        private List<String> _styles = new ArrayList<>();
 
         public SelectBuilder()
         {

@@ -118,12 +118,6 @@ public abstract class AssayProtocolSchema extends AssaySchema
         return SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), protocol.getName());
     }
 
-    @Deprecated
-    public AssayProtocolSchema(User user, Container container, @NotNull ExpProtocol protocol, @Nullable Container targetStudy)
-    {
-        this(user, container, AssayService.get().getProvider(protocol), protocol, targetStudy);
-    }
-
     public AssayProtocolSchema(User user, Container container, @NotNull AssayProvider provider, @NotNull ExpProtocol protocol, @Nullable Container targetStudy)
     {
         super(schemaName(provider, protocol), descr(protocol), user, container, ExperimentService.get().getSchema(), targetStudy);
@@ -247,15 +241,6 @@ public abstract class AssayProtocolSchema extends AssaySchema
         return table;
     }
 
-
-    // NOTE: Subclasses should override to add any additional provider specific tables.
-    @Deprecated // TODO: ContainerFilter - remove
-    protected TableInfo createProviderTable(String name)
-    {
-        throw new IllegalStateException();
-    }
-
-
     // NOTE: Subclasses should override to add any additional provider specific tables.
     protected TableInfo createProviderTable(String name, ContainerFilter cf)
     {
@@ -360,23 +345,6 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
         return result;
     }
-
-//    /** Implementations may return null if they don't have any data associated with them */
-//    /* TODO ContainerFilter - remove. Implementations that override this method still need to be upgraded to use createDataTable(ContainerFilter cf). */
-//    @Nullable
-//    @Deprecated
-//    public TableInfo createDataTable(boolean includeCopiedToStudyColumns)
-//    {
-//        throw new IllegalStateException();
-//    }
-//
-//    /** Implementations may return null if they don't have any data associated with them */
-//    // TODO ContainerFilter - make abstract. Update assays that don't override this method.
-//    @Nullable
-//    public TableInfo createDataTable(ContainerFilter cf, boolean includeCopiedToStudyColumns)
-//    {
-//        return createDataTable(includeCopiedToStudyColumns);
-//    }
 
     /** Implementations may return null if they don't have any data associated with them */
     @Nullable
