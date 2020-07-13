@@ -610,6 +610,7 @@ public class ExperimentController extends SpringActionController
             detailsView.getDataRegion().getDisplayColumn("Name").setURL(null);
             detailsView.getDataRegion().getDisplayColumn("LSID").setVisible(false);
             detailsView.getDataRegion().getDisplayColumn("MaterialLSIDPrefix").setVisible(false);
+            detailsView.getDataRegion().getDisplayColumn("LabelColor").setVisible(false);
             detailsView.setTitle("Sample Type Properties");
             detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).setStyle(ButtonBar.Style.separateButtons);
 
