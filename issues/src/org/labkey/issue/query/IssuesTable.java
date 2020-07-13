@@ -468,19 +468,19 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
     }
 
     @Override
-    public Parameter.ParameterMap insertStatement(Connection conn, User user)
+    public ParameterMapStatement insertStatement(Connection conn, User user)
     {
         return null;
     }
 
     @Override
-    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns)
+    public ParameterMapStatement updateStatement(Connection conn, User user, Set<String> columns)
     {
         return null;
     }
 
     @Override
-    public Parameter.ParameterMap deleteStatement(Connection conn)
+    public ParameterMapStatement deleteStatement(Connection conn)
     {
         return null;
     }

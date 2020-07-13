@@ -104,7 +104,7 @@ Ext4.define('LABKEY.query.browser.view.SchemaDetails', {
                 {
                     if (schemaNodeChild.get('text') === "user-defined queries")
                         userDefined.push(Ext4.clone(queryNode.data));
-                    else if (schemaNodeChild.get('text') === "built-in queries &amp; tables")
+                    else if (schemaNodeChild.get('text') === "built-in queries & tables")
                         builtIn.push(Ext4.clone(queryNode.data));
                 });
             });
@@ -140,7 +140,7 @@ Ext4.define('LABKEY.query.browser.view.SchemaDetails', {
                     afterrender: {
                         fn: function(box) {
                             // bind links
-                            var nameLinks = Ext4.DomQuery.select('tbody tr td', box.getEl().id);
+                            var nameLinks = Ext4.DomQuery.select('tbody tr td .labkey-link', box.getEl().id);
                             if (!Ext4.isEmpty(nameLinks)) {
                                 for (var i = 0; i < nameLinks.length; i++) {
                                     Ext4.get(nameLinks[i]).on('click', function(evt, t) {

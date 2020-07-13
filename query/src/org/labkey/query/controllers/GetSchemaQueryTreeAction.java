@@ -34,7 +34,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 
 import javax.servlet.http.HttpServletResponse;
@@ -55,13 +54,6 @@ import java.util.Map;
 @Action(ActionType.SelectMetaData.class)
 public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTreeAction.Form>
 {
-    boolean _withHtmlEncoding = false;
-
-    public String filter(String s)
-    {
-        return _withHtmlEncoding ? PageFlowUtil.filter(s) : s;
-    }
-
     @Override
     protected long getLastModified(Form form)
     {
@@ -71,8 +63,6 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
     @Override
     public ApiResponse execute(Form form, BindException errors) throws Exception
     {
-        _withHtmlEncoding = form.isWithHtmlEncoding();
-
         JSONArray respArray = new JSONArray();
         Container container = getContainer();
         User user = getUser();
@@ -116,7 +106,7 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
                     String dsName = scope.getDataSourceName();
                     JSONObject ds = new JSONObject();
                     ds.put("text", "Schemas in " + scope.getDisplayName());
-                    ds.put("qtip", "Schemas in data source '" + dsName + "'");
+                    ds.put("description", "Schemas in data source '" + dsName + "'");
                     ds.put("expanded", true);
                     ds.put("children", schemas);
                     ds.put("name", dsName);
@@ -185,7 +175,7 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
                     {
                         JSONObject fldr = new JSONObject();
                         fldr.put("text", "user-defined queries");
-                        fldr.put("qtip", "Custom queries created by you and those shared by others.");
+                        fldr.put("description", "Custom queries created by you and those shared by others.");
                         fldr.put("expanded", true);
                         fldr.put("children", userDefined);
                         fldr.put("schemaName", schemaPath);
@@ -195,8 +185,8 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
                     if (builtIn.length() > 0)
                     {
                         JSONObject fldr = new JSONObject();
-                        fldr.put("text", filter("built-in queries & tables"));
-                        fldr.put("qtip", "Queries and tables that are part of the schema by default.");
+                        fldr.put("text", "built-in queries & tables");
+                        fldr.put("description", "Queries and tables that are part of the schema by default.");
                         fldr.put("expanded", true);
                         fldr.put("children", builtIn);
                         fldr.put("schemaName", schemaPath);
@@ -228,9 +218,8 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
     protected JSONObject getSchemaProps(SchemaKey schemaName, QuerySchema schema)
     {
         JSONObject schemaProps = new JSONObject();
-        schemaProps.put("text", filter(schema.getName()));
-        schemaProps.put("description", filter(schema.getDescription()));
-        schemaProps.put("qtip", filter(schema.getDescription()));
+        schemaProps.put("text", schema.getName());
+        schemaProps.put("description", schema.getDescription());
         schemaProps.put("name", schema.getName());
         schemaProps.put("schemaName", schemaName);
         schemaProps.put("hidden", schema.isHidden());
@@ -246,12 +235,11 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
         String text = qname;
         if (!qname.equalsIgnoreCase(label))
             text += " (" + label + ")";
-        qprops.put("text", filter(text));
+        qprops.put("text", text);
         qprops.put("leaf", true);
         if (null != description)
         {
             qprops.put("description", description);
-            qprops.put("qtip", filter(description));
         }
         qprops.put("hidden", hidden);
         list.put(qprops);
@@ -262,7 +250,6 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
         private String _node;
         private SchemaKey _schemaName;
         private boolean _showHidden;
-        private boolean _withHtmlEncoding = false;
 
         public String getNode()
         {
@@ -292,17 +279,6 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
         public void setShowHidden(boolean showHidden)
         {
             _showHidden = showHidden;
-        }
-
-        public boolean isWithHtmlEncoding()
-        {
-            return _withHtmlEncoding;
-        }
-
-        /* This is a crazy way to build an API, but apparently this was an Ext workaround */
-        public void setWithHtmlEncoding(boolean withHtmlEncoding)
-        {
-            _withHtmlEncoding = withHtmlEncoding;
         }
     }
 }

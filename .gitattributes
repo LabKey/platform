@@ -458,7 +458,6 @@ api/src/org/labkey/api/data/DbScope.java -text
 api/src/org/labkey/api/data/DbSequence.java -text
 api/src/org/labkey/api/data/DbSequenceManager.java -text
 api/src/org/labkey/api/data/DeferredUpgrade.java -text
-api/src/org/labkey/api/data/DelegatingContainerFilter.java -text
 api/src/org/labkey/api/data/DetailsColumn.java -text
 api/src/org/labkey/api/data/dialect/AbstractDialectRetrievalTestCase.java -text
 api/src/org/labkey/api/data/dialect/BaseJdbcMetaDataLocator.java -text
@@ -3863,11 +3862,6 @@ timeline/webapp/similetimeline/scripts/util/graphics.js -text
 timeline/webapp/similetimeline/scripts/util/platform.js -text
 timeline/webapp/similetimeline/scripts/util/xmlhttp.js -text
 timeline/webapp/timeline.js -text
-timeline/webapp/timeline/jquery/ui.core.css -text
-timeline/webapp/timeline/jquery/ui.core.js -text
-timeline/webapp/timeline/jquery/ui.tabs.css -text
-timeline/webapp/timeline/jquery/ui.tabs.js -text
-timeline/webapp/timeline/jquery/ui.theme.css -text
 timeline/webapp/timeline/loadTimeline.js -text
 timeline/webapp/timeline/Timeline.js -text
 timeline/webapp/timeline/timeline_2.3.0/CHANGES.txt -text

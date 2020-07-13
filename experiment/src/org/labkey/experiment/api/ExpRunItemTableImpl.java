@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
@@ -164,19 +165,19 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
     }
 
     @Override
-    public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
+    public ParameterMapStatement insertStatement(Connection conn, User user)
     {
         return null;
     }
 
     @Override
-    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns) throws SQLException
+    public ParameterMapStatement updateStatement(Connection conn, User user, Set<String> columns)
     {
         return null;
     }
 
     @Override
-    public Parameter.ParameterMap deleteStatement(Connection conn) throws SQLException
+    public ParameterMapStatement deleteStatement(Connection conn)
     {
         return null;
     }
