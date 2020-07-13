@@ -708,15 +708,6 @@ public class QueryView extends WebPartView<Object>
         return actionButton;
     }
 
-    /**
-     * @deprecated Use {@link ButtonBar#add(DisplayElement...)}
-     */
-    @Deprecated
-    protected void addButton(ButtonBar bar, ActionButton button)
-    {
-        bar.add(button);
-    }
-
     protected String param(QueryParam param)
     {
         return param(param.toString());

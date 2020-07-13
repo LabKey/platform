@@ -457,7 +457,7 @@ public class OntologyManager
         ValidatorContext validatorCache = new ValidatorContext(c, user);
 
         Connection conn = null;
-        Parameter.ParameterMap parameterMap = null;
+        ParameterMapStatement parameterMap = null;
 
         Map<String, Object> currentRow = null;
 
@@ -705,7 +705,7 @@ public class OntologyManager
          * <p>
          * TODO maybe this can be handled declaratively? see UpdateableTableInfo
          */
-        void bindAdditionalParameters(Map<String, Object> map, Parameter.ParameterMap target) throws ValidationException;
+        void bindAdditionalParameters(Map<String, Object> map, ParameterMapStatement target) throws ValidationException;
     }
 
 
