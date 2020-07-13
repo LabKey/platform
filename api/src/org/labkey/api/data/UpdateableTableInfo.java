@@ -126,7 +126,7 @@ public interface UpdateableTableInfo extends TableInfo
      * names parameters (rather than ordinal parameters).  Might actually execute java code
      * but that shouldn't make a difference to the caller.
      */
-    Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException;
-    Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns) throws SQLException;
-    Parameter.ParameterMap deleteStatement(Connection conn) throws SQLException;
+    ParameterMapStatement insertStatement(Connection conn, User user) throws SQLException;
+    ParameterMapStatement updateStatement(Connection conn, User user, Set<String> columns) throws SQLException;
+    ParameterMapStatement deleteStatement(Connection conn) throws SQLException;
 }

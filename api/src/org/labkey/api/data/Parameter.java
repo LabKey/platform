@@ -29,14 +29,12 @@ import org.labkey.api.util.UnexpectedException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Array;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.GregorianCalendar;
-import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
@@ -445,47 +443,6 @@ public class Parameter implements AutoCloseable
                 parameter.close();
             }
             clear();
-        }
-    }
-
-    // TODO: migrate name in separate cross repository commit
-    @Deprecated
-    public static class ParameterMap extends ParameterMapStatement
-    {
-        public ParameterMap()
-        {}
-
-        public ParameterMap(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters)
-        {
-            super(scope, stmt, parameters);
-        }
-
-        public ParameterMap(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
-        {
-            super(scope, stmt, parameters, remap);
-        }
-
-        public ParameterMap(DbScope scope, SQLFragment sql, Map<String,String> remap) throws SQLException
-        {
-            super(scope, sql, remap);
-        }
-
-        public ParameterMap(DbScope scope, Connection conn, SQLFragment sql, Map<String,String> remap) throws SQLException
-        {
-            super(scope, conn, sql, remap);
-        }
-
-        public ParameterMap(ParameterMap from) throws SQLException
-        {
-            super(from);
-        }
-
-        @Override
-        public ParameterMap copy() throws SQLException
-        {
-            if (null == _sqlf || null == _conn)
-                throw new IllegalStateException("Copy can only be used on ParameterMap constructed with SQL");
-            return new ParameterMap(this);
         }
     }
 }
