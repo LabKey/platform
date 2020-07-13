@@ -541,7 +541,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             setSampleType(st, filter);
             addSampleTypeColumns(st, defaultCols);
             if (InventoryService.get() != null)
-                // TODO Should these be shown by default in LKS
                 defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(this, getContainer()));
             setName(_ss.getName());
 
