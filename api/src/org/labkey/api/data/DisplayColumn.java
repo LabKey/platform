@@ -1011,7 +1011,7 @@ public abstract class DisplayColumn extends RenderColumn
         if (_nowrap)
             style += "white-space:nowrap;";
 
-        // 34871: Support for column display width
+        // 40893: Support for column display width
         if (!StringUtils.isBlank(getWidth()))
             style += "overflow-wrap:anywhere;";
 
