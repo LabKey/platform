@@ -603,7 +603,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, String labelColor)
+                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor)
         throws ExperimentException
     {
         if (name == null)
