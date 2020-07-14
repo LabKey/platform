@@ -56,7 +56,10 @@ public class JavaExportScriptModel extends ExportScriptModel
     @Override
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
-        return "cmd.addFilter(" + quote(name) + ", " + quote(value) + ", Filter.Operator." + operator.name() + ");\n";
+        // 40753: Lookup operator by programmatic name
+        String filterOperator = "Filter.Operator.getOperator(" + quote(operator.name()) + ")";
+
+        return "cmd.addFilter(" + quote(name) + ", " + quote(value) + ", " + filterOperator + ");\n";
     }
 
     private String getListOfColumns()

@@ -42,19 +42,9 @@ public class RDockerScriptEngine extends RScriptEngine
 {
     private static final Logger LOG = Logger.getLogger(RDockerScriptEngine.class);
     private static DockerService _ds;
-    private String _remoteWorkingDir;
-    private DockerService.DockerImage _dockerImage;
 
-    /**
-     * This constructor provides an instance which can be used to prepare, but not run, script files.
-     * It provides a minimal EngingeDefinition and no RStudioService instance.
-     * @param remoteWorkingDir The remote directory to map
-     */
-    @Deprecated     // TODO delete after branch merge
-    public RDockerScriptEngine(String remoteWorkingDir)
-    {
-        this(mockEngineDefinition(), null, null);
-    }
+    private final String _remoteWorkingDir;
+    private final DockerService.DockerImage _dockerImage;
 
     /**
      * If an RStudioService is instance is passed to this constructor, it provides an instance which can both

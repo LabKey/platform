@@ -2702,13 +2702,6 @@ public class ContainerManager
         }
     }
 
-
-    @Deprecated // For backward compatibility; use ContainerService.get() instead
-    public static ContainerService getContainerService()
-    {
-        return ContainerService.get();
-    }
-
     public static Container createFakeContainer(@Nullable String name, @Nullable Container parent)
     {
         return new Container(parent, name, GUID.makeGUID(), 1, 0, new Date(), 0, false);

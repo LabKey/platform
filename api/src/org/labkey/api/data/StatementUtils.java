@@ -184,7 +184,7 @@ public class StatementUtils
      * This shouldn't be a big problem since we don't usually need to optimize the one row case, and we're moving
      * to provisioned tables for major datatypes.
      */
-    public static Parameter.ParameterMap insertStatement(Connection conn, TableInfo table, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
+    public static ParameterMapStatement insertStatement(Connection conn, TableInfo table, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
         return new StatementUtils(Operation.insert, table)
             .updateBuiltinColumns(autoFillDefaultColumns)
@@ -193,7 +193,7 @@ public class StatementUtils
     }
 
 
-    public static Parameter.ParameterMap insertStatement(
+    public static ParameterMapStatement insertStatement(
             Connection conn, TableInfo table, @Nullable Set<String> skipColumnNames,
             @Nullable Container c, @Nullable User user, @Nullable Map<String,Object> constants,
             boolean selectIds, boolean autoFillDefaultColumns, boolean supportsAutoIncrementKey) throws SQLException
@@ -220,7 +220,7 @@ public class StatementUtils
      * This shouldn't be a big problem since we don't usually need to optimize the one row case, and we're moving
      * to provisioned tables for major datatypes.
      */
-    public static Parameter.ParameterMap updateStatement(Connection conn, TableInfo table, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
+    public static ParameterMapStatement updateStatement(Connection conn, TableInfo table, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
         return new StatementUtils(Operation.update, table)
                 .updateBuiltinColumns(autoFillDefaultColumns)
@@ -229,7 +229,7 @@ public class StatementUtils
     }
 
 
-    private static Parameter.ParameterMap mergeStatement(Connection conn, TableInfo table, @Nullable Set<String> skipColumnNames, @Nullable Set<String> dontUpdate, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
+    private static ParameterMapStatement mergeStatement(Connection conn, TableInfo table, @Nullable Set<String> skipColumnNames, @Nullable Set<String> dontUpdate, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
         return new StatementUtils(Operation.merge, table)
                 .skip(skipColumnNames)
@@ -240,7 +240,7 @@ public class StatementUtils
     }
 
 
-    public static Parameter.ParameterMap mergeStatement(Connection conn, TableInfo table, @Nullable Set<String> keyNames, @Nullable Set<String> skipColumnNames, @Nullable Set<String> dontUpdate, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns, boolean supportsAutoIncrementKey) throws SQLException
+    public static ParameterMapStatement mergeStatement(Connection conn, TableInfo table, @Nullable Set<String> keyNames, @Nullable Set<String> skipColumnNames, @Nullable Set<String> dontUpdate, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns, boolean supportsAutoIncrementKey) throws SQLException
     {
         return new StatementUtils(Operation.merge, table)
                 .keys(keyNames)
@@ -463,7 +463,7 @@ public class StatementUtils
         }
     }
 
-    public Parameter.ParameterMap createStatement(Connection conn, @Nullable Container c, User user) throws SQLException
+    public ParameterMapStatement createStatement(Connection conn, @Nullable Container c, User user) throws SQLException
     {
         if (!(_table instanceof UpdateableTableInfo))
             throw new IllegalArgumentException("Table must be an UpdateableTableInfo");
@@ -917,7 +917,7 @@ public class StatementUtils
         // PREPARE
         //
 
-        Parameter.ParameterMap ret;
+        ParameterMapStatement ret;
 
         if (!useVariables)
         {
@@ -925,7 +925,7 @@ public class StatementUtils
             Stream.of(sqlfDeclare, sqlfPreselectObject, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds)
                 .filter(f -> null != f && !f.isEmpty())
                 .forEach(script::append);
-            ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, script, remap);
+            ret = new ParameterMapStatement(table.getSchema().getScope(), conn, script, remap);
         }
         else if (_dialect.isSqlServer())
         {
@@ -953,7 +953,7 @@ public class StatementUtils
                 .filter(f -> null != f && !f.isEmpty())
                 .forEach(script::append);
             _log.debug(script.toDebugString());
-            ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, script, remap);
+            ret = new ParameterMapStatement(table.getSchema().getScope(), conn, script, remap);
         }
         else
         {
@@ -1049,7 +1049,7 @@ public class StatementUtils
             final SQLFragment drop = new SQLFragment("DROP TYPE IF EXISTS ").append(typeName).append(" CASCADE;");
             _log.debug(drop.toDebugString());
             new SqlExecutor(table.getSchema()).execute(fn);
-            ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, call, updatable.remapSchemaColumns());
+            ret = new ParameterMapStatement(table.getSchema().getScope(), conn, call, updatable.remapSchemaColumns());
             ret.setDebugSql(fn.getSQL() + "--\n" + call.toDebugString());
             ret.onClose(() -> {
                 try
@@ -1189,7 +1189,7 @@ public class StatementUtils
         public void testInsert() throws Exception
         {
             init();
-            Parameter.ParameterMap m = null;
+            ParameterMapStatement m = null;
             try (Connection conn = principals.getSchema().getScope().getConnection())
             {
                 m = StatementUtils.insertStatement(conn, principals, null, container, user, null, true, true, false);
@@ -1212,7 +1212,7 @@ public class StatementUtils
         public void testUpdate() throws Exception
         {
             init();
-            Parameter.ParameterMap m = null;
+            ParameterMapStatement m = null;
             try (Connection conn = principals.getSchema().getScope().getConnection())
             {
                 m = StatementUtils.updateStatement(conn, principals, container, user, true, true);
@@ -1235,7 +1235,7 @@ public class StatementUtils
         public void testMerge() throws Exception
         {
             init();
-            Parameter.ParameterMap m = null;
+            ParameterMapStatement m = null;
             try (Connection conn = principals.getSchema().getScope().getConnection())
             {
                 m = StatementUtils.mergeStatement(conn, principals, null, null, container, user, false, true);

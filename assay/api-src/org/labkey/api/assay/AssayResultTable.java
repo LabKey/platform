@@ -29,6 +29,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.StatementUtils;
@@ -86,12 +87,6 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     private final Domain _resultsDomain;
 
     private static final String RUN_ID_ALIAS = "Run";
-
-    @Deprecated
-    public AssayResultTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
-    {
-        this(schema, null, includeCopiedToStudyColumns);
-    }
 
     public AssayResultTable(AssayProtocolSchema schema, ContainerFilter cf, boolean includeCopiedToStudyColumns)
     {
@@ -557,19 +552,19 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     }
 
     @Override
-    public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
+    public ParameterMapStatement insertStatement(Connection conn, User user) throws SQLException
     {
         return StatementUtils.insertStatement(conn, this, getContainer(), user, false, true);
     }
 
     @Override
-    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns)
+    public ParameterMapStatement updateStatement(Connection conn, User user, Set<String> columns)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Parameter.ParameterMap deleteStatement(Connection conn)
+    public ParameterMapStatement deleteStatement(Connection conn)
     {
         throw new UnsupportedOperationException();
     }

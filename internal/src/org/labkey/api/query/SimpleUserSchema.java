@@ -35,6 +35,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
@@ -549,19 +550,19 @@ public class SimpleUserSchema extends UserSchema
         }
 
         @Override
-        public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
+        public ParameterMapStatement insertStatement(Connection conn, User user) throws SQLException
         {
             return StatementUtils.insertStatement(conn, getRealTable(), null, user, false, true);
         }
 
         @Override
-        public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns) throws SQLException
+        public ParameterMapStatement updateStatement(Connection conn, User user, Set<String> columns) throws SQLException
         {
             return StatementUtils.updateStatement(conn, getRealTable(), null, user, false, true);
         }
 
         @Override
-        public Parameter.ParameterMap deleteStatement(Connection conn)
+        public ParameterMapStatement deleteStatement(Connection conn)
         {
             throw new UnsupportedOperationException();
         }
