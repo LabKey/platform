@@ -773,7 +773,7 @@ LABKEY.Mothership = (function () {
         window.addEventListener('error', report);
 
         // 40910: mute reporting errors when page unloads
-        window.addEventListener('beforeunload', function() { enable(true); });
+        window.addEventListener('beforeunload', function() { enable(false); });
 
         // catch unhandled errors in promises
         // https://developer.mozilla.org/en-US/docs/Web/Events/unhandledrejection
