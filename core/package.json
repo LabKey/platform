@@ -100,7 +100,7 @@
   },
   "dependencies": {
     "@labkey/api": "0.3.2",
-    "@labkey/components": "0.75.0-fb-sampleTypeLabelColor.4",
+    "@labkey/components": "0.76.0-fb-sampleTypeLabelColor.0",
     "@labkey/eslint-config-react": "0.0.8",
     "react-toggle-button": "2.2.0"
   },
