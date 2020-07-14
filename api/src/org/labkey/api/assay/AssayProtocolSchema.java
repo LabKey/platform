@@ -702,19 +702,24 @@ public abstract class AssayProtocolSchema extends AssaySchema
                             DataView dataView = allResultsQueryView.createDataView();
                             try (Results r = dataView.getDataRegion().getResults(dataView.getRenderContext()))
                             {
-                                final int rowCount = r.getSize();
+                                if (null != r)
+                                {
+                                    // In order to get size must first iterate through result set
+                                    while (r.next()) ;
 
-                                baseQueryView.setMessageSupplier(dataRegion -> {
-                                    if (dataRegion.getTotalRows() != null && dataRegion.getTotalRows() < rowCount)
-                                    {
-                                        long count = rowCount - dataRegion.getTotalRows();
-                                        String msg = count > 1 ? "There are " + count + " rows not shown due to unapproved QC state."
-                                                : "There is one row not shown due to unapproved QC state.";
-                                        DataRegion.Message drm = new DataRegion.Message(msg, DataRegion.MessageType.WARNING, DataRegion.MessagePart.view);
-                                        return Collections.singletonList(drm);
-                                    }
-                                    return Collections.emptyList();
-                                });
+                                    final int rowCount = r.getSize();
+                                    baseQueryView.setMessageSupplier(dataRegion -> {
+                                        if (dataRegion.getTotalRows() != null && dataRegion.getTotalRows() < rowCount)
+                                        {
+                                            long count = rowCount - dataRegion.getTotalRows();
+                                            String msg = count > 1 ? "There are " + count + " rows not shown due to unapproved QC state."
+                                                    : "There is one row not shown due to unapproved QC state.";
+                                            DataRegion.Message drm = new DataRegion.Message(msg, DataRegion.MessageType.WARNING, DataRegion.MessagePart.view);
+                                            return Collections.singletonList(drm);
+                                        }
+                                        return Collections.emptyList();
+                                    });
+                                }
                             }
                         }
                         catch (SQLException | IOException e)
