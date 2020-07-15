@@ -752,19 +752,19 @@ public class StorageProvisioner
         }
 
         @Override
-        public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
+        public ParameterMapStatement insertStatement(Connection conn, User user) throws SQLException
         {
             return _inner.insertStatement(conn, user);
         }
 
         @Override
-        public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns)
+        public ParameterMapStatement updateStatement(Connection conn, User user, Set<String> columns)
         {
             return _inner.updateStatement(conn, user, columns);
         }
 
         @Override
-        public Parameter.ParameterMap deleteStatement(Connection conn) throws SQLException
+        public ParameterMapStatement deleteStatement(Connection conn) throws SQLException
         {
             return _inner.deleteStatement(conn);
         }

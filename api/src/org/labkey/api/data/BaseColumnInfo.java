@@ -129,13 +129,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         _columnLogging = new ColumnLogging(key, parentTable);
     }
 
-    @Deprecated // Pass in a type!
-    public BaseColumnInfo(FieldKey key)
-    {
-        this(key, (TableInfo)null);
-        _name = null;
-    }
-
     public BaseColumnInfo(FieldKey key, JdbcType t)
     {
         this(key, (TableInfo)null);

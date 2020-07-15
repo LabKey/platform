@@ -413,11 +413,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpExperimentTable createExperimentTable(String name, UserSchema schema, ContainerFilter cf);
 
-    @Deprecated // TODO ContainerFilter
-    default ExpMaterialTable createMaterialTable(String name, UserSchema schema)
-    {
-        return createMaterialTable(name, schema, null);
-    }
     ExpMaterialTable createMaterialTable(String name, UserSchema schema, ContainerFilter cf);
 
     ExpMaterialInputTable createMaterialInputTable(String name, ExpSchema expSchema, ContainerFilter cf);

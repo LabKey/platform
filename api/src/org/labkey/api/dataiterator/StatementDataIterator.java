@@ -29,7 +29,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
-import org.labkey.api.data.Parameter.ParameterMap;
+import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
@@ -58,15 +58,15 @@ import java.util.function.Supplier;
 
 public class StatementDataIterator extends AbstractDataIterator
 {
-    protected ParameterMap[] _stmts;
+    protected ParameterMapStatement[] _stmts;
     Triple[][] _bindings = null;
 
-    ParameterMap _currentStmt;
+    ParameterMapStatement _currentStmt;
     Triple[] _currentBinding;
 
     // coordinate asynchronous statement execution
     boolean _useAsynchronousExecute = false;
-    SwapQueue<ParameterMap> _queue = new SwapQueue<>();
+    SwapQueue<ParameterMapStatement> _queue = new SwapQueue<>();
     final Thread _foregroundThread;
     Thread _asyncThread = null;
     AtomicReference<Exception> _backgroundException = new AtomicReference<>();
@@ -90,21 +90,7 @@ public class StatementDataIterator extends AbstractDataIterator
     CPUTimer _elapsed = new CPUTimer("StatementDataIterator@" + System.identityHashCode(this) + ".elapsed");
     CPUTimer _execute = new CPUTimer("StatementDataIterator@" + System.identityHashCode(this) + ".execute()");
 
-    @Deprecated  // Use the other constructor. TODO: Migrate usages (e.g., immport) and delete this constructor.
-    protected StatementDataIterator(DataIterator data, @Nullable ParameterMap map, DataIteratorContext context)
-    {
-        super(context);
-
-        _data = data;
-
-        _stmts = new ParameterMap[] {map};
-        _foregroundThread = Thread.currentThread();
-
-        _keyColumnInfo = new ArrayList<>(Collections.nCopies(data.getColumnCount()+1, null));
-        _keyValues = new ArrayList<>(Collections.nCopies(data.getColumnCount()+1,null));
-    }
-
-    protected StatementDataIterator(DataIterator data, DataIteratorContext context, ParameterMap... maps)
+    protected StatementDataIterator(DataIterator data, DataIteratorContext context, ParameterMapStatement... maps)
     {
         super(context);
 
@@ -189,7 +175,7 @@ public class StatementDataIterator extends AbstractDataIterator
 
         for (int set=0 ; set<_stmts.length ; set++)
         {
-            ParameterMap stmt = _stmts[set];
+            ParameterMapStatement stmt = _stmts[set];
             // map from source to target
             ArrayList<Triple> bindings = new ArrayList<>(stmt.size());
             // by name
@@ -234,7 +220,7 @@ public class StatementDataIterator extends AbstractDataIterator
 
     public void setBatchSize(int batchSize)
     {
-        this._batchSize = batchSize;
+        _batchSize = batchSize;
     }
 
 
@@ -267,7 +253,7 @@ public class StatementDataIterator extends AbstractDataIterator
     }
 
     @Nullable
-    protected Parameter getMvParameter(@NotNull ParameterMap stmt, @NotNull FieldKey mvFieldKey)
+    protected Parameter getMvParameter(@NotNull ParameterMapStatement stmt, @NotNull FieldKey mvFieldKey)
     {
         return stmt.getParameter(mvFieldKey.getName());
     }
@@ -279,7 +265,7 @@ public class StatementDataIterator extends AbstractDataIterator
         init();
     }
 
-    protected void afterExecute(ParameterMap stmt, int batchSize, int rowNumber)
+    protected void afterExecute(ParameterMapStatement stmt, int batchSize, int rowNumber)
     {
         if (null != _embargoDataIterator)
             _embargoDataIterator.setReleasedRowNumber(rowNumber);
@@ -522,7 +508,7 @@ public class StatementDataIterator extends AbstractDataIterator
             _data.close();
             log("</close() on _data>");
             joinBackgroundThread();
-            for (ParameterMap stmt : _stmts)
+            for (ParameterMapStatement stmt : _stmts)
             {
                 if (stmt != null)
                 {
@@ -531,7 +517,7 @@ public class StatementDataIterator extends AbstractDataIterator
                     log("</close() on " + stmt + ">");
                 }
             }
-            _stmts = new ParameterMap[0];
+            _stmts = new ParameterMapStatement[0];
         }
         finally
         {
@@ -542,9 +528,9 @@ public class StatementDataIterator extends AbstractDataIterator
 
     class _Runnable implements Runnable
     {
-        private final ParameterMap _firstEmpty;
+        private final ParameterMapStatement _firstEmpty;
 
-        _Runnable(@NotNull ParameterMap empty)
+        _Runnable(@NotNull ParameterMapStatement empty)
         {
             _firstEmpty = empty;
         }
@@ -566,7 +552,7 @@ public class StatementDataIterator extends AbstractDataIterator
 
         private void executeStatementsInBackground() throws BatchValidationException, InterruptedException
         {
-            ParameterMap m = _firstEmpty;
+            ParameterMapStatement m = _firstEmpty;
 
             while (null != (m = _queue.swapEmptyForFull(m)))
             {
@@ -641,11 +627,11 @@ public class StatementDataIterator extends AbstractDataIterator
 
                 SQLFragment updateX = new SQLFragment("UPDATE " + tableName + " SET X=X+?");
                 updateX.add(new Parameter("I", JdbcType.INTEGER));
-                ParameterMap pm1 = new ParameterMap(tempdb.getScope(), conn, updateX, null);
+                ParameterMapStatement pm1 = new ParameterMapStatement(tempdb.getScope(), conn, updateX, null);
 
                 SQLFragment updateY = new SQLFragment("UPDATE " + tableName + " SET Y=Y+?");
                 updateY.add(new Parameter("I", JdbcType.INTEGER));
-                ParameterMap pm2 = new ParameterMap(tempdb.getScope(), conn, updateY, null);
+                ParameterMapStatement pm2 = new ParameterMapStatement(tempdb.getScope(), conn, updateY, null);
 
                 DataIteratorContext context = new DataIteratorContext();
                 DataIterator source = getSource(context, rowCount);
@@ -681,14 +667,14 @@ public class StatementDataIterator extends AbstractDataIterator
         }
 
 
-        static class NoopParameterMap extends ParameterMap
+        private static final class NoopParameterMapStatement extends ParameterMapStatement
         {
-            private final AtomicInteger errorWhen;
+            private final AtomicInteger _errorWhen;
 
-            NoopParameterMap(AtomicInteger errorWhen)
+            NoopParameterMapStatement(AtomicInteger errorWhen)
             {
                 super();
-                this.errorWhen = errorWhen;
+                _errorWhen = errorWhen;
                 _map = new CaseInsensitiveHashMap<>();
                 _parameters = new Parameter[1];
                 _parameters[0] = new Parameter("I",JdbcType.INTEGER);
@@ -698,14 +684,14 @@ public class StatementDataIterator extends AbstractDataIterator
             @Override
             public void executeBatch() throws SQLException
             {
-                if (0 == errorWhen.getAndDecrement())
+                if (0 == _errorWhen.getAndDecrement())
                     throw new SQLException("boom");
             }
 
             @Override
             public boolean execute() throws SQLException
             {
-                if (0 == errorWhen.getAndDecrement())
+                if (0 == _errorWhen.getAndDecrement())
                     throw new SQLException("boom");
                 return true;
             }
@@ -742,8 +728,8 @@ public class StatementDataIterator extends AbstractDataIterator
         public void _testException(int when)
         {
             AtomicInteger intWhen = new AtomicInteger(when);
-            ParameterMap pm1 = new NoopParameterMap(intWhen);
-            ParameterMap pm2 = new NoopParameterMap(intWhen);
+            ParameterMapStatement pm1 = new NoopParameterMapStatement(intWhen);
+            ParameterMapStatement pm2 = new NoopParameterMapStatement(intWhen);
 
             DataIteratorContext context = new DataIteratorContext();
             DataIterator source = getSource(context, 100);

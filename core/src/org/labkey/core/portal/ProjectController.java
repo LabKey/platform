@@ -1306,7 +1306,6 @@ public class ProjectController extends SpringActionController
             if (null != titleHref && titleHref.length() > 0)
                 view.setTitleHref(titleHref);
 
-
             return view.renderToApiResponse();
         }
     }

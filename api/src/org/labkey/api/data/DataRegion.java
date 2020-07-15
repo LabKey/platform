@@ -640,18 +640,6 @@ public class DataRegion extends DisplayElement
         return getSettings() != null ? getSettings().getOffset() : _offset;
     }
 
-    /**
-     * Use {@link QuerySettings#setOffset(long)}.
-     */
-    @Deprecated
-    public void setOffset(long offset)
-    {
-        if (getSettings() != null)
-            getSettings().setOffset(offset);
-        else
-            _offset = offset;
-    }
-
     public void setSettings(QuerySettings settings)
     {
         _settings = settings;
@@ -755,12 +743,6 @@ public class DataRegion extends DisplayElement
     public @NotNull Map<String, Object> getQueryParameters()
     {
         return null == getSettings() ? Collections.emptyMap() : getSettings().getQueryParameters();
-    }
-
-    @Deprecated  // Use getResults() instead
-    final public Results getResultSet(RenderContext ctx) throws SQLException, IOException
-    {
-        return getResults(ctx);
     }
 
     /**

@@ -42,6 +42,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Project;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
+import org.labkey.api.module.AllowedOutsideImpersonationProject;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
@@ -1405,6 +1406,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    @AllowedOutsideImpersonationProject
     public class LogoutAction extends FormHandlerAction<ReturnUrlForm>
     {
         private URLHelper _redirectURL = null;
@@ -1444,6 +1446,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    @AllowedOutsideImpersonationProject
     public class StopImpersonatingAction extends FormHandlerAction<ReturnUrlForm>
     {
         @Override
@@ -1473,6 +1476,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    @AllowedOutsideImpersonationProject
     public class LogoutApiAction extends MutatingApiAction<ReturnUrlForm>
     {
         @Override
@@ -2636,6 +2640,7 @@ public class LoginController extends SpringActionController
 
     @SuppressWarnings("unused")
     @RequiresNoPermission
+    @AllowedOutsideImpersonationProject
     public class WhoAmIAction extends ReadOnlyApiAction
     {
         @Override

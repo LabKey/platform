@@ -212,7 +212,7 @@ public class HtmlRenderer implements WikiRenderer
 
     // ${labkey.<type>(<any_stream of characters>)}
     // Pattern.DOTALL allows the parameter list to span multiple lines
-    private static final Pattern _substitutionPattern = Pattern.compile("\\$\\{labkey\\.(\\w+)\\((.*?)\\)\\}", Pattern.DOTALL);
+    private static final Pattern _substitutionPattern = Pattern.compile("\\$\\{labkey\\.(\\w+)\\((.*?)\\)}", Pattern.DOTALL);
 
     // <any word>='<any value>', allowing whitespace before, after, and in-between
     private static final Pattern _paramPattern = Pattern.compile("\\s*(\\w+)\\s*=\\s*'(.*)'\\s*");

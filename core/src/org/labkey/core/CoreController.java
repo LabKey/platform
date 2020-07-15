@@ -1216,7 +1216,7 @@ public class CoreController extends SpringActionController
         {
             JSONObject props = new JSONObject();
             props.put("id", c.getRowId());
-            props.put("text", PageFlowUtil.filter(form.isUseTitles() ? c.getTitle() : c.getName()));
+            props.put("text", form.isUseTitles() ? c.getTitle() : c.getName());
             props.put("containerPath", c.getPath());
             props.put("expanded", false);
             props.put("iconCls", "x4-tree-icon-parent");
@@ -1239,7 +1239,7 @@ public class CoreController extends SpringActionController
         protected JSONObject getContainerProps(Container c, ExtContainerTreeForm form)
         {
             JSONObject props = super.getContainerProps(c, form);
-            String text = PageFlowUtil.filter(c.getName());
+            String text = c.getName();
             if (!c.getPolicy().getResourceId().equals(c.getResourceId()))
                 text += "*";
             if (c.equals(getContainer()))

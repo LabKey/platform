@@ -1492,7 +1492,7 @@ public class Table
     }
 
 
-    public static Parameter.ParameterMap deleteStatement(Connection conn, TableInfo tableDelete /*, Set<String> columns */) throws SQLException
+    public static ParameterMapStatement deleteStatement(Connection conn, TableInfo tableDelete /*, Set<String> columns */) throws SQLException
     {
         if (!(tableDelete instanceof UpdateableTableInfo))
             throw new IllegalArgumentException();
@@ -1586,7 +1586,7 @@ public class Table
         }
         sqlfDelete.append(sqlfDeleteTable);
 
-        return new Parameter.ParameterMap(tableDelete.getSchema().getScope(), conn, sqlfDelete, updatable.remapSchemaColumns());
+        return new ParameterMapStatement(tableDelete.getSchema().getScope(), conn, sqlfDelete, updatable.remapSchemaColumns());
     }
 
 
