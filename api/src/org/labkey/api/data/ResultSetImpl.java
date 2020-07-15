@@ -114,16 +114,17 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
         {
             if (Table.ALL_ROWS != _maxRows)
             {
-                if (getRow() == _maxRows)
+                if (getRow() == _maxRows + 1)
                 {
                     _isComplete = false;
                 }
 
-                hasNext = getRow() < _maxRows;
+                hasNext = getRow() <= _maxRows;
             }
 
             // Keep track of all of the rows that we've iterated
-            _size = Math.max(_size, getRow());
+            if (_isComplete)
+                _size = Math.max(_size, getRow());
         }
 
         if (!hasNext) {
