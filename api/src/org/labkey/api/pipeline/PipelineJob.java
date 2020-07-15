@@ -25,7 +25,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.AppenderRef;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
@@ -796,6 +799,8 @@ abstract public class PipelineJob extends Job implements Serializable
             {
                 getLogger().info((success ? "Successfully completed" : "Failed to complete") + " task '" + factory.getId() + "'");
                 logStartStopInfo((success ? "Successfully completed" : "Failed to complete") + " task '" + factory.getId() + "' for job '" + toString() + "' with log file " + getLogFile());
+                // remove temporary logger created for the job
+                removeLogger();
                 try
                 {
                     if (workDirectory != null)
@@ -1351,140 +1356,6 @@ abstract public class PipelineJob extends Job implements Serializable
 
     }
 
-    /////////////////////////////////////////////////////////////////////////
-    //  Logging
-    
-    /**
-     * Log4J Logger subclass to allow us to create loggers that are not cached
-     * in the Log4J repository for the life of the webapp.  This logger also
-     * logs to the weblog for the PipelineJob class, allowing administrators
-     * to collect whatever level of logging they want from PipelineJobs.
-     */
-    private static class OutputLogger extends org.apache.logging.log4j.core.Logger
-    {
-        private final PipelineJob _job;
-        private boolean _isSettingStatus;
-
-        // Required for xstream serialization on Java 7
-        @SuppressWarnings({"UnusedDeclaration"})
-        private OutputLogger()
-        {
-            //noinspection NullableProblems
-            this(null, "");
-        }
-
-        protected OutputLogger(PipelineJob job, String name)
-        {
-            super((LoggerContext) LogManager.getContext(), name, LogManager.getLogger(name).getMessageFactory());
-
-            _job = job;
-        }
-
-        @Override
-        public void debug(Object message)
-        {
-            debug(message, null);
-        }
-
-        @Override
-        public void debug(Object message, @Nullable Throwable t)
-        {
-            _job.getClassLogger().debug(getSystemLogMessage(message), t);
-            super.debug(message, t);
-        }
-
-        @Override
-        public void info(Object message)
-        {
-            info(message, null);
-        }
-
-        @Override
-        public void info(Object message, @Nullable Throwable t)
-        {
-            _job.getClassLogger().info(getSystemLogMessage(message), t);
-            super.info(message, t);
-        }
-
-        @Override
-        public void warn(Object message)
-        {
-            warn(message, null);
-        }
-
-        @Override
-        public void warn(Object message, @Nullable Throwable t)
-        {
-            _job.getClassLogger().warn(getSystemLogMessage(message), t);
-            super.warn(message, t);
-        }
-
-        @Override
-        public void error(Object message)
-        {
-            error(message, null);
-        }
-
-        @Override
-        public void error(Object message, @Nullable Throwable t)
-        {
-            _job.getClassLogger().error(getSystemLogMessage(message), t);
-            super.error(message, t);
-            setErrorStatus(message);
-        }
-
-        @Override
-        public void fatal(Object message)
-        {
-            fatal(message, null);
-        }
-
-        @Override
-        public void fatal(Object message, Throwable t)
-        {
-            _job.getClassLogger().fatal(getSystemLogMessage(message), t);
-            super.fatal(message, t);
-            setErrorStatus(message);
-        }
-
-        private String getSystemLogMessage(Object message)
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.append("(from pipeline job log file ");
-            sb.append(_job.getLogFile().getPath());
-            if (message != null)
-            {
-                sb.append(": ");
-                String stringMessage = message.toString();
-                // Limit the maximum line length
-                final int maxLength = 10000;
-                if (stringMessage.length() > maxLength)
-                {
-                    stringMessage = stringMessage.substring(0, maxLength) + "...";
-                }
-                sb.append(stringMessage);
-            }
-            sb.append(")");
-            return sb.toString();
-        }
-
-        public void setErrorStatus(Object message)
-        {
-            if (_isSettingStatus)
-                return;
-
-            _isSettingStatus = true;
-            try
-            {
-                _job.setStatus(TaskStatus.error, message == null ? "ERROR" : message.toString());
-            }
-            finally
-            {
-                _isSettingStatus = false;
-            }
-        }
-    }
-
     public String getLogLevel()
     {
         return _loggerLevel;
@@ -1514,17 +1385,46 @@ abstract public class PipelineJob extends Job implements Serializable
 
             File logFile = null != _logFile ? _logFile : new File(_logFilePathName);
             // Create appending logger.
-            _logger = new OutputLogger(this, PipelineJob.class.getSimpleName() + ".Logger." + _logFilePathName);
-            LoggerContext loggerContext = (LoggerContext) LogManager.getContext(true);
-            Configuration configuration = loggerContext.getConfiguration();
-            LoggerConfig loggerConfig = configuration.getLoggerConfig(_logger.getName());
-            loggerConfig.getAppenders().forEach((key, value) -> loggerConfig.removeAppender(value.getName()));
+            final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+            final Configuration config = ctx.getConfiguration();
 
-            SafeFileAppender appender = SafeFileAppender.createAppender("SafeFile", false, PatternLayout.newBuilder().withPattern("%d{DATE} %-5p: %m%n").build(), null, logFile);
-            loggerConfig.addAppender(appender, Level.toLevel(_loggerLevel), null);
+            // Programmatically adding appender and logger config to log4j2 config
+            String appenderName = "SafeFile";
+            Layout<? extends Serializable> layout = PatternLayout.newBuilder().withPattern("%d{DATE} %-5p: %m%n").build();
+            Appender appender = SafeFileAppender.createAppender(appenderName, false, layout, null, logFile);
+            appender.start();
+            config.addAppender(appender);
+
+            AppenderRef ref = AppenderRef.createAppenderRef(appenderName, null, null);
+            AppenderRef[] refs = new AppenderRef[] {ref};
+            String loggerName = PipelineJob.class.getSimpleName() + ".Logger." + _logFilePathName;
+            LoggerConfig loggerConfig = LoggerConfig.createLogger(false, Level.toLevel(_loggerLevel), loggerName, "true", refs, null, config, null );
+            loggerConfig.addAppender(appender, null, null);
+            config.addLogger(loggerName, loggerConfig);
+            ctx.updateLoggers();
+
+            // Now that the log4j2 config contains the logger, access the logger through LogManager
+            _logger = LogManager.getLogger(loggerName);
         }
 
         return _logger;
+    }
+
+    /**
+     * This method removes the logger created for this pipeline job so that it does not live
+     * in the Log4J2 repository for the life of the webapp.
+     * */
+    public synchronized void removeLogger()
+    {
+        if (_logger != null)
+        {
+            final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+            final Configuration config = ctx.getConfiguration();
+            String loggerName = PipelineJob.class.getSimpleName() + ".Logger." + _logFilePathName;
+            config.removeLogger(loggerName);
+            ctx.updateLoggers();
+            _logger = null;
+        }
     }
 
     public void error(String message)

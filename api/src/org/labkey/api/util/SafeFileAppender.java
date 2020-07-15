@@ -17,10 +17,12 @@ package org.labkey.api.util;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.Core;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.appender.FileAppender;
 import org.apache.logging.log4j.core.config.Property;
 import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
@@ -33,13 +35,15 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Serializable;
 
+import static org.labkey.api.util.StringUtilsLabKey.DEFAULT_CHARSET;
+
 /**
  * Custom Log4J appender that opens the log file and closes it for each logging operation, thus ensuring
  * that the file does not stay locked.
  * Created: Oct 18, 2005
  * @author bmaclean
  */
-@Plugin(name = "SafeFile", category = "Core", elementType = "appender", printObject = true)
+@Plugin(name = FileAppender.PLUGIN_NAME, category = Core.CATEGORY_NAME, elementType = FileAppender.ELEMENT_TYPE, printObject = true)
 public class SafeFileAppender extends AbstractAppender
 {
     private static Logger _log = LogManager.getLogger(SafeFileAppender.class);
@@ -54,7 +58,7 @@ public class SafeFileAppender extends AbstractAppender
     @PluginFactory
     public static SafeFileAppender createAppender(@PluginAttribute("name") String name,
                                                   @PluginAttribute("ignoreExceptions") boolean ignoreExceptions,
-                                                  @PluginElement("Layout") Layout layout,
+                                                  @PluginElement("Layout") Layout<? extends Serializable> layout,
                                                   @PluginElement("Filters") Filter filter,
                                                   File file)
     {
@@ -70,8 +74,20 @@ public class SafeFileAppender extends AbstractAppender
     {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(_file, true)))
         {
-            writer.write(loggingEvent.getMessage().getFormattedMessage());
+            writer.write(new String(getLayout().toByteArray(loggingEvent), DEFAULT_CHARSET));
             writer.write(LINE_SEP);
+            if (null != loggingEvent.getThrown())
+            {
+                StackTraceElement[] stackTraceElements = loggingEvent.getThrown().getStackTrace();
+                if (stackTraceElements != null)
+                {
+                    for (StackTraceElement stackTraceElement : stackTraceElements)
+                    {
+                        writer.write(stackTraceElement.toString());
+                        writer.write(LINE_SEP);
+                    }
+                }
+            }
         }
         catch (IOException e)
         {
