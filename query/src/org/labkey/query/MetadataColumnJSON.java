@@ -25,6 +25,7 @@ public class MetadataColumnJSON extends GWTPropertyDescriptor
 {
     private String _wrappedColumnName;
     private boolean _lookupCustom;
+    private boolean _lockExistingField;
 
     public MetadataColumnJSON()
     {
@@ -69,6 +70,16 @@ public class MetadataColumnJSON extends GWTPropertyDescriptor
     {
         _lookupCustom = false;
         super.setLookupSchema(lookupSchema);
+    }
+
+    public boolean isLockExistingField()
+    {
+        return _lockExistingField;
+    }
+
+    public void setLockExistingField(boolean lockExistingField)
+    {
+        _lockExistingField = lockExistingField;
     }
 
     @Override

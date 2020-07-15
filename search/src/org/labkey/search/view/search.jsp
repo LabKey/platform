@@ -117,15 +117,17 @@
                 Path path = Path.parse(hit.docid.substring(4));
                 if (path.startsWith(dav))
                     path = dav.relativize(path);
-                if (path.startsWith(containerPath))
+                if (path.startsWith(containerPath) || path.startsWith(new Path(c.getId())))
                 {
-                    Path rel = containerPath.relativize(path);
+                    Path rel;
+                    if (path.startsWith(containerPath))
+                        rel = containerPath.relativize(path);
+                    else
+                        rel = path.subpath(1, path.size());
                     if (rel.startsWith(files) || rel.startsWith(pipeline))
                     {
-                        if (path.size() > 0) path = path.getParent();
-                        text = path.toString("/","");
-
-                        if (rel.size() > 0) rel = rel.getParent();
+                        rel = rel.getParent();
+                        text = c.getParsedPath().append(rel).toString("/","");
                         url = urlProvider(ProjectUrls.class).getFileBrowserURL(c, rel.toString("/",""));
                     }
                 }
