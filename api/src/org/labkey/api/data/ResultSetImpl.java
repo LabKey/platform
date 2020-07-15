@@ -43,6 +43,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     private final @Nullable DbScope _scope;
     private final @Nullable Connection _connection;
     private int _maxRows;
+    private boolean _iterationComplete;
 
     private boolean _isComplete = true;
 
@@ -97,25 +98,40 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     @Override
     public int getSize()
     {
+        if (!_iterationComplete)
+        {
+            throw new IllegalStateException("ResultSet must first be iterated through before getting size");
+        }
         return _size;
     }
 
     @Override
     public boolean next() throws SQLException
     {
-        boolean success = super.next();
-        if (!success || Table.ALL_ROWS == _maxRows)
-            return success;
-        if (getRow() == _maxRows + 1)
+        boolean hasNext = super.next();
+
+        if (hasNext)
         {
-            _isComplete = false;
-        }
-        else
-        {
+            if (Table.ALL_ROWS != _maxRows)
+            {
+                if (getRow() == _maxRows + 1)
+                {
+                    _isComplete = false;
+                }
+
+                hasNext = getRow() <= _maxRows;
+            }
+
             // Keep track of all of the rows that we've iterated
-            _size = Math.max(_size, getRow());
+            if (_isComplete)
+                _size = Math.max(_size, getRow());
         }
-        return getRow() <= _maxRows;
+
+        if (!hasNext) {
+            _iterationComplete = true;
+        }
+
+        return hasNext;
     }
 
 
