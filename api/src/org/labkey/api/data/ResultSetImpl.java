@@ -96,11 +96,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
 
     protected boolean hasNext(boolean hasNext)
     {
-        if (hasNext)
-        {
-            _countComplete = false;
-        }
-        _countComplete = true;
+        _countComplete = !hasNext;
 
         return hasNext;
     }
