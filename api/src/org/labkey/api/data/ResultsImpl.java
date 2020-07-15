@@ -255,6 +255,12 @@ public class ResultsImpl implements Results, DataIterator
         return ((TableResultSet) _rs).getSize();
     }
 
+    @Override
+    public int countAll() throws SQLException
+    {
+        return ((TableResultSet) _rs).countAll();
+    }
+
 
     //
     // FieldKey getters

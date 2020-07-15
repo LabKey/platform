@@ -24,7 +24,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ResultSetUtil;
 
-import javax.sql.rowset.CachedRowSet;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -43,7 +42,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     private final @Nullable DbScope _scope;
     private final @Nullable Connection _connection;
     private int _maxRows;
-    private boolean _iterationComplete;
+    private boolean _countComplete;
 
     private boolean _isComplete = true;
 
@@ -95,18 +94,30 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
         _isComplete = isComplete;
     }
 
-    @Override
-    public boolean iterateAll() throws SQLException
+    protected boolean hasNext(boolean hasNext)
     {
-        while(next());
+        if (hasNext)
+        {
+            _countComplete = false;
+        }
+        _countComplete = true;
 
-        return true;
+        return hasNext;
     }
 
     @Override
+    public int countAll() throws SQLException
+    {
+        while(next());
+
+        return _size;
+    }
+
+    // Must iterate through result set before getting the size, consider using countAll
+    @Override
     public int getSize()
     {
-        if (!_iterationComplete)
+        if (!_countComplete)
         {
             throw new IllegalStateException("ResultSet must first be iterated through before getting size");
         }
@@ -116,9 +127,9 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     @Override
     public boolean next() throws SQLException
     {
-        boolean hasNext = super.next();
+        boolean success = super.next();
 
-        if (hasNext)
+        if (success)
         {
             if (Table.ALL_ROWS != _maxRows)
             {
@@ -127,7 +138,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
                     _isComplete = false;
                 }
 
-                hasNext = getRow() <= _maxRows;
+                success = getRow() <= _maxRows;
             }
 
             // Keep track of all of the rows that we've iterated
@@ -135,11 +146,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
                 _size = Math.max(_size, getRow());
         }
 
-        if (!hasNext) {
-            _iterationComplete = true;
-        }
-
-        return hasNext;
+        return hasNext(success);
     }
 
 

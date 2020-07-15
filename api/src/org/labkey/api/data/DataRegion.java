@@ -1099,7 +1099,7 @@ public class DataRegion extends DisplayElement
         if (useTableWrap)
             out.write("</tbody></table>");
 
-        if (usesResultSet() && rs instanceof TableResultSet && ((TableResultSet) rs).iterateAll() && ((TableResultSet) rs).getSize() != -1)
+        if (usesResultSet() && rs instanceof TableResultSet && ((TableResultSet) rs).countAll() != -1)
         {
             _rowCount = ((TableResultSet) rs).getSize();
             if (_complete && _totalRows == null)
