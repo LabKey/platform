@@ -1391,7 +1391,7 @@ abstract public class PipelineJob extends Job implements Serializable
             // Programmatically adding appender and logger config to log4j2 config
             String appenderName = "SafeFile";
             Layout<? extends Serializable> layout = PatternLayout.newBuilder().withPattern("%d{DATE} %-5p: %m%n").build();
-            Appender appender = SafeFileAppender.createAppender(appenderName, false, layout, null, logFile);
+            Appender appender = SafeFileAppender.createAppender(appenderName, false, layout, null, logFile, this);
             appender.start();
             config.addAppender(appender);
 

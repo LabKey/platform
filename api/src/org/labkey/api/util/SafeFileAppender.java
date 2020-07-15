@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.Core;
@@ -28,6 +29,8 @@ import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.pipeline.PipelineJob;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -49,10 +52,15 @@ public class SafeFileAppender extends AbstractAppender
     private static Logger _log = LogManager.getLogger(SafeFileAppender.class);
     private final String LINE_SEP = System.getProperty("line.separator");
     private static File _file;
+    private PipelineJob _job;
+    private Logger _jobLogger;
+    private boolean _isSettingStatus;
 
-    public SafeFileAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties)
+    public SafeFileAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties, PipelineJob job)
     {
         super(name, filter, layout, ignoreExceptions, properties);
+        _job = job;
+        _jobLogger = job.getClassLogger();
     }
 
     @PluginFactory
@@ -60,13 +68,14 @@ public class SafeFileAppender extends AbstractAppender
                                                   @PluginAttribute("ignoreExceptions") boolean ignoreExceptions,
                                                   @PluginElement("Layout") Layout<? extends Serializable> layout,
                                                   @PluginElement("Filters") Filter filter,
-                                                  File file)
+                                                  File file,
+                                                  PipelineJob job)
     {
         _file = file;
 
         // Make sure that we try to mount the drive (if needed) before using the file
         NetworkDrive.exists(_file);
-        return new SafeFileAppender(name, filter, layout, ignoreExceptions, null);
+        return new SafeFileAppender(name, filter, layout, ignoreExceptions, null, job);
     }
 
     @Override
@@ -74,6 +83,7 @@ public class SafeFileAppender extends AbstractAppender
     {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(_file, true)))
         {
+            logJobMessage(loggingEvent, loggingEvent.getThrown());
             writer.write(new String(getLayout().toByteArray(loggingEvent), DEFAULT_CHARSET));
             writer.write(LINE_SEP);
             if (null != loggingEvent.getThrown())
@@ -96,6 +106,73 @@ public class SafeFileAppender extends AbstractAppender
                 append(loggingEvent);
             else
                 _log.error("Failed appending to file.", e);
+        }
+    }
+
+    private void logJobMessage(LogEvent logEvent, @Nullable Throwable t)
+    {
+        if (logEvent.getLevel().compareTo(Level.DEBUG) == 0)
+        {
+            _jobLogger.debug(getSystemLogMessage(logEvent.getMessage()), t);
+        }
+
+        if (logEvent.getLevel().compareTo(Level.INFO) == 0)
+        {
+            _jobLogger.info(getSystemLogMessage(logEvent.getMessage()), t);
+        }
+
+        if (logEvent.getLevel().compareTo(Level.WARN) == 0)
+        {
+            _jobLogger.warn(getSystemLogMessage(logEvent.getMessage()), t);
+        }
+
+        if (logEvent.getLevel().compareTo(Level.ERROR) == 0)
+        {
+            _jobLogger.error(getSystemLogMessage(logEvent.getMessage()), t);
+            setErrorStatus(logEvent.getMessage());
+        }
+
+        if (logEvent.getLevel().compareTo(Level.FATAL) == 0)
+        {
+            _jobLogger.fatal(getSystemLogMessage(logEvent.getMessage()), t);
+            setErrorStatus(logEvent.getMessage());
+        }
+    }
+
+    private String getSystemLogMessage(Object message)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("(from pipeline job log file ");
+        sb.append(_file.getPath());
+        if (message != null)
+        {
+            sb.append(": ");
+            String stringMessage = message.toString();
+            // Limit the maximum line length
+            final int maxLength = 10000;
+            if (stringMessage.length() > maxLength)
+            {
+                stringMessage = stringMessage.substring(0, maxLength) + "...";
+            }
+            sb.append(stringMessage);
+        }
+        sb.append(")");
+        return sb.toString();
+    }
+
+    public void setErrorStatus(Object message)
+    {
+        if (_isSettingStatus)
+            return;
+
+        _isSettingStatus = true;
+        try
+        {
+            _job.setStatus(PipelineJob.TaskStatus.error, message == null ? "ERROR" : message.toString());
+        }
+        finally
+        {
+            _isSettingStatus = false;
         }
     }
 
