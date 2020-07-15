@@ -96,6 +96,14 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     }
 
     @Override
+    public boolean iterateAll() throws SQLException
+    {
+        while(next());
+
+        return true;
+    }
+
+    @Override
     public int getSize()
     {
         if (!_iterationComplete)

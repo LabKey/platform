@@ -705,7 +705,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
                                 if (null != r)
                                 {
                                     // In order to get size must first iterate through result set
-                                    while (r.next()) ;
+                                    r.iterateAll() ;
 
                                     final int rowCount = r.getSize();
                                     baseQueryView.setMessageSupplier(dataRegion -> {
