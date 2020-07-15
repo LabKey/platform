@@ -169,8 +169,11 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
                 _respFormat = ApiResponseWriter.Format.JSON_COMPACT;
             }
 
-            //validate the form
-            validate(form, errors);
+            if (form != null)
+            {
+                // validate the form, if a binding error didn't prevent it from being created. See issue 40888
+                validate(form, errors);
+            }
 
             //if we had binding or validation errors,
             //return them without calling execute.
