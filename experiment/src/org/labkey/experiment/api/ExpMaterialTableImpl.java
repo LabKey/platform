@@ -777,11 +777,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     .setFileLinkDirectory("sampleset")
                     .setIndexFunction(lsids -> () ->
                     {
-                        for (String lsid : lsids)
+                        for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLSID(lsids))
                         {
-                            ExpMaterialImpl expMaterial = ExperimentServiceImpl.get().getExpMaterial(lsid);
-                            if (null != expMaterial)
-                                expMaterial.index(null);
+                            expMaterial.index(null);
                         }
                     }));
 
