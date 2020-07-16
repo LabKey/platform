@@ -2280,9 +2280,10 @@ public class LoginController extends SpringActionController
                 return new HtmlView("Error: a valid returnUrl was not specified.");
             }
 
-            String token = TokenAuthenticationManager.get().createKey(getViewContext().getRequest(), getUser());
+            User user = getUser().isImpersonated() ? getUser().getImpersonatingUser() : getUser();
+            String token = TokenAuthenticationManager.get().createKey(getViewContext().getRequest(), user);
             returnUrl.addParameter("labkeyToken", token);
-            returnUrl.addParameter("labkeyEmail", getUser().getEmail());
+            returnUrl.addParameter("labkeyEmail", user.getEmail());
 
             getViewContext().getResponse().sendRedirect(returnUrl.getURIString());
             return null;
