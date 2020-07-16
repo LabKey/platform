@@ -61,7 +61,7 @@ public class PopupUserView extends PopupMenuView
         ActionURL externalToolsViewURL = PageFlowUtil.urlProvider(SecurityUrls.class).getExternalToolsViewURL(user, currentURL);
         if (null != externalToolsViewURL)
         {
-            NavTree externalToolSettings = new NavTree("External Tool Settings", externalToolsViewURL);
+            NavTree externalToolSettings = new NavTree("External Tool Access", externalToolsViewURL);
             tree.addChild(externalToolSettings);
         }
 

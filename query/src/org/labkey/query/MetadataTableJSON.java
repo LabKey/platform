@@ -538,6 +538,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             columnInfos.put(metadataColumnJSON.getName(), metadataColumnJSON);
             orderedPDs.add(metadataColumnJSON);
 
+            metadataColumnJSON.setLockExistingField(true);
             metadataColumnJSON.setRequired(!columnInfo.isNullable());
             metadataColumnJSON.setLabel(columnInfo.getLabel());
             metadataColumnJSON.setFormat(columnInfo.getFormat());
@@ -700,6 +701,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         }
                         if (column.getWrappedColumnName() != null)
                         {
+                            metadataColumnJSON.setLockExistingField(false);
                             injectedColumnNames.add(column.getColumnName());
                             metadataColumnJSON.setWrappedColumnName(column.getWrappedColumnName());
                             ColumnInfo tableColumn = table.getColumn(column.getWrappedColumnName());
@@ -710,7 +712,6 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         }
                         else
                         {
-                            metadataColumnJSON.setLockType(LockedPropertyType.PartiallyLocked.name());
                             ColumnInfo tableColumn = table.getColumn(column.getColumnName());
                             if (tableColumn != null)
                             {
@@ -728,10 +729,6 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
 
         Set<String> builtInColumnNames = new CaseInsensitiveHashSet(columnInfos.keySet());
         builtInColumnNames.removeAll(injectedColumnNames);
-        if (!metadataTableJSON.isUserDefinedQuery())
-        {
-            metadataTableJSON.setMandatoryFieldNames(builtInColumnNames);
-        }
         metadataTableJSON.setFields(orderedPDs);
 
         // TODO: figure out something better for defaultValuesURL

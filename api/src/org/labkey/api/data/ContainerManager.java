@@ -155,6 +155,8 @@ public class ContainerManager
         Name,
         Parent,
         Policy,
+        /** The default or active set of modules in the container has changed */
+        Modules,
         WebRoot,
         AttachmentDirectory,
         PipelineRoot,
@@ -1813,12 +1815,6 @@ public class ContainerManager
             NavTreeManager.uncacheTree(project.getId());
             NavTreeManager.uncacheTree(PROJECT_LIST_ID + project.getId());
         }
-    }
-
-
-    public static void notifyContainerChange(String id)
-    {
-        notifyContainerChange(id, Property.Policy);
     }
 
     public static void notifyContainerChange(String id, Property prop)

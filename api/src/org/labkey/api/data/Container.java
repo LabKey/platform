@@ -934,7 +934,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         props.put("name", module.getName());
 
         props.save();
-        ContainerManager.notifyContainerChange(getId());
+        ContainerManager.notifyContainerChange(getId(), ContainerManager.Property.Modules);
         _defaultModule = null;
     }
 
@@ -967,7 +967,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         props.save();
-        ContainerManager.notifyContainerChange(getId());
+        ContainerManager.notifyContainerChange(getId(), ContainerManager.Property.Modules);
     }
 
     public void appendWorkbookModulesToParent(Set<Module> newModules, @Nullable User user)

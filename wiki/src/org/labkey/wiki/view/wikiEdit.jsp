@@ -16,7 +16,11 @@
  */
 %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
+<%@ page import="org.labkey.api.util.element.Select.SelectBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -24,7 +28,6 @@
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="org.labkey.wiki.model.WikiEditModel" %>
-<%@ page import="org.labkey.wiki.model.WikiTree" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -133,20 +136,29 @@
                 <tr>
                     <td class="labkey-form-label"><label for="<%=h(ID_PREFIX)%>parent">Parent</label></td>
                     <td width="99%">
-                        <select name="parent" id="<%=text(ID_PREFIX)%>parent">
-                            <option<%=selected(model.getParent() == -1)%> value="-1">[none]</option>
-                            <%
-                                for (WikiTree possibleParent : model.getPossibleParents())
-                                {
-                                    String indent = "";
-                                    int depth = possibleParent.getDepth();
-                                    String parentTitle = possibleParent.getTitle();
-                                    while (depth-- > 0)
-                                        indent = indent + "&nbsp;&nbsp;";
-                                    %><option<%=selected(possibleParent.getRowId() == model.getParent())%> value="<%= possibleParent.getRowId() %>"><%=text(indent)%><%= h(parentTitle) %> (<%= possibleParent.getName() %>)</option><%
-                                }
-                            %>
-                        </select>
+                    <%
+                        SelectBuilder parentBuilder = new SelectBuilder()
+                            .name("parent")
+                            .id(ID_PREFIX + "parent")
+                            .style("width:600px");
+                        parentBuilder.addOption(new OptionBuilder().value("-1").label("[none]").selected(model.getParent() == -1).build());
+                        model.getPossibleParents().forEach(pp->{
+                            StringBuilder indent = new StringBuilder();
+                            int depth = pp.getDepth();
+                            while (depth-- > 0)
+                                indent.append("&nbsp;&nbsp;");
+
+                            HtmlString label = HtmlStringBuilder.of(HtmlString.unsafe(indent.toString())).append(pp.getTitle() + " (" + pp.getName() + ")").getHtmlString();
+
+                            parentBuilder.addOption(new OptionBuilder()
+                                .value(String.valueOf(pp.getRowId()))
+                                .label(label)
+                                .selected(pp.getRowId() == model.getParent())
+                                .build()
+                            );
+                        });
+                    %>
+                    <%=parentBuilder%>
                     </td>
                 </tr>
                 <tr>

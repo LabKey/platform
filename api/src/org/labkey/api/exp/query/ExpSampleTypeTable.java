@@ -29,6 +29,7 @@ public interface ExpSampleTypeTable extends ExpTable<ExpSampleTypeTable.Column>
         Name,
         Description,
         NameExpression,
+        LabelColor,
         MaterialLSIDPrefix,
         Created,
         Modified,

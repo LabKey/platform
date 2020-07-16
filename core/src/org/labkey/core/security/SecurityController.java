@@ -1962,7 +1962,7 @@ public class SecurityController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("External Tool Settings");
+            root.addChild("External Tool Access");
         }
     }
 
