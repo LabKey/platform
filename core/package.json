@@ -74,7 +74,12 @@
           "formats": {
             "dateFormat": "yyyy-MM-dd"
           }
-        }
+        },
+        "user": {
+          "id": 1004
+        },
+        "project": {},
+        "moduleContext": {}
       }
     },
     "moduleFileExtensions": [
@@ -95,7 +100,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.0.0",
-    "@labkey/components": "0.70.5",
+    "@labkey/components": "0.78.0",
     "@labkey/eslint-config-react": "0.0.8",
     "react-toggle-button": "2.2.0"
   },
