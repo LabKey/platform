@@ -702,6 +702,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
                             DataView dataView = allResultsQueryView.createDataView();
 
                             RenderContext renderContext = dataView.getRenderContext();
+                            // Issue 40921: use cached result set as it will have size available without iterating the results
                             renderContext.setCache(true);
                             try (Results r = dataView.getDataRegion().getResults(renderContext))
                             {
@@ -710,7 +711,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
                                 baseQueryView.setMessageSupplier(dataRegion -> {
                                     try
                                     {
-                                        // Getting all results for the data region requires an operation that iterates
+                                        // Issue 40921: Getting all results for the data region requires an operation that iterates
                                         // through and counts the total rows in the data region. getAggregateResults
                                         // with ALL_ROWS will perform this calculation
                                         int maxRows = dataRegion.getSettings().getMaxRows();
