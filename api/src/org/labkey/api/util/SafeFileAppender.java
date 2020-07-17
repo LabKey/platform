@@ -52,15 +52,17 @@ public class SafeFileAppender extends AbstractAppender
     private static Logger _log = LogManager.getLogger(SafeFileAppender.class);
     private final String LINE_SEP = System.getProperty("line.separator");
     private static File _file;
+    @Nullable
     private PipelineJob _job;
+    @Nullable
     private Logger _jobLogger;
     private boolean _isSettingStatus;
 
-    public SafeFileAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties, PipelineJob job)
+    public SafeFileAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties, @Nullable PipelineJob job)
     {
         super(name, filter, layout, ignoreExceptions, properties);
         _job = job;
-        _jobLogger = job.getClassLogger();
+        _jobLogger = job != null?  job.getClassLogger() : null;
     }
 
     @PluginFactory
@@ -69,7 +71,7 @@ public class SafeFileAppender extends AbstractAppender
                                                   @PluginElement("Layout") Layout<? extends Serializable> layout,
                                                   @PluginElement("Filters") Filter filter,
                                                   File file,
-                                                  PipelineJob job)
+                                                  @Nullable PipelineJob job)
     {
         _file = file;
 
@@ -83,7 +85,10 @@ public class SafeFileAppender extends AbstractAppender
     {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(_file, true)))
         {
-            logJobMessage(loggingEvent, loggingEvent.getThrown());
+            if (null != _jobLogger)
+            {
+                logJobMessage(loggingEvent, loggingEvent.getThrown());
+            }
             writer.write(new String(getLayout().toByteArray(loggingEvent), DEFAULT_CHARSET));
             writer.write(LINE_SEP);
             if (null != loggingEvent.getThrown())

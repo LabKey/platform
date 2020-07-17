@@ -7628,17 +7628,17 @@ public class AdminController extends SpringActionController
                     eventId = Integer.parseInt(s);
             }
             catch (NumberFormatException x) {}
-            LogEvent[] events = SessionAppender.getLoggingEvents(getViewContext().getRequest());
-            ArrayList<Map<String, Object>> list = new ArrayList<>(events.length);
-            for (LogEvent e : events)
+            Map<LogEvent, String> events = SessionAppender.getLoggingEvents(getViewContext().getRequest());
+            ArrayList<Map<String, Object>> list = new ArrayList<>(events.size());
+            for (Map.Entry<LogEvent, String> entry : events.entrySet())
             {
-                // TODO - find replacement - maybe a ThreadLocal using a WeakHashMap of Event->EventId?
-//                if (eventId==0 || eventId<Integer.parseInt(e.getProperty("eventId")))
-                if (eventId==0)
+                if (eventId==0 || eventId<Integer.parseInt(entry.getValue()))
                 {
+                    LogEvent e = entry.getKey();
                     HashMap<String, Object> m = new HashMap<>();
+                    m.put("eventId", entry.getValue());
                     m.put("level", e.getLevel().toString());
-                    m.put("message", e.getMessage());
+                    m.put("message", e.getMessage().getFormattedMessage());
                     m.put("timestamp", new Date(e.getTimeMillis()));
                     list.add(m);
                 }

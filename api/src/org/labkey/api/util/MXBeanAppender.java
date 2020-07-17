@@ -16,12 +16,17 @@
 package org.labkey.api.util;
 
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.Core;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Property;
 import org.apache.logging.log4j.core.config.plugins.Plugin;
+import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
+import org.apache.logging.log4j.core.config.plugins.PluginElement;
+import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.labkey.api.mbean.ErrorsMXBean;
 import org.labkey.api.mbean.LabKeyManagement;
 
@@ -37,9 +42,17 @@ import java.util.concurrent.TimeUnit;
  * Date: 2012-02-28
  * Time: 4:10 PM
  */
-@Plugin(name = "SessionAppender", category = "Core", elementType = "appender", printObject = true)
+@Plugin(name = "MXBeanAppender", category = Core.CATEGORY_NAME, elementType = Appender.ELEMENT_TYPE, printObject = true)
 public class MXBeanAppender extends AbstractAppender implements ErrorsMXBean
 {
+    @PluginFactory
+    public static MXBeanAppender createAppender(@PluginAttribute("name") String name,
+                                                 @PluginElement("Layout") Layout<? extends Serializable> layout,
+                                                 @PluginElement("Filter") final Filter filter)
+    {
+        return new MXBeanAppender(name, filter, layout, false, null);
+    }
+
     public MXBeanAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties)
     {
         super(name, filter, layout, ignoreExceptions, properties);
