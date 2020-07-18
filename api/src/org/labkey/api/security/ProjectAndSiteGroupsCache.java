@@ -42,23 +42,18 @@ public class ProjectAndSiteGroupsCache
     private static final CoreSchema CORE = CoreSchema.getInstance();
     private static final BlockingCache<Container, Collection<Integer>> CACHE = CacheManager.getBlockingCache(1000, CacheManager.DAY, "Project Groups", null);
 
-    private static final CacheLoader<Container, Collection<Integer>> GROUP_LIST_LOADER = new CacheLoader<Container, Collection<Integer>>()
-    {
-        @Override
-        public Collection<Integer> load(Container c, Object argument)
-        {
-            String containerClause = c.isRoot() ? "IS NULL" : "= ?";
+    private static final CacheLoader<Container, Collection<Integer>> GROUP_LIST_LOADER = (c, argument) -> {
+        String containerClause = c.isRoot() ? "IS NULL" : "= ?";
 
-            SQLFragment sql = new SQLFragment(
-                "SELECT UserId FROM " + CORE.getTableInfoPrincipals() + "\n" +
-                    "WHERE Type = '" + PrincipalType.GROUP.getTypeChar() + "' AND Container " + containerClause + "\n" +
-                    "ORDER BY LOWER(Name)");  // Force case-insensitve order for consistency
+        SQLFragment sql = new SQLFragment(
+            "SELECT UserId FROM " + CORE.getTableInfoPrincipals() + "\n" +
+                "WHERE Type = '" + PrincipalType.GROUP.getTypeChar() + "' AND Container " + containerClause + "\n" +
+                "ORDER BY LOWER(Name)");  // Force case-insensitve order for consistency
 
-            if (!c.isRoot())
-                sql.add(c);
+        if (!c.isRoot())
+            sql.add(c);
 
-            return Collections.unmodifiableCollection(new SqlSelector(CORE.getSchema(), sql).getCollection(Integer.class));
-        }
+        return Collections.unmodifiableCollection(new SqlSelector(CORE.getSchema(), sql).getCollection(Integer.class));
     };
 
 
