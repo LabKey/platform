@@ -117,7 +117,7 @@ public class SampleTypeContentsView extends QueryView
     {
         PanelButton result = super.createExportButton(recordSelectorColumns);
         ActionURL url = new ActionURL(ExperimentController.ExportSampleTypeAction.class, getContainer());
-        url.addParameter("sampleSetId", _source.getRowId());
+        url.addParameter("sampleTypeId", _source.getRowId());
         result.addSubPanel("XAR", new JspView<>("/org/labkey/experiment/controllers/exp/exportSampleTypeAsXar.jsp", url));
         return result;
     }
