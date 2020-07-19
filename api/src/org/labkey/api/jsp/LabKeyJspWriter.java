@@ -29,15 +29,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class LabKeyJspWriter extends JspWriterWrapper
 {
     private static final Logger LOG = Logger.getLogger(LabKeyJspWriter.class);
-    private static final Logger LOGSTRING = Logger.getLogger(LabKeyJspWriter.class.getName()+".string");
-
-
-    private static final AtomicInteger CHAR_ARRAY_INVOCATIONS = new AtomicInteger();
+    private static final Logger LOGSTRING = Logger.getLogger(LabKeyJspWriter.class.getName() + ".string");
     private static final AtomicInteger STRING_INVOCATIONS = new AtomicInteger();
-    private static final AtomicInteger OBJECT_INVOCATIONS = new AtomicInteger();
-    private static final Set<String> UNIQUE_CHAR_ARRAY_INVOCATIONS = new ConcurrentHashSet<>();
     private static final Set<String> UNIQUE_STRING_INVOCATIONS = new ConcurrentHashSet<>();
-    private static final Set<String> UNIQUE_OBJECT_INVOCATIONS = new ConcurrentHashSet<>();
 
     LabKeyJspWriter(JspWriter jspWriter)
     {
@@ -47,9 +41,7 @@ public class LabKeyJspWriter extends JspWriterWrapper
     @Override
     public void print(char[] s) throws IOException
     {
-        CHAR_ARRAY_INVOCATIONS.incrementAndGet();
-        UNIQUE_CHAR_ARRAY_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString());
-        super.print(s);
+        throw new IllegalStateException("A JSP is attempting to render a character array!");
     }
 
     @Override
@@ -73,16 +65,11 @@ public class LabKeyJspWriter extends JspWriterWrapper
             {
                 obj = ((HasHtmlString) obj).getHtmlString();
             }
-            else if (!(obj instanceof Number) && !(obj instanceof Boolean))
+            // Allow Number and Boolean for convenience -- no encoding needed for those. Also allow null, which is rendered
+            // as "null" (useful when generating JavaScript).
+            else if (null != obj && !(obj instanceof Number) && !(obj instanceof Boolean))
             {
-                OBJECT_INVOCATIONS.incrementAndGet();
-                if (UNIQUE_OBJECT_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString()))
-                {
-                    if (null == obj)
-                        LOG.info("A JSP is attempting to render a null object!", new Throwable());
-                    else
-                        LOG.info("A JSP is rendering an object of class " + obj.getClass().getName(), new Throwable());
-                }
+                throw new IllegalStateException("A JSP is attempting to render an object of class " + obj.getClass().getName() + "!");
             }
         }
 
@@ -93,13 +80,8 @@ public class LabKeyJspWriter extends JspWriterWrapper
     {
         if (AppProps.getInstance().isDevMode())
         {
-            LOG.info("print(char[]) invocations: " + CHAR_ARRAY_INVOCATIONS);
             LOG.info("print(String) invocations: " + STRING_INVOCATIONS);
-            LOG.info("print(Object) invocations: " + OBJECT_INVOCATIONS);
-
-            LOG.info("Unique code points that invoke print(char[]): " + UNIQUE_CHAR_ARRAY_INVOCATIONS.size());
             LOG.info("Unique code points that invoke print(String): " + UNIQUE_STRING_INVOCATIONS.size());
-            LOG.info("Unique code points that invoke print(Object): " + UNIQUE_OBJECT_INVOCATIONS.size());
         }
     }
 }

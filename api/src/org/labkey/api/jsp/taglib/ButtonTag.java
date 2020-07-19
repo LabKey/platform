@@ -55,8 +55,7 @@ public class ButtonTag extends SimpleTagBase
             button.submit(_submit).onClick(onClickScript).name(_name);
         }
 
-        // TODO: HtmlString
-        getOut().print(button.toString());
+        getOut().print(button);
     }
 
     public void setHref(String href)
