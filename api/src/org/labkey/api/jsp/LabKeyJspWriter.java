@@ -15,6 +15,9 @@
  */
 package org.labkey.api.jsp;
 
+import com.google.common.collect.ConcurrentHashMultiset;
+import com.google.common.collect.Multiset;
+import com.google.common.collect.Multiset.Entry;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.settings.AppProps;
@@ -23,7 +26,11 @@ import org.labkey.api.util.HtmlString;
 
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class LabKeyJspWriter extends JspWriterWrapper
@@ -32,6 +39,7 @@ public class LabKeyJspWriter extends JspWriterWrapper
     private static final Logger LOGSTRING = Logger.getLogger(LabKeyJspWriter.class.getName() + ".string");
     private static final AtomicInteger STRING_INVOCATIONS = new AtomicInteger();
     private static final Set<String> UNIQUE_STRING_INVOCATIONS = new ConcurrentHashSet<>();
+    private static final Multiset<String> COUNTING_SET = ConcurrentHashMultiset.create();
 
     LabKeyJspWriter(JspWriter jspWriter)
     {
@@ -47,11 +55,13 @@ public class LabKeyJspWriter extends JspWriterWrapper
     @Override
     public void print(String s) throws IOException
     {
-        STRING_INVOCATIONS.incrementAndGet();
-        if (UNIQUE_STRING_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString()))
+        if (COUNTING_SET.add(Thread.currentThread().getStackTrace()[2].toString()))
         {
-            LOGSTRING.info(" A JSP is printing a string!", new Throwable());
+            LOGSTRING.info( "A JSP is printing a string!", new Throwable());
         }
+
+        STRING_INVOCATIONS.incrementAndGet();
+        UNIQUE_STRING_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString());
 
         super.print(s);
     }
@@ -80,8 +90,22 @@ public class LabKeyJspWriter extends JspWriterWrapper
     {
         if (AppProps.getInstance().isDevMode())
         {
+            Set<Entry<String>> entrySet = COUNTING_SET.entrySet();
+            LOG.info("print(String) invocations: " + COUNTING_SET.size());
+            LOG.info("Unique code points that invoke print(String): " + entrySet.size());
             LOG.info("print(String) invocations: " + STRING_INVOCATIONS);
             LOG.info("Unique code points that invoke print(String): " + UNIQUE_STRING_INVOCATIONS.size());
+
+            if (!entrySet.isEmpty())
+            {
+                List<Entry<String>> entries = new ArrayList<>(entrySet);
+                Comparator<Entry<String>> comparator = Comparator.comparingInt(Entry::getCount);
+                entries.sort(comparator.reversed());
+                LOG.info("Most common print(String) code points:\n   " +
+                    entries.stream().limit(100)
+                        .map(e -> e.getElement() + " x " + e.getCount())
+                        .collect(Collectors.joining("\n   ")));
+            }
         }
     }
 }

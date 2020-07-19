@@ -49,10 +49,10 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.vcs.Vcs;
 import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.ActionURL;
@@ -800,7 +800,7 @@ public class SqlScriptController extends SpringActionController
             html.append("</pre>\n");
 
             html.append("<form method=\"post\">");
-            html.append("<input type=\"hidden\" name=\"" + CSRFUtil.csrfName + "\" value=\"").append(CSRFUtil.getExpectedToken(getViewContext())).append("\">");
+            html.append(new CsrfInput(getViewContext()));
             html.append(PageFlowUtil.button("Save to " + consolidator.getFilename()).submit(true));
             html.append(PageFlowUtil.button("Back").href(getSuccessURL(form)));
             html.append("</form>");

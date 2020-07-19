@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.jsp.taglib.ErrorsTag;
+import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.context.NoSuchMessageException;
@@ -675,12 +676,12 @@ public class DOM
                 for (var attr : attrs)
                 {
                     if (attr.getKey() == Attribute.method && "POST".equalsIgnoreCase(String.valueOf(attr.getValue())))
+                    {
                         isPost = true;
+                        break;
+                    }
                 }
-            var csrfInput = !isPost ? null : DOM.INPUT(at(
-                    Attribute.type,"hidden",
-                    Attribute.name,CSRFUtil.csrfName,
-                    Attribute.value,CSRFUtil.getExpectedToken(HttpView.currentContext())));
+            var csrfInput = !isPost ? null : new CsrfInput(HttpView.currentContext());
             return DOM.FORM(attrs, body, csrfInput);
         }
 

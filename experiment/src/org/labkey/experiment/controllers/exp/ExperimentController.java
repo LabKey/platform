@@ -142,6 +142,7 @@ import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TidyUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DataView;
@@ -2371,7 +2372,7 @@ public class ExperimentController extends SpringActionController
                             PageFlowUtil.filter(form.getHtmlFragment()) +
                             "</textarea><br>" +
                             "<input type=\"submit\">" +
-                            "<input type=hidden name='X-LABKEY-CSRF' value=\"" + CSRFUtil.getExpectedToken(getViewContext()) + "\">" +
+                            new CsrfInput(getViewContext()) +
                             "</form>";
             return new HtmlView(html);
         }

@@ -18,9 +18,8 @@ package org.labkey.api.jsp.taglib;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.util.element.Input;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -174,7 +173,7 @@ public class FormTag extends BodyTagSupport
     @Override
     public int doStartTag() throws JspException
     {
-        // TODO: HtmlString or HTML DOM
+        // TODO: Use HtmlStringBuilder or HTML DOM
         StringBuilder sb = new StringBuilder();
         sb.append("<form");
         if (StringUtils.isNotEmpty(getId()))
@@ -232,10 +231,9 @@ public class FormTag extends BodyTagSupport
         try
         {
             JspWriter out = pageContext.getOut();
-            String csrf = CSRFUtil.getExpectedToken(pageContext);
             if (StringUtils.equals("POST", method))
             {
-                out.print("<input type=\"hidden\" name=\"" + CSRFUtil.csrfName + "\" value=\"" + PageFlowUtil.filter(csrf) + "\">");
+                out.print(new CsrfInput(pageContext));
             }
             out.print("</form>");
         }
