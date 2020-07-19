@@ -181,7 +181,7 @@ public class GroupedResultSet extends ResultSetImpl
         if (_ignoreNext)
         {
             _ignoreNext = false;
-            return true;
+            return hasNext(true);
         }
         Object previousValue;
         if (getRow() > 0)
@@ -197,7 +197,7 @@ public class GroupedResultSet extends ResultSetImpl
         {
             if (!super.next())
             {
-                return false;
+                return hasNext(false);
             }
             currentValue = getObject(_columnIndex);
         }
@@ -205,9 +205,9 @@ public class GroupedResultSet extends ResultSetImpl
 
         if (_lastRow != 0)
         {
-            return getRow() <= _lastRow;
+            return hasNext(getRow() <= _lastRow);
         }
-        return true;
+        return hasNext(true);
     }
 
     public ResultSet getNextResultSet() throws SQLException
@@ -241,12 +241,12 @@ public class GroupedResultSet extends ResultSetImpl
             if (_ignoreNext)
             {
                 _ignoreNext = false;
-                return true;
+                return hasNext(true);
             }
             boolean success = innerNext();
 
             if (!success)
-                return success;
+                return hasNext(success);
 
             if (null == _currentValue)
                 _currentValue = getObject(_columnIndex);
@@ -258,7 +258,7 @@ public class GroupedResultSet extends ResultSetImpl
                 previous();  // Back it up
             }
 
-            return success;
+            return hasNext(success);
         }
 
         @Override
