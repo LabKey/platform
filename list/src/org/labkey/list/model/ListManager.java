@@ -73,16 +73,15 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.list.controllers.ListController;
+import org.labkey.list.model.ListImporter.ValidatorImporter;
 import org.labkey.list.view.ListItemAttachmentParent;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -102,7 +101,7 @@ public class ListManager implements SearchService.DocumentProvider
     private class ListDefCacheLoader implements CacheLoader<String,List<ListDef>>
     {
         @Override
-        public List<ListDef> load(String entityId, @Nullable Object argument)
+        public List<ListDef> load(@NotNull String entityId, @Nullable Object argument)
         {
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), entityId);
             ArrayList<ListDef> ownLists = new TableSelector(getListMetadataTable(), filter, null).getArrayList(ListDef.class);
@@ -1182,15 +1181,16 @@ public class ListManager implements SearchService.DocumentProvider
         return itemRecord;
     }
 
-    boolean importListSchema(ListDefinition unsavedList, String typeColumn, ImportTypesHelper importHelper, User user, List<String> errors) throws Exception
+    boolean importListSchema(ListDefinition unsavedList, String typeColumn, ImportTypesHelper importHelper, User user, Collection<ValidatorImporter> validatorImporters, List<String> errors) throws Exception
     {
         if (!errors.isEmpty())
             return false;
 
         final Container container = unsavedList.getContainer();
-        final String typeURI = unsavedList.getDomain().getTypeURI();
+        final Domain domain = unsavedList.getDomain();
+        final String typeURI = domain.getTypeURI();
 
-        DomainURIFactory factory = name -> new Pair<>(typeURI,container);
+        DomainURIFactory factory = name -> new Pair<>(typeURI, container);
 
         ImportPropertyDescriptorsList pds = importHelper.getImportPropertyDescriptors(factory, errors, container);
 
@@ -1208,13 +1208,15 @@ public class ListManager implements SearchService.DocumentProvider
 
         for (ImportPropertyDescriptor ipd : pds.properties)
         {
-            DomainProperty domainProperty = unsavedList.getDomain().addPropertyOfPropertyDescriptor(ipd.pd);
-            ipd.validators.forEach(domainProperty::addValidator);
+            DomainProperty domainProperty = domain.addPropertyOfPropertyDescriptor(ipd.pd);
             domainProperty.setConditionalFormats(ipd.formats);
             domainProperty.setDefaultValue(ipd.defaultValue);
         }
 
         unsavedList.save(user);
+
+        // Save validators later, after all the lists are imported, #40343
+        validatorImporters.add(new ValidatorImporter(domain.getTypeId(), pds.properties, user));
 
         return true;
     }
