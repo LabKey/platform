@@ -27,6 +27,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
@@ -133,29 +134,28 @@ public class MiniProfiler
         SETTINGS_CACHE.remove(user);
     }
 
-    public static String renderInitScript(long currentId, Set<Long> ids, String version)
+    public static HtmlString renderInitScript(long currentId, Set<Long> ids, String version)
     {
         Settings settings = getSettings();
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("<script type='text/javascript'>\n");
-        sb.append("LABKEY.internal.MiniProfiler.init({\n");
-        sb.append("  currentId:").append(currentId).append(",\n");
-        sb.append("  ids:").append(ids).append(",\n");
-        sb.append("  version:").append(version).append(",\n");
-        sb.append("  renderPosition:'").append(settings.getRenderPosition().getStyle()).append("',\n");
-        sb.append("  showTrivial:").append(settings.isShowTrivial()).append(",\n");
-        sb.append("  trivialMilliseconds:").append(settings.getTrivialMillis()).append(",\n");
-        sb.append("  showChildrenTime:").append(settings.isShowChildrenTime()).append(",\n");
-        sb.append("  maxTracesToShow:").append(20).append(",\n");
-        sb.append("  showControls:").append(settings.isShowControls()).append(",\n");
-        sb.append("  authorized:true,\n");
-        sb.append("  toggleShortcut:'").append(settings.getToggleShortcut() != null ? settings.getToggleShortcut() : "").append("',\n");
-        sb.append("  startHidden:").append(settings.isStartHidden()).append("\n");
-        sb.append("});\n");
-        sb.append("</script>\n");
-
-        return sb.toString();
+        return HtmlString.unsafe(
+            "<script type='text/javascript'>\n" +
+            "LABKEY.internal.MiniProfiler.init({\n" +
+            "  currentId:" + currentId + ",\n" +
+            "  ids:" + ids + ",\n" +
+            "  version:" + version + ",\n" +
+            "  renderPosition:'" + settings.getRenderPosition().getStyle() + "',\n" +
+            "  showTrivial:" + settings.isShowTrivial() + ",\n" +
+            "  trivialMilliseconds:" + settings.getTrivialMillis() + ",\n" +
+            "  showChildrenTime:" + settings.isShowChildrenTime() + ",\n" +
+            "  maxTracesToShow:" + 20 + ",\n" +
+            "  showControls:" + settings.isShowControls() + ",\n" +
+            "  authorized:true,\n" +
+            "  toggleShortcut:'" + (settings.getToggleShortcut() != null ? settings.getToggleShortcut() : "") + "',\n" +
+            "  startHidden:" + settings.isStartHidden() + "\n" +
+            "});\n" +
+            "</script>\n"
+        );
     }
 
     public static void addObject(Object object)
