@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JavaScriptFragment;
 
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
@@ -62,7 +63,7 @@ public class LabKeyJspWriter extends JspWriterWrapper
     @Override
     public void print(Object obj) throws IOException
     {
-        if (!(obj instanceof HtmlString))
+        if (!(obj instanceof HtmlString) && !(obj instanceof JavaScriptFragment))
         {
             if (obj instanceof HasHtmlString)
             {
