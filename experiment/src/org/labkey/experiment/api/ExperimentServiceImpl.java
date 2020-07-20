@@ -960,14 +960,15 @@ public class ExperimentServiceImpl implements ExperimentService
         return toExpProtocol(p, useCache);
     }
 
-    private ExpProtocolImpl toExpProtocol(Protocol p, boolean cache)
+    @NotNull
+    private ExpProtocolImpl toExpProtocol(@Nullable Protocol p, boolean cache)
     {
         ExpProtocolImpl result = p == null ? null : new ExpProtocolImpl(p);
-        if (cache)
+        if (cache && result != null)
         {
             Cache<String, ExpProtocolImpl> c = getProtocolCache();
-            c.put(getCacheKey(p.getLSID()), result);
-            c.put("ROWID/" + p.getRowId(), result);
+            c.put(getCacheKey(result.getLSID()), result);
+            c.put("ROWID/" + result.getRowId(), result);
         }
         return result;
     }
