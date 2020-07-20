@@ -670,7 +670,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
                             DataView dataView = allResultsQueryView.createDataView();
                             try (Results r = dataView.getDataRegion().getResults(dataView.getRenderContext()))
                             {
-                                final int rowCount = r.getSize();
+                                final int rowCount = r.countAll();
 
                                 baseQueryView.setMessageSupplier(dataRegion -> {
                                     if (dataRegion.getTotalRows() != null && dataRegion.getTotalRows() < rowCount)
