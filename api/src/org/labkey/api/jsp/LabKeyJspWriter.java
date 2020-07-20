@@ -89,9 +89,10 @@ public class LabKeyJspWriter extends JspWriterWrapper
 
             if (!entrySet.isEmpty())
             {
+                // Sort entries first by count, then by code point, which will group by file and order by line number
                 List<Entry<String>> entries = new ArrayList<>(entrySet);
                 Comparator<Entry<String>> comparator = Comparator.comparingInt(Entry::getCount);
-                entries.sort(comparator.reversed());
+                entries.sort(comparator.reversed().thenComparing(Entry::getElement));
                 LOG.info("Most common print(String) code points:\n   " +
                     entries.stream().limit(100)
                         .map(e -> e.getElement() + " x " + e.getCount())
