@@ -16,6 +16,8 @@
 package org.labkey.api.jsp.taglib;
 
 import org.labkey.api.util.DOM;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 
 import javax.servlet.jsp.JspException;
@@ -87,10 +89,34 @@ public class PanelTag extends BodyTagSupport
         this.width = width;
     }
 
+    Pair<HtmlString,HtmlString> tag;
+
     @Override
     public int doStartTag() throws JspException
     {
-        return BodyTagSupport.EVAL_BODY_BUFFERED;
+        String style = getWidth() != null ? "width: " + getWidth() + "px;" : "";
+
+        tag = DOM.renderWithPlaceHolder(
+            DIV(cl("panel", "panel-" + getType(), getClassName()).at(DOM.Attribute.id, getId(), DOM.Attribute.style, style),
+                isBlank(getTitle()) ? null :
+                    DIV(cl("panel-heading"),
+                        H3(cl("panel-title", "pull-left"), getTitle()),
+                        DIV(cl("clearfix"))
+                    ),
+                DIV(cl("panel-body"), DOM.BODY_PLACE_HOLDER)
+            )
+        );
+
+        try
+        {
+            pageContext.getOut().print(tag.first);
+        }
+        catch(IOException x)
+        {
+            throw UnexpectedException.wrap(x);
+        }
+
+        return BodyTagSupport.EVAL_BODY_INCLUDE;
     }
 
     @Override
@@ -98,42 +124,13 @@ public class PanelTag extends BodyTagSupport
     {
         try
         {
-            String style = getWidth() != null ? "width: " + getWidth() + "px;" : "";
-            DIV(
-                cl("panel", "panel-" + getType(), getClassName()).at(DOM.Attribute.id, getId(), DOM.Attribute.style, style),
-                isBlank(getTitle()) ? null :
-                    DIV(
-                        cl("panel-heading"),
-                        H3(cl("panel-title", "pull-left"), getTitle()),
-                        DIV(cl("clearfix"))
-                    ),
-                DIV(
-                    cl("panel-body"),
-                    getRenderableBodyContent()
-                )
-            ).appendTo(pageContext.getOut());
-            return BodyTagSupport.EVAL_PAGE;
+            pageContext.getOut().print(tag.second);
         }
-        catch (Exception x)
+        catch(IOException x)
         {
-            throw new JspException(x);
+            throw UnexpectedException.wrap(x);
         }
-    }
 
-    // CONSIDER: make a new base class for this method
-    DOM.Renderable getRenderableBodyContent()
-    {
-        return sb ->
-        {
-            try
-            {
-                sb.append(getBodyContent().getString());
-                return sb;
-            }
-            catch(IOException x)
-            {
-                throw UnexpectedException.wrap(x);
-            }
-        };
+        return BodyTagSupport.EVAL_PAGE;
     }
 }

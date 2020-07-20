@@ -52,6 +52,38 @@ public class DOM
         Appendable appendTo(Appendable sb);
     }
 
+    static final String BODY_PLACE_HOLDER_STRING = "<!-- org.labkey.api.util.DOM.BODYCONTENT!" + GUID.makeHash() + "-->";
+    public static Renderable BODY_PLACE_HOLDER = new Renderable()
+    {
+        @Override
+        public Appendable appendTo(Appendable sb)
+        {
+            try
+            {
+                sb.append(BODY_PLACE_HOLDER_STRING);
+                return sb;
+            }
+            catch (Exception x)
+            {
+                throw UnexpectedException.wrap(x);
+            }
+        }
+    };
+
+    /*
+    * This is mostly for retro-fitting JSP tags implementatoins that want to use DOM, useful when the
+    * wrapping HTML is pretty small compared to the body.  Avoid outside JSP Tags.
+    */
+    public static Pair<HtmlString,HtmlString> renderWithPlaceHolder(Renderable r)
+    {
+        StringBuilder sb = new StringBuilder();
+        r.appendTo(sb);
+        String[] split = StringUtils.splitByWholeSeparator(sb.toString(),BODY_PLACE_HOLDER_STRING);
+        if (split.length != 2)
+            throw new IllegalArgumentException();
+        return new Pair<>(HtmlString.unsafe(split[0]),HtmlString.unsafe(split[1]));
+    }
+
     public enum Element
     {
         a,
@@ -269,7 +301,16 @@ public class DOM
         multiple,
         muted,
         name,
-        novalidate,
+        novalidate
+        {
+            @Override
+            Appendable render(Appendable builder, Object value) throws IOException
+            {
+                if (value != Boolean.FALSE)
+                    builder.append(" novalidate");
+                return builder;
+            }
+        },
         onabort,
         onafterprint,
         onbeforeprint,
