@@ -191,7 +191,7 @@ public class SecurityPolicyManager
     public static void notifyPolicyChange(String objectID)
     {
         // UNDONE: generalize cross manager/module notifications
-        ContainerManager.notifyContainerChange(objectID);
+        ContainerManager.notifyContainerChange(objectID, ContainerManager.Property.Policy);
     }
 
     public static void notifyPolicyChanges(List<String> objectIDs)

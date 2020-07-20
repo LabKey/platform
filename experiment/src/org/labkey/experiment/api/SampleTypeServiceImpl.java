@@ -598,13 +598,13 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
             throws ExperimentException
     {
         return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3,
-                parentCol, nameExpression, templateInfo, null);
+                parentCol, nameExpression, templateInfo, null, null);
     }
 
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases)
+                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor)
         throws ExperimentException
     {
         if (name == null)
@@ -642,6 +642,11 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         int nameExpMax = materialSourceTable.getColumn("NameExpression").getScale();
         if (nameExpression != null && nameExpression.length() > nameExpMax)
             throw new ExperimentException("Name expression may not exceed " + nameExpMax + " characters.");
+
+        // Validate the label color length
+        int labelColorMax = materialSourceTable.getColumn("LabelColor").getScale();
+        if (labelColor != null && labelColor.length() > labelColorMax)
+            throw new ExperimentException("Label color may not exceed " + labelColorMax + " characters.");
 
         Lsid lsid = getSampleTypeLsid(name, c);
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
@@ -701,6 +706,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         source.setMaterialLSIDPrefix(new Lsid.LsidBuilder("Sample", c.getRowId() + "." + PageFlowUtil.encode(name), "").toString());
         if (nameExpression != null)
             source.setNameExpression(nameExpression);
+        source.setLabelColor(labelColor);
         source.setContainer(c);
         source.setMaterialParentImportAliasMap(importAliasJson);
 
@@ -857,6 +863,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
                 st.setNameExpression(sampleIdPattern);
             }
 
+            st.setLabelColor(options.getLabelColor());
             st.setImportAliasMap(options.getImportAliases());
         }
 

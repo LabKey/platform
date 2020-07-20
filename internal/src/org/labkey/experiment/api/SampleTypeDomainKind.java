@@ -319,6 +319,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         if (StringUtils.isNotBlank(options.getNameExpression()) && options.getNameExpression().length() > nameExpMax)
             throw new IllegalArgumentException("Value for Name Expression field may not exceed " + nameExpMax + " characters.");
 
+        int labelColorMax = materialSourceTI.getColumn("LabelColor").getScale();
+        if (StringUtils.isNotBlank(options.getLabelColor()) && options.getLabelColor().length() > labelColorMax)
+            throw new IllegalArgumentException("Value for Label Color field may not exceed " + labelColorMax + " characters.");
+
         Map<String, String> aliasMap = options.getImportAliases();
         if (aliasMap == null || aliasMap.size() == 0)
             return;
@@ -390,6 +394,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         int idCol3 = -1;
         int parentCol = -1;
         String nameExpression = null;
+        String labelColor = null;
         Map<String, String> aliases = null;
 
         if (arguments != null)
@@ -401,14 +406,14 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             idCol3 = idCols.size() > 2 ? idCols.get(2) : -1;
             parentCol = arguments.getParentCol() != null ? arguments.getParentCol() : -1;
 
-
             nameExpression = StringUtils.trimToNull(arguments.getNameExpression());
+            labelColor = StringUtils.trimToNull(arguments.getLabelColor());
             aliases = arguments.getImportAliases();
         }
         ExpSampleType st;
         try
         {
-            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo, aliases);
+            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo, aliases, labelColor);
         }
         catch (SQLException e)
         {

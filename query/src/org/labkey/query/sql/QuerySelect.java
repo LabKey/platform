@@ -1767,8 +1767,6 @@ groupByLoop:
     @Override
     Collection<String> getKeyColumns()
     {
-        if (!_resolved)
-            throw new IllegalStateException();
         // TODO handle multi column primary keys
         // TODO handle group by/distinct
         if (_tables.size() != 1 || null != _distinct || null != _groupBy || this.isAggregate())
