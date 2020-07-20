@@ -22,20 +22,16 @@ import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.util.element.Input;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.tagext.BodyTagSupport;
 import java.io.IOException;
-import java.util.jar.Attributes;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.labkey.api.util.DOM.FORM;
 
 public class FormTag extends BodyTagSupport
 {
