@@ -38,7 +38,7 @@
     be stripped. Both are efforts to ensure that sensitive data is not sent to Google Analytics.</p>
 
 <labkey:errors/>
-<labkey:form action="<%=h(new ActionURL(AnalyticsController.BeginAction.class, ContainerManager.getRoot()))%>" method="POST">
+<labkey:form action="<%=new ActionURL(AnalyticsController.BeginAction.class, ContainerManager.getRoot())%>" method="POST">
     <table>
         <tr>
             <td valign=top nowrap>

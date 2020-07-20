@@ -55,7 +55,7 @@
 %>
 <%=text(errorHTML)%>
 
-<labkey:form action="<%=h(buildURL(AdminController.CustomizeEmailAction.class))%>" method="post">
+<labkey:form action="<%=buildURL(AdminController.CustomizeEmailAction.class)%>" method="post">
     <% if (bean.getReturnUrl() != null) { %>
         <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>" />
     <% } %>

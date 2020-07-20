@@ -19,7 +19,6 @@ import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
 import org.apache.log4j.Logger;
-import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
@@ -31,14 +30,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class LabKeyJspWriter extends JspWriterWrapper
 {
     private static final Logger LOG = Logger.getLogger(LabKeyJspWriter.class);
     private static final Logger LOGSTRING = Logger.getLogger(LabKeyJspWriter.class.getName() + ".string");
-    private static final AtomicInteger STRING_INVOCATIONS = new AtomicInteger();
-    private static final Set<String> UNIQUE_STRING_INVOCATIONS = new ConcurrentHashSet<>();
     private static final Multiset<String> COUNTING_SET = ConcurrentHashMultiset.create();
 
     LabKeyJspWriter(JspWriter jspWriter)
@@ -59,9 +55,6 @@ public class LabKeyJspWriter extends JspWriterWrapper
         {
             LOGSTRING.info( "A JSP is printing a string!", new Throwable());
         }
-
-        STRING_INVOCATIONS.incrementAndGet();
-        UNIQUE_STRING_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString());
 
         super.print(s);
     }
@@ -93,8 +86,6 @@ public class LabKeyJspWriter extends JspWriterWrapper
             Set<Entry<String>> entrySet = COUNTING_SET.entrySet();
             LOG.info("print(String) invocations: " + COUNTING_SET.size());
             LOG.info("Unique code points that invoke print(String): " + entrySet.size());
-            LOG.info("print(String) invocations: " + STRING_INVOCATIONS);
-            LOG.info("Unique code points that invoke print(String): " + UNIQUE_STRING_INVOCATIONS.size());
 
             if (!entrySet.isEmpty())
             {

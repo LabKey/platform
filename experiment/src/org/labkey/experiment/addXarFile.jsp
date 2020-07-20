@@ -22,7 +22,7 @@
 
 <labkey:errors />
 <p>
-<labkey:form name="upload" action="<%=h(buildURL(ExperimentController.ShowAddXarFileAction.class))%>" enctype="multipart/form-data" method="post" layout="horizontal">
+<labkey:form name="upload" action="<%=buildURL(ExperimentController.ShowAddXarFileAction.class)%>" enctype="multipart/form-data" method="post" layout="horizontal">
     <labkey:input type="file" label="Local File" id="UploadFile" name="uploadFile" value="" size="60"/>
     <%= button("Upload").submit(true) %>
 </labkey:form>

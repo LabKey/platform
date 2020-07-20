@@ -63,7 +63,7 @@
             <br/>Additionally, any further modifications to this report will be reflected in the link as viewed by the recipient.</p>
 
         <labkey:errors/>
-        <labkey:form action="<%=h(urlFor(ShareReportAction.class))%>" method="POST" layout="horizontal">
+        <labkey:form action="<%=urlFor(ShareReportAction.class)%>" method="POST" layout="horizontal">
             <b>Recipients (one per line):</b>
             <labkey:autoCompleteTextArea
                 name="recipientList" id="recipientList" rows="6" cols="95"

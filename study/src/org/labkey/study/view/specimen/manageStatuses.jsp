@@ -46,7 +46,7 @@ function showSystemRows(value)
 }
 
 </script>
-<labkey:form action="<%=h(buildURL(SpecimenController.ManageStatusesAction.class))%>" name="manageStatuses" method="POST">
+<labkey:form action="<%=buildURL(SpecimenController.ManageStatusesAction.class)%>" name="manageStatuses" method="POST">
     <p>
         Request statuses help a coordinator organize and track requests through the system and
         communicate progress to requesters. All requests do not need to pass through all states.

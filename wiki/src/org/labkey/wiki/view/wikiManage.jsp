@@ -98,7 +98,7 @@
     }
 </script>
 
-<labkey:form method="post" name="manage" action="<%=h(buildURL(WikiController.ManageAction.class))%>" enctype="multipart/form-data" onsubmit="return checkWikiName(name.value)">
+<labkey:form method="post" name="manage" action="<%=buildURL(WikiController.ManageAction.class)%>" enctype="multipart/form-data" onsubmit="return checkWikiName(name.value)">
 <input type="hidden" name="containerPath" value="<%=h(c.getPath())%>">
 
 <table>

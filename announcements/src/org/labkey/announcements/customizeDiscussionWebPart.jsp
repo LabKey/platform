@@ -25,9 +25,9 @@
     Portal.WebPart part = me.getModelBean();
     Map<String, String> props = part.getPropertyMap();
 %>
-This webpart displays a single discussion.  It's designed to work in conjunction with custom pages built using the JavaScript API, though it could be placed on a portal page to display a single, specific discussion.<br><br>
+This webpart displays a single discussion. It's designed to work in conjunction with custom pages built using the JavaScript API, though it could be placed on a portal page to display a single, specific discussion.<br><br>
 
-<labkey:form name="frmCustomize" method="post" action="<%=h(part.getCustomizePostURL(getViewContext()))%>">
+<labkey:form name="frmCustomize" method="post" action="<%=part.getCustomizePostURL(getViewContext())%>">
     <table>
         <tr>
             <td>Entity Id:</td>

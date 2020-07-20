@@ -31,7 +31,7 @@
 %>
 
 <labkey:errors/>
-<labkey:form action="<%=h(buildURL(SpecimenController.ManageDisplaySettingsAction.class))%>" method="POST">
+<labkey:form action="<%=buildURL(SpecimenController.ManageDisplaySettingsAction.class)%>" method="POST">
     <table class="labkey-manage-display" width=600>
         <tr>
             <td colspan="2" class="labkey-announcement-title" align="left">

@@ -51,7 +51,7 @@
 </script>
 
 &nbsp;&nbsp;
-<labkey:form action="<%= h(escalateURL.getURIString())%>" method="post">
+<labkey:form action="<%=escalateURL.getURIString()%>" method="post">
     <input type="hidden" name="detailsUrl" value="<%=cancelUrl.getURIString()%>"/>
     <table width="100%">
         <tr class="labkey-wp-header"><th colspan=2><b>Escalate Pipeline Job Failure</b></th></tr>

@@ -168,7 +168,7 @@
         return true;
     }
 </script>
-<labkey:form action="<%=h(buildURL(SpecimenController.HandleUpdateRequestInputsAction.class))%>" method="POST" onsubmit="return verifyForm()">
+<labkey:form action="<%=buildURL(SpecimenController.HandleUpdateRequestInputsAction.class)%>" method="POST" onsubmit="return verifyForm()">
     <table id="inputTable" class="lk-fields-table">
         <tr>
             <th valign="bottom">&nbsp;</th>

@@ -40,7 +40,7 @@
         return true;
     }
 </script>
-<labkey:form action="<%=h(buildURL(StudyController.CustomizeParticipantViewAction.class))%>" name="editorForm" method="POST">
+<labkey:form action="<%=buildURL(StudyController.CustomizeParticipantViewAction.class)%>" name="editorForm" method="POST">
     <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl())%>">
     <input type="hidden" name="reshow" value="false">
     <input type="hidden" name="participantId" value="<%= h(bean.getParticipantId()) %>">

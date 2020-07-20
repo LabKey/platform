@@ -116,7 +116,7 @@ function toggleItemSelector()
 }
 
 </script>
-<labkey:form action="<%=h(buildURL(AdminController.ReorderFoldersAction.class))%>" name="reorder" method="POST" onsubmit="saveList()">
+<labkey:form action="<%=buildURL(AdminController.ReorderFoldersAction.class)%>" name="reorder" method="POST" onsubmit="saveList()">
 <p>
     <label><input type="radio" name="resetToAlphabetical" value="true"<%=checked(!isCustomOrder)%> onChange="toggleItemSelector();"/> Sort <%= reorderingProjects ? "projects" : "folders" %> alphabetically</label><br>
     <label><input type="radio" name="resetToAlphabetical" value="false"<%=checked(isCustomOrder)%> onChange="toggleItemSelector();" /> Use custom <%= reorderingProjects ? "project" : "folder" %> order </label>

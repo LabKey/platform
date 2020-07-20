@@ -199,7 +199,7 @@
                                 </td>
                             </tr>
                         </table>
-                        <labkey:form action="<%=h(buildURL(WikiController.AttachFilesAction.class))%>" method="POST" enctype="multipart/form-data" id="form-files">
+                        <labkey:form action="<%=buildURL(WikiController.AttachFilesAction.class)%>" method="POST" enctype="multipart/form-data" id="form-files">
                             <table id="wiki-existing-attachments"></table>
                             <br>
                             <table id="wiki-new-attachments"></table>

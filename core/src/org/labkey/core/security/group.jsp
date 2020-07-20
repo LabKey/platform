@@ -153,7 +153,7 @@
 
 </script>
 
-<labkey:form id="groupMembersForm" action="<%=h(buildURL(GroupAction.class))%>" method="POST" layout="horizontal">
+<labkey:form id="groupMembersForm" action="<%=buildURL(GroupAction.class)%>" method="POST" layout="horizontal">
 <%
 if (bean.messages.size() > 0)
 {
@@ -315,7 +315,7 @@ if (!bean.isSystemGroup)
     if (bean.members.size() == 0)
     {
         %>
-        <labkey:form action="<%=h(buildURL(SecurityController.StandardDeleteGroupAction.class))%>" method="POST">
+        <labkey:form action="<%=buildURL(SecurityController.StandardDeleteGroupAction.class)%>" method="POST">
         <%= button("Delete Empty Group").submit(true).onClick("return confirm('Permanently delete group " + bean.groupName + "?')") %>
         <input type="hidden" name="group" value="<%= h(bean.groupName) %>">
         </labkey:form>

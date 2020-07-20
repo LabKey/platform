@@ -282,7 +282,7 @@
     var _unenrolled = <%=unenrolledIndex%>;
     var _hasUnenrolledCohorts = <%=hasUnenrolledCohorts%>;
 
-    // set a default number of ptids per column, but we will calcualte this on render based on the webpart width
+    // set a default number of ptids per column, but we will calculate this on render based on the webpart width
     var MIN_PTIDS_PER_COL = 24, sumPtidLength = 0, avgPtidLength = 0;
 
     var h, i, ptid;

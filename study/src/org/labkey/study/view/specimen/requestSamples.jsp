@@ -105,7 +105,7 @@ function setDefaults()
     return true;
 }
 </script>
-<labkey:form name="CreateSampleRequest" action="<%=h(buildURL(SpecimenController.HandleCreateSampleRequestAction.class))%>" method="POST">
+<labkey:form name="CreateSampleRequest" action="<%=buildURL(SpecimenController.HandleCreateSampleRequestAction.class)%>" method="POST">
     <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
     <%
         if (vials != null)
