@@ -60,9 +60,9 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
             tpl: Ext4.create('Ext.XTemplate',
                 '<tpl for=".">',
                     '<tpl if="active">',
-                        '<div class="x4-boundlist-item">{displayName:htmlEncode}</div>',
+                        '<div class="x4-boundlist-item">{email:htmlEncode} ({displayName:htmlEncode})</div>',
                     '<tpl else>',
-                        '<div class="x4-boundlist-item" style="color: #999999;">{displayName:htmlEncode} (inactive)</div>',
+                        '<div class="x4-boundlist-item" style="color: #999999;">{email:htmlEncode} ({displayName:htmlEncode}) (inactive)</div>',
                     '</tpl>',
                 '</tpl>')
         });
@@ -83,6 +83,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
                 extend: 'Ext.data.Model',
                 fields: [
                     {name: 'userId', type: 'integer'},
+                    {name: 'email', type: 'string'},
                     {name: 'displayName', type: 'string'},
                     {name: 'active', type: 'boolean'}
                 ]
@@ -91,6 +92,13 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
 
         return Ext4.create('Ext.data.Store', {
             model: 'LABKEY.Security.ImpersonationUsers',
+            // Hard-code the sort for now. TODO: provide an option in the UI to switch sort between email & display name
+            sorters: [
+                {
+                    property : 'email',
+                    direction: 'ASC'
+                },
+            ],
             autoLoad: true,
             proxy: {
                 type: 'ajax',

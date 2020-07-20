@@ -45,6 +45,9 @@ LABKEY.Mothership = (function () {
     // Maximum number of milliseconds to attempt hook installation before giving up.
     var _maxDelayMillis = 4*1000;
 
+    function enable(enabled) {
+        _enabled = enabled;
+    }
 
     function log() {
         if (_debug && console && console.debug)
@@ -769,6 +772,9 @@ LABKEY.Mothership = (function () {
     function initEventListeners() {
         window.addEventListener('error', report);
 
+        // 40910: mute reporting errors when page unloads
+        window.addEventListener('beforeunload', function() { enable(false); });
+
         // catch unhandled errors in promises
         // https://developer.mozilla.org/en-US/docs/Web/Events/unhandledrejection
         if (window.hasOwnProperty('onunhandledrejection')) {
@@ -804,7 +810,7 @@ LABKEY.Mothership = (function () {
         hookLabKey : function () { if (_hookLabKey) { replaceLabKeyListeners(0); } },
 
         /** Turn error reporting on or off (default is on). */
-        enable  : function (b) { _enabled = b; },
+        enable: enable,
 
         /** Process and updates a stack trace by integrating available source map information */
         processStackTrace : processStackTrace,

@@ -17,14 +17,23 @@
 package org.labkey.api.security;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 
 import javax.mail.Address;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -36,6 +45,8 @@ import java.util.Map;
  */
 public class ValidEmail
 {
+    private static final Logger LOG = Logger.getLogger(ValidEmail.class);
+
     private final InternetAddress _internetAddress;
 
     public ValidEmail(String rawEmail) throws InvalidEmailException
@@ -101,9 +112,36 @@ public class ValidEmail
         if (null == trimmed)
             return null;
 
-        // If no domain, add the default domain
+        // If no domain, need to resolve to a full ID
         if (!trimmed.contains("@"))
         {
+            // Look if the user domain has a custom property that's meant to match the value from the login form
+            // Use the search user so that we can get the full set of custom columns via the UserSchema
+            UserSchema schema = QueryService.get().getUserSchema(User.getSearchUser(), ContainerManager.getRoot(), "core");
+            TableInfo usersTable = schema.getTable("SiteUsers");
+
+            // Use a "uid" column, if present, to map a username typed into the form to a full email address
+            ColumnInfo uidColumn = usersTable.getColumn("uid");
+            if (uidColumn != null)
+            {
+                LOG.debug("Found field in users table to use to match against login form: " + uidColumn.getName());
+                Collection<Map<String, Object>> matchingUsers = new TableSelector(usersTable, new SimpleFilter(uidColumn.getFieldKey(), rawEmail), null).getMapCollection();
+                if (matchingUsers.size() == 1)
+                {
+                    String fullEmail = (String) matchingUsers.iterator().next().get("Email");
+                    if (fullEmail != null)
+                    {
+                        LOG.debug("Found match for '" + rawEmail + "', resolved to '" + fullEmail + "'");
+                        return fullEmail;
+                    }
+                }
+                else
+                {
+                    LOG.debug("Found " + matchingUsers.size() + " matches for '" + rawEmail + "', unable to resolve unique email address");
+                }
+            }
+
+            LOG.debug("Resolving user name '" + rawEmail + "' using default domain '" + getDefaultDomain() + "'");
             String domain = getDefaultDomain();
 
             if (null != domain && domain.length() > 0)

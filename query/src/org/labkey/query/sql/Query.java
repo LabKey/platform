@@ -1705,7 +1705,11 @@ public class Query
         new SqlTest("WITH UserCTE AS (SELECT 1001 as UserId) \n" +
                 "SELECT U1.UserId Expr1, U2.UserId Expr2\n" +
                 "FROM UserCTE AS U1, UserCTE AS U2 \n" +
-                "WHERE U1.UserId = U2.UserId", 2, 1)
+                "WHERE U1.UserId = U2.UserId", 2, 1),
+
+        // 40830, this query caused a problem because it has no simple field references (only an expression) and so
+        // getSuggestedColumns() is not called on the inner SELECT and therefore resolveFields() was not called before getKeyColumns()
+        new SqlTest("SELECT Name || '-' || Label FROM (SELECT Name, Label FROM core.Modules) M")
     };
 
 
@@ -1740,7 +1744,7 @@ public class Query
         new SqlTest("SELECT regr_slope(seven, d), day FROM R GROUP BY day", 2, 7),
         new SqlTest("SELECT regr_sxx(seven, d), day FROM R GROUP BY day", 2, 7),
         new SqlTest("SELECT regr_sxy(seven, d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT regr_syy(seven, d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT regr_syy(seven, d), day FROM R GROUP BY day", 2, 7)
     };
 
 

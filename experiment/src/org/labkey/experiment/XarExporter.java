@@ -585,6 +585,10 @@ public class XarExporter
         {
             xSampleSet.setNameExpression(sampleType.getNameExpression());
         }
+        if (sampleType.getLabelColor() != null)
+        {
+            xSampleSet.setLabelColor(sampleType.getLabelColor());
+        }
 
         Domain domain = sampleType.getDomain();
         queueDomain(domain);
