@@ -52,9 +52,9 @@ public class LabKeyJspWriter extends JspWriterWrapper
     @Override
     public void print(String s) throws IOException
     {
-        if (COUNTING_SET.add(Thread.currentThread().getStackTrace()[2].toString()))
+        if (0 == COUNTING_SET.add(Thread.currentThread().getStackTrace()[2].toString(), 1))
         {
-            LOGSTRING.info( "A JSP is printing a string!", new Throwable());
+            LOGSTRING.info(" A JSP is printing a string!", new Throwable());
         }
 
         super.print(s);

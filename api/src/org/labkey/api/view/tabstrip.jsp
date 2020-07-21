@@ -61,7 +61,7 @@
     </ul>
     <div class="labkey-tab-strip-spacer"></div>
     <div class="labkey-tab-strip-content">
-        <div id="<%=view._prefix%>tabContent"><%
+        <div id="<%=h(view._prefix)%>tabContent"><%
             ModelAndView tabView = view.getTabView(tabId);
             if (tabView != null)
             {

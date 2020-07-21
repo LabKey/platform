@@ -69,7 +69,7 @@
             {
                 ActionURL downloadURL = WikiController.getDownloadURL(getContainer(), model.getWiki(), att.getName());
                 %>
-                    <%=sep%>
+                    <%=h(sep)%>
                     {
                         name: <%=q(att.getName())%>,
                         iconUrl: <%=q(getViewContext().getContextPath() + att.getFileIcon())%>,
@@ -87,8 +87,8 @@
             for (WikiRendererType format : WikiRendererType.values())
             {
         %>
-            <%=sep%>
-            <%=format.name()%>: <%=q(format.getDisplayName())%>
+            <%=h(sep)%>
+            <%=format%>: <%=q(format.getDisplayName())%>
         <%
                 sep = ",";
             }

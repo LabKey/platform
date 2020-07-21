@@ -58,7 +58,7 @@
             webpartId: <%= webPartId %>,
             manageView: <%= manageView%>,
             fullPage: <%= manageView%>,
-            returnUrl: '<%= getActionURL().getLocalURIString()%>',
+            returnUrl: <%=q(getActionURL().getLocalURIString())%>,
             allowCustomize: <%= getContainer().hasPermission(u, AdminPermission.class) %>,
             allowEdit: <%= getContainer().hasPermission(u, InsertPermission.class) %>,
             autoResize: true
