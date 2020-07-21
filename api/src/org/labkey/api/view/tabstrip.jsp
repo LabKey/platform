@@ -38,7 +38,7 @@
             if (null != tab.getText() && tab.getText().length() > 0)
             {
             %>
-            <li class="<%=(tab.getId().equalsIgnoreCase(tabId) ? "labkey-tab-active" : "labkey-tab-inactive")%>" id="<%=view._prefix%>tab<%=tab.getId()%>"><%
+            <li class="<%=h(tab.getId().equalsIgnoreCase(tabId) ? "labkey-tab-active" : "labkey-tab-inactive")%>" id="<%=h(view._prefix + "tab" + tab.getId())%>"><%
 
             if (tab.getScript() == null && tab.getHref() == null)
             {
