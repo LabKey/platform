@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page import="org.labkey.study.view.StudySummaryWebPartFactory" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudySummaryWebPartFactory.StudySummaryBean> me = (JspView<StudySummaryWebPartFactory.StudySummaryBean>) HttpView.currentView();
@@ -68,7 +69,7 @@
 
     boolean isAdmin = c.hasPermission(user, AdminPermission.class);
     ActionURL url = new ActionURL(StudyController.BeginAction.class, bean.getStudy().getContainer());
-    String descriptionHtml = bean.getDescriptionHtml();
+    HtmlString descriptionHtml = bean.getDescriptionHtml();
     String investigator = bean.getInvestigator();
     String grant = bean.getGrant();
     List<Attachment> protocolDocs = bean.getProtocolDocuments();
@@ -135,16 +136,12 @@
         </td>
 
         <td style="vertical-align:top;border-left:solid #DDDDDD 1px;padding-left:1em">
-                <a href="<%=h(BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%>"><img src="<%=request.getContextPath()%>/_images/studyNavigator.gif" alt="Study Navigator"> </a>
-            <%out.print("<p>");%>
-            <%=link("Study Navigator", BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%>
-            <%out.print("</p>");%>
+            <a href="<%=h(BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%>"><img src="<%=h(request.getContextPath())%>/_images/studyNavigator.gif" alt="Study Navigator"> </a>
+            <p><%=link("Study Navigator", BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%></p>
             <%
                 if (isAdmin)
                 {
-                    out.print("<p>");
-                    out.print(link("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
-                    out.print("</p>");
+                    %><p><%=link("Manage Study", url.setAction(StudyController.ManageStudyAction.class))%></p><%
 
                     // if there is a pipeline override, show the pipeline view, else show the file browser
                     ActionURL pipelineUrl;
@@ -154,22 +151,16 @@
                     else
                         pipelineUrl = urlProvider(PipelineUrls.class).urlBegin(c);
 
-                    out.print("<p>");
-                    out.print(link("Manage Files", pipelineUrl));
-                    out.print("</p>");
+                    %><p><%=link("Manage Files", pipelineUrl)%></p><%
                 }
                 else if (c.hasPermission(user, ManageRequestSettingsPermission.class) &&
                         bean.getStudy().getRepositorySettings().isEnableRequests())
                 {
-                    out.print("<p>");
-                    out.print(link("Manage Specimen Request Settings", url.setAction(StudyController.ManageStudyAction.class)));
-                    out.print("</p>");
+                    %><p><%=link("Manage Specimen Request Settings", url.setAction(StudyController.ManageStudyAction.class))%></p><%
                 }
                 else if (c.hasPermission(user, ManageRequestSettingsPermission.class))
                 {
-                    out.print("<p>");
-                    out.print(link("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
-                    out.print("</p>");
+                    %><p><%=link("Manage Study", url.setAction(StudyController.ManageStudyAction.class))%></p><%
                 }
             %>
         </td>

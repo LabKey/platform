@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="org.labkey.pipeline.api.PipelineEmailPreferences" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -32,11 +33,11 @@
         dependencies.add("internal/jQuery");
     }
 
-    private String getTitle(String pref, Container c, String title)
+    private HtmlString getTitle(String pref, Container c, String title)
     {
         if (PipelineEmailPreferences.get().isInherited(c, pref))
-            return ("<span class=\"labkey-error\">*</span>&nbsp;" + title);
-        return title;
+            return HtmlStringBuilder.of(HtmlString.unsafe("<span class=\"labkey-error\">*</span>&nbsp;")).append(title).getHtmlString();
+        return HtmlString.of(title);
     }
 
     private String getSelected(String value, String option)
@@ -59,9 +60,9 @@
     String failureNotifyStart = StringUtils.defaultString(PipelineEmailPreferences.get().getFailureNotifyStart(c), "12:00");
 
     HtmlString displaySuccess = h(notifyOwnerOnSuccess || !StringUtils.isEmpty(notifyUsersOnSuccess) ? "" : "none");
-    String displayError = notifyOwnerOnError ||
+    HtmlString displayError = HtmlString.of(notifyOwnerOnError ||
             !StringUtils.isEmpty(notifyUsersOnError) ||
-            !StringUtils.isEmpty(escalationUsers) ? "" : "none";
+            !StringUtils.isEmpty(escalationUsers) ? "" : "none");
 
     String completeUserUrl = urlProvider(SecurityUrls.class).getCompleteUserURLPrefix(c);
 %>
@@ -134,13 +135,13 @@
         <tr style="display:<%=displaySuccess%>">
             <td style="padding-left: 20px;">
                 <label>
-                    <input value="true" type=checkbox id="notifyOwnerOnSuccess" name="notifyOwnerOnSuccess"<%=checked(notifyOwnerOnSuccess)%>><%=text(getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_SUCCESS, c, "Send to owner"))%>
+                    <input value="true" type=checkbox id="notifyOwnerOnSuccess" name="notifyOwnerOnSuccess"<%=checked(notifyOwnerOnSuccess)%>><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_SUCCESS, c, "Send to owner")%>
                 </label>
             </td>
         </tr>
         <tr style="display:<%=displaySuccess%>">
             <td style="padding-left: 20px;">
-                <%=text(getTitle(PipelineEmailPreferences.PREF_NOTIFY_USERS_ON_SUCCESS, c, "Additional users to notify (enter one or more email addresses, each on its own line):"))%>
+                <%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_USERS_ON_SUCCESS, c, "Additional users to notify (enter one or more email addresses, each on its own line):")%>
             </td>
         </tr>
         <tr style="display:<%=displaySuccess%>">
@@ -166,7 +167,7 @@
                     <option value="12"<%=selected("12".equals(successNotifyInterval))%>>12 hours</option>
                     <option value="24"<%=selected("24".equals(successNotifyInterval))%>>24 hours</option>
                 </select>&nbsp;&nbsp;
-                <%=getTitle(PipelineEmailPreferences.PREF_SUCCESS_NOTIFY_START, c, "Starting at:") + helpPopup("Notification start time", "Enter the starting time in 24-hour format (e.g., 0:30 for 12:30AM, 14:00 for 2:00PM).")%>&nbsp;<input type="text" name="successNotifyStart" id="successNotifyStart" value="<%=successNotifyStart%>" size="4">
+                <%=getTitle(PipelineEmailPreferences.PREF_SUCCESS_NOTIFY_START, c, "Starting at:")%><%=helpPopup("Notification start time", "Enter the starting time in 24-hour format (e.g., 0:30 for 12:30AM, 14:00 for 2:00PM).")%>&nbsp;<input type="text" name="successNotifyStart" id="successNotifyStart" value="<%=h(successNotifyStart)%>" size="4">
             </td>
         </tr>
         <tr style="display:<%=displaySuccess%>">
@@ -177,7 +178,7 @@
         <tr>
             <td>
                 <label>
-                    <input type=checkbox id="notifyOnError" name="notifyOnError" onclick="return updateControls(this, false);"<%=checked(displayError.equals(""))%>>Send email notification(s) if the pipeline job fails
+                    <input type=checkbox id="notifyOnError" name="notifyOnError" onclick="return updateControls(this, false);"<%=checked(displayError.toString().equals(""))%>>Send email notification(s) if the pipeline job fails
                 </label>
             </td>
         </tr>
@@ -230,7 +231,7 @@
                     <option value="12"<%=selected("12".equals(failureNotifyInterval))%>>12 hours</option>
                     <option value="24"<%=selected("24".equals(failureNotifyInterval))%>>24 hours</option>
                 </select>&nbsp;&nbsp;
-                <%=getTitle(PipelineEmailPreferences.PREF_FAILURE_NOTIFY_START, c, "Starting at:") + helpPopup("Notification start time", "Enter the starting time in 24-hour format (e.g., 0:30 for 12:30AM, 14:00 for 2:00PM).")%>&nbsp;<input type="text" name="failureNotifyStart" id="failureNotifyStart" value="<%=failureNotifyStart%>" size="4">
+                <%=getTitle(PipelineEmailPreferences.PREF_FAILURE_NOTIFY_START, c, "Starting at:")%><%=helpPopup("Notification start time", "Enter the starting time in 24-hour format (e.g., 0:30 for 12:30AM, 14:00 for 2:00PM).")%>&nbsp;<input type="text" name="failureNotifyStart" id="failureNotifyStart" value="<%=h(failureNotifyStart)%>" size="4">
             </td>
         </tr>
         <tr style="display:<%=displayError%>">
