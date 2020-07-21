@@ -152,7 +152,7 @@
         <%-- TODO: escalate job failures button --%>
 
         <% if (status.active && cancelURL != null) { %>
-        <%=button("Cancel Job").id("cancel-btn").usePost().href(cancelURL)%>
+        <%=button("Cancel").id("cancel-btn").usePost().href(cancelURL)%>
         <% } %>
 
         <% if (retryURL != null) { %>
