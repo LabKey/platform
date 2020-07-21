@@ -68,7 +68,7 @@ public class ErrorsTag extends TagSupport
                                 if (m instanceof LabKeyError)
                                     out.print(((LabKeyError)m).renderToHTML(context));
                                 else
-                                    out.print(PageFlowUtil.filter(context.getMessage(m), true));
+                                    out.print(HtmlString.of(context.getMessage(m), true));
                             }
                             catch (NoSuchMessageException nsme)
                             {
