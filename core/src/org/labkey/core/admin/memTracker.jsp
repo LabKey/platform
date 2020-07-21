@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.util.DateUtil"%>
 <%@ page import="org.labkey.api.util.MemTracker" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>

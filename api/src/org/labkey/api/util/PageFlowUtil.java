@@ -371,18 +371,10 @@ public class PageFlowUtil
         if (cs == null)
             return "''";
 
-        String s = cs.toString();
-
-        // UNDONE: what behavior do we want for tainted strings? IllegalArgumentException()?
-        if (cs instanceof Taintable && ((Taintable)cs).isTainted())
-        {
-            if (s.toLowerCase().contains("<script"))
-                return "''";
-        }
-        return jsString(s);
+        return jsString(cs.toString());
     }
 
-
+    @Deprecated // usages look wrong to me -- they should just use q()?
     static public HtmlString jsString(HtmlString hs)
     {
         return HtmlString.unsafe(jsString(hs.toString()));
