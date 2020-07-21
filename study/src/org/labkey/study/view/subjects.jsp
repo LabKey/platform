@@ -97,7 +97,7 @@
     var $h = Ext4.util.Format.htmlEncode;
     var first = true;
 
-    var _urlTemplate = '<%= urlTemplate %>';
+    var _urlTemplate = <%= q(urlTemplate) %>;
     var _singularNoun = <%= q(singularNoun) %>;
     var _pluralNoun = <%= q(pluralNoun) %>;
     var _divId = <%= q(divId) %>;
@@ -121,7 +121,7 @@
         new SqlSelector(dbschema, sqlf).forEach(rs-> {
             String ptid = rs.getString(1);
             ptidMap.put(ptid,ptidMap.size());
-            try { _out.print(commas[0]); _out.print(q(ptid)); commas[0]=(0==ptidMap.size()%10?",\n":","); } catch (IOException x) {}
+            try { _out.print(unsafe(commas[0])); _out.print(q(ptid)); commas[0]=(0==ptidMap.size()%10?",\n":","); } catch (IOException x) {}
         });
         %>];
     var _groups = [<%
@@ -731,12 +731,12 @@
 Ext4.onReady(<%=viewObject%>.render, <%=viewObject%>);
 </script>
 
-<div id=<%= q(outerDivId) %>>
-    <table id=<%= q(divId) %> class="lk-participants-list-table">
+<div id="<%= h(outerDivId) %>">
+    <table id="<%= h(divId) %>" class="lk-participants-list-table">
         <tr>
             <% if (bean.getWide()) { %>
             <td valign=top>
-                <div id=<%=q(groupsDivId)%>></div>
+                <div id="<%=h(groupsDivId)%>"></div>
             </td>
             <% } %>
             <td style="padding-left: 10px;" valign=top class="iScroll">

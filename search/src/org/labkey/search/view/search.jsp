@@ -601,14 +601,14 @@
     +function($){
         'use strict';
 
-        var advFormCtSelector = '#' + <%=PageFlowUtil.jsString(advFormCt)%>;
+        var advFormCtSelector = '#' + <%=q(advFormCt)%>;
 
         function getAdvForm() {
-            return $('#' + <%=PageFlowUtil.jsString(advFormId)%>);
+            return $('#' + <%=q(advFormId)%>);
         }
 
         function getSearchForm() {
-            return $('#' + <%=PageFlowUtil.jsString(searchFormId)%>);
+            return $('#' + <%=q(searchFormId)%>);
         }
 
         $(function() {
