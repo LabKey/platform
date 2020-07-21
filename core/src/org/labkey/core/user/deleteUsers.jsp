@@ -33,7 +33,7 @@
     ActionURL deactivateUsersUrl = new ActionURL(UserController.DeactivateUsersAction.class, getContainer());
 %>
 <p>Are sure you want to <span style="font-weight:bold;color: #FF0000">permanently delete</span>
-the following <%=bean.getUsers().size() > 1 ? "users" : "user"%>?
+the following <%=h(bean.getUsers().size() > 1 ? "users" : "user")%>?
 This action cannot be undone.</p>
     <ul>
     <%
@@ -76,7 +76,7 @@ This action cannot be undone.</p>
         }
     %>
     <p><span style="font-weight:bold">Note:</span> you may also
-    <a href="#" onclick="document.deactivateUsersForm.submit();return false;">deactivate <%=bean.getUsers().size() > 1 ? "these users" : "this user"%></a>
+    <a href="#" onclick="document.deactivateUsersForm.submit();return false;">deactivate <%=h(bean.getUsers().size() > 1 ? "these users" : "this user")%></a>
     instead of deleting them.
     Deactivated users may not login, but their information will be preserved
     for display purposes, and their group memberships will be preserved in case
