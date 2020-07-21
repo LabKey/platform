@@ -38,6 +38,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.compliance.ComplianceService;
+import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -56,6 +57,7 @@ import org.labkey.api.pipeline.PipelineJobData;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
@@ -124,6 +126,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 public class PipelineController extends SpringActionController
 {
@@ -1726,6 +1730,35 @@ public class PipelineController extends SpringActionController
                 url.addParameter(Params.path, path);
 
             return url;
+        }
+
+        @Override
+        @Nullable
+        public ActionURL urlBrowse(PipelineStatusFile sf, @Nullable URLHelper returnUrl)
+        {
+            if (sf == null)
+                return null;
+
+            File logFile = new File(sf.getFilePath());
+            File dir = logFile.getParentFile();
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(sf.lookupContainer());
+            if (NetworkDrive.exists(dir) && pipeRoot != null && pipeRoot.isUnderRoot(dir))
+            {
+                String relativePath = pipeRoot.relativePath(dir);
+
+                // Issue 14693: changing the pipeline root or symlinks can result in bad paths.  if we cant locate the file, just dont display the browse button.
+                if (relativePath != null)
+                {
+                    relativePath = relativePath.replace("\\", "/");
+                    if (relativePath.equals("."))
+                    {
+                        relativePath = "/";
+                    }
+                    return urlBrowse(sf.lookupContainer(), returnUrl, relativePath);
+                }
+            }
+
+            return null;
         }
 
         @Override
