@@ -668,20 +668,39 @@ public abstract class AssayProtocolSchema extends AssaySchema
                             QueryView allResultsQueryView = createAllResultsQueryView(viewContext, qs);
 
                             DataView dataView = allResultsQueryView.createDataView();
-                            try (Results r = dataView.getDataRegion().getResults(dataView.getRenderContext()))
+
+                            RenderContext renderContext = dataView.getRenderContext();
+                            // Issue 40921: use cached result set as it will have size available without iterating the results
+                            renderContext.setCache(true);
+                            try (Results r = dataView.getDataRegion().getResults(renderContext))
                             {
                                 final int rowCount = r.countAll();
 
                                 baseQueryView.setMessageSupplier(dataRegion -> {
-                                    if (dataRegion.getTotalRows() != null && dataRegion.getTotalRows() < rowCount)
+                                    try
                                     {
-                                        long count = rowCount - dataRegion.getTotalRows();
-                                        String msg = count > 1 ? "There are " + count + " rows not shown due to unapproved QC state."
-                                                : "There is one row not shown due to unapproved QC state.";
-                                        DataRegion.Message drm = new DataRegion.Message(msg, DataRegion.MessageType.WARNING, DataRegion.MessagePart.view);
-                                        return Collections.singletonList(drm);
+                                        // Issue 40921: Getting all results for the data region requires an operation that iterates
+                                        // through and counts the total rows in the data region. getAggregateResults
+                                        // with ALL_ROWS will perform this calculation
+                                        int maxRows = dataRegion.getSettings().getMaxRows();
+                                        dataRegion.getSettings().setMaxRows(Table.ALL_ROWS);
+                                        dataRegion.getAggregateResults(renderContext);
+                                        dataRegion.getSettings().setMaxRows(maxRows);
+
+                                        if (dataRegion.getTotalRows() != null && dataRegion.getTotalRows() < rowCount)
+                                        {
+                                            long count = rowCount - dataRegion.getTotalRows();
+                                            String msg = count > 1 ? "There are " + count + " rows not shown due to unapproved QC state."
+                                                    : "There is one row not shown due to unapproved QC state.";
+                                            DataRegion.Message drm = new DataRegion.Message(msg, DataRegion.MessageType.WARNING, DataRegion.MessagePart.view);
+                                            return Collections.singletonList(drm);
+                                        }
+                                        return Collections.emptyList();
                                     }
-                                    return Collections.emptyList();
+                                    catch(IOException e)
+                                    {
+                                        throw new RuntimeException(e);
+                                    }
                                 });
                             }
                         }

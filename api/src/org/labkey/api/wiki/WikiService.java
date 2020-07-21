@@ -25,6 +25,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -60,4 +61,16 @@ public interface WikiService
 
     /** For columns that want a lookup to the canonical RendererType column. Be sure to null check WikiService before adding your FK. */
     TableInfo getRendererTypeTable(User user, Container container);
+
+    /**
+     * Returns the raw (unformatted) content
+     */
+    String getContent(Container c, String wikiName);
+
+    /**
+     * Update the content of a wiki
+     */
+    boolean updateContent(Container c, User user, String wikiName, String content);
+
+    void deleteWiki(Container c, User user, String wikiName, boolean deleteSubtree) throws SQLException;
 }
