@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.reports.permissions.ShareReportPermission" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -98,7 +97,7 @@
             height          : 600,
             subjectColumn   : <%=q(org.labkey.api.study.StudyService.get().getSubjectColumnName(getContainer()))%>,
             subjectVisitColumn: <%=q(org.labkey.api.study.StudyService.get().getSubjectVisitColumnName(getContainer()))%>,
-            subjectNoun     : {singular : <%=PageFlowUtil.jsString(s.getSubjectNounSingular())%>, plural : <%=PageFlowUtil.jsString(s.getSubjectNounPlural())%>, columnName: <%=PageFlowUtil.jsString(s.getSubjectColumnName())%>},
+            subjectNoun     : {singular : <%=q(s.getSubjectNounSingular())%>, plural : <%=q(s.getSubjectNounPlural())%>, columnName: <%=q(s.getSubjectColumnName())%>},
             visitBased      : <%=s.getTimepointType().isVisitBased()%>,
             renderTo        : '<%= renderId %>',
             filterDiv       : '<%=filterRenderId%>',

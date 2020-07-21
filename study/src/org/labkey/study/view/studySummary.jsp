@@ -126,7 +126,7 @@
                 %>
                     <br><a href="<%=h(StudyController.getProtocolDocumentDownloadURL(c, doc.getName()))%>">
                         <img src="<%=getWebappURL(doc.getFileIcon())%>" alt="[<%= h(doc.getName()) %>]">
-                        <%= h(h(doc.getName())) %>
+                        <%= h(doc.getName()) %>
                     </a><%
                         }
                     }

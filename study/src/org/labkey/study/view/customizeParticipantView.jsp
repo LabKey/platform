@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls"%>
 <%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
@@ -32,7 +31,7 @@
 <script type="text/javascript">
     window.onbeforeunload = LABKEY.beforeunload();
 
-    var DEFAULT_SCRIPT_VALUE = <%= PageFlowUtil.jsString(bean.getDefaultScript()) %>;
+    var DEFAULT_SCRIPT_VALUE = <%= q(bean.getDefaultScript()) %>;
 
     function setCustomScriptState(disabled)
     {

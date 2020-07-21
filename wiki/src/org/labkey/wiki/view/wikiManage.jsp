@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.HtmlString"%>
 <%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
 <%@ page import="org.labkey.api.util.element.Select.SelectBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -85,7 +84,7 @@
                 swapWiki.text = selText;
                 swapWiki.value = selValue;
                 saveWikiList(listName, targetName);
-                document.manage.nextAction.value = <%= PageFlowUtil.jsString(WikiController.NextAction.manage.name()) %>;
+                document.manage.nextAction.value = <%=q(WikiController.NextAction.manage.name())%>;
                 return false;
             }
         }
@@ -130,7 +129,7 @@
                     .name("parent")
                     .id("id")
                     .style("width:420px")
-                    .onChange("document.manage.nextAction.value = " + PageFlowUtil.jsString(WikiController.NextAction.manage.name()) + "; submit();");
+                    .onChange("document.manage.nextAction.value = " + q(WikiController.NextAction.manage.name()) + "; submit();");
                 parentBuilder.addOption(new OptionBuilder().value("-1").label("[none]").selected(wiki.getParent() == -1).build());
                 bean.possibleParents.forEach(pp->{
                     StringBuilder indent = new StringBuilder();
@@ -171,9 +170,9 @@
                             <%=siblingsBuilder%>
                         </td>
                         <td valign="top" >
-                            <%= button("Move Up").style("width:100px").submit(true).onClick("return orderModule('siblings', 0, 'siblingOrder', " + PageFlowUtil.jsString(WikiController.NextAction.manage.name()) + ")") %>
+                            <%= button("Move Up").style("width:100px").submit(true).onClick("return orderModule('siblings', 0, 'siblingOrder', " + q(WikiController.NextAction.manage.name()) + ")") %>
                             <br/>
-                            <%= button("Move Down").style("width:100px").submit(true).onClick("return orderModule('siblings', 1, 'siblingOrder', "  + PageFlowUtil.jsString(WikiController.NextAction.manage.name()) + ")") %>
+                            <%= button("Move Down").style("width:100px").submit(true).onClick("return orderModule('siblings', 1, 'siblingOrder', "  + q(WikiController.NextAction.manage.name()) + ")") %>
                         </td>
                     </tr>
                 </table>
@@ -218,12 +217,12 @@
 <input type="hidden" name="originalName" value="<%= h(wiki.getName()) %>">
 <input type="hidden" name="rowId" value="<%= wiki.getRowId() %>">
 <input type="hidden" name="nextAction" value="">
-<%= button("Save").submit(true).onClick("document.manage.nextAction.value = " + PageFlowUtil.jsString(WikiController.NextAction.page.name()) + "; return true;").title("Save Changes") %>
+<%= button("Save").submit(true).onClick("document.manage.nextAction.value = " + q(WikiController.NextAction.page.name()) + "; return true;").title("Save Changes") %>
 <%= button("Delete").href(new ActionURL(WikiController.DeleteAction.class, c).addParameter("name", wiki.getName())) %>
-<%= button("Edit Content").submit(true).onClick("document.manage.nextAction.value = " + PageFlowUtil.jsString(WikiController.NextAction.edit.name()) + "; return true;").title("Edit Content and Attachments") %>
+<%= button("Edit Content").submit(true).onClick("document.manage.nextAction.value = " + q(WikiController.NextAction.edit.name()) + "; return true;").title("Edit Content and Attachments") %>
 
 <script type="text/javascript">
-    existingWikiPages = [<% for (String name : bean.pageNames) out.print(unsafe(PageFlowUtil.jsString(name) + ",")); %>];
+    existingWikiPages = [<% for (String name : bean.pageNames) out.print(q(name) + ","); %>];
 
     function checkWikiName(name)
     {

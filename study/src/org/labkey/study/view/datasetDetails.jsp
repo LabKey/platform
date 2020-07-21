@@ -184,8 +184,8 @@ if (!pipelineSet)
             <tr>
                 <td class=labkey-form-label>Additional Key Column</td>
                 <td><%=h(dataset.getKeyPropertyName() != null ?
-                                 h(dataset.getKeyPropertyName()) :
-                                 dataset.getUseTimeKeyField() ? h(TIME_KEY_FIELD_DISPLAY) :
+                                 dataset.getKeyPropertyName() :
+                                 dataset.getUseTimeKeyField() ? TIME_KEY_FIELD_DISPLAY :
                                  "None")%></td>
 
                 <td class=labkey-form-label>Tag</td>

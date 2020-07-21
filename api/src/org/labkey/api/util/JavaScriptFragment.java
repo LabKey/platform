@@ -12,7 +12,8 @@ public class JavaScriptFragment
     public static final JavaScriptFragment NULL = JavaScriptFragment.unsafe(" null ");
     public static final JavaScriptFragment TRUE = JavaScriptFragment.unsafe(" true ");
     public static final JavaScriptFragment FALSE = JavaScriptFragment.unsafe(" false ");
-    public static final JavaScriptFragment bool(boolean b) { return b ? TRUE : FALSE;};
+
+    public static JavaScriptFragment bool(boolean b) { return b ? TRUE : FALSE;};
 
     private final @NotNull String _s;
 

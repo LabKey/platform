@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.experiment.types.TypesController" %>
+<%@ page import="org.labkey.experiment.types.TypesController"%>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -111,7 +110,7 @@ else
 			<tr><th valign=top align=right nowrap>Parent Concept</th><td><%=h(row.get("ConceptURI"))%></td></tr>
 			<tr><th valign=top align=right nowrap>Description</th><td><%=h(description)%></td></tr>
 		</table>
-        <%=button("select").onClick("javascript:select(" + PageFlowUtil.jsString(uri) + ")")%><%
+        <%=button("select").onClick("javascript:select(" + q(uri) + ")")%><%
 		}
 
 	%><p/><b>Search Results</b><hr size=1><%
@@ -126,17 +125,17 @@ else
 		String description = (String)row.get("Description");
 
 	    // concept
-		%><b><a href="javascript:concept(<%=PageFlowUtil.jsString(uri)%>)"><%=h(name)%></a> : </b><%
+		%><b><a href="javascript:concept(<%=q(uri)%>)"><%=h(name)%></a> : </b><%
 		String and = "";
 		for (String pathURI : path)
 			{
 			out.print(and);
-			%><a href="javascript:concept(<%=PageFlowUtil.jsString(pathURI)%>)"><%=h(pathURI.substring(pathURI.lastIndexOf('#')+1))%></a><%
+			%><a href="javascript:concept(<%=q(pathURI)%>)"><%=h(pathURI.substring(pathURI.lastIndexOf('#')+1))%></a><%
 			and = " / ";
 			}
 		if (false)
 		{
-		%><%=and%><a href="javascript:concept(<%=PageFlowUtil.jsString(uri)%>)"><%=h(name)%></a><%
+		%><%=and%><a href="javascript:concept(<%=q(uri)%>)"><%=h(name)%></a><%
 		}
 		out.println("<br>");
 		if (row == match)

@@ -206,6 +206,11 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return HtmlString.of(o == null ? null : o.toString());
     }
 
+    public HtmlString h(HtmlString o)
+    {
+        return HtmlString.of(o == null ? null : o.toString());
+    }
+
     /**
      * Html escape a string.
      * The name comes from Embedded Ruby.

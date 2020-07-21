@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -54,7 +53,7 @@
         Ext4.create('LABKEY.ext4.DataViewsPanel', {
             id: 'data-views-panel-<%= webPartId %>',
             renderTo: <%=q(renderId)%>,
-            pageId: <%= PageFlowUtil.jsString(me.getModelBean().getPageId()) %>,
+            pageId: <%= q(me.getModelBean().getPageId()) %>,
             index: <%= me.getModelBean().getIndex() %>,
             webpartId: <%= webPartId %>,
             manageView: <%= manageView%>,

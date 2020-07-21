@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
 <%@ page import="org.labkey.api.util.element.Select.SelectBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -70,10 +69,12 @@
             {
                 ActionURL downloadURL = WikiController.getDownloadURL(getContainer(), model.getWiki(), att.getName());
                 %>
-                    <%=sep%>{name: <%=PageFlowUtil.jsString(att.getName())%>,
-                             iconUrl: <%=PageFlowUtil.jsString(getViewContext().getContextPath() + att.getFileIcon())%>,
-                             downloadUrl: <%=PageFlowUtil.jsString(downloadURL.toString())%>
-                            }
+                    <%=sep%>
+                    {
+                        name: <%=q(att.getName())%>,
+                        iconUrl: <%=q(getViewContext().getContextPath() + att.getFileIcon())%>,
+                        downloadUrl: <%=q(downloadURL.toString())%>
+                    }
                 <%
                 sep = ",";
             }
@@ -87,7 +88,7 @@
             {
         %>
             <%=sep%>
-            <%=format.name()%>: <%=PageFlowUtil.jsString(format.getDisplayName())%>
+            <%=format.name()%>: <%=q(format.getDisplayName())%>
         <%
                 sep = ",";
             }

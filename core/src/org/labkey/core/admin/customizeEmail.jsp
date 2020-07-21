@@ -18,8 +18,9 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.emailTemplate.EmailTemplate" %>
 <%@ page import="org.labkey.api.util.emailTemplate.EmailTemplate.ContentType" %>
 <%@ page import="org.labkey.api.util.emailTemplate.EmailTemplateService" %>
@@ -31,8 +32,6 @@
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Formatter" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -140,11 +139,11 @@
     {
         out.print(sep);
         out.print("\t\"name\":\"" + et.getClass().getName() + "\",\n");
-        out.print("\t\"description\":" + PageFlowUtil.jsString(et.getDescription()) + ",\n");
-        out.print("\t\"sender\":" + PageFlowUtil.jsString(et.getSenderName()) + ",\n");
-        out.print("\t\"replyToEmail\":" + PageFlowUtil.jsString(et.getReplyToEmail()) + ",\n");
-        out.print("\t\"subject\":" + PageFlowUtil.jsString(et.getSubject()) + ",\n");
-        out.print("\t\"message\":" + PageFlowUtil.jsString(et.getBody()) + ",\n");
+        out.print("\t\"description\":" + q(et.getDescription()) + ",\n");
+        out.print("\t\"sender\":" + q(et.getSenderName()) + ",\n");
+        out.print("\t\"replyToEmail\":" + q(et.getReplyToEmail()) + ",\n");
+        out.print("\t\"subject\":" + q(et.getSubject()) + ",\n");
+        out.print("\t\"message\":" + q(et.getBody()) + ",\n");
         // Let users delete the folder-scoped template only if it's been stored in the same folder they're in, and they're
         // not in the root where they'd be doing a site-level template
         out.print("\t\"showFolderReset\":" + (c.equals(et.getContainer()) && !c.isRoot()) + ",\n");
@@ -160,12 +159,12 @@
         for (EmailTemplate.ReplacementParam param : replacements)
         {
             out.print(innerSep);
-            out.print("\t\t\"paramName\":" + PageFlowUtil.jsString(param.getName()) + ",\n");
-            out.print("\t\t\"format\":" + PageFlowUtil.jsString(param.getContentType().toString()) + ",\n");
-            out.print("\t\t\"valueType\":" + PageFlowUtil.jsString(param.getValueType().getSimpleName()) + ",\n");
-            out.print("\t\t\"paramDesc\":" + PageFlowUtil.jsString(param.getDescription()) + ",\n");
+            out.print("\t\t\"paramName\":" + q(param.getName()) + ",\n");
+            out.print("\t\t\"format\":" + q(param.getContentType().toString()) + ",\n");
+            out.print("\t\t\"valueType\":" + q(param.getValueType().getSimpleName()) + ",\n");
+            out.print("\t\t\"paramDesc\":" + q(param.getDescription()) + ",\n");
             String formattedValue = param.getFormattedValue(c, null, ContentType.HTML);
-            out.print("\t\t\"paramValue\":" + PageFlowUtil.jsString(formattedValue) + "\n");
+            out.print("\t\t\"paramValue\":" + q(formattedValue) + "\n");
             out.print("}");
 
             innerSep = "\t,{";

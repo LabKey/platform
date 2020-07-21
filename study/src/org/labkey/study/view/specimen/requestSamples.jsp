@@ -17,14 +17,13 @@
 %>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.study.SpecimenService"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
 <%@ page import="org.labkey.api.view.template.ClientDependencies"%>
 <%@ page import="org.labkey.study.SpecimenManager"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
-<%@ page import="org.labkey.study.model.LocationImpl" %>
+<%@ page import="org.labkey.study.model.LocationImpl"%>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.Vial" %>
 <%@ page import="org.springframework.validation.BindException" %>
@@ -80,7 +79,7 @@ DefaultValues['input<%= i %>'] = {};
             Map<Integer, String> defaults = input.getDefaultSiteValues(c);
             for (Map.Entry<Integer,String> entry : defaults.entrySet())
             {
-    %>DefaultValues['input<%= i %>']['<%= entry.getKey() %>'] = <%= PageFlowUtil.jsString(entry.getValue()) %>;
+    %>DefaultValues['input<%= i %>']['<%= entry.getKey() %>'] = <%= q(entry.getValue()) %>;
     <%
             }
         }
