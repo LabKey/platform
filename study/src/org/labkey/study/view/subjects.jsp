@@ -97,11 +97,11 @@
     var $h = Ext4.util.Format.htmlEncode;
     var first = true;
 
-    var _urlTemplate = <%= unsafe(q(urlTemplate)) %>;
-    var _singularNoun = <%= unsafe(q(singularNoun)) %>;
-    var _pluralNoun = <%= unsafe(q(pluralNoun)) %>;
-    var _divId = <%= unsafe(q(divId)) %>;
-    var _outerDivId = <%= unsafe(q(outerDivId)) %>;
+    var _urlTemplate = <%= q(urlTemplate) %>;
+    var _singularNoun = <%= q(singularNoun) %>;
+    var _pluralNoun = <%= q(pluralNoun) %>;
+    var _divId = <%= q(divId) %>;
+    var _outerDivId = <%= q(outerDivId) %>;
 
     // filters
     var _filterSubstring;
@@ -121,7 +121,7 @@
         new SqlSelector(dbschema, sqlf).forEach(rs-> {
             String ptid = rs.getString(1);
             ptidMap.put(ptid,ptidMap.size());
-            try { _out.print(unsafe(commas[0])); _out.print(unsafe(q(ptid))); commas[0]=(0==ptidMap.size()%10?",\n":","); } catch (IOException x) {}
+            try { _out.print(unsafe(commas[0])); _out.print(q(ptid)); commas[0]=(0==ptidMap.size()%10?",\n":","); } catch (IOException x) {}
         });
         %>];
     var _groups = [<%
@@ -148,7 +148,7 @@
                 for (Cohort co : cohorts)
                 {
                     cohortIndexMap.put(co.getRowId(), index);
-                    %><%=commas[0]%>{id:<%=co.getRowId()%>, index:<%=index%>, type:'cohort', label:<%=unsafe(q(co.getLabel()))%>, enrolled:<%=co.isEnrolled()%>}<%
+                    %><%=commas[0]%>{id:<%=co.getRowId()%>, index:<%=index%>, type:'cohort', label:<%=q(co.getLabel())%>, enrolled:<%=co.isEnrolled()%>}<%
                     commas[0]=",\n";
                     index++;
                     if (!co.isEnrolled())
@@ -191,7 +191,7 @@
                         {
                             groupMap.put(g.getRowId(), index);
                             // UNDONE: groupid vs categoryid???
-                            %><%=commas[0]%>{categoryId:<%=cat.getRowId()%>, id:<%=g.getRowId()%>, index:<%=index%>, shared:true, type:'participantGroup', label:<%=unsafe(q(g.getLabel()))%>}<%
+                            %><%=commas[0]%>{categoryId:<%=cat.getRowId()%>, id:<%=g.getRowId()%>, index:<%=index%>, shared:true, type:'participantGroup', label:<%=q(g.getLabel())%>}<%
                             commas[0]=",\n";
                             index++;
                         }
@@ -442,8 +442,8 @@
         <% if (bean.getWide()) { %>
         var ptidPanel = Ext4.create('LABKEY.study.ParticipantFilterPanel',
         {
-            id : <%=unsafe(q(groupsPanelId))%>,
-            renderTo : Ext4.get(<%=unsafe(q(groupsDivId))%>),
+            id : <%=q(groupsPanelId)%>,
+            renderTo : Ext4.get(<%=q(groupsDivId)%>),
             title : 'Show',
             border : true,
             cls : 'themed-panel iScroll',
@@ -590,7 +590,7 @@
             html.push('</li>\n');
         }
         html.push('</ul></td></tr></table>');
-        Ext4.get(<%=unsafe(q(listDivId))%>).update(html.join(''));
+        Ext4.get(<%=q(listDivId)%>).update(html.join(''));
 
         // if we have no unenrolled cohorts in the study, then no need to call out that a participant belongs to an enrolled cohort
         // if the filter only includes enrolled participants, then use 'enrolled' to describe them
@@ -612,7 +612,7 @@
             else
                 message = 'No matching' + enrolledText + _pluralNoun + '.';
         }
-        Ext4.get(<%=unsafe(q(divId + ".status"))%>).update(message);
+        Ext4.get(<%=q(divId + ".status")%>).update(message);
     }
 
 
@@ -681,7 +681,7 @@
 
         Ext4.create('Ext.tip.ToolTip',
         {
-            target     : <%=unsafe(q(listDivId))%>,
+            target     : <%=q(listDivId)%>,
             delegate   : "LI.ptid",
             trackMouse : true,
             listeners  :
@@ -706,7 +706,7 @@
 
         /* ptids events */
 
-        var ptidDiv = Ext4.get(<%=unsafe(q(listDivId))%>);
+        var ptidDiv = Ext4.get(<%=q(listDivId)%>);
         ptidDiv.on('mouseover', function(e,dom)
         {
             var indexAttr = dom.attributes.index || dom.parentNode.attributes.index;

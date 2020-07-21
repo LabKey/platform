@@ -156,7 +156,7 @@
                 +function($){
                     $('#headerWarningLink').on('click', function () {
                         LABKEY.Ajax.request({
-                            url: <%=unsafe(q(displayUrl))%>,
+                            url: <%=q(displayUrl)%>,
                             method: 'POST',
                             success: function(xhr) {
                                 var resp = JSON.parse(xhr.responseText);
