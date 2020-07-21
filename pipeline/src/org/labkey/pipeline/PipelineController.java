@@ -1734,7 +1734,7 @@ public class PipelineController extends SpringActionController
 
         @Override
         @Nullable
-        public ActionURL urlBrowse(PipelineStatusFile sf, @Nullable URLHelper returnUrl)
+        public ActionURL urlBrowse(@Nullable PipelineStatusFile sf, @Nullable URLHelper returnUrl)
         {
             if (sf == null)
                 return null;
