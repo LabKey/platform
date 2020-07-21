@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.core.user.UserController" %>
 <%@ page import="org.labkey.core.user.UserController.UserUrlsImpl" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -100,9 +101,10 @@
             { %>
         <tr><td colspan="3"><labkey:errors /></td></tr><%
             }
-            if (form.getMessage() != null)
+            HtmlString msg = form.getMessage();
+            if (!HtmlString.isBlank(msg))
             {
-                %><tr><td colspan="3"><div class="labkey-message"><%=form.getMessage()%></div></td></tr><%
+                %><tr><td colspan="3"><div class="labkey-message"><%=msg%></div></td></tr><%
             }
         %>
         <tr>

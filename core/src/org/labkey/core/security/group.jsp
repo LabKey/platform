@@ -34,6 +34,7 @@
 <%@ page import="org.labkey.core.security.SecurityApiActions" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page import="org.labkey.core.security.SecurityController.GroupAction" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -159,9 +160,9 @@ if (bean.messages.size() > 0)
 {
     %><b>System membership status for new group members:</b><br>
     <div id="messages"><%
-    for (String message : bean.messages)
+    for (HtmlString message : bean.messages)
     {
-        %><%= text(message) %><br><%
+        %><%= message %><br><%
     }
     %></div><br><%
 }

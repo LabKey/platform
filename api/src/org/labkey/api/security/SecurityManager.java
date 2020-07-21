@@ -77,6 +77,8 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
@@ -2727,7 +2729,7 @@ public class SecurityManager
         return sm;
     }
 
-    public static String addUser(ViewContext context, ValidEmail email, boolean sendMail, String mailPrefix) throws Exception
+    public static HtmlString addUser(ViewContext context, ValidEmail email, boolean sendMail, String mailPrefix) throws Exception
     {
         return addUser(context, email, sendMail, mailPrefix, null, null, true);
     }
@@ -2735,14 +2737,14 @@ public class SecurityManager
     /**
      * @return null if the user already exists, or a message indicating success/failure
      */
-    public static String addUser(ViewContext context, ValidEmail email, boolean sendMail, String mailPrefix, @Nullable List<Pair<String, String>> extraParameters, String provider, boolean isAddUser) throws Exception
+    public static HtmlString addUser(ViewContext context, ValidEmail email, boolean sendMail, String mailPrefix, @Nullable List<Pair<String, String>> extraParameters, String provider, boolean isAddUser) throws Exception
     {
         if (UserManager.userExists(email))
         {
             return null;
         }
 
-        StringBuilder message = new StringBuilder();
+        HtmlStringBuilder message = HtmlStringBuilder.of();
         NewUserStatus newUserStatus;
 
         ActionURL messageContentsURL = null;
@@ -2764,25 +2766,26 @@ public class SecurityManager
 
             if (newUserStatus.isLdapEmail())
             {
-                message.append(PageFlowUtil.filter(newUser.getEmail())).append(" added as a new user to the system.  This user will be authenticated via LDAP.");
+                message.append(newUser.getEmail()).append(" added as a new user to the system.  This user will be authenticated via LDAP.");
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system.  This user will be authenticated via LDAP.");
             }
             else if (sendMail)
             {
-                message.append(PageFlowUtil.filter(email.getEmailAddress())).append(" added as a new user to the system and emailed successfully.");
+                message.append(email.getEmailAddress()).append(" added as a new user to the system and emailed successfully.");
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system.  Verification email was sent successfully.");
             }
             else
             {
-                message.append(PageFlowUtil.filter(email.getEmailAddress())).append(" added as a new user to the system, but no email was sent.");
+                message.append(email.getEmailAddress()).append(" added as a new user to the system, but no email was sent.");
 
                 // Issue 33254: only allow Site Admins to see the verification URL
                 if (currentUser.hasSiteAdminPermission())
                 {
                     message.append("  Click ");
-                    String href = "<a href=\"" + PageFlowUtil.filter(createVerificationURL(context.getContainer(),
-                            email, newUserStatus.getVerification(), extraParameters)) + "\" target=\"_blank\">here</a>";
-                    message.append(href).append(" to change the password from the random one that was assigned.");
+                    message.append(HtmlString.unsafe("<a href=\""));
+                        message.append(createVerificationURL(context.getContainer(), email, newUserStatus.getVerification(), extraParameters));
+                    message.append(HtmlString.unsafe("\" target=\"_blank\">here</a>"));
+                    message.append(" to change the password from the random one that was assigned.");
                 }
 
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system and the administrator chose not to send a verification email.");
@@ -2804,7 +2807,7 @@ public class SecurityManager
         }
         catch (SecurityManager.UserManagementException e)
         {
-            message.append("Failed to create user ").append(email).append(": ").append(e.getMessage());
+            message.append("Failed to create user ").append(email.toString()).append(": ").append(e.getMessage());
         }
 
         // showRegistrationEmail uses default provider to generate verificationUrl
@@ -2815,7 +2818,7 @@ public class SecurityManager
             message.append(" Click ").append(href).append(" to see the email.");
         }
 
-        return message.toString();
+        return message.getHtmlString();
     }
 
     public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, @Nullable List<Pair<String, String>> extraParameters) throws Exception
@@ -2868,7 +2871,7 @@ public class SecurityManager
         }
     }
 
-    private static void appendMailHelpText(StringBuilder sb, ActionURL messageContentsURL, boolean isAdmin)
+    private static void appendMailHelpText(HtmlStringBuilder sb, ActionURL messageContentsURL, boolean isAdmin)
     {
         if (isAdmin)
         {
@@ -2877,7 +2880,7 @@ public class SecurityManager
             if (messageContentsURL != null)
             {
                 sb.append(" Alternatively, you can copy the <a href=\"");
-                sb.append(PageFlowUtil.filter(messageContentsURL));
+                sb.append(messageContentsURL);
                 sb.append("\" target=\"_blank\">contents of the message</a> into an email client and send it to the user manually.");
             }
 
