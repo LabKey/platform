@@ -71,7 +71,7 @@ If you want to let users change the list that's displayed or customize the view 
             fieldLabel : 'Title',
             width: 400
         });
-        var queryCombo = ('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
+        var queryCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
             defaultSchema : 'lists',
             // Only include actual lists -- no custom queries
             includeUserQueries: false,

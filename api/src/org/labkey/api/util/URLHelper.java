@@ -58,11 +58,10 @@ import java.util.stream.Collectors;
 /**
  * Represents a URL, typically within this instance of LabKey Server.
  */
-public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlString
+public class URLHelper implements Cloneable, Serializable, HasHtmlString
 {
     private static final Logger LOG = Logger.getLogger(URLHelper.class);
 
-    protected boolean _tainted = false;
     protected String _scheme = "http";
     protected String _host = null;
     protected int _port = 80;
@@ -853,14 +852,6 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
             }
         }
     }
-
-
-    @Override
-    public boolean isTainted()
-    {
-        return _tainted;
-    }
-
 
     public void addFilter(String dataRegionName, FieldKey field, CompareType ct, Object value)
     {

@@ -46,7 +46,7 @@ String hashedPath = contextPath + "/" + jsPath + "?" + PageFlowUtil.getServerSes
     String comma ="\n\t";
     for (Map.Entry<String, String> entry : bean.getProperties().entrySet())
     {
-        %><%=text(comma)%><%=PageFlowUtil.jsString(entry.getKey())%>:<%= PageFlowUtil.jsString(entry.getValue()) %><%
+        %><%=text(comma)%><%=q(entry.getKey())%>:<%=q(entry.getValue())%><%
         comma=",\n\t";
     }
 %>}
