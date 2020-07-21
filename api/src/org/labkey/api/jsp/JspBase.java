@@ -34,6 +34,7 @@ import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -244,18 +245,21 @@ public abstract class JspBase extends JspContext implements HasViewContext
      * Javascript inside of element event attributes (e.g. onclick="dosomething") needs to be HTML escaped.
      * Javascript inside of &lt;script> tags should NEVER be HTML escaped.
      */
-    final protected String q(String str)
+    final protected JavaScriptFragment q(String str)
     {
-        if (null == str) return "null";
-        return PageFlowUtil.jsString(str);
+        return JavaScriptFragment.unsafe(null == str ? "null" : PageFlowUtil.jsString(str));
     }
 
-    final protected String q(HtmlString str)
+    final protected JavaScriptFragment q(HtmlString hs)
     {
-        if (null == str) return "null";
-        return q(str.toString());
+        return JavaScriptFragment.unsafe(null == hs ? "null" : PageFlowUtil.jsString(hs.toString()));
     }
 
+    // TODO: Very, very temporary; just for backward compatibility. Eliminate ASAP.
+    public HtmlString text(JavaScriptFragment f)
+    {
+        return HtmlString.unsafe(f.toString());
+    }
 
     protected HtmlString hq(String str)
     {
