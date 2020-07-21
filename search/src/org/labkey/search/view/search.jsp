@@ -501,7 +501,9 @@
                     {
                         String summary = StringUtils.trimToNull(hit.summary);
                         if (null != summary)
-                            %><%=h(summary, false).toString().replace("&lt;br&gt;", "<br>")%><%
+                        {
+                            %><%=unsafe(h(summary, false).toString().replace("&lt;br&gt;", "<br>"))%><%
+                        }
                     }
                 %>
                 </div>

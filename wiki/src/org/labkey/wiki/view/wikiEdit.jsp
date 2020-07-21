@@ -46,14 +46,14 @@
 %>
 <script type="text/javascript">
     LABKEY._wiki.setProps({
-        entityId: <%=model.getEntityId()%>,
-        rowId: <%=model.getRowId()%>,
-        name: <%=model.getName()%>,
-        title: <%=model.getTitle()%>,
-        body: <%=model.getBody()%>,
+        entityId: <%=q(model.getEntityId())%>,
+        rowId: <%= model.getRowId() %>,
+        name: <%=q(model.getName())%>,
+        title: <%=q(model.getTitle())%>,
+        body: <%=q(model.getBody())%>,
         parent: <%=model.getParent()%>,
         pageVersionId: <%=model.getPageVersionId()%>,
-        rendererType: <%=model.getRendererType()%>,
+        rendererType: <%=q(model.getRendererType())%>,
         webPartId: <%=model.getWebPartId()%>,
         showAttachments: <%=model.isShowAttachments()%>,
         shouldIndex: <%=model.isShouldIndex()%>,
@@ -94,7 +94,7 @@
             }
         %>
     });
-    LABKEY._wiki.setURLs(<%= model.getRedir() %>, <%= model.getCancelRedir() %>);
+    LABKEY._wiki.setURLs(<%= q(model.getRedir()) %>, <%= q(model.getCancelRedir()) %>);
 </script>
 <div id="status" class="labkey-status-info" style="display: none; width: 99%;">(status)</div>
 <table width=99%;>
