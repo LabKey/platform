@@ -457,7 +457,7 @@ public class StatusController extends SpringActionController
 
             _statusFile = getStatusFile(form.getRowId());
             if (_statusFile == null)
-                throw new NotFoundException("Status file not found");
+                throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
 
             if (!_statusFile.lookupContainer().equals(getContainer()))
             {
@@ -489,8 +489,6 @@ public class StatusController extends SpringActionController
                         .addParameter("name", PipelineProvider.CAPTION_RETRY_BUTTON)
                         .addParameter("rowId", _statusFile.getRowId());
             }
-
-            // TODO: escalate job failure url
 
             bean.status = StatusDetailsBean.create(getContainer(), _statusFile, 0);
 
@@ -544,7 +542,7 @@ public class StatusController extends SpringActionController
 
             PipelineStatusFile psf = getStatusFile(form.getRowId());
             if (psf == null)
-                throw new NotFoundException("Status file not found");
+                throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
 
             var status = StatusDetailsBean.create(c, psf, form.getOffset());
             return success(status);
@@ -561,9 +559,7 @@ public class StatusController extends SpringActionController
 
             PipelineStatusFile sf = getStatusFile(form.getRowId());
             if (sf == null)
-            {
-                throw new NotFoundException();
-            }
+                throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
 
             if (sf.getDataUrl() != null)
             {
@@ -615,7 +611,7 @@ public class StatusController extends SpringActionController
 
             PipelineStatusFileImpl sf = getStatusFile(form.getRowId());
             if (sf == null)
-                throw new NotFoundException();
+                throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
 
             PipelineProvider provider = PipelineService.get().getPipelineProvider(sf.getProvider());
             if (provider == null)
@@ -995,151 +991,6 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresLogin
-    @RequiresPermission(ReadPermission.class)
-    public class EscalateJobFailureAction extends SimpleViewAction<RowIdForm>
-    {
-        @Override
-        public ModelAndView getView(RowIdForm form, BindException errors)
-        {
-            DataRegion rgn = new DataRegion();
-
-            rgn.setColumns(getTableInfo().getColumns("Created, Modified, Job, Provider, Email, Status, Info, FilePath, DataUrl"));
-            rgn.addDisplayColumn(new FileDisplayColumn());
-            DisplayColumn col = rgn.getDisplayColumn("Job");
-            col.setVisible(false);
-            col = rgn.getDisplayColumn("Provider");
-            col.setVisible(false);
-            col = rgn.getDisplayColumn("DataUrl");
-            col.setVisible(false);
-
-            DetailsView detailsView = new DetailsView(rgn, form.getRowId());
-            detailsView.setTitle("Job Status");
-
-            VBox view = new VBox(detailsView);
-            PipelineStatusFileImpl sf = getStatusFile(form.getRowId());
-            if (sf == null)
-            {
-                throw new NotFoundException();
-            }
-            view.addView(new JspView<>("/org/labkey/pipeline/status/escalateJobFailure.jsp", sf));
-
-            return view;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            root.addChild("Escalate Pipeline Job Failure");
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class EscalateAction extends ShowListBaseAction<EscalateMessageForm>
-    {
-        @Override
-        public void validateCommand(EscalateMessageForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(EscalateMessageForm form, BindException errors)
-        {
-            String recipients = "";
-            try
-            {
-                MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
-
-                final String message = (form.getEscalationMessage() == null ? "" : form.getEscalationMessage() + "\n\n") +
-                        "Job details can be found:\n\n" + form.getDetailsUrl();
-                m.setTextContent(message);
-                m.setHtmlContent(message);
-                m.setSubject(form.getEscalationSubject());
-                m.addFrom(new Address[]{new InternetAddress(getUser().getEmail(), getUser().getFullName())});
-
-                if (form.getEscalateAll())
-                    recipients = PipelineEmailPreferences.get().getEscalationUsers(getContainer());
-                else
-                    recipients = form.getEscalateUser();
-                if (!StringUtils.isEmpty(recipients))
-                {
-                    m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(recipients));
-                    MailHelper.send(m, getUser(), getContainer());
-                }
-            }
-            catch (Exception e)
-            {
-                _log.error("Failed creating an email escalation message for a pipeline job", e);
-                if (StringUtils.isEmpty(recipients))
-                    reject(errors, "Failed to send email.");
-                else
-                    reject(errors, "Failed sending email to " + recipients);
-                return false;
-            }
-
-            return true;
-        }
-    }
-
-    public static class EscalateMessageForm extends ReturnUrlWithErrorForm
-    {
-        private String _escalateUser;
-        private boolean _escalateAll;
-        private String _escalationSubject;
-        private String _escalationMessage;
-        private String _detailsUrl;
-
-        public void setEscalateUser(String escalateUser)
-        {
-            _escalateUser = escalateUser;
-        }
-
-        public String getEscalateUser()
-        {
-            return _escalateUser;
-        }
-
-        public void setEscalateAll(boolean escalateAll)
-        {
-            _escalateAll = escalateAll;
-        }
-
-        public boolean getEscalateAll()
-        {
-            return _escalateAll;
-        }
-
-        public void setEscalationSubject(String escalationSubject)
-        {
-            _escalationSubject = escalationSubject;
-        }
-
-        public String getEscalationSubject()
-        {
-            return _escalationSubject;
-        }
-
-        public void setEscalationMessage(String escalationMessage)
-        {
-            _escalationMessage = escalationMessage;
-        }
-
-        public String getEscalationMessage()
-        {
-            return _escalationMessage;
-        }
-
-        public void setDetailsUrl(String detailsUrl)
-        {
-            _detailsUrl = detailsUrl;
-        }
-
-        public String getDetailsUrl()
-        {
-            return _detailsUrl;
-        }
-    }
-
     private DataRegion getDetails(Container c, User user, int rowId) throws RedirectException
     {
         DataRegion rgn = new DataRegion();
@@ -1158,10 +1009,8 @@ public class StatusController extends SpringActionController
 
         PipelineStatusFileImpl sf = getStatusFile(rowId);
         if (sf == null)
-        {
             throw new NotFoundException("Could not find status file for rowId " + rowId);
-        }
-        
+
         if (!sf.lookupContainer().equals(getContainer()))
         {
             ActionURL url = getViewContext().cloneActionURL();
@@ -1222,20 +1071,6 @@ public class StatusController extends SpringActionController
                 ActionButton showData = new ActionButton(url, "Browse Files");
                 showData.setActionType(ActionButton.Action.LINK);
                 bb.add(showData);
-            }
-        }
-
-        // escalate pipeline failure button
-        if (!PipelineJob.TaskStatus.complete.matches(sf.getStatus()))
-        {
-            final String escalationUsers = PipelineEmailPreferences.get().getEscalationUsers(c);
-            if (!StringUtils.isEmpty(escalationUsers) && !getUser().isGuest())
-            {
-                ActionURL url = new ActionURL(EscalateJobFailureAction.class, c);
-                url.addParameter("rowId", rowId);
-                ActionButton escalate = new ActionButton(url, "Escalate Job Failure");
-                escalate.setActionType(ActionButton.Action.LINK);
-                bb.add(escalate);
             }
         }
 
@@ -1361,9 +1196,7 @@ public class StatusController extends SpringActionController
                 controller.new RunActionAction(),
                 controller.new DeleteStatusAction(),
                 controller.new CancelStatusAction(),
-                controller.new CompleteStatusAction(),
-                controller.new EscalateJobFailureAction(),
-                controller.new EscalateAction()
+                controller.new CompleteStatusAction()
             );
 
             // @RequiresPermission(UpdatePermission.class)

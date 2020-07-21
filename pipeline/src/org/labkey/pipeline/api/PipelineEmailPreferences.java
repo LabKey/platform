@@ -55,7 +55,6 @@ public class PipelineEmailPreferences
     public static final String PREF_NOTIFY_USERS_ON_SUCCESS = "notifyUsersOnSuccess";
     public static final String PREF_NOTIFY_OWNER_ON_ERROR = "notifyOwnerOnError";
     public static final String PREF_NOTIFY_USERS_ON_ERROR = "notifyUsersOnError";
-    public static final String PREF_ESCALATION_USERS = "escalationUsers";
     public static final String PREF_SUCCESS_INTERVAL = "successNotificationInterval";
     public static final String PREF_FAILURE_INTERVAL = "failureNotificationInterval";
     public static final String PREF_SUCCESS_NOTIFY_START = "successNotificationStart";
@@ -130,17 +129,6 @@ public class PipelineEmailPreferences
     {
         if (!StringUtils.equals(getNotifyUsersOnError(c), value))
             _setProperty(c, PREF_NOTIFY_USERS_ON_ERROR, value);
-    }
-
-    public String getEscalationUsers(Container c)
-    {
-        return _getProperty(c, PREF_ESCALATION_USERS);
-    }
-
-    public void setEscalationUsers(String value, Container c)
-    {
-        if (!StringUtils.equals(getEscalationUsers(c), value))
-            _setProperty(c, PREF_ESCALATION_USERS, value);
     }
 
     public String getSuccessNotificationInterval(Container c)
@@ -218,7 +206,6 @@ public class PipelineEmailPreferences
         _setProperty(c, PREF_NOTIFY_USERS_ON_SUCCESS, null);
         _setProperty(c, PREF_NOTIFY_OWNER_ON_ERROR, null);
         _setProperty(c, PREF_NOTIFY_USERS_ON_ERROR, null);
-        _setProperty(c, PREF_ESCALATION_USERS, null);
         _setProperty(c, PREF_SUCCESS_INTERVAL, null);
         _setProperty(c, PREF_FAILURE_INTERVAL, null);
         _setProperty(c, PREF_SUCCESS_NOTIFY_START, null);

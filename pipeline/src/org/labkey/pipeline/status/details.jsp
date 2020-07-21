@@ -35,7 +35,6 @@
     ActionURL showListURL = bean.showListUrl;
     ActionURL showFolderURL = bean.showFolderUrl;
     ActionURL showDataURL = bean.dataUrl;
-    // TODO: escalate pipeline failure url
 %>
 <%!
     // keep in sync with JavaScript logTextClass function
@@ -149,14 +148,12 @@
         <%=button("Browse Files").href(browseFilesURL)%>
         <% } %>
 
-        <%-- TODO: escalate job failures button --%>
-
         <% if (status.active && cancelURL != null) { %>
         <%=button("Cancel").id("cancel-btn").usePost().href(cancelURL)%>
         <% } %>
 
         <% if (retryURL != null) { %>
-        <%=button("Retry").id("retry-btn").usePost().href(retryURL).addClass(!(TaskStatus.error.matches(status.status) || TaskStatus.error.matches(status.status)) ? "hidden" : "")%>
+        <%=button("Retry").id("retry-btn").usePost().href(retryURL).addClass(!(TaskStatus.error.matches(status.status) || TaskStatus.cancelled.matches(status.status)) ? "hidden" : "")%>
         <% } %>
     </div>
 </labkey:panel>

@@ -852,7 +852,6 @@ public class PipelineController extends SpringActionController
                     c);
             pref.setNotifyOwnerOnError(form.getNotifyOwnerOnError(), c);
             pref.setNotifyUsersOnError(getValidUserList(form.getNotifyUsersOnError(), errors), c);
-            pref.setEscalationUsers(getValidUserList(form.getEscalationUsers(), errors), c);
             pref.setFailureNotificationInterval(
                     form.getFailureNotifyInterval(),
                     form.getFailureNotifyStart(),
