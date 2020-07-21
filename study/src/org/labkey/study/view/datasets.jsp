@@ -69,7 +69,7 @@
 <%
     if (container.hasPermission(user, AdminPermission.class))
     {
-        out.print("<br>");
+        out.print(unsafe("<br>"));
         out.print(link("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, container)));
     }
 %>
