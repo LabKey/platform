@@ -32,7 +32,6 @@ import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
-import org.labkey.test.util.RReportHelper;
 import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
@@ -89,7 +88,7 @@ public class StudyExportTest extends StudyManualTest
         modifyDatasetColumn(MODIFIED_DATASET);
         setDemographicsBit();
 
-        _listHelper.importListArchive(getFolderName(), new File(RReportHelper.getRLibraryPath(), "/listArchive.zip"));
+        _listHelper.importListArchive(getFolderName(), TestFileUtils.getSampleData("lists/ListOfPeople.lists.zip"));
 
         // export new study to zip file using "xml" formats
         exportStudy(true);
