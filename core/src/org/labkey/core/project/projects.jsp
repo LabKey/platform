@@ -196,7 +196,7 @@
         {
             Ext4.onReady(function() {
                 var config = <%= HtmlString.unsafe(new JSONObject(properties).toString()) %>;
-                _customizeProjectWebpart<%=webPartId%>(Ext4, <%=webPart.getRowId()%>, <%=q(webPart.getPageId())%>, <%=webPart.getIndex()%>, config);
+                _customizeProjectWebpart<%=webPartId%>(Ext4, <%=webPart.getRowId()%>, <%=unsafe(q(webPart.getPageId()))%>, <%=webPart.getIndex()%>, config);
             });
         });
     }
