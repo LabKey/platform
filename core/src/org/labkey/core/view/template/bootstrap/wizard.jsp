@@ -35,10 +35,10 @@
             <div class="row labkey-wizard-row hidden-md hidden-lg">
                 <div class="col-xs-12">
                     <ul class="nav nav-pills list-inline">
-                        <%for (NavTree navTree : pageConfig.getNavTrail()) { %>
-                        <li <%= pageConfig.getTitle().startsWith(navTree.getText()) ? "class=\"active\"" : ""%>>
-                            <a><span class="list-group-item-heading"><%= navTree.getText() %></span></a>
-                        </li>
+                        <% for (NavTree navTree : pageConfig.getNavTrail()) { %>
+                            <li <%=text(pageConfig.getTitle().startsWith(navTree.getText()) ? "class=\"active\"" : "")%>>
+                                <a><span class="list-group-item-heading"><%=h(navTree.getText())%></span></a>
+                            </li>
                         <%}%>
                     </ul>
                 </div>
@@ -47,8 +47,8 @@
                 <div class="col-md-3 hidden-xs hidden-sm">
                     <ul class="nav nav-stacked labkey-wizard-pills">
                         <% for (NavTree navTree : pageConfig.getNavTrail()) { %>
-                            <li <%= pageConfig.getTitle().startsWith(navTree.getText()) ? "class=\"active\"" : ""%>>
-                                <a><%= navTree.getText() %></a>
+                            <li <%=text(pageConfig.getTitle().startsWith(navTree.getText()) ? "class=\"active\"" : "")%>>
+                                <a><%=h(navTree.getText())%></a>
                             </li>
                         <% } %>
                     </ul>
