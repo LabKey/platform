@@ -116,28 +116,28 @@ public class SafeFileAppender extends AbstractAppender
 
     private void logJobMessage(LogEvent logEvent, @Nullable Throwable t)
     {
-        if (logEvent.getLevel().compareTo(Level.DEBUG) == 0)
+        if (logEvent.getLevel().equals(Level.DEBUG))
         {
             _jobLogger.debug(getSystemLogMessage(logEvent.getMessage()), t);
         }
 
-        if (logEvent.getLevel().compareTo(Level.INFO) == 0)
+        if (logEvent.getLevel().equals(Level.INFO))
         {
             _jobLogger.info(getSystemLogMessage(logEvent.getMessage()), t);
         }
 
-        if (logEvent.getLevel().compareTo(Level.WARN) == 0)
+        if (logEvent.getLevel().equals(Level.WARN))
         {
             _jobLogger.warn(getSystemLogMessage(logEvent.getMessage()), t);
         }
 
-        if (logEvent.getLevel().compareTo(Level.ERROR) == 0)
+        if (logEvent.getLevel().equals(Level.ERROR))
         {
             _jobLogger.error(getSystemLogMessage(logEvent.getMessage()), t);
             setErrorStatus(logEvent.getMessage());
         }
 
-        if (logEvent.getLevel().compareTo(Level.FATAL) == 0)
+        if (logEvent.getLevel().equals(Level.FATAL))
         {
             _jobLogger.fatal(getSystemLogMessage(logEvent.getMessage()), t);
             setErrorStatus(logEvent.getMessage());
