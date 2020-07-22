@@ -116,6 +116,11 @@ public class SafeFileAppender extends AbstractAppender
 
     private void logJobMessage(LogEvent logEvent, @Nullable Throwable t)
     {
+        if (logEvent.getLevel().equals(Level.TRACE))
+        {
+            _jobLogger.trace(getSystemLogMessage(logEvent.getMessage()), t);
+        }
+
         if (logEvent.getLevel().equals(Level.DEBUG))
         {
             _jobLogger.debug(getSystemLogMessage(logEvent.getMessage()), t);
