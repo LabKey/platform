@@ -807,9 +807,16 @@ public class DOM
         html.append(" ");
         html.append(key.name());
         html.append("=\"");
-        String s = String.valueOf(value);
-        if (StringUtils.isNotBlank(s))
-            html.append(filter(s));
+        if (value instanceof HtmlString)
+        {
+            html.append(value.toString());
+        }
+        else
+        {
+            String s = String.valueOf(value);
+            if (StringUtils.isNotBlank(s))
+                html.append(filter(s));
+        }
         html.append("\"");
         return html;
     }
