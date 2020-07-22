@@ -509,6 +509,7 @@ public class StatusController extends SpringActionController
 
         private int _rowId;
         private long _offset;
+        private int _count;
 
         public int getRowId()
         {
@@ -528,6 +529,16 @@ public class StatusController extends SpringActionController
         public void setOffset(long offset)
         {
             _offset = offset;
+        }
+
+        public int getCount()
+        {
+            return _count;
+        }
+
+        public void setCount(int count)
+        {
+            _count = count;
         }
     }
 

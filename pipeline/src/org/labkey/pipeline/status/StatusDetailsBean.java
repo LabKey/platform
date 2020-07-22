@@ -1,5 +1,7 @@
 package org.labkey.pipeline.status;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import edu.emory.mathcs.backport.java.util.Collections;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.StringBuilderWriter;
@@ -11,6 +13,8 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
+import org.labkey.pipeline.api.PipelineStatusFileImpl;
+import org.labkey.pipeline.api.PipelineStatusManager;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -18,14 +22,18 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
+import static org.labkey.pipeline.api.PipelineStatusManager.getSplitStatusFiles;
 
 /**
  * Used for Jackson serialization
  * @see StatusController.Details2Action
  * @see StatusController.StatusDetailLog
  */
+@JsonInclude(JsonInclude.Include.NON_NULL) // Don't serialize null values
 public class StatusDetailsBean
 {
     public final int rowId;
@@ -42,11 +50,20 @@ public class StatusDetailsBean
     public final String activeHostName;
     public final String filePath;
 
+    public final StatusDetailsBean parentStatus;
+    public final List<StatusDetailsBean> splitStatus;
+
     public final List<StatusDetailFile> files;
     public final List<StatusDetailRun> runs;
     public final StatusDetailLog log;
 
-    public StatusDetailsBean(Container c, PipelineStatusFile psf, List<StatusDetailFile> files, List<StatusDetailRun> runs, StatusDetailLog log)
+    // private constructor for parent/split job status
+    private StatusDetailsBean(Container c, PipelineStatusFile psf)
+    {
+        this(c, psf, null, null, null, null, null);
+    }
+
+    public StatusDetailsBean(Container c, PipelineStatusFile psf, List<StatusDetailFile> files, List<StatusDetailRun> runs, StatusDetailsBean parentStatus, List<StatusDetailsBean> splitStatus, StatusDetailLog log)
     {
         this.rowId = psf.getRowId();
         this.jobId = psf.getJobId();
@@ -62,7 +79,8 @@ public class StatusDetailsBean
         this.activeHostName = psf.getActiveHostName();
         this.filePath = psf.getFilePath();
 
-        // TODO: include split and join job info -- see JobDisplayColumn
+        this.parentStatus = parentStatus;
+        this.splitStatus = splitStatus;
 
         this.files = files;
         this.runs = runs;
@@ -71,7 +89,7 @@ public class StatusDetailsBean
 
     public static StatusDetailsBean create(Container c, PipelineStatusFile psf, long logOffset) throws IOException
     {
-        var statusRuns = ExperimentService.get().getExpRunsForJobId(psf.getRowId()).stream().map(StatusDetailRun::create).collect(Collectors.toList());
+        var statusRuns = ExperimentService.get().getExpRunsForJobId(psf.getRowId()).stream().map(StatusDetailRun::create).collect(toList());
         var statusFiles = Collections.emptyList();
         StatusDetailLog statusLog = null;
 
@@ -86,7 +104,7 @@ public class StatusDetailsBean
                 List<File> files = FileDisplayColumn.listFiles(path.toFile(), c, provider);
                 if (files != null && !files.isEmpty())
                 {
-                    statusFiles = files.stream().map(f -> new StatusDetailFile(c, psf.getRowId(), f)).collect(Collectors.toList());
+                    statusFiles = files.stream().map(f -> new StatusDetailFile(c, psf.getRowId(), f)).collect(toList());
                 }
 
 
@@ -110,7 +128,25 @@ public class StatusDetailsBean
             }
         }
 
-        return new StatusDetailsBean(c, psf, statusFiles, statusRuns, statusLog);
+        StatusDetailsBean parentStatus = null;
+        if (psf.getJobParentId() != null)
+        {
+            var parent = PipelineStatusManager.getJobStatusFile(psf.getJobParentId());
+            if (parent != null)
+                parentStatus = new StatusDetailsBean(parent.lookupContainer(), parent);
+        }
+
+        List<StatusDetailsBean> splitStatus = null;
+        List<PipelineStatusFileImpl> splitStatusFiles = getSplitStatusFiles(psf.getJobId());
+        if (!splitStatusFiles.isEmpty())
+        {
+            splitStatus = splitStatusFiles.stream()
+                    .sorted(Comparator.comparing(PipelineStatusFile::getDescription, String.CASE_INSENSITIVE_ORDER))
+                    .map(split -> new StatusDetailsBean(split.lookupContainer(), split))
+                    .collect(toList());
+        }
+
+        return new StatusDetailsBean(c, psf, statusFiles, statusRuns, parentStatus, splitStatus, statusLog);
     }
 
     // Copy the file content from Path to the PrintWriter,

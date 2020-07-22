@@ -74,6 +74,11 @@
         return sb.toString();
     }
 %>
+<style type="text/css">
+    td.split-job-status {
+        width: 15em;
+    }
+</style>
 <div id="error-list">
     <labkey:errors/>
 </div>
@@ -121,15 +126,71 @@
                 <% } %>
             </td>
         </tr>
+        <tr class="<%=status.parentStatus == null ? "hidden" : ""%>">
+            <td class="lk-form-label">Join job:</td>
+            <td id="parent-job">
+                <table class="table-bordered table-condensed">
+                    <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Description</th>
+                    </tr>
+                    </thead>
+                    <tbody id="parent-job-table-body">
+                    <% if (status.parentStatus != null) { %>
+                    <tr class="labkey-alternate-row" data-rowid="<%=status.parentStatus.rowId%>">
+                        <td class="split-job-status">
+                            <a href="<%=h(StatusController.urlDetails(getContainer(), status.parentStatus.rowId))%>">
+                                <%=h(status.parentStatus.status)%>
+                            </a>
+                        </td>
+                        <td class="split-job-description">
+                            <%=h(status.parentStatus.description)%>
+                        </td>
+                    </tr>
+                    <% } %>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        <tr class="<%=status.splitStatus == null || status.splitStatus.isEmpty() ? "hidden" : ""%>">
+            <td class="lk-form-label">Split jobs:</td>
+            <td id="split-jobs">
+                <table class="table-bordered table-condensed">
+                    <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Description</th>
+                    </tr>
+                    </thead>
+                    <tbody id="split-jobs-table-body">
+                    <% if (status.splitStatus != null) { %>
+                    <% for (int i = 0; i < status.splitStatus.size(); i++) { %>
+                        <% var split = status.splitStatus.get(i); %>
+                    <tr class="<%=getShadeRowClass(i)%>" data-rowid="<%=split.rowId%>">
+                        <td class="split-job-status">
+                            <a href="<%=h(StatusController.urlDetails(getContainer(), split.rowId))%>">
+                                <%=h(split.status)%>
+                            </a>
+                        </td>
+                        <td class="split-job-description">
+                            <%=h(split.description)%>
+                        </td>
+                    </tr>
+                    <% } %>
+                    <% } %>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
         <tr class="<%=status.runs.isEmpty() ? "hidden" : ""%>">
-            <td class="lk-form-label">Runs:</td>
+            <td class="lk-form-label">Completed Runs:</td>
             <td id="runs-list">
                 <% for (var run : status.runs) { %>
                 <a href="<%=run.url%>" id="run-<%=run.rowId%>"><%=h(run.name)%></a><br>
                 <% } %>
             </td>
         </tr>
-        <!-- TODO: split and join status -->
         </tbody>
     </table>
     <div class="labkey-button-bar-separate">
@@ -141,8 +202,6 @@
 
         <%-- NOTE: showDataURL is null until the job is complete.  When complete, the button will be shown. --%>
         <%=button("Data").id("show-data-btn").href(showDataURL).addClass(status.active || showDataURL == null ? "hidden" : "")%>
-
-        <%-- TODO: consider adding Runs button in addition to the runs-list above --%>
 
         <% if (browseFilesURL != null) { %>
         <%=button("Browse Files").href(browseFilesURL)%>
@@ -193,6 +252,9 @@
 
     let filesListEl = document.getElementById('files-list');
     let runsListEl = document.getElementById('runs-list');
+
+    let parentJobTableBodyEl = document.getElementById('parent-job-table-body');
+    let splitJobsTableBodyEl = document.getElementById('split-jobs-table-body');
 
     let logContainerEl = document.getElementById('log-container');
     let logDataEl = document.getElementById('log-data');
@@ -308,6 +370,7 @@
 
         let active = <%=status.active%>;
         let nextOffset = <%=nextOffset%>;
+        let fetchCount = 0;
 
         function updateField(el, text) {
             // NOTE: using innerText encodes html for us
@@ -316,7 +379,8 @@
 
         function updateStatus(active, status, hadError) {
             if (!active) {
-                statusSpinnerEl.style.display = 'none';
+                if (statusSpinnerEl)
+                    statusSpinnerEl.classList.add('hidden');
             }
 
             updateField(statusTextEl, status);
@@ -337,9 +401,8 @@
                     runsListEl.appendChild(link);
                     runsListEl.appendChild(document.createElement('BR'));
 
-                    // show the parent list if hidden
-                    let runListRowEl = runsListEl.parentElement;
-                    runListRowEl.classList.remove('hidden');
+                    // show the <tr> if hidden
+                    runsListEl.parentElement.classList.remove('hidden');
                 }
             }
         }
@@ -365,11 +428,90 @@
                     filesListEl.appendChild(link);
                     filesListEl.appendChild(document.createElement('BR'));
 
-                    // show the parent list if hidden
-                    let fileListRowEl = filesListEl.parentElement;
-                    fileListRowEl.classList.remove('hidden');
+                    // show the <tr> if hidden
+                    filesListEl.parentElement.classList.remove('hidden');
                 }
             }
+        }
+
+
+        function renderSplitJobStatusRow(status, alt) {
+            let html = '<tr class="' + (alt ? 'labkey-alternate-row' : 'labkey-row') + '"' +
+                    ' data-rowid="' + LABKEY.Utils.encodeHtml(status.rowId) + '">' +
+                    '<td class="split-job-status">' +
+                    '<a href="' + LABKEY.ActionURL.buildURL('pipeline-status', 'details.view', null, {'rowId': status.rowId}) + '">' +
+                    LABKEY.Utils.encodeHtml(status.status) +
+                    '</a>' +
+                    '</td>' +
+                    '<td class="split-job-description">' +
+                    LABKEY.Utils.encodeHtml(status.description) +
+                    '</td>' +
+                    '</tr>';
+
+            return createDomNode(html);
+        }
+
+        function findSplitJobStatusRow(tableBodyEl, rowId) {
+            // dataset values are string, so we need to convert the rowId
+            let rowIdStr = ""+rowId;
+            let rows = tableBodyEl.querySelectorAll("tr");
+            for (let i = 0; i < rows.length; i++) {
+                let row = rows[i];
+                if (row.dataset.rowid === rowIdStr) {
+                    return row;
+                }
+            }
+
+            return null;
+        }
+
+        function updateSplitJobStatusRow(status, rowEl) {
+            if (!rowEl)
+                return;
+
+            let statusLinkEl = rowEl.querySelector('td.split-job-status > a');
+            statusLinkEl.innerText = status.status;
+
+            let descriptionEl = rowEl.querySelector('td.split-job-description');
+            descriptionEl.innerText = status.description;
+        }
+
+        function updateStatusRow(tableBodyEl, status) {
+            if (!status)
+                return;
+
+            let rowEl = findSplitJobStatusRow(tableBodyEl, status.rowId);
+            if (!rowEl) {
+                let alt = (tableBodyEl.childNodes.length % 2) === 1;
+                rowEl = renderSplitJobStatusRow(status, alt);
+                tableBodyEl.appendChild(rowEl);
+            }
+            else {
+                updateSplitJobStatusRow(status, rowEl);
+            }
+        }
+
+        function updateParentStatus(parentStatus) {
+            if (!parentStatus)
+                return;
+
+            updateStatusRow(parentJobTableBodyEl, parentStatus);
+
+            // show the <tr> if hidden
+            document.getElementById('parent-job').parentElement.classList.remove('hidden');
+        }
+
+        function updateSplitStatus(splitStatus) {
+            if (!splitStatus || splitStatus.length === 0)
+                return;
+
+            for (let i = 0; i < splitStatus.length; i++) {
+                let status = splitStatus[i];
+                updateStatusRow(splitJobsTableBodyEl, status);
+            }
+
+            // show the <tr> if hidden
+            document.getElementById('split-jobs').parentElement.classList.remove('hidden');
         }
 
         function renderLog(records) {
@@ -415,7 +557,8 @@
                 LABKEY.Ajax.request({
                     url: LABKEY.ActionURL.buildURL('pipeline-status', 'statusDetails.api', null, {
                         rowId: <%=status.rowId%>,
-                        offset: nextOffset
+                        offset: nextOffset,
+                        count: fetchCount++
                     }),
                     method: 'GET',
                     success: LABKEY.Utils.getCallbackWrapper(function (result, xhr) {
@@ -467,7 +610,8 @@
                             updateStatus(active, status.status, status.hadError);
                             updateRuns(status.runs);
                             updateFiles(status.files);
-                            //TODO: split join status
+                            updateParentStatus(status.parentStatus);
+                            updateSplitStatus(status.splitStatus);
                             updateLog(status.log);
                         }
                     }),
@@ -476,7 +620,7 @@
                             let errorListEl = document.getElementById('error-list');
                             let msgEl = document.createElement("DIV");
                             msgEl.classList.add('labkey-error');
-                            msgEl.innerHTML = err.exception;
+                            msgEl.innerHTML = LABKEY.Utils.encodeHtml(err.exception);
                             errorListEl.appendChild(msgEl);
                         }
                     }, false)
