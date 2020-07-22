@@ -474,7 +474,7 @@ public class StatusController extends SpringActionController
             Details2Bean bean = new Details2Bean();
 
             if (_statusFile.isCancellable() && c.hasPermission(getUser(), DeletePermission.class))
-                bean.cancelUrl = urlProvider(PipelineStatusUrls.class).urlCancel(getContainer(), _statusFile.getRowId(), getViewContext().cloneActionURL());
+                bean.cancelUrl = urlCancel(getContainer(), _statusFile.getRowId(), getViewContext().cloneActionURL());
 
             bean.browseFilesUrl = urlProvider(PipelineUrls.class).urlBrowse(_statusFile, getViewContext().getActionURL());
             bean.showListUrl = urlShowList(getContainer(), true);
@@ -484,11 +484,7 @@ public class StatusController extends SpringActionController
                 bean.dataUrl = new ActionURL(StatusController.ShowDataAction.class, c).addParameter("rowId", _statusFile.getRowId());
 
             if (_statusFile.getJobStore() != null && (getUser().hasRootAdminPermission() || c.hasPermission(getUser(), UpdatePermission.class)))
-            {
-                bean.retryUrl = new ActionURL(ProviderActionAction.class, c)
-                        .addParameter("name", PipelineProvider.CAPTION_RETRY_BUTTON)
-                        .addParameter("rowId", _statusFile.getRowId());
-            }
+                bean.retryUrl = urlRetry(_statusFile);
 
             bean.status = StatusDetailsBean.create(getContainer(), _statusFile, 0);
 
@@ -505,7 +501,7 @@ public class StatusController extends SpringActionController
 
     public static class StatusDetailsForm extends RowIdForm
     {
-        enum Params { rowId, offset }
+        enum Params { rowId, offset, count }
 
         private int _rowId;
         private long _offset;
@@ -605,67 +601,6 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermission(UpdatePermission.class)
-    public class ProviderActionAction extends FormHandlerAction<ProviderActionForm>
-    {
-        private ActionURL _urlSuccess;
-
-        @Override
-        public void validateCommand(ProviderActionForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(ProviderActionForm form, BindException errors)
-        {
-            getContainerCheckAdmin();
-
-            PipelineStatusFileImpl sf = getStatusFile(form.getRowId());
-            if (sf == null)
-                throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
-
-            PipelineProvider provider = PipelineService.get().getPipelineProvider(sf.getProvider());
-            if (provider == null)
-                throw new NotFoundException();
-
-            try
-            {
-                _urlSuccess = provider.handleStatusAction(getViewContext(), form.getName(), sf);
-
-                return true;
-            }
-            catch (PipelineProvider.HandlerException e)
-            {
-                errors.addError(new LabKeyError(e.getMessage()));
-            }
-
-            return false;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(ProviderActionForm form)
-        {
-            // Just to be safe, return to the details page, if there is no success URL from
-            // the provider.
-
-            return (_urlSuccess != null ? _urlSuccess : urlDetails(getContainer(), form.getRowId()));
-        }
-    }
-
-    public static class ProviderActionForm extends RowIdForm
-    {
-        private String name;
-
-        public String getName()
-        {
-            return name;
-        }
-
-        public void setName(String name)
-        {
-            this.name = name;
-        }
-    }
 
     public static ActionURL urlShowFile(Container c, int rowId, String filename, boolean download)
     {
@@ -841,50 +776,6 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public class RunActionAction extends PerformStatusActionBase<ActionForm>
-    {
-        @Override
-        public boolean handlePost(ActionForm form, BindException errors) throws Exception
-        {
-            // The method prototype for this method is used to determine the form type,
-            // so it must be here, even though it does nothing more than call super.
-
-            return super.handlePost(form, errors);
-        }
-
-        @Override
-        public void handleSelect(ActionForm form) throws PipelineProvider.HandlerException
-        {
-            // Let the provider handle the action, if it can.
-            for (int rowId : form.getRowIds())
-            {
-                PipelineStatusFileImpl sf = getStatusFile(rowId);
-                if (sf == null)
-                    continue;   // Already gone.
-
-                PipelineProvider provider = PipelineService.get().getPipelineProvider(sf.getProvider());
-                if (provider != null)
-                    provider.handleStatusAction(getViewContext(), form.getAction(), sf);
-            }
-        }
-    }
-
-    public static class ActionForm extends SelectStatusForm
-    {
-        private String _action;
-
-        public String getAction()
-        {
-            return _action;
-        }
-
-        public void setAction(String action)
-        {
-            _action = action;
-        }
-    }
-
     public static class ConfirmDeleteStatusForm extends SelectStatusForm
     {
         private String _dataRegionSelectionKey;
@@ -1002,6 +893,70 @@ public class StatusController extends SpringActionController
         }
     }
 
+    @RequiresPermission(UpdatePermission.class)
+    public class RetryStatusAction extends FormHandlerAction<RowIdForm>
+    {
+        ActionURL _successURL;
+
+        @Override
+        public void validateCommand(RowIdForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(RowIdForm form, BindException errors) throws Exception
+        {
+            getContainerCheckAdmin();
+
+            Set<Integer> rowIds;
+            if (form.getRowId() != 0)
+            {
+                rowIds = Set.of(form.getRowId());
+            }
+            else
+            {
+                rowIds = DataRegionSelection.getSelectedIntegers(getViewContext(), false);
+            }
+
+            ActionURL firstDetailsURL = null;
+            for (Integer rowId : rowIds)
+            {
+                var sf = getStatusFile(rowId);
+                if (sf == null)
+                    throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
+
+                if (firstDetailsURL == null)
+                    firstDetailsURL = urlDetails(sf);
+
+                if (!PipelineJob.TaskStatus.error.matches(sf.getStatus()) && !PipelineJob.TaskStatus.cancelled.matches(sf.getStatus()))
+                {
+                    errors.addError(new LabKeyError("Unable to retry job that is not in the ERROR or CANCELLED state"));
+                }
+
+                try
+                {
+                    PipelineJobService.get().getJobStore().retry(sf);
+                }
+                catch (IOException | NoSuchJobException e)
+                {
+                    errors.addError(new LabKeyError(e.getMessage()));
+                }
+            }
+
+            if (errors.hasErrors())
+                return false;
+
+            _successURL = form.getReturnActionURL(firstDetailsURL);
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(RowIdForm rowIdForm)
+        {
+            return _successURL;
+        }
+    }
+
     private DataRegion getDetails(Container c, User user, int rowId) throws RedirectException
     {
         DataRegion rgn = new DataRegion();
@@ -1029,7 +984,8 @@ public class StatusController extends SpringActionController
             throw new RedirectException(url);
         }
 
-        ButtonBar bb = new ProviderButtonBar(sf);
+        ButtonBar bb = new ButtonBar();
+        bb.setStyle(ButtonBar.Style.separateButtons);
 
         ActionButton showGrid = new ActionButton(new ActionURL(ShowListAction.class, getContainer()).addParameter(DataRegion.LAST_FILTER_PARAM, "true"), "Show Grid");
         showGrid.setActionType(ActionButton.Action.LINK);
@@ -1088,9 +1044,19 @@ public class StatusController extends SpringActionController
         if (sf.isCancellable() && getContainer().hasPermission(getUser(), DeletePermission.class))
         {
             ActionURL url = urlCancel(c, sf.getRowId(), getViewContext().getActionURL());
-            ActionButton showData = new ActionButton(url, "Cancel");
-            showData.setActionType(ActionButton.Action.POST);
-            bb.add(showData);
+            ActionButton button = new ActionButton(url, "Cancel");
+            button.setActionType(ActionButton.Action.POST);
+            bb.add(button);
+        }
+
+        if (sf.isRetryable())
+        {
+            ActionURL retryUrl = urlRetry(sf);
+            ActionButton button = new ActionButton(retryUrl, "Retry");
+            button.setActionType(ActionButton.Action.POST);
+            if (!getUser().hasRootAdminPermission())
+                button.setDisplayPermission(UpdatePermission.class);
+            bb.add(button);
         }
 
         rgn.setButtonBar(bb, DataRegion.MODE_DETAILS);
@@ -1105,6 +1071,12 @@ public class StatusController extends SpringActionController
         if (returnUrl != null)
             url.addReturnURL(returnUrl);
         return url;
+    }
+
+    private static ActionURL urlRetry(PipelineStatusFile sf)
+    {
+        return new ActionURL(RetryStatusAction.class, sf.lookupContainer())
+                .addParameter("rowId", sf.getRowId());
     }
 
     protected static boolean isVisibleFile(String name, String basename)
@@ -1201,10 +1173,11 @@ public class StatusController extends SpringActionController
                 controller.new ShowListRegionAction(),
                 controller.new ShowPartRegionAction(),
                 controller.new DetailsAction(),
+                controller.new Details2Action(),
                 controller.new ShowDataAction(),
                 controller.new ShowFolderAction(),
                 controller.new ShowFileAction(),
-                controller.new RunActionAction(),
+                controller.new StatusDetailsAction(),
                 controller.new DeleteStatusAction(),
                 controller.new CancelStatusAction(),
                 controller.new CompleteStatusAction()
@@ -1212,7 +1185,7 @@ public class StatusController extends SpringActionController
 
             // @RequiresPermission(UpdatePermission.class)
             assertForUpdateOrDeletePermission(user,
-                controller.new ProviderActionAction()
+                controller.new RetryStatusAction()
             );
 
             // @RequiresPermission(AdminOperationsPermission.class)
