@@ -108,8 +108,8 @@
             propEdit     : <%=queryDef.isMetadataEditable() && !builtIn%>,
             queryText    : <%=q(action._form.ff_queryText)%>,
             metadataText : <%=q(action._form.ff_metadataText)%>,
-            help         : <%=PageFlowUtil.qh(new HelpTopic(sqlHelpTopic).toString())%>,
-            metadataHelp : <%=PageFlowUtil.qh(new HelpTopic(metadataHelpTopic).toString())%>
+            help         : <%=q(new HelpTopic(sqlHelpTopic).getHelpTopicHref())%>,
+            metadataHelp : <%=q(new HelpTopic(metadataHelpTopic).getHelpTopicHref())%>
         };
 
         var tabMap = {

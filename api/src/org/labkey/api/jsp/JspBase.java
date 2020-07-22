@@ -39,6 +39,7 @@ import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.util.element.Select.SelectBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -426,6 +427,11 @@ public abstract class JspBase extends JspContext implements HasViewContext
     public ButtonBuilder button(HtmlString html)
     {
         return new ButtonBuilder(html);
+    }
+
+    public SelectBuilder select()
+    {
+        return new SelectBuilder();
     }
 
     public @NotNull HtmlString makeHtmlId(@Nullable String s)
