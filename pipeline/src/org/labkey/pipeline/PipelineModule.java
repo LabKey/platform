@@ -41,6 +41,8 @@ import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;

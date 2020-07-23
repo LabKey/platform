@@ -45,8 +45,6 @@ import java.util.List;
  */
 abstract public class PipelineProvider
 {
-    public static final String CAPTION_RETRY_BUTTON = "Retry";
-
     public enum Params { path }
 
     private boolean _showActionsIfModuleInactive;
@@ -274,59 +272,6 @@ abstract public class PipelineProvider
      * @param includeAll add all actions from this provider even if there are no files of interest in the pipeline directory
      */
     public abstract void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll);
-
-    /**
-     * Allows the provider to add action buttons to the details page of one
-     * of its status entries.
-     *
-     * @return List of actions to add to the details page
-     */
-    public List<StatusAction> addStatusActions()
-    {
-        List<PipelineProvider.StatusAction> actions = new ArrayList<>();
-        actions.add(new PipelineProvider.StatusAction(CAPTION_RETRY_BUTTON)
-        {
-            @Override
-            public boolean isVisible(PipelineStatusFile statusFile)
-            {
-                // We can retry if the job is in ERROR or CANCELLED and we still have the serialized job info
-                return (PipelineJob.TaskStatus.error.matches(statusFile.getStatus()) ||
-                        PipelineJob.TaskStatus.cancelled.matches(statusFile.getStatus())) &&
-                        statusFile.getJobStore() != null;
-            }
-        });
-        return actions;
-    }
-
-    /**
-     * Allows the provider to handle the user clicking on one of the action
-     * buttons provided through getStatusActions.
-     *
-     * @param name The name of the action clicked
-     * @param sf   The StatusFile object on which the action is to be performed
-     */
-    public ActionURL handleStatusAction(ViewContext ctx, String name, PipelineStatusFile sf)
-            throws HandlerException
-    {
-        if (PipelineProvider.CAPTION_RETRY_BUTTON.equals(name))
-        {
-            if (!PipelineJob.TaskStatus.error.matches(sf.getStatus()) && !PipelineJob.TaskStatus.cancelled.matches(sf.getStatus()))
-            {
-                throw new HandlerException("Unable to retry job that is not in the ERROR or CANCELLED state");
-            }
-            try
-            {
-                PipelineJobService.get().getJobStore().retry(sf);
-            }
-            // CONSIDER: Narrow this net further?
-            catch (IOException | NoSuchJobException e)
-            {
-                throw new HandlerException(e);
-            }
-            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlDetails(ctx.getContainer(), sf.getRowId());
-        }
-        return null;
-    }
 
     /**
      * Local exception type to throw from handleStatusAction.

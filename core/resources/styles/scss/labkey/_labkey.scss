@@ -197,6 +197,44 @@ pre.labkey-log-file
   border: none;
 }
 
+pre.labkey-log-text {
+  margin: 2px 0;
+  padding-left: 1.6em;
+  white-space: pre-wrap;
+}
+
+// only show the first line of the <pre> block when collapsed
+pre.labkey-log-text.collapsed {
+  height: #{$lk-line-height-base}em;
+  overflow-y: hidden;
+}
+
+// draw a vertical line under the plus icon when expanded
+// https://stackoverflow.com/questions/1179928/how-can-i-put-a-vertical-line-down-the-center-of-a-div/53551089#53551089
+pre.labkey-log-text.multiline.expanded {
+  background-image: linear-gradient(#ccc, #ccc);
+  background-size: 1px calc(100% - 1.5em);
+  background-repeat: no-repeat;
+  background-position-x: 0.55em;
+  background-position-y: 1.25em;
+}
+
+// add [-] icon before multiline block
+pre.labkey-log-text.multiline.expanded::before {
+  font-family: FontAwesome;
+  content: '\f147'; /* fa-minus-square-o */
+  float: left;
+  margin-left: -1.4em;
+}
+
+// add [+] icon before multiline block
+pre.labkey-log-text.multiline.collapsed::before {
+  font-family: FontAwesome;
+  content: '\f196'; /* fa-plus-square-o */
+  float: left;
+  margin-left: -1.4em;
+}
+
 //TODO: Can remove if _frameNavigation is removed
 .labkey-expandable-nav-body {
   border: 0;

@@ -88,24 +88,6 @@ public interface PipelineQueue
     void done(PipelineJob job);
 
     /**
-     * Attempt to find a job running in memory on the LabKey Server with the
-     * specified status file path.  This only works on the mini-pipeline, and
-     * is currently only used in a single case to show enriched information
-     * about the running job's state for the flow <code>JobStatusView</code>.
-     * <p/>
-     * Avoid adding any new dependencies on this code, and especially anything
-     * that does not degrade gracefully, when no in memory job is returned for
-     * something the pipeline status indicates is running.  It may be running
-     * on another machine.
-     *
-     * @param c The container in which the job was started
-     * @param statusFile The file path associated with this job for its status
-     * @return An job actively running in memory on this server
-     */
-    @Deprecated
-    PipelineJob findJobInMemory(Container c, String statusFile);
-
-    /**
      * An old way for getting data about running jobs that assumes they are all
      * in memory on the LabKey Server.  This is still supported for some backward
      * compatibility, but in the EnterprisePipeline it is not very useful, since
