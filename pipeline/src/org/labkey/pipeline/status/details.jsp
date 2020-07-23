@@ -75,6 +75,10 @@
     }
 %>
 <style type="text/css">
+    #log-container {
+        height: 30em;
+        overflow: auto;
+    }
     td.split-job-status {
         width: 15em;
     }
@@ -222,7 +226,7 @@
         <%=link("Copy to clipboard").id("copy-log-text").onClick("copyLogText(event);return false;")%>
     </div>
     <br>
-    <div id="log-container" style="height:400px;overflow:auto;">
+    <div id="log-container">
         <% if (status.log == null) { %>
         <em>Log file doesn't exist.</em>
         <% } else { %>
@@ -563,79 +567,79 @@
         }
 
         function fetchStatus() {
-            if (active) {
-                LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('pipeline-status', 'statusDetails.api', null, {
-                        rowId: <%=status.rowId%>,
-                        offset: nextOffset,
-                        count: fetchCount++
-                    }),
-                    method: 'GET',
-                    success: LABKEY.Utils.getCallbackWrapper(function (result, xhr) {
-                        if (result.success) {
-                            let status = result.data;
-                            console.log("status", status);
-                            active = status.active;
-                            if (active) {
-                                // add the next chunk of log data and scroll
-                                if (status.log && status.log.nextOffset) {
-                                    nextOffset = status.log.nextOffset;
-                                }
-                                setTimeout(fetchStatus, 500);
+            if (!active)
+                return;
+
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('pipeline-status', 'statusDetails.api', null, {
+                    rowId: <%=status.rowId%>,
+                    offset: nextOffset,
+                    count: fetchCount++
+                }),
+                method: 'GET',
+                success: LABKEY.Utils.getCallbackWrapper(function (result, xhr) {
+                    if (result.success) {
+                        let status = result.data;
+                        active = status.active;
+                        if (active) {
+                            // add the next chunk of log data and scroll
+                            if (status.log && status.log.nextOffset) {
+                                nextOffset = status.log.nextOffset;
                             }
-                            else {
+                            setTimeout(fetchStatus, 500);
+                        }
+                        else {
 
-                                // disable the cancel button
-                                if (cancelBtnEl) {
-                                    cancelBtnEl.classList.add('labkey-disabled-button');
-                                }
-
-                                // if status is error or cancelled, show retry
-                                if (retryBtnEl && (status.status.toLowerCase() === <%=q(TaskStatus.error.name())%> || status.status.toLowerCase() === <%=q(TaskStatus.cancelled.name())%>)) {
-                                    retryBtnEl.classList.remove('hidden');
-                                }
-
-                                // reveal the data button
-                                if (status.dataUrl) {
-                                    showDataBtnEl.href = status.dataUrl;
-                                    showDataBtnEl.classList.remove('hidden');
-                                }
-
-                                // if redirect=1, navigate to the imported run
-                                if (status.status.toLowerCase() === <%=q(TaskStatus.complete.name())%> && LABKEY.ActionURL.getParameter('redirect') === '1') {
-                                    let redirect = status.dataUrl;
-                                    if (redirect) {
-                                        setTimeout(function () {
-                                            window.location = redirect;
-                                        }, 300);
-                                    }
-                                }
+                            // disable the cancel button
+                            if (cancelBtnEl) {
+                                cancelBtnEl.classList.add('labkey-disabled-button');
                             }
 
-                            updateField(createdEl, status.created);
-                            updateField(modifiedEl, status.modified);
-                            updateField(emailEl, status.email);
-                            updateField(infoEl, status.info);
-                            updateField(descriptionEl, status.description);
-                            updateStatus(active, status.status, status.hadError);
-                            updateRuns(status.runs);
-                            updateFiles(status.files);
-                            updateParentStatus(status.parentStatus);
-                            updateSplitStatus(status.splitStatus);
-                            updateLog(status.log);
+                            // if status is error or cancelled, show retry
+                            if (retryBtnEl && (status.status.toLowerCase() === <%=q(TaskStatus.error.name())%> || status.status.toLowerCase() === <%=q(TaskStatus.cancelled.name())%>)) {
+                                retryBtnEl.classList.remove('hidden');
+                            }
+
+                            // reveal the data button
+                            if (status.dataUrl) {
+                                showDataBtnEl.href = status.dataUrl;
+                                showDataBtnEl.classList.remove('hidden');
+                            }
+
+                            // if redirect=1, navigate to the imported run
+                            if (status.status.toLowerCase() === <%=q(TaskStatus.complete.name())%> && LABKEY.ActionURL.getParameter('redirect') === '1') {
+                                let redirect = status.dataUrl;
+                                if (redirect) {
+                                    setTimeout(function () {
+                                        window.location = redirect;
+                                    }, 300);
+                                }
+                            }
                         }
-                    }),
-                    failure: LABKEY.Utils.getCallbackWrapper(function (err) {
-                        if (err.exception) {
-                            let errorListEl = document.getElementById('error-list');
-                            let msgEl = document.createElement("DIV");
-                            msgEl.classList.add('labkey-error');
-                            msgEl.innerHTML = LABKEY.Utils.encodeHtml(err.exception);
-                            errorListEl.appendChild(msgEl);
-                        }
-                    }, false)
-                });
-            }
+
+                        updateField(createdEl, status.created);
+                        updateField(modifiedEl, status.modified);
+                        updateField(emailEl, status.email);
+                        updateField(infoEl, status.info);
+                        updateField(descriptionEl, status.description);
+                        updateStatus(active, status.status, status.hadError);
+                        updateRuns(status.runs);
+                        updateFiles(status.files);
+                        updateParentStatus(status.parentStatus);
+                        updateSplitStatus(status.splitStatus);
+                        updateLog(status.log);
+                    }
+                }),
+                failure: LABKEY.Utils.getCallbackWrapper(function (err) {
+                    if (err.exception) {
+                        let errorListEl = document.getElementById('error-list');
+                        let msgEl = document.createElement("DIV");
+                        msgEl.classList.add('labkey-error');
+                        msgEl.innerHTML = LABKEY.Utils.encodeHtml(err.exception);
+                        errorListEl.appendChild(msgEl);
+                    }
+                }, false)
+            });
         }
 
         if (active) {
