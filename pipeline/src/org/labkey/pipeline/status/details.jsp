@@ -222,8 +222,7 @@
         <%=link("Copy to clipboard").id("copy-log-text").onClick("copyLogText(event);return false;")%>
     </div>
     <br>
-    <div id="log-container" style="height:400px;overflow:auto;"
-         data-exists="<%=status.log != null%>" data-offset="<%=nextOffset%>">
+    <div id="log-container" style="height:400px;overflow:auto;">
         <% if (status.log == null) { %>
         <em>Log file doesn't exist.</em>
         <% } else { %>
@@ -274,27 +273,31 @@
         if (isShowingDetails()) {
             showFullLogEl.dataset.details = "false";
             showFullLogEl.innerHTML = "Show full log file";
-            logDataEl.querySelectorAll("pre[data-level='DEBUG']").forEach(function (n) {
-                n.classList.add('hidden');
-            });
-            logDataEl.querySelectorAll("pre[data-multiline='true']").forEach(function (n) {
-                n.classList.replace('expanded', 'collapsed');
-            });
+            if (logDataEl) {
+                logDataEl.querySelectorAll("pre[data-level='DEBUG']").forEach(function (n) {
+                    n.classList.add('hidden');
+                });
+                logDataEl.querySelectorAll("pre[data-multiline='true']").forEach(function (n) {
+                    n.classList.replace('expanded', 'collapsed');
+                });
+            }
         }
         else {
             showFullLogEl.dataset.details = "true";
             showFullLogEl.innerHTML = "Show summary";
-            logDataEl.querySelectorAll("pre[data-level='DEBUG']").forEach(function (n) {
-                n.classList.remove('hidden');
-            });
-            logDataEl.querySelectorAll("pre[data-multiline='true']").forEach(function (n) {
-                n.classList.replace('collapsed', 'expanded');
-            });
+            if (logDataEl) {
+                logDataEl.querySelectorAll("pre[data-level='DEBUG']").forEach(function (n) {
+                    n.classList.remove('hidden');
+                });
+                logDataEl.querySelectorAll("pre[data-multiline='true']").forEach(function (n) {
+                    n.classList.replace('collapsed', 'expanded');
+                });
+            }
         }
     }
 
     // expand-collapse single block
-    logDataEl.addEventListener('click', function (e) {
+    logContainerEl.addEventListener('click', function (e) {
         let n = e.target;
         if (n.classList.contains('multiline')) {
             if (n.classList.contains('expanded')) {
@@ -307,48 +310,15 @@
     });
 
     function copyLogText(e) {
-        navigator.clipboard.writeText(logDataEl.innerText).then(function () {
-            let orig = e.target.innerHTML;
-            e.target.innerHTML = "Copied!";
-            setTimeout(function () {
-               e.target.innerHTML = orig;
-            }, 2000);
-        });
-    }
-
-    // keep in sync with Java logTextClass function
-    function logTextClass(record, showDetails) {
-        let classes = '';
-
-        switch (record.level) {
-            case 'DEBUG':
-                classes = "text-muted hidden";
-                break;
-            case 'WARN':
-                classes = "text-warning";
-                break;
-            case 'ERROR':
-            case 'FATAL':
-                classes = "text-danger";
-                break;
-            case 'INFO':
-            default:
-                let lower = record.lines.toLowerCase();
-                if (lower.indexOf('success') !== -1 || lower.indexOf('completed') !== -1) {
-                    classes = "text-success"
-                }
-                break;
+        if (logDataEl) {
+            navigator.clipboard.writeText(logDataEl.innerText).then(function () {
+                let orig = e.target.innerHTML;
+                e.target.innerHTML = "Copied!";
+                setTimeout(function () {
+                    e.target.innerHTML = orig;
+                }, 2000);
+            });
         }
-
-        if (record.multiline) {
-            classes += " multiline";
-            if (record.stackTrace && !showDetails)
-                classes += " collapsed";
-            else
-                classes += " expanded";
-        }
-
-        return classes;
     }
 
     function scrollLog(smooth) {
@@ -514,6 +484,41 @@
             document.getElementById('split-jobs').parentElement.classList.remove('hidden');
         }
 
+        // keep in sync with Java logTextClass function
+        function logTextClass(record, showDetails) {
+            let classes = '';
+
+            switch (record.level) {
+                case 'DEBUG':
+                    classes = "text-muted hidden";
+                    break;
+                case 'WARN':
+                    classes = "text-warning";
+                    break;
+                case 'ERROR':
+                case 'FATAL':
+                    classes = "text-danger";
+                    break;
+                case 'INFO':
+                default:
+                    let lower = record.lines.toLowerCase();
+                    if (lower.indexOf('success') !== -1 || lower.indexOf('completed') !== -1) {
+                        classes = "text-success"
+                    }
+                    break;
+            }
+
+            if (record.multiline) {
+                classes += " multiline";
+                if (record.stackTrace && !showDetails)
+                    classes += " collapsed";
+                else
+                    classes += " expanded";
+            }
+
+            return classes;
+        }
+
         function renderLog(records) {
             let nodes = [];
             for (let i = 0; i < records.length; i++) {
@@ -532,6 +537,19 @@
             return nodes;
         }
 
+        function updateLog(log) {
+            if (log && log.records) {
+                let chunks = renderLog(log.records);
+                if (!logDataEl) {
+                    // job is active, but the log file didn't exist during first page load
+                    logContainerEl.innerHTML = '<div id="log-data"></div>';
+                    logDataEl = document.getElementById('log-data');
+                }
+                chunks.forEach(function (chunk) { logDataEl.appendChild(chunk); });
+                scrollLog(true);
+            }
+        }
+
         function createDomNode(html) {
             let template = document.createElement('template');
             template.innerHTML = html;
@@ -542,14 +560,6 @@
             let template = document.createElement('template');
             template.innerHTML = html;
             return template.content.childNodes;
-        }
-
-        function updateLog(log) {
-            if (log && log.records) {
-                let chunks = renderLog(log.records);
-                chunks.forEach(function (chunk) { logDataEl.appendChild(chunk); });
-                scrollLog(true);
-            }
         }
 
         function fetchStatus() {
