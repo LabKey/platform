@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public class JavaScriptFragment
 {
+    public static final JavaScriptFragment EMPTY_STRING = JavaScriptFragment.unsafe("''");
     public static final JavaScriptFragment NULL = JavaScriptFragment.unsafe(" null ");
     public static final JavaScriptFragment TRUE = JavaScriptFragment.unsafe(" true ");
     public static final JavaScriptFragment FALSE = JavaScriptFragment.unsafe(" false ");

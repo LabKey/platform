@@ -9411,7 +9411,7 @@ public class AdminController extends SpringActionController
                 });
             }
 
-            return new HtmlView(DIV(urls.stream().map(url -> createHtmlFragment(A(at(href,url)),BR()))));
+            return new HtmlView(DIV(urls.stream().map(url -> createHtmlFragment(A(at(href,url),url),BR()))));
         }
     }
 

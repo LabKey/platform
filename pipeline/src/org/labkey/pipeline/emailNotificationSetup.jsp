@@ -128,7 +128,7 @@
         <tr>
             <td>
                 <label>
-                    <input type=checkbox id="notifyOnSuccess" name="notifyOnSuccess" onclick="return updateControls(this, false);"<%=checked(displaySuccess.equals(""))%>>Send email notifications if the pipeline job succeeds
+                    <input type=checkbox id="notifyOnSuccess" name="notifyOnSuccess" onclick="return updateControls(this, false);"<%=checked(HtmlString.isBlank(displaySuccess))%>>Send email notifications if the pipeline job succeeds
                 </label>
             </td>
         </tr>
@@ -157,15 +157,15 @@
             <td style="padding-left: 20px;">
                 <%=getTitle(PipelineEmailPreferences.PREF_SUCCESS_INTERVAL, c, "Notification frequency:")%>&nbsp;
                 <select id="successNotifyInterval" name="successNotifyInterval" onchange="updateSuccessNotifyInterval();">
-                    <option value="0"<%=selected("0".equals(successNotifyInterval))%>>every job</option>
-                    <option value="1"<%=selected("1".equals(successNotifyInterval))%>>1 hour</option>
-                    <option value="2"<%=selected("2".equals(successNotifyInterval))%>>2 hours</option>
-                    <option value="3"<%=selected("3".equals(successNotifyInterval))%>>3 hours</option>
-                    <option value="4"<%=selected("4".equals(successNotifyInterval))%>>4 hours</option>
-                    <option value="5"<%=selected("5".equals(successNotifyInterval))%>>5 hours</option>
-                    <option value="6"<%=selected("6".equals(successNotifyInterval))%>>6 hours</option>
-                    <option value="12"<%=selected("12".equals(successNotifyInterval))%>>12 hours</option>
-                    <option value="24"<%=selected("24".equals(successNotifyInterval))%>>24 hours</option>
+                    <option value="0"<%=selected("0",successNotifyInterval)%>>every job</option>
+                    <option value="1"<%=selected("1",successNotifyInterval)%>>1 hour</option>
+                    <option value="2"<%=selected("2",successNotifyInterval)%>>2 hours</option>
+                    <option value="3"<%=selected("3",successNotifyInterval)%>>3 hours</option>
+                    <option value="4"<%=selected("4",successNotifyInterval)%>>4 hours</option>
+                    <option value="5"<%=selected("5",successNotifyInterval)%>>5 hours</option>
+                    <option value="6"<%=selected("6",successNotifyInterval)%>>6 hours</option>
+                    <option value="12"<%=selected("12",successNotifyInterval)%>>12 hours</option>
+                    <option value="24"<%=selected("24",successNotifyInterval)%>>24 hours</option>
                 </select>&nbsp;&nbsp;
                 <%=getTitle(PipelineEmailPreferences.PREF_SUCCESS_NOTIFY_START, c, "Starting at:")%><%=helpPopup("Notification start time", "Enter the starting time in 24-hour format (e.g., 0:30 for 12:30AM, 14:00 for 2:00PM).")%>&nbsp;<input type="text" name="successNotifyStart" id="successNotifyStart" value="<%=h(successNotifyStart)%>" size="4">
             </td>
@@ -178,7 +178,7 @@
         <tr>
             <td>
                 <label>
-                    <input type=checkbox id="notifyOnError" name="notifyOnError" onclick="return updateControls(this, false);"<%=checked(displayError.toString().equals(""))%>>Send email notification(s) if the pipeline job fails
+                    <input type=checkbox id="notifyOnError" name="notifyOnError" onclick="return updateControls(this, false);"<%=checked(HtmlString.isBlank(displayError))%>>Send email notification(s) if the pipeline job fails
                 </label>
             </td>
         </tr>

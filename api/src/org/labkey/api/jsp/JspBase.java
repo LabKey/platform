@@ -61,6 +61,7 @@ import java.util.Date;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static org.labkey.api.util.HtmlString.EMPTY_STRING;
@@ -253,12 +254,12 @@ public abstract class JspBase extends JspContext implements HasViewContext
      */
     final protected JavaScriptFragment q(String str)
     {
-        return JavaScriptFragment.unsafe(null == str ? "null" : PageFlowUtil.jsString(str));
+        return null == str ? JavaScriptFragment.NULL : JavaScriptFragment.unsafe(PageFlowUtil.jsString(str));
     }
 
     final protected JavaScriptFragment q(HtmlString hs)
     {
-        return JavaScriptFragment.unsafe(null == hs ? "null" : PageFlowUtil.jsString(hs.toString()));
+        return null == hs ? JavaScriptFragment.NULL : JavaScriptFragment.unsafe(PageFlowUtil.jsString(hs.toString()));
     }
 
     // TODO: Very, very temporary; just for backward compatibility. Eliminate ASAP.
@@ -307,6 +308,12 @@ public abstract class JspBase extends JspContext implements HasViewContext
     public HtmlString selected(boolean selected)
     {
         return selected ? SELECTED : EMPTY_STRING;
+    }
+
+    /** Returns " selected" if a.equals(b) */
+    public HtmlString selected(Object a, Object b)
+    {
+        return selected(Objects.equals(a,b));
     }
 
     /** Returns " selected" (if a.equals(b)) */

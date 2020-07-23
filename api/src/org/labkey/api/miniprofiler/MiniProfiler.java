@@ -36,6 +36,8 @@ import javax.servlet.ServletContext;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.util.PageFlowUtil.jsString;
+
 /**
  * Does some lightweight data capture about database queries and other potentially expensive work performed in the
  * context of an HTTP request.
@@ -143,15 +145,15 @@ public class MiniProfiler
             "LABKEY.internal.MiniProfiler.init({\n" +
             "  currentId:" + currentId + ",\n" +
             "  ids:" + ids + ",\n" +
-            "  version:" + version + ",\n" +
-            "  renderPosition:'" + settings.getRenderPosition().getStyle() + "',\n" +
+            "  version:" + Integer.valueOf(version) + ",\n" +
+            "  renderPosition:" + jsString(settings.getRenderPosition().getStyle()) + ",\n" +
             "  showTrivial:" + settings.isShowTrivial() + ",\n" +
             "  trivialMilliseconds:" + settings.getTrivialMillis() + ",\n" +
             "  showChildrenTime:" + settings.isShowChildrenTime() + ",\n" +
             "  maxTracesToShow:" + 20 + ",\n" +
             "  showControls:" + settings.isShowControls() + ",\n" +
             "  authorized:true,\n" +
-            "  toggleShortcut:'" + (settings.getToggleShortcut() != null ? settings.getToggleShortcut() : "") + "',\n" +
+            "  toggleShortcut:" + jsString(settings.getToggleShortcut() != null ? settings.getToggleShortcut() : "") + ",\n" +
             "  startHidden:" + settings.isStartHidden() + "\n" +
             "});\n" +
             "</script>\n"
