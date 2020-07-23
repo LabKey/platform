@@ -19,11 +19,11 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="org.labkey.pipeline.api.PipelineEmailPreferences" %>
-<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -39,13 +39,6 @@
             return HtmlStringBuilder.of(HtmlString.unsafe("<span class=\"labkey-error\">*</span>&nbsp;")).append(title).getHtmlString();
         return HtmlString.of(title);
     }
-
-    private String getSelected(String value, String option)
-    {
-        if (StringUtils.equals(value, option))
-            return "selected";
-        return "";
-    }
 %>
 <%
     Container c = getContainer();
@@ -58,8 +51,8 @@
     String successNotifyStart = StringUtils.defaultString(PipelineEmailPreferences.get().getSuccessNotifyStart(c), "12:00");
     String failureNotifyStart = StringUtils.defaultString(PipelineEmailPreferences.get().getFailureNotifyStart(c), "12:00");
 
-    String displaySuccess = notifyOwnerOnSuccess || !StringUtils.isEmpty(notifyUsersOnSuccess) ? "" : "none";
-    String displayError = notifyOwnerOnError || !StringUtils.isEmpty(notifyUsersOnError) ? "" : "none";
+    HtmlString displaySuccess = h(notifyOwnerOnSuccess || !StringUtils.isEmpty(notifyUsersOnSuccess) ? "" : "none");
+    HtmlString displayError = h(notifyOwnerOnError || !StringUtils.isEmpty(notifyUsersOnError) ? "" : "none");
 
     String completeUserUrl = urlProvider(SecurityUrls.class).getCompleteUserURLPrefix(c);
 %>
