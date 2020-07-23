@@ -31,8 +31,6 @@ public interface PipelineStatusUrls extends UrlProvider
 
     ActionURL urlDetails(Container container, int rowId);
 
-    ActionURL urlDetails2(Container container, int rowId);
-
     ActionURL urlShowFile(Container container, int rowId, String filename);
 
     ActionURL urlCancel(Container container, int rowId, @Nullable ActionURL returnUrl);

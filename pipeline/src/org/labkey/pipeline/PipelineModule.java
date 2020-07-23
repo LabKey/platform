@@ -97,8 +97,6 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 {
     private static final Logger _log = Logger.getLogger(PipelineModule.class);
 
-    public static final String EXPERIMENTAL_LIVE_PIPELINE_STATUS = "live-pipeline-status";
-
     @Override
     public String getName()
     {
@@ -140,11 +138,6 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         PipelineQuerySchema.register(this);
 
         PipelineTriggerRegistry.setInstance(new PipelineTriggerRegistryImpl());
-
-        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_LIVE_PIPELINE_STATUS,
-                "Live Pipeline Status",
-                "Update the pipeline job status page while the job is running.",
-                false);
     }
 
     @Override

@@ -292,14 +292,14 @@ public class StatusController extends SpringActionController
         }
     }
 
-    public static ActionURL urlDetails2(Container c, int rowId)
+    public static ActionURL urlDetailsLegacy(Container c, int rowId)
     {
-        return urlDetails2(c, rowId, null);
+        return urlDetailsLegacy(c, rowId, null);
     }
 
-    public static ActionURL urlDetails2(Container c, int rowId, String errorMessage)
+    public static ActionURL urlDetailsLegacy(Container c, int rowId, String errorMessage)
     {
-        ActionURL url = new ActionURL(Details2Action.class, c);
+        ActionURL url = new ActionURL(LegacyDetailsAction.class, c);
         url.addParameter(RowIdForm.Params.rowId, Integer.toString(rowId));
         if (errorMessage != null)
         {
@@ -315,11 +315,7 @@ public class StatusController extends SpringActionController
 
     public static ActionURL urlDetails(Container c, int rowId, String errorMessage)
     {
-        ActionURL url;
-        if (ExperimentalFeatureService.get().isFeatureEnabled(PipelineModule.EXPERIMENTAL_LIVE_PIPELINE_STATUS))
-            url = new ActionURL(Details2Action.class, c);
-        else
-            url = new ActionURL(DetailsAction.class, c);
+        ActionURL url = new ActionURL(DetailsAction.class, c);
         url.addParameter(RowIdForm.Params.rowId, Integer.toString(rowId));
         if (errorMessage != null)
         {
@@ -334,16 +330,13 @@ public class StatusController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DetailsAction extends SimpleViewAction<RowIdForm>
+    public class LegacyDetailsAction extends SimpleViewAction<RowIdForm>
     {
         private PipelineStatusFile _statusFile;
 
         @Override
         public ModelAndView getView(RowIdForm form, BindException errors)
         {
-            if (getViewContext().getActionURL().getParameter("oldschool") == null && ExperimentalFeatureService.get().isFeatureEnabled(PipelineModule.EXPERIMENTAL_LIVE_PIPELINE_STATUS))
-                throw new RedirectException(urlDetails2(getContainer(), form.getRowId(), form.getErrorMessage()));
-
             Container c = getContainerCheckAdmin();
 
             DataRegion rgn = getDetails(c, getUser(), form.getRowId());
@@ -434,7 +427,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    public static class Details2Bean
+    public static class DetailsBean
     {
         public ActionURL cancelUrl;
         public ActionURL browseFilesUrl;
@@ -446,7 +439,7 @@ public class StatusController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class Details2Action extends SimpleViewAction<RowIdForm>
+    public class DetailsAction extends SimpleViewAction<RowIdForm>
     {
         private PipelineStatusFileImpl _statusFile;
 
@@ -471,7 +464,7 @@ public class StatusController extends SpringActionController
                 errors.addError(new LabKeyError(form.getErrorMessage()));
             }
 
-            Details2Bean bean = new Details2Bean();
+            DetailsBean bean = new DetailsBean();
 
             if (_statusFile.isCancellable() && c.hasPermission(getUser(), DeletePermission.class))
                 bean.cancelUrl = urlCancel(getContainer(), _statusFile.getRowId(), getViewContext().cloneActionURL());
@@ -488,7 +481,7 @@ public class StatusController extends SpringActionController
 
             bean.status = StatusDetailsBean.create(getContainer(), _statusFile, 0);
 
-            return new JspView<Details2Bean>("/org/labkey/pipeline/status/details.jsp", bean, errors);
+            return new JspView<DetailsBean>("/org/labkey/pipeline/status/details.jsp", bean, errors);
         }
 
         @Override
@@ -1110,12 +1103,6 @@ public class StatusController extends SpringActionController
         }
 
         @Override
-        public ActionURL urlDetails2(Container container, int rowId)
-        {
-            return StatusController.urlDetails2(container, rowId);
-        }
-
-        @Override
         public ActionURL urlBegin(Container container, boolean notComplete)
         {
             ActionURL url = urlBegin(container);
@@ -1172,8 +1159,8 @@ public class StatusController extends SpringActionController
                 controller.new ShowListAction(),
                 controller.new ShowListRegionAction(),
                 controller.new ShowPartRegionAction(),
+                controller.new LegacyDetailsAction(),
                 controller.new DetailsAction(),
-                controller.new Details2Action(),
                 controller.new ShowDataAction(),
                 controller.new ShowFolderAction(),
                 controller.new ShowFileAction(),

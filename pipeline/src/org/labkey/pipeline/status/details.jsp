@@ -25,7 +25,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    StatusController.Details2Bean bean = (StatusController.Details2Bean) getModelBean();
+    StatusController.DetailsBean bean = (StatusController.DetailsBean) getModelBean();
     StatusDetailsBean status = bean.status;
     long nextOffset = status.log != null ? status.log.nextOffset : -1;
 
@@ -373,8 +373,8 @@
         let fetchCount = 0;
 
         function updateField(el, text) {
-            // NOTE: using innerText encodes html for us
-            el.innerText = text;
+            if (text !== null && text !== undefined)
+                el.innerText = text;
         }
 
         function updateStatus(active, status, hadError) {
@@ -581,7 +581,7 @@
                                 }
 
                                 // if status is error or cancelled, show retry
-                                if (retryBtnEl && (status.status === <%=q(TaskStatus.error.name())%> || status.status === <%=q(TaskStatus.cancelled.name())%>)) {
+                                if (retryBtnEl && (status.status.toLowerCase() === <%=q(TaskStatus.error.name())%> || status.status.toLowerCase() === <%=q(TaskStatus.cancelled.name())%>)) {
                                     retryBtnEl.classList.remove('hidden');
                                 }
 
@@ -592,7 +592,7 @@
                                 }
 
                                 // if redirect=1, navigate to the imported run
-                                if (status.status === <%=q(TaskStatus.complete.name())%> && LABKEY.ActionURL.getParameter('redirect') === '1') {
+                                if (status.status.toLowerCase() === <%=q(TaskStatus.complete.name())%> && LABKEY.ActionURL.getParameter('redirect') === '1') {
                                     let redirect = status.dataUrl;
                                     if (redirect) {
                                         setTimeout(function () {
