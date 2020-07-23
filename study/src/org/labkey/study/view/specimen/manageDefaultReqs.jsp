@@ -53,7 +53,7 @@ function verifyNewRequirement(prefix)
     return true;
 }
 </script>
-<labkey:form action="<%=h(buildURL(SpecimenController.ManageDefaultReqsAction.class))%>" name="manageDefaultReqs" method="POST">
+<labkey:form action="<%=buildURL(SpecimenController.ManageDefaultReqsAction.class)%>" name="manageDefaultReqs" method="POST">
         <labkey:panel title="Requirements of Each Originating Lab">
             <table class="labkey-data-region-legacy" style="width: 650px;">
                 <tr>

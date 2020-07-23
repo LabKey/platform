@@ -38,15 +38,9 @@
             renderTo:<%=q(bean.getDivId())%>,
             start:<%=q(bean.getStartField())%>,
             title:<%=q(bean.getTitleField())%>,
-            description:<%=nq(bean.getDescriptionField())%>,
-            end:<%=nq(bean.getEndField())%>,
-            query:{schemaName:<%=nq(bean.getSchemaName())%>, queryName:<%=nq(bean.getQueryName())%>, viewName:<%=nq(bean.getViewName())%>
+            description:<%=q(bean.getDescriptionField())%>,
+            end:<%=q(bean.getEndField())%>,
+            query:{schemaName:<%=q(bean.getSchemaName())%>, queryName:<%=q(bean.getQueryName())%>, viewName:<%=q(bean.getViewName())%>
         }});
     });
 </script>
-<%!
-    String nq(String str)
-    {
-        return str == null ? "null" : q(str);
-    }
-%>

@@ -31,7 +31,7 @@
     CustomizeBean bean = me.getModelBean();
     DiscussionService.Settings settings = bean.settings;
 
-%><labkey:form action="<%=h(buildURL(AnnouncementsController.CustomizeAction.class))%>" method="post">
+%><labkey:form action="<%=buildURL(AnnouncementsController.CustomizeAction.class)%>" method="post">
 <%=generateReturnUrlFormField(bean.returnURL)%>
 <table class="lk-fields-table">
     <tr>

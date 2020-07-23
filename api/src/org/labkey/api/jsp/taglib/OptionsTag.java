@@ -16,6 +16,8 @@
 
 package org.labkey.api.jsp.taglib;
 
+import org.labkey.api.util.element.Option.OptionBuilder;
+
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
 import java.util.Collection;
@@ -40,38 +42,25 @@ public class OptionsTag extends SimpleTagBase
     @Override
     public void doTag() throws IOException
     {
-        // TODO: HtmlString
         JspWriter out = getOut();
         if (_map != null)
         {
             for (Map.Entry<?, String> option : _map.entrySet())
             {
-                out.print("\n<option value=\"");
-                out.print(h(option.getKey()));
-                out.print("\"");
+                OptionBuilder builder = new OptionBuilder(option.getValue(), option.getKey().toString());
                 if (isSelected(option.getKey()))
-                {
-                    out.print(" selected");
-                }
-                out.print(">");
-                out.print(h(option.getValue()));
-                out.print("</option>");
+                    builder.selected(true);
+                out.print(builder);
             }
         }
         else if (_set != null)
         {
             for (String value : _set)
             {
-                out.print("\n<option value=\"");
-                out.print(h(value));
-                out.print("\"");
+                OptionBuilder builder = new OptionBuilder(value, value);
                 if (isSelected(value))
-                {
-                    out.print(" selected");
-                }
-                out.print(">");
-                out.print(h(value));
-                out.print("</option>");
+                    builder.selected(true);
+                out.print(builder);
             }
         }
         else

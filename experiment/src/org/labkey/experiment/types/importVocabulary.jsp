@@ -25,7 +25,7 @@
 <h3>Upload Vocabulary</h3>
 
 <p>
-Use this form to upload a vocabulary or dictionary of concepts.  The file format is compatible with
+Use this form to upload a vocabulary or dictionary of concepts. The file format is compatible with
 the flat file format used by NCICB, except column headers are required. see <a href="http://ncicb.nci.nih.gov/NCICB/infrastructure/cacore_overview/vocabulary">http://ncicb.nci.nih.gov/NCICB/infrastructure/cacore_overview/vocabulary</a>.
 </p>
 <p>
@@ -46,7 +46,7 @@ Specifically it should be a tab-delimited text file with no column headers, and 
 
 <p>&nbsp;</p>
 
-<labkey:form action="<%=h(buildURL(TypesController.ImportVocabularyAction.class))%>" method="POST" enctype="multipart/form-data">
+<labkey:form action="<%=buildURL(TypesController.ImportVocabularyAction.class)%>" method="POST" enctype="multipart/form-data">
 <table>
 <tr><td class=labkey-form-label>Thesaurus URI<br><small>e.g http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl</small></td><td><input name="name" value="<%=h(form.getName())%>"></td></tr>
 <!--<tr><td class=labkey-form-label>Short prefix<br><small>e.g NCI_Thesaurus</small></td><td><input name="prefix" value=""></td></tr> -->

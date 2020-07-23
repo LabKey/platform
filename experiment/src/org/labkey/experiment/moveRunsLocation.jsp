@@ -35,7 +35,7 @@
         document.forms["moveForm"].submit();
     }
 </script>
-<labkey:form name="moveForm" action="<%=h(buildURL(ExperimentController.MoveRunsAction.class))%>" method="POST">
+<labkey:form name="moveForm" action="<%=buildURL(ExperimentController.MoveRunsAction.class)%>" method="POST">
     <%
         for (String id : DataRegionSelection.getSelected(getViewContext(), false))
         { %>

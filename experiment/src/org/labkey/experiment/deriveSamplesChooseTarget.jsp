@@ -37,7 +37,7 @@
     }
 %>
 
-<labkey:form action="<%=h(buildURL(ExperimentController.DeriveSamplesAction.class))%>" method="get">
+<labkey:form action="<%=buildURL(ExperimentController.DeriveSamplesAction.class)%>" method="get">
     <% if (bean.getDataRegionSelectionKey() != null) { %>
     <input type="hidden" name="<%= h(DataRegionSelection.DATA_REGION_SELECTION_KEY) %>" value="<%=h(bean.getDataRegionSelectionKey())%>"/>
     <% } %>

@@ -17,10 +17,9 @@
 package org.labkey.api.jsp.taglib;
 
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.util.element.Input.InputBuilder;
 
-import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
-import java.util.Set;
 
 public class CheckboxTag extends SimpleTagBase
 {
@@ -32,26 +31,23 @@ public class CheckboxTag extends SimpleTagBase
     @Override
     public void doTag() throws IOException
     {
-        // TODO: HtmlString
-
-        JspWriter out = getOut();
-        out.print("<input type=\"checkbox\" id=\"");
-        out.print(h(_id));
-        out.print("\" name=\"");
-        out.print(h(_name));
-        out.print("\" value=\"");
-        out.print(h(_value));
-        out.print("\"");
+        // TODO: We need a CheckBoxBuilder
+        InputBuilder checkbox = new InputBuilder()
+            .type("checkbox")
+            .id(_id)
+            .name(_name)
+            .value(_value);
 
         if (_checked != null && _checked)
-        {
-            out.print(" checked");
-        }
-        out.print(">");
-        out.print("<input type=\"hidden\" name=\"");
-        out.print(SpringActionController.FIELD_MARKER);
-        out.print(h(_name));
-        out.print("\">");
+            checkbox.checked(true);
+
+        getOut().print(checkbox);
+
+        InputBuilder springMarker = new InputBuilder()
+            .type("hidden")
+            .name(SpringActionController.FIELD_MARKER + _name);
+
+        getOut().print(springMarker);
     }
 
     public void setId(String id)

@@ -374,15 +374,9 @@ public class Input extends DisplayElement implements HasHtmlString
         out.write(toString());
     }
 
-    // TODO reverse toString() and getHtmlString() (that is toString() should call getHtmlString())
+    // TODO: Render via DOM or HtmlStringBuilder
     @Override
     public HtmlString getHtmlString()
-    {
-        return HtmlString.unsafe(toString());
-    }
-
-    @Override
-    public String toString()
     {
         StringBuilder sb = new StringBuilder();
 
@@ -441,7 +435,13 @@ public class Input extends DisplayElement implements HasHtmlString
                 sb.append("</div>");
         }
 
-        return sb.toString();
+        return HtmlString.unsafe(sb.toString());
+    }
+
+    @Override
+    public String toString()
+    {
+        return getHtmlString().toString();
     }
 
     protected void doInput(StringBuilder sb)
@@ -919,7 +919,7 @@ public class Input extends DisplayElement implements HasHtmlString
         @Override
         public HtmlString getHtmlString()
         {
-            return HtmlString.unsafe(toString());
+            return build().getHtmlString();
         }
     }
 }

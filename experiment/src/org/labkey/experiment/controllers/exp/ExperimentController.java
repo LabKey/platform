@@ -128,12 +128,12 @@ import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.DOM.LK;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -142,6 +142,7 @@ import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TidyUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DataView;
@@ -2371,7 +2372,7 @@ public class ExperimentController extends SpringActionController
                             PageFlowUtil.filter(form.getHtmlFragment()) +
                             "</textarea><br>" +
                             "<input type=\"submit\">" +
-                            "<input type=hidden name='X-LABKEY-CSRF' value=\"" + CSRFUtil.getExpectedToken(getViewContext()) + "\">" +
+                            new CsrfInput(getViewContext()) +
                             "</form>";
             return new HtmlView(html);
         }
@@ -2384,7 +2385,7 @@ public class ExperimentController extends SpringActionController
             if (!base.endsWith("/")) base += "/";
 
             String baseTag = "<base href=\"" + PageFlowUtil.filter(base) + "\"/>";
-            String css = PageFlowUtil.getStylesheetIncludes(getContainer());
+            HtmlString css = PageFlowUtil.getStylesheetIncludes(getContainer());
             String htmlFragment = StringUtils.trimToEmpty(form.getHtmlFragment());
             String html = "<html><head>" + baseTag + css + "</head><body>" + htmlFragment + "</body></html>";
 

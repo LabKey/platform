@@ -30,6 +30,7 @@ import org.labkey.api.data.Entity;
 import org.labkey.api.data.Transient;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService;
@@ -212,11 +213,13 @@ public class AnnouncementModel extends Entity implements Serializable
         return new ActionURL(ThreadAction.class, container);
     }
 
-    public String translateBody()
+    public HtmlString translateBody()
     {
         ActionURL attachPrefix = AnnouncementsController.getDownloadURL(this, "");
 
-        return getFormattedHtml(attachPrefix.getLocalURIString());
+        // TODO change return type of getFormattedHtml()
+        String s = getFormattedHtml(attachPrefix.getLocalURIString());
+        return HtmlString.unsafe(s==null ? "" : s);
     }
 
     //returns string corresponding to name of enum entry

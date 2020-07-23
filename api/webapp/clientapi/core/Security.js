@@ -956,7 +956,7 @@ LABKEY.Security = new function()
          * and their contained securable resources (defaults to false).
          * @param {Boolean} config.includeEffectivePermissions If set to true, the response will include the
          * list of effective permissions (unique names) the current user has to each resource (defaults to false).
-         * These permissions are calcualted based on the current user's group memberships and role assignments, and
+         * These permissions are calculated based on the current user's group memberships and role assignments, and
          * represent the actual permissions the user has to these resources at the time of the API call.
          * @param {Function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:

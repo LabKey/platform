@@ -87,11 +87,13 @@
 <%
     if (bean.isWideView())
     {
-        out.print("<table width=\"100%\"><tr><td valign=\"top\">");
+        %><table width="100%"><tr><td valign="top"><%
         maxColumns--;
     }
     else if (bean.getAdminView())
-        out.print("<table>");
+    {
+        %><table><%
+    }
 
     for (Map.Entry<String, List<DataViewInfo>> entry : groups.entrySet())
     {
@@ -99,7 +101,7 @@
             continue;
         if (bean.isWideView() && reportCount >= reportsPerColumn && maxColumns > 0)
         {
-            out.print("</td><td valign=\"top\" style=\"padding-left: 20px;\">");
+            %></td><td valign="top" style="padding-left: 20px;"><%
             reportCount = 0;
             maxColumns--;
         }
@@ -162,14 +164,14 @@
     {
         if (!bean.getAdminView())
         {
-            out.print("<table class=\"lk-fields-table\">");
+            out.print(unsafe("<table class=\"lk-fields-table\">"));
         }
         else
         {
-            out.print("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-announcement-title\" align=left><span>");
-            out.print(h(title) + " " + countSection);
-            out.print("</span></td></tr>");
-            out.print("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-title-area-line\"></td></tr>");
+            out.print(unsafe("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-announcement-title\" align=left><span>"));
+            out.print(h(title + " " + countSection));
+            out.print(unsafe("</span></td></tr>"));
+            out.print(unsafe("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-title-area-line\"></td></tr>"));
         }
         countSection++;
     }
@@ -178,7 +180,7 @@
     {
         if (!bean.getAdminView())
         {
-            out.print("</table>");
+            out.print(unsafe("</table>"));
         }
     }
 %>

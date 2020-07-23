@@ -36,7 +36,7 @@
 %>
 <labkey:errors/>
 
-<labkey:form action="<%=h(buildURL(CohortController.ManageCohortsAction.class))%>" name="manageCohorts" method="POST">
+<labkey:form action="<%=buildURL(CohortController.ManageCohortsAction.class)%>" name="manageCohorts" method="POST">
     <input type="hidden" name="reshow" value="true">
     <input type="hidden" name="clearParticipants" value="false">
     <input type="hidden" name="updateParticipants" value="false">

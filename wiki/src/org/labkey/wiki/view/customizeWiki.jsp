@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
@@ -32,7 +31,7 @@
 <script type="text/javascript">
 
 //store current container id on client
-var currentContainerId = <%=currentContainer==null ? "null" : PageFlowUtil.jsString(currentContainer.getId())%>;
+var currentContainerId = <%=currentContainer==null ? "null" : q(currentContainer.getId())%>;
 var m = {};
 
 function getForm()

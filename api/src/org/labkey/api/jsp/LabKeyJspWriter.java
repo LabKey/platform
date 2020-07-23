@@ -15,29 +15,28 @@
  */
 package org.labkey.api.jsp;
 
+import com.google.common.collect.ConcurrentHashMultiset;
+import com.google.common.collect.Multiset;
+import com.google.common.collect.Multiset.Entry;
 import org.apache.log4j.Logger;
-import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JavaScriptFragment;
 
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class LabKeyJspWriter extends JspWriterWrapper
 {
     private static final Logger LOG = Logger.getLogger(LabKeyJspWriter.class);
-    private static final Logger LOGSTRING = Logger.getLogger(LabKeyJspWriter.class.getName()+".string");
-
-
-    private static final AtomicInteger CHAR_ARRAY_INVOCATIONS = new AtomicInteger();
-    private static final AtomicInteger STRING_INVOCATIONS = new AtomicInteger();
-    private static final AtomicInteger OBJECT_INVOCATIONS = new AtomicInteger();
-    private static final Set<String> UNIQUE_CHAR_ARRAY_INVOCATIONS = new ConcurrentHashSet<>();
-    private static final Set<String> UNIQUE_STRING_INVOCATIONS = new ConcurrentHashSet<>();
-    private static final Set<String> UNIQUE_OBJECT_INVOCATIONS = new ConcurrentHashSet<>();
+    private static final Logger LOGSTRING = Logger.getLogger(LabKeyJspWriter.class.getName() + ".string");
+    private static final Multiset<String> COUNTING_SET = ConcurrentHashMultiset.create();
 
     LabKeyJspWriter(JspWriter jspWriter)
     {
@@ -47,16 +46,13 @@ public class LabKeyJspWriter extends JspWriterWrapper
     @Override
     public void print(char[] s) throws IOException
     {
-        CHAR_ARRAY_INVOCATIONS.incrementAndGet();
-        UNIQUE_CHAR_ARRAY_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString());
-        super.print(s);
+        throw new IllegalStateException("A JSP is attempting to render a character array!");
     }
 
     @Override
     public void print(String s) throws IOException
     {
-        STRING_INVOCATIONS.incrementAndGet();
-        if (UNIQUE_STRING_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString()))
+        if (0 == COUNTING_SET.add(Thread.currentThread().getStackTrace()[2].toString(), 1))
         {
             LOGSTRING.info(" A JSP is printing a string!", new Throwable());
         }
@@ -67,22 +63,17 @@ public class LabKeyJspWriter extends JspWriterWrapper
     @Override
     public void print(Object obj) throws IOException
     {
-        if (!(obj instanceof HtmlString))
+        if (!(obj instanceof HtmlString) && !(obj instanceof JavaScriptFragment))
         {
             if (obj instanceof HasHtmlString)
             {
                 obj = ((HasHtmlString) obj).getHtmlString();
             }
-            else if (!(obj instanceof Number) && !(obj instanceof Boolean))
+            // Allow Number and Boolean for convenience -- no encoding needed for those. Also allow null, which is rendered
+            // as "null" (useful when generating JavaScript).
+            else if (null != obj && !(obj instanceof Number) && !(obj instanceof Boolean))
             {
-                OBJECT_INVOCATIONS.incrementAndGet();
-                if (UNIQUE_OBJECT_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString()))
-                {
-                    if (null == obj)
-                        LOG.info("A JSP is attempting to render a null object!", new Throwable());
-                    else
-                        LOG.info("A JSP is rendering an object of class " + obj.getClass().getName(), new Throwable());
-                }
+                throw new IllegalStateException("A JSP is attempting to render an object of class " + obj.getClass().getName() + "!");
             }
         }
 
@@ -93,13 +84,21 @@ public class LabKeyJspWriter extends JspWriterWrapper
     {
         if (AppProps.getInstance().isDevMode())
         {
-            LOG.info("print(char[]) invocations: " + CHAR_ARRAY_INVOCATIONS);
-            LOG.info("print(String) invocations: " + STRING_INVOCATIONS);
-            LOG.info("print(Object) invocations: " + OBJECT_INVOCATIONS);
+            Set<Entry<String>> entrySet = COUNTING_SET.entrySet();
+            LOG.info("print(String) invocations: " + COUNTING_SET.size());
+            LOG.info("Unique code points that invoke print(String): " + entrySet.size());
 
-            LOG.info("Unique code points that invoke print(char[]): " + UNIQUE_CHAR_ARRAY_INVOCATIONS.size());
-            LOG.info("Unique code points that invoke print(String): " + UNIQUE_STRING_INVOCATIONS.size());
-            LOG.info("Unique code points that invoke print(Object): " + UNIQUE_OBJECT_INVOCATIONS.size());
+            if (!entrySet.isEmpty())
+            {
+                // Sort entries first by count, then by code point, which will group by file and order by line number
+                List<Entry<String>> entries = new ArrayList<>(entrySet);
+                Comparator<Entry<String>> comparator = Comparator.comparingInt(Entry::getCount);
+                entries.sort(comparator.reversed().thenComparing(Entry::getElement));
+                LOG.info("Most common print(String) code points:\n   " +
+                    entries.stream().limit(100)
+                        .map(e -> e.getElement() + " x " + e.getCount())
+                        .collect(Collectors.joining("\n   ")));
+            }
         }
     }
 }

@@ -28,8 +28,8 @@
     String selected = StringUtils.defaultString(webPart.getPropertyMap().get("style"), "full");
 %>
 
-<labkey:form name="frmCustomize" method="post" action="<%=h(webPart.getCustomizePostURL(context))%>">
-    <input type="radio" name="style" value="full" <%=text("full".equals(selected)?"checked":"")%>>&nbsp;full<br>
-    <input type="radio" name="style" value="simple" <%=text("simple".equals(selected)?"checked":"")%>>&nbsp;simple<br>
+<labkey:form name="frmCustomize" method="post" action="<%=webPart.getCustomizePostURL(context)%>">
+    <input type="radio" name="style" value="full"<%=checked("full".equals(selected))%>>&nbsp;full<br>
+    <input type="radio" name="style" value="simple"<%=checked("simple".equals(selected))%>>&nbsp;simple<br>
     <input type="submit">
 </labkey:form>

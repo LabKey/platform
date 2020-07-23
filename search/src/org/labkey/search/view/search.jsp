@@ -501,7 +501,9 @@
                     {
                         String summary = StringUtils.trimToNull(hit.summary);
                         if (null != summary)
-                            %><%=h(summary, false).toString().replace("&lt;br&gt;", "<br>")%><%
+                        {
+                            %><%=unsafe(h(summary, false).toString().replace("&lt;br&gt;", "<br>"))%><%
+                        }
                     }
                 %>
                 </div>
@@ -601,14 +603,14 @@
     +function($){
         'use strict';
 
-        var advFormCtSelector = '#' + <%=PageFlowUtil.jsString(advFormCt)%>;
+        var advFormCtSelector = '#' + <%=q(advFormCt)%>;
 
         function getAdvForm() {
-            return $('#' + <%=PageFlowUtil.jsString(advFormId)%>);
+            return $('#' + <%=q(advFormId)%>);
         }
 
         function getSearchForm() {
-            return $('#' + <%=PageFlowUtil.jsString(searchFormId)%>);
+            return $('#' + <%=q(searchFormId)%>);
         }
 
         $(function() {

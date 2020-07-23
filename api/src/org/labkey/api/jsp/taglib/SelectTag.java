@@ -15,7 +15,6 @@
  */
 package org.labkey.api.jsp.taglib;
 
-import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.jsp.JspException;
@@ -24,26 +23,12 @@ import java.io.IOException;
 
 public class SelectTag extends BodyTagSupport
 {
-    private boolean formGroup = true;
     private String message = null;
     private String id = null;
     private String label = null;
     private String name = null;
-    private Object value = null;
-    private String contextContent;
-
     private String onChange = null;
     private String onKeyUp = null;
-
-    public boolean isFormGroup()
-    {
-        return formGroup;
-    }
-
-    public void setFormGroup(boolean formGroup)
-    {
-        this.formGroup = formGroup;
-    }
 
     @Override
     public String getId()
@@ -87,21 +72,6 @@ public class SelectTag extends BodyTagSupport
         this.name = name;
     }
 
-    public Object getValue()
-    {
-        return value;
-    }
-
-    public void setValue(Object value)
-    {
-        this.value = value;
-    }
-
-    public void setContextContent(String contextContent)
-    {
-        this.contextContent = contextContent;
-    }
-
     public String getOnChange()
     {
         return onChange;
@@ -125,22 +95,17 @@ public class SelectTag extends BodyTagSupport
     @Override
     public int doStartTag() throws JspException
     {
-        // TODO: HtmlString
+        // TODO: Delegate to SelectBuilder
 
         StringBuilder sb = new StringBuilder();
 
-        if (isFormGroup())
-            sb.append("<div class=\"form-group\">");
-
         sb.append("<label class=\"control-label\">");
         sb.append(PageFlowUtil.filter(getLabel()));
-        if (StringUtils.isNotEmpty(contextContent))
-            doContextField(sb);
         sb.append("</label>");
 
         sb.append("<select")
-                .append(" class=\"").append("form-control").append("\"")
-                .append(" name=\"").append(getName()).append("\"");
+            .append(" class=\"").append("form-control").append("\"")
+            .append(" name=\"").append(getName()).append("\"");
 
         if (getId() != null)
             sb.append(" id=\"").append(getId()).append("\"");
@@ -168,18 +133,8 @@ public class SelectTag extends BodyTagSupport
         if (getMessage() != null)
             sb.append("<span class=\"help-block\">").append(getMessage()).append("</span>");
 
-        if (isFormGroup())
-            sb.append("</div>");
-
         print(sb);
         return BodyTagSupport.EVAL_PAGE;
-    }
-
-    protected void doContextField(StringBuilder sb)
-    {
-        sb.append("<i class=\"fa fa-question-circle context-icon\" data-container=\"body\" data-tt=\"tooltip\" data-placement=\"top\" title=\"");
-        sb.append(contextContent);
-        sb.append("\"></i>");
     }
 
     private void print(StringBuilder sb) throws JspException

@@ -61,13 +61,13 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.Button;
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.ModuleChangeListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.element.CsrfInput;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -1286,15 +1286,14 @@ public class Portal implements ModuleChangeListener
                 OPTIONS.add(OPTION(at(value, name), displayName));
         });
 
-       return createHtml(
+        return createHtml(
                 DIV(
                         LK.FORM(
                                 at(method, "POST", action, urlProvider().getAddWebPartURL(c))
                                         .cl("form-inline").cl(pullClass).cl(visibilityClass),
 
-                                INPUT(
-                                        at(type, "hidden", name, "X-LABKEY-CSRF", value, CSRFUtil.getExpectedToken(viewContext))
-                                ),
+                                new CsrfInput(viewContext),
+
                                 INPUT(
                                         at(type, "hidden", name, "pageId", value, bean.pageId)
                                 ),

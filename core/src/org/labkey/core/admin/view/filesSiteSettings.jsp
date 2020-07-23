@@ -43,7 +43,7 @@
 %>
 
 <labkey:errors/>
-<labkey:form action="<%=h(buildURL(FilesSiteSettingsAction.class))%>" method="post">
+<labkey:form action="<%=buildURL(FilesSiteSettingsAction.class)%>" method="post">
     <input type="hidden" name="upgrade" value="<%=bean.isUpgrade()%>">
     <table width="80%">
         <tr><td colspan="2"><h4>Site-Level File Root</h4></td></tr>

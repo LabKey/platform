@@ -44,7 +44,7 @@
     List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
 %>
 <labkey:errors/>
-<labkey:form action="<%=h(buildURL(StudyController.VisitSummaryAction.class))%>" method="POST">
+<labkey:form action="<%=buildURL(StudyController.VisitSummaryAction.class)%>" method="POST">
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(visit)%>">
 <input type="hidden" name="id" value="<%=visit.getRowId()%>">
     <table class="lk-fields-table">

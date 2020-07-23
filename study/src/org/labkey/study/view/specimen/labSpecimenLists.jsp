@@ -28,7 +28,7 @@
     SpecimenController.LabSpecimenListsBean bean = me.getModelBean();
     boolean originating = bean.getType() == SpecimenController.LabSpecimenListsBean.Type.ORIGINATING;
 %>
-<labkey:form action="<%=h(buildURL(SpecimenController.EmailLabSpecimenListsAction.class))%>" method="POST" enctype="multipart/form-data">
+<labkey:form action="<%=buildURL(SpecimenController.EmailLabSpecimenListsAction.class)%>" method="POST" enctype="multipart/form-data">
 <input type="hidden" name="id" value="<%= bean.getSpecimenRequest().getRowId() %>">
 <input type="hidden" name="listType" value="<%= h(bean.getType().toString()) %>">
 

@@ -15,18 +15,18 @@
  */
 package org.labkey.api.util.element;
 
+import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 
 import javax.validation.constraints.NotNull;
 
-public class Option
+public class Option implements HasHtmlString
 {
-    private boolean _disabled;
-    @NotNull
-    private HtmlString _label;
-    private boolean _selected;
-    private String _value;
+    private final boolean _disabled;
+    private final @NotNull HtmlString _label;
+    private final boolean _selected;
+    private final String _value;
 
     private Option(OptionBuilder builder)
     {
@@ -59,10 +59,17 @@ public class Option
     @Override
     public String toString()
     {
+        return getHtmlString().toString();
+    }
+
+    @Override
+    public HtmlString getHtmlString()
+    {
+        // TODO: This method should do the rendering via DOM or HtmlStringBuilder
         StringBuilder sb = new StringBuilder();
 
         sb.append("<option")
-                .append(" value=\"").append(getValue() == null ? "" : PageFlowUtil.filter(getValue())).append("\"");
+            .append(" value=\"").append(getValue() == null ? "" : PageFlowUtil.filter(getValue())).append("\"");
 
         if (isDisabled())
             sb.append(" disabled");
@@ -77,14 +84,12 @@ public class Option
 
         sb.append("</option>");
 
-        return sb.toString();
+        return HtmlString.unsafe(sb.toString());
     }
 
-    public static class OptionBuilder
+    public static class OptionBuilder implements HasHtmlString
     {
-        @NotNull
-        private HtmlString _label;
-
+        private @NotNull HtmlString _label;
         private boolean _disabled;
         private boolean _selected;
         private String _value;
@@ -139,6 +144,12 @@ public class Option
         public String toString()
         {
             return build().toString();
+        }
+
+        @Override
+        public HtmlString getHtmlString()
+        {
+            return build().getHtmlString();
         }
     }
 }
