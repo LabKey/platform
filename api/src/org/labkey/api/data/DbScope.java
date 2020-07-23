@@ -41,7 +41,9 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.LoggerWriter;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.SimpleLoggerWriter;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.data.xml.TablesDocument;
@@ -978,7 +980,7 @@ public class DbScope
         logCurrentConnectionState(LOG);
     }
 
-    public void logCurrentConnectionState(@NotNull Logger log)
+    public void logCurrentConnectionState(LoggerWriter log)
     {
         synchronized (_transaction)
         {
@@ -1014,6 +1016,12 @@ public class DbScope
             }
         }
     }
+
+    public void logCurrentConnectionState(@NotNull Logger log)
+    {
+        logCurrentConnectionState(new SimpleLoggerWriter(log));
+    }
+
 
     private static final int spidUnknown = -1;
 

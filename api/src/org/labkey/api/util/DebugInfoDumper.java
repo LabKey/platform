@@ -230,22 +230,22 @@ public class DebugInfoDumper
     }
 
     /**
-     * Writes the current set of thread stacks once to the supplied logger.
-     */
-    public static synchronized void dumpThreads(Logger log)
+     * Writes the thread dump into threads.txt
+     * */
+    public static synchronized void dumpThreads(LoggerWriter logWriter)
     {
-        log.debug("*********************************************");
-        log.debug("Starting thread dump - " + LocalDateTime.now().toString());
+        logWriter.debug("*********************************************");
+        logWriter.debug("Starting thread dump - " + LocalDateTime.now().toString());
         long used = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed();
         long max = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax();
-        log.debug("Heap usage at " + DecimalFormat.getPercentInstance().format(((double)used / (double)max)) + " - " +
+        logWriter.debug("Heap usage at " + DecimalFormat.getPercentInstance().format(((double)used / (double)max)) + " - " +
                 FileUtils.byteCountToDisplaySize(used) + " from a max of " +
                 FileUtils.byteCountToDisplaySize(max) + " (" + DecimalFormat.getInstance().format(used) + " / " + DecimalFormat.getInstance().format(max) + " bytes)");
-        log.debug("*********************************************");
+        logWriter.debug("*********************************************");
         Map<Thread,StackTraceElement[]> threads = Thread.getAllStackTraces();
         for (Map.Entry<Thread, StackTraceElement[]> threadEntry : threads.entrySet())
         {
-            log.debug("");
+            logWriter.debug("");
             Thread thread = threadEntry.getKey();
             StringBuilder threadInfo = new StringBuilder(thread.getName());
             threadInfo.append(" (");
@@ -258,39 +258,47 @@ public class DebugInfoDumper
                 threadInfo.append(", Database Connection SPIDs = ");
                 threadInfo.append(spids);
             }
-            log.debug(threadInfo);
+            logWriter.debug(threadInfo.toString());
             String uri = ViewServlet.getRequestURL(thread);
             if (null != uri)
-                log.debug(uri);
+                logWriter.debug(uri);
             for (StackTraceElement stackTraceElement : threadEntry.getValue())
             {
-                log.debug("\t" + stackTraceElement.toString());
+                logWriter.debug("\t" + stackTraceElement.toString());
             }
 
             if (ConnectionWrapper.getProbableLeakCount() > 0)
             {
-                ConnectionWrapper.dumpLeaksForThread(thread, log);
+                ConnectionWrapper.dumpLeaksForThread(thread, logWriter);
             }
         }
 
-        log.debug("*********************************************");
-        log.debug("Completed thread dump");
-        log.debug("*********************************************");
+        logWriter.debug("*********************************************");
+        logWriter.debug("Completed thread dump");
+        logWriter.debug("*********************************************");
 
         for (DbScope dbScope : DbScope.getDbScopes())
         {
-            dbScope.logCurrentConnectionState(log);
+            dbScope.logCurrentConnectionState(logWriter);
         }
 
         if (ConnectionWrapper.getActiveConnectionCount() > 0)
         {
-            log.debug("*********************************************");
-            log.debug("Start dump of all open connections");
-            log.debug("*********************************************");
-            ConnectionWrapper.dumpOpenConnections(log);
-            log.debug("*********************************************");
-            log.debug("Completed dump of all open connections");
-            log.debug("*********************************************");
+            logWriter.debug("*********************************************");
+            logWriter.debug("Start dump of all open connections");
+            logWriter.debug("*********************************************");
+            ConnectionWrapper.dumpOpenConnections(logWriter);
+            logWriter.debug("*********************************************");
+            logWriter.debug("Completed dump of all open connections");
+            logWriter.debug("*********************************************");
         }
+    }
+
+    /**
+     * Writes the current set of thread stacks once to the supplied logger.
+     */
+    public static synchronized void dumpThreads(Logger log)
+    {
+        dumpThreads(new SimpleLoggerWriter(log));
     }
 }
