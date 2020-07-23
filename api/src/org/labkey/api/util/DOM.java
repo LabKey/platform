@@ -849,6 +849,11 @@ public class DOM
             for (var i : (Object[]) body)
                 appendBody(builder, i);
         }
+        else if (body instanceof Iterable)
+        {
+            for (var i : ((Iterable)body))
+                appendBody(builder, i);
+        }
         else if (body instanceof Stream)
         {
             ((Stream<Object>) body).forEach(i -> appendBody(builder, i));

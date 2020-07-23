@@ -670,11 +670,9 @@ public abstract class AssayProtocolSchema extends AssaySchema
                             DataView dataView = allResultsQueryView.createDataView();
 
                             RenderContext renderContext = dataView.getRenderContext();
-                            // Issue 40921: use cached result set as it will have size available without iterating the results
-                            renderContext.setCache(true);
                             try (Results r = dataView.getDataRegion().getResults(renderContext))
                             {
-                                final int rowCount = r.getSize();
+                                final int rowCount = r.countAll();
 
                                 baseQueryView.setMessageSupplier(dataRegion -> {
                                     try

@@ -53,16 +53,13 @@
     boolean notifyOwnerOnError = PipelineEmailPreferences.get().getNotifyOwnerOnError(c);
     String notifyUsersOnSuccess = StringUtils.defaultString(PipelineEmailPreferences.get().getNotifyUsersOnSuccess(c)).replaceAll(";", "\n");
     String notifyUsersOnError = StringUtils.defaultString(PipelineEmailPreferences.get().getNotifyUsersOnError(c)).replaceAll(";", "\n");
-    String escalationUsers = StringUtils.defaultString(PipelineEmailPreferences.get().getEscalationUsers(c)).replaceAll(";", "\n");
     String successNotifyInterval = StringUtils.defaultString(PipelineEmailPreferences.get().getSuccessNotificationInterval(c));
     String failureNotifyInterval = StringUtils.defaultString(PipelineEmailPreferences.get().getFailureNotificationInterval(c));
     String successNotifyStart = StringUtils.defaultString(PipelineEmailPreferences.get().getSuccessNotifyStart(c), "12:00");
     String failureNotifyStart = StringUtils.defaultString(PipelineEmailPreferences.get().getFailureNotifyStart(c), "12:00");
 
-    HtmlString displaySuccess = h(notifyOwnerOnSuccess || !StringUtils.isEmpty(notifyUsersOnSuccess) ? "" : "none");
-    HtmlString displayError = HtmlString.of(notifyOwnerOnError ||
-            !StringUtils.isEmpty(notifyUsersOnError) ||
-            !StringUtils.isEmpty(escalationUsers) ? "" : "none");
+    String displaySuccess = notifyOwnerOnSuccess || !StringUtils.isEmpty(notifyUsersOnSuccess) ? "" : "none";
+    String displayError = notifyOwnerOnError || !StringUtils.isEmpty(notifyUsersOnError) ? "" : "none";
 
     String completeUserUrl = urlProvider(SecurityUrls.class).getCompleteUserURLPrefix(c);
 %>
@@ -201,20 +198,6 @@
                     id="notifyUsersOnError"
                     url="<%=completeUserUrl%>" rows="5" cols="60"
                     value="<%=notifyUsersOnError%>"/>
-            </td>
-        </tr>
-        <tr style="display:<%=displayError%>">
-            <td style="padding-left: 20px; width: 540px;">
-                <%=getTitle(PipelineEmailPreferences.PREF_ESCALATION_USERS, c, "Escalation Users (Email addresses entered here will appear in a view accessible from pipeline job details. Additional email messages can be sent from this view regarding a job failure):")%>
-            </td>
-        </tr>
-        <tr style="display:<%=displayError%>">
-            <td style="padding-left: 20px;">
-                <labkey:autoCompleteTextArea
-                    name="escalationUsers"
-                    id="escalationUsers"
-                    url="<%=completeUserUrl%>" rows="5" cols="60"
-                    value="<%=escalationUsers%>"/>
             </td>
         </tr>
         <tr style="display:<%=displayError%>">
