@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.query.QueryAction"%>
 <%@ page import="org.labkey.api.query.QueryDefinition"%>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>

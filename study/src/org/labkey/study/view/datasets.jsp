@@ -20,12 +20,15 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.util.DOM" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
+<%@ page import="static org.labkey.api.util.DOM.*" %>
+<%@ page import="static org.labkey.api.util.DOM.Attribute.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     StudyManager manager = StudyManager.getInstance();
@@ -58,11 +61,11 @@
 %>
 <table width="100%">
     <tr>
-        <td valign=top><%=renderDatasets(userDatasets, 0, datasetsPerCol + 1)%>
+        <td valign=top><%renderDatasets(out, userDatasets, 0, datasetsPerCol + 1);%>
         </td>
-        <td valign=top><%=renderDatasets(userDatasets, datasetsPerCol + 1, (2 * datasetsPerCol) + 1)%>
+        <td valign=top><%renderDatasets(out, userDatasets, datasetsPerCol + 1, (2 * datasetsPerCol) + 1);%>
         </td>
-        <td valign=top><%=renderDatasets(userDatasets, (2 * datasetsPerCol) + 1, userDatasets.size())%>
+        <td valign=top><%renderDatasets(out, userDatasets, (2 * datasetsPerCol) + 1, userDatasets.size());%>
         </td>
     </tr>
 </table>
@@ -74,32 +77,27 @@
     }
 %>
 <%!
-    String renderDatasets(List<DatasetDefinition> datasets, int startIndex, int endIndex)
+    void renderDatasets(JspWriter out, List<DatasetDefinition> datasets, int startIndex, int endIndex)
     {
-        StringBuilder sb = new StringBuilder();
         if (startIndex >= datasets.size() || startIndex >= endIndex)
-            return "";
+            return;
 
         String category = startIndex == 0 ? null : datasets.get(startIndex - 1).getCategory();
         ActionURL datasetURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, getContainer());
-        sb.append("<table>\n");
+        List<DOM.Renderable> tds = new ArrayList<>();
         //Print a column header if necessary
         Dataset firstDataset = datasets.get(startIndex);
         if (!equal(category, firstDataset.getCategory()))
         {
             category = firstDataset.getCategory();
             // don't need extra padding (labkey-announcement-title) on first row
-            sb.append("<tr><td class=\"labkey-announcement-title\" style=\"padding-top:0;\"><span>");
-            sb.append(h(category == null ? "Uncategorized" : category));
-            sb.append("</span></td></tr>\n");
-            sb.append("<tr><td class=\"labkey-title-area-line\"></td></tr>\n");
+            tds.add(TR(TD(cl("labkey-announcement-title").at(style, "padding-top:0;"), SPAN(category == null ? "Uncategorized" : category))));
+            tds.add(TR(TD(cl("labkey-title-area-line"))));
         }
         else if (null != category)
         {
-            sb.append("<tr><td class=\"labkey-announcement-title\" style=\"padding-top:0;\"><span>");
-            sb.append(h(category)).append(" (Continued)");
-            sb.append("</span></td></tr>\n");
-            sb.append("<tr><td class=\"labkey-title-area-line\"></td></tr>\n");
+            tds.add(TR(TD(cl("labkey-announcement-title").at(style, "padding-top:0;"), SPAN(category + " (Continued)"))));
+            tds.add(TR(TD(cl("labkey-title-area-line"))));
         }
 
         for (Dataset dataset : datasets.subList(startIndex, endIndex))
@@ -107,21 +105,15 @@
             if (!equal(category, dataset.getCategory()))
             {
                 category = dataset.getCategory();
-                sb.append("<tr><td class=\"labkey-announcement-title\"><span>").append(h(category == null ? "Uncategorized" : category)).append("</span></td></tr>\n");
-                sb.append("<tr><td class=\"labkey-title-area-line\"></td></tr>\n");
+                tds.add(TR(TD(cl("labkey-announcement-title"), SPAN(category == null ? "Uncategorized" : category))));
+                tds.add(TR(TD(cl("labkey-title-area-line"))));
             }
 
             String datasetLabel = (dataset.getLabel() != null ? dataset.getLabel() : "" + dataset.getDatasetId());
-
-            sb.append("        <tr><td>");
-            sb.append("<a href=\"").append(datasetURL.replaceParameter("datasetId", String.valueOf(dataset.getDatasetId())));
-            sb.append("\">");
-            sb.append(h(datasetLabel));
-            sb.append("</a></td></tr>\n");
+            tds.add(TR(TD(link(datasetLabel).href(datasetURL.replaceParameter("datasetId", String.valueOf(dataset.getDatasetId()))).clearClasses())));
         }
-        sb.append("    </table>");
 
-        return sb.toString();
+        TABLE(tds.toArray()).appendTo(out);
     }
 
     boolean equal(String s1, String s2)

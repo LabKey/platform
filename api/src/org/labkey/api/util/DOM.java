@@ -52,21 +52,17 @@ public class DOM
         Appendable appendTo(Appendable sb);
     }
 
-    static final String BODY_PLACE_HOLDER_STRING = "<!-- org.labkey.api.util.DOM.BODYCONTENT!" + GUID.makeHash() + "-->";
-    public static Renderable BODY_PLACE_HOLDER = new Renderable()
-    {
-        @Override
-        public Appendable appendTo(Appendable sb)
+    private static final String BODY_PLACE_HOLDER_STRING = "<!-- org.labkey.api.util.DOM.BODYCONTENT!" + GUID.makeHash() + "-->";
+
+    public static final Renderable BODY_PLACE_HOLDER = sb -> {
+        try
         {
-            try
-            {
-                sb.append(BODY_PLACE_HOLDER_STRING);
-                return sb;
-            }
-            catch (Exception x)
-            {
-                throw UnexpectedException.wrap(x);
-            }
+            sb.append(BODY_PLACE_HOLDER_STRING);
+            return sb;
+        }
+        catch (Exception x)
+        {
+            throw UnexpectedException.wrap(x);
         }
     };
 
