@@ -59,8 +59,10 @@ public class FileLoggerWriter implements LoggerWriter
                 LOG.error("Failed appending to file.", e);
             }
         }
-
-        LOG.error("File not provided to write logs.");
+        else
+        {
+            LOG.error("File not provided to write logs.");
+        }
 
     }
 
