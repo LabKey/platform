@@ -12,7 +12,7 @@ import java.io.IOException;
 /**
  * This loggerWriter will log the contents in a file.
  * */
-public class FileLoggerWriter implements LoggerWriter
+public class FileLoggerWriter implements LoggerWriter, AutoCloseable
 {
     private final String LINE_SEP = System.getProperty("line.separator");
     private static Logger LOG = LogManager.getLogger(FileLoggerWriter.class);
@@ -36,6 +36,7 @@ public class FileLoggerWriter implements LoggerWriter
 
     }
 
+    @Override
     public void close()
     {
         try
