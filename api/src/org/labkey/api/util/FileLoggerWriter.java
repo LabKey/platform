@@ -18,12 +18,34 @@ public class FileLoggerWriter implements LoggerWriter
     private static Logger LOG = LogManager.getLogger(FileLoggerWriter.class);
 
     private File _file;
+    private BufferedWriter _writer;
 
-    public void writeToFile(File file)
+    public FileLoggerWriter(File file)
     {
-        // Make sure that we try to mount the drive (if needed) before using the file
-        NetworkDrive.exists(file);
         _file = file;
+        // Make sure that we try to mount the drive (if needed) before using the file
+        NetworkDrive.exists(_file);
+        try
+        {
+            _writer = new BufferedWriter(new FileWriter(_file, true));
+        }
+        catch (IOException e)
+        {
+            LOG.error("Failed appending to file.", e);
+        }
+
+    }
+
+    public void close()
+    {
+        try
+        {
+            _writer.close();
+        }
+        catch (IOException e)
+        {
+            LOG.error("Unable to close the file - " + _file.getName(), e);
+        }
     }
 
     private boolean isFilePresent()
@@ -36,10 +58,10 @@ public class FileLoggerWriter implements LoggerWriter
     {
         if (isFilePresent())
         {
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(_file, true)))
+            try
             {
-                writer.write(message);
-                writer.write(LINE_SEP);
+                _writer.write(message);
+                _writer.write(LINE_SEP);
 
                 if (null != t)
                 {
@@ -48,8 +70,8 @@ public class FileLoggerWriter implements LoggerWriter
                     {
                         for (StackTraceElement stackTraceElement : stackTraceElements)
                         {
-                            writer.write(stackTraceElement.toString());
-                            writer.write(LINE_SEP);
+                            _writer.write(stackTraceElement.toString());
+                            _writer.write(LINE_SEP);
                         }
                     }
                 }
