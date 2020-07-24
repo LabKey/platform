@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util.element;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
@@ -23,17 +24,17 @@ import javax.validation.constraints.NotNull;
 
 public class Option implements HasHtmlString
 {
-    private final boolean _disabled;
     private final @NotNull HtmlString _label;
+    private final @NotNull String _value;
+    private final boolean _disabled;
     private final boolean _selected;
-    private final String _value;
 
     private Option(OptionBuilder builder)
     {
-        _disabled = builder._disabled;
         _label = builder._label;
-        _selected = builder._selected;
         _value = builder._value;
+        _disabled = builder._disabled;
+        _selected = builder._selected;
     }
 
     public boolean isDisabled()
@@ -51,7 +52,7 @@ public class Option implements HasHtmlString
         return _selected;
     }
 
-    public String getValue()
+    public @NotNull String getValue()
     {
         return _value;
     }
@@ -69,7 +70,7 @@ public class Option implements HasHtmlString
         StringBuilder sb = new StringBuilder();
 
         sb.append("<option")
-            .append(" value=\"").append(getValue() == null ? "" : PageFlowUtil.filter(getValue())).append("\"");
+            .append(" value=\"").append(PageFlowUtil.filter(getValue())).append("\"");
 
         if (isDisabled())
             sb.append(" disabled");
@@ -90,19 +91,19 @@ public class Option implements HasHtmlString
     public static class OptionBuilder implements HasHtmlString
     {
         private @NotNull HtmlString _label;
+        private @NotNull String _value;
         private boolean _disabled;
         private boolean _selected;
-        private String _value;
 
         public OptionBuilder()
         {
             _label = HtmlString.EMPTY_STRING;
         }
 
-        public OptionBuilder(String label, String value)
+        public OptionBuilder(String label, @Nullable Object value)
         {
-            _label = HtmlString.of(label);
-            _value = value;
+            label(label);
+            value(value);
         }
 
         public OptionBuilder disabled(boolean disabled)
@@ -117,8 +118,9 @@ public class Option implements HasHtmlString
             return this;
         }
 
-        public OptionBuilder label(HtmlString label)
+        public OptionBuilder label(@NotNull HtmlString label)
         {
+            assert null != label;
             _label = label;
             return this;
         }
@@ -129,9 +131,9 @@ public class Option implements HasHtmlString
             return this;
         }
 
-        public OptionBuilder value(String value)
+        public OptionBuilder value(@Nullable Object value)
         {
-            _value = value;
+            _value = null == value ? "" : value.toString();
             return this;
         }
 
