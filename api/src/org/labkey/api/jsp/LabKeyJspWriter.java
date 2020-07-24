@@ -19,7 +19,9 @@ import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
 import org.apache.log4j.Logger;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JavaScriptFragment;
@@ -37,6 +39,19 @@ public class LabKeyJspWriter extends JspWriterWrapper
     private static final Logger LOG = Logger.getLogger(LabKeyJspWriter.class);
     private static final Logger LOGSTRING = Logger.getLogger(LabKeyJspWriter.class.getName() + ".string");
     private static final Multiset<String> COUNTING_SET = ConcurrentHashMultiset.create();
+    private static final String EXPERIMENTAL_THROW_ON_WARNING = "labkeyJspWriterThrowOnWarning";
+
+    public static void registerExperimentalFeature()
+    {
+        // Don't bother adding the flag in production mode since LabKeyJspWriter is registered only in development mode
+        if (AppProps.getInstance().isDevMode())
+        {
+            AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_THROW_ON_WARNING,
+                "Throw exceptions for JSP warnings",
+                "Enables strict checking of JSP output. For example, calling print(String) results in an IllegalStateException.",
+                false);
+        }
+    }
 
     LabKeyJspWriter(JspWriter jspWriter)
     {
@@ -54,6 +69,9 @@ public class LabKeyJspWriter extends JspWriterWrapper
     {
         if (0 == COUNTING_SET.add(Thread.currentThread().getStackTrace()[2].toString(), 1))
         {
+            if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_THROW_ON_WARNING))
+                throw new IllegalStateException("A JSP is printing a string!");
+
             LOGSTRING.info(" A JSP is printing a string!", new Throwable());
         }
 
