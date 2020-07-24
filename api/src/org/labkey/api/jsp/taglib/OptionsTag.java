@@ -47,7 +47,7 @@ public class OptionsTag extends SimpleTagBase
         {
             for (Map.Entry<?, String> option : _map.entrySet())
             {
-                OptionBuilder builder = new OptionBuilder(option.getValue(), option.getKey().toString());
+                OptionBuilder builder = new OptionBuilder(option.getValue(), option.getKey());
                 if (isSelected(option.getKey()))
                     builder.selected(true);
                 out.print(builder);
