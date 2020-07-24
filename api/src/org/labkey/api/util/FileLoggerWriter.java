@@ -31,7 +31,7 @@ public class FileLoggerWriter implements LoggerWriter
         }
         catch (IOException e)
         {
-            LOG.error("Failed appending to file.", e);
+            LOG.error("Failed opening the file - " + _file.getName() , e);
         }
 
     }
@@ -78,7 +78,7 @@ public class FileLoggerWriter implements LoggerWriter
             }
             catch (IOException e)
             {
-                LOG.error("Failed appending to file.", e);
+                LOG.error("Failed appending to file - " + _file.getName(), e);
             }
         }
         else
