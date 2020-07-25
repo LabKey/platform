@@ -57,14 +57,7 @@ public class Option implements HasHtmlString
         return _value;
     }
 
-    @Override
-    public String toString()
-    {
-        return getHtmlString().toString();
-    }
-
-    @Override
-    public HtmlString getHtmlString()
+    public HtmlString render(boolean forceSelected)
     {
         // TODO: This method should do the rendering via DOM or HtmlStringBuilder
         StringBuilder sb = new StringBuilder();
@@ -75,7 +68,7 @@ public class Option implements HasHtmlString
         if (isDisabled())
             sb.append(" disabled");
 
-        if (isSelected())
+        if (forceSelected || isSelected())
             sb.append(" selected");
 
         sb.append(">");
@@ -86,6 +79,18 @@ public class Option implements HasHtmlString
         sb.append("</option>");
 
         return HtmlString.unsafe(sb.toString());
+    }
+
+    @Override
+    public HtmlString getHtmlString()
+    {
+        return render(false);
+    }
+
+    @Override
+    public String toString()
+    {
+        return getHtmlString().toString();
     }
 
     public static class OptionBuilder implements HasHtmlString

@@ -20,7 +20,6 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 
-import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.BodyTagSupport;
 import java.io.IOException;
 
@@ -32,7 +31,6 @@ import static org.labkey.api.util.DOM.cl;
 public class PanelTag extends BodyTagSupport
 {
     private String className = null;
-    private String id = null;
     private String type = "default";
     private String title = null;
     private Integer width = null;
@@ -45,18 +43,6 @@ public class PanelTag extends BodyTagSupport
     public void setClassName(String className)
     {
         this.className = className;
-    }
-
-    @Override
-    public String getId()
-    {
-        return id;
-    }
-
-    @Override
-    public void setId(String id)
-    {
-        this.id = id;
     }
 
     public String getType()
@@ -92,7 +78,7 @@ public class PanelTag extends BodyTagSupport
     Pair<HtmlString,HtmlString> tag;
 
     @Override
-    public int doStartTag() throws JspException
+    public int doStartTag()
     {
         String style = getWidth() != null ? "width: " + getWidth() + "px;" : "";
 
@@ -120,7 +106,7 @@ public class PanelTag extends BodyTagSupport
     }
 
     @Override
-    public int doEndTag() throws JspException
+    public int doEndTag()
     {
         try
         {

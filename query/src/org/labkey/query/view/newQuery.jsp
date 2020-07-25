@@ -17,15 +17,12 @@
 %>
 <%@ page import="org.labkey.api.query.QueryParam"%>
 <%@ page import="org.labkey.api.query.QueryUrls"%>
-<%@ page import="org.labkey.api.util.element.Option" %>
 <%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.NewQueryForm" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="java.util.stream.Collectors" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -46,19 +43,16 @@
                   id="ff_newQueryName"
                   name="ff_newQueryName"
                   value="<%=form.ff_newQueryName%>" />
-    <%
-        List<Option> options = namesAndLabels.entrySet().stream()
+    <%=select().name("ff_baseTableName").label("Which query/table do you want this new query to be based on?").addOptions(
+        namesAndLabels.entrySet().stream()
             .map(entry->{
                 String queryLabel = entry.getValue();
                 String queryName = entry.getKey();
                 String displayText = queryName;
                 if (!queryName.equalsIgnoreCase(queryLabel))
                     displayText += " (" + queryLabel + ")";
-                return new OptionBuilder(displayText, queryName).selected(queryName.equals(form.ff_baseTableName)).build();
-            })
-            .collect(Collectors.toList());
-    %>
-    <%=select().name("ff_baseTableName").label("Which query/table do you want this new query to be based on?").addOptions(options)%>
+                return new OptionBuilder(displayText, queryName).selected(queryName.equals(form.ff_baseTableName));
+            }))%>
     <%= button("Create and Edit Source").disableOnClick(true).submit(true) %>
     <%= button("Cancel").href(urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), form.getSchemaName())) %>
 </labkey:form>

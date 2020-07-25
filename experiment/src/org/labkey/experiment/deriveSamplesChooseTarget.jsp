@@ -87,9 +87,7 @@
         <tr>
             <td class="labkey-form-label">Target sample type:</td>
             <td colspan="2">
-                <labkey:select name="targetSampleTypeId">
-                    <labkey:options value="<%=bean.getTargetSampleTypeId()%>" map="<%=sampleTypeOptions%>"/>
-                </labkey:select>
+                <%=select().name("targetSampleTypeId").addOptions(sampleTypeOptions).selected(bean.getTargetSampleTypeId())%>
             </td>
         </tr>
         <tr>

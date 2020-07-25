@@ -17,10 +17,11 @@
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
-<%@ page import="java.util.Map" %>
+<%@ page import="java.util.stream.Stream" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -160,16 +161,12 @@ function restoreDefaultPage()
 }
 </script>
 <labkey:form id="change-wiki-form" className="col-md-6 col-lg-5" method="POST">
-    <labkey:select
-            label="Folder containing the page to display"
-            message="You can also <a href=\"javascript:restoreDefaultPage();\">restore to this folder's default page.</a>"
-            name="webPartContainer"
-            onKeyUp="updatePageList();"
-            onChange="updatePageList();">
-        <%
-            String webPartContainer = StringUtils.trimToNull(webPart.getPropertyMap().get("webPartContainer"));
-            for (Container c : me.getContainerList())
-            {
+    <%
+        String webPartContainer = StringUtils.trimToNull(webPart.getPropertyMap().get("webPartContainer"));
+    %>
+    <%=select().label("Folder containing the page to display").name("webPartContainer").onChange("updatePageList();").onKeyUp("updatePageList();").addOptions(
+        me.getContainerList().stream()
+            .map(c->{
                 boolean selected = false;
                 //if there's no property setting for container, select the current container.
                 if (webPartContainer == null)
@@ -178,39 +175,35 @@ function restoreDefaultPage()
                         selected = true;
                 }
                 else if (c.getId().equals(webPartContainer))
+                {
                     selected = true;
-        %>
-        <option<%=selected(selected)%> value="<%=text(c.getId())%>"><%=h(c.getPath())%></option>
-        <%
-            }
-        %>
-    </labkey:select>
-    <labkey:select label="Page to display" name="name">
-        <%
-            //if current container has no pages
-            if (null == me.getContainerNameTitleMap() || me.getContainerNameTitleMap().size() == 0)
-            {%>
-        <option selected value="">&lt;no pages&gt;</option>
-        <%}
+                }
+                return new OptionBuilder(c.getPath(), c.getId()).selected(selected);
+            }))%>
+    <span class="help-block">You can also <a href="javascript:restoreDefaultPage();">restore to this folder's default page.</a></span><br>
+    <%
+        final Stream<OptionBuilder> builders;
+
+        //if current container has no pages
+        if (null == me.getContainerNameTitleMap() || me.getContainerNameTitleMap().size() == 0)
+        {
+            builders = Stream.of(new OptionBuilder().value("").label("no pages"));
+        }
         else
         {
-            for (Map.Entry<String, String> entry : me.getContainerNameTitleMap().entrySet())
-            {
-                String name = entry.getKey();
-                String title = entry.getValue();
+            builders = me.getContainerNameTitleMap().entrySet().stream()
+                .map(entry->{
+                    String name = entry.getKey();
+                    String title = entry.getValue();
+                    //if there's a "default" page and no other page has been selected as default, select it.
+                    boolean selected = (name.equalsIgnoreCase("default") && webPart.getPropertyMap().get("name") == null) || name.equals(webPart.getPropertyMap().get("name"));
 
-                //if there's a "default" page and no other page has been selected as default, select it.
-                if (name.equalsIgnoreCase("default") && webPart.getPropertyMap().get("name") == null)
-                {%>
-        <option selected value="<%=h(name)%>"><%=h(name + " (" + title + ")")%></option>
-        <%}
-        else
-        {%>
-        <option<%=selected(name.equals(webPart.getPropertyMap().get("name")))%> value="<%=h(name)%>"><%=h(name + " (" + title + ")")%></option>
-        <%}
+                    return new OptionBuilder().value(name).label(name + " (" + title + ")").selected(selected);
+                });
         }
-        }%>
-    </labkey:select>
+    %>
+    <%=select().name("name").label("Page to display").addOptions(builders)%>
+    <br>
     <%= button("Submit").submit(true).id("btnSubmit") %>
     <%= button("Cancel").href(getContainer().getStartURL(getUser())) %>
 </labkey:form>

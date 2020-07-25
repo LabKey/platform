@@ -21,26 +21,11 @@ import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.BodyTagSupport;
 import java.io.IOException;
 
+@Deprecated // Migrate all remaining usages to SelectBuilder and delete this class
 public class SelectTag extends BodyTagSupport
 {
-    private String message = null;
-    private String id = null;
     private String label = null;
     private String name = null;
-    private String onChange = null;
-    private String onKeyUp = null;
-
-    @Override
-    public String getId()
-    {
-        return id;
-    }
-
-    @Override
-    public void setId(String id)
-    {
-        this.id = id;
-    }
 
     public String getLabel()
     {
@@ -50,16 +35,6 @@ public class SelectTag extends BodyTagSupport
     public void setLabel(String label)
     {
         this.label = label;
-    }
-
-    public String getMessage()
-    {
-        return message;
-    }
-
-    public void setMessage(String message)
-    {
-        this.message = message;
     }
 
     public String getName()
@@ -72,31 +47,9 @@ public class SelectTag extends BodyTagSupport
         this.name = name;
     }
 
-    public String getOnChange()
-    {
-        return onChange;
-    }
-
-    public void setOnChange(String onChange)
-    {
-        this.onChange = onChange;
-    }
-
-    public String getOnKeyUp()
-    {
-        return onKeyUp;
-    }
-
-    public void setOnKeyUp(String onKeyUp)
-    {
-        this.onKeyUp = onKeyUp;
-    }
-
     @Override
     public int doStartTag() throws JspException
     {
-        // TODO: Delegate to SelectBuilder
-
         StringBuilder sb = new StringBuilder();
 
         sb.append("<label class=\"control-label\">");
@@ -110,12 +63,6 @@ public class SelectTag extends BodyTagSupport
         if (getId() != null)
             sb.append(" id=\"").append(getId()).append("\"");
 
-        // events
-        if (getOnChange() != null)
-            sb.append(" onchange=\"").append(getOnChange()).append("\"");
-        if (getOnKeyUp() != null)
-            sb.append(" onkeyup=\"").append(getOnKeyUp()).append("\"");
-
         sb.append(">");
 
         print(sb);
@@ -128,10 +75,6 @@ public class SelectTag extends BodyTagSupport
         StringBuilder sb = new StringBuilder();
 
         sb.append("</select>");
-
-        // render unescaped message (may contain HTML)
-        if (getMessage() != null)
-            sb.append("<span class=\"help-block\">").append(getMessage()).append("</span>");
 
         print(sb);
         return BodyTagSupport.EVAL_PAGE;
