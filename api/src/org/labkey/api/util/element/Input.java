@@ -644,6 +644,8 @@ public class Input extends DisplayElement implements HasHtmlString
         private String _min;
         private Boolean _multiple;
         private String _name;
+        private String _onChange;
+        private String _onKeyUp;
         private String _placeholder;
         private Boolean _readOnly;
         private Boolean _required;
@@ -656,9 +658,6 @@ public class Input extends DisplayElement implements HasHtmlString
         private String _type = "text";
         private HtmlString _value;
         private Boolean _needsWrapping;
-
-        protected String _onChange;
-        protected String _onKeyUp;
 
         public InputBuilder()
         {
