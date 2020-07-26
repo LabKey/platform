@@ -52,7 +52,7 @@ public class ActionURL extends URLHelper implements Cloneable
         return AppProps.getInstance().getUseContainerRelativeURL();
     }
 
-    public enum Param implements EnumHasHtmlString<Param>
+    public enum Param implements EnumHasHtmlString
     {
         returnUrl,
         redirectUrl,    // mostly deprecated for returnUrl

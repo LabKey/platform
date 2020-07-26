@@ -97,7 +97,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
     // serialize these twice
     protected Map<String, Object> _mapReportProps = new HashMap<>();
 
-    public enum Prop implements ReportProperty, EnumHasHtmlString<Prop>
+    public enum Prop implements ReportProperty, EnumHasHtmlString
     {
         descriptorType,
         reportId,

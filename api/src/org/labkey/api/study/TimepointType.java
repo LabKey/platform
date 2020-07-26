@@ -25,7 +25,7 @@ import org.labkey.api.util.EnumHasHtmlString;
  * User: markigra
  * Date: Oct 31, 2007
  */
-public enum TimepointType implements EnumHasHtmlString<TimepointType>
+public enum TimepointType implements EnumHasHtmlString
 {
     /** Events should be explicitly assigned a visit number */
     VISIT(true),

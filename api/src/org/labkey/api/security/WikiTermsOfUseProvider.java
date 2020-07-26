@@ -169,7 +169,7 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
         }
     }
 
-    public enum TermsOfUseType implements EnumHasHtmlString<TermsOfUseType> { NONE, PROJECT_LEVEL, SITE_WIDE }
+    public enum TermsOfUseType implements EnumHasHtmlString { NONE, PROJECT_LEVEL, SITE_WIDE }
 
     public static class TermsOfUse
     {
