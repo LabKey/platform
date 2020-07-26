@@ -67,12 +67,28 @@ public class LabKeyJspWriter extends JspWriterWrapper
     @Override
     public void print(String s) throws IOException
     {
-        if (0 == COUNTING_SET.add(Thread.currentThread().getStackTrace()[2].toString(), 1))
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+
+        if (0 == COUNTING_SET.add(stackTrace[2].toString(), 1))
         {
             if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_THROW_ON_WARNING))
                 throw new IllegalStateException("A JSP is printing a string!");
 
-            LOGSTRING.info(" A JSP is printing a string!", new Throwable());
+            // Shorten the stack trace to the first org.labkey.api.view.JspView.renderView()
+            StringBuilder shortStackTrace = new StringBuilder("\njava.lang.Throwable");
+            int i = 1;
+            StackTraceElement ste;
+
+            do
+            {
+                ste = stackTrace[i++];
+                String line = String.valueOf(ste);
+                shortStackTrace.append("\n\tat ");
+                shortStackTrace.append(line);
+            }
+            while (i < stackTrace.length && !("org.labkey.api.view.JspView".equals(ste.getClassName()) && "renderView".equals(ste.getMethodName())));
+
+            LOGSTRING.info(" A JSP is printing a string!" + shortStackTrace.toString());
         }
 
         super.print(s);
