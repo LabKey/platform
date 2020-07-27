@@ -44,8 +44,6 @@ import java.util.WeakHashMap;
 @Plugin(name = "SessionAppender", category = Core.CATEGORY_NAME, elementType = Appender.ELEMENT_TYPE, printObject = true)
 public class SessionAppender extends AbstractAppender
 {
-    private static ThreadLocal<WeakHashMap<LogEvent, String>> _eventIds = new ThreadLocal<>();
-
     @PluginFactory
     public static SessionAppender createAppender(@PluginAttribute("name") String name,
                                                  @PluginElement("Layout") Layout<? extends Serializable> layout,
@@ -69,7 +67,18 @@ public class SessionAppender extends AbstractAppender
 
         final String key;
         boolean on;
-        final Map<LogEvent, String> eventIdMap = new WeakHashMap<>();
+        final Map<LogEvent, String> eventIdMap = new ConcurrentReferenceHashMap<>(16, ConcurrentReferenceHashMap.ReferenceType.WEAK)
+        {
+            @Override
+            public String put(LogEvent key, String value)
+            {
+                // Safeguard against runaway size. ConcurrentReferenceHashMap does not have removeEldestEntry so have
+                // to randomly remove an entry
+                if (size() > 1000)
+                    remove(0);
+                return super.put(key, value);
+            }
+        };
         int eventId=0;
     }
 
@@ -108,8 +117,6 @@ public class SessionAppender extends AbstractAppender
         synchronized (info.eventIdMap)
         {
             info.eventIdMap.put(event, String.valueOf(++info.eventId));
-            if (info.eventIdMap.size() > 1000)
-                info.eventIdMap.remove(0);
         }
     }
 
