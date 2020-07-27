@@ -17,7 +17,8 @@
 package org.labkey.api.security;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
@@ -45,7 +46,7 @@ import java.util.Map;
  */
 public class ValidEmail
 {
-    private static final Logger LOG = Logger.getLogger(ValidEmail.class);
+    private static final Logger LOG = LogManager.getLogger(ValidEmail.class);
 
     private final InternetAddress _internetAddress;
 

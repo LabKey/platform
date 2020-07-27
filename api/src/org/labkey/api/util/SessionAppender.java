@@ -15,30 +15,45 @@
  */
 package org.labkey.api.util;
 
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.Core;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Property;
 import org.apache.logging.log4j.core.config.plugins.Plugin;
+import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
+import org.apache.logging.log4j.core.config.plugins.PluginElement;
+import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.util.ConcurrentReferenceHashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.Serializable;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Collections;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 /**
  * User: matthewb
  * Date: Aug 18, 2009
  * Time: 2:18:21 PM
  */
-@Plugin(name = "SessionAppender", category = "Core", elementType = "appender", printObject = true)
+@Plugin(name = "SessionAppender", category = Core.CATEGORY_NAME, elementType = Appender.ELEMENT_TYPE, printObject = true)
 public class SessionAppender extends AbstractAppender
 {
+    private static ThreadLocal<WeakHashMap<LogEvent, String>> _eventIds = new ThreadLocal<>();
+
+    @PluginFactory
+    public static SessionAppender createAppender(@PluginAttribute("name") String name,
+                                                 @PluginElement("Layout") Layout<? extends Serializable> layout,
+                                                 @PluginElement("Filter") final Filter filter)
+    {
+        return new SessionAppender(name, filter, layout, false, null);
+    }
+
     protected SessionAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties)
     {
         super(name, filter, layout, ignoreExceptions, properties);
@@ -54,7 +69,7 @@ public class SessionAppender extends AbstractAppender
 
         final String key;
         boolean on;
-        final List<LogEvent> list = new LinkedList<>();
+        final Map<LogEvent, String> eventIdMap = new WeakHashMap<>();
         int eventId=0;
     }
 
@@ -90,25 +105,23 @@ public class SessionAppender extends AbstractAppender
         AppenderInfo info = localInfo.get();
         if (null == info || !info.on)
             return;
-        synchronized (info.list)
+        synchronized (info.eventIdMap)
         {
-            // TODO - find replacement - maybe a ThreadLocal using a WeakHashMap of Event->EventId?
-            //            event.setProperty("eventId", String.valueOf(++info.eventId));
-            info.list.add(event);
-            if (info.list.size() > 1000)
-                info.list.remove(0);
+            info.eventIdMap.put(event, String.valueOf(++info.eventId));
+            if (info.eventIdMap.size() > 1000)
+                info.eventIdMap.remove(0);
         }
     }
 
 
-    public static LogEvent[] getLoggingEvents(HttpServletRequest request)
+    public static Map<LogEvent, String> getLoggingEvents(HttpServletRequest request)
     {
         AppenderInfo info = _getLoggingForSession(request);
         if (null == info)
-            return new LogEvent[0];
-        synchronized (info.list)
+            return Collections.emptyMap();
+        synchronized (info.eventIdMap)
         {
-            return info.list.toArray(new LogEvent[0]);
+            return info.eventIdMap;
         }
     }
 

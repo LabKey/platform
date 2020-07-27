@@ -23,7 +23,6 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.LoggerConfig;
-import org.apache.logging.log4j.core.config.NullConfiguration;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
@@ -49,9 +48,11 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.net.URL;
-import java.util.ArrayList;
+import java.net.URISyntaxException;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * User: kevink
@@ -83,17 +84,30 @@ public class LoggerController extends SpringActionController
         private String level;
         private boolean inherited;
 
-        public static LoggerLevel fromLogger(LoggerConfig log)
+        public static LoggerLevel fromLoggerConfig(LoggerConfig log)
         {
             LoggerConfig parent = log.getParent();
-            Level level = log.getLevel();
-            Level effectiveLevel = log.getLevel();
+            String parentName = parent != null ? parent.getName() : "";
 
+            return getLoggerLevel(parentName, log.getLevel(), log.getName());
+        }
+
+        public static LoggerLevel fromLogger(Logger log)
+        {
+            Logger parent = ((org.apache.logging.log4j.core.Logger) log).getParent();
+            String parentName = parent != null ? parent.getName() : null;
+
+            return getLoggerLevel(parentName, log.getLevel(), log.getName());
+        }
+
+        private static LoggerLevel getLoggerLevel(String parent, Level level, String name)
+        {
             LoggerLevel loggerLevel = new LoggerLevel();
-            loggerLevel.setName(log.getName());
-            loggerLevel.setParent(parent != null ? parent.getName() : null);
-            loggerLevel.setLevel(level != null ? level.toString() : effectiveLevel.toString());
-            loggerLevel.setInherited(level == null);
+            loggerLevel.setName(name);
+            loggerLevel.setParent(parent);
+            loggerLevel.setLevel(level.toString());
+            boolean inherited = parent != null && !parent.equalsIgnoreCase(name);
+            loggerLevel.setInherited(inherited);
             return loggerLevel;
         }
 
@@ -135,6 +149,24 @@ public class LoggerController extends SpringActionController
         public void setInherited(boolean inherited)
         {
             this.inherited = inherited;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            LoggerLevel that = (LoggerLevel) o;
+            return inherited == that.inherited &&
+                    name.equals(that.name) &&
+                    Objects.equals(parent, that.parent) &&
+                    level.equals(that.level);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(name, parent, level, inherited);
         }
     }
 
@@ -181,23 +213,24 @@ public class LoggerController extends SpringActionController
         @Override
         public SimpleResponse<Collection<LoggerLevel>> execute(ListFilter filter, BindException errors)
         {
-            Level filterLevel = filter.getLevel() != null ? Level.toLevel(filter.getLevel()) : null;
-
-            Collection<LoggerLevel> loggers = new ArrayList<>();
-            LoggerContext loggerContext = (LoggerContext) LogManager.getContext(true);
+            Set<LoggerLevel> loggers = new HashSet<>();
+            LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
             Configuration configuration = loggerContext.getConfiguration();
 
+            Collection<org.apache.logging.log4j.core.Logger> currentLoggers = loggerContext.getLoggers();
+            Collection<LoggerConfig> loggerConfigs = configuration.getLoggers().values();
 
-            Collection<LoggerConfig> currentLoggers = configuration.getLoggers().values();
-            for (LoggerConfig currentLogger: currentLoggers)
+            for (LoggerConfig currentLogger: loggerConfigs)
             {
-                if (!filter.isInherited() && currentLogger.getLevel() == null)
+                if (filterCheck(filter, currentLogger.getLevel(), currentLogger.getName()))
                     continue;
 
-                if (filterLevel != null && !(filterLevel.equals(currentLogger.getLevel())))
-                    continue;
+                loggers.add(LoggerLevel.fromLoggerConfig(currentLogger));
+            }
 
-                if (filter.getContains() != null && !StringUtils.containsIgnoreCase(currentLogger.getName(), filter.getContains()))
+            for (Logger currentLogger: currentLoggers)
+            {
+                if (filterCheck(filter, currentLogger.getLevel(), currentLogger.getName()))
                     continue;
 
                 loggers.add(LoggerLevel.fromLogger(currentLogger));
@@ -205,18 +238,28 @@ public class LoggerController extends SpringActionController
 
             return success(loggers);
         }
+
+        private boolean filterCheck(ListFilter filter, Level level, String loggerName)
+        {
+            Level filterLevel = filter.getLevel() != null ? Level.toLevel(filter.getLevel()) : null;
+
+            if (!filter.isInherited() && level == null)
+                return true;
+
+            if (filterLevel != null && !(filterLevel.equals(level)))
+                return true;
+
+            return filter.getContains() != null && !StringUtils.containsIgnoreCase(loggerName, filter.getContains());
+        }
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
     public class ResetAction extends MutatingApiAction<Object>
     {
         @Override
-        public SimpleResponse execute(Object o, BindException errors)
+        public SimpleResponse execute(Object o, BindException errors) throws URISyntaxException
         {
-            LoggerContext.getContext(true).setConfiguration(new NullConfiguration());
-            URL url = getClass().getResource("/log4j.xml");
-            // TODO : log4j
-//            DOMConfigurator.configure(url);
+            ((org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false)).reconfigure();
             return success();
         }
     }
@@ -237,10 +280,7 @@ public class LoggerController extends SpringActionController
                 Configurator.setLevel(logger.getName(), Level.toLevel(loggerLevel.level));
             }
 
-            LoggerContext loggerContext = (LoggerContext) LogManager.getContext(true);
-            Configuration configuration = loggerContext.getConfiguration();
-
-            return success(LoggerLevel.fromLogger(configuration.getLoggerConfig(logger.getName())));
+            return success(LoggerLevel.fromLogger(logger));
         }
     }
 
