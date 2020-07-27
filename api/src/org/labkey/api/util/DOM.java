@@ -52,12 +52,26 @@ public class DOM
         Appendable appendTo(Appendable sb);
     }
 
+
+    /*
+     * BODY_PLACE_HOLDER and TemplateAppendableWrapper are used to make it possible to efficiently implement an HTML wrapper
+     * frame using DOM, even if the 'body' of the frame is not available yet.  For instance this can use use to implement
+     * Jsp tags that extend BodyTagSupport.  It can also be used to implement subclasses of WebPartFrame.
+     *
+     * The DOM Renderable objects write to the normal output Appendable until it hits BODY_PLACE_HOLDER.  At that point the
+     * output is captured in an StringBuilder.  The caller can stash the markup generated after BODY_PLACE_HOLDER and
+     * render that markup after the body is rendered.
+     */
+
     private static final String BODY_PLACE_HOLDER_STRING = "<!-- org.labkey.api.util.DOM.BODYCONTENT!" + GUID.makeHash() + "-->";
 
     public static final Renderable BODY_PLACE_HOLDER = sb -> {
         try
         {
-            sb.append(BODY_PLACE_HOLDER_STRING);
+            if (sb instanceof TemplateAppendableWrapper)
+                ((TemplateAppendableWrapper)sb).bufferRemainingOutput();
+            else
+                sb.append(BODY_PLACE_HOLDER_STRING);
             return sb;
         }
         catch (Exception x)
@@ -66,19 +80,57 @@ public class DOM
         }
     };
 
-    /*
-    * This is mostly for retro-fitting JSP tags implementatoins that want to use DOM, useful when the
-    * wrapping HTML is pretty small compared to the body.  Avoid outside JSP Tags.
-    */
-    public static Pair<HtmlString,HtmlString> renderWithPlaceHolder(Renderable r)
+    private static final class TemplateAppendableWrapper implements Appendable
     {
-        StringBuilder sb = new StringBuilder();
-        r.appendTo(sb);
-        String[] split = StringUtils.splitByWholeSeparator(sb.toString(),BODY_PLACE_HOLDER_STRING);
-        if (split.length != 2)
-            throw new IllegalArgumentException();
-        return new Pair<>(HtmlString.unsafe(split[0]),HtmlString.unsafe(split[1]));
+        final Appendable out;
+        final StringBuilder sb = new StringBuilder();
+        Appendable current;
+
+        TemplateAppendableWrapper(Appendable out)
+        {
+            this.out = out;
+            this.current = out;
+        }
+
+        void bufferRemainingOutput()
+        {
+            this.current = sb;
+        }
+
+        HtmlString getEndMarkup()
+        {
+            return HtmlString.unsafe(sb.toString());
+        }
+
+        @Override
+        public Appendable append(CharSequence csq) throws IOException
+        {
+            current.append(csq);
+            return this;
+        }
+
+        @Override
+        public Appendable append(CharSequence csq, int start, int end) throws IOException
+        {
+            current.append(csq, start, end);
+            return this;
+        }
+
+        @Override
+        public Appendable append(char c) throws IOException
+        {
+            current.append(c);
+            return this;
+        }
     }
+
+    public static HtmlString renderTemplate(Renderable r, Appendable out)
+    {
+        var wrapper = new TemplateAppendableWrapper(out);
+        r.appendTo(wrapper);
+        return wrapper.getEndMarkup();
+    }
+
 
     public enum Element
     {
