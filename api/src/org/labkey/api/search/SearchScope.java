@@ -24,7 +24,7 @@ import org.labkey.api.util.EnumHasHtmlString;
  * User: adam
  * Date: 2/18/12
  */
-public enum SearchScope implements EnumHasHtmlString<SearchScope>
+public enum SearchScope implements EnumHasHtmlString
 {
     All() {
         @Override

@@ -626,7 +626,7 @@ public class SecurityController extends SpringActionController
 
     }
 
-    public enum PermissionType implements EnumHasHtmlString<PermissionType>
+    public enum PermissionType implements EnumHasHtmlString
     {
         defaultPermission,
         customPermission,

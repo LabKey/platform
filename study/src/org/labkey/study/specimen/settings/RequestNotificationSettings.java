@@ -51,9 +51,9 @@ public class RequestNotificationSettings
     private DefaultEmailNotifyEnum _defaultEmailNotify = DefaultEmailNotifyEnum.ActorsInvolved;
     private SpecimensAttachmentEnum _specimensAttachment = SpecimensAttachmentEnum.InEmailBody;
 
-    public enum DefaultEmailNotifyEnum implements EnumHasHtmlString<DefaultEmailNotifyEnum>
+    public enum DefaultEmailNotifyEnum implements EnumHasHtmlString
     {All, None, ActorsInvolved}
-    public enum SpecimensAttachmentEnum implements EnumHasHtmlString<SpecimensAttachmentEnum>
+    public enum SpecimensAttachmentEnum implements EnumHasHtmlString
     {InEmailBody, ExcelAttachment, TextAttachment, Never}
 
     public RequestNotificationSettings()

@@ -28,7 +28,9 @@ import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.element.Option;
+import org.labkey.api.util.element.Option.OptionBuilder;
 import org.labkey.api.util.element.Select;
+import org.labkey.api.util.element.Select.SelectBuilder;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -107,22 +109,20 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
 
         boolean disabled = isDisabledInput();
 
-        Select.SelectBuilder select = new Select.SelectBuilder()
-                .name(_inputName)
-                .disabled(disabled);
-        List<Option> options = new ArrayList<>();
-        options.add(new Option.OptionBuilder().label("[None]").build());
+        SelectBuilder select = new SelectBuilder()
+            .name(_inputName)
+            .disabled(disabled);
+        select.addOption(new OptionBuilder().label("[None]"));
         for (Study study : studies)
         {
             Container container = study.getContainer();
-            options.add(new Option.OptionBuilder()
-                    .label(PageFlowUtil.filter(container.getPath() + " (" + study.getLabel()) + ")")
-                    .value(PageFlowUtil.filter(container.getId()))
-                    .selected(container.getId().equals(value))
-                    .build()
+            select.addOption(new OptionBuilder()
+                .label(container.getPath() + " (" + study.getLabel() + ")")
+                .value(container.getId())
+                .selected(container.getId().equals(value))
             );
         }
-        out.write(select.addOptions(options).toString());
+        out.write(select.toString());
         
         if (disabled)
             out.write("<input type=\"hidden\" name=\"" +_inputName + "\" value=\"" + PageFlowUtil.filter(value) + "\">");

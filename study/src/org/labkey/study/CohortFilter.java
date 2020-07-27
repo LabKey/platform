@@ -47,7 +47,7 @@ public interface CohortFilter
     @Deprecated /** Callers need to handle multiple cohorts case */
     int getCohortId();
 
-    public enum Type implements EnumHasHtmlString<Type>
+    enum Type implements EnumHasHtmlString
     {
         PTID_INITIAL("Initial cohort")
         {

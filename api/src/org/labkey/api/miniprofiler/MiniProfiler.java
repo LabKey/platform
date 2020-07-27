@@ -274,7 +274,7 @@ public class MiniProfiler
         _collectTroubleshootingStackTraces = enabled;
     }
 
-    public enum RenderPosition implements EnumHasHtmlString<RenderPosition>
+    public enum RenderPosition implements EnumHasHtmlString
     {
         TopLeft("left"),
         TopRight("right"),

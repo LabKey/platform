@@ -28,9 +28,7 @@
 
 <b>Domain Kinds:</b>
 <form method="GET" action="experiment-types-types.view">
-    <labkey:select label="Domain Kinds" name="domainKind" onChange="this.form.submit();">
-        <labkey:options value="<%=h(bean.domainKind)%>" set="<%=bean.domainKinds.keySet()%>"/>
-    </labkey:select>
+    <%=select().name("domainKind").label("Domain Kinds").onChange("this.form.submit();").addOptions(bean.domainKinds.keySet()).selected(bean.domainKind)%>
 </form>
 
 <h3>local types</h3>

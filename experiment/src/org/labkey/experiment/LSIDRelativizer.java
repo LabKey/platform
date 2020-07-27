@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
  * User: jeckels
  * Date: Nov 21, 2005
  */
-public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
+public enum LSIDRelativizer implements EnumHasHtmlString
 {
     /** Keeps the original LSID from the source server */
     ABSOLUTE("Absolute")

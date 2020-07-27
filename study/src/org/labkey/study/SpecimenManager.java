@@ -2244,7 +2244,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         }
     }
 
-    public enum SpecimenTypeLevel implements EnumHasHtmlString<SpecimenTypeLevel>
+    public enum SpecimenTypeLevel implements EnumHasHtmlString
     {
         PrimaryType()
         {
