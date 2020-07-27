@@ -24,7 +24,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.EnumHasHtmlString;
+import org.labkey.api.util.SimpleHasHtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.CohortImpl;
 
@@ -47,7 +47,7 @@ public interface CohortFilter
     @Deprecated /** Callers need to handle multiple cohorts case */
     int getCohortId();
 
-    enum Type implements EnumHasHtmlString
+    enum Type implements SimpleHasHtmlString
     {
         PTID_INITIAL("Initial cohort")
         {

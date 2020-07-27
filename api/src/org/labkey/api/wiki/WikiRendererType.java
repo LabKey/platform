@@ -16,8 +16,8 @@
 
 package org.labkey.api.wiki;
 
-import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.SimpleHasHtmlString;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -27,7 +27,7 @@ import org.labkey.api.view.JspView;
  * User: Tamra Myers
  * Date: Aug 17, 2006
  */
-public enum WikiRendererType implements EnumHasHtmlString
+public enum WikiRendererType implements SimpleHasHtmlString
 {
     RADEOX
         {
@@ -38,7 +38,7 @@ public enum WikiRendererType implements EnumHasHtmlString
             @Override
             public HttpView getSyntaxHelpView()
             {
-                return new JspView("/org/labkey/api/wiki/wikiRadeoxHelp.jsp");
+                return new JspView<>("/org/labkey/api/wiki/wikiRadeoxHelp.jsp");
             }
         },
     HTML
@@ -74,7 +74,7 @@ public enum WikiRendererType implements EnumHasHtmlString
             public String getFileExtension() {return ".md";}
             @Override
             public HttpView getSyntaxHelpView(){
-                return new JspView("/org/labkey/api/wiki/wikiMarkdownHelp.jsp");
+                return new JspView<>("/org/labkey/api/wiki/wikiMarkdownHelp.jsp");
             }
         };
 

@@ -17,14 +17,14 @@ package org.labkey.api.search;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.util.EnumHasHtmlString;
+import org.labkey.api.util.SimpleHasHtmlString;
 
 /**
  * Options for how widely or narrowly to search on the server, based on the number of containers to include.
  * User: adam
  * Date: 2/18/12
  */
-public enum SearchScope implements EnumHasHtmlString
+public enum SearchScope implements SimpleHasHtmlString
 {
     All() {
         @Override

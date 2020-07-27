@@ -15,17 +15,17 @@
  */
 package org.labkey.study.specimen.settings;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
-import org.labkey.api.data.Container;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.util.EnumHasHtmlString;
+import org.labkey.api.util.SimpleHasHtmlString;
 
 import javax.mail.Address;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.List;
-import java.util.ArrayList;
 
 /*
  * User: brittp
@@ -51,9 +51,9 @@ public class RequestNotificationSettings
     private DefaultEmailNotifyEnum _defaultEmailNotify = DefaultEmailNotifyEnum.ActorsInvolved;
     private SpecimensAttachmentEnum _specimensAttachment = SpecimensAttachmentEnum.InEmailBody;
 
-    public enum DefaultEmailNotifyEnum implements EnumHasHtmlString
+    public enum DefaultEmailNotifyEnum implements SimpleHasHtmlString
     {All, None, ActorsInvolved}
-    public enum SpecimensAttachmentEnum implements EnumHasHtmlString
+    public enum SpecimensAttachmentEnum implements SimpleHasHtmlString
     {InEmailBody, ExcelAttachment, TextAttachment, Never}
 
     public RequestNotificationSettings()

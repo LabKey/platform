@@ -18,14 +18,14 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.util.EnumHasHtmlString;
+import org.labkey.api.util.SimpleHasHtmlString;
 
 /**
  * List of ways that a study can group events based on their time.
  * User: markigra
  * Date: Oct 31, 2007
  */
-public enum TimepointType implements EnumHasHtmlString
+public enum TimepointType implements SimpleHasHtmlString
 {
     /** Events should be explicitly assigned a visit number */
     VISIT(true),

@@ -69,11 +69,11 @@ import org.labkey.api.study.StudyCachable;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.SimpleHasHtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -2244,7 +2244,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         }
     }
 
-    public enum SpecimenTypeLevel implements EnumHasHtmlString
+    public enum SpecimenTypeLevel implements SimpleHasHtmlString
     {
         PrimaryType()
         {
