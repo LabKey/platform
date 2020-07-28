@@ -25,10 +25,10 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.SimpleHasHtmlString;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 
@@ -274,7 +274,7 @@ public class MiniProfiler
         _collectTroubleshootingStackTraces = enabled;
     }
 
-    public enum RenderPosition implements EnumHasHtmlString
+    public enum RenderPosition implements SimpleHasHtmlString
     {
         TopLeft("left"),
         TopRight("right"),

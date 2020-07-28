@@ -15,7 +15,6 @@
  */
 package org.labkey.study.specimen.report;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.jsp.taglib.AutoCompleteTextTag;
 import org.labkey.api.query.CustomView;
@@ -24,10 +23,10 @@ import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DemoMode;
-import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.SimpleHasHtmlString;
 import org.labkey.api.util.element.Option.OptionBuilder;
 import org.labkey.api.util.element.Select;
 import org.labkey.api.view.ActionURL;
@@ -74,7 +73,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         hideEmptyColumns
     }
 
-    public enum Status implements EnumHasHtmlString
+    public enum Status implements SimpleHasHtmlString
     {
         ALL("All vials"),
         AVAILABLE("Available vials"),
@@ -84,15 +83,16 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         REQUESTED_COMPLETE("Vials in completed requests"),
         NOT_REQUESTED_COMPLETE("Vials not in completed requests");
 
-        private String _caption;
-        public String getCaption()
-        {
-            return _caption;
-        }
+        private final String _caption;
 
         Status(String caption)
         {
             _caption = caption;
+        }
+
+        public String getCaption()
+        {
+            return _caption;
         }
     }
 
@@ -249,10 +249,10 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     public static final String COMPLETED_REQUESTS_FILTER_SQL =
             "SELECT SpecimenGlobalUniqueId FROM study.SampleRequestSpecimen\n" +
-                    "\tJOIN study.SampleRequest ON study.SampleRequestSpecimen.SampleRequestId = study.SampleRequest.RowId\n" +
-                    "\tJOIN study.SampleRequestStatus ON study.SampleRequest.StatusId = study.SampleRequestStatus.RowId\n" +
-                    "\tWHERE study.SampleRequestStatus.SpecimensLocked = ? AND study.SampleRequestStatus.FinalState = ?\n" +
-                    "\tAND study.SampleRequest.Container = ?";
+                "\tJOIN study.SampleRequest ON study.SampleRequestSpecimen.SampleRequestId = study.SampleRequest.RowId\n" +
+                "\tJOIN study.SampleRequestStatus ON study.SampleRequest.StatusId = study.SampleRequestStatus.RowId\n" +
+                "\tWHERE study.SampleRequestStatus.SpecimensLocked = ? AND study.SampleRequestStatus.FinalState = ?\n" +
+                "\tAND study.SampleRequest.Container = ?";
 
     protected void addAvailabilityFilter(SimpleFilter filter, Status status)
     {

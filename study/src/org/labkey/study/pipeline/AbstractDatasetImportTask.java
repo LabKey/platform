@@ -25,8 +25,8 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
-import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.SimpleHasHtmlString;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.StudyImportContext;
@@ -205,7 +205,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
     }
 
 
-    public enum Action implements EnumHasHtmlString
+    public enum Action implements SimpleHasHtmlString
     {
         REPLACE,
         APPEND,
