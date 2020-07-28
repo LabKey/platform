@@ -101,7 +101,7 @@ public class StatusDetailsBean
             {
                 // get other log files in the directory
                 var provider = PipelineService.get().getPipelineProvider(psf.getProvider());
-                List<File> files = FileDisplayColumn.listFiles(path.toFile(), c, provider);
+                List<Path> files = FileDisplayColumn.listFiles(path, c, provider);
                 if (files != null && !files.isEmpty())
                 {
                     statusFiles = files.stream().map(f -> new StatusDetailFile(c, psf.getRowId(), f)).collect(toList());
@@ -192,7 +192,17 @@ public class StatusDetailsBean
 
         public StatusDetailFile(Container c, int rowId, File file)
         {
-            this.name = file.getName();
+            this(c, rowId, file.getName());
+        }
+
+        public StatusDetailFile(Container c, int rowId, Path path)
+        {
+            this(c, rowId, path.getFileName().toString());
+        }
+
+        public StatusDetailFile(Container c, int rowId, String fileName)
+        {
+            this.name = fileName;
             this.viewUrl = StatusController.urlShowFile(c, rowId, name, false);
             this.downloadUrl = StatusController.urlShowFile(c, rowId, name, true);
         }
