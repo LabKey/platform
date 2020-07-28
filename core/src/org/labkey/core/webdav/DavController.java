@@ -2753,6 +2753,11 @@ public class DavController extends SpringActionController
             json.key("iconHref").value(resource.getIconHref());
             json.key("iconFontCls").value(resource.getIconFontCls());
             json.key("options").value(determineMethodsAllowed(resource));
+            json.key("canDelete").value(resource.canDelete(getUser(), false));
+            json.key("canRename").value(resource.canRename(getUser(), false));
+            json.key("canEdit").value(resource.canWrite(getUser(), false));
+            json.key("canUpload").value(resource.canCreate(getUser(), false));
+            json.key("canRead").value(resource.canRead(getUser(), false));
 
             long created = resource.getCreated();
             if (Long.MIN_VALUE != created)
