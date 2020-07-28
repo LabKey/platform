@@ -27,10 +27,9 @@
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.NavTree"%>
-<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.core.admin.AdminController"%>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.Map" %>

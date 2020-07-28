@@ -21,11 +21,7 @@ package org.labkey.api.util;
  */
 
 // TODO: Remove type parameter. This requires a multi-repo commit, so we'll change all the implementors first, then circle back to remove it here.
-public interface EnumHasHtmlString<E extends Enum<?>> extends HasHtmlString
+@Deprecated // Enums should simply implement SimpleHasHtmlString instead
+public interface EnumHasHtmlString<E extends Enum<?>> extends SimpleHasHtmlString
 {
-    @Override
-    default HtmlString getHtmlString()
-    {
-        return HtmlString.of(toString());
-    }
 }
