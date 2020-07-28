@@ -68,6 +68,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -777,11 +778,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     .setFileLinkDirectory("sampleset")
                     .setIndexFunction(lsids -> () ->
                     {
-                        for (String lsid : lsids)
+                        SearchService ss = SearchService.get();
+                        if (ss != null)
                         {
-                            ExpMaterialImpl expMaterial = ExperimentServiceImpl.get().getExpMaterial(lsid);
-                            if (null != expMaterial)
-                                expMaterial.index(null);
+                            for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLSID(lsids))
+                            {
+                                ss.defaultTask().addRunnable(() -> expMaterial.index(null), SearchService.PRIORITY.bulk);
+                            }
                         }
                     }));
 
