@@ -20,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.element.Input;
 import org.labkey.api.view.ActionURL;
@@ -174,7 +173,7 @@ public class FormTag extends BodyTagSupport
     }
 
 
-    Pair<HtmlString,HtmlString> tag;
+    HtmlString endTag;
 
     @Override
     public int doStartTag() throws JspException
@@ -199,22 +198,13 @@ public class FormTag extends BodyTagSupport
         if (isNoValidate())
             formAttributes.at(DOM.Attribute.novalidate, Boolean.TRUE);
 
-        tag = DOM.renderWithPlaceHolder(
-            DOM.LK.FORM(formAttributes
-                .cl(isNotBlank(_class), _class)
-                .cl(Input.Layout.HORIZONTAL.toString().equalsIgnoreCase(getLayout()), "form-horizontal")
-                .cl(Input.Layout.INLINE.toString().equalsIgnoreCase(getLayout()), "form-inline"),
-                DOM.BODY_PLACE_HOLDER)
-        );
-
-        try
-        {
-            pageContext.getOut().print(tag.first);
-        }
-        catch(IOException x)
-        {
-            throw UnexpectedException.wrap(x);
-        }
+        var form =
+                DOM.LK.FORM(formAttributes
+                    .cl(isNotBlank(_class), _class)
+                    .cl(Input.Layout.HORIZONTAL.toString().equalsIgnoreCase(getLayout()), "form-horizontal")
+                    .cl(Input.Layout.INLINE.toString().equalsIgnoreCase(getLayout()), "form-inline"),
+                    DOM.BODY_PLACE_HOLDER);
+        endTag = DOM.renderTemplate(form, pageContext.getOut());
 
         return BodyTagSupport.EVAL_BODY_INCLUDE;
     }
@@ -224,7 +214,7 @@ public class FormTag extends BodyTagSupport
     {
         try
         {
-            pageContext.getOut().print(tag.second);
+            pageContext.getOut().print(endTag);
         }
         catch(IOException x)
         {
