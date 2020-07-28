@@ -75,32 +75,22 @@ public class PanelTag extends BodyTagSupport
         this.width = width;
     }
 
-    Pair<HtmlString,HtmlString> tag;
+    HtmlString endTag;
 
     @Override
     public int doStartTag()
     {
         String style = getWidth() != null ? "width: " + getWidth() + "px;" : "";
 
-        tag = DOM.renderWithPlaceHolder(
-            DIV(cl("panel", "panel-" + getType(), getClassName()).at(DOM.Attribute.id, getId(), DOM.Attribute.style, style),
+        var panel = DIV(cl("panel", "panel-" + getType(), getClassName()).at(DOM.Attribute.id, getId(), DOM.Attribute.style, style),
                 isBlank(getTitle()) ? null :
                     DIV(cl("panel-heading"),
                         H3(cl("panel-title", "pull-left"), getTitle()),
                         DIV(cl("clearfix"))
                     ),
                 DIV(cl("panel-body"), DOM.BODY_PLACE_HOLDER)
-            )
-        );
-
-        try
-        {
-            pageContext.getOut().print(tag.first);
-        }
-        catch(IOException x)
-        {
-            throw UnexpectedException.wrap(x);
-        }
+            );
+        endTag = DOM.renderTemplate(panel, pageContext.getOut());
 
         return BodyTagSupport.EVAL_BODY_INCLUDE;
     }
@@ -110,7 +100,7 @@ public class PanelTag extends BodyTagSupport
     {
         try
         {
-            pageContext.getOut().print(tag.second);
+            pageContext.getOut().print(endTag);
         }
         catch(IOException x)
         {
