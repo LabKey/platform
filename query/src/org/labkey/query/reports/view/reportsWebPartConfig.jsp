@@ -70,7 +70,7 @@
     String showTabs = Report.renderParam.showTabs.name();
 %>
 
-<labkey:form name="frmCustomize" method="post" action="<%=h(webPart.getCustomizePostURL(context))%>">
+<labkey:form name="frmCustomize" method="post" action="<%=webPart.getCustomizePostURL(context)%>">
     <table class="lk-fields-table">
         <tr>
             <td class="labkey-form-label">Web Part Title:</td>

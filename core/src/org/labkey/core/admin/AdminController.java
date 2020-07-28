@@ -1539,7 +1539,7 @@ public class AdminController extends SpringActionController
         void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled);
     }
 
-    public enum MigrateFilesOption implements EnumHasHtmlString<MigrateFilesOption>
+    public enum MigrateFilesOption implements SimpleHasHtmlString
     {
         leave {
             @Override
@@ -1817,7 +1817,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public enum FileRootProp implements EnumHasHtmlString<FileRootProp>
+    public enum FileRootProp implements SimpleHasHtmlString
     {
         disable,
         siteDefault,
@@ -9413,7 +9413,7 @@ public class AdminController extends SpringActionController
                 });
             }
 
-            return new HtmlView(DIV(urls.stream().map(url -> createHtmlFragment(A(at(href,url)),BR()))));
+            return new HtmlView(DIV(urls.stream().map(url -> createHtmlFragment(A(at(href,url),url),BR()))));
         }
     }
 

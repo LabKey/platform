@@ -34,10 +34,12 @@ import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.util.element.Select.SelectBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -59,6 +61,7 @@ import java.util.Date;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static org.labkey.api.util.HtmlString.EMPTY_STRING;
@@ -205,6 +208,11 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return HtmlString.of(o == null ? null : o.toString());
     }
 
+    public HtmlString h(HtmlString o)
+    {
+        return HtmlString.of(o == null ? null : o.toString());
+    }
+
     /**
      * Html escape a string.
      * The name comes from Embedded Ruby.
@@ -244,18 +252,21 @@ public abstract class JspBase extends JspContext implements HasViewContext
      * Javascript inside of element event attributes (e.g. onclick="dosomething") needs to be HTML escaped.
      * Javascript inside of &lt;script> tags should NEVER be HTML escaped.
      */
-    final protected String q(String str)
+    final protected JavaScriptFragment q(String str)
     {
-        if (null == str) return "null";
-        return PageFlowUtil.jsString(str);
+        return null == str ? JavaScriptFragment.NULL : JavaScriptFragment.unsafe(PageFlowUtil.jsString(str));
     }
 
-    final protected String q(HtmlString str)
+    final protected JavaScriptFragment q(HtmlString hs)
     {
-        if (null == str) return "null";
-        return q(str.toString());
+        return null == hs ? JavaScriptFragment.NULL : JavaScriptFragment.unsafe(PageFlowUtil.jsString(hs.toString()));
     }
 
+    // TODO: Very, very temporary; just for backward compatibility. Eliminate ASAP.
+    public HtmlString text(JavaScriptFragment f)
+    {
+        return HtmlString.unsafe(f.toString());
+    }
 
     protected HtmlString hq(String str)
     {
@@ -297,6 +308,12 @@ public abstract class JspBase extends JspContext implements HasViewContext
     public HtmlString selected(boolean selected)
     {
         return selected ? SELECTED : EMPTY_STRING;
+    }
+
+    /** Returns " selected" if a.equals(b) */
+    public HtmlString selected(Object a, Object b)
+    {
+        return selected(Objects.equals(a,b));
     }
 
     /** Returns " selected" (if a.equals(b)) */
@@ -417,6 +434,11 @@ public abstract class JspBase extends JspContext implements HasViewContext
     public ButtonBuilder button(HtmlString html)
     {
         return new ButtonBuilder(html);
+    }
+
+    public SelectBuilder select()
+    {
+        return new SelectBuilder();
     }
 
     public @NotNull HtmlString makeHtmlId(@Nullable String s)

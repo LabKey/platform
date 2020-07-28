@@ -48,8 +48,9 @@
     CstmView view = form.getViewAndCheckPermission();
 %>
 <labkey:errors />
-<labkey:form method = "POST" action="<%=h(urlPost)%>">
-    <p>Schema: <%=h(view.getSchema())%><br>
+<labkey:form method = "POST" action="<%=urlPost%>">
+    <p>
+        Schema: <%=h(view.getSchema())%><br>
         Query: <%=h(view.getQueryName())%><br>
         Name: <%=h(view.getName())%><br>
         Owner: <%=h(userIdToString(view.getCustomViewOwner()))%><br>

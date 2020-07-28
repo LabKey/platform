@@ -25,6 +25,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.UserManagementPermission;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -118,7 +119,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
             {
                 if (getUser().hasRootPermission(UserManagementPermission.class))
                 {
-                    String result = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), null);
+                    SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), null);
                     newMembers.add(UserManager.getUser(email));
                 }
                 else

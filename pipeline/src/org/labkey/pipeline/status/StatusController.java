@@ -19,36 +19,12 @@ package org.labkey.pipeline.status;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.LabKeyError;
-import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleStreamAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.MenuButton;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.*;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.pipeline.PipelineProvider;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipelineStatusFile;
-import org.labkey.api.pipeline.PipelineStatusUrls;
-import org.labkey.api.pipeline.PipelineUrls;
-import org.labkey.api.pipeline.TaskFactory;
-import org.labkey.api.pipeline.TaskPipelineRegistry;
+import org.labkey.api.pipeline.*;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.reader.Readers;
@@ -62,26 +38,12 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.MailHelper;
-import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.TestContext;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.DetailsView;
-import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.SpringErrorView;
-import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.VBox;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.settings.ExperimentalFeatureService;
+import org.labkey.api.util.*;
+import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.pipeline.PipelineController;
+import org.labkey.pipeline.PipelineModule;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
@@ -96,17 +58,15 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static org.labkey.pipeline.api.PipelineStatusManager.cancelStatus;
-import static org.labkey.pipeline.api.PipelineStatusManager.completeStatus;
-import static org.labkey.pipeline.api.PipelineStatusManager.deleteStatus;
-import static org.labkey.pipeline.api.PipelineStatusManager.getStatusFile;
-import static org.labkey.pipeline.api.PipelineStatusManager.getTableInfo;
+import static org.labkey.api.util.PageFlowUtil.urlProvider;
+import static org.labkey.pipeline.api.PipelineStatusManager.*;
 
 
 public class StatusController extends SpringActionController
@@ -138,7 +98,7 @@ public class StatusController extends SpringActionController
 
     public static void registerAdminConsoleLinks()
     {
-        ActionURL url = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(ContainerManager.getRoot(), false);
+        ActionURL url = urlProvider(PipelineStatusUrls.class).urlBegin(ContainerManager.getRoot(), false);
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "pipeline", url, ReadPermission.class);
     }
 
@@ -333,6 +293,22 @@ public class StatusController extends SpringActionController
         }
     }
 
+    public static ActionURL urlDetailsLegacy(Container c, int rowId)
+    {
+        return urlDetailsLegacy(c, rowId, null);
+    }
+
+    public static ActionURL urlDetailsLegacy(Container c, int rowId, String errorMessage)
+    {
+        ActionURL url = new ActionURL(LegacyDetailsAction.class, c);
+        url.addParameter(RowIdForm.Params.rowId, Integer.toString(rowId));
+        if (errorMessage != null)
+        {
+            url.addParameter("errorMessage", errorMessage);
+        }
+        return url;
+    }
+
     public static ActionURL urlDetails(Container c, int rowId)
     {
         return urlDetails(c, rowId, null);
@@ -351,13 +327,11 @@ public class StatusController extends SpringActionController
 
     public static ActionURL urlDetails(PipelineStatusFileImpl sf)
     {
-        ActionURL url = new ActionURL(DetailsAction.class, sf.lookupContainer());
-        url.addParameter(RowIdForm.Params.rowId, Integer.toString(sf.getRowId()));
-        return url;
+        return urlDetails(sf.lookupContainer(), sf.getRowId());
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DetailsAction extends SimpleViewAction<RowIdForm>
+    public class LegacyDetailsAction extends SimpleViewAction<RowIdForm>
     {
         private PipelineStatusFile _statusFile;
 
@@ -454,6 +428,128 @@ public class StatusController extends SpringActionController
         }
     }
 
+    public static class DetailsBean
+    {
+        public ActionURL cancelUrl;
+        public ActionURL browseFilesUrl;
+        public ActionURL retryUrl;
+        public ActionURL showListUrl;
+        public ActionURL showFolderUrl;
+        public ActionURL dataUrl;
+        public StatusDetailsBean status;
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class DetailsAction extends SimpleViewAction<RowIdForm>
+    {
+        private PipelineStatusFileImpl _statusFile;
+
+        @Override
+        public ModelAndView getView(RowIdForm form, BindException errors) throws IOException
+        {
+            Container c = getContainerCheckAdmin();
+
+            _statusFile = getStatusFile(form.getRowId());
+            if (_statusFile == null)
+                throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
+
+            if (!_statusFile.lookupContainer().equals(getContainer()))
+            {
+                ActionURL url = getViewContext().cloneActionURL();
+                url.setContainer(_statusFile.lookupContainer());
+                throw new RedirectException(url);
+            }
+
+            if (form.getErrorMessage() != null)
+            {
+                errors.addError(new LabKeyError(form.getErrorMessage()));
+            }
+
+            DetailsBean bean = new DetailsBean();
+
+            if (_statusFile.isCancellable() && c.hasPermission(getUser(), DeletePermission.class))
+                bean.cancelUrl = urlCancel(getContainer(), _statusFile.getRowId(), getViewContext().cloneActionURL());
+
+            bean.browseFilesUrl = urlProvider(PipelineUrls.class).urlBrowse(_statusFile, getViewContext().getActionURL());
+            bean.showListUrl = urlShowList(getContainer(), true);
+            if (c == null || c.isRoot())
+                bean.showFolderUrl = new ActionURL(StatusController.ShowFolderAction.class, c).addParameter("rowId", _statusFile.getRowId());
+            if (_statusFile.getDataUrl() != null)
+                bean.dataUrl = new ActionURL(StatusController.ShowDataAction.class, c).addParameter("rowId", _statusFile.getRowId());
+
+            if (_statusFile.getJobStore() != null && (getUser().hasRootAdminPermission() || c.hasPermission(getUser(), UpdatePermission.class)))
+                bean.retryUrl = urlRetry(_statusFile);
+
+            bean.status = StatusDetailsBean.create(getContainer(), _statusFile, 0);
+
+            return new JspView<DetailsBean>("/org/labkey/pipeline/status/details.jsp", bean, errors);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            root.addChild("Pipeline Jobs", new ActionURL(BeginAction.class, getContainer()));
+            root.addChild(_statusFile == null ? "Job Status" : _statusFile.getDescription());
+        }
+    }
+
+    public static class StatusDetailsForm extends RowIdForm
+    {
+        enum Params { rowId, offset, count }
+
+        private int _rowId;
+        private long _offset;
+        private int _count;
+
+        public int getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(int rowId)
+        {
+            _rowId = rowId;
+        }
+
+        public long getOffset()
+        {
+            return _offset;
+        }
+
+        public void setOffset(long offset)
+        {
+            _offset = offset;
+        }
+
+        public int getCount()
+        {
+            return _count;
+        }
+
+        public void setCount(int count)
+        {
+            _count = count;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class StatusDetailsAction extends ReadOnlyApiAction<StatusDetailsForm>
+    {
+        @Override
+        public Object execute(StatusDetailsForm form, BindException errors) throws Exception
+        {
+            Container c = getContainerCheckAdmin();
+
+            PipelineStatusFile psf = getStatusFile(form.getRowId());
+            if (psf == null)
+                throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
+
+            var status = StatusDetailsBean.create(c, psf, form.getOffset());
+            return success(status);
+        }
+    }
+
     @RequiresPermission(ReadPermission.class)
     public class ShowDataAction extends SimpleRedirectAction<RowIdForm>
     {
@@ -464,9 +560,7 @@ public class StatusController extends SpringActionController
 
             PipelineStatusFile sf = getStatusFile(form.getRowId());
             if (sf == null)
-            {
-                throw new NotFoundException();
-            }
+                throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
 
             if (sf.getDataUrl() != null)
             {
@@ -494,74 +588,13 @@ public class StatusController extends SpringActionController
 
             if (c != null)
             {
-                throw new RedirectException(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c));
+                throw new RedirectException(urlProvider(ProjectUrls.class).getStartURL(c));
             }
 
             return urlDetails(c, form.getRowId());
         }
     }
 
-    @RequiresPermission(UpdatePermission.class)
-    public class ProviderActionAction extends FormHandlerAction<ProviderActionForm>
-    {
-        private ActionURL _urlSuccess;
-
-        @Override
-        public void validateCommand(ProviderActionForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(ProviderActionForm form, BindException errors)
-        {
-            getContainerCheckAdmin();
-
-            PipelineStatusFileImpl sf = getStatusFile(form.getRowId());
-            if (sf == null)
-                throw new NotFoundException();
-
-            PipelineProvider provider = PipelineService.get().getPipelineProvider(sf.getProvider());
-            if (provider == null)
-                throw new NotFoundException();
-
-            try
-            {
-                _urlSuccess = provider.handleStatusAction(getViewContext(), form.getName(), sf);
-
-                return true;
-            }
-            catch (PipelineProvider.HandlerException e)
-            {
-                errors.addError(new LabKeyError(e.getMessage()));
-            }
-
-            return false;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(ProviderActionForm form)
-        {
-            // Just to be safe, return to the details page, if there is no success URL from
-            // the provider.
-
-            return (_urlSuccess != null ? _urlSuccess : urlDetails(getContainer(), form.getRowId()));
-        }
-    }
-
-    public static class ProviderActionForm extends RowIdForm
-    {
-        private String name;
-
-        public String getName()
-        {
-            return name;
-        }
-
-        public void setName(String name)
-        {
-            this.name = name;
-        }
-    }
 
     public static ActionURL urlShowFile(Container c, int rowId, String filename, boolean download)
     {
@@ -737,50 +770,6 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public class RunActionAction extends PerformStatusActionBase<ActionForm>
-    {
-        @Override
-        public boolean handlePost(ActionForm form, BindException errors) throws Exception
-        {
-            // The method prototype for this method is used to determine the form type,
-            // so it must be here, even though it does nothing more than call super.
-
-            return super.handlePost(form, errors);
-        }
-
-        @Override
-        public void handleSelect(ActionForm form) throws PipelineProvider.HandlerException
-        {
-            // Let the provider handle the action, if it can.
-            for (int rowId : form.getRowIds())
-            {
-                PipelineStatusFileImpl sf = getStatusFile(rowId);
-                if (sf == null)
-                    continue;   // Already gone.
-
-                PipelineProvider provider = PipelineService.get().getPipelineProvider(sf.getProvider());
-                if (provider != null)
-                    provider.handleStatusAction(getViewContext(), form.getAction(), sf);
-            }
-        }
-    }
-
-    public static class ActionForm extends SelectStatusForm
-    {
-        private String _action;
-
-        public String getAction()
-        {
-            return _action;
-        }
-
-        public void setAction(String action)
-        {
-            _action = action;
-        }
-    }
-
     public static class ConfirmDeleteStatusForm extends SelectStatusForm
     {
         private String _dataRegionSelectionKey;
@@ -898,148 +887,67 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresLogin
-    @RequiresPermission(ReadPermission.class)
-    public class EscalateJobFailureAction extends SimpleViewAction<RowIdForm>
+    @RequiresPermission(UpdatePermission.class)
+    public class RetryStatusAction extends FormHandlerAction<RowIdForm>
     {
+        ActionURL _successURL;
+
         @Override
-        public ModelAndView getView(RowIdForm form, BindException errors)
+        public void validateCommand(RowIdForm target, Errors errors)
         {
-            DataRegion rgn = new DataRegion();
+        }
 
-            rgn.setColumns(getTableInfo().getColumns("Created, Modified, Job, Provider, Email, Status, Info, FilePath, DataUrl"));
-            rgn.addDisplayColumn(new FileDisplayColumn());
-            DisplayColumn col = rgn.getDisplayColumn("Job");
-            col.setVisible(false);
-            col = rgn.getDisplayColumn("Provider");
-            col.setVisible(false);
-            col = rgn.getDisplayColumn("DataUrl");
-            col.setVisible(false);
+        @Override
+        public boolean handlePost(RowIdForm form, BindException errors) throws Exception
+        {
+            getContainerCheckAdmin();
 
-            DetailsView detailsView = new DetailsView(rgn, form.getRowId());
-            detailsView.setTitle("Job Status");
-
-            VBox view = new VBox(detailsView);
-            PipelineStatusFileImpl sf = getStatusFile(form.getRowId());
-            if (sf == null)
+            Set<Integer> rowIds;
+            if (form.getRowId() != 0)
             {
-                throw new NotFoundException();
+                rowIds = Set.of(form.getRowId());
             }
-            view.addView(new JspView<>("/org/labkey/pipeline/status/escalateJobFailure.jsp", sf));
-
-            return view;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            root.addChild("Escalate Pipeline Job Failure");
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class EscalateAction extends ShowListBaseAction<EscalateMessageForm>
-    {
-        @Override
-        public void validateCommand(EscalateMessageForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(EscalateMessageForm form, BindException errors)
-        {
-            String recipients = "";
-            try
+            else
             {
-                MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
+                rowIds = DataRegionSelection.getSelectedIntegers(getViewContext(), false);
+            }
 
-                final String message = (form.getEscalationMessage() == null ? "" : form.getEscalationMessage() + "\n\n") +
-                        "Job details can be found:\n\n" + form.getDetailsUrl();
-                m.setTextContent(message);
-                m.setHtmlContent(message);
-                m.setSubject(form.getEscalationSubject());
-                m.addFrom(new Address[]{new InternetAddress(getUser().getEmail(), getUser().getFullName())});
+            ActionURL firstDetailsURL = null;
+            for (Integer rowId : rowIds)
+            {
+                var sf = getStatusFile(rowId);
+                if (sf == null)
+                    throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
 
-                if (form.getEscalateAll())
-                    recipients = PipelineEmailPreferences.get().getEscalationUsers(getContainer());
-                else
-                    recipients = form.getEscalateUser();
-                if (!StringUtils.isEmpty(recipients))
+                if (firstDetailsURL == null)
+                    firstDetailsURL = urlDetails(sf);
+
+                if (!PipelineJob.TaskStatus.error.matches(sf.getStatus()) && !PipelineJob.TaskStatus.cancelled.matches(sf.getStatus()))
                 {
-                    m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(recipients));
-                    MailHelper.send(m, getUser(), getContainer());
+                    errors.addError(new LabKeyError("Unable to retry job that is not in the ERROR or CANCELLED state"));
+                }
+
+                try
+                {
+                    PipelineJobService.get().getJobStore().retry(sf);
+                }
+                catch (IOException | NoSuchJobException e)
+                {
+                    errors.addError(new LabKeyError(e.getMessage()));
                 }
             }
-            catch (Exception e)
-            {
-                _log.error("Failed creating an email escalation message for a pipeline job", e);
-                if (StringUtils.isEmpty(recipients))
-                    reject(errors, "Failed to send email.");
-                else
-                    reject(errors, "Failed sending email to " + recipients);
-                return false;
-            }
 
+            if (errors.hasErrors())
+                return false;
+
+            _successURL = form.getReturnActionURL(firstDetailsURL);
             return true;
         }
-    }
 
-    public static class EscalateMessageForm extends ReturnUrlWithErrorForm
-    {
-        private String _escalateUser;
-        private boolean _escalateAll;
-        private String _escalationSubject;
-        private String _escalationMessage;
-        private String _detailsUrl;
-
-        public void setEscalateUser(String escalateUser)
+        @Override
+        public URLHelper getSuccessURL(RowIdForm rowIdForm)
         {
-            _escalateUser = escalateUser;
-        }
-
-        public String getEscalateUser()
-        {
-            return _escalateUser;
-        }
-
-        public void setEscalateAll(boolean escalateAll)
-        {
-            _escalateAll = escalateAll;
-        }
-
-        public boolean getEscalateAll()
-        {
-            return _escalateAll;
-        }
-
-        public void setEscalationSubject(String escalationSubject)
-        {
-            _escalationSubject = escalationSubject;
-        }
-
-        public String getEscalationSubject()
-        {
-            return _escalationSubject;
-        }
-
-        public void setEscalationMessage(String escalationMessage)
-        {
-            _escalationMessage = escalationMessage;
-        }
-
-        public String getEscalationMessage()
-        {
-            return _escalationMessage;
-        }
-
-        public void setDetailsUrl(String detailsUrl)
-        {
-            _detailsUrl = detailsUrl;
-        }
-
-        public String getDetailsUrl()
-        {
-            return _detailsUrl;
+            return _successURL;
         }
     }
 
@@ -1061,10 +969,8 @@ public class StatusController extends SpringActionController
 
         PipelineStatusFileImpl sf = getStatusFile(rowId);
         if (sf == null)
-        {
             throw new NotFoundException("Could not find status file for rowId " + rowId);
-        }
-        
+
         if (!sf.lookupContainer().equals(getContainer()))
         {
             ActionURL url = getViewContext().cloneActionURL();
@@ -1072,7 +978,8 @@ public class StatusController extends SpringActionController
             throw new RedirectException(url);
         }
 
-        ButtonBar bb = new ProviderButtonBar(sf);
+        ButtonBar bb = new ButtonBar();
+        bb.setStyle(ButtonBar.Style.separateButtons);
 
         ActionButton showGrid = new ActionButton(new ActionURL(ShowListAction.class, getContainer()).addParameter(DataRegion.LAST_FILTER_PARAM, "true"), "Show Grid");
         showGrid.setActionType(ActionButton.Action.LINK);
@@ -1119,56 +1026,51 @@ public class StatusController extends SpringActionController
 
         if (sf.getFilePath() != null)
         {
-            File logFile = new File(sf.getFilePath());
-            File dir = logFile.getParentFile();
-            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(sf.lookupContainer());
-            if (NetworkDrive.exists(dir) && pipeRoot != null && pipeRoot.isUnderRoot(dir))
+            ActionURL url = urlProvider(PipelineUrls.class).urlBrowse(sf, getViewContext().getActionURL());
+            if (url != null)
             {
-                String relativePath = pipeRoot.relativePath(dir);
-
-                // Issue 14693: changing the pipeline root or symlinks can result in bad paths.  if we cant locate the file, just dont display the browse button.
-                if(relativePath != null)
-                {
-                    relativePath = relativePath.replace("\\", "/");
-                    if (relativePath.equals("."))
-                    {
-                        relativePath = "/";
-                    }
-                    ActionURL url = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(sf.lookupContainer(), getViewContext().getActionURL(), relativePath);
-                    ActionButton showData = new ActionButton(url, "Browse Files");
-                    showData.setActionType(ActionButton.Action.LINK);
-                    bb.add(showData);
-                }
-            }
-        }
-
-        // escalate pipeline failure button
-        if (!PipelineJob.TaskStatus.complete.matches(sf.getStatus()))
-        {
-            final String escalationUsers = PipelineEmailPreferences.get().getEscalationUsers(c);
-            if (!StringUtils.isEmpty(escalationUsers) && !getUser().isGuest())
-            {
-                ActionURL url = new ActionURL(EscalateJobFailureAction.class, c);
-                url.addParameter("rowId", rowId);
-                ActionButton escalate = new ActionButton(url, "Escalate Job Failure");
-                escalate.setActionType(ActionButton.Action.LINK);
-                bb.add(escalate);
+                ActionButton showData = new ActionButton(url, "Browse Files");
+                showData.setActionType(ActionButton.Action.LINK);
+                bb.add(showData);
             }
         }
 
         if (sf.isCancellable() && getContainer().hasPermission(getUser(), DeletePermission.class))
         {
-            ActionURL url = new ActionURL(PipelineController.CancelJobAction.class, c);
-            url.addParameter("rowId", sf.getRowId());
-            url.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-            ActionButton showData = new ActionButton(url, "Cancel");
-            showData.setActionType(ActionButton.Action.POST);
-            bb.add(showData);
+            ActionURL url = urlCancel(c, sf.getRowId(), getViewContext().getActionURL());
+            ActionButton button = new ActionButton(url, "Cancel");
+            button.setActionType(ActionButton.Action.POST);
+            bb.add(button);
+        }
+
+        if (sf.isRetryable())
+        {
+            ActionURL retryUrl = urlRetry(sf);
+            ActionButton button = new ActionButton(retryUrl, "Retry");
+            button.setActionType(ActionButton.Action.POST);
+            if (!getUser().hasRootAdminPermission())
+                button.setDisplayPermission(UpdatePermission.class);
+            bb.add(button);
         }
 
         rgn.setButtonBar(bb, DataRegion.MODE_DETAILS);
 
         return rgn;
+    }
+
+    private static ActionURL urlCancel(Container c, int rowId, @Nullable ActionURL returnUrl)
+    {
+        ActionURL url = new ActionURL(PipelineController.CancelJobAction.class, c);
+        url.addParameter("rowId", rowId);
+        if (returnUrl != null)
+            url.addReturnURL(returnUrl);
+        return url;
+    }
+
+    private static ActionURL urlRetry(PipelineStatusFile sf)
+    {
+        return new ActionURL(RetryStatusAction.class, sf.lookupContainer())
+                .addParameter("rowId", sf.getRowId());
     }
 
     protected static boolean isVisibleFile(String name, String basename)
@@ -1217,6 +1119,12 @@ public class StatusController extends SpringActionController
         {
             return StatusController.urlShowFile(container, rowId, filename, false);
         }
+
+        @Override
+        public ActionURL urlCancel(Container container, int rowId, @Nullable ActionURL returnUrl)
+        {
+            return StatusController.urlCancel(container, rowId, returnUrl);
+        }
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
@@ -1252,21 +1160,20 @@ public class StatusController extends SpringActionController
                 controller.new ShowListAction(),
                 controller.new ShowListRegionAction(),
                 controller.new ShowPartRegionAction(),
+                controller.new LegacyDetailsAction(),
                 controller.new DetailsAction(),
                 controller.new ShowDataAction(),
                 controller.new ShowFolderAction(),
                 controller.new ShowFileAction(),
-                controller.new RunActionAction(),
+                controller.new StatusDetailsAction(),
                 controller.new DeleteStatusAction(),
                 controller.new CancelStatusAction(),
-                controller.new CompleteStatusAction(),
-                controller.new EscalateJobFailureAction(),
-                controller.new EscalateAction()
+                controller.new CompleteStatusAction()
             );
 
             // @RequiresPermission(UpdatePermission.class)
             assertForUpdateOrDeletePermission(user,
-                controller.new ProviderActionAction()
+                controller.new RetryStatusAction()
             );
 
             // @RequiresPermission(AdminOperationsPermission.class)

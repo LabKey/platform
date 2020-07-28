@@ -85,6 +85,8 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DotRunner;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
@@ -648,7 +650,7 @@ public class SecurityController extends SpringActionController
         root.addChild(group.getName() + " Group");
     }
 
-    private ModelAndView renderGroup(Group group, BindException errors, List<String> messages)
+    private ModelAndView renderGroup(Group group, BindException errors, List<HtmlString> messages)
     {
         // validate that group is in the current project!
         Container c = getContainer();
@@ -692,7 +694,7 @@ public class SecurityController extends SpringActionController
     {
         private Group _group;
         private ActionURL _successURL;
-        private List<String> _messages = new ArrayList<>();
+        private List<HtmlString> _messages = new ArrayList<>();
 
         @Override
         public ModelAndView getView(UpdateMembersForm form, boolean reshow, BindException errors) throws Exception
@@ -830,7 +832,7 @@ public class SecurityController extends SpringActionController
                     List<User> addUsers = new ArrayList<>(addEmails.size());
                     for (ValidEmail email : addEmails)
                     {
-                        String addMessage = SecurityManager.addUser(getViewContext(), email, form.getSendEmail(), form.getMailPrefix());
+                        HtmlString addMessage = SecurityManager.addUser(getViewContext(), email, form.getSendEmail(), form.getMailPrefix());
                         if (addMessage != null)
                             _messages.add(addMessage);
 
@@ -1242,7 +1244,7 @@ public class SecurityController extends SpringActionController
         private String newUsers;
         private String _cloneUser;
         private boolean _skipProfile;
-        private String _message = null;
+        private HtmlStringBuilder _message = HtmlStringBuilder.of("");
         private String _provider = null;
 
         public void setProvider(String provider)
@@ -1290,15 +1292,21 @@ public class SecurityController extends SpringActionController
 
         public void addMessage(String message)
         {
-            if (_message == null)
-                _message = message;
-            else
-                _message += "<br/>" + message;
+            if (_message.length() != 0)
+                _message.append(HtmlString.unsafe("<br/>"));
+            _message.append(message);
         }
 
-        public String getMessage()
+        public void addMessage(HtmlString message)
         {
-            return _message;
+            if (_message.length() != 0)
+                _message.append(HtmlString.unsafe("<br/>"));
+            _message.append(message);
+        }
+
+        public HtmlString getMessage()
+        {
+            return _message.getHtmlString();
         }
     }
 
@@ -1373,13 +1381,13 @@ public class SecurityController extends SpringActionController
 
             for (ValidEmail email : emails)
             {
-                String result = SecurityManager.addUser(getViewContext(), email, form.getSendMail(), null, extraParams, form.getProvider(), true);
+                HtmlString result = SecurityManager.addUser(getViewContext(), email, form.getSendMail(), null, extraParams, form.getProvider(), true);
                 User user = UserManager.getUser(email);
 
-                if (result == null && user != null)
+                if (HtmlString.isBlank(result) && user != null)
                 {
                     ActionURL url = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), user.getUserId(), returnURL);
-                    result = PageFlowUtil.filter(email) + " was already a registered system user.  Click <a href=\"" + url.getEncodedLocalURIString() + "\">here</a> to see this user's profile and history.";
+                    result = HtmlString.unsafe(PageFlowUtil.filter(email) + " was already a registered system user.  Click <a href=\"" + url.getEncodedLocalURIString() + "\">here</a> to see this user's profile and history.");
                 }
                 else if (userToClone != null)
                 {
@@ -1389,7 +1397,7 @@ public class SecurityController extends SpringActionController
                         clonePermissions(userToClone, email);
                 }
                 if (user != null)
-                    form.addMessage(String.format("%s<meta userId='%d' email='%s'/>", result, user.getUserId(), PageFlowUtil.filter(user.getEmail())));
+                    form.addMessage(HtmlString.unsafe(String.format("%s<meta userId='%d' email='%s'/>", result, user.getUserId(), PageFlowUtil.filter(user.getEmail()))));
                 else
                     form.addMessage(result);
             }

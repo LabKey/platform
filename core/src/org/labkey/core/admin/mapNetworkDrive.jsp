@@ -95,7 +95,7 @@
     <% } %>
 </labkey:form>
 
-<labkey:form name="networkdrivetest" action="<%=h(buildURL(AdminController.ShowNetworkDriveTestAction.class))%>" enctype="multipart/form-data" method="post" target="_new">
+<labkey:form name="networkdrivetest" action="<%=buildURL(AdminController.ShowNetworkDriveTestAction.class)%>" enctype="multipart/form-data" method="post" target="_new">
     <input type="hidden" name="networkDriveLetter" value="" />
     <input type="hidden" name="networkDrivePath" value="" />
     <input type="hidden" name="networkDriveUser" value="" />

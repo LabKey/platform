@@ -112,7 +112,7 @@
             <li class="navbar-search hidden-xs">
                 <a class="fa fa-search" id="global-search-trigger"></a>
                 <div id="global-search" class="global-search">
-                    <labkey:form id="global-search-form" action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" method="GET">
+                    <labkey:form id="global-search-form" action="<%=urlProvider(SearchUrls.class).getSearchURL(c, null)%>" method="GET">
                         <input type="text" class="search-box" name="q" placeholder="<%=h(SearchUtils.getPlaceholder(c))%>" value="">
                         <input type="submit" hidden>
                         <a href="#" onclick="document.getElementById('global-search-form').submit(); return false;" class="btn-search fa fa-search"></a>
@@ -125,7 +125,7 @@
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
                     <li>
-                        <labkey:form action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" method="GET">
+                        <labkey:form action="<%=urlProvider(SearchUrls.class).getSearchURL(c, null)%>" method="GET">
                             <div class="input-group">
                                 <input type="text" class="search-box" name="q" placeholder="<%=h(SearchUtils.getPlaceholder(c))%>" value="">
                                 <input type="submit" hidden>

@@ -107,21 +107,21 @@
         folderTree = new Ext.tree.TreePanel({
             loader : new Ext.tree.TreeLoader({
                 dataUrl : LABKEY.ActionURL.buildURL('core', 'getExtContainerAdminTree.api'),
-                baseParams : {move: true, requiredPermission : <%=PageFlowUtil.jsString(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>, showContainerTabs: false}
+                baseParams : {move: true, requiredPermission : <%=q(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>, showContainerTabs: false}
             }),
             root : new Ext.tree.AsyncTreeNode({
-                id : <%= PageFlowUtil.jsString(Integer.toString(project.getParent().getRowId()))%>,
+                id : <%= q(Integer.toString(project.getParent().getRowId()))%>,
                 expanded : true,
                 editable : true,
                 expandable : true,
-                text : <%=PageFlowUtil.jsString(project.getParent().getName())%>,
+                text : <%=q(project.getParent().getName())%>,
                 <%=text(project.equals(c) ? "cls : 'x-tree-node-current'" : "")%>
             }),
             rootVisible: false,
             enableDrag: false,
             useArrows : true,
             autoScroll: true,
-            title : 'Please select a new parent for Folder \'' + <%=PageFlowUtil.jsString(c.getName())%> + '\'.',
+            title : 'Please select a new parent for Folder \'' + <%=q(c.getName())%> + '\'.',
             border: true
         });
 

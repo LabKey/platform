@@ -164,7 +164,7 @@ else
         </ul>
     <% } %>
 
-    <labkey:form action="<%= h(getViewContext().cloneActionURL().deleteParameters()) %>" method="post">
+    <labkey:form action="<%=getViewContext().cloneActionURL().deleteParameters()%>" method="post">
         <%
             if (getViewContext().getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME) != null)
             {

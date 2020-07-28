@@ -30,6 +30,8 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -50,7 +52,7 @@ public class FileDisplayColumn extends SimpleDisplayColumn
     @Override
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        String[] fileNames = null;
+        List<File> files = null;
         File dir = null;
 
         Map cols = ctx.getRow();
@@ -61,49 +63,23 @@ public class FileDisplayColumn extends SimpleDisplayColumn
 
         if (rowIdI != null && filePath != null && filePath.length() > 0)
         {
-            File f = new File(filePath);
-            dir = f.getParentFile();
-
-            if (NetworkDrive.exists(dir))
-            {
-                // calculate base name of the .status file
-                String statusName = f.getName();
-
-                // remove .status
-                final String basename = statusName.substring(0, statusName.lastIndexOf('.'));
-                final PipelineProvider provider = PipelineService.get().getPipelineProvider(providerName);
-                final Container container = ContainerManager.getForId(containerId);
-
-                // get files with .log, or same basename and .out
-                fileNames = dir.list(
-                    new FilenameFilter()
-                    {
-                        @Override
-                        public boolean accept(File dir, String name)
-                        {
-                            if (provider != null)
-                                return provider.isStatusViewableFile(container, name, basename);
-
-                            return StatusController.isVisibleFile(name, basename);
-                        }
-                    }
-                );
-            }
+            PipelineProvider provider = PipelineService.get().getPipelineProvider(providerName);
+            Container container = ContainerManager.getForId(containerId);
+            files = listFiles(new File(filePath), container, provider);
         }
 
-        if (fileNames == null || fileNames.length == 0)
+        if (files == null || files.isEmpty())
         {
             out.write("&nbsp;");
         }
         else
         {
-            Arrays.sort(fileNames);
-
-            for (final String fileName : fileNames)
+            for (final File file : files)
             {
                 // make sure the files can be open for read
-                try (FileInputStream ignored = new FileInputStream(new File(dir, fileName)))
+                try (FileInputStream ignored = new FileInputStream(file))
                 {
+                    String fileName = file.getName();
                     out.write("<a href=\"");
                     out.write(StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, false).getLocalURIString());
                     out.write("\">");
@@ -117,10 +93,49 @@ public class FileDisplayColumn extends SimpleDisplayColumn
                 }
                 catch (IOException e)
                 {
-                    out.write(PageFlowUtil.filter(fileName));
+                    out.write(PageFlowUtil.filter(file.getName()));
                     out.write("<br>\n");
                 }
             }
         }
+    }
+
+    public static List<File> listFiles(File f, Container c, PipelineProvider provider)
+            throws IOException
+    {
+        File dir = f.getParentFile();
+
+        if (NetworkDrive.exists(dir))
+        {
+            // calculate base name of the .status file
+            String statusName = f.getName();
+
+            // remove .status
+            final String basename = statusName.substring(0, statusName.lastIndexOf('.'));
+
+            // get files with .log, or same basename and .out
+            File[] fileArray = dir.listFiles(
+                    new FilenameFilter()
+                    {
+                        @Override
+                        public boolean accept(File dir, String name)
+                        {
+                            if (provider != null)
+                                return provider.isStatusViewableFile(c, name, basename);
+
+                            return StatusController.isVisibleFile(name, basename);
+                        }
+                    }
+            );
+
+            if (fileArray != null && fileArray.length > 0)
+            {
+                List<File> files = Arrays.asList(fileArray);
+                files.sort(File::compareTo);
+                return files;
+            }
+        }
+
+        return Collections.emptyList();
     }
 }

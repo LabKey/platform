@@ -26,7 +26,7 @@
 <%
     List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getUser());
 %>
-<labkey:form action="<%=h(buildURL(StudyController.VisitVisibilityAction.class))%>" method="POST">
+<labkey:form action="<%=buildURL(StudyController.VisitVisibilityAction.class)%>" method="POST">
     <table class="lk-fields-table">
         <tr>
             <th align="left" style="font-weight: bold;">ID</th>

@@ -96,7 +96,7 @@
     {
 %>
 
-<labkey:form action="<%=h(buildURL(StudyController.DatasetVisibilityAction.class))%>" method="POST">
+<labkey:form action="<%=buildURL(StudyController.DatasetVisibilityAction.class)%>" method="POST">
 
 <p>Datasets can be hidden on the study overview screen.</p>
 <p>Hidden data can always be viewed, but is not shown by default.</p>

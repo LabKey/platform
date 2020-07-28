@@ -20,6 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -45,8 +46,6 @@ public class ErrorsTag extends TagSupport
 
         try
         {
-            //out.print(PageFlowUtil.getStrutsError((HttpServletRequest) pageContext.getRequest(), null));
-
             // There are spring tags for this.  But I want to make this work for migration beehive->spring
             int count=0;
             Enumeration<String> e = pageContext.getAttributeNamesInScope(PageContext.REQUEST_SCOPE);
@@ -64,17 +63,17 @@ public class ErrorsTag extends TagSupport
                         {
                             count++;
                             if (count == 1)
-                                out.print("<div class=\"labkey-error\">");
+                                out.print(HtmlString.unsafe("<div class=\"labkey-error\">"));
                             try
                             {
                                 if (m instanceof LabKeyError)
                                     out.print(((LabKeyError)m).renderToHTML(context));
                                 else
-                                    out.print(PageFlowUtil.filter(context.getMessage(m), true));
+                                    out.print(HtmlString.of(context.getMessage(m), true));
                             }
                             catch (NoSuchMessageException nsme)
                             {
-                                out.print("Unknown error: " + m);
+                                out.print(HtmlString.unsafe("Unknown error: " + m));
                                 ExceptionUtil.logExceptionToMothership((HttpServletRequest)pageContext.getRequest(), nsme);
                                 Logger log = LogManager.getLogger(ErrorsTag.class);
                                 log.error("Failed to find a message: " + m, nsme);
@@ -84,7 +83,7 @@ public class ErrorsTag extends TagSupport
                 }
             }
             if (count > 0)
-                out.println("</div>");
+                out.println(HtmlString.unsafe("</div>"));
         }
         catch (IOException e)
         {

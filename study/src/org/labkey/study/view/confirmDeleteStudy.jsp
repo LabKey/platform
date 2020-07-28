@@ -31,7 +31,7 @@
         return confirmed;
     }
 </script>
-<labkey:form action="<%=h(buildURL(StudyController.DeleteStudyAction.class))%>" method="post" onsubmit="return deleteStudy_onSubmit();">
+<labkey:form action="<%=buildURL(StudyController.DeleteStudyAction.class)%>" method="post" onsubmit="return deleteStudy_onSubmit();">
 This will delete all study data in this folder.
 <ul>
 <%

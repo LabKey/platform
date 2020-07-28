@@ -321,6 +321,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     protected void checkSqlScript(String lowerNoComments, String lowerNoCommentsNoWhiteSpace, Collection<String> errors)
     {
+        if (lowerNoComments.startsWith("use ") || lowerNoComments.contains("\nuse "))
+            errors.add("USE statements are prohibited");
     }
 
 

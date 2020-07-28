@@ -313,12 +313,6 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
     }
 
     @Override
-    public PipelineJob findJobInMemory(Container c, String statusFile)
-    {
-        throw new UnsupportedOperationException("No useful information about jobs in memory.");
-    }
-
-    @Override
     public PipelineJobData getJobDataInMemory(Container c)
     {
         throw new UnsupportedOperationException("No useful information about jobs in memory.");

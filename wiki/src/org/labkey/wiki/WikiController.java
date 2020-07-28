@@ -1645,7 +1645,7 @@ public class WikiController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(WikiNameForm wikiNameForm)
         {
-            return new VersionAction(getViewContext(), _wiki,_wikiversion).getUrl();
+            return new VersionAction(getViewContext(), _wiki, _wikiversion).getUrl();
         }
 
         @Override

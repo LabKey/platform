@@ -57,7 +57,7 @@
     ActionURL updateDatasetURL = new ActionURL(StudyController.UpdateDatasetVisitMappingAction.class, container);
 %>
 
-<labkey:form action="<%=h(updateDatasetURL.getLocalURIString())%>" method="POST">
+<labkey:form action="<%=updateDatasetURL.getLocalURIString()%>" method="POST">
 <%= button("Save").submit(true) %>&nbsp;<%= text(button("Cancel").href(buildURL(StudyController.DatasetDetailsAction.class, "id=" + dataset.getDatasetId())).toString()) %>
 <%
     FrameFactoryClassic.startTitleFrame(out, "Dataset Properties", null, "100%", null);

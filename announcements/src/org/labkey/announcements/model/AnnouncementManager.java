@@ -703,7 +703,7 @@ public class AnnouncementManager
                     props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
                     props.put(SearchService.PROPERTY.title.toString(), ann.getTitle());  // Title is fine for both indexing and displaying
 
-                    StringBuilder html = new StringBuilder(ann.translateBody());
+                    StringBuilder html = new StringBuilder(ann.translateBody().toString());
 
                     for (AnnouncementModel response : ann.getResponses())
                         html.append(" ").append(response.translateBody());

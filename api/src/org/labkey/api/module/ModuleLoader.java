@@ -1491,6 +1491,16 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
     }
 
+    // Runs the drop and create scripts in a single module
+    public void recreateViews(Module module)
+    {
+        synchronized (UPGRADE_LOCK)
+        {
+            runScripts(module, SchemaUpdateType.Before);
+            runScripts(module, SchemaUpdateType.After);
+        }
+    }
+
     /**
      * Module upgrade scripts have completed, and we are now completing module startup.
      * @return true if module startup in progress.

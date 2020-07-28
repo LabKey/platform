@@ -27,7 +27,7 @@
 %>
 <labkey:errors/>
 <p>Vials from the selected specimens can be shipped to you from multiple locations.  Please select your preferred location:</p>
-<labkey:form action="<%= h(bean.getFormTarget().getLocalURIString()) %>" method="POST">
+<labkey:form action="<%=bean.getFormTarget().getLocalURIString()%>" method="POST">
 <%= h(bean.getSourceForm().getHiddenFormInputs(getViewContext())) %>
 <p>
     <select name="preferredLocation">

@@ -610,12 +610,11 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
     // called from exp-20.005-20.006
     // Issue 40443: For SQL Server, if modifying a table that is used in a view, the views need to get recreated after that
-    // modification happens.  So we need to do that after the previous deferred upgrade scripts happen since
+    // modification happens. So we need to do that after the previous deferred upgrade scripts happen since
     // the createViews scripts run at the end of the regular upgrade scripts and thus before the deferred ones.
     @DeferredUpgrade
     public static void recreateViewsAfterMaterialRowIdDbSequence(ModuleContext context)
     {
-        ModuleLoader.getInstance().recreateViews();
+        ModuleLoader.getInstance().recreateViews(ModuleLoader.getInstance().getModule(context.getName()));
     }
-
 }

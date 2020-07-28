@@ -16,14 +16,12 @@
 package org.labkey.api.util;
 
 /**
- * Turns any Enum into a HasHtmlString, where each constant returns an HtmlString containing its name.
- * @param <E> The Enum
+ * Turns any Enum into a HasHtmlString, where each constant returns an HtmlString containing an encoded version of its
+ * toString(). Enums that implement this interface can be safely rendered from a JSP.
  */
-public interface EnumHasHtmlString<E extends Enum> extends HasHtmlString
+
+// TODO: Remove type parameter. This requires a multi-repo commit, so we'll change all the implementors first, then circle back to remove it here.
+@Deprecated // Enums should simply implement SimpleHasHtmlString instead
+public interface EnumHasHtmlString<E extends Enum<?>> extends SimpleHasHtmlString
 {
-    @Override
-    default HtmlString getHtmlString()
-    {
-        return HtmlString.of(((E)this).name());
-    }
 }

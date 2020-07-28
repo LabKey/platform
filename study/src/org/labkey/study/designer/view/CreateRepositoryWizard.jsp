@@ -44,7 +44,7 @@
 Use this wizard to create a folder that will contain all of the assay results and information about each <%=h(species)%> (subject) within
 the vaccine study.
 
-<labkey:form name="createRepositoryForm" action="<%=h(buildURL(DesignerController.CreateRepository.class))%>" method="post">
+<labkey:form name="createRepositoryForm" action="<%=buildURL(DesignerController.CreateRepository.class)%>" method="post">
     <input type="hidden" name="studyId" value="<%=form.getStudyId()%>">
     <input type="hidden" name="studyName" value="<%=h(form.getStudyName())%>">
     <input type="hidden" name="wizardStepNumber" value="<%=form.getWizardStepNumber()%>">

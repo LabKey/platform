@@ -37,7 +37,7 @@
     }
 %>
 
-<labkey:form action="<%=h(buildURL(ExperimentController.DeriveSamplesAction.class))%>" method="get">
+<labkey:form action="<%=buildURL(ExperimentController.DeriveSamplesAction.class)%>" method="get">
     <% if (bean.getDataRegionSelectionKey() != null) { %>
     <input type="hidden" name="<%= h(DataRegionSelection.DATA_REGION_SELECTION_KEY) %>" value="<%=h(bean.getDataRegionSelectionKey())%>"/>
     <% } %>
@@ -87,9 +87,7 @@
         <tr>
             <td class="labkey-form-label">Target sample type:</td>
             <td colspan="2">
-                <labkey:select name="targetSampleTypeId">
-                    <labkey:options value="<%=bean.getTargetSampleTypeId()%>" map="<%=sampleTypeOptions%>"/>
-                </labkey:select>
+                <%=select().name("targetSampleTypeId").addOptions(sampleTypeOptions).selected(bean.getTargetSampleTypeId())%>
             </td>
         </tr>
         <tr>

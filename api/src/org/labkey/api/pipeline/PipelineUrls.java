@@ -33,6 +33,7 @@ public interface PipelineUrls extends UrlProvider
     ActionURL urlBrowse(Container container);
     ActionURL urlBrowse(Container container, @Nullable URLHelper returnUrl);
     ActionURL urlBrowse(Container container, @Nullable URLHelper returnUrl, @Nullable String path);
+    @Nullable ActionURL urlBrowse(PipelineStatusFile statusFile, @Nullable URLHelper returnUrl);
 
     ActionURL urlSetup(Container container);
 

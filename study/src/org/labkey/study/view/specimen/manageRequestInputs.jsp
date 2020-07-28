@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.SpecimenManager"%>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -133,12 +132,12 @@
         var rememberSiteValueCell = newRow.insertCell(newRow.cells.length);
 
         // set the HTML for the new cell:
-        buttonCell.innerHTML = <%= PageFlowUtil.jsString(tdButtons)%>;
-        titleCell.innerHTML = <%= PageFlowUtil.jsString(tdTitle)%>;
-        helpTextCell.innerHTML = <%= PageFlowUtil.jsString(tdHelpText)%>;
-        multilineCell.innerHTML = <%= PageFlowUtil.jsString(tdMultiline)%>;
-        requiredCell.innerHTML = <%= PageFlowUtil.jsString(tdRequired)%>;
-        rememberSiteValueCell.innerHTML = <%= PageFlowUtil.jsString(tdRememberSiteValue)%>;
+        buttonCell.innerHTML = <%= q(tdButtons)%>;
+        titleCell.innerHTML = <%= q(tdTitle)%>;
+        helpTextCell.innerHTML = <%= q(tdHelpText)%>;
+        multilineCell.innerHTML = <%= q(tdMultiline)%>;
+        requiredCell.innerHTML = <%= q(tdRequired)%>;
+        rememberSiteValueCell.innerHTML = <%= q(tdRememberSiteValue)%>;
 
         // align the checkboxes to center:
         multilineCell.align = "center";
@@ -168,7 +167,7 @@
         return true;
     }
 </script>
-<labkey:form action="<%=h(buildURL(SpecimenController.HandleUpdateRequestInputsAction.class))%>" method="POST" onsubmit="return verifyForm()">
+<labkey:form action="<%=buildURL(SpecimenController.HandleUpdateRequestInputsAction.class)%>" method="POST" onsubmit="return verifyForm()">
     <table id="inputTable" class="lk-fields-table">
         <tr>
             <th valign="bottom">&nbsp;</th>

@@ -68,6 +68,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
@@ -808,6 +809,9 @@ public class XarReader extends AbstractXarImporter
 
             vals.setFilePathRoot(FileUtil.getAbsolutePath(_xarSource.getRootPath()));     //  FileUtil.getAbsolutePath(runContext.getContainer(), _job.getPipeRoot().getRootNioPath()));
             vals.setContainer(getContainer());
+
+            // remember which job created the run so we can show this run on the job details page
+            vals.setJobId(PipelineService.get().getJobId(_job.getUser(), _job.getContainer(), _job.getJobGUID()));
 
             ExpRunImpl impl = new ExpRunImpl(vals);
             try

@@ -129,7 +129,7 @@
         </tr>
     </table>
 </labkey:form>
-<labkey:form name="systemMaintenance" action="<%=h(buildURL(AdminController.SystemMaintenanceAction.class))%>" method="post" target="systemMaintenance"><input type="hidden" name="taskName"/></labkey:form>
+<labkey:form name="systemMaintenance" action="<%=buildURL(AdminController.SystemMaintenanceAction.class)%>" method="post" target="systemMaintenance"><input type="hidden" name="taskName"/></labkey:form>
 <script type="text/javascript">
 
     // global functions for script calls from this Form

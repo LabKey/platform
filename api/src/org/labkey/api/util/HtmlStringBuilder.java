@@ -24,6 +24,11 @@ public class HtmlStringBuilder implements HasHtmlString
     {
     }
 
+    public static HtmlStringBuilder of()
+    {
+        return new HtmlStringBuilder();
+    }
+
     public static HtmlStringBuilder of(String s)
     {
         return new HtmlStringBuilder().append(s);

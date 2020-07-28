@@ -28,7 +28,7 @@
     ActionURL urlCancel = new ActionURL(ManageViewsAction.class, getContainer());
 %>
 <labkey:errors />
-<labkey:form method="POST" action="<%=h(urlPost)%>">
+<labkey:form method="POST" action="<%=urlPost%>">
     <p>Create New Custom View</p>
     <p>Schema Name: <br><input type="text" name="ff_schemaName" value="<%=h(form.ff_schemaName)%>"></p>
     <p>Query Name: <br><input type="text" name="ff_queryName" value="<%=h(form.ff_queryName)%>"></p>

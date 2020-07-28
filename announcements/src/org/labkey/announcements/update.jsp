@@ -132,10 +132,9 @@ if (settings.hasExpires())
       <select name="rendererType" id="rendererType" onChange="LABKEY.setDirty(true);"<%
           for (WikiRendererType type : bean.renderers)
           {
-              String value = type.name();
               String displayName = type.getDisplayName();
       %>
-        <option<%=selected(type == bean.currentRendererType)%> value="<%=h(value)%>"><%=h(displayName)%></option><%
+        <option<%=selected(type == bean.currentRendererType)%> value="<%=type%>"><%=h(displayName)%></option><%
         } %>
       </select>
     </td>
@@ -153,7 +152,7 @@ if (settings.hasExpires())
                     x++;
                     %><tr id="attach-<%=x%>">
                         <td><img src="<%=getWebappURL(att.getFileIcon())%>" alt="logo"/>&nbsp;<%= h(att.getName()) %></td>
-                        <td><a onclick="LABKEY.discuss.removeAttachment(<%=PageFlowUtil.jsString(ann.getEntityId())%>, <%=PageFlowUtil.filterQuote(att.getName())%>, 'attach-<%=x%>'); ">remove</a></td>
+                        <td><a onclick="LABKEY.discuss.removeAttachment(<%=q(ann.getEntityId())%>, <%=PageFlowUtil.filterQuote(att.getName())%>, 'attach-<%=x%>'); ">remove</a></td>
                     </tr><%
                 }
                 %>
@@ -182,7 +181,7 @@ if (settings.hasExpires())
 <%
     for (WikiRendererType renderer : WikiRendererType.values()) {
 %>
-<div class="help-<%=renderer.name()%>" style="display:none">
+<div class="help-<%=renderer%>" style="display:none">
     <% me.include(renderer.getSyntaxHelpView(), out); %>
 </div>
 <%

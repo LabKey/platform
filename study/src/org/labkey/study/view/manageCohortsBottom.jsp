@@ -37,7 +37,7 @@
     StudyManager manager = StudyManager.getInstance();
 %>
 <labkey:errors/>
-<labkey:form action="<%=h(buildURL(CohortController.ManageCohortsAction.class))%>" name="manualAssignment" method="POST">
+<labkey:form action="<%=buildURL(CohortController.ManageCohortsAction.class)%>" name="manualAssignment" method="POST">
 <%
     if (study.isManualCohortAssignment()) // Need to create a form for submitting the assignments
     {

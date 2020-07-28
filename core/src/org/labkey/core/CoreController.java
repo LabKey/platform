@@ -139,6 +139,7 @@ import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.FolderTab;
@@ -2089,7 +2090,8 @@ public class CoreController extends SpringActionController
             if (!AppProps.getInstance().isDevMode() || !getUser().hasRootAdminPermission())
                 throw new UnauthorizedException("under development");
             return new HtmlView("<form method=\"POST\" enctype=\"multipart/form-data\">"+
-                    "<input name=file type=file><input type=submit><input type=hidden name=" +  CSRFUtil.csrfName + " value=" + CSRFUtil.getExpectedToken(getViewContext()) + ">" +
+                    "<input name=file type=file><input type=submit>" +
+                    new CsrfInput(getViewContext()) +
                     "</form>");
         }
 

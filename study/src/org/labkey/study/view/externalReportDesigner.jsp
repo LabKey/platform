@@ -30,7 +30,7 @@
     ReportsController.ExternalReportBean bean = me.getModelBean();
     ExternalReport report = bean.getExtReport();
 %>
-<labkey:form action="<%=h(buildURL(ExternalReportAction.class))%>" method="POST" name="reportDesigner">
+<labkey:form action="<%=buildURL(ExternalReportAction.class)%>" method="POST" name="reportDesigner">
     Design external report. You can invoke any command line to generate the report. You can use the following
     substitution strings in your command line to identify the source data file and the output file to be generated.
     <ul>

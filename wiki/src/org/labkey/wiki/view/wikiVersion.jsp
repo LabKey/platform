@@ -70,18 +70,18 @@ else
 
         if (fOutputMakeCurrent)
         {
-            %><tr><td align=right colspan="2"><labkey:form method="POST" action="<%=h(bean.makeCurrentURL)%>">
+            %><tr><td align=right colspan="2"><labkey:form method="POST" action="<%=bean.makeCurrentURL%>">
                 <%= button("Make Current").submit(true) %></labkey:form></td></tr><%
         }%>
 
-       <tr><td colspan=2>&nbsp;</td></tr>
-       <tr><td colspan=2 class="labkey-title-area-line"></td></tr>
-       <tr><td colspan=2>&nbsp;</td></tr>
-       <tr>
-           <td align="left">
-               <%=link("page", bean.pageURL)%>&nbsp;<%=link("history", bean.versionsURL)%>&nbsp;<%=link("source", bean.sourceURL)%>
-           </td>
-           <td align="right">
+        <tr><td colspan=2>&nbsp;</td></tr>
+        <tr><td colspan=2 class="labkey-title-area-line"></td></tr>
+        <tr><td colspan=2>&nbsp;</td></tr>
+        <tr>
+            <td align="left">
+                <%=link("page", bean.pageURL)%>&nbsp;<%=link("history", bean.versionsURL)%>&nbsp;<%=link("source", bean.sourceURL)%>
+            </td>
+            <td align="right">
 <%
 
         WikiVersion[] versions = WikiSelectManager.getAllVersions(bean.wiki);
@@ -108,8 +108,8 @@ else
         }
     %>
             </td>
-       </tr>
-       <tr>
+        </tr>
+        <tr>
             <td align="left">
                 <i>Created by:</i> <%=h(bean.createdBy)%>,
                 <i>Date:</i> <%=formatDateTime(bean.created)%>

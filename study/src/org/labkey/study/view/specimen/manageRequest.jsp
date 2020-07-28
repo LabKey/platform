@@ -423,7 +423,7 @@
                             .addParameter("listType", SpecimenController.LabSpecimenListsBean.Type.PROVIDING.toString())) : HtmlString.EMPTY_STRING %>
     </td>
 </tr>
-<labkey:form action="<%=h(buildURL(SpecimenController.ManageRequestAction.class))%>" name="addRequirementForm" enctype="multipart/form-data" method="POST">
+<labkey:form action="<%=buildURL(SpecimenController.ManageRequestAction.class)%>" name="addRequirementForm" enctype="multipart/form-data" method="POST">
         <input type="hidden" name="id" value="<%= bean.getSpecimenRequest().getRowId()%>">
         <tr class="labkey-wp-header">
             <th align="left">Current Requirements</th>

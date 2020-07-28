@@ -260,12 +260,13 @@ public class Button extends DisplayElement implements HasHtmlString
 
     public static class ButtonBuilder extends DisplayElementBuilder<Button, ButtonBuilder>
     {
+        private final HtmlString html;
+
         private String typeCls;
         private boolean disableOnClick;
         private boolean dropdown;
         private boolean enabled = true;
         private boolean submit;
-        private HtmlString html;
 
         public ButtonBuilder(@NotNull String text)
         {

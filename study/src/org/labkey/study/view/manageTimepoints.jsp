@@ -65,7 +65,7 @@
 </table>
 
 <labkey:panel title="Timepoint Configuration" width="800">
-<labkey:form action="<%=h(buildURL(StudyController.ManageVisitsAction.class))%>" method="POST">
+<labkey:form action="<%=buildURL(StudyController.ManageVisitsAction.class)%>" method="POST">
    Data in this study is grouped using date-based timepoints rather than visit ids.
     <ul>
        <li>A timepoint is assigned to each dataset row by computing the number of days between a subject's start date and the date supplied in the row.</li>

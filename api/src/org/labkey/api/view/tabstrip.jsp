@@ -38,7 +38,7 @@
             if (null != tab.getText() && tab.getText().length() > 0)
             {
             %>
-            <li class="<%=(tab.getId().equalsIgnoreCase(tabId) ? "labkey-tab-active" : "labkey-tab-inactive")%>" id="<%=view._prefix%>tab<%=tab.getId()%>"><%
+            <li class="<%=h(tab.getId().equalsIgnoreCase(tabId) ? "labkey-tab-active" : "labkey-tab-inactive")%>" id="<%=h(view._prefix + "tab" + tab.getId())%>"><%
 
             if (tab.getScript() == null && tab.getHref() == null)
             {
@@ -61,7 +61,7 @@
     </ul>
     <div class="labkey-tab-strip-spacer"></div>
     <div class="labkey-tab-strip-content">
-        <div id="<%=view._prefix%>tabContent"><%
+        <div id="<%=h(view._prefix)%>tabContent"><%
             ModelAndView tabView = view.getTabView(tabId);
             if (tabView != null)
             {
