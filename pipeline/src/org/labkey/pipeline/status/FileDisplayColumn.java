@@ -120,7 +120,7 @@ public class FileDisplayColumn extends SimpleDisplayColumn
     {
         Path parent = p.getParent();
 
-        if (Files.exists(parent))
+        if (NetworkDrive.exists(parent))
         {
             // calculate base name of the .status file
             String statusName = p.getFileName().toString();
