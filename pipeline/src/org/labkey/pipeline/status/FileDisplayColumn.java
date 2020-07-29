@@ -26,21 +26,18 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Writer;
-import java.net.URI;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * FileDisplayColumn class
@@ -109,12 +106,6 @@ public class FileDisplayColumn extends SimpleDisplayColumn
         }
     }
 
-    public static List<Path> listFiles(File f, Container c, PipelineProvider provider)
-            throws IOException
-    {
-        return listFiles(f.toPath(), c, provider);
-    }
-
     public static List<Path> listFiles(Path p, Container c, PipelineProvider provider)
             throws IOException
     {
@@ -129,10 +120,9 @@ public class FileDisplayColumn extends SimpleDisplayColumn
             final String basename = statusName.substring(0, statusName.lastIndexOf('.'));
 
             // get files with .log, or same basename and .out
-            List<Path> paths = Collections.emptyList();
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(parent))
+            try (Stream<Path> stream = Files.list(parent))
             {
-                paths = Files.list(parent)
+                return stream
                         .filter(path -> {
                             String name = path.getFileName().toString();
                             if (provider != null)
@@ -141,10 +131,8 @@ public class FileDisplayColumn extends SimpleDisplayColumn
                             return StatusController.isVisibleFile(name, basename);
                         })
                         .sorted(Path::compareTo)
-                        .collect(Collectors.toCollection(ArrayList::new));
+                        .collect(toList());
             }
-
-            return paths;
         }
 
         return Collections.emptyList();
