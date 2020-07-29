@@ -171,6 +171,9 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         if (auditHistoryUrl != null)
             resp.put("auditHistoryUrl", auditHistoryUrl);
 
+        // Return public name for query
+        resp.put("name", tinfo.getPublicName());
+
         resp.put("title", tinfo.getTitle());
         resp.put("titleColumn", tinfo.getTitleColumn());
 
