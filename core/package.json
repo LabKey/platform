@@ -100,7 +100,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.0.0",
-    "@labkey/components": "0.81.0-fb-mergeFrom207.0",
+    "@labkey/components": "0.81.1",
     "@labkey/eslint-config-react": "0.0.8",
     "react-toggle-button": "2.2.0"
   },
