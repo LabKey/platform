@@ -122,7 +122,7 @@
             <td class="lk-form-label">File Path:</td>
             <td id="file-path"><%=h(status.filePath)%></td>
         </tr>
-        <tr class="<%=status.files.isEmpty() ? "hidden" : ""%>">
+        <tr class="<%=h(status.files.isEmpty() ? "hidden" : "")%>">
             <td class="lk-form-label">Files:</td>
             <td id="files-list">
                 <% for (var file : status.files) { %>
@@ -130,7 +130,7 @@
                 <% } %>
             </td>
         </tr>
-        <tr class="<%=status.parentStatus == null ? "hidden" : ""%>">
+        <tr class="<%=h(status.parentStatus == null ? "hidden" : "")%>">
             <td class="lk-form-label">Join job:</td>
             <td id="parent-job">
                 <table class="table-bordered table-condensed">
@@ -157,7 +157,7 @@
                 </table>
             </td>
         </tr>
-        <tr class="<%=status.splitStatus == null || status.splitStatus.isEmpty() ? "hidden" : ""%>">
+        <tr class="<%=h(status.splitStatus == null || status.splitStatus.isEmpty() ? "hidden" : "")%>">
             <td class="lk-form-label">Split jobs:</td>
             <td id="split-jobs">
                 <table class="table-bordered table-condensed">
@@ -187,7 +187,7 @@
                 </table>
             </td>
         </tr>
-        <tr class="<%=status.runs.isEmpty() ? "hidden" : ""%>">
+        <tr class="<%=h(status.runs.isEmpty() ? "hidden" : "")%>">
             <td class="lk-form-label">Completed Runs:</td>
             <td id="runs-list">
                 <% for (var run : status.runs) { %>
@@ -232,7 +232,7 @@
         <% } else { %>
         <div id="log-data">
             <% for (var record : status.log.records) { %>
-            <pre class="labkey-log-text <%=logTextClass(record)%>"
+            <pre class="labkey-log-text <%=h(logTextClass(record))%>"
                  data-multiline="<%=h(record.isMultiline())%>"
                  data-stacktrace="<%=h(record.isStackTrace())%>"
                  data-level="<%=h(record.getLevel())%>"
