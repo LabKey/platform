@@ -22,7 +22,7 @@ import org.labkey.api.util.EnumHasHtmlString;
  * User: jeckels
  * Date: Sep 12, 2006
  */
-public enum XarExportType implements EnumHasHtmlString<XarExportType>
+public enum XarExportType implements EnumHasHtmlString
 {
     BROWSER_DOWNLOAD("Download to web browser"),
     PIPELINE_FILE("Write to exportedXars directory in pipeline");

@@ -46,7 +46,7 @@ import java.util.Set;
  */
 public class CohortFilterFactory
 {
-    public static enum Params implements EnumHasHtmlString<Params>
+    public static enum Params implements EnumHasHtmlString
     {
         cohortFilterType
         {

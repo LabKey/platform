@@ -82,16 +82,16 @@ function orderModule(listName, hiddenElName, down)
     return false;
 }
 </script>
-<labkey:form method="post" name="reorder" action="<%=h(buildURL(StudyController.VisitOrderAction.class))%>" enctype="multipart/form-data">
+<labkey:form method="post" name="reorder" action="<%=buildURL(StudyController.VisitOrderAction.class)%>" enctype="multipart/form-data">
     <table class="lk-fields-table">
         <tr>
             <th style="font-weight: bold;" colspan="2">Display Order<%= helpPopup("Display Order", "Display order determines the order in which visits appear in reports and views for all " +
-                    "study and specimen data.  By default, visits are displayed in order of increasing visit ID for visit-based studies, and in date " +
+                    "study and specimen data. By default, visits are displayed in order of increasing visit ID for visit-based studies, and in date " +
                     "order for date-based studies.")%></th>
             <th style="font-weight: bold;" colspan="2">Chronological Order<%= helpPopup("Chronological Order", "Chronological visit order is used to determine which visits occurred before " +
-                    "or after others.  Visits are chronologically ordered when all participants move only downward through the visit list.  Any given " +
+                    "or after others. Visits are chronologically ordered when all participants move only downward through the visit list. Any given " +
                     StudyService.get().getSubjectNounSingular(getContainer()).toLowerCase() + " may skip some visits, depending on " +
-                    "cohort assignment or other factors.  It is generally not useful to set a chronological order for date-based studies.")%></th>
+                    "cohort assignment or other factors. It is generally not useful to set a chronological order for date-based studies.")%></th>
         </tr>
         <%
             List<VisitImpl> visits = getVisits(Visit.Order.DISPLAY);

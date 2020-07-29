@@ -20,6 +20,8 @@ import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
 import java.util.Objects;
 
+import static org.labkey.api.util.HtmlString.unsafe;
+
 public class RadioTag extends SimpleTagBase
 {
     protected String _name;
@@ -34,26 +36,26 @@ public class RadioTag extends SimpleTagBase
         // TODO: HtmlString
 
         JspWriter out = getOut();
-        out.print("<input type=\"radio\" name=\"");
+        out.print(unsafe("<input type=\"radio\" name=\""));
         out.print(h(_name));
-        out.print("\" value=\"");
+        out.print(unsafe("\" value=\""));
         out.print(h(_value));
-        out.print("\"");
+        out.print(unsafe("\""));
         if (isChecked())
         {
-            out.print(" checked");
+            out.print(unsafe(" checked"));
         }
         if (_id != null)
         {
-            out.print(" id=\"");
+            out.print(unsafe(" id=\""));
             out.print(h(_id));
-            out.print("\"");
+            out.print(unsafe("\""));
         }
         if (_disabled)
         {
-            out.print(" disabled");
+            out.print(unsafe(" disabled"));
         }
-        out.print(">");
+        out.print(unsafe(">"));
     }
 
     public void setName(String name)

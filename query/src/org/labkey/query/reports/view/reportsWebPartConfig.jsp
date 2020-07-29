@@ -23,16 +23,15 @@
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -71,7 +70,7 @@
     String showTabs = Report.renderParam.showTabs.name();
 %>
 
-<labkey:form name="frmCustomize" method="post" action="<%=h(webPart.getCustomizePostURL(context))%>">
+<labkey:form name="frmCustomize" method="post" action="<%=webPart.getCustomizePostURL(context)%>">
     <table class="lk-fields-table">
         <tr>
             <td class="labkey-form-label">Web Part Title:</td>

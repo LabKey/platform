@@ -114,7 +114,7 @@
     %>
     <tr>
         <td>
-            <labkey:form action="<%=h(buildURL(SpecimenController.ManageRequirementAction.class))%>" enctype="multipart/form-data" method="post">
+            <labkey:form action="<%=buildURL(SpecimenController.ManageRequirementAction.class)%>" enctype="multipart/form-data" method="post">
                 <input type="hidden" name="id" value="<%= requirement.getRequestId() %>">
                 <input type="hidden" name="requirementId" value="<%= requirement.getRowId() %>">
                 <table>

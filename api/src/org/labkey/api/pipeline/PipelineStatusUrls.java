@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
@@ -31,4 +32,6 @@ public interface PipelineStatusUrls extends UrlProvider
     ActionURL urlDetails(Container container, int rowId);
 
     ActionURL urlShowFile(Container container, int rowId, String filename);
+
+    ActionURL urlCancel(Container container, int rowId, @Nullable ActionURL returnUrl);
 }

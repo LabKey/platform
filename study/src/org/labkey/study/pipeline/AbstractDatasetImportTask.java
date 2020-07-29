@@ -205,7 +205,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
     }
 
 
-    public enum Action implements EnumHasHtmlString<Action>
+    public enum Action implements EnumHasHtmlString
     {
         REPLACE,
         APPEND,

@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
 <%@ page import="org.labkey.api.util.element.Select.SelectBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -42,18 +41,19 @@
     JspView<WikiEditModel> me = (JspView<WikiEditModel>) HttpView.currentView();
     WikiEditModel model = me.getModelBean();
     final String ID_PREFIX = "wiki-input-";
+    final HtmlString H_ID_PREFIX = h("wiki-input-");
     String sep;
 %>
 <script type="text/javascript">
     LABKEY._wiki.setProps({
-        entityId: <%=model.getEntityId()%>,
-        rowId: <%=model.getRowId()%>,
-        name: <%=model.getName()%>,
-        title: <%=model.getTitle()%>,
-        body: <%=model.getBody()%>,
+        entityId: <%=q(model.getEntityId())%>,
+        rowId: <%= model.getRowId() %>,
+        name: <%=q(model.getName())%>,
+        title: <%=q(model.getTitle())%>,
+        body: <%=q(model.getBody())%>,
         parent: <%=model.getParent()%>,
         pageVersionId: <%=model.getPageVersionId()%>,
-        rendererType: <%=model.getRendererType()%>,
+        rendererType: <%=q(model.getRendererType())%>,
         webPartId: <%=model.getWebPartId()%>,
         showAttachments: <%=model.isShowAttachments()%>,
         shouldIndex: <%=model.isShouldIndex()%>,
@@ -69,10 +69,12 @@
             {
                 ActionURL downloadURL = WikiController.getDownloadURL(getContainer(), model.getWiki(), att.getName());
                 %>
-                    <%=sep%>{name: <%=PageFlowUtil.jsString(att.getName())%>,
-                             iconUrl: <%=PageFlowUtil.jsString(getViewContext().getContextPath() + att.getFileIcon())%>,
-                             downloadUrl: <%=PageFlowUtil.jsString(downloadURL.toString())%>
-                            }
+                    <%=h(sep)%>
+                    {
+                        name: <%=q(att.getName())%>,
+                        iconUrl: <%=q(getViewContext().getContextPath() + att.getFileIcon())%>,
+                        downloadUrl: <%=q(downloadURL.toString())%>
+                    }
                 <%
                 sep = ",";
             }
@@ -85,14 +87,14 @@
             for (WikiRendererType format : WikiRendererType.values())
             {
         %>
-            <%=sep%>
-            <%=format.name()%>: <%=PageFlowUtil.jsString(format.getDisplayName())%>
+            <%=h(sep)%>
+            <%=format%>: <%=q(format.getDisplayName())%>
         <%
                 sep = ",";
             }
         %>
     });
-    LABKEY._wiki.setURLs(<%= model.getRedir() %>, <%= model.getCancelRedir() %>);
+    LABKEY._wiki.setURLs(<%= q(model.getRedir()) %>, <%= q(model.getCancelRedir()) %>);
 </script>
 <div id="status" class="labkey-status-info" style="display: none; width: 99%;">(status)</div>
 <table width=99%;>
@@ -116,25 +118,25 @@
         <td style="vertical-align:top;width:99%">
             <table class="lk-fields-table" style="width:99%">
                 <tr>
-                    <td class="labkey-form-label-nowrap"><label for="<%=h(ID_PREFIX)%>name">Name * <%= helpPopup("Name", "This field is required") %></label></td>
+                    <td class="labkey-form-label-nowrap"><label for="<%=H_ID_PREFIX%>name">Name * <%= helpPopup("Name", "This field is required") %></label></td>
                     <td width="99%">
-                        <input type="text" name="name" id="<%=h(ID_PREFIX)%>name" size="80" maxlength="255"/>
+                        <input type="text" name="name" id="<%=H_ID_PREFIX%>name" size="80" maxlength="255"/>
                     </td>
                 </tr>
                 <tr>
-                    <td class="labkey-form-label"><label for="<%=h(ID_PREFIX)%>title">Title</label></td>
+                    <td class="labkey-form-label"><label for="<%=H_ID_PREFIX%>title">Title</label></td>
                     <td width="99%">
-                        <input type="text" name="title" id="<%=h(ID_PREFIX)%>title" size="80" maxlength="255"/>
+                        <input type="text" name="title" id="<%=H_ID_PREFIX%>title" size="80" maxlength="255"/>
                     </td>
                 </tr>
                 <tr>
-                    <td class="labkey-form-label-nowrap"><label for="<%=h(ID_PREFIX)%>shouldIndex">Index <%= helpPopup("Index", "Uncheck if the content on this page should not be searchable") %></label></td>
+                    <td class="labkey-form-label-nowrap"><label for="<%=H_ID_PREFIX%>shouldIndex">Index <%= helpPopup("Index", "Uncheck if the content on this page should not be searchable") %></label></td>
                     <td width="99%">
-                        <input type="checkbox" name="shouldIndex" id="<%=h(ID_PREFIX)%>shouldIndex"/>
+                        <input type="checkbox" name="shouldIndex" id="<%=H_ID_PREFIX%>shouldIndex"/>
                     </td>
                 </tr>
                 <tr>
-                    <td class="labkey-form-label"><label for="<%=h(ID_PREFIX)%>parent">Parent</label></td>
+                    <td class="labkey-form-label"><label for="<%=H_ID_PREFIX%>parent">Parent</label></td>
                     <td width="99%">
                     <%
                         SelectBuilder parentBuilder = new SelectBuilder()
@@ -162,7 +164,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td class="labkey-form-label"><label for="<%=h(ID_PREFIX)%>body">Body</label>
+                    <td class="labkey-form-label"><label for="<%=H_ID_PREFIX%>body">Body</label>
                         <br/><span id="wiki-current-format"></span>
                     </td>
                     <td width="99%">
@@ -179,27 +181,27 @@
                             <div id="wiki-tab-strip-spacer" class="labkey-tab-strip-spacer" style="display: none;"></div>
                             <div id="wiki-tab-content" class="labkey-tab-strip-content" style="padding: 0;">
                                 <labkey:form action="">
-                                    <textarea rows="30" cols="80" style="width:100%; border:none;" id="<%=ID_PREFIX%>body" name="body"></textarea>
-                                    <script type="text/javascript">LABKEY.Utils.tabInputHandler('#<%=ID_PREFIX%>body');</script>
+                                    <textarea rows="30" cols="80" style="width:100%; border:none;" id="<%=H_ID_PREFIX%>body" name="body"></textarea>
+                                    <script type="text/javascript">LABKEY.Utils.tabInputHandler('#<%=H_ID_PREFIX%>body');</script>
                                 </labkey:form>
                             </div>
                         </div>
                     </td>
                 </tr>
                 <tr>
-                    <td class="labkey-form-label"><label for="<%=h(ID_PREFIX)%>showAttachments">Files</label></td>
+                    <td class="labkey-form-label"><label for="<%=H_ID_PREFIX%>showAttachments">Files</label></td>
                     <td width="99%">
                         <table>
                             <tr>
                                 <td>
                                     <label>
-                                        <input type="checkbox" id="<%=ID_PREFIX%>showAttachments"/>
+                                        <input type="checkbox" id="<%=H_ID_PREFIX%>showAttachments"/>
                                         Show Attached Files
                                     </label>
                                 </td>
                             </tr>
                         </table>
-                        <labkey:form action="<%=h(buildURL(WikiController.AttachFilesAction.class))%>" method="POST" enctype="multipart/form-data" id="form-files">
+                        <labkey:form action="<%=buildURL(WikiController.AttachFilesAction.class)%>" method="POST" enctype="multipart/form-data" id="form-files">
                             <table id="wiki-existing-attachments"></table>
                             <br>
                             <table id="wiki-new-attachments"></table>
@@ -340,7 +342,7 @@
         </td>
     </tr>
 </table>
-<div id="<%=ID_PREFIX%>window-change-format" class="x4-hidden">
+<div id="<%=H_ID_PREFIX%>window-change-format" class="x4-hidden">
     <table>
         <tr>
             <td>
@@ -354,8 +356,8 @@
         </tr>
         <tr>
             <td>
-                <label for="<%=ID_PREFIX%>window-change-format-to">Convert page format from <span id="<%=ID_PREFIX%>window-change-format-from" style="font-weight: bold;">(from)</span> to</label>
-                <select id="<%=ID_PREFIX%>window-change-format-to"></select>
+                <label for="<%=H_ID_PREFIX%>window-change-format-to">Convert page format from <span id="<%=H_ID_PREFIX%>window-change-format-from" style="font-weight: bold;">(from)</span> to</label>
+                <select id="<%=H_ID_PREFIX%>window-change-format-to"></select>
             </td>
         </tr>
     </table>

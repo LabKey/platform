@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.util.GUID" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
@@ -23,7 +24,7 @@
 <%
 JspView<ExperimentController.ExportBean> me = (JspView<ExperimentController.ExportBean>) HttpView.currentView();
 ExperimentController.ExportBean bean = me.getModelBean();
-String guid = GUID.makeGUID();
+HtmlString guid = HtmlString.of(GUID.makeGUID());
 %>
 
 <script type="text/javascript">
@@ -60,12 +61,12 @@ LABKEY.FileExportOptions = {};
 
 <table cellspacing="4" class="lk-fields-table" style="overflow-y: visible;">
     <tr>
-        <td valign="middle"><input type="radio" name="fileExportType" value="all" checked onclick="LABKEY.FileExportOptions.setFileDownloadEnabled(document.getElementById('<%=h(guid) %>').checked, '<%= h(guid) %>');" /></td>
+        <td valign="middle"><input type="radio" name="fileExportType" value="all" checked onclick="LABKEY.FileExportOptions.setFileDownloadEnabled(document.getElementById('<%=guid%>').checked, '<%=guid%>');" /></td>
         <td valign="middle">Include all files</td>
     </tr>
     <% if (!bean.getRoles().isEmpty()) { %>
         <tr>
-            <td valign="middle"><input type="radio" id="<%=h(guid) %>"name="fileExportType" value="role" onclick="LABKEY.FileExportOptions.setFileDownloadEnabled(document.getElementById('<%= h(guid) %>').checked, '<%= h(guid) %>');" /></td>
+            <td valign="middle"><input type="radio" id="<%=guid%>"name="fileExportType" value="role" onclick="LABKEY.FileExportOptions.setFileDownloadEnabled(document.getElementById('<%=guid%>').checked, '<%=guid%>');" /></td>
             <td valign="middle">Include only selected files based on usage in run:</td>
         </tr>
         <tr>
@@ -81,7 +82,7 @@ LABKEY.FileExportOptions = {};
                                 %></tr><tr><%
                     %>
                             <td>
-                                <input type="checkbox" class="file-download-role-checkbox-<%= guid %>" disabled="true" name="roles" id="role<%= h(role) %>" value="<%= h(role) %>" />
+                                <input type="checkbox" class="file-download-role-checkbox-<%=guid%>" disabled="true" name="roles" id="role<%= h(role) %>" value="<%= h(role) %>" />
                                 <span style="padding-left: .4em; padding-right: 1.5em;"><%= h(role) %></span>
                             </td>
                     <%

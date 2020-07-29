@@ -16,6 +16,7 @@
 
 package org.labkey.api.jsp.taglib;
 
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.jsp.tagext.SimpleTagSupport;
@@ -23,14 +24,14 @@ import javax.servlet.jsp.JspWriter;
 
 public class SimpleTagBase extends SimpleTagSupport
 {
-    protected String h(Object o)
+    protected HtmlString h(Object o)
     {
-        return PageFlowUtil.filter(o);
+        return null==o ? HtmlString.EMPTY_STRING : HtmlString.of(o.toString());
     }
 
-    protected String h(String s)
+    protected HtmlString h(String s)
     {
-        return PageFlowUtil.filter(s);
+        return null==s ? HtmlString.EMPTY_STRING : HtmlString.of(s);
     }
 
     protected JspWriter getOut()

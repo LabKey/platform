@@ -239,33 +239,6 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         return result;
     }
 
-    private boolean statusFileMatches(PipelineJob job, String statusFile)
-    {
-        File fileCompare = job.getLogFile();
-        if (fileCompare == null)
-            return false;
-        String compare = PipelineJobService.statusPathOf(fileCompare.toString());
-        return new File(compare).equals(new File(statusFile));
-    }
-
-    @Override
-    public PipelineJob findJobInMemory(Container c, String statusFile)
-    {
-        PipelineJobData jd = getJobDataInMemory(c);
-        statusFile = PipelineJobService.statusPathOf(statusFile);
-        for (PipelineJob job : jd.getRunningJobs())
-        {
-            if (statusFileMatches(job, statusFile))
-                return job;
-        }
-        for (PipelineJob job : jd.getPendingJobs())
-        {
-            if (statusFileMatches(job, statusFile))
-                return job;
-        }
-        return null;
-    }
-
     @Override
     public synchronized PipelineJobData getJobDataInMemory(Container c)
     {

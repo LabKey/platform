@@ -174,7 +174,7 @@ This study was created from a vaccine study protocol with the following descript
                     %>
                         <br><a href="<%= h(StudyController.getProtocolDocumentDownloadURL(c, doc.getName())) %>">
                             <img src="<%= getViewContext().getContextPath() + doc.getFileIcon() %>" alt="[<%= h(doc.getName()) %>]">
-                            <%= h(h(doc.getName())) %>
+                            <%= h(doc.getName()) %>
                         </a><%
                             }
                         }

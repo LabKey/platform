@@ -235,7 +235,7 @@ function validate()
     return false;
 }
 </script>
-<labkey:form name="folderModules" id="folderModules" method="POST" action="<%=h(buildURL(FolderTypeAction.class))%>" onsubmit="return validate();">
+<labkey:form name="folderModules" id="folderModules" method="POST" action="<%=buildURL(FolderTypeAction.class)%>" onsubmit="return validate();">
     <table width="100%">
         <tr>
             <td valign="top"><%

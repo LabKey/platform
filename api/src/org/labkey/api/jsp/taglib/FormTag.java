@@ -18,18 +18,20 @@ package org.labkey.api.jsp.taglib;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.element.Input;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.tagext.BodyTagSupport;
 import java.io.IOException;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class FormTag extends BodyTagSupport
 {
@@ -171,78 +173,64 @@ public class FormTag extends BodyTagSupport
         return isNoValidate == null ? false : isNoValidate;
     }
 
+
+    Pair<HtmlString,HtmlString> tag;
+
     @Override
     public int doStartTag() throws JspException
     {
-        // TODO: HtmlString or HTML DOM
-        StringBuilder sb = new StringBuilder();
-        sb.append("<form");
-        if (StringUtils.isNotEmpty(getId()))
-            sb.append(" id=\"").append(getId()).append("\"");
-        if (StringUtils.isNotEmpty(name))
-            sb.append(" name=\"").append(name).append("\"");
-        if (StringUtils.isNotEmpty(method))
-            sb.append(" method=\"").append(method).append("\"");
-        if (null != action)
-            sb.append(" action=\"").append(action).append("\"");
-        if (StringUtils.isNotEmpty(enctype))
-            sb.append(" enctype=\"").append(enctype).append("\"");
-        if (StringUtils.isNotEmpty(target))
-            sb.append(" target=\"").append(target).append("\"");
-        if (StringUtils.isNotEmpty(onsubmit))
-            sb.append(" onsubmit=\"").append(onsubmit).append("\"");
-        if (StringUtils.isNotEmpty(style))
-            sb.append(" style=\"").append(style).append("\"");
-        if (StringUtils.isNotEmpty(autoComplete))
-            sb.append(" autocomplete=\"").append(autoComplete).append("\"");
-
+        var formAttributes = DOM.at(DOM.Attribute.id, getId());
+        if (isNotBlank(name))
+            formAttributes.at(DOM.Attribute.name, name);
+        if (isNotBlank(method))
+            formAttributes.at(DOM.Attribute.method, method);
+        if (!HtmlString.isBlank(action))
+            formAttributes.at(DOM.Attribute.action, action);
+        if (isNotBlank(enctype))
+            formAttributes.at(DOM.Attribute.enctype, enctype);
+        if (isNotBlank(target))
+            formAttributes.at(DOM.Attribute.target, target);
+        if (isNotBlank(onsubmit))
+            formAttributes.at(DOM.Attribute.onsubmit, onsubmit);
+        if (isNotBlank(style))
+            formAttributes.at(DOM.Attribute.style, style);
+        if (isNotBlank(autoComplete))
+            formAttributes.at(DOM.Attribute.autocomplete, autoComplete);
         if (isNoValidate())
-            sb.append(" novalidate");
+            formAttributes.at(DOM.Attribute.novalidate, Boolean.TRUE);
 
-        String cls = "";
-        if (StringUtils.isNotEmpty(_class))
-            cls += " " + _class;
-        if (getLayout() != null)
-        {
-            if (Input.Layout.HORIZONTAL.toString().equalsIgnoreCase(getLayout()))
-                cls += " form-horizontal";
-            else if (Input.Layout.INLINE.toString().equalsIgnoreCase(getLayout()))
-                cls += " form-inline";
-        }
+        tag = DOM.renderWithPlaceHolder(
+            DOM.LK.FORM(formAttributes
+                .cl(isNotBlank(_class), _class)
+                .cl(Input.Layout.HORIZONTAL.toString().equalsIgnoreCase(getLayout()), "form-horizontal")
+                .cl(Input.Layout.INLINE.toString().equalsIgnoreCase(getLayout()), "form-inline"),
+                DOM.BODY_PLACE_HOLDER)
+        );
 
-        if (StringUtils.isNotEmpty(cls))
-            sb.append(" class=\"").append(cls).append("\"");
-        sb.append(">");
         try
         {
-            JspWriter out = pageContext.getOut();
-            out.print(sb.toString());
+            pageContext.getOut().print(tag.first);
         }
-        catch (IOException e)
+        catch(IOException x)
         {
-            throw new JspException(e);
+            throw UnexpectedException.wrap(x);
         }
+
         return BodyTagSupport.EVAL_BODY_INCLUDE;
     }
-
 
     @Override
     public int doEndTag() throws JspException
     {
         try
         {
-            JspWriter out = pageContext.getOut();
-            String csrf = CSRFUtil.getExpectedToken(pageContext);
-            if (StringUtils.equals("POST", method))
-            {
-                out.print("<input type=\"hidden\" name=\"" + CSRFUtil.csrfName + "\" value=\"" + PageFlowUtil.filter(csrf) + "\">");
-            }
-            out.print("</form>");
+            pageContext.getOut().print(tag.second);
         }
-        catch (IOException e)
+        catch(IOException x)
         {
-            throw new JspException(e);
+            throw UnexpectedException.wrap(x);
         }
+
         return BodyTagSupport.EVAL_PAGE;
     }
 }

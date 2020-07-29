@@ -40,6 +40,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.element.Input;
 import org.labkey.api.util.element.Option;
+import org.labkey.api.util.element.Option.OptionBuilder;
 import org.labkey.api.util.element.Select;
 import org.labkey.api.util.element.TextArea;
 import org.labkey.api.view.HttpView;
@@ -720,14 +721,14 @@ public class DataColumn extends DisplayColumn
             List<Option> options = new ArrayList<>();
 
             // add empty option
-            options.add(new Option.OptionBuilder().build());
+            options.add(new OptionBuilder().build());
 
             for (NamedObject entry : entryList)
             {
                 String entryName = entry.getName();
-                Option.OptionBuilder option = new Option.OptionBuilder()
-                        .selected(isSelectInputSelected(entryName, value, strVal))
-                        .value(entryName);
+                OptionBuilder option = new OptionBuilder()
+                    .selected(isSelectInputSelected(entryName, value, strVal))
+                    .value(entryName);
 
                 if (null != entry.getObject())
                     option.label(getSelectInputDisplayValue(entry));

@@ -74,7 +74,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         hideEmptyColumns
     }
 
-    public enum Status implements EnumHasHtmlString<Status>
+    public enum Status implements EnumHasHtmlString
     {
         ALL("All vials"),
         AVAILABLE("Available vials"),

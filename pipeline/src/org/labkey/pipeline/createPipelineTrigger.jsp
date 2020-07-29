@@ -45,11 +45,11 @@
     String docLink = new HelpTopic("fileWatcher").getHelpTopicHref();
 
     Map<String, FileAnalysisTaskPipeline> triggerConfigTasks = PipelineJobService.get().getTaskPipelines(getContainer())
-            .stream()
-            .filter(FileAnalysisTaskPipeline.class::isInstance)
-            .map(FileAnalysisTaskPipeline.class::cast)
-            .filter(FileAnalysisTaskPipeline::isAllowForTriggerConfiguration)
-            .collect(Collectors.toMap(FileAnalysisTaskPipeline -> FileAnalysisTaskPipeline.getId().getName(), Function.identity()));
+        .stream()
+        .filter(FileAnalysisTaskPipeline.class::isInstance)
+        .map(FileAnalysisTaskPipeline.class::cast)
+        .filter(FileAnalysisTaskPipeline::isAllowForTriggerConfiguration)
+        .collect(Collectors.toMap(FileAnalysisTaskPipeline -> FileAnalysisTaskPipeline.getId().getName(), Function.identity()));
 
     // would appear on the URL param
     if (bean.getPipelineTask() != null && triggerConfigTasks.containsKey(bean.getPipelineTask()))
@@ -80,7 +80,7 @@
     else
     {
 %>
-<labkey:form layout="horizontal" id="pipelineForm" method="POST" action="<%=h(buildURL(PipelineController.CreatePipelineTriggerAction.class))%>">
+<labkey:form layout="horizontal" id="pipelineForm" method="POST" action="<%=buildURL(PipelineController.CreatePipelineTriggerAction.class)%>">
     <div class="row">
         <div class="col-sm-2">
             <div id="lk-trigger-nav" class="list-group">

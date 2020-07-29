@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.jsp.taglib.ErrorsTag;
+import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.context.NoSuchMessageException;
@@ -49,6 +50,34 @@ public class DOM
     public interface Renderable
     {
         Appendable appendTo(Appendable sb);
+    }
+
+    private static final String BODY_PLACE_HOLDER_STRING = "<!-- org.labkey.api.util.DOM.BODYCONTENT!" + GUID.makeHash() + "-->";
+
+    public static final Renderable BODY_PLACE_HOLDER = sb -> {
+        try
+        {
+            sb.append(BODY_PLACE_HOLDER_STRING);
+            return sb;
+        }
+        catch (Exception x)
+        {
+            throw UnexpectedException.wrap(x);
+        }
+    };
+
+    /*
+    * This is mostly for retro-fitting JSP tags implementatoins that want to use DOM, useful when the
+    * wrapping HTML is pretty small compared to the body.  Avoid outside JSP Tags.
+    */
+    public static Pair<HtmlString,HtmlString> renderWithPlaceHolder(Renderable r)
+    {
+        StringBuilder sb = new StringBuilder();
+        r.appendTo(sb);
+        String[] split = StringUtils.splitByWholeSeparator(sb.toString(),BODY_PLACE_HOLDER_STRING);
+        if (split.length != 2)
+            throw new IllegalArgumentException();
+        return new Pair<>(HtmlString.unsafe(split[0]),HtmlString.unsafe(split[1]));
     }
 
     public enum Element
@@ -268,7 +297,16 @@ public class DOM
         multiple,
         muted,
         name,
-        novalidate,
+        novalidate
+        {
+            @Override
+            Appendable render(Appendable builder, Object value) throws IOException
+            {
+                if (value != Boolean.FALSE)
+                    builder.append(" novalidate");
+                return builder;
+            }
+        },
         onabort,
         onafterprint,
         onbeforeprint,
@@ -675,12 +713,12 @@ public class DOM
                 for (var attr : attrs)
                 {
                     if (attr.getKey() == Attribute.method && "POST".equalsIgnoreCase(String.valueOf(attr.getValue())))
+                    {
                         isPost = true;
+                        break;
+                    }
                 }
-            var csrfInput = !isPost ? null : DOM.INPUT(at(
-                    Attribute.type,"hidden",
-                    Attribute.name,CSRFUtil.csrfName,
-                    Attribute.value,CSRFUtil.getExpectedToken(HttpView.currentContext())));
+            var csrfInput = !isPost ? null : new CsrfInput(HttpView.currentContext());
             return DOM.FORM(attrs, body, csrfInput);
         }
 
@@ -765,9 +803,16 @@ public class DOM
         html.append(" ");
         html.append(key.name());
         html.append("=\"");
-        String s = String.valueOf(value);
-        if (StringUtils.isNotBlank(s))
-            html.append(filter(s));
+        if (value instanceof HtmlString)
+        {
+            html.append(value.toString());
+        }
+        else
+        {
+            String s = String.valueOf(value);
+            if (StringUtils.isNotBlank(s))
+                html.append(filter(s));
+        }
         html.append("\"");
         return html;
     }
@@ -802,6 +847,11 @@ public class DOM
         else if (body.getClass().isArray())
         {
             for (var i : (Object[]) body)
+                appendBody(builder, i);
+        }
+        else if (body instanceof Iterable)
+        {
+            for (var i : ((Iterable)body))
                 appendBody(builder, i);
         }
         else if (body instanceof Stream)

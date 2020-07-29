@@ -44,7 +44,6 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -52,6 +51,7 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.JspView;
@@ -94,7 +94,6 @@ public class DataRegion extends DisplayElement
     private final String _domId = "lk-region-" + UniqueID.getServerSessionScopedUID(); // TODO: Consider using UniqueID.getRequestScopedUID(request) instead
 
     private List<DisplayColumn> _displayColumns = new ArrayList<>();
-    private List<AnalyticsProviderItem> _summaryStatsProviders = null;
     private Map<String, List<Aggregate.Result>> _aggregateResults = null;
     private AggregateRowConfig _aggregateRowConfig = new AggregateRowConfig();
     private TableInfo _table = null;
@@ -1710,7 +1709,7 @@ public class DataRegion extends DisplayElement
     {
         if (mode == MODE_GRID)
             out.write("<input type=\"hidden\" name=\"" + DataRegionSelection.DATA_REGION_SELECTION_KEY + "\" value=\"" + PageFlowUtil.filter(getSelectionKey()) + "\">");
-        out.write("<input type=\"hidden\" name=\"" + CSRFUtil.csrfName + "\" value=\"" + CSRFUtil.getExpectedToken(ctx.getViewContext()) + "\">");
+        out.write(new CsrfInput(ctx.getViewContext()).toString());
         for (Pair<String, Object> field : _hiddenFormFields)
         {
             out.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(field.first) + "\" value=\"" + PageFlowUtil.filter((String) field.second) + "\">");
