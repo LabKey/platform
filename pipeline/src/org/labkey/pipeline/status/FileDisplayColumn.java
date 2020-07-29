@@ -21,6 +21,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -29,10 +30,17 @@ import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Writer;
+import java.net.URI;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * FileDisplayColumn class
@@ -52,7 +60,7 @@ public class FileDisplayColumn extends SimpleDisplayColumn
     @Override
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        List<File> files = null;
+        List<Path> files = null;
         File dir = null;
 
         Map cols = ctx.getRow();
@@ -65,7 +73,8 @@ public class FileDisplayColumn extends SimpleDisplayColumn
         {
             PipelineProvider provider = PipelineService.get().getPipelineProvider(providerName);
             Container container = ContainerManager.getForId(containerId);
-            files = listFiles(new File(filePath), container, provider);
+            Path path = FileUtil.stringToPath(container, filePath, false);
+            files = listFiles(path, container, provider);
         }
 
         if (files == null || files.isEmpty())
@@ -74,12 +83,12 @@ public class FileDisplayColumn extends SimpleDisplayColumn
         }
         else
         {
-            for (final File file : files)
+            for (final Path file : files)
             {
                 // make sure the files can be open for read
-                try (FileInputStream ignored = new FileInputStream(file))
+                String fileName = file.getFileName().toString();
+                if (Files.isReadable(file))
                 {
-                    String fileName = file.getName();
                     out.write("<a href=\"");
                     out.write(StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, false).getLocalURIString());
                     out.write("\">");
@@ -91,49 +100,51 @@ public class FileDisplayColumn extends SimpleDisplayColumn
                     out.write(PageFlowUtil.textLink("download", StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, true)));
                     out.write("<br>\n");
                 }
-                catch (IOException e)
+                else
                 {
-                    out.write(PageFlowUtil.filter(file.getName()));
+                    out.write(PageFlowUtil.filter(fileName));
                     out.write("<br>\n");
                 }
             }
         }
     }
 
-    public static List<File> listFiles(File f, Container c, PipelineProvider provider)
+    public static List<Path> listFiles(File f, Container c, PipelineProvider provider)
             throws IOException
     {
-        File dir = f.getParentFile();
+        return listFiles(f.toPath(), c, provider);
+    }
 
-        if (NetworkDrive.exists(dir))
+    public static List<Path> listFiles(Path p, Container c, PipelineProvider provider)
+            throws IOException
+    {
+        Path parent = p.getParent();
+
+        if (NetworkDrive.exists(parent))
         {
             // calculate base name of the .status file
-            String statusName = f.getName();
+            String statusName = p.getFileName().toString();
 
             // remove .status
             final String basename = statusName.substring(0, statusName.lastIndexOf('.'));
 
             // get files with .log, or same basename and .out
-            File[] fileArray = dir.listFiles(
-                    new FilenameFilter()
-                    {
-                        @Override
-                        public boolean accept(File dir, String name)
-                        {
+            List<Path> paths = Collections.emptyList();
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(parent))
+            {
+                paths = Files.list(parent)
+                        .filter(path -> {
+                            String name = path.getFileName().toString();
                             if (provider != null)
                                 return provider.isStatusViewableFile(c, name, basename);
 
                             return StatusController.isVisibleFile(name, basename);
-                        }
-                    }
-            );
-
-            if (fileArray != null && fileArray.length > 0)
-            {
-                List<File> files = Arrays.asList(fileArray);
-                files.sort(File::compareTo);
-                return files;
+                        })
+                        .sorted(Path::compareTo)
+                        .collect(Collectors.toCollection(ArrayList::new));
             }
+
+            return paths;
         }
 
         return Collections.emptyList();
