@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.LsidType;
 import org.labkey.api.exp.api.ExpMaterialRunInput;
 import org.labkey.api.settings.AppProps;
@@ -63,5 +64,11 @@ public class MaterialInput extends AbstractRunInput
     protected int getInputKey()
     {
         return _materialId;
+    }
+
+    @Override
+    public @Nullable ExpMaterialRunInputImpl getExpObject()
+    {
+        return new ExpMaterialRunInputImpl(this);
     }
 }

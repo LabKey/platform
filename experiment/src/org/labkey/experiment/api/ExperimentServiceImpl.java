@@ -1273,11 +1273,10 @@ public class ExperimentServiceImpl implements ExperimentService
     public ExpObject findObjectFromLSID(String lsid)
     {
         Identifiable id = LsidManager.get().getObject(lsid);
-        if (id instanceof ExpObject)
-        {
-            return (ExpObject) id;
-        }
-        return null;
+        if (id == null)
+            return null;
+
+        return id.getExpObject();
     }
 
     @Override
