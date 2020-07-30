@@ -1040,9 +1040,9 @@ public class ExceptionUtil
                 {
                 }
                 @Override
-                public void error(Object message, Throwable t)
+                public void error(String message, Throwable t)
                 {
-                    res.addHeader("Logger.error", null!=message?String.valueOf(message):null!=t?t.getMessage():"");
+                    res.addHeader("Logger.error", null!=message? message :null!=t?t.getMessage():"");
                 }
                 @Override
                 public void fatal(Object message)
