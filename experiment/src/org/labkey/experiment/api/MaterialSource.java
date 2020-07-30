@@ -17,6 +17,8 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
@@ -169,4 +171,9 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
         return getName().compareToIgnoreCase(o.getName());
     }
 
+    @Override
+    public @Nullable ExpSampleTypeImpl getExpObject()
+    {
+        return new ExpSampleTypeImpl(this);
+    }
 }

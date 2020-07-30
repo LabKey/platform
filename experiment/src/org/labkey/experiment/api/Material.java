@@ -15,7 +15,9 @@
  */
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -54,5 +56,11 @@ public class Material extends RunItem
     public int hashCode()
     {
         return getRowId();
+    }
+
+    @Override
+    public @Nullable ExpMaterialImpl getExpObject()
+    {
+        return new ExpMaterialImpl(this);
     }
 }

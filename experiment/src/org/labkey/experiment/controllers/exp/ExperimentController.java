@@ -4627,10 +4627,6 @@ public class ExperimentController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            if (!container.hasPermission(getUser(), UpdatePermission.class))
-            {
-                throw new UnauthorizedException();
-            }
             obj.setComment(getUser(), form.getComment());
 
             if (form.isRedirect())
