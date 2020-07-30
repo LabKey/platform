@@ -40,7 +40,8 @@ jtidy-r918.jar|Java Tidy|r918|{link:SourceForge|http://jtidy.sourceforge.net/}|{
 junit-4.12.jar|JUnit|4.12|{link:Junit|http://www.junit.org}|{link:CPL 1.0|http://www.opensource.org/licenses/cpl1.0.php}|jeckels|Unit testing
 jxl-2.6.3.jar|API|2.6.3|{link:jexcelapi|http://www.jexcelapi.org/}|{link:LGPL|http://www.opensource.org/licenses/lgpl-license.php}|jeckels|Java Excel library
 kaptcha-2.3.jar|Captcha generator|2.3|{link:kaptcha|http://code.google.com/p/kaptcha/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|User signup forms
-log4j-1.2.17.jar|Log4j|1.2.17|{link:Apache|http://logging.apache.org/log4j/1.2/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Logging
+log4j-api:2.13.3.jar|Log4j|2.13.3|{link:Apache|https://logging.apache.org/log4j/2.x/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|ankurj|Logging
+log4j-core:2.13.3.jar|Log4j|2.13.3|{link:Apache|https://logging.apache.org/log4j/2.x/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|ankurj|Logging
 objenesis-1.0.jar|Objenesis|1.0|{link:Objenesis|http://code.google.com/p/objenesis/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Library for instantiating Java objects, dependency of jMock
 opencsv-2.3.jar|OpenCSV|2.3|{link:OpenCSV|http://opencsv.sourceforge.net/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parsing CSV Files
 patricia-trie-0.6.jar|PATRICIA Trie|0.6|{link:PATRICIA Trie|http://code.google.com/p/patricia-trie/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|PATRICIA Trie data structure implementation
