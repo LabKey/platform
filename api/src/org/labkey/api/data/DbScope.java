@@ -1027,38 +1027,40 @@ public class DbScope
 
     protected ConnectionWrapper getPooledConnection(ConnectionType type, @Nullable Logger log) throws SQLException
     {
+        Connection conn;
 
-        try(Connection conn = _dataSource.getConnection())
+        try
         {
-            if (!conn.getAutoCommit())
-                throw new ConfigurationException("A database connection is in an unexpected state: auto-commit is false. This indicates a configuration problem with the datasource definition or the database connection pool.");
-
-            //
-            // Handle one time per-connection setup
-            // relies on pool implementation reusing same connection/wrapper instances
-            //
-
-            Connection delegate = getDelegate(conn);
-            Integer spid = _initializedConnections.get(delegate);
-
-            if (null == spid)
-            {
-                if (null != _dialect)
-                {
-                    _dialect.prepareConnection(conn);
-                    spid = _dialect.getSPID(delegate);
-                }
-
-                _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
-            }
-
-            return new ConnectionWrapper(conn, this, spid, type, log);
+            conn = _dataSource.getConnection();
         }
         catch (SQLException e)
         {
             throw new ConfigurationException("Can't create a database connection to " + _dataSource.toString(), e);
         }
 
+        if (!conn.getAutoCommit())
+            throw new ConfigurationException("A database connection is in an unexpected state: auto-commit is false. This indicates a configuration problem with the datasource definition or the database connection pool.");
+
+        //
+        // Handle one time per-connection setup
+        // relies on pool implementation reusing same connection/wrapper instances
+        //
+
+        Connection delegate = getDelegate(conn);
+        Integer spid = _initializedConnections.get(delegate);
+
+        if (null == spid)
+        {
+            if (null != _dialect)
+            {
+                _dialect.prepareConnection(conn);
+                spid = _dialect.getSPID(delegate);
+            }
+
+            _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
+        }
+
+        return new ConnectionWrapper(conn, this, spid, type, log);
     }
 
     /** Identical to conn.close() and try-with-resources on Connection, except it logs SQLException instead of throwing **/
