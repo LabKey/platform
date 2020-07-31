@@ -25,6 +25,7 @@ import org.apache.logging.log4j.core.config.properties.PropertiesConfigurationFa
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 /**
 * User: jeckels
@@ -39,12 +40,12 @@ public class LoggerUtil
         {
             if (classloaderResource.toLowerCase().endsWith(".properties"))
             {
-                ConfigurationSource source = new ConfigurationSource(new FileInputStream(classloaderResource));
+                ConfigurationSource source = new ConfigurationSource(Objects.requireNonNull(LoggerUtil.class.getClassLoader().getResourceAsStream(classloaderResource)));
                 PropertiesConfigurationFactory factory = new PropertiesConfigurationFactory();
-                LoggerContext context = (LoggerContext) LogManager.getContext();
+                LoggerContext context = (LoggerContext) LogManager.getContext(false);
                 PropertiesConfiguration propertiesConfiguration = factory.getConfiguration(context, source);
                 context.setConfiguration(propertiesConfiguration);
-                Configurator.initialize(propertiesConfiguration);
+                Configurator.initialize(null, propertiesConfiguration);
             }
             else
             {

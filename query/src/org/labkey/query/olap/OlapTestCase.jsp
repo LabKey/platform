@@ -21,8 +21,6 @@ JSONObject executeJsonApi(ActionURL url, User user, String json) throws Exceptio
     // Oddly, BaseApiAction returns SC_BAD_REQUEST by default when an handled error is returned, even though the it is not a bad request.
     assertTrue(HttpServletResponse.SC_BAD_REQUEST == res.getStatus() || HttpServletResponse.SC_OK == res.getStatus());
     assertEquals("application/json", res.getContentType());
-    // TODO: remove after debugging TC failure
-    LogManager.getLogger(OlapController.class).info("executeJsonApi - " + res.getContentAsString());
     return new JSONObject(res.getContentAsString());
 }
 
@@ -32,7 +30,6 @@ boolean canExecuteMdx(String configId) throws Exception
     config.put("query", "SELECT [Measures].[RowCount] ON COLUMNS, [Fact.ptid].[ptid].Members ON ROWS FROM [Facts]");
     config.put("configId", configId);
     config.put("schemaName", "OlapTest");
-    LogManager.getLogger(OlapController.class).info("configId - " + configId);
     JSONObject result = executeJsonApi(new ActionURL("olap","executeMdx", JunitUtil.getTestContainer()), TestContext.get().getUser(), config.toString());
     if (null != result.get("success") && Boolean.FALSE == result.getBoolean("success"))
         return false;

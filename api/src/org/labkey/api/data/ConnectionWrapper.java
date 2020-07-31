@@ -73,9 +73,7 @@ public class ConnectionWrapper implements java.sql.Connection
     private static final Map<ConnectionWrapper, Pair<Thread, Throwable>> _openConnections = Collections.synchronizedMap(new IdentityHashMap<>());
     private static final Set<ConnectionWrapper> _loggedLeaks = new HashSet<>();
     private static final Logger _logDefault = LogManager.getLogger(ConnectionWrapper.class);
-    private static final LoggerContext _loggerContext = (LoggerContext) LogManager.getContext(false);
-    private static final LoggerConfig _loggerConfig = _loggerContext.getConfiguration().getLoggerConfig(_logDefault.getName());
-    private static final boolean _explicitLogger = _logDefault.getLevel() != null || _loggerConfig.getParent() != null  && _loggerConfig.getParent().getName().equals("org.labkey.api.data");
+    private static final boolean _explicitLogger = initializeExplicitLogger();
     private static final AtomicLong COUNTER = new AtomicLong(0);
 
     private final Connection _connection;
@@ -100,6 +98,14 @@ public class ConnectionWrapper implements java.sql.Connection
     private static Method _transactionStateMethod;
 
     private volatile boolean _allowClose = true;
+
+    private static boolean initializeExplicitLogger()
+    {
+        var loggerContext = (LoggerContext) LogManager.getContext(false);
+        var loggerConfig = loggerContext.getConfiguration().getLoggerConfig(_logDefault.getName());
+
+        return _logDefault.getLevel() != null || loggerConfig.getParent() != null  && loggerConfig.getParent().getName().equals("org.labkey.api.data");
+    }
 
     public ConnectionWrapper(Connection conn, DbScope scope, Integer spid, ConnectionType type, @Nullable Logger log)
     {
