@@ -152,7 +152,7 @@
     }
 
     function moveIssue() {
-        Issues.window.MoveIssue.create(<%=PageFlowUtil.jsString(issueId)%>, <%=PageFlowUtil.jsString(issueDef.getName())%>);
+        Issues.window.MoveIssue.create(<%=q(issueId)%>, <%=q(issueDef.getName())%>);
     }
 
     /**

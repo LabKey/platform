@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.query.controllers.InternalSourceViewForm" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.query.persist.CstmView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.query.controllers.QueryController.*" %>
-<%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.UserManager" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.query.controllers.InternalSourceViewForm" %>
+<%@ page import="org.labkey.query.controllers.QueryController.InternalSourceViewAction" %>
+<%@ page import="org.labkey.query.controllers.QueryController.ManageViewsAction" %>
+<%@ page import="org.labkey.query.persist.CstmView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -47,8 +48,9 @@
     CstmView view = form.getViewAndCheckPermission();
 %>
 <labkey:errors />
-<labkey:form method = "POST" action="<%=h(urlPost)%>">
-    <p>Schema: <%=h(view.getSchema())%><br>
+<labkey:form method = "POST" action="<%=urlPost%>">
+    <p>
+        Schema: <%=h(view.getSchema())%><br>
         Query: <%=h(view.getQueryName())%><br>
         Name: <%=h(view.getName())%><br>
         Owner: <%=h(userIdToString(view.getCustomViewOwner()))%><br>

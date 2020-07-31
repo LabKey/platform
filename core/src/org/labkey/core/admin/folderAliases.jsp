@@ -40,7 +40,7 @@
     </tr>
     <tr>
         <td>
-        <labkey:form action="<%=h(buildURL(AdminController.FolderAliasesAction.class))%>" method="post">
+        <labkey:form action="<%=buildURL(AdminController.FolderAliasesAction.class)%>" method="post">
             <textarea rows="4" cols="40" name="aliases"><%
                 StringBuilder sb = new StringBuilder();
                 String separator = "";

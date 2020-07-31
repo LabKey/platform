@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.util.DateUtil"%>
 <%@ page import="org.labkey.api.util.MemTracker" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -60,11 +59,11 @@
                     // Hacky - assuming that the first one should be a different size
                     if (i == 0)
                     {
-                        %><img vspace="2" hspace="2" width="800" height="100" style="border: 1px solid" src="<%=this.buildURL(AdminController.MemoryChartAction.class)%>&type=<%= PageFlowUtil.encode(graphName) %>"/> <%
+                        %><img vspace="2" hspace="2" width="800" height="100" style="border: 1px solid" src="<%=urlFor(AdminController.MemoryChartAction.class).addParameter("type", graphName)%>"/> <%
                     }
                     else
                     {
-                        %><img hspace="2" vspace="2" width="398" height="70" style="border: 1px solid" src="<%=this.buildURL(AdminController.MemoryChartAction.class)%>&type=<%= PageFlowUtil.encode(graphName) %>"/> <%
+                        %><img hspace="2" vspace="2" width="398" height="70" style="border: 1px solid" src="<%=urlFor(AdminController.MemoryChartAction.class).addParameter("type", graphName)%>"/> <%
                     }
                     if (i % 2 == 0)
                     {

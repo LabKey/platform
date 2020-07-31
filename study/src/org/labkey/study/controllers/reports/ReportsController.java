@@ -71,11 +71,11 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -947,7 +947,7 @@ public class ReportsController extends BaseStudyController
             out.write("</select></td>");
 
             out.write("<td>" + PageFlowUtil.button("Save").submit(true));
-            out.write("<input type=hidden name='" + CSRFUtil.csrfName + "' value='" + PageFlowUtil.filter(CSRFUtil.getExpectedToken(getViewContext())) + "'>");
+            out.write(new CsrfInput(getViewContext()).toString());
             out.write("</form>");
 
             if (_confirm)

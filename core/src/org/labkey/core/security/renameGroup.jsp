@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.security.Group" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -67,14 +66,14 @@
                     handler: function() {
                         renameForm.getForm().submit({
                             success: function() {
-                                window.location = <%=PageFlowUtil.jsString(manageURL.getLocalURIString())%>;
+                                window.location = <%=q(manageURL.getLocalURIString())%>;
                             }
                         });
                     }
                 },{
                     text: 'Cancel',
                     handler: function() {
-                        window.location = <%=PageFlowUtil.jsString(manageURL.getLocalURIString())%>;
+                        window.location = <%=q(manageURL.getLocalURIString())%>;
                     }
                 }]
             }]

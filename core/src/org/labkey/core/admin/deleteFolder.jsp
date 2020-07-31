@@ -180,7 +180,7 @@
             <tr><td>Are you <u>sure</u> you want to permanently delete <%=h(containerType)%> <b><%=h(name)%></b><%=h(showSubfolder ? ", all its subfolders," : "")%> and all the objects <%=h(usePlural ? "they contain" : "it contains")%>?</td></tr>
             <tr><td>&nbsp;</td></tr>
         </table>
-        <labkey:form action='<%=h(buildURL(AdminController.DeleteFolderAction.class) + (recurse ? "recurse=1" : ""))%>' method="post">
+        <labkey:form action='<%=buildURL(AdminController.DeleteFolderAction.class) + (recurse ? "recurse=1" : "")%>' method="post">
             <% if (form.getReturnUrl() != null) { %>
                 <input type="hidden" name="returnUrl" value="<%=h(form.getReturnUrl())%>"/>
             <% } %>

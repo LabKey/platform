@@ -39,7 +39,7 @@
     boolean includeEditOption = study.getSecurityType() == SecurityType.ADVANCED_WRITE;
 %>
 Any user with READ access to this folder may view some summary data.  However, access to detail data must be explicitly granted.
-    <labkey:form id="groupUpdateForm" action="<%=h(buildURL(SecurityController.SaveStudyPermissionsAction.class))%>" method="post">
+    <labkey:form id="groupUpdateForm" action="<%=buildURL(SecurityController.SaveStudyPermissionsAction.class)%>" method="post">
 <%
     if (returnUrl != null)
         out.print("<input type=\"hidden\" name=\"returnUrl\" value=\"" + h(returnUrl) + "\">");
