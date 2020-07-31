@@ -55,8 +55,8 @@ public class AliasManager
             claimAliases(columns);
     }
 
-
-    private static boolean isLegalNameChar(char ch, boolean first)
+    /** Allows alpha and underscores, and numbers for all but the first character */
+    public static boolean isLegalNameChar(char ch, boolean first)
     {
         if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z' || ch == '_')
             return true;
