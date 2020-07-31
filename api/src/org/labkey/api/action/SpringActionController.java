@@ -696,7 +696,16 @@ public abstract class SpringActionController implements Controller, HasViewConte
         if (action instanceof NavTrailAction)
         {
             ((NavTrailAction)action).addNavTrail(root);
+            assert isValidNavTree(root) : action.getClass().getName() + " is generating a malformed NavTree";
         }
+    }
+
+    // NavTrail renders only the first level children, so flag the NavTree as invalid if any child has children. This
+    // most likely means that addNavTrail() chained calls to addChild(), which adds nodes that will never render.
+    private boolean isValidNavTree(NavTree tree)
+    {
+        return tree.getChildren().stream()
+            .noneMatch(NavTree::hasChildren);
     }
 
     protected void beforeAction(Controller action) throws ServletException
