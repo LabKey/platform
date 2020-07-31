@@ -1,8 +1,8 @@
 package org.labkey.pipeline.status;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import edu.emory.mathcs.backport.java.util.Collections;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.StringBuilderWriter;
 import org.labkey.api.exp.api.ExpRun;
@@ -36,6 +36,8 @@ import static org.labkey.pipeline.api.PipelineStatusManager.getSplitStatusFiles;
 @JsonInclude(JsonInclude.Include.NON_NULL) // Don't serialize null values
 public class StatusDetailsBean
 {
+    public static final Logger LOG = Logger.getLogger(StatusDetailsBean.class);
+
     public final int rowId;
     public final String jobId;
     public final String created;
@@ -87,7 +89,7 @@ public class StatusDetailsBean
         this.log = log;
     }
 
-    public static StatusDetailsBean create(Container c, PipelineStatusFile psf, long logOffset) throws IOException
+    public static StatusDetailsBean create(Container c, PipelineStatusFile psf, long logOffset)
     {
         var statusRuns = ExperimentService.get().getExpRunsForJobId(psf.getRowId()).stream().map(StatusDetailRun::create).collect(toList());
         var statusFiles = Collections.emptyList();
@@ -109,22 +111,31 @@ public class StatusDetailsBean
 
 
                 // read from the offset to the end of the file content
-                StringBuilder sb = new StringBuilder();
-                long count = transferTo(sb, path, logOffset);
-                if (psf.isActive())
+                try
                 {
-                    // if the job is still running and we aren't on an end-of-lne,
-                    // wind back to the most recent newline.
-                    while (sb.length() > 1)
+                    StringBuilder sb = new StringBuilder();
+                    long count = transferTo(sb, path, logOffset);
+                    if (psf.isActive())
                     {
-                        char ch = sb.charAt(sb.length()-1);
-                        if (ch == '\n' || ch == '\r')
-                            break;
-                        sb.setLength(sb.length()-1);
-                        count -= 1;
+                        // if the job is still running and we aren't on an end-of-lne,
+                        // wind back to the most recent newline.
+                        while (sb.length() > 1)
+                        {
+                            char ch = sb.charAt(sb.length() - 1);
+                            if (ch == '\n' || ch == '\r')
+                                break;
+                            sb.setLength(sb.length() - 1);
+                            count -= 1;
+                        }
                     }
+                    var records = LogFileParser.parseLines(sb.toString());
+                    statusLog = StatusDetailLog.createSuccess(records, logOffset + count);
                 }
-                statusLog = new StatusDetailLog(sb.toString(), logOffset + count);
+                catch (IOException e)
+                {
+                    LOG.warn("Error reading log file '" + strPath + "' at offset " + logOffset + ": " + e.getMessage(), e);
+                    statusLog = StatusDetailLog.createError("Error reading log file at offset " + logOffset + ": " + e.getMessage(), logOffset);
+                }
             }
         }
 
@@ -210,13 +221,29 @@ public class StatusDetailsBean
 
     public static class StatusDetailLog
     {
-        public final long nextOffset;
+        public final boolean success;
+        public final String message;
         public final List<LogFileParser.Record> records;
+        public final long nextOffset;
 
-        public StatusDetailLog(String data, long nextOffset)
+        protected StatusDetailLog(boolean success, String message, List<LogFileParser.Record> records, long nextOffset)
         {
-            this.records = LogFileParser.parseLines(data);
+            this.success = success;
+            this.message = message;
+            this.records = records;
             this.nextOffset = nextOffset;
+        }
+
+        /** Read log successfully */
+        public static StatusDetailLog createSuccess(List<LogFileParser.Record> records, long nextOffset)
+        {
+            return new StatusDetailLog(true, null, records, nextOffset);
+        }
+
+        /** Error reading log */
+        public static StatusDetailLog createError(String message, long nextOffset)
+        {
+            return new StatusDetailLog(false, message, null, nextOffset);
         }
     }
 

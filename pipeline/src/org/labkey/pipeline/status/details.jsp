@@ -227,7 +227,7 @@
     </div>
     <br>
     <div id="log-container">
-        <% if (status.log == null) { %>
+        <% if (status.log == null || status.log.records == null) { %>
         <em>Log file doesn't exist.</em>
         <% } else { %>
         <div id="log-data">
@@ -542,14 +542,39 @@
         }
 
         function updateLog(log) {
-            if (log && log.records) {
-                let chunks = renderLog(log.records);
+            if (log) {
                 if (!logDataEl) {
                     // job is active, but the log file didn't exist during first page load
                     logContainerEl.innerHTML = '<div id="log-data"></div>';
                     logDataEl = document.getElementById('log-data');
                 }
-                chunks.forEach(function (chunk) { logDataEl.appendChild(chunk); });
+
+                if (log.success) {
+                    // successfully read the status log file
+                    if (log.records && log.records.length > 0) {
+                        let chunks = renderLog(log.records);
+                        chunks.forEach(function (chunk) { logDataEl.appendChild(chunk); });
+                    }
+                }
+                else {
+                    // error reading the status log file.
+                    let message = log.message || 'Error reading log file';
+
+                    // Add the error if the previous message was not the same error.
+                    let lastChild = logDataEl.lastElementChild;
+                    if (!lastChild || lastChild.innerText !== message) {
+                        let errEl = document.createElement('PRE');
+                        errEl.innerText = message;
+                        errEl.classList.add('labkey-log-text');
+                        errEl.classList.add('bg-warning');
+                        errEl.classList.add('text-danger');
+                        logDataEl.appendChild(errEl);
+                    }
+                    else {
+                        console.warn("Skipping duplicate error: " + message);
+                    }
+                }
+
                 scrollLog(true);
             }
         }
