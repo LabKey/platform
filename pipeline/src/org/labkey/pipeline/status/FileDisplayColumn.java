@@ -107,7 +107,6 @@ public class FileDisplayColumn extends SimpleDisplayColumn
     }
 
     public static List<Path> listFiles(Path p, Container c, PipelineProvider provider)
-            throws IOException
     {
         Path parent = p.getParent();
 
@@ -132,6 +131,10 @@ public class FileDisplayColumn extends SimpleDisplayColumn
                         })
                         .sorted(Path::compareTo)
                         .collect(toList());
+            }
+            catch (IOException e)
+            {
+                // ignore, just return an empty file list
             }
         }
 
