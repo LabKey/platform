@@ -16,8 +16,10 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.LsidType;
 import org.labkey.api.exp.api.ExpDataRunInput;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.settings.AppProps;
 
 import static org.labkey.api.util.PageFlowUtil.encode;
@@ -66,5 +68,11 @@ public class DataInput extends AbstractRunInput
     protected int getInputKey()
     {
         return _dataId;
+    }
+
+    @Override
+    public @Nullable ExpDataRunInputImpl getExpObject()
+    {
+        return new ExpDataRunInputImpl(this);
     }
 }
