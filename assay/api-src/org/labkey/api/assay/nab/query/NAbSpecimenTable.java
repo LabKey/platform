@@ -50,6 +50,7 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
         super(DilutionManager.getTableInfoNAbSpecimen(), schema, cf);
 
         wrapAllColumns(true);
+        setTitle(DilutionManager.NAB_SPECIMEN_TABLE_NAME);
 
         // TODO - add columns for all of the different cutoff values
         ExprColumn selectedAUC = new ExprColumn(this, "AUC", getSelectedCurveFitAUC(false), JdbcType.DECIMAL);
