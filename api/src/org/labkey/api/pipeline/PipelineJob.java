@@ -1421,6 +1421,7 @@ abstract public class PipelineJob extends Job implements Serializable
             final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
             final Configuration config = ctx.getConfiguration();
             String loggerName = PipelineJob.class.getSimpleName() + ".Logger." + _logFilePathName;
+            config.getLoggerConfig(loggerName).removeAppender("SafeFile");
             config.removeLogger(loggerName);
             ctx.updateLoggers();
             _logger = null;
