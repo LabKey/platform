@@ -176,7 +176,6 @@ public class SafeFileAppender extends AbstractAppender
             return;
 
         _isSettingStatus = true;
-
         try
         {
             _job.setStatus(PipelineJob.TaskStatus.error, message == null ? "ERROR" : message.toString());
