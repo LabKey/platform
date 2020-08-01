@@ -26,11 +26,21 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.Core;
+import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.Layout;
+import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.appender.FileAppender;
 import org.apache.logging.log4j.core.config.AppenderRef;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.config.Property;
+import org.apache.logging.log4j.core.config.plugins.Plugin;
+import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
+import org.apache.logging.log4j.core.config.plugins.PluginElement;
+import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -50,7 +60,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Job;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.SafeFileAppender;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -82,6 +91,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static org.labkey.api.util.StringUtilsLabKey.DEFAULT_CHARSET;
 
 /**
  * A job represents the invocation of a pipeline on a certain set out inputs. It can be monolithic (a single run() method)
@@ -1373,6 +1384,154 @@ abstract public class PipelineJob extends Job implements Serializable
     public Logger getClassLogger()
     {
         return _log;
+    }
+
+    /**
+     * Custom Log4J appender that opens the log file and closes it for each logging operation, thus ensuring
+     * that the file does not stay locked.
+     * Created: Oct 18, 2005
+     * @author bmaclean
+     */
+    @Plugin(name = FileAppender.PLUGIN_NAME, category = Core.CATEGORY_NAME, elementType = FileAppender.ELEMENT_TYPE, printObject = true)
+    public static class SafeFileAppender extends AbstractAppender
+    {
+        private static Logger _log = LogManager.getLogger(SafeFileAppender.class);
+        private final String LINE_SEP = System.getProperty("line.separator");
+        private static File _file;
+        @Nullable
+        private PipelineJob _job;
+        @Nullable
+        private Logger _jobLogger;
+        private boolean _isSettingStatus;
+
+        public SafeFileAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties, @Nullable PipelineJob job)
+        {
+            super(name, filter, layout, ignoreExceptions, properties);
+            _job = job;
+            _jobLogger = job != null?  job.getClassLogger() : null;
+        }
+
+        @PluginFactory
+        public static SafeFileAppender createAppender(@PluginAttribute("name") String name,
+                                                                          @PluginAttribute("ignoreExceptions") boolean ignoreExceptions,
+                                                                          @PluginElement("Layout") Layout<? extends Serializable> layout,
+                                                                          @PluginElement("Filters") Filter filter,
+                                                                          File file,
+                                                                          @Nullable PipelineJob job)
+        {
+            _file = file;
+
+            // Make sure that we try to mount the drive (if needed) before using the file
+            NetworkDrive.exists(_file);
+            return new SafeFileAppender(name, filter, layout, ignoreExceptions, null, job);
+        }
+
+        @Override
+        public void append(LogEvent loggingEvent)
+        {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(_file, true)))
+            {
+                if (null != _jobLogger)
+                {
+                    logJobMessage(loggingEvent, loggingEvent.getThrown());
+                }
+                writer.write(new String(getLayout().toByteArray(loggingEvent), DEFAULT_CHARSET));
+                writer.write(LINE_SEP);
+                if (null != loggingEvent.getThrown())
+                {
+                    StackTraceElement[] stackTraceElements = loggingEvent.getThrown().getStackTrace();
+                    if (stackTraceElements != null)
+                    {
+                        for (StackTraceElement stackTraceElement : stackTraceElements)
+                        {
+                            writer.write(stackTraceElement.toString());
+                            writer.write(LINE_SEP);
+                        }
+                    }
+                }
+            }
+            catch (IOException e)
+            {
+                File parentFile = _file.getParentFile();
+                if (parentFile != null && !NetworkDrive.exists(parentFile) && parentFile.mkdirs())
+                    append(loggingEvent);
+                else
+                    _log.error("Failed appending to file.", e);
+            }
+        }
+
+        private void logJobMessage(LogEvent logEvent, @Nullable Throwable t)
+        {
+            if (logEvent.getLevel().equals(Level.TRACE))
+            {
+                _jobLogger.trace(getSystemLogMessage(logEvent.getMessage()), t);
+            }
+
+            if (logEvent.getLevel().equals(Level.DEBUG))
+            {
+                _jobLogger.debug(getSystemLogMessage(logEvent.getMessage()), t);
+            }
+
+            if (logEvent.getLevel().equals(Level.INFO))
+            {
+                _jobLogger.info(getSystemLogMessage(logEvent.getMessage()), t);
+            }
+
+            if (logEvent.getLevel().equals(Level.WARN))
+            {
+                _jobLogger.warn(getSystemLogMessage(logEvent.getMessage()), t);
+            }
+
+            if (logEvent.getLevel().equals(Level.ERROR))
+            {
+                _jobLogger.error(getSystemLogMessage(logEvent.getMessage()), t);
+                setErrorStatus(logEvent.getMessage());
+            }
+
+            if (logEvent.getLevel().equals(Level.FATAL))
+            {
+                _jobLogger.fatal(getSystemLogMessage(logEvent.getMessage()), t);
+                setErrorStatus(logEvent.getMessage());
+            }
+        }
+
+        private String getSystemLogMessage(Object message)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append("(from pipeline job log file ");
+            sb.append(_file.getPath());
+            if (message != null)
+            {
+                sb.append(": ");
+                String stringMessage = message.toString();
+                // Limit the maximum line length
+                final int maxLength = 10000;
+                if (stringMessage.length() > maxLength)
+                {
+                    stringMessage = stringMessage.substring(0, maxLength) + "...";
+                }
+                sb.append(stringMessage);
+            }
+            sb.append(")");
+            return sb.toString();
+        }
+
+        public void setErrorStatus(Object message)
+        {
+            if (_isSettingStatus)
+                return;
+
+            _isSettingStatus = true;
+            try
+            {
+                _job.setStatus(PipelineJob.TaskStatus.error, message == null ? "ERROR" : message.toString());
+            }
+            finally
+            {
+                _isSettingStatus = false;
+            }
+        }
+
     }
 
     // Multiple threads log messages, so synchronize to make sure that no one gets a partially intitialized logger
