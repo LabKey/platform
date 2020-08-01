@@ -93,7 +93,7 @@ If you want to let users change the list that's displayed or customize the view 
                     if(myPanel.getForm().isValid()){
 
                         myPanel.getForm().submit({
-                            url : <%=(part.getCustomizePostURL(ctx)).getLocalURIString()%>,
+                            url : <%=q((part.getCustomizePostURL(ctx)).getLocalURIString())%>,
                             success : function(){},
                             failure : function(){}
                         });
@@ -113,6 +113,5 @@ If you want to let users change the list that's displayed or customize the view 
             standardSubmit: true,
             items : [title, queryCombo, viewCombo, submitButton, { xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF }]
         });
-
     });
 </script>
