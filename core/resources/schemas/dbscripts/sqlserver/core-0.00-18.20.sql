@@ -819,3 +819,7 @@ ALTER TABLE core.APIKeys ADD RowId INT IDENTITY(1, 1);
 ALTER TABLE core.APIKeys DROP CONSTRAINT PK_APIKeys;
 ALTER TABLE core.APIKeys ADD CONSTRAINT PK_APIKeys PRIMARY KEY (RowId);
 ALTER TABLE core.APIKeys ADD CONSTRAINT UQ_CRYPT UNIQUE (Crypt);
+
+/* core-18.10-18.20.sql */
+
+EXEC core.executeJavaUpgradeCode 'encryptMappedDrivePassword';

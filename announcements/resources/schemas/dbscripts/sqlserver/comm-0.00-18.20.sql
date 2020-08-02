@@ -196,3 +196,10 @@ CREATE TABLE comm.Tours
 
   CONSTRAINT PK_ToursId PRIMARY KEY (RowId)
 );
+
+/* comm-18.10-18.20.sql */
+
+ALTER TABLE comm.Announcements ADD Approved DATETIME NULL;
+GO
+
+UPDATE comm.Announcements SET Approved = Created;

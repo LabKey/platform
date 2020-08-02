@@ -1587,3 +1587,7 @@ CREATE INDEX ix_participantvisit_sequencenum ON study.participantvisit (containe
 
 -- Adding as an explicit index because it got lost on postgresql as an include column
 CREATE INDEX ix_participantvisit_visitrowid ON study.participantvisit (visitrowid);
+
+/* study-18.10-18.20.sql */
+
+ALTER TABLE study.Dataset ALTER COLUMN TypeURI NVARCHAR(300);
