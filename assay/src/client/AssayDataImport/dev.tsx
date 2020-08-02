@@ -17,9 +17,9 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import $ from 'jquery'
 
-import {AppContainer} from 'react-hot-loader'
+import { AppContainer } from 'react-hot-loader'
 
-import {App} from './AssayDataImport'
+import { App } from './AssayDataImport'
 
 const render = () => {
     ReactDOM.render(

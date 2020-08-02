@@ -17,14 +17,14 @@
 import React, {PureComponent} from "react";
 import {
     Alert,
-    BeforeUnload,
-    ConfirmModal,
     DatasetDesignerPanels,
     DatasetModel,
     fetchDatasetDesign,
-    LoadingSpinner
+    LoadingSpinner,
+    BeforeUnload,
+    ConfirmModal
 } from "@labkey/components";
-import {ActionURL, Domain, getServerContext} from "@labkey/api";
+import { ActionURL, Domain, getServerContext } from "@labkey/api";
 
 import "@labkey/components/dist/components.css"
 
