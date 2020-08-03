@@ -1443,7 +1443,9 @@ abstract public class PipelineJob extends Job implements Serializable
             var abstractConfig = (AbstractConfiguration) config;
             abstractConfig.removeAppender("SafeFile");
             ctx.updateLoggers();
-            _jobAppenders.get(loggerName).setJob(null);
+            SafeFileAppender appender = _jobAppenders.get(loggerName);
+            appender.setJob(null);
+            appender.stop();
             _jobAppenders.remove(loggerName);
             _logger = null;
         }
