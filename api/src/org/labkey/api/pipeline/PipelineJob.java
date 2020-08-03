@@ -33,6 +33,7 @@ import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.appender.FileAppender;
+import org.apache.logging.log4j.core.config.AbstractConfiguration;
 import org.apache.logging.log4j.core.config.AppenderRef;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
@@ -286,8 +287,6 @@ abstract public class PipelineJob extends Job implements Serializable
     private transient PipelineQueue _queue;
     private File _logFile;
     private LocalDirectory _localDirectory;
-
-    private SafeFileAppender _jobAppender;
 
     // Default constructor for serialization
     protected PipelineJob()
@@ -1407,7 +1406,6 @@ abstract public class PipelineJob extends Job implements Serializable
             String appenderName = "SafeFile";
             Layout<? extends Serializable> layout = PatternLayout.newBuilder().withPattern("%d{DATE} %-5p: %m%n").build();
             SafeFileAppender appender = SafeFileAppender.createAppender(appenderName, false, layout, null, logFile, this);
-            _jobAppender = appender;
             appender.start();
             config.addAppender(appender);
 
@@ -1437,11 +1435,11 @@ abstract public class PipelineJob extends Job implements Serializable
             final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
             final Configuration config = ctx.getConfiguration();
             String loggerName = PipelineJob.class.getSimpleName() + ".Logger." + _logFilePathName;
-            config.getLoggerConfig(loggerName).removeAppender("SafeFile");
             config.removeLogger(loggerName);
+            var abstractConfig = (AbstractConfiguration) config;
+            abstractConfig.removeAppender("SafeFile");
             ctx.updateLoggers();
             _logger = null;
-            _jobAppender.setJob(null);
         }
     }
 
