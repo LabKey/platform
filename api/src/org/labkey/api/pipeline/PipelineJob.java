@@ -287,6 +287,8 @@ abstract public class PipelineJob extends Job implements Serializable
     private File _logFile;
     private LocalDirectory _localDirectory;
 
+    private SafeFileAppender _jobAppender;
+
     // Default constructor for serialization
     protected PipelineJob()
     {
@@ -813,6 +815,7 @@ abstract public class PipelineJob extends Job implements Serializable
                 logStartStopInfo((success ? "Successfully completed" : "Failed to complete") + " task '" + factory.getId() + "' for job '" + toString() + "' with log file " + getLogFile());
                 // remove temporary logger created for the job
                 removeLogger();
+
                 try
                 {
                     if (workDirectory != null)
@@ -1403,7 +1406,8 @@ abstract public class PipelineJob extends Job implements Serializable
             // Programmatically adding appender and logger config to log4j2 config
             String appenderName = "SafeFile";
             Layout<? extends Serializable> layout = PatternLayout.newBuilder().withPattern("%d{DATE} %-5p: %m%n").build();
-            Appender appender = SafeFileAppender.createAppender(appenderName, false, layout, null, logFile, this);
+            SafeFileAppender appender = SafeFileAppender.createAppender(appenderName, false, layout, null, logFile, this);
+            _jobAppender = appender;
             appender.start();
             config.addAppender(appender);
 
@@ -1437,6 +1441,7 @@ abstract public class PipelineJob extends Job implements Serializable
             config.removeLogger(loggerName);
             ctx.updateLoggers();
             _logger = null;
+            _jobAppender.setJob(null);
         }
     }
 

@@ -186,4 +186,13 @@ public class SafeFileAppender extends AbstractAppender
         }
     }
 
+    public PipelineJob getJob()
+    {
+        return _job;
+    }
+
+    public void setJob(PipelineJob job)
+    {
+        _job = job;
+    }
 }
