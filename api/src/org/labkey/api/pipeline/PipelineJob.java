@@ -67,6 +67,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.PrintWriters;
 import org.quartz.CronExpression;
+import org.springframework.util.ConcurrentReferenceHashMap;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -287,6 +288,8 @@ abstract public class PipelineJob extends Job implements Serializable
     private transient PipelineQueue _queue;
     private File _logFile;
     private LocalDirectory _localDirectory;
+
+    private Map<String, SafeFileAppender> _jobAppenders = new ConcurrentReferenceHashMap<>(16, ConcurrentReferenceHashMap.ReferenceType.WEAK);
 
     // Default constructor for serialization
     protected PipelineJob()
@@ -1416,6 +1419,7 @@ abstract public class PipelineJob extends Job implements Serializable
             loggerConfig.addAppender(appender, null, null);
             config.addLogger(loggerName, loggerConfig);
             ctx.updateLoggers();
+            _jobAppenders.put(loggerName, appender);
 
             // Now that the log4j2 config contains the logger, access the logger through LogManager
             _logger = LogManager.getLogger(loggerName);
@@ -1439,6 +1443,8 @@ abstract public class PipelineJob extends Job implements Serializable
             var abstractConfig = (AbstractConfiguration) config;
             abstractConfig.removeAppender("SafeFile");
             ctx.updateLoggers();
+            _jobAppenders.get(loggerName).setJob(null);
+            _jobAppenders.remove(loggerName);
             _logger = null;
         }
     }
