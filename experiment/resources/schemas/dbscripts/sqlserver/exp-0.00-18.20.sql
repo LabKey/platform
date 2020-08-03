@@ -1210,8 +1210,6 @@ CREATE TABLE exp.Edge
 
 /* exp-18.10-18.20.sql */
 
-EXEC core.executeJavaUpgradeCode 'rebuildAllEdges';
-
 ALTER TABLE exp.PropertyDescriptor
   ADD TextExpression nvarchar(200) NULL
 
