@@ -2,10 +2,8 @@
 
 announcements/module.properties -text
 announcements/resources/schemas/comm.xml -text
-announcements/resources/schemas/dbscripts/postgresql/comm-18.10-18.20.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-create.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-drop.sql -text
-announcements/resources/schemas/dbscripts/sqlserver/comm-18.10-18.20.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-drop.sql -text
 announcements/src/org/labkey/announcements/announcementListLinkBar.jsp -text
 announcements/src/org/labkey/announcements/AnnouncementModule.java -text
@@ -1493,7 +1491,6 @@ api/src/org/labkey/api/util/StringUtilsLabKey.java -text
 api/src/org/labkey/api/util/SubstitutionFormat.java -text
 api/src/org/labkey/api/util/SystemMaintenance.java -text
 api/src/org/labkey/api/util/SystemMaintenanceJob.java -text
-api/src/org/labkey/api/util/Taintable.java -text
 api/src/org/labkey/api/util/ThumbnailUtil.java -text
 api/src/org/labkey/api/util/TimeOnlyDate.java -text
 api/src/org/labkey/api/util/UnexpectedException.java -text
@@ -2154,13 +2151,9 @@ devtools/src/org/labkey/devtools/view/tags.jsp -text
 experiment/module.properties -text
 experiment/resources/queries/exp/RunGroups/NameOnly.qview.xml -text
 experiment/resources/queries/exp/SampleSets/NameOnly.qview.xml -text
-experiment/resources/schemas/dbscripts/postgresql/exp-18.10-18.20.sql -text
-experiment/resources/schemas/dbscripts/postgresql/exp-18.11-18.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-18.20-18.30.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
-experiment/resources/schemas/dbscripts/sqlserver/exp-18.10-18.20.sql -text
-experiment/resources/schemas/dbscripts/sqlserver/exp-18.11-18.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-18.20-18.30.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-drop.sql -text
 experiment/resources/schemas/exp.xml -text
@@ -2894,12 +2887,10 @@ pipeline/src/org/labkey/pipeline/setup.jsp -text
 pipeline/src/org/labkey/pipeline/startPipelineImport.jsp -text
 pipeline/src/org/labkey/pipeline/status/DescriptionDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/enterprisePipelineAdmin.jsp -text
-pipeline/src/org/labkey/pipeline/status/escalateJobFailure.jsp -text
 pipeline/src/org/labkey/pipeline/status/FileDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/JobDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/JobStatusLogView.java -text
 pipeline/src/org/labkey/pipeline/status/PipelineQueryView.java -text
-pipeline/src/org/labkey/pipeline/status/ProviderButtonBar.java -text
 pipeline/src/org/labkey/pipeline/status/StatusController.java -text
 pipeline/src/org/labkey/pipeline/status/StatusDataRegion.java -text
 pipeline/src/org/labkey/pipeline/trigger/PipelineTriggerManager.java -text

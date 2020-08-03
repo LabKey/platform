@@ -15,8 +15,6 @@
  */
 package org.labkey.core;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.SystemUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -45,8 +43,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.NetworkDriveProps;
-import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
@@ -87,72 +83,6 @@ public class CoreUpgradeCode implements UpgradeCode
     public void handleUnknownModules(ModuleContext context)
     {
         ModuleLoader.getInstance().handleUnkownModules();
-    }
-
-    /**
-     * Invoked from 18.10-18.11 to migrate mapped drive settings to an encrypted property store.
-     */
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void encryptMappedDrivePassword(final ModuleContext context)
-    {
-        if (!context.isNewInstall() && SystemUtils.IS_OS_WINDOWS)
-        {
-            WritableNetworkProps props = new WritableNetworkProps();
-
-            String driveLetter = props.getStringValue(WritableNetworkProps.NETWORK_DRIVE_LETTER);
-            String drivePath = props.getStringValue(WritableNetworkProps.NETWORK_DRIVE_PATH);
-            String user = props.getStringValue(WritableNetworkProps.NETWORK_DRIVE_USER);
-            String password = props.getStringValue(WritableNetworkProps.NETWORK_DRIVE_PASSWORD);
-
-            if (StringUtils.isNotBlank(driveLetter) || StringUtils.isNotBlank(drivePath) || StringUtils.isNotBlank(user) || StringUtils.isNotBlank(password))
-            {
-                // we won't blow up on upgrade if the encryption key isn't specified but we will drop any
-                // existing mapped drive settings and force them to re-add them
-                if (Encryption.isMasterEncryptionPassPhraseSpecified())
-                {
-                    NetworkDriveProps.setNetworkDriveLetter(driveLetter);
-                    NetworkDriveProps.setNetworkDrivePath(drivePath);
-                    NetworkDriveProps.setNetworkDriveUser(user);
-                    NetworkDriveProps.setNetworkDrivePassword(password);
-                }
-                else
-                {
-                    LOG.warn("Master encryption key not specified, unable to migrate saved network drive settings");
-                }
-                // clear out the legacy settings
-                props.clearNetworkSettings();
-                props.save(context.getUpgradeUser());
-            }
-        }
-    }
-
-    /**
-     * Helper class to access legacy network settings so we can remove the old API methods immediately
-     */
-    private static class WritableNetworkProps extends WriteableAppProps
-    {
-        static final String NETWORK_DRIVE_LETTER = "networkDriveLetter";
-        static final String NETWORK_DRIVE_PATH = "networkDrivePath";
-        static final String NETWORK_DRIVE_USER = "networkDriveUser";
-        static final String NETWORK_DRIVE_PASSWORD = "networkDrivePassword";
-
-        public WritableNetworkProps()
-        {
-            super(ContainerManager.getRoot());
-        }
-
-        public void clearNetworkSettings()
-        {
-            remove(NETWORK_DRIVE_LETTER);
-            remove(NETWORK_DRIVE_PATH);
-            remove(NETWORK_DRIVE_USER);
-            remove(NETWORK_DRIVE_PASSWORD);
-        }
-
-        public String getStringValue(String key)
-        {
-            return lookupStringValue(key, "");
-        }
     }
 
     /**
