@@ -80,6 +80,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -2814,8 +2815,8 @@ public class SecurityManager
         // hide showRegistrationEmail link if provider is specified for now
         if (messageContentsURL != null && provider == null)
         {
-            String href = "<a href=" + PageFlowUtil.filter(messageContentsURL) + " target=\"_blank\">here</a>";
-            message.append(" Click ").append(href).append(" to see the email.");
+            LinkBuilder link = new LinkBuilder("here").href(messageContentsURL).target("_blank").clearClasses();
+            message.append(" Click ").append(link).append(" to see the email.");
         }
 
         return message.getHtmlString();
