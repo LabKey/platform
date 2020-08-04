@@ -1500,7 +1500,7 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             String formattedDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").format(new Date());
 
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(_file, true)))
+            try (PrintWriter writer = new PrintWriter(new FileWriter(_file, true)))
             {
                 String line = formattedDate +
                         " " +
@@ -1511,15 +1511,7 @@ abstract public class PipelineJob extends Job implements Serializable
                 writer.write(LINE_SEP);
                 if (null != t)
                 {
-                    StackTraceElement[] stackTraceElements = t.getStackTrace();
-                    if (stackTraceElements != null)
-                    {
-                        for (StackTraceElement stackTraceElement : stackTraceElements)
-                        {
-                            writer.write(stackTraceElement.toString());
-                            writer.write(LINE_SEP);
-                        }
-                    }
+                    t.printStackTrace(writer);
                 }
             }
             catch (IOException e)
