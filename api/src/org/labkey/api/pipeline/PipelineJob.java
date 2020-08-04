@@ -1498,13 +1498,12 @@ abstract public class PipelineJob extends Job implements Serializable
 
         public void write(String message, @Nullable Throwable t, String level)
         {
-            String formattedDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").format(new Date());
+            String formattedDate = new SimpleDateFormat("dd MMM yyyy HH:mm:ss,SSS").format(new Date());
 
             try (PrintWriter writer = new PrintWriter(new FileWriter(_file, true)))
             {
-                String line = formattedDate +
-                        " " +
-                        level +
+                var line = formattedDate + " " +
+                        String.format("%-5s", level) +
                         " : " +
                         message;
                 writer.write(line);
