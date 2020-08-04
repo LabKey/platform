@@ -71,7 +71,7 @@ public class StatementUtils
     // configuration parameters
     private Operation _operation = Operation.insert;
     private SqlDialect _dialect;
-    private TableInfo _table;
+    private TableInfo _targetTable;
     private Set<String> _keyColumnNames = null;       // override the primary key of _table
     private Set<String> _skipColumnNames = null;
     private Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
@@ -97,7 +97,7 @@ public class StatementUtils
     {
         _operation = op;
         _dialect = table.getSqlDialect();
-        _table = table;
+        _targetTable = table;
     }
 
     public StatementUtils dialect(SqlDialect dialect)
@@ -465,10 +465,10 @@ public class StatementUtils
 
     public ParameterMapStatement createStatement(Connection conn, @Nullable Container c, User user) throws SQLException
     {
-        if (!(_table instanceof UpdateableTableInfo))
+        if (!(_targetTable instanceof UpdateableTableInfo))
             throw new IllegalArgumentException("Table must be an UpdateableTableInfo");
 
-        UpdateableTableInfo updatable = (UpdateableTableInfo)_table;
+        UpdateableTableInfo updatable = (UpdateableTableInfo) _targetTable;
         TableInfo table = updatable.getSchemaTableInfo();
 
         if (table.getTableType() != DatabaseTableType.TABLE || null == table.getMetaDataName())
@@ -534,8 +534,17 @@ public class StatementUtils
                 keys.put(col.getFieldKey(), col);
             else
             {
-                for (ColumnInfo pk : _table.getPkColumns())
-                    keys.put(pk.getFieldKey(), pk);
+                // see 26661 and 41053
+                // NOTE: IMO we should not be using updatable.getPkColumns() here! If the caller doesn't want to use the
+                // 'real' PK from the SchemaTableInfo for update/merge, then the alternate keys should be explicitly specified
+                // using StatementUtils.keys()
+                for (String pkName : updatable.getPkColumnNames())
+                {
+                    col = table.getColumn(pkName);
+                    if (null == col)
+                        throw new IllegalStateException("pk column not found: " + pkName);
+                    keys.put(col.getFieldKey(), col);
+                }
             }
         }
 
@@ -550,8 +559,8 @@ public class StatementUtils
         SQLFragment sqlfObjectProperty = new SQLFragment();
         SQLFragment sqlfDelete = new SQLFragment();
 
-        Domain domain = _table.getDomain();
-        DomainKind domainKind = _table.getDomainKind();
+        Domain domain = updatable.getDomain();
+        DomainKind domainKind = updatable.getDomainKind();
         List<? extends DomainProperty> properties = Collections.emptyList();
 
         boolean hasObjectURIColumn = objectURIColumnName != null && table.getColumn(objectURIColumnName) != null;

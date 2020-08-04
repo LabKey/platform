@@ -114,6 +114,7 @@ public class WrappedColumnInfo
             @Override
             public String getSelectName()
             {
+                assert getParentTable() instanceof SchemaTableInfo : "Use getValueSql()";
                 return sourceColumnInfo.getSelectName();
             }
 
