@@ -51,6 +51,7 @@ import javax.servlet.ServletException;
 import javax.sql.DataSource;
 import javax.sql.PooledConnection;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -61,6 +62,7 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -79,6 +81,7 @@ import java.util.Random;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -342,7 +345,7 @@ public class DbScope
 
             _dsName = dsName;
             _displayName = null != props.getDisplayName() ? props.getDisplayName() : extractDisplayName(_dsName);
-            _dataSource = dataSource;
+            _dataSource = new NonBlockingDataSource(dataSource);
             _databaseName = _dialect.getDatabaseName(_dsProps);
             _URL = dbmd.getURL();
             _databaseProductName = dbmd.getDatabaseProductName();
@@ -2797,5 +2800,157 @@ public class DbScope
             }
         }
     }
-}
 
+
+    /**
+     *  Implements a JDBC DataSource with a timeout for getConnection() without replying on the implementation
+     *  of the wrapped datasource.
+     *
+     *  Additional ideas to consider:
+     *    + Blocking/rejecting requests if connection pool is exhausted
+     *    + Shorter time out for threads that are already holding on to one or more connections
+     */
+    class NonBlockingDataSource implements DataSource, Runnable
+    {
+        final DataSource _ds;
+        final ArrayBlockingQueue<Object> _q;
+        final Thread _t;
+
+        NonBlockingDataSource(DataSource ds)
+        {
+            _ds = ds;
+            // queue contains either an Connection or an Exception
+            _q = new ArrayBlockingQueue<>(1);
+
+            _t = new Thread(this);
+            _t.setDaemon(true);
+            _t.start();
+        }
+
+        @Override
+        public Connection getConnection() throws SQLException
+        {
+            return getConnection(60_000);
+        }
+
+        public Connection getConnection(long timeout) throws SQLException
+        {
+            try
+            {
+                Object o = _q.poll(timeout, TimeUnit.MILLISECONDS);
+                if (o instanceof Exception)
+                    throw (Exception) o;
+                if (o instanceof Connection)
+                    return (Connection) o;
+                throw new ConnectionPoolTimeoutException();
+            }
+            catch (SQLException x)
+            {
+                throw x;
+            }
+            catch (Exception x)
+            {
+                throw UnexpectedException.wrap(x);
+            }
+        }
+
+        @Override
+        public Connection getConnection(String username, String password) throws SQLException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public PrintWriter getLogWriter() throws SQLException
+        {
+            return _ds.getLogWriter();
+        }
+
+        @Override
+        public void setLogWriter(PrintWriter out) throws SQLException
+        {
+            _ds.setLogWriter(out);
+        }
+
+        @Override
+        public void setLoginTimeout(int seconds) throws SQLException
+        {
+            _ds.setLoginTimeout(seconds);
+        }
+
+        @Override
+        public int getLoginTimeout() throws SQLException
+        {
+            return _ds.getLoginTimeout();
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> iface) throws SQLException
+        {
+            return _ds.unwrap(iface);
+        }
+
+        @Override
+        public boolean isWrapperFor(Class<?> iface) throws SQLException
+        {
+            return _ds.isWrapperFor(iface);
+        }
+
+        @Override
+        public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException
+        {
+            return _ds.getParentLogger();
+        }
+
+        // background thread that prefetches connections
+
+        @Override
+        public void run()
+        {
+            while (true)
+            {
+                Connection c = null;
+                try
+                {
+                    c = _ds.getConnection();
+                    _q.put(c);
+                    c = null;
+                }
+                catch (InterruptedException x)
+                {
+                    if (null != c)
+                    {
+                        try
+                        {
+                            c.close();
+                        }
+                        catch (SQLException closex)
+                        {
+                            LOG.info(closex);
+                        }
+                    }
+                }
+                catch (Exception x)
+                {
+                    try
+                    {
+                        _q.put(x);
+                    }
+                    catch (InterruptedException putx)
+                    {
+                        /* pass */
+                    }
+                }
+            }
+        }
+    }
+
+
+    public static class ConnectionPoolTimeoutException extends SQLException
+    {
+        ConnectionPoolTimeoutException()
+        {
+            super("Timeout waiting for connection");
+        }
+    }
+}
