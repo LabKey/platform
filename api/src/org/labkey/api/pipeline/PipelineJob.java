@@ -296,6 +296,8 @@ abstract public class PipelineJob extends Job implements Serializable
     protected transient Logger _logger;
     private transient boolean _settingStatus;
     private transient PipelineQueue _queue;
+    private transient Map<String, SafeFileAppender> _jobAppenders = new ConcurrentReferenceHashMap<>(16, ConcurrentReferenceHashMap.ReferenceType.WEAK);
+
     private File _logFile;
     private LocalDirectory _localDirectory;
 
@@ -1425,6 +1427,7 @@ abstract public class PipelineJob extends Job implements Serializable
             loggerConfig.addAppender(appender, null, null);
             config.addLogger(loggerName, loggerConfig);
             ctx.updateLoggers();
+            _jobAppenders.put(loggerName, appender);
 
             // Now that the log4j2 config contains the logger, access the logger through LogManager
             _logger = LogManager.getLogger(loggerName);
@@ -1439,9 +1442,12 @@ abstract public class PipelineJob extends Job implements Serializable
      * */
     public synchronized void removeLogger()
     {
+
         final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
         final Configuration config = ctx.getConfiguration();
         String loggerName = PipelineJob.class.getSimpleName() + ".Logger." + _logFilePathName;
+        _jobAppenders.get(loggerName).setJob(null);
+        _jobAppenders.remove(loggerName);
         config.removeLogger(loggerName);
         var abstractConfig = (AbstractConfiguration) config;
         config.getAppender("SafeFile").stop();
