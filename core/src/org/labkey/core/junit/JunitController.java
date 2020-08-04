@@ -26,6 +26,7 @@ import org.json.JSONObject;
 import org.junit.runner.notification.Failure;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.PermissionCheckableAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -422,10 +423,10 @@ public class JunitController extends SpringActionController
     }
 
     @RequiresSiteAdmin
-    public static class Go extends SimpleViewAction<TestForm>
+    public static class GoAction extends MutatingApiAction<TestForm>
     {
         @Override
-        public ModelAndView getView(TestForm form, BindException errors) throws Exception
+        public Object execute(TestForm form, BindException errors) throws Exception
         {
             TestContext.setTestContext(getViewContext().getRequest(), getUser());
 
@@ -436,9 +437,8 @@ public class JunitController extends SpringActionController
             Class clazz = findTestClass(form.getTestCase());
             JunitRunner.RunnerResult result = JunitRunner.run(clazz);
 
-            int status = HttpServletResponse.SC_OK;
             if (!result.junitResult.wasSuccessful())
-                status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+                getViewContext().getResponse().setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
             Map<String, Object> map = new HashMap<>();
 
@@ -460,20 +460,7 @@ public class JunitController extends SpringActionController
             }
             map.put("timers", timers);
 
-            JSONObject json = new JSONObject(map);
-
-            HttpServletResponse response = getViewContext().getResponse();
-            response.reset();
-            response.setStatus(status);
-
-            PrintWriter out = response.getWriter();
-            response.setContentType("application/json");
-            response.setCharacterEncoding("utf-8");
-
-            out.append(json.toString(4));
-            response.flushBuffer();
-
-            return null;
+            return new ApiSimpleResponse(map);
         }
 
         private static List<Map<String, Object>> toList(List<Failure> failures)
@@ -492,11 +479,6 @@ public class JunitController extends SpringActionController
             }
 
             return list;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
         }
     }
 

@@ -1066,6 +1066,12 @@ public class ExceptionUtil
                 {
                     return user;
                 }
+
+                @Override
+                public String getMethod()
+                {
+                    return "GET";
+                }
             };
             ExceptionUtil.decorateException(ex, ExceptionInfo.SkipMothershipLogging, "true", true);
             ActionURL url = ExceptionUtil.handleException(req, res, ex, message, false, dummySearch, dummyLog);
