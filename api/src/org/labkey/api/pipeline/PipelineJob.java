@@ -22,10 +22,15 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Appender;
+import org.apache.log4j.Category;
+import org.apache.log4j.spi.HierarchyEventListener;
+import org.apache.log4j.spi.LoggerFactory;
+import org.apache.log4j.spi.LoggerRepository;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.Core;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.Layout;
@@ -43,6 +48,9 @@ import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.apache.logging.log4j.simple.SimpleLogger;
+import org.apache.logging.log4j.spi.LoggerRegistry;
+import org.apache.logging.log4j.util.PropertiesUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
@@ -85,9 +93,11 @@ import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -816,7 +826,7 @@ abstract public class PipelineJob extends Job implements Serializable
                 getLogger().info((success ? "Successfully completed" : "Failed to complete") + " task '" + factory.getId() + "'");
                 logStartStopInfo((success ? "Successfully completed" : "Failed to complete") + " task '" + factory.getId() + "' for job '" + toString() + "' with log file " + getLogFile());
                 // remove temporary logger created for the job
-                removeLogger();
+//                removeLogger();
 
                 try
                 {
@@ -1387,6 +1397,161 @@ abstract public class PipelineJob extends Job implements Serializable
         }
     }
 
+    private static class OutputLogger extends SimpleLogger
+    {
+        private final PipelineJob _job;
+        private boolean _isSettingStatus;
+        private File _file;
+        private final String LINE_SEP = System.getProperty("line.separator");
+
+        protected OutputLogger(PipelineJob job, File file, String name, Level level)
+        {
+            super(name, level, false, false, false, false, "", null, new PropertiesUtil(PropertiesUtil.getSystemProperties()), null);
+
+            _job = job;
+            _file = file;
+
+        }
+
+        @Override
+        public void debug(String message)
+        {
+            _job.getClassLogger().debug(getSystemLogMessage(message));
+            write(message, null);
+        }
+
+        @Override
+        public void debug(String message, @Nullable Throwable t)
+        {
+            _job.getClassLogger().debug(getSystemLogMessage(message), t);
+            write(message, t);
+        }
+
+        @Override
+        public void info(String message)
+        {
+            _job.getClassLogger().info(getSystemLogMessage(message));
+            write(message, null);
+        }
+
+        @Override
+        public void info(String message, @Nullable Throwable t)
+        {
+            _job.getClassLogger().info(getSystemLogMessage(message), t);
+            write(message, t);
+        }
+
+        @Override
+        public void warn(String message)
+        {
+            _job.getClassLogger().warn(getSystemLogMessage(message));
+            write(message, null);
+        }
+
+        @Override
+        public void warn(String message, @Nullable Throwable t)
+        {
+            _job.getClassLogger().warn(getSystemLogMessage(message), t);
+            write(message, t);
+        }
+
+        @Override
+        public void error(String message)
+        {
+            _job.getClassLogger().error(getSystemLogMessage(message));
+            write(message, null);
+        }
+
+        @Override
+        public void error(String message, @Nullable Throwable t)
+        {
+            _job.getClassLogger().error(getSystemLogMessage(message), t);
+            write(message, t);
+            setErrorStatus(message);
+        }
+
+        @Override
+        public void fatal(String message)
+        {
+            _job.getClassLogger().fatal(getSystemLogMessage(message));
+            write(message, null);
+        }
+
+        @Override
+        public void fatal(String message, Throwable t)
+        {
+            _job.getClassLogger().fatal(getSystemLogMessage(message), t);
+            write(message, t);
+            setErrorStatus(message);
+        }
+
+        private String getSystemLogMessage(Object message)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append("(from pipeline job log file ");
+            sb.append(_job.getLogFile().getPath());
+            if (message != null)
+            {
+                sb.append(": ");
+                String stringMessage = message.toString();
+                // Limit the maximum line length
+                final int maxLength = 10000;
+                if (stringMessage.length() > maxLength)
+                {
+                    stringMessage = stringMessage.substring(0, maxLength) + "...";
+                }
+                sb.append(stringMessage);
+            }
+            sb.append(")");
+            return sb.toString();
+        }
+
+        public void setErrorStatus(Object message)
+        {
+            if (_isSettingStatus)
+                return;
+
+            _isSettingStatus = true;
+            try
+            {
+                _job.setStatus(TaskStatus.error, message == null ? "ERROR" : message.toString());
+            }
+            finally
+            {
+                _isSettingStatus = false;
+            }
+        }
+
+        public void write(String message, @Nullable Throwable t)
+        {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(_file, true)))
+            {
+                writer.write(message);
+                writer.write(LINE_SEP);
+                if (null != t)
+                {
+                    StackTraceElement[] stackTraceElements = t.getStackTrace();
+                    if (stackTraceElements != null)
+                    {
+                        for (StackTraceElement stackTraceElement : stackTraceElements)
+                        {
+                            writer.write(stackTraceElement.toString());
+                            writer.write(LINE_SEP);
+                        }
+                    }
+                }
+            }
+            catch (IOException e)
+            {
+                File parentFile = _file.getParentFile();
+                if (parentFile != null && !NetworkDrive.exists(parentFile) && parentFile.mkdirs())
+                    write(message, t);
+                else
+                    _log.error("Failed appending to file.", e);
+            }
+        }
+    }
+
     public Logger getClassLogger()
     {
         return _log;
@@ -1402,27 +1567,27 @@ abstract public class PipelineJob extends Job implements Serializable
 
             File logFile = null != _logFile ? _logFile : new File(_logFilePathName);
             // Create appending logger.
-            final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-            final Configuration config = ctx.getConfiguration();
-
-            // Programmatically adding appender and logger config to log4j2 config
-            String appenderName = "SafeFile";
-            Layout<? extends Serializable> layout = PatternLayout.newBuilder().withPattern("%d{DATE} %-5p: %m%n").build();
-            SafeFileAppender appender = SafeFileAppender.createAppender(appenderName, false, layout, null, logFile, this);
-            appender.start();
-            config.addAppender(appender);
-
-            AppenderRef ref = AppenderRef.createAppenderRef(appenderName, null, null);
-            AppenderRef[] refs = new AppenderRef[] {ref};
+//            final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+//            final Configuration config = ctx.getConfiguration();
+//
+//            // Programmatically adding appender and logger config to log4j2 config
+//            String appenderName = "SafeFile";
+//            Layout<? extends Serializable> layout = PatternLayout.newBuilder().withPattern("%d{DATE} %-5p: %m%n").build();
+//            SafeFileAppender appender = SafeFileAppender.createAppender(appenderName, false, layout, null, logFile, this);
+//            appender.start();
+//            config.addAppender(appender);
+//
+//            AppenderRef ref = AppenderRef.createAppenderRef(appenderName, null, null);
+//            AppenderRef[] refs = new AppenderRef[] {ref};
             String loggerName = PipelineJob.class.getSimpleName() + ".Logger." + _logFilePathName;
-            LoggerConfig loggerConfig = LoggerConfig.createLogger(false, Level.toLevel(_loggerLevel), loggerName, "true", refs, null, config, null );
-            loggerConfig.addAppender(appender, null, null);
-            config.addLogger(loggerName, loggerConfig);
-            ctx.updateLoggers();
-            _jobAppenders.put(loggerName, appender);
+//            LoggerConfig loggerConfig = LoggerConfig.createLogger(false, Level.toLevel(_loggerLevel), loggerName, "true", refs, null, config, null );
+//            loggerConfig.addAppender(appender, null, null);
+//            config.addLogger(loggerName, loggerConfig);
+//            ctx.updateLoggers();
+//            _jobAppenders.put(loggerName, appender);
 
             // Now that the log4j2 config contains the logger, access the logger through LogManager
-            _logger = LogManager.getLogger(loggerName);
+            _logger = new OutputLogger(this, logFile, loggerName, Level.toLevel(_loggerLevel));
         }
 
         return _logger;
