@@ -195,4 +195,10 @@ public class SafeFileAppender extends AbstractAppender
     {
         _job = job;
     }
+
+
+    public void setJobLogger(Logger jobLogger)
+    {
+        _jobLogger = jobLogger;
+    }
 }

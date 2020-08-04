@@ -1422,8 +1422,10 @@ abstract public class PipelineJob extends Job implements Serializable
             appender.start();
             config.addAppender(appender);
 
+            AppenderRef ref = AppenderRef.createAppenderRef(appenderName, null, null);
+            AppenderRef[] refs = new AppenderRef[] {ref};
             String loggerName = PipelineJob.class.getSimpleName() + ".Logger." + _logFilePathName;
-            LoggerConfig loggerConfig = new LoggerConfig(loggerName, Level.toLevel(_loggerLevel), true);
+            LoggerConfig loggerConfig = LoggerConfig.createLogger(false, Level.toLevel(_loggerLevel), loggerName, "true", refs, null, config, null );
             loggerConfig.addAppender(appender, null, null);
             config.addLogger(loggerName, loggerConfig);
             ctx.updateLoggers();
@@ -1446,7 +1448,9 @@ abstract public class PipelineJob extends Job implements Serializable
         final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
         final Configuration config = ctx.getConfiguration();
         String loggerName = PipelineJob.class.getSimpleName() + ".Logger." + _logFilePathName;
-        _jobAppenders.get(loggerName).setJob(null);
+        SafeFileAppender appender = _jobAppenders.get(loggerName);
+        appender.setJob(null);
+        appender.setJobLogger(null);
         _jobAppenders.remove(loggerName);
         config.removeLogger(loggerName);
         var abstractConfig = (AbstractConfiguration) config;
