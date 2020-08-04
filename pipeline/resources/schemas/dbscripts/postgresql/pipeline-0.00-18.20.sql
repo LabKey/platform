@@ -127,3 +127,19 @@ CREATE TABLE pipeline.TriggerConfigurations
 /* pipeline-17.30-18.10.sql */
 
 ALTER TABLE pipeline.TriggerConfigurations ADD COLUMN customConfiguration TEXT;
+
+/* pipeline-18.10-18.20.sql */
+
+CREATE TABLE pipeline.TriggeredFiles
+(
+  RowId SERIAL NOT NULL,
+  Container ENTITYID NOT NULL,
+  TriggerId INTEGER NOT NULL,
+  FilePath VARCHAR(1000) NOT NULL,
+  LastRun TIMESTAMP,
+
+  CONSTRAINT PK_TriggeredFiles PRIMARY KEY (RowId),
+  CONSTRAINT FK_TriggeredFiles_TriggerId FOREIGN KEY (TriggerId) REFERENCES pipeline.TriggerConfigurations(RowId),
+  CONSTRAINT FK_TriggeredFiles_Container FOREIGN KEY (Container) REFERENCES core.Containers (ENTITYID),
+  CONSTRAINT UQ_TriggeredFiles_Container_TriggerId_FilePath UNIQUE (Container, TriggerId, FilePath)
+);

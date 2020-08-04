@@ -15,6 +15,9 @@
  */
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.api.ExpObject;
+
 public class MaterialProtocolInput extends AbstractProtocolInput
 {
     protected Integer _materialSourceId;
@@ -33,5 +36,11 @@ public class MaterialProtocolInput extends AbstractProtocolInput
     public String getObjectType()
     {
         return ExpMaterialImpl.DEFAULT_CPAS_TYPE;
+    }
+
+    @Override
+    public @Nullable ExpMaterialProtocolInputImpl getExpObject()
+    {
+        return new ExpMaterialProtocolInputImpl(this);
     }
 }
