@@ -49,6 +49,7 @@ import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,6 +58,8 @@ import java.util.stream.Collectors;
 
 public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> implements ExpProtocol
 {
+    private List<ExpProtocolActionImpl> _actions;
+
     // For serialization
     protected ExpProtocolImpl() {}
 
@@ -189,7 +192,11 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
     @Override
     public List<ExpProtocolActionImpl> getSteps()
     {
-        return ExpProtocolActionImpl.fromProtocolActions(ExperimentServiceImpl.get().getProtocolActions(getRowId()));
+        if (_actions == null)
+        {
+            _actions = Collections.unmodifiableList(ExpProtocolActionImpl.fromProtocolActions(ExperimentServiceImpl.get().getProtocolActions(getRowId())));
+        }
+        return _actions;
     }
 
     @Override

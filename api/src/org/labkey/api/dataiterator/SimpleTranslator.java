@@ -157,14 +157,18 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         private final boolean _includeTitleColumn;
         private final RemapMissingBehavior _missing;
 
+        private final boolean _allowBulkLoads;
+        private final Set<Pair<ColumnInfo, ColumnInfo>> _bulkLoads = new HashSet<>();
+
         private List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>>> _maps = null;
         private Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>> _titleColumnLookupMap = null;
 
-        public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn, RemapMissingBehavior missing)
+        public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn, RemapMissingBehavior missing, boolean allowBulkLoads)
         {
             _targetTable = targetTable;
             _includeTitleColumn = includeTitleColumn;
             _missing = missing;
+            _allowBulkLoads = allowBulkLoads;
         }
 
         private List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>>> getMaps()
@@ -262,9 +266,24 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
             else
             {
-                TableSelector ts = createSelector(pkCol, altKeyCol, k);
-                ts.fillMultiValuedMap(map);
-                vs = map.get(k);
+                Collection<Object> bulkLoaded = null;
+                if (_allowBulkLoads && _bulkLoads.add(Pair.of(pkCol, altKeyCol)))
+                {
+                    TableSelector bulkSelector = createSelector(pkCol, altKeyCol);
+                    bulkSelector.fillMultiValuedMap(map);
+                    bulkLoaded = map.get(k);
+                }
+
+                if (bulkLoaded == null)
+                {
+                    TableSelector ts = createSelector(pkCol, altKeyCol, k);
+                    ts.fillMultiValuedMap(map);
+                    vs = map.get(k);
+                }
+                else
+                {
+                    vs = bulkLoaded;
+                }
 
                 // ArrayListValuedHashMap returns an empty collection if 'k' is not in the map.
                 // If there are no values in the database, stash a MISS marker to avoid re-fetching.
@@ -280,10 +299,19 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             return v;
         }
 
+        private TableSelector createSelector(ColumnInfo pkCol, ColumnInfo altKeyCol)
+        {
+            return createSelector(pkCol, altKeyCol, new SimpleFilter());
+        }
+
         private TableSelector createSelector(ColumnInfo pkCol, ColumnInfo altKeyCol, Object value)
         {
-            SimpleFilter filter = new SimpleFilter(altKeyCol.getFieldKey(), value);
-            return new TableSelector(_targetTable, Arrays.asList(altKeyCol, pkCol), filter, null);
+            return createSelector(pkCol, altKeyCol, new SimpleFilter(altKeyCol.getFieldKey(), value));
+        }
+
+        private TableSelector createSelector(ColumnInfo pkCol, ColumnInfo altKeyCol, SimpleFilter filter)
+        {
+            return new TableSelector(_targetTable, Arrays.asList(altKeyCol, pkCol), filter, null).setMaxRows(1_000_000);
         }
 
 
@@ -709,7 +737,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             _toCol = toCol;
             _missing = missing;
             _includeTitleColumn = includeTitleColumn;
-            _remapper = new RemapPostConvert(_toCol.getFkTableInfo(), _includeTitleColumn, _missing);
+            _remapper = new RemapPostConvert(_toCol.getFkTableInfo(), _includeTitleColumn, _missing, false);
         }
 
         @Override

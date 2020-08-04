@@ -15,8 +15,10 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.IdentifiableBase;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.IdentifiableBase;
 
 import java.util.Date;
 
@@ -155,4 +157,9 @@ public class ProtocolApplication extends IdentifiableBase
 
     }
 
+    @Override
+    public @Nullable ExpProtocolApplicationImpl getExpObject()
+    {
+        return new ExpProtocolApplicationImpl(this);
+    }
 }

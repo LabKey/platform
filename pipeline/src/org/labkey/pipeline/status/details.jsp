@@ -122,7 +122,7 @@
             <td class="lk-form-label">File Path:</td>
             <td id="file-path"><%=h(status.filePath)%></td>
         </tr>
-        <tr class="<%=status.files.isEmpty() ? "hidden" : ""%>">
+        <tr class="<%=h(status.files.isEmpty() ? "hidden" : "")%>">
             <td class="lk-form-label">Files:</td>
             <td id="files-list">
                 <% for (var file : status.files) { %>
@@ -130,7 +130,7 @@
                 <% } %>
             </td>
         </tr>
-        <tr class="<%=status.parentStatus == null ? "hidden" : ""%>">
+        <tr class="<%=h(status.parentStatus == null ? "hidden" : "")%>">
             <td class="lk-form-label">Join job:</td>
             <td id="parent-job">
                 <table class="table-bordered table-condensed">
@@ -157,7 +157,7 @@
                 </table>
             </td>
         </tr>
-        <tr class="<%=status.splitStatus == null || status.splitStatus.isEmpty() ? "hidden" : ""%>">
+        <tr class="<%=h(status.splitStatus == null || status.splitStatus.isEmpty() ? "hidden" : "")%>">
             <td class="lk-form-label">Split jobs:</td>
             <td id="split-jobs">
                 <table class="table-bordered table-condensed">
@@ -187,7 +187,7 @@
                 </table>
             </td>
         </tr>
-        <tr class="<%=status.runs.isEmpty() ? "hidden" : ""%>">
+        <tr class="<%=h(status.runs.isEmpty() ? "hidden" : "")%>">
             <td class="lk-form-label">Completed Runs:</td>
             <td id="runs-list">
                 <% for (var run : status.runs) { %>
@@ -227,12 +227,12 @@
     </div>
     <br>
     <div id="log-container">
-        <% if (status.log == null) { %>
+        <% if (status.log == null || status.log.records == null) { %>
         <em>Log file doesn't exist.</em>
         <% } else { %>
         <div id="log-data">
             <% for (var record : status.log.records) { %>
-            <pre class="labkey-log-text <%=logTextClass(record)%>"
+            <pre class="labkey-log-text <%=h(logTextClass(record))%>"
                  data-multiline="<%=h(record.isMultiline())%>"
                  data-stacktrace="<%=h(record.isStackTrace())%>"
                  data-level="<%=h(record.getLevel())%>"
@@ -542,14 +542,39 @@
         }
 
         function updateLog(log) {
-            if (log && log.records) {
-                let chunks = renderLog(log.records);
+            if (log) {
                 if (!logDataEl) {
                     // job is active, but the log file didn't exist during first page load
                     logContainerEl.innerHTML = '<div id="log-data"></div>';
                     logDataEl = document.getElementById('log-data');
                 }
-                chunks.forEach(function (chunk) { logDataEl.appendChild(chunk); });
+
+                if (log.success) {
+                    // successfully read the status log file
+                    if (log.records && log.records.length > 0) {
+                        let chunks = renderLog(log.records);
+                        chunks.forEach(function (chunk) { logDataEl.appendChild(chunk); });
+                    }
+                }
+                else {
+                    // error reading the status log file.
+                    let message = log.message || 'Error reading log file';
+
+                    // Add the error if the previous message was not the same error.
+                    let lastChild = logDataEl.lastElementChild;
+                    if (!lastChild || lastChild.innerText !== message) {
+                        let errEl = document.createElement('PRE');
+                        errEl.innerText = message;
+                        errEl.classList.add('labkey-log-text');
+                        errEl.classList.add('bg-warning');
+                        errEl.classList.add('text-danger');
+                        logDataEl.appendChild(errEl);
+                    }
+                    else {
+                        console.warn("Skipping duplicate error: " + message);
+                    }
+                }
+
                 scrollLog(true);
             }
         }

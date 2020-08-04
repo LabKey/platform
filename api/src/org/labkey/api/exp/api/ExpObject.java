@@ -75,4 +75,11 @@ public interface ExpObject extends Identifiable, Comparable<ExpObject>
      * @return Map from PropertyURI to ObjectProperty
      */
     Map<String, ObjectProperty> getObjectProperties();
+
+    @Override
+    @Nullable
+    default ExpObject getExpObject()
+    {
+        return this;
+    }
 }

@@ -16,10 +16,12 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.ProtocolParameter;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolInput;
 
 import java.lang.reflect.InvocationTargetException;
@@ -410,4 +412,9 @@ public class Protocol extends IdentifiableEntity
         return _protocolInputs;
     }
 
+    @Override
+    public @Nullable ExpProtocolImpl getExpObject()
+    {
+        return new ExpProtocolImpl(this);
+    }
 }
