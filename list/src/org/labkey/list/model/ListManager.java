@@ -1032,11 +1032,13 @@ public class ListManager implements SearchService.DocumentProvider
         // The "search user" might not have access
         if (null != ti)
         {
-            ColumnInfo keyColumn = ti.getColumn(list.getKeyName());
+            // 'unwrap' ListTable to get schema table for update
+            TableInfo sti = ((ListTable)ti).getSchemaTableInfo();
+            ColumnInfo keyColumn = sti.getColumn(list.getKeyName());
             if (null != keyColumn)
             {
                 String keySelectName = keyColumn.getSelectName();
-                new SqlExecutor(ti.getSchema()).execute("UPDATE " + getListTableName(ti) + " SET LastIndexed = ? WHERE " +
+                new SqlExecutor(sti.getSchema()).execute("UPDATE " + getListTableName(sti) + " SET LastIndexed = ? WHERE " +
                         keySelectName + " = ?", new Timestamp(ms), pk);
             }
         }
