@@ -165,7 +165,7 @@ public class SimpleTableDomainKind extends BaseAbstractDomainKind
                 TableInfo schemaTable = table.getRealTable();
 
                 SQLFragment sql = new SQLFragment();
-                sql.append("SELECT o.ObjectId FROM " + schemaTable + " me, exp.object o WHERE me." + objectUriColumn.getSelectName() + " = o.ObjectURI AND me.Container = ?");
+                sql.append("SELECT o.ObjectId FROM " + schemaTable + " me, exp.object o WHERE " + objectUriColumn.getValueSql("me") + " = o.ObjectURI AND me.Container = ?");
                 sql.add(domain.getContainer().getId());
                 return sql;
             }
