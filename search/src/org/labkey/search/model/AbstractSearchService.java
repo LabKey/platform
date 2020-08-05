@@ -19,7 +19,8 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -76,7 +77,7 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class AbstractSearchService implements SearchService, ShutdownListener
 {
-    private static final Logger _log = Logger.getLogger(AbstractSearchService.class);
+    private static final Logger _log = LogManager.getLogger(AbstractSearchService.class);
 
     // Runnables go here, and get pulled off in a single threaded manner (assumption is that Runnables can create work very quickly)
     final PriorityBlockingQueue<Item> _runQueue = new PriorityBlockingQueue<>(1000, itemCompare);

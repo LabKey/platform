@@ -15,19 +15,19 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.io.IOUtils" %>
+<%@ page import="org.labkey.api.exp.ExperimentException" %>
+<%@ page import="org.labkey.api.reader.Readers" %>
+<%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.exp.ExperimentException" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.experiment.ExperimentRunGraph" %>
-<%@ page import="org.labkey.experiment.controllers.exp.ExperimentRunGraphModel" %>
-<%@ page import="org.labkey.api.reader.Readers" %>
-<%@ page import="org.apache.commons.io.IOUtils" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentRunGraphModel" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.io.Reader" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override

@@ -19,12 +19,12 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="org.labkey.pipeline.PipelineController.StartFolderImportForm" %>
-<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!

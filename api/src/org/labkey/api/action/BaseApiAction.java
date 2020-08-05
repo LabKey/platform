@@ -19,7 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -265,7 +265,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
                 return null;
 
             ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), e);
-            Logger.getLogger(BaseApiAction.class).error("ApiAction exception: ", e);
+            LogManager.getLogger(BaseApiAction.class).error("ApiAction exception: ", e);
 
             createResponseWriter().writeAndClose(e);
         }

@@ -15,7 +15,8 @@
  */
 package org.labkey.core.notification;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -72,7 +73,7 @@ import java.util.Map.Entry;
  */
 public class EmailServiceImpl implements EmailService
 {
-    private static final Logger _log = Logger.getLogger(EmailService.class);
+    private static final Logger _log = LogManager.getLogger(EmailService.class);
     private static final String EMAIL_PREF_CATEGORY = "EmailService.emailPrefs";
 
     @Override

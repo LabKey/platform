@@ -21,7 +21,8 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
@@ -78,7 +79,7 @@ import java.util.Map;
  */
 public abstract class BaseViewAction<FORM> extends PermissionCheckableAction implements Validator, HasPageConfig
 {
-    protected static final Logger logger = Logger.getLogger(BaseViewAction.class);
+    protected static final Logger logger = LogManager.getLogger(BaseViewAction.class);
 
     private PageConfig _pageConfig = null;
     private PropertyValues _pvs;
@@ -443,7 +444,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             catch (Exception x)
             {
                 errors.addError(new ObjectError(commandName, new String[]{"Error"}, new Object[] {value}, x.getMessage()));
-                Logger.getLogger(BaseViewAction.class).error("unexpected error", x);
+                LogManager.getLogger(BaseViewAction.class).error("unexpected error", x);
             }
         }
         return errors;

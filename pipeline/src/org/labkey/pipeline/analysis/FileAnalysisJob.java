@@ -15,7 +15,8 @@
  */
 package org.labkey.pipeline.analysis;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.TaskId;
@@ -41,7 +42,7 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
     private TaskId _taskPipelineId;
     private Map<String, String> _variableMap;
 
-    private static final Logger LOG = Logger.getLogger(FileAnalysisJob.class);
+    private static final Logger LOG = LogManager.getLogger(FileAnalysisJob.class);
 
     // For serialization
     protected FileAnalysisJob() {}

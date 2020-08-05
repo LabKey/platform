@@ -17,9 +17,9 @@
 package org.labkey.assay.plate;
 
 import org.labkey.api.assay.dilution.DilutionCurve;
+import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
-import org.labkey.api.assay.plate.WellGroup;
 
 import java.util.Collections;
 import java.util.List;

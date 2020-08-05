@@ -16,7 +16,8 @@
 package org.labkey.api.pipeline.file;
 
 import org.apache.commons.io.input.ReaderInputStream;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.Container;
@@ -52,7 +53,7 @@ import java.util.Map;
 public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnalysisJob>
         extends PipelineProtocol
 {
-    private static Logger _log = Logger.getLogger(AbstractFileAnalysisProtocol.class);
+    private static Logger _log = LogManager.getLogger(AbstractFileAnalysisProtocol.class);
 
     public static final String LEGACY_JOINED_BASENAME = "all";
 

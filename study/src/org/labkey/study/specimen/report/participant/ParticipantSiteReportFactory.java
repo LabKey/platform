@@ -15,7 +15,6 @@
  */
 package org.labkey.study.specimen.report.participant;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.StudyService;

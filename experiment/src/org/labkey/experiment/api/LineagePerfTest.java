@@ -16,7 +16,8 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -75,7 +76,7 @@ import static org.labkey.api.util.JunitUtil.deleteTestContainer;
 @TestTimeout(TestTimeout.DEFAULT * 10)
 public class LineagePerfTest extends Assert
 {
-    private static final Logger LOG = Logger.getLogger(LineagePerfTest.class);
+    private static final Logger LOG = LogManager.getLogger(LineagePerfTest.class);
 
     private static boolean _currentSetting;
     private static User _user;

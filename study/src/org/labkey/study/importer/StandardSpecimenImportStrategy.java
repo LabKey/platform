@@ -19,7 +19,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
 import org.labkey.api.study.SpecimenImportStrategy;
 
-import java.io.IOException;
 import java.util.Map;
 
 /**

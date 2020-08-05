@@ -26,7 +26,6 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
-<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!

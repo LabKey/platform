@@ -21,8 +21,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.springframework.validation.BindException;
 

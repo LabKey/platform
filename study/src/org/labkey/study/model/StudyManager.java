@@ -19,12 +19,14 @@ package org.labkey.study.model;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -119,7 +121,6 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -188,7 +189,7 @@ public class StudyManager
     public static final SearchService.SearchCategory datasetCategory = new SearchService.SearchCategory("dataset", "Study Dataset");
     public static final SearchService.SearchCategory subjectCategory = new SearchService.SearchCategory("subject", "Study Subject");
 
-    private static final Logger _log = Logger.getLogger(StudyManager.class);
+    private static final Logger _log = LogManager.getLogger(StudyManager.class);
     private static final StudyManager _instance = new StudyManager();
     private static final StudySchema SCHEMA = StudySchema.getInstance();
 
@@ -4869,7 +4870,7 @@ public class StudyManager
 
 
     // To see detailed logging from StatementDataIterator, configure org.labkey.study.model.StudyManager$DatasetImportTestCase to level TRACE
-    private static final Logger TEST_LOGGER = Logger.getLogger(DatasetImportTestCase.class);
+    private static final Logger TEST_LOGGER = LogManager.getLogger(DatasetImportTestCase.class);
 
     @TestWhen(TestWhen.When.BVT)
     public static class DatasetImportTestCase extends Assert

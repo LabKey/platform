@@ -18,7 +18,8 @@ package org.labkey.api.util;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -161,7 +162,7 @@ public class PageFlowUtil
         xml
     }
 
-    private static final Logger _log = Logger.getLogger(PageFlowUtil.class);
+    private static final Logger _log = LogManager.getLogger(PageFlowUtil.class);
     private static final String _newline = System.getProperty("line.separator");
 
     private static final Pattern urlPatternStart = Pattern.compile("((http|https|ftp|mailto)://\\S+).*");

@@ -17,7 +17,8 @@
 package org.labkey.assay.plate.query;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.assay.query.AssayDbSchema;
+import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
@@ -26,8 +27,7 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.plate.PlateService;
-import org.labkey.api.assay.plate.WellGroup;
+import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.HashSet;
 import java.util.Set;

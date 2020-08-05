@@ -16,7 +16,8 @@
 
 package org.labkey.bigiron.mssql;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -47,7 +48,7 @@ import java.util.Set;
 */
 public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 {
-    private static final Logger LOG = Logger.getLogger(MicrosoftSqlServerDialectFactory.class);
+    private static final Logger LOG = LogManager.getLogger(MicrosoftSqlServerDialectFactory.class);
     public static final String PRODUCT_NAME = "Microsoft SQL Server";
 
     private volatile TableResolver _tableResolver = new StandardTableResolver();

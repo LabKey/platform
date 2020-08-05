@@ -32,7 +32,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
-import javax.servlet.ServletException;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;

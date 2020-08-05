@@ -17,9 +17,9 @@ package org.labkey.api.collections;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Set;
-import java.util.Iterator;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Wrapper around another Set instance that disallows adding nulls by throwing an {@link IllegalArgumentException}

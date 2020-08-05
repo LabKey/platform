@@ -18,7 +18,8 @@ package org.labkey.api.files.view;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
@@ -81,7 +82,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     public static final String ROOT_OFFSET_PROPERTY_NAME = "rootOffset";
     public static final String FOLDER_TREE_VISIBLE_PROPERTY_NAME = "folderTreeVisible";
 
-    private static final Logger _log = Logger.getLogger(FilesWebPart.class);
+    private static final Logger _log = LogManager.getLogger(FilesWebPart.class);
 
     private boolean showAdmin = false;
     private String fileSet;

@@ -18,8 +18,8 @@ package org.labkey.api.attachments;
 
 import org.labkey.api.util.FileStream;
 
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * User: adam

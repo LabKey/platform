@@ -15,7 +15,8 @@
  */
 package org.labkey.api.exp.xar;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,7 +36,7 @@ import java.util.regex.Pattern;
  */
 public class LsidUtils
 {
-    private static Logger _log = Logger.getLogger(LsidUtils.class);
+    private static Logger _log = LogManager.getLogger(LsidUtils.class);
 
     private static Pattern REPLACEMENT_PATTERN = Pattern.compile("\\Q${\\E(.*?)\\Q}\\E");
 

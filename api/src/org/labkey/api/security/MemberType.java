@@ -17,8 +17,6 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.*;
-
 /**
  * User: adam
  * Date: 11/12/12

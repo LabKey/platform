@@ -20,7 +20,8 @@ import org.apache.commons.beanutils.BeanMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -166,7 +167,7 @@ import java.util.TreeSet;
 
 public class IssuesController extends SpringActionController
 {
-    private static final Logger _log = Logger.getLogger(IssuesController.class);
+    private static final Logger _log = LogManager.getLogger(IssuesController.class);
     private static final String helpTopic = "issues";
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
         IssuesController.class,

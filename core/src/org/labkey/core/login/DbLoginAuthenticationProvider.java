@@ -15,7 +15,8 @@
  */
 package org.labkey.core.login;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -154,7 +155,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
             int c = _count.incrementAndGet();
 
             if (c % 10 == 0)
-                Logger.getLogger(DbLoginAuthenticationProvider.class).info(c + " requests");
+                LogManager.getLogger(DbLoginAuthenticationProvider.class).info(c + " requests");
 
             return c % 100 != 0;
         }

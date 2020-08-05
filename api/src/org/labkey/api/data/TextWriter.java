@@ -16,7 +16,8 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.writer.PrintWriters;
 
@@ -34,7 +35,7 @@ import java.io.PrintWriter;
  */
 public abstract class TextWriter implements AutoCloseable
 {
-    private static final Logger LOG = Logger.getLogger(TextWriter.class);
+    private static final Logger LOG = LogManager.getLogger(TextWriter.class);
 
     // Stashing the OutputStream and the PrintWriter allows multiple writes (e.g., Export Runs to TSV)
     // TODO: Would be nice to remove this

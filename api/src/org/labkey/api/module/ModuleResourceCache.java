@@ -15,7 +15,8 @@
  */
 package org.labkey.api.module;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.Constants;
@@ -66,7 +67,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
  */
 public final class ModuleResourceCache<V> implements ModuleChangeListener
 {
-    private static final Logger LOG = Logger.getLogger(ModuleResourceCache.class);
+    private static final Logger LOG = LogManager.getLogger(ModuleResourceCache.class);
 
     private final BlockingCache<Module, V> _cache;
     private final ModuleResourceCacheHandler<V> _handler;

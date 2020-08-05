@@ -15,12 +15,13 @@
  */
 package org.labkey.search.model;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tika.config.InitializableProblemHandler;
 
 public class ProblemHandler implements InitializableProblemHandler
 {
-    private final Logger LOG = Logger.getLogger(LuceneSearchServiceImpl.class);
+    private final Logger LOG = LogManager.getLogger(LuceneSearchServiceImpl.class);
 
     @Override
     public void handleInitializableProblem(String className, String message)

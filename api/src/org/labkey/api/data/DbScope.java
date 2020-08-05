@@ -18,8 +18,9 @@ package org.labkey.api.data;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -40,7 +41,9 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.LoggerWriter;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.SimpleLoggerWriter;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.data.xml.TablesDocument;
@@ -111,7 +114,7 @@ import java.util.stream.Collectors;
  */
 public class DbScope
 {
-    private static final Logger LOG = Logger.getLogger(DbScope.class);
+    private static final Logger LOG = LogManager.getLogger(DbScope.class);
     private static final ConnectionMap _initializedConnections = newConnectionMap();
     private static final Map<String, DbScope> _scopes = new LinkedHashMap<>();
     private static final Map<Thread, Thread> _sharedConnections = new WeakHashMap<>();
@@ -977,7 +980,7 @@ public class DbScope
         logCurrentConnectionState(LOG);
     }
 
-    public void logCurrentConnectionState(@NotNull Logger log)
+    public void logCurrentConnectionState(LoggerWriter log)
     {
         synchronized (_transaction)
         {
@@ -1013,6 +1016,12 @@ public class DbScope
             }
         }
     }
+
+    public void logCurrentConnectionState(@NotNull Logger log)
+    {
+        logCurrentConnectionState(new SimpleLoggerWriter(log));
+    }
+
 
     private static final int spidUnknown = -1;
 

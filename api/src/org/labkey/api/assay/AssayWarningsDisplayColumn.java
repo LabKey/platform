@@ -16,10 +16,10 @@
 
 package org.labkey.api.assay;
 
+import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.assay.actions.AssayRunUploadForm;
 
 /**
  * User: jeckels

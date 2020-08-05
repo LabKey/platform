@@ -24,7 +24,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
-import javax.validation.constraints.Null;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;

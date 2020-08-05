@@ -18,7 +18,13 @@ package org.labkey.api.gwt.client.ui;
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Event;
-import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.ui.ChangeListener;
+import com.google.gwt.user.client.ui.ChangeListenerCollection;
+import com.google.gwt.user.client.ui.ClickListener;
+import com.google.gwt.user.client.ui.ClickListenerCollection;
+import com.google.gwt.user.client.ui.FileUpload;
+import com.google.gwt.user.client.ui.SourcesChangeEvents;
+import com.google.gwt.user.client.ui.SourcesClickEvents;
 
 /**
  * User: jgarms

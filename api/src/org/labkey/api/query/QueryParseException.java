@@ -16,7 +16,7 @@
 
 package org.labkey.api.query;
 
-import org.apache.log4j.Level;
+import org.apache.logging.log4j.Level;
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.NullColumnInfo;
@@ -29,7 +29,7 @@ public class QueryParseException extends QueryException
 {
     protected int _line;
     protected int _column;
-    protected int _level = Level.ERROR_INT;
+    protected int _level = Level.ERROR.intLevel();
 
     public QueryParseException(String message, Throwable cause, int line, int column)
     {
@@ -47,12 +47,12 @@ public class QueryParseException extends QueryException
 
     public boolean isError()
     {
-        return _level >= Level.ERROR_INT;
+        return _level >= Level.ERROR.intLevel();
     }
 
     public boolean isWarning()
     {
-        return _level < Level.ERROR_INT;
+        return _level < Level.ERROR.intLevel();
     }
 
 
@@ -62,7 +62,7 @@ public class QueryParseException extends QueryException
         String ret = super.getMessage();
         if (_line != 0)
         {
-            if (_level == Level.WARN_INT)
+            if (_level == Level.WARN.intLevel())
                 ret = "Warning on line " + _line + ": " + ret;
             else
                 ret = "Error on line " + _line + ": " + ret;

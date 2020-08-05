@@ -16,7 +16,8 @@
 package org.labkey.api.search;
 
 import org.apache.commons.collections4.ListUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -67,8 +68,8 @@ import java.util.function.Function;
 public interface SearchService
 {
     // create logger for package which can be set via logger-manage.view
-    Logger _packageLogger = Logger.getLogger(SearchService.class.getPackage().getName());
-    Logger _log = Logger.getLogger(SearchService.class);
+    Logger _packageLogger = LogManager.getLogger(SearchService.class.getPackage().getName());
+    Logger _log = LogManager.getLogger(SearchService.class);
 
     long DEFAULT_FILE_SIZE_LIMIT = 100L; // 100 MB
 
