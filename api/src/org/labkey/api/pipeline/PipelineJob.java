@@ -39,6 +39,7 @@ import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.User;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
@@ -1377,6 +1378,7 @@ abstract public class PipelineJob extends Job implements Serializable
         private boolean _isSettingStatus;
         private File _file;
         private final String LINE_SEP = System.getProperty("line.separator");
+        private final String datePattern = "dd MMM yyyy HH:mm:ss,SSS";
 
         protected OutputLogger(PipelineJob job, File file, String name, Level level)
         {
@@ -1498,7 +1500,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
         public void write(String message, @Nullable Throwable t, String level)
         {
-            String formattedDate = new SimpleDateFormat("dd MMM yyyy HH:mm:ss,SSS").format(new Date());
+            String formattedDate = DateUtil.formatDateTime(new Date(), datePattern);
 
             try (PrintWriter writer = new PrintWriter(new FileWriter(_file, true)))
             {
