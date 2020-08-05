@@ -59,7 +59,7 @@ import java.util.stream.Collectors;
 
 public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> implements ExpProtocol
 {
-    private List<ExpProtocolActionImpl> _actions;
+    private transient List<ExpProtocolActionImpl> _actions;
 
     // For serialization
     protected ExpProtocolImpl() {}
