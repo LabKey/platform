@@ -15,8 +15,9 @@
  */
 package org.labkey.api.data.bigiron;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
@@ -55,7 +56,7 @@ import java.sql.Connection;
  */
 public abstract class AbstractClrInstallationManager
 {
-    private static final Logger LOG = Logger.getLogger(AbstractClrInstallationManager.class);
+    private static final Logger LOG = LogManager.getLogger(AbstractClrInstallationManager.class);
 
     @Nullable
     private String _installedVersion = null;

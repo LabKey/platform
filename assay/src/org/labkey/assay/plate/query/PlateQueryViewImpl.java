@@ -16,17 +16,21 @@
 
 package org.labkey.assay.plate.query;
 
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.DataView;
-import org.labkey.api.data.*;
+import org.labkey.api.view.ViewContext;
 
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: brittp

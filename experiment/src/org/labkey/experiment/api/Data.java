@@ -19,7 +19,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 

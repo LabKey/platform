@@ -16,13 +16,20 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.NestableDataRegion;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.TableInfo;
 
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Collections;
-import java.util.ArrayList;
 
 /**
  * Configuration for a NestedQueryView that understands which columns should be associated with the outer and inner

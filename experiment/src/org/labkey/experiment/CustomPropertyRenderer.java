@@ -18,7 +18,6 @@ package org.labkey.experiment;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.view.ViewContext;
 
 import java.util.List;
 

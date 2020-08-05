@@ -16,13 +16,13 @@
 package org.labkey.assay.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssaySchema;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.query.ExprColumn;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssaySchema;
-import org.labkey.api.assay.AssayService;
 
 /**
  * User: kevink

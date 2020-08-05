@@ -15,7 +15,8 @@
  */
 package org.labkey.api.products;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
@@ -40,7 +41,7 @@ import java.util.stream.Collectors;
 
 public class ProductRegistry
 {
-    private static final Logger _logger = Logger.getLogger(ProductRegistry.class);
+    private static final Logger _logger = LogManager.getLogger(ProductRegistry.class);
     private static final Map<String, ProductMenuProvider> _productMap = new ConcurrentCaseInsensitiveSortedMap<>();
     private static final Map<String, ProductMenuProvider> _moduleProviderMap = new ConcurrentHashMap<>();
     private static final Map<String, ProductMenuProvider> _sectionMap = new ConcurrentCaseInsensitiveSortedMap<>();

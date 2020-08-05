@@ -16,7 +16,6 @@
 
 package org.labkey.api.iterator;
 
-import java.io.IOException;
 import java.util.Iterator;
 
 /**

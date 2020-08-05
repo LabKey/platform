@@ -20,7 +20,8 @@ import gwt.client.org.labkey.plate.designer.client.PlateDataService;
 import gwt.client.org.labkey.plate.designer.client.model.GWTPlate;
 import gwt.client.org.labkey.plate.designer.client.model.GWTPosition;
 import gwt.client.org.labkey.plate.designer.client.model.GWTWellGroup;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateTemplate;
 import org.labkey.api.assay.plate.PlateTypeHandler;
@@ -29,15 +30,12 @@ import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.plate.WellGroupTemplate;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,7 +47,7 @@ import java.util.Set;
  */
 public class PlateDataServiceImpl extends BaseRemoteService implements PlateDataService
 {
-    private static final Logger LOG = Logger.getLogger(PlateDataServiceImpl.class);
+    private static final Logger LOG = LogManager.getLogger(PlateDataServiceImpl.class);
 
     public PlateDataServiceImpl(ViewContext context)
     {

@@ -16,7 +16,8 @@
 
 package org.labkey.api.jsp;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
@@ -30,7 +31,7 @@ import java.util.Enumeration;
 
 public class JspLoader
 {
-    private static Logger _log = Logger.getLogger(JspLoader.class);
+    private static Logger _log = LogManager.getLogger(JspLoader.class);
     private static final JspClassLoader _jspClassLoader;
 
     static

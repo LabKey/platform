@@ -16,7 +16,8 @@
 package org.labkey.api.util;
 
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -33,7 +34,7 @@ import java.util.Collection;
  */
 public class ContainerTree
 {
-    private static Logger _log = Logger.getLogger(ContainerTree.class);
+    private static Logger _log = LogManager.getLogger(ContainerTree.class);
 
     private Container _root;
     private User _user;

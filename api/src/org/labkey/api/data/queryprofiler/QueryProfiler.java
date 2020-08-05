@@ -19,10 +19,11 @@ package org.labkey.api.data.queryprofiler;
 import org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength;
 import org.apache.commons.collections4.map.ReferenceMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Appender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.RollingFileAppender;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -70,7 +71,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 */
 public class QueryProfiler
 {
-    private static final Logger LOG = Logger.getLogger(QueryProfiler.class);
+    private static final Logger LOG = LogManager.getLogger(QueryProfiler.class);
     private static final QueryProfiler INSTANCE = new QueryProfiler();
 
     private final BlockingQueue<Query> _queue = new LinkedBlockingQueue<>(1000);
@@ -621,16 +622,18 @@ public class QueryProfiler
         @Override
         public void shutdownStarted()
         {
-            Logger logger = Logger.getLogger(QueryProfilerThread.class);
+            Logger logger = LogManager.getLogger(QueryProfilerThread.class);
+            LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+            Configuration config = ctx.getConfiguration();
 
             if (null != logger)
             {
-                LOG.info("Starting to log statistics for queries prior to web application shut down");
-                Appender appender = logger.getAppender("QUERY_STATS");
-                if (null != appender && appender instanceof RollingFileAppender)
-                    ((RollingFileAppender)appender).rollOver();
-                else
-                    LOG.warn("Could not rollover the query stats tsv file--there was no appender named QUERY_STATS, or it is not a RollingFileAppender.");
+//                LOG.info("Starting to log statistics for queries prior to web application shut down");
+//                Appender appender = config.getAppender("QUERY_STATS");
+//                if (null != appender && appender instanceof RollingFileAppender)
+//                    ((RollingFileAppender)appender).rollOver();
+//                else
+//                    LOG.warn("Could not rollover the query stats tsv file--there was no appender named QUERY_STATS, or it is not a RollingFileAppender.");
 
                 try (PrintWriter logWriter = new LogPrintWriter(logger, Level.INFO))
                 {

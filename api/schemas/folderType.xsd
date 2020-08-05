@@ -3,7 +3,6 @@
             elementFormDefault="qualified"
             targetNamespace="http://labkey.org/data/xml/folderType"
             xmlns:ft="http://labkey.org/data/xml/folderType"
-            xmlns:mp="http://labkey.org/moduleProperties/xml/"
             xmlns:wp="http://labkey.org/data/xml/webpart">
   <xsd:import namespace="http://labkey.org/data/xml/webpart" schemaLocation="webpart.xsd"/>
   <xsd:element name="folderType" type="ft:folderType" />

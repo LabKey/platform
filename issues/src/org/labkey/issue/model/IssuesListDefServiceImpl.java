@@ -15,7 +15,8 @@
  */
 package org.labkey.issue.model;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -49,7 +50,7 @@ import java.util.stream.Collectors;
 
 public class IssuesListDefServiceImpl implements IssuesListDefService
 {
-    private static final Logger LOG = Logger.getLogger(IssuesListDefServiceImpl.class);
+    private static final Logger LOG = LogManager.getLogger(IssuesListDefServiceImpl.class);
     private final Map<String, IssuesListDefProvider> _issuesListDefProviders = new ConcurrentHashMap<>();
     private final List<IssueDetailHeaderLinkProvider> _headerLinkProviders = new ArrayList<>();
 

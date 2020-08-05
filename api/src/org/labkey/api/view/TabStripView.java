@@ -18,15 +18,12 @@ package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.template.ClientDependency;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * User: Karl Lum

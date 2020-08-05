@@ -20,7 +20,8 @@ import org.apache.commons.collections4.Factory;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -91,8 +92,22 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.util.DOM.*;
-import static org.labkey.api.util.DOM.Attribute.*;
+import static org.labkey.api.util.DOM.Attribute.action;
+import static org.labkey.api.util.DOM.Attribute.method;
+import static org.labkey.api.util.DOM.Attribute.name;
+import static org.labkey.api.util.DOM.Attribute.type;
+import static org.labkey.api.util.DOM.Attribute.value;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.HR;
+import static org.labkey.api.util.DOM.INPUT;
+import static org.labkey.api.util.DOM.LK;
+import static org.labkey.api.util.DOM.OPTION;
+import static org.labkey.api.util.DOM.Renderable;
+import static org.labkey.api.util.DOM.SELECT;
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.cl;
+import static org.labkey.api.util.DOM.createHtml;
 
 /**
  * Manages the configuration of portal pages, which can be configured by admins to show
@@ -100,7 +115,7 @@ import static org.labkey.api.util.DOM.Attribute.*;
  */
 public class Portal implements ModuleChangeListener
 {
-    private static final Logger LOG = Logger.getLogger(Portal.class);
+    private static final Logger LOG = LogManager.getLogger(Portal.class);
     private static final WebPartBeanLoader FACTORY = new WebPartBeanLoader();
 
     public static final String FOLDER_PORTAL_PAGE = "folder";

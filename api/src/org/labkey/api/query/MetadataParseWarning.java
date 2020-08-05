@@ -15,7 +15,7 @@
  */
 package org.labkey.api.query;
 
-import org.apache.log4j.Level;
+import org.apache.logging.log4j.Level;
 import org.json.JSONObject;
 
 /**
@@ -33,7 +33,7 @@ public class MetadataParseWarning extends MetadataParseException
     public MetadataParseWarning(String message, Throwable cause, int line, int column)
     {
         super(message, cause, line, column);
-        _level = Level.WARN_INT;
+        _level = Level.WARN.intLevel();
     }
 
     public MetadataParseWarning(String queryName, QueryParseException other)

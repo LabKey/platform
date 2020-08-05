@@ -16,7 +16,6 @@
 package org.labkey.study.writer;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.security.xml.GroupType;

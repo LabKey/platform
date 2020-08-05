@@ -15,7 +15,7 @@
  */
 package org.labkey.pipeline.analysis;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
@@ -329,12 +329,12 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         }
         catch (XmlValidationException e)
         {
-            Logger.getLogger(PipelineJobServiceImpl.class).error(e);
+            LogManager.getLogger(PipelineJobServiceImpl.class).error(e);
             return null;
         }
         catch (XmlException |IOException e)
         {
-            Logger.getLogger(PipelineJobServiceImpl.class).error("Error loading task pipeline '" + pipelineConfig.getPath() + "':\n" + e.getMessage());
+            LogManager.getLogger(PipelineJobServiceImpl.class).error("Error loading task pipeline '" + pipelineConfig.getPath() + "':\n" + e.getMessage());
             return null;
         }
 

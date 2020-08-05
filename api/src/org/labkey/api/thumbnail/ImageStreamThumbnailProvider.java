@@ -16,7 +16,8 @@
 package org.labkey.api.thumbnail;
 
 import org.apache.batik.transcoder.TranscoderException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentType;
@@ -40,7 +41,7 @@ import java.io.InputStream;
  */
 public class ImageStreamThumbnailProvider implements ThumbnailProvider
 {
-    private static final Logger LOG = Logger.getLogger(ImageStreamThumbnailProvider.class);
+    private static final Logger LOG = LogManager.getLogger(ImageStreamThumbnailProvider.class);
 
     private final ThumbnailProvider _provider;
     private final @Nullable String _contentType;

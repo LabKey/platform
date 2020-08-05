@@ -18,7 +18,6 @@ package org.labkey.api.security;
 import org.labkey.api.module.Module;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFException;
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.ViewServlet;
 

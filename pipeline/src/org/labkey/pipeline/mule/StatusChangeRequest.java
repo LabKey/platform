@@ -21,7 +21,6 @@ import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
 
 import java.io.Serializable;
-import java.sql.SQLException;
 
 /**
  * Transfer object for remote status changes.

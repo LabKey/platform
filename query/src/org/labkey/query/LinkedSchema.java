@@ -16,7 +16,7 @@
 package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -101,7 +101,7 @@ public class LinkedSchema extends ExternalSchema
         Container sourceContainer = def.lookupSourceContainer();
         if (sourceContainer == null)
         {
-            Logger.getLogger(LinkedSchema.class).warn("Source container '" + def.getSourceContainerId() + "' not found for linked schema " + def.getUserSchemaName());
+            LogManager.getLogger(LinkedSchema.class).warn("Source container '" + def.getSourceContainerId() + "' not found for linked schema " + def.getUserSchemaName());
             return null;
         }
 
@@ -112,7 +112,7 @@ public class LinkedSchema extends ExternalSchema
         UserSchema sourceSchema = getSourceSchema(def, sourceSchemaName, sourceContainer, user);
         if (sourceSchema == null)
         {
-            Logger.getLogger(LinkedSchema.class).warn("Source schema '" + sourceSchemaName + "' not found in container '" + sourceContainer.getPath() + "' for linked schema " + def.getUserSchemaName());
+            LogManager.getLogger(LinkedSchema.class).warn("Source schema '" + sourceSchemaName + "' not found in container '" + sourceContainer.getPath() + "' for linked schema " + def.getUserSchemaName());
             return null;
         }
 
@@ -163,7 +163,7 @@ public class LinkedSchema extends ExternalSchema
         // Disallow recursive linked schema
         if (def.lookupContainer() == sourceContainer && def.getUserSchemaName().equals(sourceSchemaName))
         {
-            Logger.getLogger(LinkedSchema.class).warn("Disallowed recursive linked schema definition '" + sourceSchemaName + "' in container '" + sourceContainer.getPath() + "'");
+            LogManager.getLogger(LinkedSchema.class).warn("Disallowed recursive linked schema definition '" + sourceSchemaName + "' in container '" + sourceContainer.getPath() + "'");
             return null;
         }
 

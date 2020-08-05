@@ -15,9 +15,9 @@
  */
 package org.labkey.pipeline.mule.filters;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.pipeline.PipelineJob;
 import org.mule.providers.jms.filters.JmsSelectorFilter;
@@ -35,7 +35,7 @@ public class TaskJmsSelectorFilter extends JmsSelectorFilter
 {
     private static Set<String> ALL_LOCAL_LOCATIONS = new HashSet<>();
 
-    private static Logger _log = Logger.getLogger(TaskJmsSelectorFilter.class);
+    private static Logger _log = LogManager.getLogger(TaskJmsSelectorFilter.class);
 
     private boolean _includeMonolithic;
 

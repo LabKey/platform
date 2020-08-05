@@ -16,9 +16,14 @@
 
 package org.labkey.study.designer;
 
+import gwt.client.org.labkey.study.designer.client.StudyDefinitionService;
+import gwt.client.org.labkey.study.designer.client.model.GWTAssayDefinition;
 import gwt.client.org.labkey.study.designer.client.model.GWTCohort;
+import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
+import gwt.client.org.labkey.study.designer.client.model.GWTStudyDesignVersion;
 import gwt.client.org.labkey.study.designer.client.model.GWTTimepoint;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.ValidationException;
@@ -36,10 +41,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.designer.DesignerController;
-import gwt.client.org.labkey.study.designer.client.StudyDefinitionService;
-import gwt.client.org.labkey.study.designer.client.model.GWTAssayDefinition;
-import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
-import gwt.client.org.labkey.study.designer.client.model.GWTStudyDesignVersion;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.DatasetDefinition;
@@ -58,7 +59,7 @@ import java.util.List;
  */
 public class StudyDefinitionServiceImpl extends BaseRemoteService implements StudyDefinitionService
 {
-    private static Logger _log = Logger.getLogger(StudyDefinitionServiceImpl.class);
+    private static Logger _log = LogManager.getLogger(StudyDefinitionServiceImpl.class);
 
     public StudyDefinitionServiceImpl(ViewContext context)
     {

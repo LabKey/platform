@@ -15,7 +15,8 @@
  */
 package org.labkey.api.view.template;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
@@ -37,7 +38,7 @@ import java.util.function.Supplier;
  */
 public class LibClientDependency extends FilePathClientDependency
 {
-    private static final Logger _log = Logger.getLogger(LibClientDependency.class);
+    private static final Logger _log = LogManager.getLogger(LibClientDependency.class);
 
     private final Resource _resource;
     private final List<Supplier<ClientDependency>> _suppliers = new LinkedList<>();

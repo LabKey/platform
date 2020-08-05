@@ -16,13 +16,13 @@
 
 package org.labkey.api.assay.query;
 
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssaySchema;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssaySchema;
-import org.labkey.api.assay.AssayService;
 
 /**
  * User: brittp

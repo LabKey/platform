@@ -16,7 +16,8 @@
 package org.labkey.api.assay.plate;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.query.ValidationException;
@@ -32,7 +33,7 @@ import java.util.Map;
  */
 public class PlateUtils
 {
-    public static final Logger LOG = Logger.getLogger(PlateUtils.class);
+    public static final Logger LOG = LogManager.getLogger(PlateUtils.class);
     private static final int START_ROW = 6; //0 based, row 7 in the workshet
     private static final int START_COL = 0;
 

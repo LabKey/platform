@@ -23,7 +23,6 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.query.ValidationException;
 
 import java.util.Map;
-import java.sql.SQLException;
 
 /**
  * User: jeckels

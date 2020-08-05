@@ -18,7 +18,8 @@ package org.labkey.study.model;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -125,9 +126,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toSet;
 
 
 /**
@@ -140,7 +138,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     // standard string to use in URLs etc.
     public static final String DATASETKEY = "datasetId";
 //    static final Object MANAGED_KEY_LOCK = new Object();
-    private static Logger _log = Logger.getLogger(DatasetDefinition.class);
+    private static Logger _log = LogManager.getLogger(DatasetDefinition.class);
 
     private final ReentrantLock _lock = new ReentrantLock();
 

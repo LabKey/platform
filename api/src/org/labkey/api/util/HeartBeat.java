@@ -15,7 +15,8 @@
  */
 package org.labkey.api.util;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * HeatBeatThread is faster than using System.currentTimeMillis() for
@@ -47,7 +48,7 @@ public class HeartBeat
     // IMPL
     //
 
-    private static final Logger _log = Logger.getLogger(HeartBeat.class);
+    private static final Logger _log = LogManager.getLogger(HeartBeat.class);
     public static volatile int counter = 0;     // covers more than 60yrs uptime
     public static volatile long currentTimeMillis = System.currentTimeMillis();
 

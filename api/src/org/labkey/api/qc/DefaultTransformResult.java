@@ -16,7 +16,8 @@
 
 package org.labkey.api.qc;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.DomainProperty;
 
@@ -39,7 +40,7 @@ public class DefaultTransformResult implements TransformResult
     private String _comments;
     private String _warnings;
     private List<File> _files;
-    private static final Logger LOG = Logger.getLogger(DefaultTransformResult.class);
+    private static final Logger LOG = LogManager.getLogger(DefaultTransformResult.class);
 
     @Override
     public List<File> getFiles()

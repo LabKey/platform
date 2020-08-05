@@ -18,8 +18,8 @@ package org.labkey.study.model;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.study.Cohort;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.study.Cohort;
 
 import java.util.ArrayList;
 import java.util.HashSet;

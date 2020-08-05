@@ -15,15 +15,16 @@
  */
 package org.labkey.experiment;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
-import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DotRunner;
@@ -64,7 +65,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class ExperimentRunGraph
 {
     private static File baseDirectory;
-    private static Logger _log = Logger.getLogger(ExperimentRunGraph.class);
+    private static Logger _log = LogManager.getLogger(ExperimentRunGraph.class);
     private static int MAX_WIDTH_SMALL_FONT = 8;
     private static int MAX_WIDTH_BIG_FONT = 3;
     private static int MAX_SIBLINGS = 5;

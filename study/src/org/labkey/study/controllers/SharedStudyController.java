@@ -15,7 +15,8 @@
  */
 package org.labkey.study.controllers;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
@@ -58,7 +59,7 @@ import static org.labkey.api.util.HttpUtil.Method.POST;
  */
 public class SharedStudyController extends BaseStudyController
 {
-    private static final Logger _log = Logger.getLogger(SharedStudyController.class);
+    private static final Logger _log = LogManager.getLogger(SharedStudyController.class);
 
     private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(SharedStudyController.class);
 

@@ -19,8 +19,8 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 
 /*

@@ -18,7 +18,6 @@ package org.labkey.api.reports.report.r;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.view.ViewContext;
 

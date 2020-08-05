@@ -17,9 +17,6 @@
 package org.labkey.api.assay;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.assay.AbstractTempDirDataCollector;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.util.PageFlowUtil;

@@ -15,7 +15,6 @@
  */
 package org.labkey.api.ldk.table;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
