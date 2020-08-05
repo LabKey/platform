@@ -143,7 +143,7 @@ public class CrosstabDataRegion extends DataRegion
 
         out.write("<th colspan=\"");
         out.write(String.valueOf(groupWidth));
-        out.write("\" class=\"labkey-data-region");
+        out.write("\" class=\"labkey-data-region labkey-pivot");
         if (alternate)
             out.write(" labkey-alternate-col");
         if (isShowBorders())
