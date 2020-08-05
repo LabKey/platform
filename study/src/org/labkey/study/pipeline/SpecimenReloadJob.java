@@ -20,14 +20,11 @@ import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.study.SpecimenTransform;
-import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
-import java.sql.SQLException;
 
 /**
  * Created by klum on 5/24/2014.

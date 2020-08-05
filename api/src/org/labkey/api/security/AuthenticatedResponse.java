@@ -18,10 +18,10 @@ package org.labkey.api.security;
 
 import org.labkey.api.util.PageFlowUtil;
 
-import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpServletResponse;
-import java.io.PrintWriter;
+import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.Locale;
 

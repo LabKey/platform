@@ -23,7 +23,6 @@ import org.labkey.api.gwt.client.LockedPropertyType;
 import org.labkey.api.gwt.client.PHIType;
 import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.gwt.client.util.BooleanProperty;
-import org.labkey.api.gwt.client.util.IPropertyWrapper;
 import org.labkey.api.gwt.client.util.IntegerProperty;
 import org.labkey.api.gwt.client.util.StringProperty;
 import org.labkey.api.gwt.client.util.StringUtils;

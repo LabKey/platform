@@ -19,15 +19,15 @@ import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.assay.AssayDomainService;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.assay.AssayManager;
 import org.labkey.assay.AssayDomainServiceImpl;
+import org.labkey.assay.AssayManager;
 import org.springframework.validation.BindException;
 
 @Marshal(Marshaller.Jackson)

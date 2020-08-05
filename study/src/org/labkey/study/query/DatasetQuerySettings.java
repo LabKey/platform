@@ -17,7 +17,6 @@ package org.labkey.study.query;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.study.model.QCStateSet;
 import org.springframework.beans.PropertyValues;
 
 /**

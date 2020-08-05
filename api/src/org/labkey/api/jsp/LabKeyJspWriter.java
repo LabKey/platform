@@ -15,10 +15,12 @@
  */
 package org.labkey.api.jsp;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.labkey.api.collections.ConcurrentHashSet;
 import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
-import org.apache.log4j.Logger;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ExperimentalFeatureService;
@@ -36,10 +38,10 @@ import java.util.stream.Collectors;
 
 public class LabKeyJspWriter extends JspWriterWrapper
 {
-    private static final Logger LOG = Logger.getLogger(LabKeyJspWriter.class);
-    private static final Logger LOGSTRING = Logger.getLogger(LabKeyJspWriter.class.getName() + ".string");
     private static final Multiset<String> COUNTING_SET = ConcurrentHashMultiset.create();
     private static final String EXPERIMENTAL_THROW_ON_WARNING = "labkeyJspWriterThrowOnWarning";
+    private static final Logger LOG = LogManager.getLogger(LabKeyJspWriter.class);
+    private static final Logger LOGSTRING = LogManager.getLogger(LabKeyJspWriter.class.getName()+".string");
 
     public static void registerExperimentalFeature()
     {

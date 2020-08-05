@@ -16,7 +16,8 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.miniprofiler.MiniProfiler;
@@ -24,7 +25,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ResultSetUtil;
 
-import javax.sql.rowset.CachedRowSet;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -38,7 +38,7 @@ import java.util.Map;
 */
 public class ResultSetImpl extends LoggingResultSetWrapper implements TableResultSet
 {
-    private static final Logger _log = Logger.getLogger(ResultSetImpl.class);
+    private static final Logger _log = LogManager.getLogger(ResultSetImpl.class);
 
     private final @Nullable DbScope _scope;
     private final @Nullable Connection _connection;

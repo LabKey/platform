@@ -15,7 +15,6 @@
  */
 package org.labkey.pipeline.mule;
 
-import java.sql.SQLException;
 import java.io.Serializable;
 
 /**

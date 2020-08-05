@@ -15,7 +15,8 @@
  */
 package org.labkey.api.wiki;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
@@ -35,7 +36,7 @@ public class WikiRendererDisplayColumn extends DataColumn
     @NotNull
     private String _renderTypeColumnName;
     private WikiRendererType _defaultRenderer = WikiRendererType.TEXT_WITH_LINKS;
-    private static final Logger _log = Logger.getLogger(WikiRendererDisplayColumn.class);
+    private static final Logger _log = LogManager.getLogger(WikiRendererDisplayColumn.class);
 
     public WikiRendererDisplayColumn(ColumnInfo contentColumn, @NotNull String renderTypeColumnName, WikiRendererType defaultRenderer)
     {

@@ -17,7 +17,8 @@ package org.labkey.pipeline.mule;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.settings.AppProps;
@@ -58,7 +59,7 @@ import java.util.Set;
  */
 public class MuleListenerHelper implements ServletContext
 {
-    private static final Logger _log = Logger.getLogger(MuleListenerHelper.class);
+    private static final Logger _log = LogManager.getLogger(MuleListenerHelper.class);
 
     private final MuleXmlBuilderContextListener _muleContextListener;
     private final ServletContext _parentContext;

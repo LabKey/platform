@@ -15,9 +15,12 @@
  */
 package org.labkey.study.writer;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
@@ -45,8 +48,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
@@ -75,7 +76,7 @@ import java.util.Set;
  */
 public class DatasetDataWriter implements InternalStudyWriter
 {
-    private static final Logger LOG = Logger.getLogger(DatasetDataWriter.class);
+    private static final Logger LOG = LogManager.getLogger(DatasetDataWriter.class);
 
     @Override
     public String getDataType()

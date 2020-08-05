@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.exp.ExperimentDataHandler" %>
 <%@ page import="org.labkey.api.exp.Identifiable" %>
+<%@ page import="org.labkey.api.exp.LsidManager" %>
 <%@ page import="org.labkey.api.exp.api.ExpData" %>
 <%@ page import="org.labkey.api.exp.api.ExpDataProtocolInput" %>
 <%@ page import="org.labkey.api.exp.api.ExpDataRunInput" %>
@@ -42,7 +43,6 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Objects" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.exp.LsidManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ExpRun> me = (JspView<ExpRun>) HttpView.currentView();

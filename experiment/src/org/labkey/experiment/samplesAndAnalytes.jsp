@@ -18,12 +18,12 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.exp.api.ExpSampleType" %>
 <%@ page import="org.labkey.api.study.SamplesUrls" %>
+<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.experiment.api.ExpSampleTypeImpl" %>
 <%@ page import="org.labkey.experiment.api.SampleTypeServiceImpl" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container proj = getContainer().getProject();

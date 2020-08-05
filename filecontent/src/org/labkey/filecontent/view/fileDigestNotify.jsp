@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.announcements.EmailOption" %>
+<%@ page import="org.labkey.api.audit.provider.FileSystemAuditProvider" %>
 <%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
@@ -27,8 +29,6 @@
 <%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.audit.provider.FileSystemAuditProvider" %>
-<%@ page import="org.labkey.api.announcements.EmailOption" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%

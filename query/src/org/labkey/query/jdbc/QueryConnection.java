@@ -21,7 +21,6 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 
 import java.sql.Array;
 import java.sql.Blob;
@@ -31,8 +30,6 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.NClob;
 import java.sql.PreparedStatement;
-import java.sql.SQLClientInfoException;
-import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Savepoint;

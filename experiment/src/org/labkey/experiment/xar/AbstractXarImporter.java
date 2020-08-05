@@ -16,7 +16,7 @@
 
 package org.labkey.experiment.xar;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveType;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.XarContext;

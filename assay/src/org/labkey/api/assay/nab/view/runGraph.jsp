@@ -16,10 +16,10 @@
  */
 %>
 <%@ page import="org.labkey.api.assay.nab.RenderAssayBean" %>
+<%@ page import="org.labkey.api.assay.nab.view.RunDetailOptions" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.assay.nab.view.RunDetailOptions" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<RenderAssayBean> me = (JspView<RenderAssayBean>) HttpView.currentView();

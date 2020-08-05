@@ -15,7 +15,8 @@
  */
 package org.labkey.api.data.dialect;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.SqlScanner;
 
@@ -23,7 +24,7 @@ import java.util.Map;
 
 public class MutatingSqlDetector
 {
-    private static final Logger LOG = Logger.getLogger(MutatingSqlDetector.class);
+    private static final Logger LOG = LogManager.getLogger(MutatingSqlDetector.class);
 
     private final String _sql;
     private final StringBuilder _firstWord = new StringBuilder();

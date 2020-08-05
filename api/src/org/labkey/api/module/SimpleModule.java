@@ -16,7 +16,8 @@
 package org.labkey.api.module;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -61,7 +62,7 @@ import java.util.LinkedList;
  */
 public class SimpleModule extends SpringModule
 {
-    private static final Logger _log = Logger.getLogger(ModuleUpgrader.class);
+    private static final Logger _log = LogManager.getLogger(ModuleUpgrader.class);
 
     public static String NAMESPACE_PREFIX = "ExtensibleTable";
     public static String DOMAIN_NAMESPACE_PREFIX_TEMPLATE = NAMESPACE_PREFIX + "-${SchemaName}";

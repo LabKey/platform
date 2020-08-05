@@ -27,7 +27,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentProtocolHandler;
-import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.ProtocolParameter;
 import org.labkey.api.exp.api.ExpDataProtocolInput;

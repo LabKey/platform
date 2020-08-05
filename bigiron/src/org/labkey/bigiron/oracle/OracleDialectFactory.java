@@ -16,7 +16,8 @@
 
 package org.labkey.bigiron.oracle;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -44,7 +45,7 @@ import java.util.Set;
  */
 public class OracleDialectFactory implements SqlDialectFactory
 {
-    private static final Logger _log = Logger.getLogger(OracleDialectFactory.class);
+    private static final Logger _log = LogManager.getLogger(OracleDialectFactory.class);
 
     private String getProductName()
     {

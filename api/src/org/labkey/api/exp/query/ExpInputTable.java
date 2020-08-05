@@ -15,8 +15,8 @@
  */
 package org.labkey.api.exp.query;
 
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 
 /**
  * Base table type for usages of data or materials in runs 

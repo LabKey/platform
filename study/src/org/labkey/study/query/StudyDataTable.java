@@ -16,11 +16,14 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.query.*;
+import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;

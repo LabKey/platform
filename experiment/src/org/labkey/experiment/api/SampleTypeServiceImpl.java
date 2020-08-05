@@ -21,14 +21,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
-import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
@@ -60,8 +61,8 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -122,7 +123,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         return (SampleTypeServiceImpl) SampleTypeService.get();
     }
 
-    private static final Logger LOG = Logger.getLogger(SampleTypeServiceImpl.class);
+    private static final Logger LOG = LogManager.getLogger(SampleTypeServiceImpl.class);
 
     // SampleType -> Container cache
     private final Cache<String, String> sampleTypeCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleTypeToContainer");

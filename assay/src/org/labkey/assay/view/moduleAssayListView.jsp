@@ -18,8 +18,8 @@
 <%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.assay.ModuleAssayProvider" %>
 <%@ page import="org.labkey.assay.AssayController" %>
+<%@ page import="org.labkey.assay.ModuleAssayProvider" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%

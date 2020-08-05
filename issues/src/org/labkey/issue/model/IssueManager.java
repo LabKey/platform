@@ -17,7 +17,8 @@ package org.labkey.issue.model;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
@@ -124,7 +125,7 @@ import static org.labkey.api.security.UserManager.USER_DISPLAY_NAME_COMPARATOR;
  */
 public class IssueManager
 {
-    private static final Logger _log = Logger.getLogger(IssueManager.class);
+    private static final Logger _log = LogManager.getLogger(IssueManager.class);
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("issue", "Issues");
     // UNDONE: Keywords, Summary, etc.
 

@@ -18,7 +18,6 @@ package org.labkey.query.view;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.data.views.ProviderType;
 import org.labkey.api.query.CustomView;
-import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.view.ViewContext;
 

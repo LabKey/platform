@@ -18,7 +18,8 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
@@ -61,7 +62,7 @@ import static org.labkey.api.data.RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VAL
 /** Subclass that wraps a ColumnInfo to pull values from the database */
 public class DataColumn extends DisplayColumn
 {
-    private static final Logger LOG = Logger.getLogger(DataColumn.class);
+    private static final Logger LOG = LogManager.getLogger(DataColumn.class);
 
     private ColumnInfo _boundColumn;
     private ColumnInfo _displayColumn;

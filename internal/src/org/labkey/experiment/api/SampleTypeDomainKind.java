@@ -18,7 +18,8 @@ package org.labkey.experiment.api;
 
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -38,8 +39,8 @@ import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
@@ -99,7 +100,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
                 new PropertyStorageSpec.Index(true, "lsid")
         )));
 
-        logger = Logger.getLogger(SampleTypeDomainKind.class);
+        logger = LogManager.getLogger(SampleTypeDomainKind.class);
     }
 
     public SampleTypeDomainKind()

@@ -16,7 +16,6 @@
 package org.labkey.pipeline.mule.transformers;
 
 import org.mule.transformers.AbstractTransformer;
-import org.mule.umo.transformer.TransformerException;
 
 /**
  * NoOpTransformer class

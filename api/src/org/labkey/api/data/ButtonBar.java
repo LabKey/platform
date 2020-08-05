@@ -22,7 +22,12 @@ import org.labkey.api.view.DisplayElement;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * A set of buttons that are displayed as a unit. Typically, but not always,

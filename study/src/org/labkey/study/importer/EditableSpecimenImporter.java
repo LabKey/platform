@@ -15,7 +15,8 @@
  */
 package org.labkey.study.importer;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
@@ -30,7 +31,6 @@ import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -63,7 +63,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
     public void process(List<Map<String, Object>> rows, boolean merge, Logger logger) throws IOException, ValidationException
     {
         if (null == logger)
-            logger = Logger.getLogger(getClass());
+            logger = LogManager.getLogger(getClass());
         _process(rows, merge, logger);
     }
 

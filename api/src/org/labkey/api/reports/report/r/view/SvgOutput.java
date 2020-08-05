@@ -16,7 +16,7 @@
 package org.labkey.api.reports.report.r.view;
 
 import org.apache.batik.transcoder.TranscoderException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.thumbnail.Thumbnail;
@@ -66,7 +66,7 @@ public class SvgOutput extends HtmlOutput
                 }
                 catch (TranscoderException e)
                 {
-                    Logger.getLogger(SvgOutput.class).error("Couldn't generate thumbnail", e);
+                    LogManager.getLogger(SvgOutput.class).error("Couldn't generate thumbnail", e);
                 }
             }
         }

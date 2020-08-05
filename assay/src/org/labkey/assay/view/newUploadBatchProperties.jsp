@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.exp.property.DomainProperty" %>
-<%@ page import="org.labkey.api.assay.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.api.assay.AssayProvider" %>
+<%@ page import="org.labkey.api.assay.actions.AssayRunUploadForm" %>
+<%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.util.Map" %>

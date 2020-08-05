@@ -15,7 +15,6 @@
  */
 package org.labkey.filecontent;
 
-import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.Lsid;

@@ -17,8 +17,9 @@ package org.labkey.api.security;
 
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.util.FileUtil;
@@ -40,7 +41,7 @@ import java.util.regex.Pattern;
  */
 public class BlacklistFilter
 {
-    static Logger _log = Logger.getLogger(BlacklistFilter.class);
+    static Logger _log = LogManager.getLogger(BlacklistFilter.class);
     static Cache<String,Suspicious> suspiciousMap = CacheManager.getStringKeyCache(1_000, CacheManager.HOUR, "suspicious cache");
 
 

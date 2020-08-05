@@ -19,8 +19,8 @@ package org.labkey.api.jsp.taglib;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 
-import javax.servlet.jsp.tagext.SimpleTagSupport;
 import javax.servlet.jsp.JspWriter;
+import javax.servlet.jsp.tagext.SimpleTagSupport;
 
 public class SimpleTagBase extends SimpleTagSupport
 {
