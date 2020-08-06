@@ -15,10 +15,10 @@
  */
 package org.labkey.study.specimen.settings;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.model.StudyManager;
-import org.labkey.api.data.Container;
 
 import java.util.ArrayList;
 import java.util.HashMap;

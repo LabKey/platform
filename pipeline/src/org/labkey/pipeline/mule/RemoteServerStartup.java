@@ -15,23 +15,32 @@
  */
 package org.labkey.pipeline.mule;
 
-import org.mule.config.builders.MuleXmlConfigurationBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.pipeline.AbstractPipelineStartup;
+import org.labkey.pipeline.api.PipelineJobServiceImpl;
+import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.mule.extras.client.MuleClient;
 import org.mule.impl.RequestContext;
 import org.springframework.beans.factory.BeanFactory;
-import org.labkey.pipeline.api.PipelineJobServiceImpl;
-import org.labkey.pipeline.AbstractPipelineStartup;
-import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
-import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.util.BreakpointThread;
-import org.apache.log4j.Logger;
 
-import javax.jms.*;
-import java.io.*;
-import java.lang.IllegalStateException;
-import java.util.*;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.QueueBrowser;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import java.io.File;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /*
 * User: jeckels
@@ -39,7 +48,7 @@ import java.util.*;
 */
 public class RemoteServerStartup extends AbstractPipelineStartup
 {
-    private static Logger _log = Logger.getLogger(RemoteServerStartup.class);
+    private static Logger _log = LogManager.getLogger(RemoteServerStartup.class);
     private static final String JOB_QUEUE_ADDRESS = "job.queue";
 
     /**
@@ -47,8 +56,7 @@ public class RemoteServerStartup extends AbstractPipelineStartup
      */
     public void run(List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, File webappDir, String[] args) throws Exception
     {
-        Map<String, BeanFactory> factories = initContext("log4j.xml", moduleFiles, moduleConfigFiles, customConfigFiles, webappDir, PipelineJobService.LocationType.RemoteServer);
-        LoggerUtil.rollErrorLogFile(_log);
+        Map<String, BeanFactory> factories = initContext("RemoteServerStartup", "log4j2.xml", moduleFiles, moduleConfigFiles, customConfigFiles, webappDir, PipelineJobService.LocationType.RemoteServer);
 
         _log.info("Starting up LabKey Remote Server");
 

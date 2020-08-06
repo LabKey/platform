@@ -15,8 +15,9 @@
  */
 package org.labkey.api.module;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -57,7 +58,7 @@ import java.util.Set;
  */
 public class SimpleFolderType extends MultiPortalFolderType
 {
-    private static final Logger LOGGER = Logger.getLogger(SimpleFolderType.class);
+    private static final Logger LOGGER = LogManager.getLogger(SimpleFolderType.class);
 
     private final String _name;
     private final String _description;
@@ -156,7 +157,7 @@ public class SimpleFolderType extends MultiPortalFolderType
 
     private static FolderType parseFile(Resource folderTypeFile)
     {
-        Logger log = Logger.getLogger(SimpleFolderType.class);
+        Logger log = LogManager.getLogger(SimpleFolderType.class);
         XmlOptions xmlOptions = new XmlOptions();
 
         Map<String,String> namespaceMap = new HashMap<>();

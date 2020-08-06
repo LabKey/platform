@@ -15,12 +15,18 @@
  */
 package org.labkey.experiment;
 
-import org.labkey.api.view.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.data.*;
-import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 /**

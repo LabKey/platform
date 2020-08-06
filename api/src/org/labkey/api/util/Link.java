@@ -24,8 +24,10 @@ import java.io.Writer;
 import java.util.Collections;
 
 import static org.labkey.api.util.DOM.A;
+import static org.labkey.api.util.DOM.Attribute.href;
+import static org.labkey.api.util.DOM.Attribute.onclick;
+import static org.labkey.api.util.DOM.Attribute.target;
 import static org.labkey.api.util.DOM.at;
-import static org.labkey.api.util.DOM.Attribute.*;
 
 public class Link extends DisplayElement implements HasHtmlString
 {

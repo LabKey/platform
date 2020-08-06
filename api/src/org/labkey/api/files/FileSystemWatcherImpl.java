@@ -16,7 +16,8 @@
 package org.labkey.api.files;
 
 import org.apache.commons.lang3.SystemUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.imca_cat.pollingwatchservice.PathWatchService;
 import org.imca_cat.pollingwatchservice.PollingWatchService;
 import org.junit.Assert;
@@ -73,7 +74,7 @@ import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
  */
 public class FileSystemWatcherImpl implements FileSystemWatcher
 {
-    private static final Logger LOG = Logger.getLogger(FileSystemWatcherImpl.class);
+    private static final Logger LOG = LogManager.getLogger(FileSystemWatcherImpl.class);
 
     private final WatchService _watcher;
     private final ConcurrentMap<Path, PathListenerManager> _listenerMap = new ConcurrentHashMap<>(1000);

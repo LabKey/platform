@@ -16,9 +16,9 @@
 
 package org.labkey.api.security;
 
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-import java.lang.annotation.ElementType;
 
 /**
  * Indicates that a user must be authenticated (not a guest), but does not require any particular permission.

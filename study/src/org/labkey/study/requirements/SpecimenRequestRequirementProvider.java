@@ -18,7 +18,9 @@ package org.labkey.study.requirements;
 
 import org.labkey.api.data.TableInfo;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.*;
+import org.labkey.study.model.SpecimenRequest;
+import org.labkey.study.model.SpecimenRequestActor;
+import org.labkey.study.model.SpecimenRequestRequirement;
 
 import java.util.List;
 

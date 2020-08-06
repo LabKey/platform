@@ -18,7 +18,8 @@ package org.labkey.study.model;
 
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -97,7 +98,7 @@ import java.util.stream.Collectors;
  */
 public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 {
-    private static final Logger LOG = Logger.getLogger(StudyImpl.class);
+    private static final Logger LOG = LogManager.getLogger(StudyImpl.class);
     private static final String DOMAIN_URI_PREFIX = "Study";
 
     public static final DomainInfo DOMAIN_INFO = new StudyDomainInfo(DOMAIN_URI_PREFIX, true);

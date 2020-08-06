@@ -16,7 +16,6 @@
 package org.labkey.api.query;
 
 import org.springframework.validation.BindException;
-import org.springframework.validation.ObjectError;
 
 /**
  * Represents a particular validation error. Various validation error

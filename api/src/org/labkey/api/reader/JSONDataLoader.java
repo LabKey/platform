@@ -26,7 +26,7 @@ import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
@@ -773,7 +773,7 @@ public class JSONDataLoader extends DataLoader
         }
         catch (IOException e)
         {
-            Logger.getLogger(JSONDataLoader.class).error("Error closing JSON stream", e);
+            LogManager.getLogger(JSONDataLoader.class).error("Error closing JSON stream", e);
         }
     }
 

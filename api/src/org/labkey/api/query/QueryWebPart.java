@@ -16,7 +16,6 @@
 
 package org.labkey.api.query;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertingWrapDynaBean;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
@@ -27,7 +26,6 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.ButtonBarConfig;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;

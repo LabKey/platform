@@ -16,8 +16,8 @@
  */
 %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
-<%@ page import="java.util.Collection" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="java.util.Collection" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <script>

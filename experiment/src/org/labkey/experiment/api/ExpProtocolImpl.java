@@ -27,7 +27,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentProtocolHandler;
-import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.ProtocolParameter;
 import org.labkey.api.exp.api.ExpDataProtocolInput;
@@ -59,7 +58,7 @@ import java.util.stream.Collectors;
 
 public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> implements ExpProtocol
 {
-    private List<ExpProtocolActionImpl> _actions;
+    private transient List<ExpProtocolActionImpl> _actions;
 
     // For serialization
     protected ExpProtocolImpl() {}

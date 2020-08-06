@@ -25,15 +25,42 @@
 package org.labkey.api.script;
 
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
-import com.sun.phobos.script.util.*;
 import com.sun.phobos.script.util.ExtendedScriptException;
-import org.apache.log4j.Logger;
+import com.sun.phobos.script.util.InterfaceImplementor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.reports.LabKeyScriptEngine;
 import org.labkey.api.util.ExceptionUtil;
-import org.mozilla.javascript.*;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Function;
+import org.mozilla.javascript.ImporterTopLevel;
+import org.mozilla.javascript.JavaScriptException;
+import org.mozilla.javascript.LazilyLoadedCtor;
+import org.mozilla.javascript.RhinoException;
+import org.mozilla.javascript.Script;
+import org.mozilla.javascript.Scriptable;
+import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.Synchronizer;
+import org.mozilla.javascript.Undefined;
+import org.mozilla.javascript.Wrapper;
 
-import javax.script.*;
-import java.io.*;
+import javax.script.AbstractScriptEngine;
+import javax.script.Bindings;
+import javax.script.Compilable;
+import javax.script.CompiledScript;
+import javax.script.Invocable;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineFactory;
+import javax.script.ScriptException;
+import javax.script.SimpleBindings;
+import javax.script.SimpleScriptContext;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -58,7 +85,7 @@ import java.util.Map;
 // kevink: Essentially the same as the original, with changes marked with kevink
 public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScriptEngine, Invocable, Compilable
 {
-    private final Logger _log = Logger.getLogger(RhinoScriptEngine.class);
+    private final Logger _log = LogManager.getLogger(RhinoScriptEngine.class);
 
     public static final boolean DEBUG = false;
     private static final String TOPLEVEL_SCRIPT_NAME = "META-INF/toplevel.js";

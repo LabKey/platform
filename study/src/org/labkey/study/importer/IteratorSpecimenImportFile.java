@@ -19,9 +19,8 @@ package org.labkey.study.importer;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.study.SpecimenImportStrategy;
-import org.labkey.study.importer.SpecimenImporter.*;
+import org.labkey.study.importer.SpecimenImporter.SpecimenTableType;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 

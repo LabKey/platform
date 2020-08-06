@@ -16,9 +16,9 @@
 
 package org.labkey.experiment.controllers.exp;
 
+import org.labkey.api.data.BeanViewForm;
 import org.labkey.experiment.api.Experiment;
 import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.api.data.BeanViewForm;
 
 /**
  * User: jeckels

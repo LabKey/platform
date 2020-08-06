@@ -15,7 +15,8 @@
  */
 package org.labkey.api.module;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.ListIterator;
@@ -28,7 +29,7 @@ import java.util.ListIterator;
  */
 public class ModuleUpgrader
 {
-    private static final Logger _log = Logger.getLogger(ModuleUpgrader.class);
+    private static final Logger _log = LogManager.getLogger(ModuleUpgrader.class);
 
     private final List<Module> _modules;
 

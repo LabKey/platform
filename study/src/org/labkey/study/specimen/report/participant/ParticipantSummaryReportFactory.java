@@ -15,16 +15,16 @@
  */
 package org.labkey.study.specimen.report.participant;
 
-import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
-import org.labkey.study.specimen.report.SpecimenVisitReport;
-import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.VisitImpl;
-import org.labkey.study.SpecimenManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.study.StudyService;
+import org.labkey.study.SpecimenManager;
+import org.labkey.study.controllers.specimen.SpecimenController;
+import org.labkey.study.model.VisitImpl;
+import org.labkey.study.specimen.report.SpecimenVisitReport;
+import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * User: brittp

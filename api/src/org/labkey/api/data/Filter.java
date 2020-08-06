@@ -20,9 +20,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 
-import java.util.Set;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Knows how to generate a WHERE clause to filter a query based on some set of criteria. Used extensively, often

@@ -16,7 +16,8 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.query.CrosstabView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -36,7 +37,7 @@ import java.util.List;
  */
 public class CrosstabDataRegion extends DataRegion
 {
-    private static final Logger _log = Logger.getLogger(CrosstabDataRegion.class);
+    private static final Logger _log = LogManager.getLogger(CrosstabDataRegion.class);
     private CrosstabSettings _settings;
     private int _numRowAxisCols;
     private int _numMeasures;

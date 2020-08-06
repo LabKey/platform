@@ -15,8 +15,6 @@
  */
 package org.labkey.api.query;
 
-import com.google.gwt.user.client.rpc.IsSerializable;
-import com.google.gwt.user.client.rpc.RemoteService;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.RuntimeSQLException;
 import org.springframework.validation.BindException;

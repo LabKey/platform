@@ -16,10 +16,10 @@
  */
 --%>
 <%@ page extends="org.labkey.query.controllers.Page" %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.query.QueryDefinition" %>
-<%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.api.query.QueryDefinition"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
+<%@ page import="java.util.Collection" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     QueryController.DeleteQueryAction action = (QueryController.DeleteQueryAction) HttpView.currentModel();

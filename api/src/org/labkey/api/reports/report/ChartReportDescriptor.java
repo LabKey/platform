@@ -17,8 +17,6 @@
 package org.labkey.api.reports.report;
 
 import org.apache.commons.lang3.math.NumberUtils;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.visualization.GenericChartReport;
 
 import java.util.Arrays;
 import java.util.List;

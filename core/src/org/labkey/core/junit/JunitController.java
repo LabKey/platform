@@ -19,7 +19,13 @@ package org.labkey.core.junit;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -346,9 +352,12 @@ public class JunitController extends SpringActionController
         {
             _testClasses = testClasses;
             _results = results;
-            _appender = new StatusAppender();
-            _log = Logger.getLogger(JunitRunnable.class);
-            _log.addAppender(_appender);
+            _appender = new StatusAppender("StatusAppender", null, PatternLayout.createDefaultLayout(), false, null);
+            _log = LogManager.getLogger(JunitRunnable.class);
+            LoggerContext loggerContext = (LoggerContext) LogManager.getContext(true);
+            Configuration configuration = loggerContext.getConfiguration();
+            LoggerConfig loggerConfig = configuration.getLoggerConfig(_log.getName());
+            loggerConfig.addAppender(_appender, Level.toLevel(_log.getLevel().toString()), null);
             TestContext.setTestContext(request, user);
         }
 

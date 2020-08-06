@@ -16,14 +16,18 @@
 
 package org.labkey.core.wiki;
 
+import org.labkey.api.view.HttpView;
+import org.labkey.api.wiki.MacroProvider;
 import org.radeox.macro.BaseMacro;
 import org.radeox.macro.parameter.MacroParameter;
-import org.labkey.api.wiki.MacroProvider;
-import org.labkey.api.view.HttpView;
 
-import java.io.Writer;
 import java.io.IOException;
-import java.util.*;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: Mark Igra

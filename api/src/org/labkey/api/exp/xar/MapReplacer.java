@@ -16,8 +16,8 @@
 
 package org.labkey.api.exp.xar;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: jeckels

@@ -17,23 +17,19 @@
 package org.labkey.assay;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.assay.plate.PlateManager;
-import org.labkey.assay.query.AssayDbSchema;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager.ContainerListener;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.AssayService;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Collection;
+import org.labkey.assay.plate.PlateManager;
 
 import java.beans.PropertyChangeEvent;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;

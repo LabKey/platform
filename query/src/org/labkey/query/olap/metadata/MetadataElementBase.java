@@ -15,9 +15,9 @@
  */
 package org.labkey.query.olap.metadata;
 
-import org.junit.Assert;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.query.FieldKey;
 import org.olap4j.impl.Named;

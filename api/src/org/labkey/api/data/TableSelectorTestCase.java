@@ -16,7 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.log4j.Level;
+import org.apache.logging.log4j.Level;
 import org.junit.Test;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Selector.ForEachBlock;

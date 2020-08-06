@@ -18,7 +18,8 @@ package org.labkey.announcements;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -59,7 +60,7 @@ import static java.lang.Boolean.TRUE;
 @RequiresPermission(ReadPermission.class)
 public class SendMessageAction extends MutatingApiAction<SendMessageAction.MessageForm>
 {
-    private static final Logger _log = Logger.getLogger(SendMessageAction.class);
+    private static final Logger _log = LogManager.getLogger(SendMessageAction.class);
     private Map<String, Set<String>> _recipientMap = new HashMap<>();
 
     enum Props

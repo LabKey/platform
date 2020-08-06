@@ -16,7 +16,8 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -63,7 +64,7 @@ import java.util.stream.Stream;
 // identify tests that exercise the code paths that will be changed.
 public class StatementUtils
 {
-    private static final Logger _log = Logger.getLogger(StatementUtils.class);
+    private static final Logger _log = LogManager.getLogger(StatementUtils.class);
 
     public enum Operation {insert, update, merge}
     public static String OWNEROBJECTID = "exp$object$ownerobjectid";

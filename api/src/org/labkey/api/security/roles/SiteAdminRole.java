@@ -15,7 +15,16 @@
  */
 package org.labkey.api.security.roles;
 
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.security.permissions.AnalystPermission;
+import org.labkey.api.security.permissions.BrowserDeveloperPermission;
+import org.labkey.api.security.permissions.CanUseSendMessageApiPermission;
+import org.labkey.api.security.permissions.EditModuleResourcesPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
+import org.labkey.api.security.permissions.SiteAdminPermission;
+import org.labkey.api.security.permissions.TrustedPermission;
+import org.labkey.api.security.permissions.UploadFileBasedModulePermission;
 import org.labkey.api.settings.AppProps;
 
 import java.util.Arrays;

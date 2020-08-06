@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.json.JSONObject;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.URLHelper;
 

@@ -16,8 +16,21 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.*;
-import org.labkey.api.exp.*;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MVDisplayColumnFactory;
+import org.labkey.api.data.OORDisplayColumnFactory;
+import org.labkey.api.data.OutOfRangeDisplayColumn;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.RawValueColumn;
 
 import java.util.ArrayList;
 import java.util.Collection;

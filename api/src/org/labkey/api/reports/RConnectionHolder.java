@@ -15,10 +15,11 @@
  */
 package org.labkey.api.reports;
 
+import org.rosuda.REngine.Rserve.RConnection;
+
 import javax.script.ScriptException;
 import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionBindingListener;
-import org.rosuda.REngine.Rserve.RConnection;
 import java.util.HashSet;
 
 //

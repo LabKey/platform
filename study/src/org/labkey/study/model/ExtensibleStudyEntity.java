@@ -17,7 +17,10 @@ package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
-import org.labkey.api.exp.*;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -26,7 +29,6 @@ import org.labkey.api.query.ValidationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.sql.SQLException;
 
 /**
  * Indicates that an object has virtual columns in Ontology Manager

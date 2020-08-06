@@ -32,7 +32,6 @@ import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiTree;
 import org.labkey.wiki.model.WikiVersion;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;

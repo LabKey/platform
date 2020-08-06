@@ -16,10 +16,10 @@
 
 package org.labkey.api.qc;
 
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.query.ValidationException;
 
 /**
  * Takes assay data and runs it through the configured transform scripts. Each script may transform it into a new

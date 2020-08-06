@@ -18,14 +18,9 @@ package org.labkey.study.model;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.TreatmentProduct;
 import org.labkey.api.util.Pair;
-import org.labkey.study.StudySchema;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 

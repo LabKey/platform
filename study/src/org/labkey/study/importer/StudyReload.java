@@ -16,7 +16,8 @@
 
 package org.labkey.study.importer;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.FolderImportContext;
@@ -28,11 +29,8 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.study.Study;
-import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.folder.xml.FolderDocument;
@@ -45,8 +43,6 @@ import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.util.Date;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 /*
 * User: adam
@@ -55,7 +51,7 @@ import java.util.concurrent.BlockingQueue;
 */
 public class StudyReload
 {
-    private static final Logger LOG = Logger.getLogger(StudyReload.class);
+    private static final Logger LOG = LogManager.getLogger(StudyReload.class);
 
     private static String getDescription(Study study)
     {

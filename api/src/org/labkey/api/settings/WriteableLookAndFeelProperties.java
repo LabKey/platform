@@ -23,9 +23,24 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.view.ActionURL;
+
 import java.util.Collection;
 
-import static org.labkey.api.settings.LookAndFeelProperties.*;
+import static org.labkey.api.settings.LookAndFeelProperties.COMPANY_NAME_PROP;
+import static org.labkey.api.settings.LookAndFeelProperties.CUSTOM_LOGIN_PROP;
+import static org.labkey.api.settings.LookAndFeelProperties.CUSTOM_WELCOME_PROP;
+import static org.labkey.api.settings.LookAndFeelProperties.DATE_PARSING_MODE;
+import static org.labkey.api.settings.LookAndFeelProperties.DISCUSSION_ENABLED_PROP;
+import static org.labkey.api.settings.LookAndFeelProperties.FOLDER_DISPLAY_MODE;
+import static org.labkey.api.settings.LookAndFeelProperties.HELP_MENU_ENABLED_PROP;
+import static org.labkey.api.settings.LookAndFeelProperties.LOGO_HREF_PROP;
+import static org.labkey.api.settings.LookAndFeelProperties.NAVIGATION_BAR_WIDTH;
+import static org.labkey.api.settings.LookAndFeelProperties.REPORT_A_PROBLEM_PATH_PROP;
+import static org.labkey.api.settings.LookAndFeelProperties.SUPPORT_EMAIL;
+import static org.labkey.api.settings.LookAndFeelProperties.SYSTEM_DESCRIPTION_PROP;
+import static org.labkey.api.settings.LookAndFeelProperties.SYSTEM_EMAIL_ADDRESS_PROP;
+import static org.labkey.api.settings.LookAndFeelProperties.SYSTEM_SHORT_NAME_PROP;
+import static org.labkey.api.settings.LookAndFeelProperties.THEME_NAME_PROP;
 
 /**
  * User: adam
