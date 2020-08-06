@@ -32,6 +32,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -465,7 +466,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             }
         }
 
-        PdLookupForeignKey lookupKey = null;
+        ForeignKey lookupKey = null;
         if (key.getLookupQuery() != null || key.getConceptURI() != null)
         {
             // TODO ContainerFilter

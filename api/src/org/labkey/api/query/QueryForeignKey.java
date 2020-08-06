@@ -20,11 +20,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
@@ -42,14 +44,19 @@ public class QueryForeignKey extends AbstractForeignKey
     protected TableInfo _table;
 
     /**
-     * The configured container for this lookup. Null if it should use the current container
+     * The explicitly configured container for this lookup.
      * This will create a single container containerFilter() using lookupContainer (unless tableinfo was explicitly provided, of course)
+     *    see getLookupContainerFilter().
+     * Also, this value is used to properly propagate whether the target container was explictly set or not (can't tell looking at _effectiveContainer)
      */
-    @Nullable
-    Container _lookupContainer;
-    /** The container for the schema for the target table (unless the target schema was explicitly) provided. */
-    @NotNull
-    Container _effectiveContainer;
+    @Nullable Container _lookupContainer;
+
+    /** The container for the schema for the target table (unless the target schema was explicitly provided). */
+    @NotNull Container _effectiveContainer;
+
+    /** For property descriptor we can fall back to the definition container when trying to resolve a table */
+    @Nullable Container _definitionContainer;
+
     User _user;
     QuerySchema _schema;
     boolean _useRawFKValue;
@@ -65,6 +72,7 @@ public class QueryForeignKey extends AbstractForeignKey
 
         // target schema definition
         Container effectiveContainer;
+        Container definitionContainer;      // alternative to current container for resolving table
         String lookupSchemaName;
         UserSchema targetSchema;
 
@@ -109,10 +117,6 @@ public class QueryForeignKey extends AbstractForeignKey
             return this;
         }
 
-//        public Builder schema(String schemaName)
-//        {
-//            return setSchema(schemaName);
-//        }
 
         // effectiveContainer is the container used when resolving schemaName if there is not an explicit fkFolderPath defined
         public Builder schema(String schemaName, Container effectiveContainer)
@@ -125,18 +129,17 @@ public class QueryForeignKey extends AbstractForeignKey
             return this;
         }
 
-        // effectiveContainer is the container used when resolving schemaName if there is not an explicit fkFolderPath defined
-//        public Builder setSchema(String schemaName, Container effectiveContainer)
-//        {
-//            lookupSchemaName = schemaName;
-//            this.effectiveContainer = effectiveContainer;
-//            return this;
-//        }
-
         // This is the container for the lookup table
         public Builder container(Container container)
         {
             this.lookupContainer = container;
+            return this;
+        }
+
+        // This is the container that contains the definition of this lookup (e.g. PropertyDescriptor)
+        public Builder definitionContainer(Container definitionContainer)
+        {
+            this.definitionContainer = definitionContainer;
             return this;
         }
 
@@ -208,6 +211,17 @@ public class QueryForeignKey extends AbstractForeignKey
         {
             if (null == lookupSchemaName && null == targetSchema)
                 targetSchema = (UserSchema)sourceSchema;
+
+            /* see 41054 duplicate the core.containers special case handling from PdLookupForeignKey */
+            if (null != sourceSchema && sourceSchema.getDbSchema().getScope().isLabKeyScope())
+            {
+                if ("core".equalsIgnoreCase(lookupSchemaName) && "containers".equalsIgnoreCase(lookupTableName) && effectiveContainer.equals(sourceSchema.getContainer()))
+                {
+                    if (null == containerFilter)
+                        containerFilter = new ContainerFilter.AllFolders(user);
+                }
+            }
+
             return new QueryForeignKey(this);
         }
     }
@@ -222,12 +236,16 @@ public class QueryForeignKey extends AbstractForeignKey
         super(builder.sourceSchema, builder.containerFilter, builder.lookupSchemaName, builder.lookupTableName, builder.lookupKey, builder.displayField);
         _effectiveContainer = builder.effectiveContainer;
         _lookupContainer = builder.lookupContainer;
+        _definitionContainer = builder.definitionContainer;
         _user = builder.user;
         _useRawFKValue = builder.useRawFKValue;
         _table = builder.table;
         _schema = builder.targetSchema;
-        // TODO there is an EHR usage that fails this assert (AbstractTableCustomizer)
-        // assert(null == _lookupContainer || getEffectiveContainer() == getLookupContainer());
+
+        // _lookupContainer is usually is just telling us whether the target container was explicit or not.  We mostly don't expect it to be different than
+        // _effective container.  However, this does happen in some cases when a constructed Schema is handed into us, see subclasses of AbstractTableCustomizer.
+        // In that case, _lookupContainer is still being used to construct the ContainerFilter (which won't match schema.getContainer())
+        assert  null != _schema || null == _lookupContainer || _lookupContainer == _effectiveContainer;
     }
 
     protected QueryForeignKey(QuerySchema sourceSchema, ContainerFilter cf, @NotNull String schemaName, @NotNull Container effectiveContainer, @Nullable Container lookupContainer, User user, String tableName, @Nullable String lookupKey, @Nullable String displayField)
@@ -333,15 +351,6 @@ public class QueryForeignKey extends AbstractForeignKey
         return _lookupContainer;
     }
 
-    private Container getEffectiveContainer()
-    {
-        if (null != _table)
-            return _table.getUserSchema().getContainer();
-        if (null != _schema)
-            return _schema.getContainer();
-        return _effectiveContainer;
-    }
-
     @Override
     protected User getLookupUser()
     {
@@ -352,14 +361,43 @@ public class QueryForeignKey extends AbstractForeignKey
         return super.getLookupUser();
     }
 
+    private static TableInfo TABLE_NOT_FOUND = new AbstractTableInfo(null,"TABLE NOT FOUND")
+    {
+        @Override
+        protected SQLFragment getFromSQL()
+        {
+            return null;
+        }
+
+        @Override
+        public @Nullable UserSchema getUserSchema()
+        {
+            return null;
+        }
+    };
+
     @Override
     public TableInfo getLookupTableInfo()
     {
-        if (_table == null && getSchema() != null)
+        if (null == _table)
         {
-            _table = getSchema().getTable(_tableName, getLookupContainerFilter());
+            if (getSchema() != null)
+            {
+                _table = getSchema().getTable(_tableName, getLookupContainerFilter());
+            }
+
+            /* if table was not found then check if we should fall back to the definition container */
+            if (null == _table && null == _lookupContainer && null != _definitionContainer)
+            {
+                QuerySchema altSchema = getDefinitionSchema();
+                if (null != altSchema)
+                    _table = altSchema.getTable(_tableName, new ContainerFilter.SimpleContainerFilterWithUser(_sourceSchema.getUser(), _definitionContainer));
+            }
+
+            if (null == _table)
+                _table = TABLE_NOT_FOUND;
         }
-        return _table;
+        return _table == TABLE_NOT_FOUND ? null : _table;
     }
 
     protected QuerySchema getSchema()
@@ -375,6 +413,19 @@ public class QueryForeignKey extends AbstractForeignKey
         }
         return _schema;
     }
+
+
+    protected QuerySchema getDefinitionSchema()
+    {
+        if (null == _definitionContainer)
+            return null;
+        if (null != _schema && _schema.getContainer().equals(_definitionContainer))
+            return null;
+
+        DefaultSchema resolver = DefaultSchema.get(_user,_definitionContainer);
+        return resolver.getSchema(_lookupSchemaName);
+    }
+
 
     @Override
     public StringExpression getURL(ColumnInfo parent)

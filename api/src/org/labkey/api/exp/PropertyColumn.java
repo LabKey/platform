@@ -133,7 +133,11 @@ public class PropertyColumn extends LookupColumn
         }
 
         if (user != null && ((pd.getLookupSchema() != null && pd.getLookupQuery() != null) || pd.getConceptURI() != null))
-            to.setFk(PdLookupForeignKey.create(to.getParentTable().getUserSchema(), user, container, pd));
+        {
+            assert null != to.getParentTable().getUserSchema();
+            assert user.equals(to.getParentTable().getUserSchema().getUser());
+            to.setFk(PdLookupForeignKey.create(to.getParentTable().getUserSchema(), pd));
+        }
 
         to.setDefaultValueType(pd.getDefaultValueTypeEnum());
         to.setConditionalFormats(PropertyService.get().getConditionalFormats(pd));

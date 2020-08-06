@@ -294,7 +294,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
                 {
                     if (pd.getLookupQuery() != null || pd.getConceptURI() != null)
                     {
-                        ((BaseColumnInfo)col).setFk(new IssuesPdLookupForeignKey(schema, pd));
+                        ((BaseColumnInfo)col).setFk(IssuesPdLookupForeignKey.create(schema, getContainerFilter(), pd));
                         TableInfo target = col.getFk().getLookupTableInfo();
                         if (null != target && target.getPkColumnNames().size() == 1 && StringUtils.equalsIgnoreCase(target.getTitleColumn(),target.getPkColumnNames().get(0)))
                         {
@@ -691,31 +691,33 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
      * Lookup FK which preserves the current value of the field regardless of whether it
      * is contained in the lookup.
      */
-    static class IssuesPdLookupForeignKey extends PdLookupForeignKey
+    static class IssuesPdLookupForeignKey extends QueryForeignKey
     {
-        private User _user;
-        private Container _container;
-        private String _propName;
+        private final PropertyDescriptor _pd;
 
-        public IssuesPdLookupForeignKey(IssuesQuerySchema schema, PropertyDescriptor pd)
+        public static ForeignKey create(IssuesQuerySchema schema, ContainerFilter cf, PropertyDescriptor pd)
         {
-            super(schema, schema.getContainer(), schema.getUser(), null, pd, pd.getLookupSchema(), pd.getLookupQuery(), pd.getContainer());
-            _user = schema.getUser();
-            _container = schema.getContainer();
-            _propName = pd.getName();
+            QueryForeignKey.Builder b = PdLookupForeignKey.builder(schema,cf,pd);
+            return new IssuesPdLookupForeignKey(b, pd);
         }
 
-        @Override
+        IssuesPdLookupForeignKey(QueryForeignKey.Builder b, PropertyDescriptor pd)
+        {
+            super(b);
+            _pd = pd;
+        }
+
+        @Override @NotNull
         public NamedObjectList getSelectList(RenderContext ctx)
         {
             NamedObjectList objectList = super.getSelectList(ctx);
             Integer issueId = ctx.get(FieldKey.fromParts("IssueId"), Integer.class);
             if (issueId != null)
             {
-                Issue issue = IssueManager.getIssue(_container, _user, issueId);
+                Issue issue = IssueManager.getIssue(_sourceSchema.getContainer(), _sourceSchema.getUser(), issueId);
                 if (issue != null)
                 {
-                    Object value = issue.getProperties().get(_propName);
+                    Object value = issue.getProperties().get(_pd.getName());
                     if (value instanceof String)
                     {
                         NamedObject entry = new SimpleNamedObject(value.toString(), value);

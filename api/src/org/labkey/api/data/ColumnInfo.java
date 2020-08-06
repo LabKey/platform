@@ -24,7 +24,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.util.StringExpression;
@@ -71,9 +71,9 @@ public interface ColumnInfo extends ColumnRenderProperties
         {
             if (col.getJdbcType() != JdbcType.INTEGER)
                 return false;
-            if (col.getFk() instanceof PdLookupForeignKey)
+            if (col.getFk() instanceof QueryForeignKey)
             {
-                PdLookupForeignKey lfk = (PdLookupForeignKey)col.getFk();
+                QueryForeignKey lfk = (QueryForeignKey)col.getFk();
                 if ("core".equalsIgnoreCase(lfk.getLookupSchemaName()) && ("siteusers".equalsIgnoreCase(lfk.getLookupTableName()) || "users".equalsIgnoreCase(lfk.getLookupTableName())))
                     return true;
             }
