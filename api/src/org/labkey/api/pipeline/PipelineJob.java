@@ -1463,6 +1463,14 @@ abstract public class PipelineJob extends Job implements Serializable
             setErrorStatus(message);
         }
 
+        // called from LogOutputStream.flush()
+        @Override
+        public void log(Level level, String message)
+        {
+           _job.getClassLogger().log(level, message);
+           write(message, null, level.toString());
+        }
+
         private String getSystemLogMessage(Object message)
         {
             StringBuilder sb = new StringBuilder();
