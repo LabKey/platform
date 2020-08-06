@@ -1506,7 +1506,7 @@ abstract public class PipelineJob extends Job implements Serializable
             {
                 var line = formattedDate + " " +
                         String.format("%-5s", level) +
-                        " : " +
+                        ": " +
                         message;
                 writer.write(line);
                 writer.write(LINE_SEP);
