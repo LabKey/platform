@@ -1436,6 +1436,7 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             _job.getClassLogger().error(getSystemLogMessage(message));
             write(message, null, Level.ERROR.toString());
+            setErrorStatus(message);
         }
 
         @Override
@@ -1451,6 +1452,7 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             _job.getClassLogger().fatal(getSystemLogMessage(message));
             write(message, null, Level.FATAL.toString());
+            setErrorStatus(message);
         }
 
         @Override
