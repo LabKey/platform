@@ -41,6 +41,7 @@ import java.util.Set;
  */
 public class QueryForeignKey extends AbstractForeignKey
 {
+    protected boolean _tableNotFound = false;
     protected TableInfo _table;
 
     /**
@@ -53,9 +54,6 @@ public class QueryForeignKey extends AbstractForeignKey
 
     /** The container for the schema for the target table (unless the target schema was explicitly provided). */
     @NotNull Container _effectiveContainer;
-
-    /** For property descriptor we can fall back to the definition container when trying to resolve a table */
-    @Nullable Container _definitionContainer;
 
     User _user;
     QuerySchema _schema;
@@ -72,7 +70,6 @@ public class QueryForeignKey extends AbstractForeignKey
 
         // target schema definition
         Container effectiveContainer;
-        Container definitionContainer;      // alternative to current container for resolving table
         String lookupSchemaName;
         UserSchema targetSchema;
 
@@ -117,7 +114,6 @@ public class QueryForeignKey extends AbstractForeignKey
             return this;
         }
 
-
         // effectiveContainer is the container used when resolving schemaName if there is not an explicit fkFolderPath defined
         public Builder schema(String schemaName, Container effectiveContainer)
         {
@@ -136,20 +132,13 @@ public class QueryForeignKey extends AbstractForeignKey
             return this;
         }
 
-        // This is the container that contains the definition of this lookup (e.g. PropertyDescriptor)
-        public Builder definitionContainer(Container definitionContainer)
-        {
-            this.definitionContainer = definitionContainer;
-            return this;
-        }
-
         public Builder table(String tableName)
         {
             this.lookupTableName = tableName;
             return this;
         }
 
-        public Builder table(Enum tableName)
+        public Builder table(Enum<?> tableName)
         {
             this.lookupTableName = tableName.name();
             return this;
@@ -162,29 +151,11 @@ public class QueryForeignKey extends AbstractForeignKey
             return this;
         }
 
-//        public Builder setTableName(String tableName)
-//        {
-//            this.lookupTableName = tableName;
-//            return this;
-//        }
-
         public Builder key(String name)
         {
             this.lookupKey = name;
             return this;
         }
-
-//        public Builder setLookupKey(String name)
-//        {
-//            this.lookupKey = name;
-//            return this;
-//        }
-
-//        public Builder setDisplayField(String field)
-//        {
-//            this.displayField = field;
-//            return this;
-//        }
 
         public Builder display(String field)
         {
@@ -212,7 +183,7 @@ public class QueryForeignKey extends AbstractForeignKey
             if (null == lookupSchemaName && null == targetSchema)
                 targetSchema = (UserSchema)sourceSchema;
 
-            /* see 41054 duplicate the core.containers special case handling from PdLookupForeignKey */
+            /* see 41054 move the core.containers special case handling here from PdLookupForeignKey */
             if (null != sourceSchema && sourceSchema.getDbSchema().getScope().isLabKeyScope())
             {
                 if ("core".equalsIgnoreCase(lookupSchemaName) && "containers".equalsIgnoreCase(lookupTableName) && effectiveContainer.equals(sourceSchema.getContainer()))
@@ -236,7 +207,6 @@ public class QueryForeignKey extends AbstractForeignKey
         super(builder.sourceSchema, builder.containerFilter, builder.lookupSchemaName, builder.lookupTableName, builder.lookupKey, builder.displayField);
         _effectiveContainer = builder.effectiveContainer;
         _lookupContainer = builder.lookupContainer;
-        _definitionContainer = builder.definitionContainer;
         _user = builder.user;
         _useRawFKValue = builder.useRawFKValue;
         _table = builder.table;
@@ -361,50 +331,26 @@ public class QueryForeignKey extends AbstractForeignKey
         return super.getLookupUser();
     }
 
-    private static TableInfo TABLE_NOT_FOUND = new AbstractTableInfo(null,"TABLE NOT FOUND")
-    {
-        @Override
-        protected SQLFragment getFromSQL()
-        {
-            return null;
-        }
-
-        @Override
-        public @Nullable UserSchema getUserSchema()
-        {
-            return null;
-        }
-    };
-
     @Override
     public TableInfo getLookupTableInfo()
     {
+        if (_tableNotFound || null != _table)
+            return _table;
+
+        if (getSchema() != null && _tableName != null)
+            _table = getSchema().getTable(_tableName, getLookupContainerFilter());
+
         if (null == _table)
-        {
-            if (getSchema() != null)
-            {
-                _table = getSchema().getTable(_tableName, getLookupContainerFilter());
-            }
+            _tableNotFound = true;
 
-            /* if table was not found then check if we should fall back to the definition container */
-            if (null == _table && null == _lookupContainer && null != _definitionContainer)
-            {
-                QuerySchema altSchema = getDefinitionSchema();
-                if (null != altSchema)
-                    _table = altSchema.getTable(_tableName, new ContainerFilter.SimpleContainerFilterWithUser(_sourceSchema.getUser(), _definitionContainer));
-            }
-
-            if (null == _table)
-                _table = TABLE_NOT_FOUND;
-        }
-        return _table == TABLE_NOT_FOUND ? null : _table;
+        return _table;
     }
 
     protected QuerySchema getSchema()
     {
         if (_schema == null && _user != null && _lookupSchemaName != null)
         {
-            DefaultSchema resolver = null;
+            DefaultSchema resolver;
             if (null==_sourceSchema || !_effectiveContainer.equals(_sourceSchema.getContainer()))
                 resolver = DefaultSchema.get(_user,_effectiveContainer);
             else
@@ -413,19 +359,6 @@ public class QueryForeignKey extends AbstractForeignKey
         }
         return _schema;
     }
-
-
-    protected QuerySchema getDefinitionSchema()
-    {
-        if (null == _definitionContainer)
-            return null;
-        if (null != _schema && _schema.getContainer().equals(_definitionContainer))
-            return null;
-
-        DefaultSchema resolver = DefaultSchema.get(_user,_definitionContainer);
-        return resolver.getSchema(_lookupSchemaName);
-    }
-
 
     @Override
     public StringExpression getURL(ColumnInfo parent)

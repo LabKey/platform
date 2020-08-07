@@ -59,8 +59,6 @@ public class PdLookupForeignKey
             }
         }
 
-        Objects.requireNonNull(lookupQuery);
-
         // SAMPLE LOOKUP via String special case
         // TODO: move to QueryForeignKey, requires knowing column type of parent column
         String keyColumnName = null;
@@ -71,12 +69,20 @@ public class PdLookupForeignKey
             keyColumnName = "Name";
         }
 
-        // The container that own the property descriptor might be different than the current container.
+        // The container that owns the property descriptor might be different than the current container.
         // If we can't find the targeted table in the current container, then look in the definition container.
         // This is useful for finding lists and other single-container tables
+        //
+        // NOTE: I would rather we made this explicit in the definition of the FK, but this is where we are for now for backward compatibility
+        if (null == targetContainer && !sourceSchema.getContainer().equals(pd.getContainer()))
+        {
+            QuerySchema targetSchema = sourceSchema.getSchema(lookupSchemaName);
+            if (null == targetSchema || !targetSchema.getTableNames().contains(lookupQuery))
+                targetContainer = pd.getContainer();
+        }
 
         var builder = QueryForeignKey.from(sourceSchema, cf)
-                .schema(lookupSchemaName)
+                .schema(lookupSchemaName, targetContainer)
                 .to(lookupQuery, keyColumnName, null).container(targetContainer);
         return builder;
     }
