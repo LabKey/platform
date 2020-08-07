@@ -130,7 +130,7 @@
             {
                 %><%=h(userColDisplay)%><%
             }
-            out.print("</td>");
+            %></td><%
         }
 
         Map<String, List<Group>> accessGroups = row.getAccessGroups();
@@ -192,7 +192,7 @@
         }
         else
         {
-            out.print("<td>&nbsp;</td>");
+            %><td>&nbsp;</td><%
         }
 %>
     </tr>
