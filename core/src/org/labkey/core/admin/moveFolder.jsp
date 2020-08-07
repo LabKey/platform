@@ -44,7 +44,7 @@
 %>
 <style type="text/css">
     .x-tree-node-leaf .x-tree-node-icon{
-        background-image:url(<%=getExtJs3Root()%>/resources/images/default/tree/folder.gif);
+        background-image:url(<%=getExt3Image("/tree/folder.gif")%>);
     }
 
     .x-tree-selected a.x-tree-node-anchor span {

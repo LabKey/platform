@@ -130,9 +130,14 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return HtmlString.of(PageFlowUtil.staticResourceUrl(path));
     }
 
-    public HtmlString getExtJs3Root()
+    /**
+     * Returns a URL to an ExtJS 3.x image given a short, relative path
+     * @param shortPath A path relative to the /images/default/ path, such as "tree/folder.gif"
+     * @return An HtmlString containing the full path to the image, such as "/labkey/ext-3.4.1/resources/images/default/tree/folder.gif"
+     */
+    public HtmlString getExt3Image(String shortPath)
     {
-        return HtmlStringBuilder.of(getContextPath()).append(PageFlowUtil.extJsRoot()).getHtmlString();
+        return HtmlStringBuilder.of(getContextPath()).append("/").append(PageFlowUtil.extJsRoot()).append("/resources/images/default/").append(shortPath).getHtmlString();
     }
 
     /**
