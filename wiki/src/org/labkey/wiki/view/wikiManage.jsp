@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="org.springframework.validation.Errors" %>
 <%@ page import="org.springframework.validation.FieldError" %>
+<%@ page import="org.json.JSONArray" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -222,7 +223,7 @@
 <%= button("Edit Content").submit(true).onClick("document.manage.nextAction.value = " + q(WikiController.NextAction.edit.name()) + "; return true;").title("Edit Content and Attachments") %>
 
 <script type="text/javascript">
-    existingWikiPages = [<% for (String name : bean.pageNames) out.print(q(name) + ","); %>];
+    existingWikiPages = <%=new JSONArray(bean.pageNames)%>;
 
     function checkWikiName(name)
     {
