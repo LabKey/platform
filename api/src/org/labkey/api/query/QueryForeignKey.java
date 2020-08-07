@@ -239,7 +239,6 @@ public class QueryForeignKey extends AbstractForeignKey
         _table = builder.table;
         _schema = builder.targetSchema;
         // TODO there is an EHR usage that fails this assert (AbstractTableCustomizer)
-        // TODO there is an EHR usage that fails this assert (AbstractTableCustomizer)
         // assert(null == _lookupContainer || getEffectiveContainer() == getLookupContainer());
     }
 
