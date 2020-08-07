@@ -115,7 +115,7 @@
     relatedIssues.append(q(issueDef.getName())).append(",");
 
     relatedIssues.append("{");
-    relatedIssues.append("callbackURL : ").append(bean.getCallbackURL() == null ? null : q(bean.getCallbackURL()));
+    relatedIssues.append("callbackURL : ").append(q(bean.getCallbackURL() == null ? null : bean.getCallbackURL()));
     relatedIssues.append(", body :").append(q(commentTextStr));
     relatedIssues.append(", title :").append(q(issue.getTitle()));
     relatedIssues.append(", skipPost :").append(true);
