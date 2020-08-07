@@ -49,12 +49,12 @@
         zoomGraphURL.replaceParameter("width", "" + 800);
         zoomGraphURL.replaceParameter("height", "" + 600);
 %>
-        <td><a href="<%= text(zoomGraphURL.getLocalURIString())%>" target="_blank">
-            <img src="<%= text(graphAction.getLocalURIString()) %>" alt="Neutralization Graph">
+        <td><a href="<%=zoomGraphURL%>" target="_blank">
+            <img src="<%=graphAction%>" alt="Neutralization Graph">
         </a></td>
 <%
         if (++graphCount % bean.getGraphsPerRow() == 0)
-            out.print("</tr><tr>");
+        { %></tr><tr><% }
     }
 %>
 </tr></table>
