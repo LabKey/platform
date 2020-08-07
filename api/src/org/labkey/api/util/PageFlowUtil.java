@@ -1835,6 +1835,7 @@ public class PageFlowUtil
         return HtmlString.unsafe(sb.toString());
     }
 
+    // TODO: Remove... unused? (Move string to JSpBase.getExtJs3Root())
     public static String extJsRoot()
     {
         return "ext-3.4.1";

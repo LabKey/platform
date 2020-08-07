@@ -44,7 +44,7 @@
 %>
 <style type="text/css">
     .x-tree-node-leaf .x-tree-node-icon{
-        background-image:url(<%=ctx.getContextPath()%>/<%=PageFlowUtil.extJsRoot()%>/resources/images/default/tree/folder.gif);
+        background-image:url(<%=getExtJs3Root()%>/resources/images/default/tree/folder.gif);
     }
 
     .x-tree-selected a.x-tree-node-anchor span {
@@ -79,7 +79,7 @@
 </table>
 <table class="">
     <tr><td>
-        <input type="hidden" name="<%=SpringActionController.FIELD_MARKER%>addAlias"><input type="checkbox" id='cb_move_folder_alias' name="addAlias" checked> Add a folder alias for the folder's current location. This ensures that links targeting the old folder location continue to work.
+        <input type="hidden" name="<%=getSpringFieldMarker()%>addAlias"><input type="checkbox" id='cb_move_folder_alias' name="addAlias" checked> Add a folder alias for the folder's current location. This ensures that links targeting the old folder location continue to work.
     </td></tr>
 </table>
 <div id="folderdiv" class="extContainer"></div>

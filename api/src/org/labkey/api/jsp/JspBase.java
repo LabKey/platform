@@ -23,6 +23,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -127,6 +128,11 @@ public abstract class JspBase extends JspContext implements HasViewContext
     public HtmlString getWebappURL(String path)
     {
         return HtmlString.of(PageFlowUtil.staticResourceUrl(path));
+    }
+
+    public HtmlString getExtJs3Root()
+    {
+        return HtmlStringBuilder.of(getContextPath()).append(PageFlowUtil.extJsRoot()).getHtmlString();
     }
 
     /**
@@ -365,6 +371,10 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return DemoMode.id(id, getContainer(), getUser());
     }
 
+    public HtmlString getSpringFieldMarker()
+    {
+        return h(SpringActionController.FIELD_MARKER);
+    }
 
     /**
      * Given the Class of an action in a Spring controller, returns the view URL to the action.
@@ -481,6 +491,11 @@ public abstract class JspBase extends JspContext implements HasViewContext
     public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText, int width)
     {
         return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText, htmlHelpText, width));
+    }
+
+    public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width)
+    {
+        return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText, htmlHelpText, linkHtml, width));
     }
 
     public HtmlString helpLink(String helpTopic, String displayText)

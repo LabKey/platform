@@ -41,7 +41,7 @@
     JspView<ReportsController.CrosstabDesignBean> me = (JspView<ReportsController.CrosstabDesignBean>) HttpView.currentView();
     ReportsController.CrosstabDesignBean bean = me.getModelBean();
 
-    List stats = Arrays.asList(bean.getStats());
+    List<String> stats = Arrays.asList(bean.getStats());
 %>
 
 <labkey:form action="" method="post">
@@ -101,58 +101,6 @@
 </labkey:form>
 
 <%!
-    public String fieldDropDownOld(String name, String id, Map<String, ColumnInfo> cols, String selected,
-                                boolean isStatField, boolean allowBlank, String changeHandler)
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<select name=\"").append(name).append("\" id=\"").append(id).append("\"");
-        if (changeHandler != null)
-            sb.append(" onChange=\"").append(changeHandler).append("\"");
-        sb.append(">\n");
-        if (allowBlank)
-            sb.append("<option></option>");
-
-        if (cols.containsKey("SequenceNum"))
-        {
-            sb.append("<option value=\"SequenceNum\"");
-            if ("SequenceNum".equalsIgnoreCase(selected))
-                sb.append(" selected");
-            sb.append(">Visit Id</option>");
-        }
-
-        String subjectNoun = StudyService.get().getSubjectColumnName(getContainer());
-        if (cols.containsKey(subjectNoun))
-        {
-            sb.append("<option value=\"").append(subjectNoun).append("\"");
-            if (null != selected && selected.equalsIgnoreCase(subjectNoun))
-                sb.append(" selected");
-            sb.append(">").append(StudyService.get().getSubjectColumnName(getContainer())).append("</option>");
-        }
-        FieldKey ptid = new FieldKey(null,StudyService.get().getSubjectColumnName(getContainer()));
-        FieldKey seqNum = new FieldKey(null, "SequenceNum");
-
-        for (ColumnInfo col : cols.values())
-        {
-            if (isStatField && !isValidStatColumn(col))
-                continue;
-
-            if (ptid.equals(col.getFieldKey()) || seqNum.equals(col.getFieldKey().encode()))
-                continue;
-
-            if (null != selected && selected.equalsIgnoreCase(col.getFieldKey().encode()))
-                sb.append("<option selected value=\"");
-            else
-                sb.append("<option value=\"");
-
-            sb.append(h(col.getFieldKey().encode()));
-            sb.append("\">");
-            sb.append(h(col.getLabel()));
-            sb.append("</option>\n");
-        }
-        sb.append("</select>");
-        return sb.toString();
-    }
-
     public HtmlString fieldDropDown(String name, String id, Map<String, ColumnInfo> cols, String selected,
                                     boolean isStatField, boolean allowBlank, String changeHandler)
     {
@@ -192,10 +140,7 @@
         if (Number.class.isAssignableFrom(cls) || cls.isPrimitive())
             return true;
 
-        if (String.class.isAssignableFrom(cls))
-            return true;
-
-        return false;
+        return String.class.isAssignableFrom(cls);
     }
 %>
 

@@ -15,8 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.action.SpringActionController"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.search.view.SearchWebPartFactory" %>
@@ -30,7 +29,7 @@
 <labkey:form name="frmCustomize" method="post">
 <table>
   <tr>
-    <td><input type="hidden" name="<%=SpringActionController.FIELD_MARKER%>includeSubfolders"><input type="checkbox" name="includeSubfolders" value="1"<%=checked(includeSubfolders)%>></td>
+    <td><input type="hidden" name="<%=getSpringFieldMarker()%>includeSubfolders"><input type="checkbox" name="includeSubfolders" value="1"<%=checked(includeSubfolders)%>></td>
     <td>Search subfolders</td>
   </tr>
   <tr>
