@@ -60,8 +60,8 @@ public final class DomainDescriptor
     private final int _titlePropertyId;
     private final TemplateInfo _templateInfo;
 
-    /* DomainDescriptors are cached, but DomainImpl is not, so cache DomainKind here on DomainDescriptor */
-    private DomainKind<?> _domainKind;
+    /* DomainDescriptors are cached, but DomainImpl is not, so stash DomainKind here */
+    private final DomainKind<?> _domainKind;
 
     // for StorageProvisioner (currently assuming labkey scope)
     private final String _storageTableName;
@@ -80,6 +80,7 @@ public final class DomainDescriptor
         _description = description;
         _domainURI = domainURI;
         _domainId = domainId;
+        _domainKind = PropertyService.get().getDomainKind(_domainURI);
 
         String _name = null;
         if (null != name)
@@ -128,6 +129,7 @@ public final class DomainDescriptor
         _ts = map.get("_ts");
 
         _domainURI = (String) map.get("DomainURI");
+        _domainKind = PropertyService.get().getDomainKind(_domainURI);
 
         if (map.containsKey("DomainId"))
             _domainId = (Integer) map.get("DomainId");
@@ -150,10 +152,8 @@ public final class DomainDescriptor
         _templateInfo = null;
     }
 
-    public synchronized DomainKind<?> getDomainKind()
+    public DomainKind<?> getDomainKind()
     {
-        if (null == _domainKind)
-            _domainKind = PropertyService.get().getDomainKind(_domainURI);
         return _domainKind;
     }
 
