@@ -131,4 +131,9 @@ public final class HtmlString implements DOM.Renderable, Comparable<HtmlString>
     {
         return this._s.compareTo(o._s);
     }
+
+    public int length()
+    {
+        return _s.length();
+    }
 }

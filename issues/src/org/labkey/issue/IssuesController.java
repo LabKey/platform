@@ -104,6 +104,7 @@ import org.labkey.api.util.Button;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -977,7 +978,7 @@ public class IssuesController extends SpringActionController
                         // update the duplicate issue
                         if (duplicateOf != null)
                         {
-                            duplicateOf.addComment(getUser(), "<em>Issue " + issue.getIssueId() + " marked as duplicate of this issue.</em>");
+                            duplicateOf.addComment(getUser(), HtmlString.unsafe("<em>Issue " + issue.getIssueId() + " marked as duplicate of this issue.</em>"));
                             IssueManager.saveIssue(getUser(), getContainer(), duplicateOf);
                         }
 
@@ -1164,7 +1165,7 @@ public class IssuesController extends SpringActionController
                 {
                     StringBuilder sb = new StringBuilder();
                     sb.append("<em>Issue ").append(issue.getIssueId()).append(" marked as duplicate of this issue.</em>");
-                    duplicateOf.addComment(user, sb.toString());
+                    duplicateOf.addComment(user, HtmlString.unsafe(sb.toString()));
                     IssueManager.saveIssue(user, c, duplicateOf);
                 }
 
@@ -2394,7 +2395,7 @@ public class IssuesController extends SpringActionController
             {
                 JSONObject jsonComment = new JSONObject(new BeanMap(c));
                 jsonComment.put("createdByName", c.getCreatedByName(user));
-                jsonComment.put("comment", c.getComment());
+                jsonComment.put("comment", c.getHtmlComment());
                 comments.put(comments.length(),  jsonComment);
                 // ATTACHMENTS
             }

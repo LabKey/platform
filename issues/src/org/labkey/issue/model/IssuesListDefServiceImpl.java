@@ -37,6 +37,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.util.HtmlString;
 import org.labkey.issue.query.IssuesListDefTable;
 
 import java.util.ArrayList;
@@ -277,7 +278,7 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         issue.setPriority("3");
         issue.setType("Todo");
         if (body != null)
-            issue.addComment(user, body);
+            issue.addComment(user, HtmlString.unsafe(body));
 
         ObjectFactory factory = ObjectFactory.Registry.getFactory(Issue.class);
         factory.toMap(issue, issue.getProperties());

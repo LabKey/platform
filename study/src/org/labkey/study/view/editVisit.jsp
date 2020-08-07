@@ -126,7 +126,7 @@
                     else
                     {
                     %>
-                    <select name="<%=h(CohortFilterFactory.Params.cohortId.name())%>">
+                    <select name="<%=CohortFilterFactory.Params.cohortId%>">
                         <option value="">All</option>
                     <%
 

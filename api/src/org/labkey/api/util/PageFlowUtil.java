@@ -749,7 +749,7 @@ public class PageFlowUtil
      */
     static private final boolean COMPRESS_OBJECT_STREAMS = true;
 
-    static public String encodeObject(Object o) throws IOException
+    static public HtmlString encodeObject(Object o) throws IOException
     {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         OutputStream osCompressed;
@@ -778,7 +778,7 @@ public class PageFlowUtil
             w.write(json.toString());
         }
         osCompressed.close();
-        return new String(Base64.encodeBase64(byteArrayOutputStream.toByteArray(), true), StringUtilsLabKey.DEFAULT_CHARSET);
+        return HtmlString.unsafe(new String(Base64.encodeBase64(byteArrayOutputStream.toByteArray(), true), StringUtilsLabKey.DEFAULT_CHARSET));
     }
 
     public static <T> T decodeObject(Class<T> cls, String encoded) throws IOException
@@ -2597,7 +2597,7 @@ public class PageFlowUtil
         public void testEncodeObject() throws Exception
         {
             TestBean bean = new TestBean(5,"five",new Date(DateUtil.parseISODateTime("2005-05-05 05:05:05")));
-            String s = encodeObject(bean);
+            String s = encodeObject(bean).toString();
 
             TestBean copy = decodeObject(TestBean.class, s);
             assertNotNull(copy);

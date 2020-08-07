@@ -25,6 +25,9 @@ import org.labkey.api.view.DisplayElement;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.function.Consumer;
 
 // TODO: Need handling for checkbox, file, and radio types
@@ -114,6 +117,8 @@ public class Input extends DisplayElement implements HasHtmlString
     private final boolean _showLabel;
     private final String _type;
     private final @Nullable HtmlString _value;
+    private final Integer _tabIndex;
+    private final List _styles;
 
     protected Input(InputBuilder builder)
     {
@@ -156,6 +161,8 @@ public class Input extends DisplayElement implements HasHtmlString
         _showLabel = builder._showLabel == null ? builder._label != null : builder._showLabel;
         _value = builder._value;
         _needsWrapping = builder._needsWrapping == null ? true : builder._needsWrapping;
+        _tabIndex = builder._tabIndex;
+        _styles = builder._styles;
     }
 
     public String getAutoComplete()
@@ -368,6 +375,16 @@ public class Input extends DisplayElement implements HasHtmlString
         return _step;
     }
 
+    public Integer getTabIndex()
+    {
+        return _tabIndex;
+    }
+
+    public List<String> getStyles()
+    {
+        return _styles;
+    }
+
     @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
@@ -494,7 +511,10 @@ public class Input extends DisplayElement implements HasHtmlString
             sb.append(" step=\"").append(getStep()).append("\"");
         if ((isCheckbox() || isRadio()) && isChecked())
             sb.append(" checked");
+        if (getTabIndex() != null)
+            sb.append(" tabIndex=\"").append(_tabIndex).append("\"");
 
+        doStyles(sb);
         renderValueIfNonEmpty(s->sb.append(" value=\"").append(s).append("\""));
         doInputEvents(sb);
 
@@ -517,6 +537,16 @@ public class Input extends DisplayElement implements HasHtmlString
             sb.append(" autofocus");
 
         sb.append(">");
+    }
+
+    protected void doStyles(StringBuilder sb)
+    {
+        if (!getStyles().isEmpty())
+        {
+            sb.append(" style=\"");
+            getStyles().forEach(s -> sb.append(PageFlowUtil.filter(s)).append(";"));
+            sb.append("\"");
+        }
     }
 
     protected void doInputEvents(StringBuilder sb)
@@ -658,6 +688,9 @@ public class Input extends DisplayElement implements HasHtmlString
         private String _type = "text";
         private HtmlString _value;
         private Boolean _needsWrapping;
+        private Integer _tabIndex;
+
+        private final List<String> _styles = new LinkedList<>();
 
         public InputBuilder()
         {
@@ -902,6 +935,24 @@ public class Input extends DisplayElement implements HasHtmlString
         public T stepValue(Integer stepValue)
         {
             _step = stepValue;
+            return (T)this;
+        }
+
+        public T tabIndex(Integer tabIndex)
+        {
+            _tabIndex = tabIndex;
+            return (T)this;
+        }
+
+        public T style(String style)
+        {
+            _styles.add(style);
+            return (T)this;
+        }
+
+        public T style(List<String> styles)
+        {
+            _styles.addAll(styles);
             return (T)this;
         }
 

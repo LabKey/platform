@@ -286,7 +286,7 @@
             %><table><tbody><%
                 for(DomainProperty prop : propertyArr)
                 {%>
-            <%=text(bean.renderColumn(prop, getViewContext(), true, true))%>
+            <%=bean.renderColumn(prop, getViewContext(), true, true)%>
             <%}%>
             </tbody></table>
         </div>
@@ -332,7 +332,7 @@
                     {%>
                 <div style="font-weight:bold;">Related #<%=comment.getIssue().getIssueId()%> </div><%
                 }%>
-                <%=comment.getComment()%>
+                <%=comment.getHtmlComment()%>
                 <%=bean.renderAttachments(context, comment)%>
                 <hr>
             </div>
