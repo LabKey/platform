@@ -18,9 +18,12 @@
 <%@ page import="org.labkey.api.data.ColumnInfo"%>
 <%@ page import="org.labkey.api.query.FieldKey"%>
 <%@ page import="org.labkey.api.study.StudyService"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.template.ClientDependencies"%>
+<%@ page import="org.labkey.api.util.HtmlString"%>
+<%@ page import="org.labkey.api.util.element.Option"%>
+<%@ page import="org.labkey.api.util.element.Select.SelectBuilder"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
@@ -98,7 +101,7 @@
 </labkey:form>
 
 <%!
-    public String fieldDropDown(String name, String id, Map<String, ColumnInfo> cols, String selected,
+    public String fieldDropDownOld(String name, String id, Map<String, ColumnInfo> cols, String selected,
                                 boolean isStatField, boolean allowBlank, String changeHandler)
     {
         StringBuilder sb = new StringBuilder();
@@ -148,6 +151,39 @@
         }
         sb.append("</select>");
         return sb.toString();
+    }
+
+    public HtmlString fieldDropDown(String name, String id, Map<String, ColumnInfo> cols, String selected,
+                                    boolean isStatField, boolean allowBlank, String changeHandler)
+    {
+        SelectBuilder builder = new SelectBuilder().name(name).id(id).className(null);
+        if (null != changeHandler)
+            builder.onChange(changeHandler);
+        if (allowBlank)
+            builder.addOption("", "");
+        if (cols.containsKey("SequenceNum"))
+            builder.addOption(new Option.OptionBuilder("Visit Id", "SequenceNum")
+                    .selected("SequenceNum".equalsIgnoreCase(selected)));
+
+        String subjectNoun = StudyService.get().getSubjectColumnName(getContainer());
+        if (cols.containsKey(subjectNoun))
+            builder.addOption(subjectNoun, subjectNoun).selected(null != selected && selected.equalsIgnoreCase(subjectNoun));
+
+        FieldKey ptid = new FieldKey(null, subjectNoun);
+        FieldKey seqNum = new FieldKey(null, "SequenceNum");
+
+        for (ColumnInfo col : cols.values())
+        {
+            if (isStatField && !isValidStatColumn(col))
+                continue;
+
+            if (ptid.equals(col.getFieldKey()) || seqNum.equals(col.getFieldKey().encode()))
+                continue;
+
+            builder.addOption(col.getLabel(), col.getFieldKey().encode())
+                    .selected(null != selected && selected.equalsIgnoreCase(col.getFieldKey().encode()));
+        }
+        return builder.getHtmlString();
     }
 
     boolean isValidStatColumn(ColumnInfo col)

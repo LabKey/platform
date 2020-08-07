@@ -77,19 +77,19 @@
                 <%
                         if (hasLinkPermission)
                         {
-                            out.print("<a href=\"" + inheritURL.getLocalURIString() + "\">");
+                            out.print(unsafe("<a href=\"" + inheritURL + "\">"));
                         }
 
                         // Always write out what we inherit from
-                        out.print(containerLabel);
+                        out.print(h(containerLabel));
 
                         if (hasLinkPermission)
                         {
-                            out.print("</a>)");
+                            out.print(unsafe("</a>"));
                         }
 
                         // Now write out what those settings are
-                        out.print(": ");
+                        out.print("): ");
                         boolean needComma = false;
                         for (Entry<String, String> mvEntry : MvUtil.getIndicatorsAndLabels(linkContainer).entrySet())
                         {

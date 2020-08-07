@@ -135,7 +135,7 @@
     </tr>
     <tr>
         <td class="labkey-form-label">Include Assigned To</td>
-        <td><table><tr><td><input type="checkbox" name="assignedTo"<%=checked(settings.hasAssignedTo())%>><td class="labkey-form-label">Default Assigned To</td><td><%=text(bean.assignedToSelect)%></td></tr></table></td>
+        <td><table><tr><td><input type="checkbox" name="assignedTo"<%=checked(settings.hasAssignedTo())%>><td class="labkey-form-label">Default Assigned To</td><td><%=bean.assignedToSelect%></td></tr></table></td>
     </tr>
     <tr>
         <td class="labkey-form-label">Include Format Picker</td>

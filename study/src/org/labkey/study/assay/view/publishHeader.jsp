@@ -47,9 +47,9 @@
 </script>
 <% if (bean.isMismatched()) { %>
 <p>
-    To reshow this form with Participant IDs and <%= dateOrVisit %> associated with
+    To reshow this form with Participant IDs and <%=h(dateOrVisit)%> associated with
     the specimens in the study, click on the Reset with Specimen Data button. To reshow with information from the assay,
     click on the Reset with Assay Data button.
 </p>
 <% } %>
-    Participant IDs and <%= dateOrVisit %> are required for all rows.
+    Participant IDs and <%=h(dateOrVisit)%> are required for all rows.

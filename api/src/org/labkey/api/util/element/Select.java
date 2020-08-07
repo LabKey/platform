@@ -17,6 +17,7 @@ package org.labkey.api.util.element;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.element.Option.OptionBuilder;
 
@@ -198,9 +199,9 @@ public class Select extends Input
             return this;
         }
 
-        public SelectBuilder selected(Object key)
+        public SelectBuilder selected(@Nullable Object key)
         {
-            _selected = key.toString();
+            _selected = null != key ? key.toString() : null;
             return this;
         }
 

@@ -188,13 +188,13 @@
 <h3><%=h(issueId)%> : <%=h(issue.getTitle())%></h3>
 <div class="row" style="margin-bottom: 10px">
     <div class="col-md-1">
-        <label class="control-label"><%=text(bean.getLabel("Status", true))%></label>
+        <label class="control-label"><%=bean.getLabel("Status", true)%></label>
         <div class="form-group"><%=h(issue.getStatus())%></div>
     </div>
     <%if (bean.isVisible("resolution") || !"open".equals(issue.getStatus()))
     {%>
     <div class="col-md-1">
-        <label class="control-label"><%=text(bean.getLabel("Resolution", true))%></label>
+        <label class="control-label"><%=bean.getLabel("Resolution", true)%></label>
         <div class="form-group">
             <%=h(issue.getResolution())%>
             <%if (issue.getResolution().equalsIgnoreCase("duplicate") && issue.getDuplicate() != null)
