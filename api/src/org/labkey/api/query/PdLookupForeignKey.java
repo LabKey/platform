@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Lookup;
@@ -62,8 +63,8 @@ public class PdLookupForeignKey
         // SAMPLE LOOKUP via String special case
         // TODO: move to QueryForeignKey, requires knowing column type of parent column
         String keyColumnName = null;
-        boolean isSampleSchema = sourceSchema.getDbSchema().getScope() == CoreSchema.getInstance().getScope() &&
-                ExpSchema.SCHEMA_NAME.equalsIgnoreCase(lookupSchemaName);
+        boolean isLabKeyScope = null != sourceSchema && (null == sourceSchema.getDbSchema() || sourceSchema.getDbSchema().getScope().isLabKeyScope());
+        boolean isSampleSchema = isLabKeyScope && ExpSchema.SCHEMA_NAME.equalsIgnoreCase(lookupSchemaName);
         if (isSampleSchema && pd.getJdbcType().isText())
         {
             keyColumnName = "Name";
