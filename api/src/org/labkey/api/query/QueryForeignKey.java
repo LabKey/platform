@@ -208,6 +208,17 @@ public class QueryForeignKey extends AbstractForeignKey
         {
             if (null == lookupSchemaName && null == targetSchema)
                 targetSchema = (UserSchema)sourceSchema;
+
+            /* see 41054 move the core.containers special case handling here from PdLookupForeignKey */
+            if (null != sourceSchema && sourceSchema.getDbSchema().getScope().isLabKeyScope())
+            {
+                if ("core".equalsIgnoreCase(lookupSchemaName) && "containers".equalsIgnoreCase(lookupTableName) && effectiveContainer.equals(sourceSchema.getContainer()))
+                {
+                    if (null == containerFilter)
+                        containerFilter = new ContainerFilter.AllFolders(user);
+                }
+            }
+
             return new QueryForeignKey(this);
         }
     }
@@ -226,6 +237,7 @@ public class QueryForeignKey extends AbstractForeignKey
         _useRawFKValue = builder.useRawFKValue;
         _table = builder.table;
         _schema = builder.targetSchema;
+        // TODO there is an EHR usage that fails this assert (AbstractTableCustomizer)
         // TODO there is an EHR usage that fails this assert (AbstractTableCustomizer)
         // assert(null == _lookupContainer || getEffectiveContainer() == getLookupContainer());
     }
