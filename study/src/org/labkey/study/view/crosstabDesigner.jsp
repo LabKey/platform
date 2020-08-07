@@ -152,7 +152,7 @@
     {
         Class cls = col.getJavaClass();
         if (Number.class.isAssignableFrom(cls) || cls.isPrimitive()) { %>
-            columnTypeMap['<%=col.getFieldKey().encode()%>'] = 'numeric';
+            columnTypeMap[<%=q(col.getFieldKey().encode())%>] = 'numeric';
 <%      }
     } %>
 
@@ -181,17 +181,16 @@
             var el = Ext4.get(id);
             if (el) {
 
+                var span = el.next('//span');
                 el.dom.disabled = !enabled;
                 if (!enabled)
                 {
                     el.dom.checked = false;
-                    var span = el.next('//span');
                     if (span)
                         span.addCls('labkey-disabled');
                 }
                 else
                 {
-                    var span = el.next('//span');
                     if (span)
                         span.removeCls('labkey-disabled');
                 }
