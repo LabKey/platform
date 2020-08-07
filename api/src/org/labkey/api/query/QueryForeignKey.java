@@ -210,7 +210,8 @@ public class QueryForeignKey extends AbstractForeignKey
                 targetSchema = (UserSchema)sourceSchema;
 
             /* see 41054 move the core.containers special case handling here from PdLookupForeignKey */
-            if (null != sourceSchema && sourceSchema.getDbSchema().getScope().isLabKeyScope())
+            boolean isLabKeyScope = null != sourceSchema && (null == sourceSchema.getDbSchema() || sourceSchema.getDbSchema().getScope().isLabKeyScope());
+            if (isLabKeyScope)
             {
                 if ("core".equalsIgnoreCase(lookupSchemaName) && "containers".equalsIgnoreCase(lookupTableName) && effectiveContainer.equals(sourceSchema.getContainer()))
                 {
