@@ -99,8 +99,8 @@
     }
   },
   "dependencies": {
-    "@labkey/api": "1.0.1",
-    "@labkey/components": "0.83.3-fb-package-updates-0820.4",
+    "@labkey/api": "1.0.2",
+    "@labkey/components": "0.84.0",
     "@labkey/eslint-config-react": "0.0.8",
     "react-toggle-button": "2.2.0"
   },
