@@ -208,6 +208,8 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return HtmlString.of(o == null ? null : o.toString());
     }
 
+    // TODO: Remove this
+    @Deprecated
     public HtmlString h(HtmlString o)
     {
         return HtmlString.of(o == null ? null : o.toString());

@@ -651,7 +651,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                     .append(context.getRequest().getContextPath())
                     .append(a.getFileIcon())
                     .append(HtmlString.unsafe("\">&nbsp;"))
-                    .append(PageFlowUtil.filter(a.getName()));
+                    .append(a.getName());
 
                 builder.append(new LinkBuilder(icon.getHtmlString()).href(download).target("_blank"));
                 builder.append(HtmlString.unsafe("</td></tr>"));

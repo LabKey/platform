@@ -163,7 +163,7 @@
         )))
         .collect(JSONArray.collector());
 %>
-    var emailTemplates = <%=array.toString(4)%>
+    var emailTemplates = <%=text(array.toString(4))%>
 
     function changeEmailTemplate()
     {
