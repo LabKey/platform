@@ -40,6 +40,7 @@ import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.util.element.Input.InputBuilder;
 import org.labkey.api.util.element.Select.SelectBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -431,6 +432,11 @@ public abstract class JspBase extends JspContext implements HasViewContext
     public LinkBuilder link(String text, @NotNull URLHelper url)
     {
         return link(text).href(url);
+    }
+
+    public InputBuilder<?> input()
+    {
+        return new InputBuilder();
     }
 
     public HtmlString generateBackButton()

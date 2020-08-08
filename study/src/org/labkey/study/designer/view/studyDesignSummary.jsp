@@ -83,12 +83,12 @@ This study was created from a vaccine study protocol with the following descript
     String sep = "";
     for (GWTImmunogen immunogen : revision.getImmunogens())
     {
-        out.print(sep);
+        out.print(unsafe(sep));
         out.print(h(immunogen.getName()));
         String antigenSep = "";
         for (GWTAntigen antigen : immunogen.getAntigens())
         {
-            out.print(antigenSep);
+            out.print(unsafe(antigenSep));
             out.print(h(antigen.getName()));
             antigenSep = ",";
         }
@@ -99,9 +99,8 @@ This study was created from a vaccine study protocol with the following descript
     sep = "";
     for (GWTCohort cohort : revision.getGroups())
     {
-        out.print(sep);
-        out.print(h(cohort.getName()));
-        out.print(" (" + cohort.getCount() + ")");
+        out.print(unsafe(sep));
+        out.print(h(cohort.getName() + " (" + cohort.getCount() + ")"));
         sep = ", ";
     }
 %>

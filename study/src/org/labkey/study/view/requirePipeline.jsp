@@ -32,7 +32,7 @@ directory where uploaded data will be stored.<br><br>
         ActionURL pipelineUrl = urlProvider(PipelineUrls.class).urlSetup(getContainer());
         pipelineUrl.addParameter("referer", getActionURL().getLocalURIString());
         out.print(link("Pipeline Setup", pipelineUrl));
-        out.print(" ");
+        out.print(unsafe(" "));
     }
 
     if (null == HttpView.currentModel() || (Boolean) HttpView.currentModel())

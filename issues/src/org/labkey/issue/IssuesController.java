@@ -108,6 +108,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.element.Input.InputBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -2259,7 +2260,7 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public String getExtraHtml(ViewContext ctx)
+        public HtmlString getExtraHtml(ViewContext ctx)
         {
             String q = ctx.getActionURL().getParameter("q");
 
@@ -2278,7 +2279,7 @@ public class IssuesController extends SpringActionController
                 appendStatus(html, "Closed", status, "Closed", true, statusResearchURL);
 
                 html.append("</td></tr></table>");
-                return html.toString();
+                return HtmlString.unsafe(html.toString());
             }
             else
             {
@@ -2286,14 +2287,13 @@ public class IssuesController extends SpringActionController
             }
         }
 
-        @Nullable
         @Override
-        public String getHiddenInputsHtml(ViewContext ctx)
+        public HtmlString getHiddenInputsHtml(ViewContext ctx)
         {
             String status = ctx.getActionURL().getParameter("status");
             if (status != null)
             {
-                return "<input type='hidden' id='search-type' name='status' value='" + PageFlowUtil.filter(status) + "'>";
+                return new InputBuilder().type("hidden").id("search-type").name("status").value(status).getHtmlString();
             }
 
             return null;

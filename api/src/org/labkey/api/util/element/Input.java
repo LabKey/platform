@@ -830,15 +830,21 @@ public class Input extends DisplayElement implements HasHtmlString
             return (T)this;
         }
 
-        public T value(HtmlString value)
+        public T value(@Nullable HtmlString value)
         {
             _value = value;
             return (T)this;
         }
 
+        public T value(@Nullable HasHtmlString hhs)
+        {
+            _value = null != hhs ? hhs.getHtmlString() : null;
+            return (T)this;
+        }
+
         public T value(String value)
         {
-            _value = HtmlString.of(value);
+            _value = HtmlString.of(value); // TODO: Should null result in _value == null?
             return (T)this;
         }
 
