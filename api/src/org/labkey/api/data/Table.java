@@ -443,7 +443,7 @@ public class Table
             if (RuntimeSQLException.isConstraintException(e) && (StringUtils.startsWithIgnoreCase(trim, "INSERT") || StringUtils.startsWithIgnoreCase(trim, "UPDATE")))
             {
                 // Log this ConstraintException if log Level is WARN (the default) or lower. Skip logging for callers that request just ERRORs.
-                if (Level.WARN.intLevel() >= logLevel.intLevel())
+                if (Level.WARN.isMoreSpecificThan(logLevel))
                 {
                     _log.warn("SQL Exception", e);
                     _logQuery(Level.WARN, sql, conn);
@@ -452,7 +452,7 @@ public class Table
             else
             {
                 // Log this SQLException if log level is ERROR or lower.
-                if (Level.ERROR.intLevel() >= logLevel.intLevel())
+                if (Level.ERROR.isMoreSpecificThan(logLevel))
                 {
                     _log.error("SQL Exception", e);
                     _logQuery(Level.ERROR, sql, conn);

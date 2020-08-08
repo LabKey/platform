@@ -15,12 +15,11 @@
  */
 package org.labkey.api.jsp;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.labkey.api.collections.ConcurrentHashSet;
 import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ExperimentalFeatureService;
@@ -38,9 +37,9 @@ import java.util.stream.Collectors;
 
 public class LabKeyJspWriter extends JspWriterWrapper
 {
-    private static final Multiset<String> COUNTING_SET = ConcurrentHashMultiset.create();
+    private static final Multiset<String> CODE_POINT_COUNTING_SET = ConcurrentHashMultiset.create();
+    private static final Multiset<String> FILE_COUNTING_SET = ConcurrentHashMultiset.create();
     private static final String EXPERIMENTAL_THROW_ON_WARNING = "labkeyJspWriterThrowOnWarning";
-    private static final Logger LOG = LogManager.getLogger(LabKeyJspWriter.class);
     private static final Logger LOGSTRING = LogManager.getLogger(LabKeyJspWriter.class.getName()+".string");
 
     public static void registerExperimentalFeature()
@@ -70,8 +69,9 @@ public class LabKeyJspWriter extends JspWriterWrapper
     public void print(String s) throws IOException
     {
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        StackTraceElement elementWeCareAbout = stackTrace[2];
 
-        if (0 == COUNTING_SET.add(stackTrace[2].toString(), 1))
+        if (0 == CODE_POINT_COUNTING_SET.add(elementWeCareAbout.toString(), 1))
         {
             if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_THROW_ON_WARNING))
                 throw new IllegalStateException("A JSP is printing a string!");
@@ -90,8 +90,10 @@ public class LabKeyJspWriter extends JspWriterWrapper
             }
             while (i < stackTrace.length && !("org.labkey.api.view.JspView".equals(ste.getClassName()) && "renderView".equals(ste.getMethodName())));
 
-            LOGSTRING.info(" A JSP is printing a string!" + shortStackTrace.toString());
+            LOGSTRING.info("A JSP is printing a string!" + shortStackTrace.toString());
         }
+
+        FILE_COUNTING_SET.add(elementWeCareAbout.getFileName(), 1);
 
         super.print(s);
     }
@@ -120,20 +122,29 @@ public class LabKeyJspWriter extends JspWriterWrapper
     {
         if (AppProps.getInstance().isDevMode())
         {
-            Set<Entry<String>> entrySet = COUNTING_SET.entrySet();
-            LOG.info("print(String) invocations: " + COUNTING_SET.size());
-            LOG.info("Unique code points that invoke print(String): " + entrySet.size());
+            Set<Entry<String>> entrySet = CODE_POINT_COUNTING_SET.entrySet();
+            LOGSTRING.info("Total print(String) occurrences: " + CODE_POINT_COUNTING_SET.size());
+            LOGSTRING.info("Unique code points that invoke print(String): " + entrySet.size());
 
             if (!entrySet.isEmpty())
             {
-                // Sort entries first by count, then by code point, which will group by file and order by line number
-                List<Entry<String>> entries = new ArrayList<>(entrySet);
+                // Sorts entries first by count, then by key
                 Comparator<Entry<String>> comparator = Comparator.comparingInt(Entry::getCount);
-                entries.sort(comparator.reversed().thenComparing(Entry::getElement));
-                LOG.info("Most common print(String) code points:\n   " +
-                    entries.stream().limit(100)
-                        .map(e -> e.getElement() + " x " + e.getCount())
+                comparator = comparator.reversed().thenComparing(Entry::getElement);
+
+                List<Entry<String>> entries = new ArrayList<>(entrySet);
+                entries.sort(comparator);
+                LOGSTRING.info("All print(String) code points:\n   " +
+                    entries.stream()
+                        .map(e -> e.getElement() + "\t" + e.getCount())
                         .collect(Collectors.joining("\n   ")));
+
+                List<Entry<String>> files = new ArrayList<>(FILE_COUNTING_SET.entrySet());
+                files.sort(comparator);
+                LOGSTRING.info("Problematic files (" + files.size() + "):\n" +
+                    files.stream()
+                        .map(e -> e.getElement() + "\t" + e.getCount())
+                        .collect(Collectors.joining("\n")));
             }
         }
     }

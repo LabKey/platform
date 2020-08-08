@@ -1,7 +1,9 @@
 import React, { PureComponent } from 'react';
-import { Button, ButtonGroup, FormControl, Modal } from 'react-bootstrap';
-import { ActionURL, Ajax } from '@labkey/api';
-import { DatabasePasswordRules, DatabasePasswordSettings } from "./models";
+import { Alert, Button, ButtonGroup, FormControl, Modal } from 'react-bootstrap';
+import { ActionURL, Ajax, Utils } from '@labkey/api';
+import { resolveErrorMessage } from '@labkey/components';
+
+import { DatabasePasswordRules, DatabasePasswordSettings } from './models';
 
 const OPTIONS_MAP = {
     Never: 'Never',
@@ -12,11 +14,13 @@ const OPTIONS_MAP = {
 };
 
 interface Props {
-    closeModal: Function;
+    closeModal: () => void;
     canEdit: boolean;
 }
 
 interface State {
+    error: string;
+    initError: string;
     passwordRules: DatabasePasswordRules;
     currentSettings: DatabasePasswordSettings;
     helpLink: string;
@@ -26,6 +30,8 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
     constructor(props) {
         super(props);
         this.state = {
+            error: undefined,
+            initError: undefined,
             passwordRules: { Weak: '', Strong: '' },
             helpLink: null,
             currentSettings: { strength: '', expiration: '' },
@@ -34,16 +40,16 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
 
     componentDidMount = (): void => {
         Ajax.request({
-            url: ActionURL.buildURL('login', 'getDbLoginProperties'),
-            method: 'GET',
-            scope: this,
-            failure: function(error) {
-                alert('Error: ' + error);
-            },
-            success: function(result) {
-                const response = JSON.parse(result.response);
+            url: ActionURL.buildURL('login', 'getDbLoginProperties.api'),
+            success: Utils.getCallbackWrapper(response => {
                 this.setState({ ...response });
-            },
+            }),
+            failure: Utils.getCallbackWrapper(error => {
+                console.error('Failed to get login properties', error);
+                this.setState({
+                    initError: resolveErrorMessage(error),
+                });
+            }, undefined, true),
         });
     };
 
@@ -59,24 +65,32 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
     };
 
     saveChanges = (): void => {
+        if (this.state.error) {
+            this.setState({ error: undefined });
+        }
+
         Ajax.request({
-            url: ActionURL.buildURL('login', 'SaveDbLoginProperties'),
+            url: ActionURL.buildURL('login', 'saveDbLoginProperties.api'),
             method: 'POST',
             jsonData: this.state.currentSettings,
-            scope: this,
-            failure: function(error) {
-                alert('Error: ' + error);
-            },
-            success: function(result) {
+            success: Utils.getCallbackWrapper(() => {
                 this.props.closeModal();
-            },
+            }),
+            failure: Utils.getCallbackWrapper(error => {
+                console.error('Failed to save login properties', error);
+                this.setState({
+                    error: resolveErrorMessage(error),
+                });
+            }, undefined, true),
         });
     };
 
     render() {
         const { canEdit } = this.props;
-        const { currentSettings } = this.state;
+        const { currentSettings, error, initError } = this.state;
         const { strength, expiration } = currentSettings;
+        const hasError = error !== undefined || initError !== undefined;
+        const allowEdit = canEdit && initError === undefined;
 
         return (
             <Modal show={true} onHide={this.props.closeModal}>
@@ -87,6 +101,8 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                 </Modal.Header>
 
                 <Modal.Body>
+                    {hasError && <Alert bsStyle="danger">{error || initError}</Alert>}
+
                     <div className="database-modal__field-row">
                         <span>Password Strength:</span>
 
@@ -96,14 +112,14 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                                     value="Weak"
                                     name="strength"
                                     active={strength == 'Weak'}
-                                    disabled={!canEdit}>
+                                    disabled={!allowEdit}>
                                     Weak
                                 </Button>
                                 <Button
                                     value="Strong"
                                     name="strength"
                                     active={strength == 'Strong'}
-                                    disabled={!canEdit}>
+                                    disabled={!allowEdit}>
                                     Strong
                                 </Button>
                             </ButtonGroup>
@@ -130,7 +146,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                         <span>Password Expiration:</span>
 
                         <span className="database-modal__field">
-                            {canEdit ? (
+                            {allowEdit ? (
                                 <FormControl
                                     componentClass="select"
                                     name="expiration"
@@ -155,7 +171,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                             <a target="_blank" href={this.state.helpLink} className="modal__help-link" rel="noopener noreferrer">
                                 More about authentication
                             </a>
-                            {canEdit && (
+                            {allowEdit && (
                                 <Button className="labkey-button primary" onClick={this.saveChanges}>
                                     Apply
                                 </Button>
@@ -163,7 +179,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                         </div>
 
                         <Button className="labkey-button modal__save-button" onClick={this.props.closeModal}>
-                            {canEdit ? 'Cancel' : 'Close'}
+                            {allowEdit ? 'Cancel' : 'Close'}
                         </Button>
                     </div>
                 </Modal.Body>
