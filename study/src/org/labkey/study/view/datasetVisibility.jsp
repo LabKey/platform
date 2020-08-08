@@ -139,7 +139,7 @@
                     else
                     {
                     %>
-                    <select name="<%="dataset[" + id + "].cohort"%>" <%=disabled(data.inherited)%>>
+                    <select name="<%=h("dataset[" + id + "].cohort")%>" <%=disabled(data.inherited)%>>
                         <labkey:options value="<%=data.cohort%>" map="<%=cohortOpts%>"/>
                     </select>
                     <%
@@ -147,14 +147,14 @@
                 %>
             </td>
             <td>
-                <select name="<%="dataset[" + id + "].status"%>" <%=disabled(data.inherited)%>>
+                <select name="<%=h("dataset[" + id + "].status")%>" <%=disabled(data.inherited)%>>
                     <labkey:options value="<%=data.status%>" map="<%=statusOpts%>"/>
                 </select>
             </td>
             <td align="center">
                 <labkey:checkbox name='<%="dataset[" + id + "].visible"%>' id='<%="dataset[" + id + "].visible"%>' value="true" checked="<%=data.visible%>"/>
             </td>
-            <td><%= text(data.empty ? "empty" : "&nbsp;") %></td>
+            <td><%=h(data.empty ? "empty" : "&nbsp;")%></td>
         </tr>
     <%
         }

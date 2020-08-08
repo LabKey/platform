@@ -78,13 +78,13 @@
         <tr>
             <td class="labkey-form-label">VisitId/Sequence Range</td>
             <td>
-                <input type="text" size="26" name="sequenceNumMin" value="<%=visit.getFormattedSequenceNumMin()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=visit.getFormattedSequenceNumMax()%>">
+                <input type="text" size="26" name="sequenceNumMin" value="<%=h(visit.getFormattedSequenceNumMin())%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=h(visit.getFormattedSequenceNumMax())%>">
             </td>
         </tr>
         <tr>
             <td class="labkey-form-label">Protocol Day&nbsp;<%=helpPopup("Protocol Day", "The expected day for this visit according to the protocol, used for study alignment.")%></td>
             <td>
-                <input type="text" size="26" name="protocolDay" value="<%=visit.getFormattedProtocolDay()%>">
+                <input type="text" size="26" name="protocolDay" value="<%=h(visit.getFormattedProtocolDay())%>">
             </td>
         </tr>
 <%
