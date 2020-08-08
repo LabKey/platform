@@ -686,6 +686,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
             return HtmlString.unsafe("\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">" + errorHTML + "</td></tr>\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">&nbsp;</td></tr>");
     }
 
+    // TODO: Should return HtmlString!
     protected String _formatErrorList(List<ObjectError> l, boolean fieldNames)
     {
         if (l.size() == 0)

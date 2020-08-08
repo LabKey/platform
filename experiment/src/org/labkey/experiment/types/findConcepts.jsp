@@ -136,18 +136,31 @@ else
 		{
 		%><%=and%><a href="javascript:concept(<%=q(uri)%>)"><%=h(name)%></a><%
 		}
-		out.println("<br>");
+		out.println(unsafe("<br>"));
 		if (row == match)
 		{
-			out.println("&nbsp;&nbsp;Semantic Types " + h(row.get("SemanticType")) + "<br>");
-			out.println("&nbsp;&nbsp;PropertyURI " + h(uri) + "<br>");
+			out.print(unsafe("&nbsp;&nbsp;Semantic Types "));
+			out.print(h(row.get("SemanticType")));
+			out.println(unsafe("<br>"));
+
+			out.print(unsafe("&nbsp;&nbsp;PropertyURI "));
+			out.print(h(uri));
+			out.println(unsafe("<br>"));
 			if (row.get("Description") != null)
-				out.println("&nbsp;&nbsp;&nbsp;" + h(description) + "<br>");
+			{
+				out.print(unsafe("&nbsp;&nbsp;&nbsp;"));
+				out.print(h(description));
+				out.println(unsafe("<br>"));
+			}
 		}
 		else
 		{
 			if (row.get("Description") != null)
-				out.println("&nbsp;&nbsp;&nbsp;" + h(description) + "<br>");
+			{
+				out.print(unsafe("&nbsp;&nbsp;&nbsp;"));
+				out.print(h(description));
+				out.println(unsafe("<br>"));
+			}
 		}
 	}
 }
