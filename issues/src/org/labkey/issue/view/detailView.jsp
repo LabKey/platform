@@ -323,6 +323,6 @@ if (!issue.getComments().contains(comment))
     </div>
 <% }
 if (bean.getCallbackURL() != null) { %>
-    <input type="hidden" name="callbackURL" value="<%=bean.getCallbackURL()%>"/>
+    <input type="hidden" name="callbackURL" value="<%=h(bean.getCallbackURL())%>"/>
 <% } %>
 </labkey:panel>

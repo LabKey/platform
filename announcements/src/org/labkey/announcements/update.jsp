@@ -152,7 +152,7 @@ if (settings.hasExpires())
                     x++;
                     %><tr id="attach-<%=x%>">
                         <td><img src="<%=getWebappURL(att.getFileIcon())%>" alt="logo"/>&nbsp;<%= h(att.getName()) %></td>
-                        <td><a onclick="LABKEY.discuss.removeAttachment(<%=q(ann.getEntityId())%>, <%=PageFlowUtil.filterQuote(att.getName())%>, 'attach-<%=x%>'); ">remove</a></td>
+                        <td><a onclick="LABKEY.discuss.removeAttachment(<%=q(ann.getEntityId())%>, <%=hq(att.getName())%>, 'attach-<%=x%>'); ">remove</a></td>
                     </tr><%
                 }
                 %>

@@ -146,7 +146,7 @@ var templateComboBox = new LABKEY.ext.ComboBox({
     valueField:'name',
     displayField:'name',
     hidden:external,
-    helpPopup:{title:'Schema Template', html:<%=PageFlowUtil.qh(bean.getHelpHTML("SchemaTemplate"))%>},
+    helpPopup:{title:'Schema Template', html:<%=qh(bean.getHelpHTML("SchemaTemplate"))%>},
     value: <%=q(initialTemplateName)%>
 });
 
@@ -166,7 +166,7 @@ var sourceSchemaCombo = new Ext.form.ComboBox({
     editable:true,
     triggerAction:'all',
     helpPopup:{title:'Source Schema Name',
-    html:<%=PageFlowUtil.qh(bean.getHelpHTML("SourceSchemaName"))%>},
+    html:<%=qh(bean.getHelpHTML("SourceSchemaName"))%>},
     value:<%=q(def.getSourceSchemaName() != null ? def.getSourceSchemaName() : (initialTemplate != null ? initialTemplate.getSourceSchemaName() : ""))%>,
     disabled:<%=initialTemplate != null%>,
     tpl: '<tpl for="."><div class="x-combo-list-item">{field1:htmlEncode}</div></tpl>'
@@ -180,7 +180,7 @@ if (external)
         fieldLabel:'Editable',
         helpPopup:{
             title:'Editable',
-            html:<%=PageFlowUtil.qh(bean.getHelpHTML("Editable"))%>
+            html:<%=qh(bean.getHelpHTML("Editable"))%>
         }
     });
     var indexableCheckBox = new LABKEY.ext.Checkbox({
@@ -188,7 +188,7 @@ if (external)
         fieldLabel:'Index Schema Meta Data',
         helpPopup:{
             title:'Index Schema Meta Data',
-            html:<%=PageFlowUtil.qh(bean.getHelpHTML("Indexable"))%>
+            html:<%=qh(bean.getHelpHTML("Indexable"))%>
         },
         checked:<%=def.isIndexable()%>
     });
@@ -197,7 +197,7 @@ if (external)
         fieldLabel:'Fast Cache Refresh',
         helpPopup:{
             title:'Fast Cache Refresh',
-            html:<%=PageFlowUtil.qh(bean.getHelpHTML("FastCacheRefresh"))%>
+            html:<%=qh(bean.getHelpHTML("FastCacheRefresh"))%>
         },
         checked:<%=def.isFastCacheRefresh()%>
     });
