@@ -19,8 +19,8 @@ package org.labkey.core;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
@@ -63,7 +63,6 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.PropertyStore;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -125,7 +124,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
@@ -211,9 +209,7 @@ public class CoreController extends SpringActionController
 {
     private static final Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<>();
     private static final Logger _log = LogManager.getLogger(CoreController.class);
-
-    private static ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
-    private static final PropertyStore _normalStore = PropertyManager.getNormalStore();
+    private static final ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
 
     public CoreController()
     {
@@ -2630,7 +2626,7 @@ public class CoreController extends SpringActionController
             if (StringUtils.equals(WikiRendererType.HTML.name(), form.getToFormat()))
             {
                 WikiRendererType fromType = WikiRendererType.valueOf(form.getFromFormat());
-                newBody = WikiRenderingService.get().getFormattedHtml(fromType, newBody);
+                newBody = WikiRenderingService.get().getFormattedHtml(fromType, newBody).toString();
             }
 
             response.put("toFormat", form.getToFormat());

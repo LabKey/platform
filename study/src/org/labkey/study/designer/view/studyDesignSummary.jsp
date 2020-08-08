@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.designer.DesignerController" %>
@@ -115,7 +116,7 @@ This study was created from a vaccine study protocol with the following descript
     else
     {
         boolean isAdmin = c.hasPermission(user, AdminPermission.class);
-        String descriptionHtml = study.getDescriptionHtml();
+        HtmlString descriptionHtml = study.getDescriptionHtml();
         String investigator = study.getInvestigator();
         String grant = study.getGrant();
         List<Attachment> protocolDocs = study.getProtocolDocuments();
@@ -158,7 +159,7 @@ This study was created from a vaccine study protocol with the following descript
                             Attachment attachment = protocolDocs.get(0);
                     %>
                     <a href="<%= h(StudyController.getProtocolDocumentDownloadURL(c, attachment.getName())) %>">
-                        <img src="<%= getViewContext().getContextPath() + attachment.getFileIcon() %>" alt="[<%= h(attachment.getName()) %>]">
+                        <img src="<%=getWebappURL(attachment.getFileIcon())%>" alt="[<%= h(attachment.getName()) %>]">
                         Study Protocol Document
                     </a>
                     <%
@@ -172,7 +173,7 @@ This study was created from a vaccine study protocol with the following descript
                             {
                     %>
                         <br><a href="<%= h(StudyController.getProtocolDocumentDownloadURL(c, doc.getName())) %>">
-                            <img src="<%= getViewContext().getContextPath() + doc.getFileIcon() %>" alt="[<%= h(doc.getName()) %>]">
+                            <img src="<%=getWebappURL(doc.getFileIcon())%>" alt="[<%= h(doc.getName()) %>]">
                             <%= h(doc.getName()) %>
                         </a><%
                             }

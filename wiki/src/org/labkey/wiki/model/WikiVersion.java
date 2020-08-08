@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.WikiRenderer;
@@ -124,10 +125,9 @@ public class WikiVersion
     // TODO: WikiVersion should know its wiki & container
     public HtmlString getHtml(Container c, Wiki wiki)
     {
-        return HtmlString.unsafe(
-                WikiRenderingService.WIKI_PREFIX +
-                HtmlString.toString(getHtmlForConvert(c, wiki)) +
-                WikiRenderingService.WIKI_SUFFIX);
+        return HtmlStringBuilder.of(WikiRenderingService.WIKI_PREFIX)
+            .append(getHtmlForConvert(c, wiki))
+            .append(WikiRenderingService.WIKI_SUFFIX).getHtmlString();
     }
 
     public HtmlString getHtmlForConvert(Container c, Wiki wiki)

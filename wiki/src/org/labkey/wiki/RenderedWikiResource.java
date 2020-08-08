@@ -16,6 +16,7 @@
 package org.labkey.wiki;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService;
 
@@ -36,7 +37,7 @@ public class RenderedWikiResource extends WikiWebdavProvider.WikiPageResource
     @Override
     protected void setBody(String body)
     {
-        super.setBody(getHtml(body, _type));
+        super.setBody(getHtml(body, _type).toString());
     }
 
     @Override
@@ -46,7 +47,7 @@ public class RenderedWikiResource extends WikiWebdavProvider.WikiPageResource
     }
 
     // TODO: Send plain text wikis straight through instead of rendering to HTML then parsing?
-    private String getHtml(String body, WikiRendererType type)
+    private HtmlString getHtml(String body, WikiRendererType type)
     {
         WikiRenderingService service = WikiRenderingService.get();
 

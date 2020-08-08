@@ -29,6 +29,7 @@ import org.labkey.api.message.digest.MessageDigest;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -287,9 +288,9 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
                 if (!dailyDigestBean.settings.isSecure())
                 {
-                    String body = ann.getFormattedHtml();
+                    HtmlString body = ann.getFormattedHtml();
                     sb.append("<tr><td style=\"padding-left:35px;\">");
-                    sb.append(body);
+                    sb.append(body.toString());
                     sb.append("</td></tr>");
                 }
             }

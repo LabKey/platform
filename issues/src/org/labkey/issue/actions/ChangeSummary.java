@@ -92,7 +92,7 @@ public class ChangeSummary
     private final Class<? extends Controller> _action;
     private final Map<String, Object> _issueProperties;
 
-    private static Set<String> _standardFields = new CaseInsensitiveHashSet();
+    private static final Set<String> _standardFields = new CaseInsensitiveHashSet();
 
     static
     {
@@ -239,7 +239,7 @@ public class ChangeSummary
         formattedComment.append(sbHTMLChanges);
         //render issues as plain text with links
         WikiRenderingService renderingService = WikiRenderingService.get();
-        String html = renderingService.getFormattedHtml(WikiRendererType.TEXT_WITH_LINKS, comment);
+        HtmlString html = renderingService.getFormattedHtml(WikiRendererType.TEXT_WITH_LINKS, comment);
         formattedComment.append(html);
         formattedComment.append("</div>");
 

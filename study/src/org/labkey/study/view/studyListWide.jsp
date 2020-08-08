@@ -57,7 +57,7 @@
         <span class='labkey-study-investigator'><%=h(study.getInvestigator())%></span>
     <%}%>
         </div>
-            <%=text(study.getDescriptionHtml())%>
+            <%=study.getDescriptionHtml()%>
 <%
     }
 %>

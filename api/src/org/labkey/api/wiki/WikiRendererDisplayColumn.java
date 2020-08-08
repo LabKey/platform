@@ -74,7 +74,7 @@ public class WikiRendererDisplayColumn extends DataColumn
             }
         }
 
-        return wikiService.getFormattedHtml(rendererType, content);
+        return wikiService.getFormattedHtml(rendererType, content).toString();
     }
 
     private FieldKey getRenderTypeFieldKey()
