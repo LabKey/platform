@@ -128,7 +128,7 @@ else
 		String and = "";
 		for (String pathURI : path)
 		{
-			out.print(h(and);
+			out.print(h(and));
 			%><a href="javascript:concept(<%=q(pathURI)%>)"><%=h(pathURI.substring(pathURI.lastIndexOf('#')+1))%></a><%
 			and = " / ";
 		}
