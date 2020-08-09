@@ -727,12 +727,14 @@ public abstract class DisplayColumn extends RenderColumn
         if (!StringUtils.isBlank(getWidth()))
             style += ";width:" + getWidth() + "px;";
 
+        out.write("<div ");
         if (!"".equals(style))
         {
-            out.write("<div style=\"");
+            out.write("style=\"");
             out.write(style);
-            out.write("\">");
+            out.write("\"");
         }
+        out.write(">");
 
         renderTitle(ctx, out);
 
@@ -754,11 +756,7 @@ public abstract class DisplayColumn extends RenderColumn
             out.write("</ul>");
         }
 
-        if (!"".equals(style))
-        {
-            out.write("</div>");
-        }
-
+        out.write("</div>");
         out.write("</th>");
     }
 
