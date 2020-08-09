@@ -520,7 +520,7 @@ public class StatusController extends SpringActionController
             if (_statusFile.getJobStore() != null && (getUser().hasRootAdminPermission() || c.hasPermission(getUser(), UpdatePermission.class)))
                 bean.retryUrl = urlRetry(_statusFile);
 
-            bean.status = StatusDetailsBean.create(getContainer(), _statusFile, 0);
+            bean.status = StatusDetailsBean.create(getContainer(), _statusFile, 0, 0);
 
             return new JspView<DetailsBean>("/org/labkey/pipeline/status/details.jsp", bean, errors);
         }
@@ -585,7 +585,7 @@ public class StatusController extends SpringActionController
             if (psf == null)
                 throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
 
-            var status = StatusDetailsBean.create(c, psf, form.getOffset());
+            var status = StatusDetailsBean.create(c, psf, form.getOffset(), form.getCount());
             return success(status);
         }
     }

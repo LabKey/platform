@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * Parse a pipeline job log file.
- * The log format is intialized in {@link org.labkey.api.pipeline.PipelineJob#getLogger()} and is:
+ * The log format is initialized in {@link org.labkey.api.pipeline.PipelineJob.OutputLogger#write(String, Throwable, String)} and is:
  * <code>%d{DATE} %-5p: %m%n</code>
  */
 public class LogFileParser
