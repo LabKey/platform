@@ -2649,44 +2649,6 @@ public class PageFlowUtil
         return PageFlowUtil.filter(o);
     }
 
-    static public <T> String strSelect(String selectName, Map<T,String> map, T current)
-    {
-        return strSelect(selectName, map.keySet(), map.values(), current);
-    }
-
-    static public String strSelect(String selectName, Collection<?> values, Collection<String> labels, Object current)
-    {
-        if (values.size() != labels.size())
-            throw new IllegalArgumentException();
-        StringBuilder ret = new StringBuilder();
-        ret.append("<select name=\"");
-        ret.append(h(selectName));
-        ret.append("\">");
-        boolean found = false;
-        Iterator itValue;
-        Iterator<String> itLabel;
-        for (itValue  = values.iterator(), itLabel = labels.iterator();
-             itValue.hasNext() && itLabel.hasNext();)
-        {
-            Object value = itValue.next();
-            String label = itLabel.next();
-            boolean selected = !found && Objects.equals(current, value);
-            ret.append("\n<option value=\"");
-            ret.append(h(value));
-            ret.append("\"");
-            if (selected)
-            {
-                ret.append(" SELECTED");
-                found = true;
-            }
-            ret.append(">");
-            ret.append(h(label));
-            ret.append("</option>");
-        }
-        ret.append("</select>");
-        return ret.toString();
-    }
-
     /**
      * CONSOLIDATE ALL .lastFilter handling
      */
