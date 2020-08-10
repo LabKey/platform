@@ -3514,7 +3514,7 @@ public class SpecimenImporter
                     }
                 }
 
-                _logger.error(sb);
+                _logger.error(sb.toString());
 
                 // If conflicts are found, stop the import.
                 throw new IllegalStateException(sb.toString());
