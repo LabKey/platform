@@ -29,7 +29,7 @@ public class QueryParseException extends QueryException
 {
     protected int _line;
     protected int _column;
-    protected int _level = Level.ERROR.intLevel();
+    protected Level _level = Level.ERROR;
 
     public QueryParseException(String message, Throwable cause, int line, int column)
     {
@@ -47,12 +47,12 @@ public class QueryParseException extends QueryException
 
     public boolean isError()
     {
-        return _level >= Level.ERROR.intLevel();
+        return _level.isMoreSpecificThan(Level.ERROR);
     }
 
     public boolean isWarning()
     {
-        return _level < Level.ERROR.intLevel();
+        return _level.isLessSpecificThan(Level.ERROR);
     }
 
 
@@ -62,7 +62,7 @@ public class QueryParseException extends QueryException
         String ret = super.getMessage();
         if (_line != 0)
         {
-            if (_level == Level.WARN.intLevel())
+            if (_level.intLevel() == Level.WARN.intLevel())
                 ret = "Warning on line " + _line + ": " + ret;
             else
                 ret = "Error on line " + _line + ": " + ret;

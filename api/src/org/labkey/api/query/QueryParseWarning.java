@@ -28,6 +28,6 @@ public class QueryParseWarning extends QueryParseException
     public QueryParseWarning(String message, Throwable cause, int line, int column)
     {
         super(message, cause, line, column);
-        _level = Level.WARN.intLevel();
+        _level = Level.WARN;
     }
 }
