@@ -77,8 +77,7 @@ public abstract class AbstractTimelineEvent
 
         map.put("rowId", _event.getRowId());
         map.put("eventType", getEventType());
-        if (!hideActionUser())
-            map.put("user", getUserObject(_event.getCreatedBy(), _currentUser));
+        map.put("user", getUserObject(_event.getCreatedBy(), _currentUser));
         map.put("timestamp", getTimestampObject(_event.getCreated(), _container));
         map.put("summary", getEventComment());
         if (_oldDataMap != null || _newDataMap != null)
@@ -102,10 +101,5 @@ public abstract class AbstractTimelineEvent
     }
 
     public abstract void initMetadataEntityObject();
-
-    public boolean hideActionUser()
-    {
-        return _currentUser.isGuest();
-    }
 
 }
