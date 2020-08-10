@@ -27,6 +27,7 @@ import java.io.IOException;
 
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static javax.servlet.http.HttpServletResponse.SC_GONE;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_ACCEPTABLE;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 
@@ -66,6 +67,10 @@ public class SecurityPointcutServiceImpl implements SecurityPointcutService
             Object ex = req.getAttribute(ExceptionUtil.REQUEST_EXCEPTION_ATTRIBUTE);
             if (ex instanceof CSRFException)
                 BlacklistFilter.handleBadRequest(req);
+        }
+        else if (res.getStatus() == SC_NOT_ACCEPTABLE)
+        {
+            BlacklistFilter.handleBadRequest(req);
         }
     }
 

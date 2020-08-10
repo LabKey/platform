@@ -62,7 +62,7 @@ public class BlacklistFilter
         String q = req.getQueryString();
         if (count == 1 || count == 20)
         {
-            _log.log(count==1?Level.INFO:Level.WARN,
+            _log.log(count == 1 ? Level.INFO : Level.WARN,
             count + " suspicious request(s) by this host: " + host + " " + userAgent + (null == s.user ? "" : "(" + s.user + ")") + "\n" + uri + (null==q ? "" : "?" + q));
         }
     }

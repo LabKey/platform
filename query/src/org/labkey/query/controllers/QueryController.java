@@ -98,6 +98,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -156,6 +157,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
@@ -1277,7 +1279,23 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
-            QueryView queryView = form.getQueryView();
+            QueryView queryView = null;
+
+            try
+            {
+                if (!errors.hasErrors())
+                    queryView = form.getQueryView();
+            }
+            catch (BadRequestException x)
+            {
+                // catch 'validation' errors that aren't caught when binding QueryForm
+               sendBadRequestResponse(x);
+               return null;
+            }
+
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors, true);
+
             if (isPrint())
             {
                 queryView.setPrintView(true);
@@ -1294,19 +1312,32 @@ public class QueryController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            new SchemaAction(_form).addNavTrail(root);
-            TableInfo ti = null;
             try
             {
+                new SchemaAction(_form).addNavTrail(root);
+                TableInfo ti = null;
                 if (null != _queryView)
                     ti = _queryView.getTable();
+                String display = ti == null ? _form.getQueryName() : ti.getTitle();
+                root.addChild(display);
             }
-            catch (QueryParseException x)
+            catch (BadRequestException x)
             {
-                /* */
+                try
+                {
+                    sendBadRequestResponse(x);
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
-            String display = ti == null ? _form.getQueryName() : ti.getTitle();
-            root.addChild(display);
+        }
+
+        private void sendBadRequestResponse(BadRequestException x) throws IOException
+        {
+            HttpServletResponse response = getViewContext().getResponse();
+            response.sendError(x.getStatus(), x.getMessage());
         }
     }
 

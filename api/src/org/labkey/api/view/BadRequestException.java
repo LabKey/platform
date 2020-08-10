@@ -29,6 +29,12 @@ public class BadRequestException extends RuntimeException implements SkipMothers
     final int status;
     boolean _useBasicAuthentication = false;
 
+    public BadRequestException(int status, String message)
+    {
+        super(message);
+        this.status = status;
+    }
+
     public BadRequestException(String message, Exception x)
     {
         this(HttpServletResponse.SC_BAD_REQUEST, StringUtils.defaultIfEmpty(message, "BAD REQUEST"), x);
