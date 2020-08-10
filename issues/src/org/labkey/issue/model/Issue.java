@@ -730,11 +730,6 @@ public class Issue extends Entity implements Serializable, Cloneable
             this.comment = comment;
         }
 
-        public String getComment()
-        {
-            throw new IllegalStateException("Callers should use getHtmlComment()");
-        }
-
         public void setComment(String comment)
         {
             setHtmlComment(HtmlString.unsafe(comment));
@@ -749,13 +744,13 @@ public class Issue extends Entity implements Serializable, Cloneable
         }
     }
 
-    public class IssueEvent implements Comparable<IssueEvent>
+    public static class IssueEvent implements Comparable<IssueEvent>
     {
-        private String containerFormattedDate;
-        private String fullTimestamp;
-        private Long millis;
-        private String name;
-        private String user;
+        private final String containerFormattedDate;
+        private final String fullTimestamp;
+        private final Long millis;
+        private final String name;
+        private final String user;
 
         public IssueEvent(String containerFormattedDate, String fullTimestamp, Long millis, String name, String user)
         {

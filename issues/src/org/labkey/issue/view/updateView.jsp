@@ -278,7 +278,7 @@
             <%=bean.renderLabel(h(names.singularName + " " + issue.getIssueId()))%><%
             }%>
             <td colspan="3">
-                <%=bean.writeInput("title", issue.getTitle(), builder->builder.id("title").style("width:100%"))%>
+                <%=bean.writeInput("title", issue.getTitle(), builder->builder.id("title").addStyle("width:100%"))%>
             </td></tr>
         <tr>
             <%=bean.renderLabel(bean.getLabel("Status", false))%><td><%=h(issue.getStatus())%></td>

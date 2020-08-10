@@ -640,7 +640,7 @@ public class Input extends DisplayElement implements HasHtmlString
 
     protected void renderValueIfNonEmpty(Consumer<String> consumer)
     {
-        if (_value != null && !"".equals(_value.toString()))
+        if (!HtmlString.isEmpty(_value))
         {
             consumer.accept(_value.toString());
         }
@@ -844,7 +844,7 @@ public class Input extends DisplayElement implements HasHtmlString
 
         public T value(String value)
         {
-            _value = HtmlString.of(value); // TODO: Should null result in _value == null?
+            _value = null != value ? HtmlString.of(value) : null;
             return (T)this;
         }
 
@@ -950,13 +950,13 @@ public class Input extends DisplayElement implements HasHtmlString
             return (T)this;
         }
 
-        public T style(String style)
+        public T addStyle(String style)
         {
             _styles.add(style);
             return (T)this;
         }
 
-        public T style(List<String> styles)
+        public T addStyles(List<String> styles)
         {
             _styles.addAll(styles);
             return (T)this;

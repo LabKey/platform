@@ -129,7 +129,7 @@
                 SelectBuilder parentBuilder = new SelectBuilder()
                     .name("parent")
                     .id("id")
-                    .style("width:420px")
+                    .addStyle("width:420px")
                     .onChange("document.manage.nextAction.value = " + q(WikiController.NextAction.manage.name()) + "; submit();");
                 parentBuilder.addOption(new OptionBuilder().value("-1").label("[none]").selected(wiki.getParent() == -1).build());
                 bean.possibleParents.forEach(pp->{
@@ -161,7 +161,7 @@
                     <tr>
                         <td>
                             <%
-                                SelectBuilder siblingsBuilder = new SelectBuilder().name("siblings").id("siblings").size(10).style("width:500px;");
+                                SelectBuilder siblingsBuilder = new SelectBuilder().name("siblings").id("siblings").size(10).addStyle("width:500px;");
                                 bean.siblings.forEach(sibling->siblingsBuilder.addOption(new OptionBuilder()
                                     .value(String.valueOf(sibling.getRowId()))
                                     .label(sibling.getTitle() + " (" + sibling.getName() + ")")
@@ -190,7 +190,7 @@
                 <tr>
                     <td>
                         <%
-                            SelectBuilder childrenBuilder = new SelectBuilder().name("children").id("children").size(10).style("width:500px");
+                            SelectBuilder childrenBuilder = new SelectBuilder().name("children").id("children").size(10).addStyle("width:500px");
                             wiki.children().forEach(child->childrenBuilder.addOption(new OptionBuilder()
                                 .value(String.valueOf(child.getRowId()))
                                 .label(child.getLatestVersion().getTitle() + " (" + child.getName() + ")")
