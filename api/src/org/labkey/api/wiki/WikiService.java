@@ -73,4 +73,9 @@ public interface WikiService
     boolean updateContent(Container c, User user, String wikiName, String content);
 
     void deleteWiki(Container c, User user, String wikiName, boolean deleteSubtree) throws SQLException;
+
+    /**
+     * Retrieves a Wiki's EntityId.
+     */
+    @Nullable String getWikiEntityId(Container c, User user, String wikiName);
 }

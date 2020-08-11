@@ -945,6 +945,18 @@ public class WikiManager implements WikiService
         }
     }
 
+    @Override
+    @Nullable
+    public String getWikiEntityId(Container c, User user, String wikiName)
+    {
+        Wiki wiki = WikiSelectManager.getWiki(c, wikiName);
+        if (null != wiki)
+        {
+            return wiki.getEntityId();
+        }
+        return null;
+    }
+
     public static class TestCase extends Assert
     {
         WikiManager _m = null;
