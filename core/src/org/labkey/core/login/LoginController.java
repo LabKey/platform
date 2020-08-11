@@ -167,7 +167,7 @@ public class LoginController extends SpringActionController
     {
         ActionURL url = getViewContext().getActionURL();
         if (isNotBlank(url.getParameter("password")))
-            throw new BadRequestException(HttpServletResponse.SC_BAD_REQUEST, "password is not allowed on URL", null);
+            throw new BadRequestException("password is not allowed on URL", HttpServletResponse.SC_BAD_REQUEST, null);
     }
 
     public static class LoginUrlsImpl implements LoginUrls

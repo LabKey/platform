@@ -2059,7 +2059,7 @@ public class ExperimentController extends SpringActionController
         public Object execute(ParseForm form, BindException errors) throws Exception
         {
             if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
-                throw new BadRequestException(HttpServletResponse.SC_BAD_REQUEST, "Expected MultipartHttpServletRequest when posting files.", null);
+                throw new BadRequestException("Expected MultipartHttpServletRequest when posting files.", HttpServletResponse.SC_BAD_REQUEST, null);
 
             MultipartFile formFile = getFileMap().get("file");
             if (formFile == null)
@@ -3753,7 +3753,7 @@ public class ExperimentController extends SpringActionController
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
             if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
-                throw new BadRequestException(HttpServletResponse.SC_BAD_REQUEST, "Expected MultipartHttpServletRequest when posting files.", null);
+                throw new BadRequestException("Expected MultipartHttpServletRequest when posting files.", HttpServletResponse.SC_BAD_REQUEST, null);
 
             if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
             {

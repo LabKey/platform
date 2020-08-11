@@ -16,7 +16,6 @@
 
 package org.labkey.api.query;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -60,6 +59,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 public class QuerySettings
 {
     public static final String URL_PARAMETER_PREFIX = "param.";
+    private static final String parseError = "Could not parse parameter '%s' with value '%s'";
 
     private String _schemaName;
     private String _queryName;
@@ -178,7 +178,7 @@ public class QuerySettings
             }
             catch (IllegalArgumentException ex)
             {
-                throw new BadRequestException(SC_BAD_REQUEST, "Illegal value for parameter '" + QueryParam.showRows.name() + "'", ex);
+                throw new BadRequestException(String.format(parseError, QueryParam.showRows.name(), showRowsParam), SC_BAD_REQUEST, ex);
             }
         }
     }
@@ -241,7 +241,7 @@ public class QuerySettings
             {
                 var identifier = ReportService.get().getReportIdentifier(reportId, null, null);
                 if (null == identifier)
-                    throw new NotFoundException();
+                    throw new NotFoundException("Could not find report for reportId: " + reportId);
                 setReportId(identifier);
             }
         }
@@ -260,7 +260,7 @@ public class QuerySettings
                 }
                 catch (NumberFormatException nfe)
                 {
-                    throw new BadRequestException(SC_BAD_REQUEST, "Could not parse parameter 'offset'", nfe);
+                    throw new BadRequestException(String.format(parseError, "offset", offsetParam), SC_BAD_REQUEST, nfe);
                 }
             }
 
@@ -280,7 +280,7 @@ public class QuerySettings
                 }
                 catch (NumberFormatException nfe)
                 {
-                    throw new BadRequestException(SC_BAD_REQUEST, "Could not parse parameter 'maxRows'", nfe);
+                    throw new BadRequestException(String.format(parseError, "maxRows", maxRowsParam), SC_BAD_REQUEST, nfe);
                 }
             }
         }
@@ -290,7 +290,7 @@ public class QuerySettings
         {
             // fail fast
             if (null == ContainerFilter.getType(getContainerFilterName()))
-                throw new BadRequestException(SC_BAD_REQUEST, "Unknown value for 'containerFilterName'");
+                throw new BadRequestException(String.format(parseError, "containerFilterName", containerFilterNameParam), SC_BAD_REQUEST);
 
             setContainerFilterName(containerFilterNameParam);
         }
@@ -314,7 +314,7 @@ public class QuerySettings
             }
             catch (URISyntaxException | IllegalArgumentException use)
             {
-                throw new BadRequestException(SC_BAD_REQUEST, "Bad returnUrl", use);
+                throw new BadRequestException(String.format(parseError, "returnUrl", returnURL), SC_BAD_REQUEST, use);
             }
         }
 

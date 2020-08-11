@@ -149,7 +149,7 @@ public class WorkbookContainerType implements ContainerType
     {
         switch (dataType)
         {
-            //The intent is that outside of these blockListed actions, return the current container (parent otherwise)
+            //The intent is that outside of these specially supported actions, return the current container (parent otherwise)
             case customQueryViews:
             case domainDefinitions:
             case dataspace:
