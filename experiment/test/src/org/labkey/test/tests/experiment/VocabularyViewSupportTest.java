@@ -166,7 +166,7 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
 
         sampleSetCustomizeGrid.applyCustomView();
 
-        String propertiesValue = prop1Name + " " + prop2Name + " " + prop3Name + "\n" +
+        String propertiesValue = prop1Name + "\n" + prop2Name + "\n" + prop3Name + "\n" +
                                  prop1Value + " " + prop2Value + " " + cityName;
 
         List<String> rowData = drt.getRowDataAsText(0);
@@ -229,7 +229,7 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
         runsTableCustomizeView.addColumn(domainProperty + "/" + propNameLocation);
         runsTableCustomizeView.applyCustomView();
 
-        String propertiesValue = propNameLab + " " + propNameLocation + "\n" +
+        String propertiesValue = propNameLab + "\n" + propNameLocation + "\n" +
                 propValueLab + " " + labLocation;
         List<String> rowData = runsTable.getRowDataAsText(0);
 

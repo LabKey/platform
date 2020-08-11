@@ -58,14 +58,15 @@ public class StatusDetailsBean
     public final List<StatusDetailFile> files;
     public final List<StatusDetailRun> runs;
     public final StatusDetailLog log;
+    public final Integer fetchCount;
 
     // private constructor for parent/split job status
     private StatusDetailsBean(Container c, PipelineStatusFile psf)
     {
-        this(c, psf, null, null, null, null, null);
+        this(c, psf, null, null, null, null, null, null);
     }
 
-    public StatusDetailsBean(Container c, PipelineStatusFile psf, List<StatusDetailFile> files, List<StatusDetailRun> runs, StatusDetailsBean parentStatus, List<StatusDetailsBean> splitStatus, StatusDetailLog log)
+    public StatusDetailsBean(Container c, PipelineStatusFile psf, List<StatusDetailFile> files, List<StatusDetailRun> runs, StatusDetailsBean parentStatus, List<StatusDetailsBean> splitStatus, StatusDetailLog log, Integer fetchCount)
     {
         this.rowId = psf.getRowId();
         this.jobId = psf.getJobId();
@@ -87,9 +88,10 @@ public class StatusDetailsBean
         this.files = files;
         this.runs = runs;
         this.log = log;
+        this.fetchCount = fetchCount;
     }
 
-    public static StatusDetailsBean create(Container c, PipelineStatusFile psf, long logOffset)
+    public static StatusDetailsBean create(Container c, PipelineStatusFile psf, long logOffset, int fetchCount)
     {
         var statusRuns = ExperimentService.get().getExpRunsForJobId(psf.getRowId()).stream().map(StatusDetailRun::create).collect(toList());
         var statusFiles = Collections.emptyList();
@@ -157,7 +159,7 @@ public class StatusDetailsBean
                     .collect(toList());
         }
 
-        return new StatusDetailsBean(c, psf, statusFiles, statusRuns, parentStatus, splitStatus, statusLog);
+        return new StatusDetailsBean(c, psf, statusFiles, statusRuns, parentStatus, splitStatus, statusLog, fetchCount);
     }
 
     // Copy the file content from Path to the PrintWriter,
