@@ -289,7 +289,7 @@ public class QuerySettings
         if (isNotBlank(containerFilterNameParam))
         {
             // fail fast
-            if (null == ContainerFilter.getType(getContainerFilterName()))
+            if (null == ContainerFilter.getType(containerFilterNameParam))
                 throw new BadRequestException(String.format(parseError, "containerFilterName", containerFilterNameParam), SC_BAD_REQUEST);
 
             setContainerFilterName(containerFilterNameParam);
