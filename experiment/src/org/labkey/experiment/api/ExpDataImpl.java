@@ -61,11 +61,13 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.element.Input.InputBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -106,7 +108,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     /**
      * Temporary mapping until experiment.xml contains the mime type
      */
-    private static MimeMap MIME_MAP = new MimeMap();
+    private static final MimeMap MIME_MAP = new MimeMap();
 
     static public List<ExpDataImpl> fromDatas(List<Data> datas)
     {
@@ -457,7 +459,6 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     }
 
     // Get all text strings from the data class for indexing
-    @NotNull
     private void getIndexValues(Set<String> identifiers, Set<String> keywords)
     {
         ExpDataClassImpl dc = this.getDataClass(null);
@@ -867,7 +868,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
         @Nullable
         @Override
-        public String getExtraHtml(ViewContext ctx)
+        public HtmlString getExtraHtml(ViewContext ctx)
         {
             String q = ctx.getActionURL().getParameter("q");
 
@@ -887,7 +888,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
                 }
 
                 html.append("</div>");
-                return html.toString();
+                return HtmlString.unsafe(html.toString());
             }
             else
             {
@@ -901,15 +902,10 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
             if (!Objects.equals(dataclass, current))
             {
-                sb.append("<a href=\"");
-
                 if (addParam)
                     url = url.clone().addParameter(PROPERTY, dataclass);
 
-                sb.append(PageFlowUtil.filter(url));
-                sb.append("\">");
-                sb.append(PageFlowUtil.filter(label));
-                sb.append("</a>");
+                sb.append(new LinkBuilder(label).href(url).clearClasses());
             }
             else
             {
@@ -919,14 +915,13 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             sb.append("</span> ");
         }
 
-        @Nullable
         @Override
-        public String getHiddenInputsHtml(ViewContext ctx)
+        public HtmlString getHiddenInputsHtml(ViewContext ctx)
         {
             String dataclass = ctx.getActionURL().getParameter(PROPERTY);
             if (dataclass != null)
             {
-                return "<input type='hidden' id='search-type' name='" + PROPERTY + "' value='" + PageFlowUtil.filter(dataclass) + "'>";
+                return new InputBuilder().type("hidden").id("search-type").name(PROPERTY).value(dataclass).getHtmlString();
             }
 
             return null;

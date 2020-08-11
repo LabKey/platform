@@ -16,11 +16,14 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.json.JSONArray" %>
+<%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.emailTemplate.EmailTemplate" %>
 <%@ page import="org.labkey.api.util.emailTemplate.EmailTemplate.ContentType" %>
 <%@ page import="org.labkey.api.util.emailTemplate.EmailTemplateService" %>
@@ -28,10 +31,9 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Formatter" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -132,50 +134,37 @@
 <script type="text/javascript">
 
 <%
-    // create the map of email template names to template properties
-    out.print("var emailTemplates = [");
-    String sep = "{";
-    for (EmailTemplate et : emailTemplates)
-    {
-        out.print(sep);
-        out.print("\t\"name\":\"" + et.getClass().getName() + "\",\n");
-        out.print("\t\"description\":" + q(et.getDescription()) + ",\n");
-        out.print("\t\"sender\":" + q(et.getSenderName()) + ",\n");
-        out.print("\t\"replyToEmail\":" + q(et.getReplyToEmail()) + ",\n");
-        out.print("\t\"subject\":" + q(et.getSubject()) + ",\n");
-        out.print("\t\"message\":" + q(et.getBody()) + ",\n");
-        // Let users delete the folder-scoped template only if it's been stored in the same folder they're in, and they're
-        // not in the root where they'd be doing a site-level template
-        out.print("\t\"showFolderReset\":" + (c.equals(et.getContainer()) && !c.isRoot()) + ",\n");
-        // Let users delete a site-scoped template if they're in the root and the template is stored in the root
-        out.print("\t\"showSiteReset\":" + (c.isRoot() && c.equals(et.getContainer())) + ",\n");
-        out.print("\t\"hasMultipleContentTypes\":" + (et.getContentType() == ContentType.HTML) + ",\n");
-        out.print("\t\"replacements\":[\n");
-
-        String innerSep = "\t{";
-        List<EmailTemplate.ReplacementParam> replacements = new ArrayList<>(et.getValidReplacements());
-        // Alphabetize for easier reference in UI
-        Collections.sort(replacements);
-        for (EmailTemplate.ReplacementParam param : replacements)
-        {
-            out.print(innerSep);
-            out.print("\t\t\"paramName\":" + q(param.getName()) + ",\n");
-            out.print("\t\t\"format\":" + q(param.getContentType().toString()) + ",\n");
-            out.print("\t\t\"valueType\":" + q(param.getValueType().getSimpleName()) + ",\n");
-            out.print("\t\t\"paramDesc\":" + q(param.getDescription()) + ",\n");
-            String formattedValue = param.getFormattedValue(c, null, ContentType.HTML);
-            out.print("\t\t\"paramValue\":" + q(formattedValue) + "\n");
-            out.print("}");
-
-            innerSep = "\t,{";
-        }
-        out.print("]}");
-
-        sep = ",{";
-    }
-    out.print("];");
-
+    // create an array of email templates with their replacement parameters
+    JSONArray array = emailTemplates.stream()
+        // Some values could be null, so Map.of() is not an option for the top-level map
+        .map(et->new JSONObject(PageFlowUtil.map(
+            "name", et.getClass().getName(),
+            "description", et.getDescription(),
+            "sender", et.getSenderName(),
+            "replyToEmail", et.getReplyToEmail(),
+            "subject", et.getSubject(),
+            "message", et.getBody(),
+            // Let users delete the folder-scoped template only if it's been stored in the same folder they're in, and they're
+            // not in the root where they'd be doing a site-level template
+            "showFolderReset", (c.equals(et.getContainer()) && !c.isRoot()),
+            // Let users delete a site-scoped template if they're in the root and the template is stored in the root
+            "showSiteReset", (c.isRoot() && c.equals(et.getContainer())),
+            "hasMultipleContentTypes", (et.getContentType() == ContentType.HTML),
+            "replacements", et.getValidReplacements().stream()
+                .sorted()
+                .map(param -> new JSONObject(Map.of(
+                    "paramName", param.getName(),
+                    "format", param.getContentType().toString(),
+                    "valueType", param.getValueType().getSimpleName(),
+                    "paramDesc", param.getDescription(),
+                    "paramValue", param.getFormattedValue(c, null, ContentType.HTML)
+                )))
+                .collect(JSONArray.collector())
+        )))
+        .collect(JSONArray.collector());
 %>
+    var emailTemplates = <%=text(array.toString(4))%>
+
     function changeEmailTemplate()
     {
         var selection = Ext4.get('templateClass').dom;
@@ -293,15 +282,15 @@
 <%
     if (StringUtils.isEmpty(errorHTML)) { %>
     Ext4.onReady(function()
+    {
+        if (LABKEY.ActionURL.getParameter('templateClass'))
         {
-            if (LABKEY.ActionURL.getParameter('templateClass'))
-            {
-                Ext4.get('templateClass').dom.value = LABKEY.ActionURL.getParameter('templateClass');
-            }
-            changeEmailTemplate();
-        });
+            Ext4.get('templateClass').dom.value = LABKEY.ActionURL.getParameter('templateClass');
+        }
+        changeEmailTemplate();
+    });
 <% } else { %>
-        Ext4.onReady(changeValidSubstitutions);
+    Ext4.onReady(changeValidSubstitutions);
 <% } %>
 </script>
 

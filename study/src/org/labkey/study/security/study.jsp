@@ -42,7 +42,7 @@ Any user with READ access to this folder may view some summary data.  However, a
     <labkey:form id="groupUpdateForm" action="<%=buildURL(SecurityController.SaveStudyPermissionsAction.class)%>" method="post">
 <%
     if (returnUrl != null)
-        out.print("<input type=\"hidden\" name=\"returnUrl\" value=\"" + h(returnUrl) + "\">");
+        out.print(input().type("hidden").name("returnUrl").value(returnUrl));
 %>
     <table class="lk-fields-table">
 

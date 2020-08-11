@@ -23,6 +23,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -39,6 +40,7 @@ import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.util.element.Input.InputBuilder;
 import org.labkey.api.util.element.Select.SelectBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -130,6 +132,16 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
     /**
+     * Returns a URL to an ExtJS 3.x image given a short, relative path
+     * @param shortPath A path relative to /images/default/, such as "tree/folder.gif"
+     * @return An HtmlString containing the full path to the image, such as "/labkey/ext-3.4.1/resources/images/default/tree/folder.gif"
+     */
+    public HtmlString getExt3Image(String shortPath)
+    {
+        return HtmlStringBuilder.of(getContextPath()).append("/").append(PageFlowUtil.extJsRoot()).append("/resources/images/default/").append(shortPath).getHtmlString();
+    }
+
+    /**
      * No-op encoding
      * Indicate that you explicitly want to include a string in the page WITHOUT encoding
      * TODO: HtmlString - Eventually, remove this method and all usages.
@@ -208,6 +220,8 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return HtmlString.of(o == null ? null : o.toString());
     }
 
+    // TODO: Remove this
+    @Deprecated
     public HtmlString h(HtmlString o)
     {
         return HtmlString.of(o == null ? null : o.toString());
@@ -279,9 +293,9 @@ public abstract class JspBase extends JspContext implements HasViewContext
      * Ext, for example, will use the 'id' config parameter as an attribute value in an XTemplate.
      * The string value is inserted directly into the dom and so should be HTML encoded.
      */
-    protected String qh(String str)
+    protected JavaScriptFragment qh(String str)
     {
-        return PageFlowUtil.qh(str);
+        return JavaScriptFragment.unsafe(PageFlowUtil.qh(str));
     }
 
     /**
@@ -363,6 +377,10 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return DemoMode.id(id, getContainer(), getUser());
     }
 
+    public HtmlString getSpringFieldMarker()
+    {
+        return h(SpringActionController.FIELD_MARKER);
+    }
 
     /**
      * Given the Class of an action in a Spring controller, returns the view URL to the action.
@@ -414,6 +432,11 @@ public abstract class JspBase extends JspContext implements HasViewContext
     public LinkBuilder link(String text, @NotNull URLHelper url)
     {
         return link(text).href(url);
+    }
+
+    public InputBuilder<?> input()
+    {
+        return new InputBuilder();
     }
 
     public HtmlString generateBackButton()
@@ -479,6 +502,11 @@ public abstract class JspBase extends JspContext implements HasViewContext
     public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText, int width)
     {
         return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText, htmlHelpText, width));
+    }
+
+    public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width)
+    {
+        return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText, htmlHelpText, linkHtml, width));
     }
 
     public HtmlString helpLink(String helpTopic, String displayText)
@@ -658,6 +686,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
             return HtmlString.unsafe("\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">" + errorHTML + "</td></tr>\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">&nbsp;</td></tr>");
     }
 
+    // TODO: Should return HtmlString!
     protected String _formatErrorList(List<ObjectError> l, boolean fieldNames)
     {
         if (l.size() == 0)

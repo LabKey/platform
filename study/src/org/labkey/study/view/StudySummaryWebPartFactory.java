@@ -113,7 +113,7 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
 
         public HtmlString getDescriptionHtml()
         {
-            String html = getStudy().getDescriptionHtml();
+            String html = getStudy().getDescriptionHtml().toString();
 
             // Hack!  Remove div so we can nestle the edit icon up to the text
             if (html.endsWith("</div>"))

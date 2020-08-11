@@ -93,7 +93,7 @@ var settings = {
     descriptionField: <%=q(settings.getDescriptionField())%>
 };
 
-var schemaInfos = <%= new JSONObject(schemaTableNames).toString() %>;
+var schemaInfos = <%= new JSONObject(schemaTableNames) %>;
 
 function updateQueries(schemaName)
 {

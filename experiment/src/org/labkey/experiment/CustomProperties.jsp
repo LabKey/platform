@@ -33,21 +33,21 @@
     {
         try
         {
-            fout.println("<tr>");
-            fout.println("    <td class=\"labkey-form-label\">");
+            fout.println(unsafe("<tr>"));
+            fout.println(unsafe("    <td class=\"labkey-form-label\">"));
 
             int i = 0;
             while(i < indent)
             {
                 i++;
-                fout.print(text("&nbsp;&nbsp;&nbsp;&nbsp;"));
+                fout.print(unsafe("&nbsp;&nbsp;&nbsp;&nbsp;"));
             }
 
             // Note: StandardPropertyRenderer HTML encodes description and value
-            fout.println(description);
-            fout.println("    </td>");
-            fout.println("    <td>" + value + "</td>");
-            fout.println("</tr>");
+            fout.println(unsafe(description));
+            fout.println(unsafe("    </td>"));
+            fout.println(unsafe("    <td>" + value + "</td>"));
+            fout.println(unsafe("</tr>"));
         }
         catch (IOException e)
         {

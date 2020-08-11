@@ -137,7 +137,7 @@ if (null != announcementModel.getBody())
 
 %>
 <tr>
-    <td colspan="3" class="labkey-force-word-break"><%=text(announcementModel.translateBody())%></td>
+    <td colspan="3" class="labkey-force-word-break"><%=announcementModel.translateBody()%></td>
 </tr><%
 
 if (!announcementModel.getAttachments().isEmpty())

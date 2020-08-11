@@ -380,44 +380,6 @@
         </attribute>
     </tag>
     <tag>
-        <name>select</name>
-        <tag-class>org.labkey.api.jsp.taglib.SelectTag</tag-class>
-        <body-content>JSP</body-content>
-        <attribute>
-            <name>formGroup</name>
-            <rtexprvalue>true</rtexprvalue>
-            <type>java.lang.Boolean</type>
-        </attribute>
-        <attribute>
-            <name>label</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-        <attribute>
-            <name>message</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-        <attribute>
-            <name>name</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-        <attribute>
-            <name>onChange</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-        <attribute>
-            <name>onKeyUp</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-        <attribute>
-            <name>value</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-        <attribute>
-            <name>contextContent</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-    </tag>
-    <tag>
         <name>autoCompleteText</name>
         <tag-class>org.labkey.api.jsp.taglib.AutoCompleteTextTag</tag-class>
         <body-content>empty</body-content>

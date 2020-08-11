@@ -79,7 +79,7 @@
         <tr>
             <td class="labkey-form-label">Report or Chart:</td>
             <td>
-                <select id="reportId" name="<%=Report.renderParam.reportId.name()%>" onchange="getSectionNames(this);">
+                <select id="reportId" name="<%=Report.renderParam.reportId%>" onchange="getSectionNames(this);">
                     <%
                         for (String reportName : reportNames)
                         {

@@ -140,9 +140,9 @@
     }
 
     if (bean.isWideView())
-        out.println("</td></tr></table>");
+        out.println(unsafe("</td></tr></table>"));
     else if (bean.getAdminView())
-        out.println("</table>");
+        out.println(unsafe("</table>"));
 
     if (user.hasRootAdminPermission() || c.hasPermission(user, AdminPermission.class)) {
 %>

@@ -749,7 +749,7 @@ public class PageFlowUtil
      */
     static private final boolean COMPRESS_OBJECT_STREAMS = true;
 
-    static public String encodeObject(Object o) throws IOException
+    static public HtmlString encodeObject(Object o) throws IOException
     {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         OutputStream osCompressed;
@@ -778,7 +778,7 @@ public class PageFlowUtil
             w.write(json.toString());
         }
         osCompressed.close();
-        return new String(Base64.encodeBase64(byteArrayOutputStream.toByteArray(), true), StringUtilsLabKey.DEFAULT_CHARSET);
+        return HtmlString.unsafe(new String(Base64.encodeBase64(byteArrayOutputStream.toByteArray(), true), StringUtilsLabKey.DEFAULT_CHARSET));
     }
 
     public static <T> T decodeObject(Class<T> cls, String encoded) throws IOException
@@ -1835,6 +1835,7 @@ public class PageFlowUtil
         return HtmlString.unsafe(sb.toString());
     }
 
+    // TODO: Remove... unused? (Move string to JSpBase.getExtJs3Root())
     public static String extJsRoot()
     {
         return "ext-3.4.1";
@@ -2597,7 +2598,7 @@ public class PageFlowUtil
         public void testEncodeObject() throws Exception
         {
             TestBean bean = new TestBean(5,"five",new Date(DateUtil.parseISODateTime("2005-05-05 05:05:05")));
-            String s = encodeObject(bean);
+            String s = encodeObject(bean).toString();
 
             TestBean copy = decodeObject(TestBean.class, s);
             assertNotNull(copy);
@@ -2646,44 +2647,6 @@ public class PageFlowUtil
     static private String h(Object o)
     {
         return PageFlowUtil.filter(o);
-    }
-
-    static public <T> String strSelect(String selectName, Map<T,String> map, T current)
-    {
-        return strSelect(selectName, map.keySet(), map.values(), current);
-    }
-
-    static public String strSelect(String selectName, Collection<?> values, Collection<String> labels, Object current)
-    {
-        if (values.size() != labels.size())
-            throw new IllegalArgumentException();
-        StringBuilder ret = new StringBuilder();
-        ret.append("<select name=\"");
-        ret.append(h(selectName));
-        ret.append("\">");
-        boolean found = false;
-        Iterator itValue;
-        Iterator<String> itLabel;
-        for (itValue  = values.iterator(), itLabel = labels.iterator();
-             itValue.hasNext() && itLabel.hasNext();)
-        {
-            Object value = itValue.next();
-            String label = itLabel.next();
-            boolean selected = !found && Objects.equals(current, value);
-            ret.append("\n<option value=\"");
-            ret.append(h(value));
-            ret.append("\"");
-            if (selected)
-            {
-                ret.append(" SELECTED");
-                found = true;
-            }
-            ret.append(">");
-            ret.append(h(label));
-            ret.append("</option>");
-        }
-        ret.append("</select>");
-        return ret.toString();
     }
 
     /**

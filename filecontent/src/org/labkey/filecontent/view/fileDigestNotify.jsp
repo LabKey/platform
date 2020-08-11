@@ -61,7 +61,7 @@
 
     %>
         <%  if (resource.exists()) { %>
-            <tr><td class="labkey-alternate-row" colspan="3"><%=h(resource.isCollection() ? "Folder: " : " File: ")%><a href="<%=resource.getLocalHref(getViewContext())%>"><%=h(resource.getName())%></a></td></tr>
+            <tr><td class="labkey-alternate-row" colspan="3"><%=h(resource.isCollection() ? "Folder: " : " File: ")%><a href="<%=h(resource.getLocalHref(getViewContext()))%>"><%=h(resource.getName())%></a></td></tr>
         <%  } else { %>
             <tr><td class="labkey-alternate-row" colspan="3"><%=h(resource.isCollection() ? "Folder: " : " File: ")%><span class="labkey-strong"><%=h(resource.getName())%></span></td></tr>
         <%  }

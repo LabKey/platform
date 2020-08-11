@@ -16,7 +16,6 @@
 
 package org.labkey.issue.model;
 
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Collections2;
 import org.apache.commons.lang3.StringUtils;
@@ -51,8 +50,12 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.element.Input;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.issue.CustomColumnConfiguration;
@@ -73,6 +76,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.util.PageFlowUtil.filter;
@@ -393,42 +397,37 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return _tableInfo;
     }
 
-    public String renderColumn(DomainProperty prop, ViewContext context) throws IOException
+    public HtmlString renderColumn(DomainProperty prop, ViewContext context) throws IOException
     {
         return renderColumn(prop, context, true, false);
     }
 
-    public String renderColumn(DomainProperty prop, ViewContext context, boolean visible, boolean readOnly) throws IOException
+    public HtmlString renderColumn(DomainProperty prop, ViewContext context, boolean visible, boolean readOnly) throws IOException
     {
         if (prop != null && shouldDisplay(prop, context.getContainer(), context.getUser()))
         {
-            final StringBuilder sb = new StringBuilder();
             TableInfo table = getIssueTable(context);
             if (table != null)
             {
                 var col = table.getColumn(FieldKey.fromParts(prop.getName()));
                 if (col != null)
                 {
-                    try (Writer writer = new StringWriter())
-                    {
-                        writer.append("<tr>");
-                        writer.append(renderLabel(prop, context));
+                    HtmlStringBuilder builder = HtmlStringBuilder.of(HtmlString.unsafe("<tr>"))
+                        .append(renderLabel(prop, context));
 
-                        if (visible)
-                            writer.append(renderInput(prop, context, readOnly));
+                    if (visible)
+                        builder.append(renderInput(prop, context, readOnly));
 
-                        writer.append("</tr>");
+                    builder.append(HtmlString.unsafe("</tr>"));
 
-                        sb.append(writer);
-                    }
-                    return sb.toString();
+                    return builder.getHtmlString();
                 }
             }
         }
-        return "";
+        return HtmlString.EMPTY_STRING;
     }
 
-    public String renderLabel(DomainProperty prop, ViewContext context) throws IOException
+    public HtmlString renderLabel(DomainProperty prop, ViewContext context) throws IOException
     {
         if (prop != null && shouldDisplay(prop, context.getContainer(), context.getUser()))
         {
@@ -447,36 +446,36 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                         dc.renderDetailsCaptionCell(renderContext, writer, "lk-form-label");
                         sb.append(writer);
                     }
-                    return sb.toString();
+                    return HtmlString.unsafe(sb.toString());
                 }
             }
         }
-        return "";
+        return HtmlString.EMPTY_STRING;
     }
 
     /**
      * Render column label only
      */
-    public String renderLabel(String label)
+    public HtmlString renderLabel(HtmlString label)
     {
-        final StringBuilder sb = new StringBuilder();
         if (label != null)
         {
-            sb.append("<td class=\"lk-form-label\">").append(label);
+            HtmlStringBuilder html = HtmlStringBuilder.of()
+                .append(HtmlString.unsafe("<td class=\"lk-form-label\">"))
+                .append(label);
             if (label.length() < 100) //prevents silly-looking colons on extremely long labels (see: email prefs)
-                sb.append(":");
-            sb.append("</td>");
+                html.append(":");
+            html.append(HtmlString.unsafe("</td>"));
 
-            return sb.toString();
+            return html.getHtmlString();
         }
-        return "";
+        return HtmlString.EMPTY_STRING;
     }
 
-    public String renderInput(DomainProperty prop, ViewContext context, boolean readOnly) throws IOException
+    public HtmlString renderInput(DomainProperty prop, ViewContext context, boolean readOnly) throws IOException
     {
         if (prop != null && shouldDisplay(prop, context.getContainer(), context.getUser()))
         {
-            final StringBuilder sb = new StringBuilder();
             TableInfo table = getIssueTable(context);
             if (table != null)
             {
@@ -495,18 +494,17 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                     RenderContext renderContext = getRenderContext(context);
                     renderContext.setMode(readOnly ? DataRegion.MODE_DETAILS : getMode());
 
-                    try (Writer writer = new StringWriter())
+                    try (StringWriter writer = new StringWriter())
                     {
                         writer.append("<td>");
                         dc.render(renderContext, writer);
                         writer.append("</td>");
-                        sb.append(writer);
+                        return HtmlString.unsafe(writer.toString());
                     }
-                    return sb.toString();
                 }
             }
         }
-        return "";
+        return HtmlString.EMPTY_STRING;
     }
 
     public static boolean shouldDisplay(DomainProperty prop, Container container, User user)
@@ -516,33 +514,25 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return container.hasPermission(user, permission);
     }
 
-    // Field is always standard column name, which is HTML safe
-    public String writeInput(String field, String value, String extra)
+    public HtmlString writeInput(String field, String value, int tabIndex)
     {
-        if (!isVisible(field))
-            return filter(value, false, true);
-        
-        final StringBuilder sb = new StringBuilder();
-
-        sb.append("<input name=\"");
-        sb.append(field);
-        sb.append("\" value=\"");
-        sb.append(filter(value));
-        sb.append("\" onchange=\"LABKEY.setDirty(true);return true;\" class=\"form-control\"");
-        if (null == extra)
-            sb.append("\">");
-        else
-        {
-            sb.append("\" ");
-            sb.append(extra);
-            sb.append(">");
-        }
-        return sb.toString();
+        return writeInput(field, value, builder->builder.tabIndex(tabIndex));
     }
 
-    public String writeInput(String field, String value, int tabIndex)
+    public HtmlString writeInput(String field, String value, Consumer<Input.InputBuilder> builderModifier)
     {
-        return writeInput(field, value, "tabIndex=\"" + tabIndex + "\"");
+        if (!isVisible(field))
+            return HtmlString.unsafe(filter(value, false, true));
+
+        Input.InputBuilder builder = new Input.InputBuilder()
+            .name(field)
+            .value(value)
+            .onChange("LABKEY.setDirty(true);return true;")
+            .className("form-control");
+
+        builderModifier.accept(builder);
+
+        return builder.getHtmlString();
     }
 
     public boolean isVisible(String field)
@@ -579,13 +569,13 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     }
 
 
-    public String getNotifyList()
+    public HtmlString getNotifyList()
     {
         if (!isVisible("notifyList"))
         {
-            return filter(getNotifyListString(false));
+            return HtmlString.of(getNotifyListString(false));
         }
-        return "";
+        return HtmlString.EMPTY_STRING;
     }
 
     public List<String> getNotifyListCollection(boolean asEmail)
@@ -593,8 +583,8 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         if (asEmail)
         {
             return _issue.getNotifyListEmail().stream()
-                    .map(ValidEmail::toString)
-                    .collect(toList());
+                .map(ValidEmail::toString)
+                .collect(toList());
         }
         else
         {
@@ -602,7 +592,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         }
     }
 
-    public String getLabel(String columnName, boolean markIfRequired)
+    public HtmlString getLabel(String columnName, boolean markIfRequired)
     {
         var col = IssuesSchema.getInstance().getTableInfoIssues().getColumn(columnName);
         String name = null;
@@ -620,9 +610,9 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         String label = PageFlowUtil.filter(StringUtils.isEmpty(name) ? capitalizedColumnName : name).replaceAll(" ", "&nbsp;");
 
         if (markIfRequired && _requiredFields != null && _requiredFields.contains(columnName.toLowerCase()))
-            return label + "&nbsp*";
+            return HtmlString.unsafe(label + "&nbsp*");
         else
-            return label;
+            return HtmlString.unsafe(label);
     }
 
     public void setAdditionalDetailInfo(Map<String, List<Pair<String, ActionURL>>> additionalDetailInfo)
@@ -641,35 +631,34 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return DateUtil.formatDateTime(_c, d);
     }
 
-    public String renderAttachments(ViewContext context, Comment comment)
+    public HtmlString renderAttachments(ViewContext context, Comment comment)
     {
         List<Attachment> attachments = new ArrayList<>(AttachmentService.get().getAttachments(new CommentAttachmentParent(comment)));
 
-        StringBuilder sb = new StringBuilder();
+        HtmlStringBuilder builder = HtmlStringBuilder.of();
 
         if (attachments.size() > 0)
         {
-            sb.append("<table class=\"issues-attachments\">");
-            sb.append("<tr><td>&nbsp;</td></tr>");
+            builder.append(HtmlString.unsafe("<table class=\"issues-attachments\"><tr><td>&nbsp;</td></tr>"));
 
             for (Attachment a : attachments)
             {
                 Issue issue = comment.getIssue();
                 ActionURL download = IssuesController.getDownloadURL(issue, comment, a);
-                sb.append("<tr><td>");
-                sb.append("<a href=\"");
-                sb.append(PageFlowUtil.filter(download));
-                sb.append("\" target=\"_blank\"><img src=\"");
-                sb.append(context.getRequest().getContextPath());
-                sb.append(PageFlowUtil.filter(a.getFileIcon()));
-                sb.append("\">&nbsp;");
-                sb.append(PageFlowUtil.filter(a.getName()));
-                sb.append("</a>");
-                sb.append("</td></tr>");
+                builder.append(HtmlString.unsafe("<tr><td>"));
+
+                HtmlStringBuilder icon = HtmlStringBuilder.of(HtmlString.unsafe("<img src=\""))
+                    .append(context.getRequest().getContextPath())
+                    .append(a.getFileIcon())
+                    .append(HtmlString.unsafe("\">&nbsp;"))
+                    .append(a.getName());
+
+                builder.append(new LinkBuilder(icon.getHtmlString()).href(download).target("_blank"));
+                builder.append(HtmlString.unsafe("</td></tr>"));
             }
-            sb.append("</table>");
+            builder.append(HtmlString.unsafe("</table>"));
         }
-        return sb.toString();
+        return builder.getHtmlString();
     }
 
     public String renderIssueIdLink(Integer id)
@@ -688,27 +677,20 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         }
     }
 
-    public String renderRelatedIssues(Set<Integer> rels)
+    public HtmlString renderRelatedIssues(Set<Integer> rels)
     {
         return renderDuplicates(rels);
     }
 
-    public String renderDuplicates(Collection<Integer> dups)
+    public HtmlString renderDuplicates(Collection<Integer> dups)
     {
         StringBuilder sb = new StringBuilder();
-        Joiner.on(", ").skipNulls().appendTo(sb, Collections2.transform(dups, new Function<Integer, String>()
-        {
-            @Override
-            public String apply(Integer id)
-            {
-                return renderIssueIdLink(id);
-            }
-        }));
-        return sb.toString();
+        Joiner.on(", ").skipNulls().appendTo(sb, Collections2.transform(dups, this::renderIssueIdLink));
+        return HtmlString.unsafe(sb.toString());
     }
 
     // simple wrapper for renderDuplicates if issue.getDuplicates().isempty() is true. (if duplicates mechanism designed better this could disappear)
-    public String renderDuplicate(int dup)
+    public HtmlString renderDuplicate(int dup)
     {
         Collection<Integer> dups = Collections.singletonList(dup);
         return renderDuplicates(dups);
@@ -739,7 +721,6 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                 sb.append("</td><td>");
                 sb.append(cellContents.toString());
                 sb.append("</td><tr>");
-
             }
 
             return sb.toString();

@@ -37,6 +37,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.util.HtmlString;
 import org.labkey.issue.query.IssuesListDefTable;
 
 import java.util.ArrayList;
@@ -263,7 +264,14 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     }
 
     @Override
+    @Deprecated // TODO: Delete
     public int createIssue(Container container, User user, @NotNull String issueDefName, @NotNull String title, @Nullable String body)
+    {
+        return createIssue(container, user, issueDefName, title, null != body ? HtmlString.unsafe(body) : null);
+    }
+
+    @Override
+    public int createIssue(Container container, User user, @NotNull String issueDefName, @NotNull String title, @Nullable HtmlString body)
     {
         IssueListDef def = IssueManager.getIssueListDef(container, issueDefName);
         if (def == null)
@@ -279,7 +287,7 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         if (body != null)
             issue.addComment(user, body);
 
-        ObjectFactory factory = ObjectFactory.Registry.getFactory(Issue.class);
+        ObjectFactory<Issue> factory = ObjectFactory.Registry.getFactory(Issue.class);
         factory.toMap(issue, issue.getProperties());
 
         IssueManager.saveIssue(user, container, issue);
