@@ -38,14 +38,14 @@ public final class DomainDescriptor
 {
     static
     {
-        ObjectFactory.Registry.register(DomainDescriptor.class, new BuilderObjectFactory<DomainDescriptor>(DomainDescriptor.class,Builder.class)
+        ObjectFactory.Registry.register(DomainDescriptor.class, new BuilderObjectFactory<>(DomainDescriptor.class, Builder.class)
         {
             @Override
-            protected void fixupMap(Map m, DomainDescriptor dd)
+            protected void fixupMap(Map<String, Object> m, DomainDescriptor dd)
             {
                 TemplateInfo ti = dd.getTemplateInfo();
                 if (null != ti)
-                    m.put("templateInfo",ti.toJSON());
+                    m.put("templateInfo", ti.toJSON());
             }
         });
     }
@@ -61,7 +61,7 @@ public final class DomainDescriptor
     private final TemplateInfo _templateInfo;
 
     /* DomainDescriptors are cached, but DomainImpl is not, so stash DomainKind here */
-    private final DomainKind<?> _domainKind;
+    private volatile DomainKind<?> _domainKind;
 
     // for StorageProvisioner (currently assuming labkey scope)
     private final String _storageTableName;
@@ -80,7 +80,6 @@ public final class DomainDescriptor
         _description = description;
         _domainURI = domainURI;
         _domainId = domainId;
-        _domainKind = PropertyService.get().getDomainKind(_domainURI);
 
         String _name = null;
         if (null != name)
@@ -129,7 +128,6 @@ public final class DomainDescriptor
         _ts = map.get("_ts");
 
         _domainURI = (String) map.get("DomainURI");
-        _domainKind = PropertyService.get().getDomainKind(_domainURI);
 
         if (map.containsKey("DomainId"))
             _domainId = (Integer) map.get("DomainId");
@@ -154,6 +152,8 @@ public final class DomainDescriptor
 
     public DomainKind<?> getDomainKind()
     {
+        if (null == _domainKind)
+            _domainKind = PropertyService.get().getDomainKind(_domainURI);
         return _domainKind;
     }
 
