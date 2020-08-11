@@ -46,7 +46,7 @@ import java.util.Set;
  */
 public class CohortFilterFactory
 {
-    public static enum Params implements SimpleHasHtmlString
+    public enum Params implements SimpleHasHtmlString
     {
         cohortFilterType
         {
@@ -169,7 +169,7 @@ public class CohortFilterFactory
     }
 
 
-    static enum CohortFilterField
+    enum CohortFilterField
     {
         currentCohortLabel("ParticipantId/Cohort/Label"){
             @Override

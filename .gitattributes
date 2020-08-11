@@ -1479,7 +1479,6 @@ api/src/org/labkey/api/util/ProtXMLFileType.java -text
 api/src/org/labkey/api/util/Rate.java -text
 api/src/org/labkey/api/util/RateAccumulator.java -text
 api/src/org/labkey/api/util/Result.java -text
-api/src/org/labkey/api/util/SafeFileAppender.java -text
 api/src/org/labkey/api/util/ScalabilityProblem.java -text
 api/src/org/labkey/api/util/ShutdownListener.java -text
 api/src/org/labkey/api/util/SimpleRateAccumulator.java -text

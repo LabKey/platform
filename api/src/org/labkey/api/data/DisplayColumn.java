@@ -689,21 +689,6 @@ public abstract class DisplayColumn extends RenderColumn
         }
         out.write("\""); // end of "class"
 
-        String style = getDefaultHeaderStyle();
-        if (style == null)
-            style = "";
-
-        // 34871: Support for column display width
-        if (!StringUtils.isBlank(getWidth()))
-            style += ";width:" + getWidth() + "px;";
-
-        if (!"".equals(style))
-        {
-            out.write(" style=\"");
-            out.write(style);
-            out.write("\"");
-        }
-
         StringBuilder tooltip = new StringBuilder();
         if (null != getDescription())
         {
@@ -734,6 +719,23 @@ public abstract class DisplayColumn extends RenderColumn
         out.write(PageFlowUtil.filter(ctx.getCurrentRegion().getName() + ":" + columnName));
         out.write("\">");
 
+        String style = getDefaultHeaderStyle();
+        if (style == null)
+            style = "";
+
+        // 34871: Support for column display width
+        if (!StringUtils.isBlank(getWidth()))
+            style += ";width:" + getWidth() + "px;";
+
+        out.write("<div ");
+        if (!"".equals(style))
+        {
+            out.write("style=\"");
+            out.write(style);
+            out.write("\"");
+        }
+        out.write(">");
+
         renderTitle(ctx, out);
 
         out.write("<span class=\"fa fa-filter\"></span>");
@@ -754,6 +756,7 @@ public abstract class DisplayColumn extends RenderColumn
             out.write("</ul>");
         }
 
+        out.write("</div>");
         out.write("</th>");
     }
 

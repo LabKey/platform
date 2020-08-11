@@ -157,7 +157,7 @@ else
 <labkey:form id="datasetSecurityForm" action="<%=buildURL(SecurityController.ApplyDatasetPermissionsAction.class)%>" method="POST">
 <%
     if (returnUrl != null)
-        out.print("<input type=\"hidden\" name=\"returnUrl\" value=\"" + h(returnUrl) + "\">");
+        out.print(input().type("hidden").name("returnUrl").value(returnUrl));
 
     int row = 0;
     %><br/><table class="table table-striped table-bordered table-hover" id="datasetSecurityFormTable"><colgroup>

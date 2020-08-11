@@ -43,6 +43,8 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.stream.Stream" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -269,38 +271,38 @@
         <tr><%
             if (bean.isInsert())
             {%>
-            <%=text(bean.renderLabel(propertyMap.get("Title"), getViewContext()))%><%
+            <%=bean.renderLabel(propertyMap.get("Title"), getViewContext())%><%
             }
             else
             {%>
-            <%=text(bean.renderLabel(h(names.singularName) + " " + issue.getIssueId()))%><%
+            <%=bean.renderLabel(h(names.singularName + " " + issue.getIssueId()))%><%
             }%>
             <td colspan="3">
-                <%=text(bean.writeInput("title", issue.getTitle(), "id=title style=\"width:100%;\""))%>
+                <%=bean.writeInput("title", issue.getTitle(), builder->builder.id("title").addStyle("width:100%"))%>
             </td></tr>
         <tr>
-            <%=text(bean.renderLabel(bean.getLabel("Status", false)))%><td><%=h(issue.getStatus())%></td>
+            <%=bean.renderLabel(bean.getLabel("Status", false))%><td><%=h(issue.getStatus())%></td>
             <td rowspan="<%=h(rowSpan)%>" valign="top">
                 <table class="lk-fields-table">
-                    <tr><%=text(bean.renderLabel(bean.getLabel("Opened", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
-                    <tr><%=text(bean.renderLabel(bean.getLabel("Changed", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
-                    <tr><%=text(bean.renderLabel(bean.getLabel("Resolved", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
-                    <%=text(bean.renderColumn(propertyMap.get("resolution"), getViewContext(), bean.isVisible("resolution"), bean.isReadOnly("resolution")))%>
+                    <tr><%=bean.renderLabel(bean.getLabel("Opened", false))%><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
+                    <tr><%=bean.renderLabel(bean.getLabel("Changed", false))%><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
+                    <tr><%=bean.renderLabel(bean.getLabel("Resolved", false))%><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=h(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
+                    <%=bean.renderColumn(propertyMap.get("resolution"), getViewContext(), bean.isVisible("resolution"), bean.isReadOnly("resolution"))%>
                     <%
                         if (bean.isVisible("resolution") || !"open".equals(issue.getStatus()))
                         {%>
-                    <tr><%=text(bean.renderLabel(bean.getLabel("Duplicate", false)))%><td><%
+                    <tr><%=bean.renderLabel(bean.getLabel("Duplicate", false))%><td><%
                         if (bean.isVisible("duplicate"))
                         {
                             if("Duplicate".equals(issue.getResolution()))
                             {
                                 //Enabled duplicate field.%>
-                        <%=text(bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "type=\"number\" min=\"1\""))%><%
+                        <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), builder->builder.type("number").minValue("1"))%><%
                         }
                         else
                         {
                             //Disabled duplicate field.%>
-                        <%=text(bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), "disabled"))%><%
+                        <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), builder->builder.disabled(true))%><%
                             }
                         %>
                         <script type="text/javascript">
@@ -338,8 +340,8 @@
                             }%>
                     </td></tr><%
                     }%>
-                    <tr><%=text(bean.renderLabel(bean.getLabel("Related", false)))%><td>
-                                <%=text(bean.writeInput("related", issue.getRelated() == null ? null : issue.getRelated(), "id=related"))%>
+                    <tr><%=bean.renderLabel(bean.getLabel("Related", false))%><td>
+                        <%=bean.writeInput("related", issue.getRelated() == null ? null : issue.getRelated(), builder->builder.id("related"))%>
 
                         <script type="text/javascript">
                             Ext4.EventManager.on(document.getElementsByName('related')[0], 'keypress', filterCommaSepNumber);
@@ -347,27 +349,29 @@
 
                     for (DomainProperty prop : column1Props)
                     {%>
-                                <%=text(bean.renderColumn(prop, getViewContext()))%><%
+                                <%=bean.renderColumn(prop, getViewContext())%><%
                     }%>
                 </table>
             </td>
             <td valign="top" rowspan="<%=h(rowSpan)%>"><table class="lk-fields-table" style="width: 100%;">
-                <tr><%=text(bean.renderLabel(bean.getLabel("Closed", false)))%><td><%=h(bean.writeDate(issue.getClosed()))%><%=text(issue.getClosedBy() != null ? " by " : "")%><%=h(issue.getClosedByName(user))%></td></tr><%
-                if (bean.isVisible("notifyList"))
-                {%>
+                <tr><%=bean.renderLabel(bean.getLabel("Closed", false))%><td><%=h(bean.writeDate(issue.getClosed()))%><%=text(issue.getClosedBy() != null ? " by " : "")%><%=h(issue.getClosedByName(user))%></td></tr><%
+            if (bean.isVisible("notifyList"))
+            {%>
                 <tr>
                     <%
-                        String notify = bean.getLabel("NotifyList", true) + popup + "<br/><br/>";
+                        HtmlStringBuilder builder = HtmlStringBuilder.of(bean.getLabel("NotifyList", true))
+                            .append(HtmlString.unsafe(popup))
+                            .append(HtmlString.unsafe("<br/><br/>"));
 
                         if (!user.isGuest())
                         {
                             if (bean.isInsert())
-                                notify += link("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class)).toString();
+                                builder.append(link("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class)));
                             else
-                                notify += link("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId())).toString();
+                                builder.append(link("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId())));
                         }
                     %>
-                    <%=text(bean.renderLabel(notify))%>
+                    <%=bean.renderLabel(builder.getHtmlString())%>
                     <td>
                         <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=completionUrl%>" rows="4" tabindex="20" cols="40" value="<%=bean.getNotifyListString(false)%>"/>
                     </td>
@@ -375,22 +379,22 @@
             }
             else
             {%>
-                <tr><%=text(bean.renderLabel(bean.getLabel("Notify", false)))%><td><%=text(bean.getNotifyList())%></td></tr><%
-                }
-                for (DomainProperty prop : column2Props)
-                {%>
-                <%=text(bean.renderColumn(prop, getViewContext()))%><%
-                }%>
+                <tr><%=bean.renderLabel(bean.getLabel("Notify", false))%><td><%=bean.getNotifyList()%></td></tr><%
+            }
+            for (DomainProperty prop : column2Props)
+            {%>
+                <%=bean.renderColumn(prop, getViewContext())%><%
+            }%>
             </table></td>
         </tr>
-        <%=text(bean.renderColumn(propertyMap.get("assignedTo"), getViewContext(), bean.isVisible("assignedTo"), bean.isReadOnly("assignedTo")))%>
+        <%=bean.renderColumn(propertyMap.get("assignedTo"), getViewContext(), bean.isVisible("assignedTo"), bean.isReadOnly("assignedTo"))%>
         <%
             for (DomainProperty prop : extraColumns)
             {%>
-        <%=text(bean.renderColumn(prop, getViewContext()))%><%
+        <%=bean.renderColumn(prop, getViewContext())%><%
         }%>
         <tr>
-            <%=text(bean.renderLabel(bean.getLabel("Comment", bean.isInsert())))%>
+            <%=bean.renderLabel(bean.getLabel("Comment", bean.isInsert()))%>
             <td colspan="3">
                 <textarea id="comment" name="comment" class="form-control" cols="150" rows="20"><%=h(bean.getBody())%></textarea>
             </td>
@@ -420,8 +424,8 @@
     </b></td></tr>
     </table>
     <div style="word-break: break-word; overflow-wrap: break-word">
-        <%=text(comment.getComment())%>
-        <%=text(bean.renderAttachments(context, comment))%>
+        <%=comment.getHtmlComment()%>
+        <%=bean.renderAttachments(context, comment)%>
     </div><%
     }%>
     </labkey:panel>

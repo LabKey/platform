@@ -712,7 +712,7 @@ public class AdminController extends SpringActionController
 
     public static class MaintenanceBean
     {
-        public String content;
+        public HtmlString content;
         public ActionURL loginURL;
     }
 
@@ -744,25 +744,25 @@ public class AdminController extends SpringActionController
             boolean startupInProgress = ModuleLoader.getInstance().isStartupInProgress();
             boolean maintenanceMode = AppProps.getInstance().isUserRequestedAdminOnlyMode();
 
-            String content = "This site is currently undergoing maintenance, only site admins may login at this time.";
+            HtmlString content = HtmlString.of("This site is currently undergoing maintenance, only site admins may login at this time.");
             if (upgradeInProgress)
             {
                 _title = "Upgrade in progress";
-                content = "Upgrade in progress: only site admins may login at this time. Your browser will be redirected when startup is complete.";
+                content = HtmlString.of("Upgrade in progress: only site admins may login at this time. Your browser will be redirected when startup is complete.");
             }
             else if (startupInProgress)
             {
                 _title = "Startup in progress";
-                content = "Startup in progress: only site admins may login at this time. Your browser will be redirected when startup is complete.";
+                content = HtmlString.of("Startup in progress: only site admins may login at this time. Your browser will be redirected when startup is complete.");
             }
             else if (maintenanceMode)
             {
                 WikiRenderingService wikiService = WikiRenderingService.get();
-                content =  wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
+                content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
             }
 
             if (content == null)
-                content = _title;
+                content = HtmlString.of(_title);
 
             ActionURL loginURL = null;
             if (getUser().isGuest())
@@ -961,7 +961,7 @@ public class AdminController extends SpringActionController
             {
                 WikiRenderingService renderingService = WikiRenderingService.get();
                 // Copy all the warnings to the top
-                String html = renderingService.getFormattedHtml(WikiRendererType.RADEOX, errorSource.toString());
+                HtmlString html = renderingService.getFormattedHtml(WikiRendererType.RADEOX, errorSource.toString());
                 views.addView(new HtmlView(html), 0);
             }
 
@@ -1011,7 +1011,7 @@ public class AdminController extends SpringActionController
 
         private final String _component;
 
-        private String _html;
+        private HtmlString _html;
         private String _errors = "";
 
         CreditsView(String creditsFilename, @Nullable String wikiSource, @NotNull Collection<String> filenames, String fileType, String foundWhere, String component, String title, String wikiSourceSearchPattern)
@@ -1031,8 +1031,8 @@ public class AdminController extends SpringActionController
             if (StringUtils.isNotEmpty(wikiSource))
             {
                 WikiRenderingService wikiService = WikiRenderingService.get();
-                String html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource);
-                _html = "<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n" + html;
+                HtmlString html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource);
+                _html = HtmlStringBuilder.of(HtmlString.unsafe("<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n")).append(html).getHtmlString();
             }
         }
 

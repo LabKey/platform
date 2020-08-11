@@ -217,9 +217,7 @@ public class AnnouncementModel extends Entity implements Serializable
     {
         ActionURL attachPrefix = AnnouncementsController.getDownloadURL(this, "");
 
-        // TODO change return type of getFormattedHtml()
-        String s = getFormattedHtml(attachPrefix.getLocalURIString());
-        return HtmlString.unsafe(s==null ? "" : s);
+        return getFormattedHtml(attachPrefix.getLocalURIString());
     }
 
     //returns string corresponding to name of enum entry
@@ -239,12 +237,12 @@ public class AnnouncementModel extends Entity implements Serializable
     }
 
     @Transient
-    public String getFormattedHtml()
+    public HtmlString getFormattedHtml()
     {
         return getFormattedHtml(null);
     }
 
-    private String getFormattedHtml(@Nullable String attachPrefix)
+    private HtmlString getFormattedHtml(@Nullable String attachPrefix)
     {
         WikiRenderingService renderingService = WikiRenderingService.get();
 

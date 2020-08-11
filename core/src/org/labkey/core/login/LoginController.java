@@ -17,8 +17,8 @@
 package org.labkey.core.login;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -116,7 +116,6 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
-import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -163,7 +162,7 @@ public class LoginController extends SpringActionController
     }
 
     @Override
-    protected void beforeAction(Controller action) throws ServletException
+    protected void beforeAction(Controller action)
     {
         ActionURL url = getViewContext().getActionURL();
         if (isNotBlank(url.getParameter("password")))
@@ -1086,7 +1085,7 @@ public class LoginController extends SpringActionController
         else if (isAdminOnlyMode())
         {
             WikiRenderingService wikiService = WikiRenderingService.get();
-            String content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
+            HtmlString content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
             HtmlView adminMessageView = new HtmlView("The site is currently undergoing maintenance", content);
             vBox.addView(adminMessageView);
         }

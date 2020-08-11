@@ -31,9 +31,9 @@
         %>
         <td style="text-align:center;vertical-align:bottom;padding-top:1em">
             <span class="tool-icon">
-                <a href="<%= item.getUrl().getLocalURIString()%>">
-                    <img src="<%= item.getIcon() %>" alt="[<%= h(item.getLabel() + " Icon") %>]"><br>
-                    <%= h(item.getLabel()) %>
+                <a href="<%=item.getUrl()%>">
+                    <img src="<%=item.getIcon()%>" alt="[<%=item.getLabel()%><%=h(" Icon")%>]"><br>
+                    <%=item.getLabel()%>
                 </a>
             </span>
         </td>

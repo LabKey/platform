@@ -77,7 +77,7 @@
     }
 
     span.closeicon {
-        background-image: url(<%=unsafe(PageFlowUtil.encode(request.getContextPath()))%>/ext-4.2.1/resources/ext-theme-classic-sandbox/images/tools/tool-sprites.gif);
+        background-image: url(<%=getContextPath()%>/ext-4.2.1/resources/ext-theme-classic-sandbox/images/tools/tool-sprites.gif);
     }
 
     td.tree-node-selected {
@@ -129,7 +129,7 @@ Ext4.onReady(function(){
            project: {
                id : '<%= project.getRowId() %>',
                name: <%= q(project.getName()) %>,
-               securityHref: <%= unsafe(qh(new ActionURL(SecurityController.PermissionsAction.class, project).getLocalURIString())) %>
+               securityHref: <%= qh(new ActionURL(SecurityController.PermissionsAction.class, project).getLocalURIString()) %>
            }
         }
     <% } %>
