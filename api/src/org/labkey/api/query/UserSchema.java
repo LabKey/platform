@@ -50,6 +50,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
+import org.springframework.core.convert.ConversionException;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;

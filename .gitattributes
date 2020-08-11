@@ -2404,7 +2404,7 @@ internal/src/org/labkey/api/rss/RSSService.java -text
 internal/src/org/labkey/api/rss/RSSServiceImpl.java -text
 internal/src/org/labkey/api/script/RhinoScriptRef.java -text
 internal/src/org/labkey/api/script/TopLevel.java -text
-internal/src/org/labkey/api/security/BlacklistFilter.java -text
+internal/src/org/labkey/api/security/BlocklistFilter.java -text
 internal/src/org/labkey/api/security/DummyAntiVirusService.java -text
 internal/src/org/labkey/api/security/SecurityPointcutServiceImpl.java -text
 internal/src/org/labkey/api/security/UserEmailComparator.java -text

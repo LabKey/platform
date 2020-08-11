@@ -78,7 +78,7 @@ public class HttpUtil
             }
             catch (IllegalArgumentException x)
             {
-                throw new BadRequestException(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed", null);
+                throw new BadRequestException("Method Not Allowed", HttpServletResponse.SC_METHOD_NOT_ALLOWED, null);
             }
         }
     }
