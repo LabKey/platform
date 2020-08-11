@@ -39,9 +39,9 @@ import java.util.regex.Pattern;
  *
  * Note that this code is not particularly concerned about speed since this only happens on already failed requests
  */
-public class BlacklistFilter
+public class BlockListFilter
 {
-    static Logger _log = LogManager.getLogger(BlacklistFilter.class);
+    static Logger _log = LogManager.getLogger(BlockListFilter.class);
     static Cache<String,Suspicious> suspiciousMap = CacheManager.getStringKeyCache(1_000, CacheManager.HOUR, "suspicious cache");
 
 
@@ -77,7 +77,7 @@ public class BlacklistFilter
     }
 
 
-    static boolean isOnBlacklist(HttpServletRequest req)
+    static boolean isOnBlockList(HttpServletRequest req)
     {
         String key = getBrowserKey(req);
         Suspicious s = suspiciousMap.get(key);

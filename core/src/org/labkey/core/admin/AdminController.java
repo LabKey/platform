@@ -9522,7 +9522,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            Collection<BlacklistFilter.Suspicious> list = BlacklistFilter.reportSuspicious();
+            Collection<BlockListFilter.Suspicious> list = BlockListFilter.reportSuspicious();
             StringBuilder sb = new StringBuilder();
             if (list.isEmpty())
             {
@@ -9532,7 +9532,7 @@ public class AdminController extends SpringActionController
             {
                 sb.append("<table class='table'>");
                 sb.append("<thead><th>host (user)</th><th>user-agent</th><th>count</th></thead>\n");
-                for (BlacklistFilter.Suspicious s : list)
+                for (BlockListFilter.Suspicious s : list)
                 {
                     sb.append("<tr><td>")
                             .append(PageFlowUtil.filter(s.host));

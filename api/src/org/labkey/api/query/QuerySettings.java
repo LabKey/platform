@@ -54,7 +54,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static javax.servlet.http.HttpServletResponse.SC_NOT_ACCEPTABLE;
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class QuerySettings
@@ -178,7 +178,7 @@ public class QuerySettings
             }
             catch (IllegalArgumentException ex)
             {
-                throw new BadRequestException(SC_NOT_ACCEPTABLE, "Illegal value for parameter '" + QueryParam.showRows.name() + "'", ex);
+                throw new BadRequestException(SC_BAD_REQUEST, "Illegal value for parameter '" + QueryParam.showRows.name() + "'", ex);
             }
         }
     }
@@ -260,7 +260,7 @@ public class QuerySettings
                 }
                 catch (NumberFormatException nfe)
                 {
-                    throw new BadRequestException(SC_NOT_ACCEPTABLE, "Could not parse parameter 'offset'", nfe);
+                    throw new BadRequestException(SC_BAD_REQUEST, "Could not parse parameter 'offset'", nfe);
                 }
             }
 
@@ -280,7 +280,7 @@ public class QuerySettings
                 }
                 catch (NumberFormatException nfe)
                 {
-                    throw new BadRequestException(SC_NOT_ACCEPTABLE, "Could not parse parameter 'maxRows'", nfe);
+                    throw new BadRequestException(SC_BAD_REQUEST, "Could not parse parameter 'maxRows'", nfe);
                 }
             }
         }
@@ -290,7 +290,7 @@ public class QuerySettings
         {
             // fail fast
             if (null == ContainerFilter.getType(getContainerFilterName()))
-                throw new BadRequestException(SC_NOT_ACCEPTABLE, "Unknown value for 'containerFilterName'");
+                throw new BadRequestException(SC_BAD_REQUEST, "Unknown value for 'containerFilterName'");
 
             setContainerFilterName(containerFilterNameParam);
         }
@@ -314,7 +314,7 @@ public class QuerySettings
             }
             catch (URISyntaxException | IllegalArgumentException use)
             {
-                throw new BadRequestException(SC_NOT_ACCEPTABLE, "Bad returnUrl", use);
+                throw new BadRequestException(SC_BAD_REQUEST, "Bad returnUrl", use);
             }
         }
 
