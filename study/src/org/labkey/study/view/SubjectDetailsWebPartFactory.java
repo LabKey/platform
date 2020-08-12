@@ -34,6 +34,7 @@ import org.labkey.study.StudyModule;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudyManager.ParticipantViewConfig;
 
 import java.util.Map;
 import java.util.Set;
@@ -48,22 +49,49 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
 {
     public enum DataType
     {
-        ALL("All Data"),
-        DEMOGRAPHIC("Demographic Data"),
-        NON_DEMOGRAPHIC("Non-Demographic Data");
-
-
-        private final String name;
-
-        DataType(String name)
+        ALL("All Data")
         {
-            this.name = name;
+            @Override
+            public WebPartView<?> createView(Container c, ParticipantViewConfig config)
+            {
+                VBox vbox = new VBox();
+                vbox.addView(StudyManager.getInstance().getParticipantDemographicsView(c, config, null));
+                // put a little space between the two views:
+                vbox.addView(new HtmlView("<p/>"));
+                vbox.addView(StudyManager.getInstance().getParticipantView(c, config));
+                return vbox;
+            }
+        },
+        DEMOGRAPHIC("Demographic Data")
+        {
+            @Override
+            public WebPartView<ParticipantViewConfig> createView(Container c, ParticipantViewConfig config)
+            {
+                return StudyManager.getInstance().getParticipantDemographicsView(c, config, null);
+            }
+        },
+        NON_DEMOGRAPHIC("Non-Demographic Data")
+        {
+            @Override
+            public WebPartView<ParticipantViewConfig> createView(Container c, ParticipantViewConfig config)
+            {
+                return StudyManager.getInstance().getParticipantView(c, config);
+            }
+        };
+
+        private final String _description;
+
+        DataType(String description)
+        {
+            _description = description;
         }
 
-        public String toString()
+        public String getDescription()
         {
-            return name;
+            return _description;
         }
+
+        public abstract WebPartView<?> createView(Container c, ParticipantViewConfig config);
     }
 
     public static final String PARTICIPANT_ID_KEY = "participantId";
@@ -166,10 +194,9 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
         if (participant == null)
             return new HtmlView(filter(subjectNoun) + " \"" + filter(participantId) + "\" does not exist in study \"" + study.getLabel() + "\".");
 
-
-        StudyManager.ParticipantViewConfig config = new StudyManager.ParticipantViewConfig()
+        ParticipantViewConfig config = new ParticipantViewConfig()
         {
-            private Map<String, String> aliases = StudyManager.getInstance().getAliasMap(StudyManager.getInstance().getStudy(container), user, participantId);
+            private final Map<String, String> aliases = StudyManager.getInstance().getAliasMap(StudyManager.getInstance().getStudy(container), user, participantId);
 
             @Override
             public String getParticipantId()
@@ -204,20 +231,7 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
             }
         };
 
-        if (type == DataType.DEMOGRAPHIC)
-            return StudyManager.getInstance().getParticipantDemographicsView(container, config, null);
-
-        if (type == DataType.NON_DEMOGRAPHIC)
-            return StudyManager.getInstance().getParticipantView(container,config);
-
-        assert type == DataType.ALL : "Unrecognized DataType: " + type;
-
-        VBox vbox = new VBox();
-        vbox.addView(StudyManager.getInstance().getParticipantDemographicsView(container, config, null));
-        // put a little space between the two views:
-        vbox.addView(new HtmlView("<p/>"));
-        vbox.addView(StudyManager.getInstance().getParticipantView(container,config));
-        return vbox;
+        return type.createView(container, config);
     }
 
 
@@ -226,5 +240,4 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
     {
         return new JspView<>("/org/labkey/study/view/customizeParticipantWebPart.jsp", webPart);
     }
-
 }

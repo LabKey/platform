@@ -75,7 +75,7 @@
     if (confirm)
     {
 %>
-        <td>There is already a report called: <i><%=report.getDescriptor().getReportName()%></i>.<br/>Overwrite the existing report?
+        <td>There is already a report called: <i><%=h(report.getDescriptor().getReportName())%></i>.<br/>Overwrite the existing report?
         <input type=hidden name=confirmed value=1>
         <input type=hidden name=label value="<%=h(bean.getLabel())%>">
 <%
