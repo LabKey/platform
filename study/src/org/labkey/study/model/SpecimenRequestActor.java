@@ -20,8 +20,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.study.StudyCachable;
 import org.labkey.api.util.MemTracker;
-import org.labkey.study.requirements.DefaultActor;
 import org.labkey.study.StudySchema;
+import org.labkey.study.requirements.DefaultActor;
 
 /**
  * User: brittp

@@ -15,7 +15,8 @@
  */
 package org.labkey.core;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
@@ -44,7 +45,7 @@ import java.util.Collections;
  */
 public class CoreContainerListener implements ContainerManager.ContainerListener
 {
-    private static final Logger _log = Logger.getLogger(CoreContainerListener.class);
+    private static final Logger _log = LogManager.getLogger(CoreContainerListener.class);
 
     @Override
     public void containerCreated(Container c, User user)

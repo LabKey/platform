@@ -16,7 +16,8 @@
 package org.labkey.core.products;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.ReadOnlyApiAction;
@@ -36,7 +37,7 @@ public class ProductController extends SpringActionController
 {
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ProductController.class);
-    private static final Logger _log = Logger.getLogger(ProductController.class);
+    private static final Logger _log = LogManager.getLogger(ProductController.class);
 
     public ProductController()
     {

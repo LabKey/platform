@@ -15,9 +15,7 @@
  */
 package org.labkey.api.data;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
-import org.labkey.api.query.FieldKey;
 
 /**
  * Indicates that inserts, updates and deletes on a table can be auditable and supports setting

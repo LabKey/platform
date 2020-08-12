@@ -23,7 +23,7 @@ import com.rometools.rome.io.FeedException;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.SyndFeedOutput;
 import com.rometools.rome.io.XmlReader;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -86,7 +86,7 @@ public class RSSServiceImpl implements RSSService
             }
             catch (IOException e)
             {
-                Logger.getLogger(RSSService.class).error("Invalid RSS Feed: " + e.getMessage());
+                LogManager.getLogger(RSSService.class).error("Invalid RSS Feed: " + e.getMessage());
             }
 
             if (null != reader)
@@ -100,7 +100,7 @@ public class RSSServiceImpl implements RSSService
                 }
                 catch (FeedException fe)
                 {
-                    Logger.getLogger(RSSService.class).error("Invalid Feed (FeedException): " + _feed.getFeedURL());
+                    LogManager.getLogger(RSSService.class).error("Invalid Feed (FeedException): " + _feed.getFeedURL());
                 }
             }
         }
@@ -130,7 +130,7 @@ public class RSSServiceImpl implements RSSService
         }
         catch (Exception e)
         {
-            Logger.getLogger(RSSService.class).error("Error", e);
+            LogManager.getLogger(RSSService.class).error("Error", e);
         }
     }
 

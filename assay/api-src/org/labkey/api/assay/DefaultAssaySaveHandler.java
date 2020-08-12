@@ -16,7 +16,8 @@
 
 package org.labkey.api.assay;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -56,7 +57,7 @@ import java.util.Map;
  */
 public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implements AssaySaveHandler
 {
-    protected static final Logger LOG = Logger.getLogger(DefaultAssaySaveHandler.class);
+    protected static final Logger LOG = LogManager.getLogger(DefaultAssaySaveHandler.class);
     protected AssayProvider _provider;
 
     @Override

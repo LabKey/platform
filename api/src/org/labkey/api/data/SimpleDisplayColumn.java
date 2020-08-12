@@ -16,15 +16,15 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.StringExpressionFactory;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * {@link DisplayColumn} implementation that typically doesn't render the value from a column in the query

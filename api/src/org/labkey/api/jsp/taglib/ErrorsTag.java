@@ -16,7 +16,8 @@
 
 package org.labkey.api.jsp.taglib;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
@@ -74,10 +75,10 @@ public class ErrorsTag extends TagSupport
                             {
                                 out.print(HtmlString.unsafe("Unknown error: " + m));
                                 ExceptionUtil.logExceptionToMothership((HttpServletRequest)pageContext.getRequest(), nsme);
-                                Logger log = Logger.getLogger(ErrorsTag.class);
+                                Logger log = LogManager.getLogger(ErrorsTag.class);
                                 log.error("Failed to find a message: " + m, nsme);
                             }
-                            out.println("<br>");
+                            out.println(HtmlString.unsafe("<br>"));
                         }
                 }
             }

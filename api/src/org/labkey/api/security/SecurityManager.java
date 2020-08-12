@@ -20,8 +20,9 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -135,7 +136,7 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 public class SecurityManager
 {
-    private static final Logger _log = Logger.getLogger(SecurityManager.class);
+    private static final Logger _log = LogManager.getLogger(SecurityManager.class);
     private static final CoreSchema core = CoreSchema.getInstance();
     private static final List<ViewFactory> VIEW_FACTORIES = new CopyOnWriteArrayList<>();
     private static final List<TermsOfUseProvider> TERMS_OF_USE_PROVIDERS = new CopyOnWriteArrayList<>();

@@ -15,7 +15,8 @@
  */
 package org.labkey.core.query;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.SpringAttachmentFile;
@@ -109,7 +110,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 FieldKey.fromParts("DisplayName")));
     }
 
-    private final static Logger LOG = Logger.getLogger(UsersTable.class);
+    private final static Logger LOG = LogManager.getLogger(UsersTable.class);
 
     public UsersTable(UserSchema schema, TableInfo table)
     {

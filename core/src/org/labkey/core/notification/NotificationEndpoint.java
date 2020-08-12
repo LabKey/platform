@@ -17,7 +17,8 @@ package org.labkey.core.notification;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
@@ -45,7 +46,7 @@ import java.util.List;
 @ServerEndpoint(value="/_websocket/notifications", configurator=NotificationEndpoint.Configurator.class)
 public class NotificationEndpoint extends Endpoint
 {
-    static final Logger LOG = Logger.getLogger(NotificationEndpoint.class);
+    static final Logger LOG = LogManager.getLogger(NotificationEndpoint.class);
     static final MultiValuedMap<Integer,NotificationEndpoint> endpointsMap = new ArrayListValuedHashMap<>();
 
     private Session session;

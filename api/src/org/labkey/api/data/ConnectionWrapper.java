@@ -16,9 +16,13 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.LoggerWriter;
 import org.labkey.api.data.DbScope.ConnectionType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StatementWrapper;
@@ -27,6 +31,7 @@ import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.SimpleLoggerWriter;
 import org.labkey.api.view.ViewServlet;
 
 import java.lang.reflect.Method;
@@ -64,11 +69,11 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ConnectionWrapper implements java.sql.Connection
 {
-    private static final Logger LOG = Logger.getLogger(ConnectionWrapper.class);
+    private static final Logger LOG = LogManager.getLogger(ConnectionWrapper.class);
     private static final Map<ConnectionWrapper, Pair<Thread, Throwable>> _openConnections = Collections.synchronizedMap(new IdentityHashMap<>());
     private static final Set<ConnectionWrapper> _loggedLeaks = new HashSet<>();
-    private static final Logger _logDefault = Logger.getLogger(ConnectionWrapper.class);
-    private static final boolean _explicitLogger = _logDefault.getLevel() != null || _logDefault.getParent() != null  && _logDefault.getParent().getName().equals("org.labkey.api.data");
+    private static final Logger _logDefault = LogManager.getLogger(ConnectionWrapper.class);
+    private static final boolean _explicitLogger = initializeExplicitLogger();
     private static final AtomicLong COUNTER = new AtomicLong(0);
 
     private final Connection _connection;
@@ -93,6 +98,14 @@ public class ConnectionWrapper implements java.sql.Connection
     private static Method _transactionStateMethod;
 
     private volatile boolean _allowClose = true;
+
+    private static boolean initializeExplicitLogger()
+    {
+        var loggerContext = (LoggerContext) LogManager.getContext(false);
+        var loggerConfig = loggerContext.getConfiguration().getLoggerConfig(_logDefault.getName());
+
+        return _logDefault.getLevel() != null || loggerConfig.getParent() != null  && loggerConfig.getParent().getName().equals("org.labkey.api.data");
+    }
 
     public ConnectionWrapper(Connection conn, DbScope scope, Integer spid, ConnectionType type, @Nullable Logger log)
     {
@@ -124,7 +137,7 @@ public class ConnectionWrapper implements java.sql.Connection
             if (className.equals("org.labkey.api.view.ViewServlet") || className.equals("org.labkey.api.action.SpringActionController"))
                 break;
             if (className.endsWith("Controller") && !className.startsWith("org.labkey.api.view"))
-                return Logger.getLogger(className);
+                return LogManager.getLogger(className);
         }
         return _logDefault;
     }
@@ -147,7 +160,7 @@ public class ConnectionWrapper implements java.sql.Connection
         return dumpOpenConnections(_logDefault);
     }
 
-    public static boolean dumpOpenConnections(@NotNull Logger log)
+    public static boolean dumpOpenConnections(@NotNull LoggerWriter logWriter)
     {
         synchronized (_openConnections)
         {
@@ -155,9 +168,16 @@ public class ConnectionWrapper implements java.sql.Connection
             {
                 String thread = p.first.getName();
                 Throwable t = p.second;
-                log.debug("Connection opened on thread: " + thread, t);
+                logWriter.debug("Connection opened on thread: " + thread, t);
             }
         }
+
+        return true;
+    }
+
+    public static boolean dumpOpenConnections(@NotNull Logger log)
+    {
+        dumpOpenConnections(new SimpleLoggerWriter(log));
 
         return true;
     }
@@ -168,6 +188,11 @@ public class ConnectionWrapper implements java.sql.Connection
     }
 
     public static boolean dumpLeaksForThread(Thread t, Logger log)
+    {
+        return dumpOpenConnections(new SimpleLoggerWriter(log));
+    }
+
+    public static boolean dumpLeaksForThread(Thread t, LoggerWriter log)
     {
         boolean leaks = false;
         synchronized(_openConnections)

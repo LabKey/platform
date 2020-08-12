@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
-<Uncontrolled(Panel)>
+<ForwardRef>
   <PanelHeading
     bsClass="panel"
     componentClass="div"
@@ -22,7 +22,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
     >
       Get help with authentication
     </a>
-    <Uncontrolled(Tabs)
+    <ForwardRef
       defaultActiveKey={1}
       id="tab-panel"
     >
@@ -716,9 +716,9 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
           }
         />
       </Tab>
-    </Uncontrolled(Tabs)>
+    </ForwardRef>
   </PanelBody>
-</Uncontrolled(Panel)>
+</ForwardRef>
 `;
 
 exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `

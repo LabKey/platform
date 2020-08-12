@@ -177,7 +177,7 @@ for (AnnouncementModel a : bean.announcementModels)
         <td class="labkey-announcement-title labkey-force-word-break" style="padding-top: 10px; padding-bottom:0px;" colspan=2 align="left"><span><a class="announcement-title-link" href="<%=h(a.getThreadURL(c))%>rowId=<%=a.getRowId()%>"><%=h(a.getTitle())%></a></span></td>
         <td align="right"><%=formatDate(a.getCreated())%></td>
     </tr>
-    <tr><td colspan=3 class="message labkey-force-word-break <%=bean.isPrint?"message-expanded":"message-collapsed"%>">
+    <tr><td colspan=3 class="message labkey-force-word-break <%=h(bean.isPrint?"message-expanded":"message-collapsed")%>">
         <div class="message-container">
             <div class="message-text"><%=a.translateBody()%></div><%
             if (!bean.isPrint)

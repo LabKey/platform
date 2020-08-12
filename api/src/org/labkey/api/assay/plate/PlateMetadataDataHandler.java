@@ -1,6 +1,6 @@
 package org.labkey.api.assay.plate;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.assay.AbstractAssayTsvDataHandler;
 import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.exp.ExperimentException;

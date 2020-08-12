@@ -16,8 +16,8 @@
 package org.labkey.pipeline.mule;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineStatusFile;
 import org.mule.extras.client.MuleClient;
 import org.mule.impl.RequestContext;
 import org.mule.umo.UMOEvent;

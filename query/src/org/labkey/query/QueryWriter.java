@@ -16,7 +16,8 @@
 package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.admin.BaseFolderWriter;
@@ -45,7 +46,7 @@ import java.util.List;
  */
 public class QueryWriter extends BaseFolderWriter
 {
-    private static final Logger _log = Logger.getLogger(QueryWriter.class);
+    private static final Logger _log = LogManager.getLogger(QueryWriter.class);
 
     public static final String FILE_EXTENSION = ".sql";
     public static final String META_FILE_EXTENSION =  ".query.xml";

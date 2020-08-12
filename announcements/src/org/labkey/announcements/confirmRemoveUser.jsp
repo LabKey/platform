@@ -24,4 +24,4 @@
 %>
 Are you sure you want to remove yourself (<%=h(bean.email)%>) from the member list of this <%=h(bean.conversationName)%>?
 <p/>
-<b>Title: <%=(bean.title)%></b>
+<b>Title: <%=h(bean.title)%></b>

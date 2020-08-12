@@ -15,7 +15,8 @@
  */
 package org.labkey.api.data.triggers;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -41,7 +42,7 @@ import java.util.Map;
  */
 public class ScriptTriggerFactory implements TriggerFactory
 {
-    private static final Logger LOG = Logger.getLogger(ScriptTriggerFactory.class);
+    private static final Logger LOG = LogManager.getLogger(ScriptTriggerFactory.class);
 
     @Override
     @NotNull

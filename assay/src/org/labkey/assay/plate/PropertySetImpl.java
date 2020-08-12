@@ -17,7 +17,6 @@
 package org.labkey.assay.plate;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.Identifiable;
 import org.labkey.api.study.PropertySet;
 
 import java.util.Collections;

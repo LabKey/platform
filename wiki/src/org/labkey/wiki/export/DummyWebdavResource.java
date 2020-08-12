@@ -20,7 +20,6 @@ import org.labkey.api.util.FileStream;
 import org.labkey.api.util.Path;
 import org.labkey.api.webdav.AbstractWebdavResource;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 /**

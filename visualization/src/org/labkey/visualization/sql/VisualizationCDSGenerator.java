@@ -16,7 +16,8 @@
 package org.labkey.visualization.sql;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -83,7 +84,7 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 public class VisualizationCDSGenerator
 {
-    private static final Logger _log = Logger.getLogger(VisualizationCDSGenerator.class);
+    private static final Logger _log = LogManager.getLogger(VisualizationCDSGenerator.class);
     ViewContext _viewContext;
     VisDataRequest _request;
     UserSchema _primarySchema = null;
@@ -267,8 +268,8 @@ public class VisualizationCDSGenerator
             String datasetQueryName = datasetPath.getName(1);
             String axisName = datasetPath.size() > 2 ? datasetPath.get(2) : null;
 
-            Set<Path> blacklist = new HashSet<>(datasetTablesSet);
-            blacklist.remove(datasetPath);
+            Set<Path> blockList = new HashSet<>(datasetTablesSet);
+            blockList.remove(datasetPath);
             VisDataRequest subrequest = new VisDataRequest();
 
             // let's collect the measures, by type
@@ -282,7 +283,7 @@ public class VisualizationCDSGenerator
             {
                 VisDataRequest.Measure m = mi.getMeasure();
                 Path measurePath = pathForMeasure(m);
-                if (blacklist.contains(measurePath))
+                if (blockList.contains(measurePath))
                 {
                     continue;
                 }
@@ -339,7 +340,7 @@ public class VisualizationCDSGenerator
             subrequest.addAll(joinedMeasures);
 
             _request.getSorts().stream()
-                    .filter(m -> !blacklist.contains(new Path(m.getSchemaName(), m.getQueryName())))
+                    .filter(m -> !blockList.contains(new Path(m.getSchemaName(), m.getQueryName())))
                     .forEach(subrequest::addSort);
 
             VisualizationSQLGenerator generator = new VisualizationSQLGenerator(getViewContext(), subrequest);
@@ -383,9 +384,9 @@ public class VisualizationCDSGenerator
                 boolean isContainer = equalsIgnoreCase(columnName, containerColumnName);
                 boolean isSubject = equalsIgnoreCase(columnName, subjectColumnName);
                 boolean isSequenceNum = equalsIgnoreCase(columnName, sequenceNumColumnName);
-                boolean isWhiteListQuery = "GridBase".equalsIgnoreCase(vcol.getQueryName());
+                boolean isAllowListQuery = "GridBase".equalsIgnoreCase(vcol.getQueryName());
 
-                if ((!isContainer && !isSubject && !isSequenceNum) || isWhiteListQuery)
+                if ((!isContainer && !isSubject && !isSequenceNum) || isAllowListQuery)
                 {
                     if (null == unionAliasList.put(alias, vcol.getType()))
                         columnAliases.add(vcol.toJSON());

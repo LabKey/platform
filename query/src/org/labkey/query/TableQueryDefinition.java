@@ -16,7 +16,8 @@
 
 package org.labkey.query;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
@@ -53,7 +54,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
 {
     private String _sql;
     private String _title;
-    private static final Logger log = Logger.getLogger(TableQueryDefinition.class);
+    private static final Logger log = LogManager.getLogger(TableQueryDefinition.class);
 
     public TableQueryDefinition(UserSchema schema, String tableName)
     {

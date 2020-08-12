@@ -15,10 +15,10 @@
  */
 package org.labkey.api.view;
 
-import java.io.IOException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.PageContext;
+import java.io.IOException;
 
 
 public class ViewOutputStream extends ServletOutputStream

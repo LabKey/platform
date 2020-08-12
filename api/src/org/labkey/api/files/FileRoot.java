@@ -17,7 +17,6 @@
 package org.labkey.api.files;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.files.FileContentService;
 
 import java.io.Serializable;
 

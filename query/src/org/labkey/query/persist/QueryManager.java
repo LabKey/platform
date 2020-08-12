@@ -19,7 +19,8 @@ package org.labkey.query.persist;
 import org.apache.commons.collections4.Bag;
 import org.apache.commons.collections4.bag.HashBag;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -78,7 +79,7 @@ import java.util.stream.Collectors;
 
 public class QueryManager
 {
-    private static final Logger _log = Logger.getLogger(QueryManager.class);
+    private static final Logger _log = LogManager.getLogger(QueryManager.class);
     private static final QueryManager instance = new QueryManager();
     private static final String SCHEMA_NAME = "query";
     private static final List<QueryChangeListener> QUERY_LISTENERS = new CopyOnWriteArrayList<>();

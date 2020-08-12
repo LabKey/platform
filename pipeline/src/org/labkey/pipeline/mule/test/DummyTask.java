@@ -17,7 +17,6 @@ package org.labkey.pipeline.mule.test;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 
 /**

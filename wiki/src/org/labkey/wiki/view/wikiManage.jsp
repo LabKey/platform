@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="org.springframework.validation.Errors" %>
 <%@ page import="org.springframework.validation.FieldError" %>
+<%@ page import="org.json.JSONArray" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -128,7 +129,7 @@
                 SelectBuilder parentBuilder = new SelectBuilder()
                     .name("parent")
                     .id("id")
-                    .style("width:420px")
+                    .addStyle("width:420px")
                     .onChange("document.manage.nextAction.value = " + q(WikiController.NextAction.manage.name()) + "; submit();");
                 parentBuilder.addOption(new OptionBuilder().value("-1").label("[none]").selected(wiki.getParent() == -1).build());
                 bean.possibleParents.forEach(pp->{
@@ -160,7 +161,7 @@
                     <tr>
                         <td>
                             <%
-                                SelectBuilder siblingsBuilder = new SelectBuilder().name("siblings").id("siblings").size(10).style("width:500px;");
+                                SelectBuilder siblingsBuilder = new SelectBuilder().name("siblings").id("siblings").size(10).addStyle("width:500px;");
                                 bean.siblings.forEach(sibling->siblingsBuilder.addOption(new OptionBuilder()
                                     .value(String.valueOf(sibling.getRowId()))
                                     .label(sibling.getTitle() + " (" + sibling.getName() + ")")
@@ -189,7 +190,7 @@
                 <tr>
                     <td>
                         <%
-                            SelectBuilder childrenBuilder = new SelectBuilder().name("children").id("children").size(10).style("width:500px");
+                            SelectBuilder childrenBuilder = new SelectBuilder().name("children").id("children").size(10).addStyle("width:500px");
                             wiki.children().forEach(child->childrenBuilder.addOption(new OptionBuilder()
                                 .value(String.valueOf(child.getRowId()))
                                 .label(child.getLatestVersion().getTitle() + " (" + child.getName() + ")")
@@ -222,7 +223,7 @@
 <%= button("Edit Content").submit(true).onClick("document.manage.nextAction.value = " + q(WikiController.NextAction.edit.name()) + "; return true;").title("Edit Content and Attachments") %>
 
 <script type="text/javascript">
-    existingWikiPages = [<% for (String name : bean.pageNames) out.print(q(name) + ","); %>];
+    existingWikiPages = <%=new JSONArray(bean.pageNames)%>;
 
     function checkWikiName(name)
     {

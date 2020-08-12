@@ -35,9 +35,7 @@ import org.labkey.study.xml.CohortsDocument;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 

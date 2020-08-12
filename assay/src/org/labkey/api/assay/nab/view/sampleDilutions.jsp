@@ -59,11 +59,11 @@
             <table class="labkey-data-region-legacy lk-sample-dilutions-table">
                 <tr>
                     <td colspan="4" align="center" class="lk-sample-dilutions-header">
-                        <%= h(results.getCaption(bean.getDataIdentifier())) %></div>
+                        <%= h(results.getCaption(bean.getDataIdentifier())) %>
                     </td>
                 </tr>
                 <tr>
-                    <td align="right" style="text-decoration:underline; padding-right: 10px;"><%= summary.getMethod().getAbbreviation() %></td>
+                    <td align="right" style="text-decoration:underline; padding-right: 10px;"><%=h(summary.getMethod().getAbbreviation())%></td>
                     <td align="center" colspan="3"  style="text-decoration:underline"><%=h(bean.getNeutralizationAbrev())%></td>
                 </tr>
                 <%
@@ -83,10 +83,10 @@
 
                 %>
                 <tr>
-                    <td align="right" style="padding-right: 10px;"><%= shortDecFormat.format(dilution) %></td>
-                    <td align="right"><%= Luc5Assay.percentString(summary.getPercent(data)) %></td>
+                    <td align="right" style="padding-right: 10px;"><%=h(shortDecFormat.format(dilution))%></td>
+                    <td align="right"><%=h(Luc5Assay.percentString(summary.getPercent(data)))%></td>
                     <td>&plusmn;</td>
-                    <td align="right"><%= Luc5Assay.percentString(summary.getPlusMinus(data)) %></td>
+                    <td align="right"><%=h(Luc5Assay.percentString(summary.getPlusMinus(data)))%></td>
                 </tr>
                 <%
                     }

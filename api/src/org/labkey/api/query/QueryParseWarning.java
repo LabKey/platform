@@ -15,7 +15,7 @@
  */
 package org.labkey.api.query;
 
-import org.apache.log4j.Level;
+import org.apache.logging.log4j.Level;
 
 /**
  * User: matthew
@@ -28,6 +28,6 @@ public class QueryParseWarning extends QueryParseException
     public QueryParseWarning(String message, Throwable cause, int line, int column)
     {
         super(message, cause, line, column);
-        _level = Level.WARN_INT;
+        _level = Level.WARN;
     }
 }

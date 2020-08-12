@@ -26,7 +26,6 @@ import org.labkey.api.writer.PrintWriters.StandardPrintWriter;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;

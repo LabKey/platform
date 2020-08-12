@@ -192,7 +192,7 @@
                 <%
             }
             %>
-            <%= button("Delete").submit(true) %>
+            <%= button("Delete").disableOnClick(true).submit(true) %>
             <%= button("Cancel").href(urlProvider(AdminUrls.class).getManageFoldersURL(getContainer())) %>
         </labkey:form>
         <%
@@ -203,7 +203,7 @@
         String targetStr = "&targets=" + StringUtils.join(ids, "&targets=");
         %>
 
-        <%= button("Delete All Folders").primary(true).href(buildURL(AdminController.DeleteFolderAction.class) + "recurse=1" + targetStr) %>
+        <%= button("Delete All Folders").disableOnClick(true).primary(true).href(buildURL(AdminController.DeleteFolderAction.class) + "recurse=1" + targetStr) %>
         <%= button("Cancel").href(urlProvider(AdminUrls.class).getManageFoldersURL(getContainer())) %>
 
         <%

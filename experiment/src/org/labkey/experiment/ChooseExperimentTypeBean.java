@@ -16,10 +16,10 @@
 
 package org.labkey.experiment;
 
+import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.exp.ExperimentRunType;
 
 import java.util.List;
 import java.util.Set;

@@ -19,8 +19,8 @@ package org.labkey.query.sql;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.SQLFragment;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Builder extends SQLFragment
 {

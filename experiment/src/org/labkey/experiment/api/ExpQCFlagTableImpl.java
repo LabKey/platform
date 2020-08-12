@@ -17,7 +17,8 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayFlagHandler;
@@ -56,7 +57,7 @@ import java.util.Map;
 
 public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> implements ExpQCFlagTable
 {
-    private static final Logger LOG = Logger.getLogger(ExpQCFlagTableImpl.class);
+    private static final Logger LOG = LogManager.getLogger(ExpQCFlagTableImpl.class);
 
     private AssayProvider _provider;
     private ExpProtocol _assayProtocol;

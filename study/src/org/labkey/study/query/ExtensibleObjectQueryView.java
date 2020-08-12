@@ -16,7 +16,6 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.PanelButton;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;

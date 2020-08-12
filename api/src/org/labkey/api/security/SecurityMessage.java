@@ -16,10 +16,10 @@
 
 package org.labkey.api.security;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
-import org.labkey.api.data.Container;
 
 import javax.mail.Address;
 import javax.mail.internet.MimeMessage;
