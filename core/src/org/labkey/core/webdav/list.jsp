@@ -18,6 +18,7 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.apache.commons.lang3.time.FastDateFormat" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
@@ -26,7 +27,6 @@
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz");
@@ -169,7 +169,7 @@ This is a WebDav enabled directory.<br>
         String comma = "";
         for (int i=0 ; i<can.size() ; i++)
         {
-            %><%=comma%><%=(i==can.size()-1 && i > 1) ? "and ":""%><%=can.get(i)%><%
+            %><%=h(comma)%><%=h((i==can.size()-1 && i > 1) ? "and ":"")%><%=h(can.get(i))%><%
             comma = ", ";
         }
         %> files in this directory.<br><%

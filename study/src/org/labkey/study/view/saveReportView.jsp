@@ -35,7 +35,7 @@
     ViewContext context = getViewContext();
 
     Report report = bean.getReport(context);
-    boolean confirm = bean.getConfirmed() != null ? Boolean.parseBoolean(bean.getConfirmed()) : false;
+    boolean confirm = bean.getConfirmed() != null && Boolean.parseBoolean(bean.getConfirmed());
 %>
 
 <script type="text/javascript">

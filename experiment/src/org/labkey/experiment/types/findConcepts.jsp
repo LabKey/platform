@@ -134,7 +134,7 @@ else
 		}
 		if (false)
 		{
-		%><%=and%><a href="javascript:concept(<%=q(uri)%>)"><%=h(name)%></a><%
+		%><%=h(and)%><a href="javascript:concept(<%=q(uri)%>)"><%=h(name)%></a><%
 		}
 		out.println(unsafe("<br>"));
 		if (row == match)

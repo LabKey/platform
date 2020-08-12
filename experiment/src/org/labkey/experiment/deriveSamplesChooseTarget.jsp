@@ -57,13 +57,13 @@
                 { %>
                     <tr class="<%=h(roleIndex % 2 == 0 ? "labkey-alternate-row" : "labkey-row")%>">
                         <td><input type="hidden" name="rowIds" value="<%= material.getRowId()%>" /><%= h(material.getName())%></td>
-                        <td><select name="inputRole<%= roleIndex %>" onchange="document.getElementById('customRole<%= roleIndex %>').disabled = this.value != '<%= ExperimentController.DeriveSamplesChooseTargetBean.CUSTOM_ROLE %>';">
+                        <td><select name="inputRole<%= roleIndex %>" onchange="document.getElementById('customRole<%= roleIndex %>').disabled = this.value != '<%=h(ExperimentController.DeriveSamplesChooseTargetBean.CUSTOM_ROLE)%>';">
                             <option value=""></option>
                             <% for (String inputRole : bean.getInputRoles())
                             { %>
                                 <option value="<%= h(inputRole)%>"><%= h(inputRole) %></option>
                             <% } %>
-                            <option value="<%= ExperimentController.DeriveSamplesChooseTargetBean.CUSTOM_ROLE %>">Add a new role...</option>
+                            <option value="<%=h(ExperimentController.DeriveSamplesChooseTargetBean.CUSTOM_ROLE)%>">Add a new role...</option>
                         </select> <input name="customRole<%= roleIndex %>" disabled="true" id="customRole<%= roleIndex %>"/></td>
                     </tr>
                 <%

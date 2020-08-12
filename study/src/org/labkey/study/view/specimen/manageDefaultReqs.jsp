@@ -225,6 +225,6 @@ function verifyNewRequirement(prefix)
                 </tr>
             </table>
         </labkey:panel>
-    <input type="hidden" name="nextPage" value="<%=new ActionURL(SpecimenController.ManageDefaultReqsAction.class, getContainer()).getLocalURIString()%>">
+    <input type="hidden" name="nextPage" value="<%=h(urlFor(SpecimenController.ManageDefaultReqsAction.class))%>">
 </labkey:form>
 <%= link("manage study", StudyController.ManageStudyAction.class) %>
