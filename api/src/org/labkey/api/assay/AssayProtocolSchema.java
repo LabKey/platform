@@ -762,6 +762,30 @@ public abstract class AssayProtocolSchema extends AssaySchema
         col.setURL(fkse.remapFieldKeys(null, map));
     }
 
+    /**
+     * Transform an illegal name into a safe version. All non-letter characters
+     * become underscores, and the first character must be a letter. Retain this implementation for backwards
+     * compatibility with copied to study column names. See issue 41030.
+     */
+    private String sanitizeName(String originalName)
+    {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true; // first character is special
+        for (int i = 0; i < originalName.length(); i++)
+        {
+            char c = originalName.charAt(i);
+            if (AliasManager.isLegalNameChar(c, first))
+            {
+                sb.append(c);
+                first = false;
+            }
+            else if (!first)
+            {
+                sb.append('_');
+            }
+        }
+        return sb.toString();
+    }
 
     /**
      * Adds columns to an assay data table, providing a link to any datasets that have
@@ -799,7 +823,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
                 String studyName = assayDataset.getStudy().getLabel();
                 if (studyName == null)
                     continue; // No study in that folder
-                String studyColumnName = "copied_to_" + AliasManager.legalNameFromName(studyName);
+                String studyColumnName = "copied_to_" + sanitizeName(studyName);
 
                 // column names must be unique. Prevent collisions
                 while (usedColumnNames.contains(studyColumnName))
