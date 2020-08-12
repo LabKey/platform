@@ -17,6 +17,7 @@
 package org.labkey.api.wiki;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
@@ -75,7 +76,7 @@ public interface WikiService
     void deleteWiki(Container c, User user, String wikiName, boolean deleteSubtree) throws SQLException;
 
     /**
-     * Retrieves a Wiki's EntityId.
+     * Update the attachments on a wiki. Note, attachment changes do not update the wiki version.
      */
-    @Nullable String getWikiEntityId(Container c, User user, String wikiName);
+    void updateAttachments(Container c, User user, String wikiName, @Nullable List<AttachmentFile> attachmentFiles, @Nullable List<String> deleteAttachmentNames);
 }
