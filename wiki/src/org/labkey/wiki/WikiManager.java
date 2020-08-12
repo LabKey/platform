@@ -946,6 +946,15 @@ public class WikiManager implements WikiService
     }
 
     @Override
+    public @Nullable AttachmentParent getAttachmentParent(Container c, User user, String wikiName)
+    {
+        Wiki wiki = WikiSelectManager.getWiki(c, wikiName);
+        if (wiki != null)
+            return wiki.getAttachmentParent();
+        return null;
+    }
+
+    @Override
     public void updateAttachments(Container c, User user, String wikiName, @Nullable List<AttachmentFile> attachmentFiles, @Nullable List<String> deleteAttachmentNames)
     {
         Wiki wiki = WikiSelectManager.getWiki(c, wikiName);

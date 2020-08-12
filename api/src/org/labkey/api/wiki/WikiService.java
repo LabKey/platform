@@ -18,6 +18,7 @@ package org.labkey.api.wiki;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
@@ -74,6 +75,12 @@ public interface WikiService
     boolean updateContent(Container c, User user, String wikiName, String content);
 
     void deleteWiki(Container c, User user, String wikiName, boolean deleteSubtree) throws SQLException;
+
+    /**
+     * Retrieve the attachment parent of a wiki
+     */
+    @Nullable
+    AttachmentParent getAttachmentParent(Container c, User user, String wikiName);
 
     /**
      * Update the attachments on a wiki. Note, attachment changes do not update the wiki version.
