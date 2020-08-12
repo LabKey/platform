@@ -29,7 +29,7 @@
 %>
 <script type="text/javascript">
 LABKEY.page = LABKEY.page || {};
-LABKEY.page.assay = <%= new JSONObject(assay).toString(2) %>;
+LABKEY.page.assay = <%= new JSONObject(assay).getHtmlString(2) %>;
 </script>
 <p>
 <%
