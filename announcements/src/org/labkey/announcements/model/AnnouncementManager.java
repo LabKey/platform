@@ -1199,8 +1199,8 @@ public class AnnouncementManager
                                      AnnouncementModel a, boolean isResponse, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationBean.Reason reason)
         {
             this.recipient = recipient;
-            this.threadURL = new ActionURL(AnnouncementsController.ThreadAction.class, c).addParameter("rowId", a.getRowId());
-            this.threadParentURL = new ActionURL(AnnouncementsController.ThreadAction.class, c).addParameter("rowId", parent.getRowId());
+            this.threadURL = AnnouncementsController.getThreadURL(c, a.getRowId());
+            this.threadParentURL = AnnouncementsController.getThreadURL(c, parent.getRowId());
             this.boardPath = c.getPath();
             this.boardURL = AnnouncementsController.getBeginURL(c);
             this.siteURL = ActionURL.getBaseServerURL();
