@@ -125,7 +125,7 @@
             <%=h(predecessorNames)%>
         </td>
         <td valign="top">
-            <% if (!props.isEmpty()) out.print(h(new JSONObject(props).toString(2))); %>
+            <% if (!props.isEmpty()) out.print(new JSONObject(props).getHtmlString(2)); %>
         </td>
         <% } %>
     </tr>
@@ -175,7 +175,7 @@
                     <td width="20px"><%=h(mpi.getMaxOccurs())%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpMaterialProtocolInputImpl)mpi).getProperties(); %>
-                        <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
+                        <% if (!map.isEmpty()) out.print(new JSONObject(map).getHtmlString(2)); %>
                     </td>
                 </tr>
                 <% } %>
@@ -196,7 +196,7 @@
                     <td width="20px"><%=h(dpi.getMaxOccurs())%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpDataProtocolInputImpl)dpi).getProperties(); %>
-                        <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
+                        <% if (!map.isEmpty()) out.print(new JSONObject(map).getHtmlString(2)); %>
                     </td>
                 </tr>
                 <% } %>
@@ -222,7 +222,7 @@
                     <td width="20px"><%=h(mpo.getMaxOccurs())%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpMaterialProtocolInputImpl)mpo).getProperties(); %>
-                        <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
+                        <% if (!map.isEmpty()) out.print(new JSONObject(map).getHtmlString(2)); %>
                     </td>
                 </tr>
                 <% } %>
@@ -243,7 +243,7 @@
                     <td width="20px"><%=h(dpo.getMaxOccurs())%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpDataProtocolInputImpl)dpo).getProperties(); %>
-                        <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
+                        <% if (!map.isEmpty()) out.print(new JSONObject(map).getHtmlString(2)); %>
                     </td>
                 </tr>
                 <% } %>

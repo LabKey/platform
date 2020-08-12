@@ -91,7 +91,7 @@
 %>
         <tr>
             <td>
-                This custom participant view is defined in an active module.  It cannot be edited via this interface.
+                This custom participant view is defined in an active module. It cannot be edited via this interface.
             </td>
         </tr>
         <tr>
@@ -110,11 +110,11 @@
 %>
 <table width="100%">
     <tr class="labkey-wp-header">
-        <th><%= h(subjectNoun) %> View Preview <%= bean.isEditable() ? "(Save to refresh)" : "" %></th>
+        <th><%= h(subjectNoun) %> View Preview <%= h(bean.isEditable() ? "(Save to refresh)" : "") %></th>
     </tr>
     <tr>
         <td>
-            <%= useCustomView ? bean.getCustomScript() : bean.getDefaultScript() %>
+            <%= unsafe(useCustomView ? bean.getCustomScript() : bean.getDefaultScript()) %>
         </td>
     </tr>
 </table>

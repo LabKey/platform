@@ -26,6 +26,7 @@
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz");
@@ -118,7 +119,7 @@
         long modified = info.getLastModified();
         %><tr class="<%=getShadeRowClass(shade)%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>?listing=html"><%=h(name)%></a></td><%
         %><td align="right">&nbsp;</td><%
-        %><td align="right" nowrap><%=modified==0?"&nbsp;":dateFormat.format(new Date(modified))%></td></tr><%
+        %><td align="right" nowrap><%=modified==0 ? HtmlString.NBSP : h(dateFormat.format(new Date(modified)))%></td></tr><%
         out.println();
     }
     for (Map.Entry<String, WebdavResource> entry : dirs.entrySet())
@@ -129,7 +130,7 @@
         long modified = info.getLastModified();
         %><tr class="<%=getShadeRowClass(shade)%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>?listing=html"><%=h(name)%></a></td><%
         %><td align="right">&nbsp;</td><%
-        %><td align="right" nowrap><%=modified==0?"&nbsp;":dateFormat.format(new Date(modified))%></td></tr><%
+        %><td align="right" nowrap><%=modified==0 ? HtmlString.NBSP : h(dateFormat.format(new Date(modified)))%></td></tr><%
         out.println();
     }
     for (Map.Entry<String, WebdavResource> entry : files.entrySet())
@@ -147,7 +148,7 @@
             %><tr class="<%=getShadeRowClass(shade)%>"><td align="left"><%=h(name)%></td><%
         }
         %><td align="right"><%=info.getContentLength()%></td><%
-        %><td align="right" nowrap><%=modified==0?"&nbsp;":dateFormat.format(new Date(modified))%></td></tr><%
+        %><td align="right" nowrap><%=modified==0 ? HtmlString.NBSP : h(dateFormat.format(new Date(modified)))%></td></tr><%
         out.println();
     }
 %></table>

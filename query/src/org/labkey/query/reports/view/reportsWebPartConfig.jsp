@@ -128,11 +128,10 @@
         // ajax call to get report section names
         if (element)
         {
-            var url = "<%=h(urlProvider(ReportUrls.class).urlReportSections(c))%>";
+            var url = "<%=h(urlProvider(ReportUrls.class).urlReportSections(c).addParameter(sectionName, pm.get(sectionName)))%>";
 
-            url = url.concat("&<%=PageFlowUtil.encode(ReportDescriptor.Prop.reportId.name())%>=");
+            url = url.concat("&<%=unsafe(PageFlowUtil.encode(ReportDescriptor.Prop.reportId.name()))%>=");
             url = url.concat(element.value);
-            url = url.concat("&<%=PageFlowUtil.encode(sectionName)%>=<%=PageFlowUtil.encode(pm.get(sectionName))%>");
 
             LABKEY.Ajax.request({
                 url: url,
