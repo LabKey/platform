@@ -98,6 +98,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -1277,7 +1278,14 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
-            QueryView queryView = form.getQueryView();
+            QueryView queryView = null;
+
+            if (!errors.hasErrors())
+                queryView = form.getQueryView();
+
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors, true);
+
             if (isPrint())
             {
                 queryView.setPrintView(true);

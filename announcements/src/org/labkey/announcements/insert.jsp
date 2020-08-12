@@ -76,7 +76,7 @@
 <%
     if (settings.hasStatus())
     {
-        %><tr><td class='labkey-form-label'>Status</td><td colspan="2"><%=text(bean.statusSelect)%></td></tr><%
+        %><tr><td class='labkey-form-label'>Status</td><td colspan="2"><%=bean.statusSelect%></td></tr><%
     }
     if (settings.hasAssignedTo())
     {

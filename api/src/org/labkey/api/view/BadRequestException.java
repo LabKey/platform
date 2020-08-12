@@ -31,10 +31,16 @@ public class BadRequestException extends RuntimeException implements SkipMothers
 
     public BadRequestException(String message, Exception x)
     {
-        this(HttpServletResponse.SC_BAD_REQUEST, StringUtils.defaultIfEmpty(message, "BAD REQUEST"), x);
+        this(StringUtils.defaultIfEmpty(message, "BAD REQUEST"), HttpServletResponse.SC_BAD_REQUEST, x);
     }
 
-    public BadRequestException(int status, String message, Exception x)
+    public BadRequestException(String message, int status)
+    {
+        super(message);
+        this.status = status;
+    }
+
+    public BadRequestException(String message, int status, Exception x)
     {
         super(message, x);
         this.status = status;

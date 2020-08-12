@@ -21,6 +21,7 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.util.HtmlString;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -92,7 +93,7 @@ public interface Study extends StudyEntity
 
     String getDescriptionRendererType();
 
-    String getDescriptionHtml();
+    HtmlString getDescriptionHtml();
 
     String getInvestigator();
 

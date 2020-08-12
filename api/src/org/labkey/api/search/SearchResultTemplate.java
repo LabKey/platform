@@ -18,6 +18,7 @@ package org.labkey.api.search;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
@@ -48,9 +49,9 @@ public interface SearchResultTemplate
 
     boolean includeAdvanceUI();
 
-    @Nullable String getExtraHtml(ViewContext ctx);
+    @Nullable HtmlString getExtraHtml(ViewContext ctx);
 
-    @Nullable String getHiddenInputsHtml(ViewContext ctx);
+    @Nullable HtmlString getHiddenInputsHtml(ViewContext ctx);
 
     String reviseQuery(ViewContext ctx, String q);
 

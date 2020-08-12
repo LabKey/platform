@@ -63,6 +63,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MailHelper.BulkEmailer;
@@ -1015,7 +1016,7 @@ public class AnnouncementManager
                 {
                     if (notificationBean == null)
                         return null;
-                    return notificationBean.body == null ? "" : notificationBean.body;
+                    return notificationBean.body == null ? "" : notificationBean.body.toString();
                 }
             });
 
@@ -1184,7 +1185,7 @@ public class AnnouncementManager
         private final AnnouncementModel announcementModel;
         private final AnnouncementModel parentModel;
         private final boolean isResponse;
-        private final String body;
+        private final HtmlString body;
         private final String bodyText;
         private final Settings settings;
         private final ActionURL removeURL;
@@ -1218,7 +1219,7 @@ public class AnnouncementManager
             }
             else
             {
-                this.body = a.getBody();
+                this.body = HtmlString.EMPTY_STRING;
             }
         }
     }

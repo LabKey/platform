@@ -86,12 +86,12 @@ else
 
 if (settings.hasStatus())
 {
-    %><tr><td class="labkey-form-label">Status</td><td colspan="2"><%=text(bean.statusSelect)%></td></tr><%
+    %><tr><td class="labkey-form-label">Status</td><td colspan="2"><%=bean.statusSelect%></td></tr><%
 }
 
 if (settings.hasAssignedTo())
 {
-    %><tr><td class="labkey-form-label">Assigned&nbsp;To</td><td colspan="2"><%=text(bean.assignedToSelect)%></td></tr><%
+    %><tr><td class="labkey-form-label">Assigned&nbsp;To</td><td colspan="2"><%=bean.assignedToSelect%></td></tr><%
 }
 
 if (settings.hasMemberList())

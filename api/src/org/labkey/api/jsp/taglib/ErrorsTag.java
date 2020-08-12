@@ -78,7 +78,7 @@ public class ErrorsTag extends TagSupport
                                 Logger log = LogManager.getLogger(ErrorsTag.class);
                                 log.error("Failed to find a message: " + m, nsme);
                             }
-                            out.println("<br>");
+                            out.println(HtmlString.unsafe("<br>"));
                         }
                 }
             }

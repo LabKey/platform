@@ -59,7 +59,7 @@ public class Link extends DisplayElement implements HasHtmlString
                 .data(null != lb.tooltip, "tt", "tooltip")
                 .data(null != lb.tooltip, "placement","top")
                 .data(null != lb.tooltip, "original-title", lb.tooltip),
-            lb.iconCls!=null ? null : lb.text
+            lb.iconCls!=null ? null : lb.html
         ).appendTo(out);
         return out;
     }
@@ -85,8 +85,13 @@ public class Link extends DisplayElement implements HasHtmlString
 
         public LinkBuilder(@NotNull String text)
         {
+            this(HtmlString.of(text));
+        }
+
+        public LinkBuilder(@NotNull HtmlString html)
+        {
             this();
-            this.text = text;
+            this.html = html;
         }
 
         @Override

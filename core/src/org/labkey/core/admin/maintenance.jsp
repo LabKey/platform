@@ -26,7 +26,7 @@
     MaintenanceBean bean = ((JspView<MaintenanceBean>)HttpView.currentView()).getModelBean();
 %>
 <labkey:errors/>
-<p><%=text(bean.content)%></p>
+<p><%=bean.content%></p>
 <% if (bean.loginURL != null) { %>
 <p><%= button("Site Admin Login").href(bean.loginURL) %></p>
 <% } %>

@@ -30,6 +30,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.SimpleHasHtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -214,7 +215,7 @@ public interface Report extends AttachmentParent, ThumbnailProvider
         List<ScriptOutput> executeScript(ViewContext context, Map<String, Object> inputParameters) throws Exception;
     }
 
-    enum renderParam
+    enum renderParam implements SimpleHasHtmlString
     {
         reportWebPart,
         reportId,

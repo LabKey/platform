@@ -31,7 +31,7 @@
 <%@ page import="org.labkey.api.search.SearchUtils.HtmlParseException" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.Formats" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Path" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -299,7 +299,7 @@
             <% } %>
             <input type="hidden" name="_dc" value="<%=h(Math.round(1000 * Math.random()))%>">
             <%
-                String hiddenInputs = template.getHiddenInputsHtml(ctx);
+                HtmlString hiddenInputs = template.getHiddenInputsHtml(ctx);
                 if (hiddenInputs != null)
                     out.print(hiddenInputs);
             %>
@@ -433,11 +433,11 @@
     </div>
 </div>
 <%
-    String extraHtml = template.getExtraHtml(ctx);
+    HtmlString extraHtml = template.getExtraHtml(ctx);
     if (null != extraHtml)
     {
 %>
-<div class="col-md-12"><%=text(extraHtml)%></div>
+<div class="col-md-12"><%=extraHtml%></div>
 <%
     }
 %>

@@ -99,8 +99,8 @@
     }
   },
   "dependencies": {
-    "@labkey/api": "1.0.1",
-    "@labkey/components": "0.83.0",
+    "@labkey/api": "1.0.2",
+    "@labkey/components": "0.84.0",
     "@labkey/eslint-config-react": "0.0.8",
     "react-toggle-button": "2.2.0"
   },
@@ -132,7 +132,7 @@
     "optimize-css-assets-webpack-plugin": "5.0.3",
     "prettier": "2.0.5",
     "react-hot-loader": "4.12.21",
-    "react-test-renderer": "16.8.6",
+    "react-test-renderer": "16.13.1",
     "rimraf": "3.0.2",
     "ts-jest": "26.1.4",
     "typescript": "3.9.7",

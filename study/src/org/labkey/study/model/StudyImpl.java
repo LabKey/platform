@@ -62,6 +62,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HTMLContentExtractor;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
@@ -703,7 +704,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
-    public String getDescriptionHtml()
+    public HtmlString getDescriptionHtml()
     {
         String description = getDescription();
 
@@ -712,12 +713,14 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             long count = StudyManager.getInstance().getParticipantCount(this);
             String subjectNoun = (count == 1 ? this.getSubjectNounSingular() : this.getSubjectNounPlural());
             TimepointType timepointType = getTimepointType();
-            return PageFlowUtil.filter((getLabel() == null ? "This study" : getLabel()) + " tracks data in ")
-                    + "<a href=\"" + new ActionURL(StudyController.DatasetsAction.class, getContainer()) + "\">"
-                    + getDatasets().size() + " dataset" + (getDatasets().size() == 1 ? "" : "s") + "</a>" +
-                    (null != timepointType ? (timepointType != TimepointType.CONTINUOUS ? (PageFlowUtil.filter(" over " + getVisits(Visit.Order.DISPLAY).size() + " "
-                    + (timepointType.isVisitBased() ? "visit" : "time point") + (getVisits(Visit.Order.DISPLAY).size() == 1 ? "" : "s"))) : "" ) : "")
-                    + ". Data is present for " + PageFlowUtil.filter(DecimalFormat.getNumberInstance().format(count)) + " " + PageFlowUtil.filter(subjectNoun) + ".";
+            // TODO: Use HtmlStringBuilder, DOM, or JSP to assemble this
+            String html = PageFlowUtil.filter((getLabel() == null ? "This study" : getLabel()) + " tracks data in ")
+                + "<a href=\"" + new ActionURL(StudyController.DatasetsAction.class, getContainer()) + "\">"
+                + getDatasets().size() + " dataset" + (getDatasets().size() == 1 ? "" : "s") + "</a>" +
+                (null != timepointType ? (timepointType != TimepointType.CONTINUOUS ? (PageFlowUtil.filter(" over " + getVisits(Visit.Order.DISPLAY).size() + " "
+                + (timepointType.isVisitBased() ? "visit" : "time point") + (getVisits(Visit.Order.DISPLAY).size() == 1 ? "" : "s"))) : "" ) : "")
+                + ". Data is present for " + PageFlowUtil.filter(DecimalFormat.getNumberInstance().format(count)) + " " + PageFlowUtil.filter(subjectNoun) + ".";
+            return HtmlString.unsafe(html);
         }
         else
         {
@@ -1056,11 +1059,11 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         appendKeyword(sb, getInvestigator());
 
         // Render and parse description
-        String descriptionHtml = getDescriptionHtml();
+        HtmlString descriptionHtml = getDescriptionHtml();
 
         try
         {
-            appendKeyword(sb, new HTMLContentExtractor.GenericHTMLExtractor(descriptionHtml).extract());
+            appendKeyword(sb, new HTMLContentExtractor.GenericHTMLExtractor(descriptionHtml.toString()).extract());
         }
         catch (IOException e)
         {

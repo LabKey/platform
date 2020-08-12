@@ -29,7 +29,7 @@
     Container proj = getContainer().getProject();
     if (proj == null || proj.isRoot())
     {
-        out.print("No current project.");
+        out.print(h("No current project."));
     }
     else
     {

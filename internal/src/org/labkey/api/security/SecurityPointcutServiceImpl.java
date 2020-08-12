@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static javax.servlet.http.HttpServletResponse.SC_GONE;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
@@ -43,13 +44,13 @@ public class SecurityPointcutServiceImpl implements SecurityPointcutService
     {
         if (!ViewServlet.validChars(req))
         {
-            BlacklistFilter.handleBadRequest(req);
+            BlockListFilter.handleBadRequest(req);
             return sendError(res, HttpServletResponse.SC_BAD_REQUEST, "Invalid characters in request.");
         }
 
         if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_BLOCKER))
         {
-           if (BlacklistFilter.isOnBlacklist(req))
+           if (BlockListFilter.isOnBlockList(req))
                return sendError(res, SC_GONE,"Try again later.");
         }
         return true;
@@ -60,12 +61,16 @@ public class SecurityPointcutServiceImpl implements SecurityPointcutService
     public void afterProcessRequest(HttpServletRequest req, HttpServletResponse res)
     {
         if (res.getStatus() == SC_NOT_FOUND)
-            BlacklistFilter.handleNotFound(req);
+            BlockListFilter.handleNotFound(req);
         else if (res.getStatus() == SC_UNAUTHORIZED || res.getStatus() == SC_FORBIDDEN)
         {
             Object ex = req.getAttribute(ExceptionUtil.REQUEST_EXCEPTION_ATTRIBUTE);
             if (ex instanceof CSRFException)
-                BlacklistFilter.handleBadRequest(req);
+                BlockListFilter.handleBadRequest(req);
+        }
+        else if (res.getStatus() == SC_BAD_REQUEST)
+        {
+            BlockListFilter.handleBadRequest(req);
         }
     }
 

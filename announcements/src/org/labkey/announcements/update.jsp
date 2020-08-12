@@ -72,12 +72,12 @@ if (settings.isTitleEditable())
 
 if (settings.hasStatus())
 {
-    %><tr><td class='labkey-form-label'>Status</td><td colspan="2"><%=text(bean.statusSelect)%></td></tr><%
+    %><tr><td class='labkey-form-label'>Status</td><td colspan="2"><%=bean.statusSelect%></td></tr><%
 }
 
 if (settings.hasAssignedTo())
 {
-    %><tr><td class='labkey-form-label'>Assigned&nbsp;To</td><td colspan="2"><%=text(bean.assignedToSelect)%></td></tr><%
+    %><tr><td class='labkey-form-label'>Assigned&nbsp;To</td><td colspan="2"><%=bean.assignedToSelect%></td></tr><%
 }
 
 if (settings.hasMemberList())
@@ -152,7 +152,7 @@ if (settings.hasExpires())
                     x++;
                     %><tr id="attach-<%=x%>">
                         <td><img src="<%=getWebappURL(att.getFileIcon())%>" alt="logo"/>&nbsp;<%= h(att.getName()) %></td>
-                        <td><a onclick="LABKEY.discuss.removeAttachment(<%=q(ann.getEntityId())%>, <%=PageFlowUtil.filterQuote(att.getName())%>, 'attach-<%=x%>'); ">remove</a></td>
+                        <td><a onclick="LABKEY.discuss.removeAttachment(<%=q(ann.getEntityId())%>, <%=hq(att.getName())%>, 'attach-<%=x%>'); ">remove</a></td>
                     </tr><%
                 }
                 %>

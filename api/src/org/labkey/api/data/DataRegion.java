@@ -2427,7 +2427,7 @@ public class DataRegion extends DisplayElement
     private void renderOldValues(Writer out, Object values) throws IOException
     {
         out.write("<input name=\"" + OLD_VALUES_NAME + "\" type=\"hidden\" value=\"");
-        out.write(PageFlowUtil.encodeObject(values));
+        out.write(PageFlowUtil.encodeObject(values).toString());
         out.write("\">");
     }
 
