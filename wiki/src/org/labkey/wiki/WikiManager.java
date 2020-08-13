@@ -81,6 +81,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -216,8 +217,20 @@ public class WikiManager implements WikiService
             fireWikiCreated(user, c, wikiInsert.getName());
     }
 
-
     public boolean updateWiki(User user, Wiki wikiNew, WikiVersion versionNew, boolean copyHistory)
+    {
+        return updateWiki(user, wikiNew, versionNew, copyHistory, true);
+    }
+
+    /**
+     * Update an existing wiki with new content.
+     *
+     * @param copyHistory true to propagate the user and date created from the previous wiki version, else just use the current user
+     *                    and current date.
+     * @param createNewVersion by default we create a new wiki version for each update, if this is set to false we will update
+     *                         the latest wiki version.
+     */
+    private boolean updateWiki(User user, Wiki wikiNew, WikiVersion versionNew, boolean copyHistory, boolean createNewVersion)
     {
         DbScope scope = comm.getSchema().getScope();
         Container c = wikiNew.lookupContainer();
@@ -255,16 +268,24 @@ public class WikiManager implements WikiService
                 }
                 //if copying wiki with history, avoid overwriting 'created by' user
                 User userToInsert = (copyHistory) ? null : user;
-                //get version number for new version
-                versionNew.setVersion(WikiSelectManager.getNextVersionNumber(wikiNew));
-                //insert initial version for this page
-                versionNew = Table.insert(userToInsert, comm.getTableInfoPageVersions(), versionNew);
 
-                //update version reference in Pages table.
-                wikiNew.setPageVersionId(versionNew.getRowId());
-                Table.update(userToInsert, comm.getTableInfoPages(), wikiNew, wikiNew.getEntityId());
+                if (createNewVersion)
+                {
+                    //get version number for new version
+                    versionNew.setVersion(WikiSelectManager.getNextVersionNumber(wikiNew));
+                    //insert initial version for this page
+                    versionNew = Table.insert(userToInsert, comm.getTableInfoPageVersions(), versionNew);
+
+                    //update version reference in Pages table.
+                    wikiNew.setPageVersionId(versionNew.getRowId());
+                    Table.update(userToInsert, comm.getTableInfoPages(), wikiNew, wikiNew.getEntityId());
+                }
+                else
+                {
+                    versionNew.setVersion(versionOld.getVersion());
+                    Table.update(userToInsert, comm.getTableInfoPageVersions(), versionNew, versionNew.getRowId());
+                }
             }
-
             transaction.commit();
         }
         finally
@@ -913,7 +934,7 @@ public class WikiManager implements WikiService
     }
 
     @Override
-    public boolean updateContent(Container c, User user, String wikiName, String content)
+    public boolean updateContent(Container c, User user, String wikiName, String content, @Nullable Integer newVersionThreshold)
     {
         if (content != null)
         {
@@ -927,7 +948,18 @@ public class WikiManager implements WikiService
                     if (!content.equals(version.getBody()))
                     {
                         version.setBody(content);
-                        return updateWiki(user, wiki, version, false);
+                        boolean createNewVersion = true;
+
+                        if (newVersionThreshold != null)
+                        {
+                            Calendar cal = Calendar.getInstance();
+                            cal.setTime(new Date());
+                            cal.add(Calendar.MILLISECOND, - newVersionThreshold);
+
+                            // only update if the wiki was updated outside of the specified time window
+                            createNewVersion = wiki.getModified().before(cal.getTime());
+                        }
+                        return updateWiki(user, wiki, version, false, createNewVersion);
                     }
                 }
             }
