@@ -217,11 +217,11 @@ export class App extends PureComponent<{}, Partial<State>> {
                     error: resolveErrorMessage(error),
                 });
             }, undefined, true),
-            success: function() {
+            success: Utils.getCallbackWrapper(() => {
                 this.setState((state) => ({
                     [configType]: state[configType].filter(auth => auth.configuration !== configuration)
-                }))
-            },
+                }));
+            }),
         });
     };
 
