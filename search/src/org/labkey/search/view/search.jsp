@@ -525,7 +525,7 @@
                         int newOffset = offset - hitsPerPage;
 
                         if (newOffset > 0)
-                            previousURL.replaceParameter("offset", String.valueOf(newOffset));
+                            previousURL.replaceParameter("offset", newOffset);
                         else
                             previousURL.deleteParameter("offset");
                 %>
@@ -542,7 +542,7 @@
                     if (pageNo < pageCount)
                     {
                 %>
-                <a href="<%=h(currentURL.clone().replaceParameter("offset", String.valueOf(offset + hitsPerPage)))%>">Next &gt;</a>
+                <a href="<%=h(currentURL.clone().replaceParameter("offset", offset + hitsPerPage))%>">Next &gt;</a>
                 <%
                     }
                 %>

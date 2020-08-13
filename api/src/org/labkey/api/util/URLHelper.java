@@ -651,6 +651,10 @@ public class URLHelper implements Cloneable, Serializable, HasHtmlString
         return addParameter(key, value);
     }
 
+    public URLHelper replaceParameter(String key, long value)
+    {
+        return replaceParameter(key, Long.toString(value));
+    }
 
     // CONSIDER: convert URLHelper implementation to use PropertyValues internally
     public PropertyValues getPropertyValues()
