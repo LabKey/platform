@@ -102,6 +102,12 @@ public abstract class ApiResponseWriter implements AutoCloseable
             {
                 return new ApiJsonWriter(response, contentTypeOverride, objectMapper, true); // TODO: FOR DEBUGGING. Before final commit, decide if pretty or compact should be default.
             }
+
+            @Override
+            public boolean isJson()
+            {
+                return true;
+            }
         },
         XML
         {
@@ -111,6 +117,12 @@ public abstract class ApiResponseWriter implements AutoCloseable
                 // TODO: Use Jackson for object -> XML serialization
                 return new ApiXmlWriter(response, contentTypeOverride);
             }
+
+            @Override
+            public boolean isJson()
+            {
+                return false;
+            }
         },
         JSON_COMPACT
         {
@@ -119,9 +131,17 @@ public abstract class ApiResponseWriter implements AutoCloseable
             {
                 return new ApiJsonWriter(response, contentTypeOverride, objectMapper, false);
             }
+
+            @Override
+            public boolean isJson()
+            {
+                return true;
+            }
         };
 
         public abstract ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride, ObjectMapper objectMapper) throws IOException;
+
+        public abstract boolean isJson();
     }
 
     private final HttpServletResponse _response;

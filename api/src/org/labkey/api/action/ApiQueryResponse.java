@@ -85,6 +85,8 @@ public class ApiQueryResponse implements ApiResponse
     private List<FieldKey> _columnFilter;
     private boolean _includeMetaData;
 
+    private ApiResponseWriter.Format _format = ApiResponseWriter.Format.JSON;
+
     // TODO: This is silly... switch to builder pattern, or at least a constructor that takes reasonable strategies
     public ApiQueryResponse(QueryView view, boolean schemaEditable, boolean includeLookupInfo,
                             String schemaName, String queryName, long offset, List<FieldKey> fieldKeys, boolean metaDataOnly,
@@ -114,7 +116,6 @@ public class ApiQueryResponse implements ApiResponse
 
     public ApiQueryResponse()
     {
-        _includeLookupInfo = true;
         _metaDataOnly = true;
     }
 
@@ -226,9 +227,9 @@ public class ApiQueryResponse implements ApiResponse
 
     protected Results getResults() throws Exception
     {
-        // We're going to be writing JSON back, which is tolerant of extra spaces, so allow async so we
-        // can monitor if the client has stopped listening
-        _dataRegion.setAllowAsync(true);
+        // If we're going to be writing JSON back, which is tolerant of extra spaces, allow async so we
+        // can monitor if the client has stopped listening. XML doesn't take kindly to leading spaces
+        _dataRegion.setAllowAsync(_format.isJson());
         try
         {
             return _dataRegion.getResults(_ctx);
@@ -641,5 +642,10 @@ public class ApiQueryResponse implements ApiResponse
     public void setColumnFilter(List<FieldKey> columnFilter)
     {
         _columnFilter = columnFilter;
+    }
+
+    public void setFormat(ApiResponseWriter.Format format)
+    {
+        _format = format;
     }
 }
