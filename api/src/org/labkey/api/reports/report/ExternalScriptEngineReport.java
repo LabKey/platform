@@ -40,6 +40,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -437,7 +438,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
                                 if (param.getId().equals(ConsoleOutput.ID))
                                 {
-                                    try (BufferedWriter bw = new BufferedWriter(new FileWriter(dst, true)))
+                                    try (BufferedWriter bw = new BufferedWriter(new FileWriter(dst, StringUtilsLabKey.DEFAULT_CHARSET, true)))
                                     {
                                         bw.write("\nLast cached update : " + DateUtil.formatDateTime(context.getContainer()) + "\n");
                                     }
