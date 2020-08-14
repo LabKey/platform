@@ -17,7 +17,8 @@ package org.labkey.api.module;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -98,7 +99,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public static final String CORE_MODULE_NAME = "Core";
 
     private static final String DEPENDENCIES_FILE_PATH = "credits/dependencies.txt";
-    private static final Logger _log = Logger.getLogger(DefaultModule.class);
+    private static final Logger _log = LogManager.getLogger(DefaultModule.class);
     private static final Set<Pair<Class<? extends DefaultModule>, String>> INSTANTIATED_MODULES = new HashSet<>();
     static final ModuleResourceCache<ModuleXml> MODULE_XML_CACHE = ModuleResourceCaches.create("module.xml files", new ModuleXmlCacheHandler(), ResourceRootProvider.getStandard(new Path()));
 

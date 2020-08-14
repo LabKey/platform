@@ -22,7 +22,8 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.CompareType;
@@ -60,7 +61,7 @@ import java.util.stream.Collectors;
  */
 public class URLHelper implements Cloneable, Serializable, HasHtmlString
 {
-    private static final Logger LOG = Logger.getLogger(URLHelper.class);
+    private static final Logger LOG = LogManager.getLogger(URLHelper.class);
 
     protected String _scheme = "http";
     protected String _host = null;

@@ -16,7 +16,8 @@
 
 package org.labkey.api.exp.query;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
@@ -51,7 +52,7 @@ public class SamplesSchema extends AbstractExpSchema
     public static final String SCHEMA_NAME = "samples";
     public static final SchemaKey SCHEMA_SAMPLES = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
     public static final String SCHEMA_DESCR = "Contains data about the samples used in experiment runs.";
-    static final Logger log = Logger.getLogger(SamplesSchema.class);
+    static final Logger log = LogManager.getLogger(SamplesSchema.class);
 
     static private Map<String, ExpSampleType> getSampleTypeMap(Container container, User user)
     {

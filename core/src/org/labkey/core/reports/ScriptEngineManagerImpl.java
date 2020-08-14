@@ -20,7 +20,8 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -79,7 +80,7 @@ import static java.util.Collections.unmodifiableList;
 */
 public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabkeyScriptEngineManager
 {
-    private static final Logger LOG = Logger.getLogger(ScriptEngineManagerImpl.class);
+    private static final Logger LOG = LogManager.getLogger(ScriptEngineManagerImpl.class);
 
     public static final String SCRIPT_ENGINE_MAP = "ExternalScriptEngineMap";
     private static final String ENGINE_DEF_MAP_PREFIX = "ScriptEngineDefinition_";

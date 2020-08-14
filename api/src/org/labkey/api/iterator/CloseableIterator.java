@@ -15,8 +15,8 @@
  */
 package org.labkey.api.iterator;
 
-import java.util.Iterator;
 import java.io.Closeable;
+import java.util.Iterator;
 
 /**
  * A type of Iterator that should be explicitly closed because it holds resources open (like DB connections or files)

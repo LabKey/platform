@@ -25,10 +25,17 @@ import java.io.Writer;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute;
-import static org.labkey.api.util.DOM.*;
-import static org.labkey.api.util.DOM.LK.*;
-import static org.labkey.api.util.DOM.Attribute.*;
+import static org.labkey.api.util.DOM.Attribute.onclick;
+import static org.labkey.api.util.DOM.Attribute.tabindex;
+import static org.labkey.api.util.DOM.Attribute.title;
+import static org.labkey.api.util.DOM.Attribute.type;
+import static org.labkey.api.util.DOM.INPUT;
+import static org.labkey.api.util.DOM.LK.FA;
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.createHtmlFragment;
 
 
 /**
@@ -47,7 +54,6 @@ public class Button extends DisplayElement implements HasHtmlString
     // Composable members
     private final String cssClass;
     private final String iconCls;
-    private final String text;
     private final HtmlString html; // required
     private final String href;
     private final String onClick;
@@ -70,7 +76,6 @@ public class Button extends DisplayElement implements HasHtmlString
     {
         this.cssClass = builder.cssClass;
         this.dropdown = builder.dropdown;
-        this.text     = builder.text;   // used as tooltip if tooltip not provided
         this.html     = builder.html;
         this.href = builder.href;
         this.onClick = builder.onClick;
@@ -96,11 +101,6 @@ public class Button extends DisplayElement implements HasHtmlString
     public String getCssClass()
     {
         return this.cssClass;
-    }
-
-    public String getText()
-    {
-        return text;
     }
 
     public String getTarget()
@@ -220,7 +220,7 @@ public class Button extends DisplayElement implements HasHtmlString
         out.write(toString());
     }
 
-    @Override // TODO: HtmlString - remove this
+    @Override
     public String toString()
     {
         return getHtmlString().toString();
@@ -231,12 +231,12 @@ public class Button extends DisplayElement implements HasHtmlString
     {
         boolean iconOnly = getIconCls() != null;
         String submitId = GUID.makeGUID();
-        final String tip = StringUtils.defaultString(tooltip, !iconOnly ? null : StringUtils.trimToNull(getText()));
+        final HtmlString tip = (null != tooltip ? HtmlString.of(tooltip) : (!iconOnly ? null : html));
 
         var attrs = at(attributes)
             .id(getId())
             .at(Attribute.href, getHref(), title, tip, onclick, generateOnClick(submitId), Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget())
-            .data("tt", (StringUtils.isBlank(tip) ? null : "tooltip"))
+            .data("tt", (HtmlString.isBlank(tip) ? null : "tooltip"))
             .data("placement", "top")
             .cl(CLS, typeCls, getCssClass())
             .cl(!isEnabled(), DISABLEDCLS)
@@ -263,13 +263,11 @@ public class Button extends DisplayElement implements HasHtmlString
 
         public ButtonBuilder(@NotNull String text)
         {
-            this.text = text;
             this.html = HtmlString.of(text);
         }
 
         public ButtonBuilder(@NotNull HtmlString html)
         {
-            this.text = null;
             this.html = html;
         }
 

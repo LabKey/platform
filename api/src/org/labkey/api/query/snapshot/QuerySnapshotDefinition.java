@@ -16,17 +16,13 @@
 package org.labkey.api.query.snapshot;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.security.User;
 
+import java.util.Date;
 import java.util.List;
-import java.util.Date;/*
- * User: Karl Lum
- * Date: Jul 14, 2008
- * Time: 12:51:32 PM
- */
 
 public interface QuerySnapshotDefinition
 {

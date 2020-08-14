@@ -16,11 +16,11 @@
 
 package org.labkey.api.defaults;
 
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.view.NavTree;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;

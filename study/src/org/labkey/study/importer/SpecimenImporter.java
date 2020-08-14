@@ -18,7 +18,7 @@ package org.labkey.study.importer;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -3514,7 +3514,7 @@ public class SpecimenImporter
                     }
                 }
 
-                _logger.error(sb);
+                _logger.error(sb.toString());
 
                 // If conflicts are found, stop the import.
                 throw new IllegalStateException(sb.toString());

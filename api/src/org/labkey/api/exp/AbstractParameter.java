@@ -16,7 +16,7 @@
 package org.labkey.api.exp;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.fhcrc.cpas.exp.xml.SimpleValueType;
 import org.labkey.api.collections.BoundMap;

@@ -5,8 +5,23 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static org.labkey.api.util.DOM.*;
-import static org.labkey.api.util.DOM.Attribute.*;
+import static org.labkey.api.util.DOM.Attribute.id;
+import static org.labkey.api.util.DOM.Attribute.method;
+import static org.labkey.api.util.DOM.Attribute.onclick;
+import static org.labkey.api.util.DOM.Attribute.selected;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.Element;
+import static org.labkey.api.util.DOM.H1;
+import static org.labkey.api.util.DOM.H2;
+import static org.labkey.api.util.DOM.LK;
+import static org.labkey.api.util.DOM.OPTION;
+import static org.labkey.api.util.DOM.SELECT;
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.cl;
+import static org.labkey.api.util.DOM.createHtml;
+import static org.labkey.api.util.DOM.createHtmlFragment;
+import static org.labkey.api.util.DOM.id;
 
 
 public class DomTestCase extends Assert

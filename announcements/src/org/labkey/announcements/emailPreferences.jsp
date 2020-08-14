@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page import="org.labkey.api.announcements.EmailOption" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.announcements.EmailPreferencesPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 

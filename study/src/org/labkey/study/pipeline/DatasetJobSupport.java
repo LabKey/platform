@@ -18,8 +18,6 @@ package org.labkey.study.pipeline;
 
 import org.labkey.api.writer.VirtualFile;
 
-import java.io.File;
-
 /*
 * User: adam
 * Date: Sep 2, 2009

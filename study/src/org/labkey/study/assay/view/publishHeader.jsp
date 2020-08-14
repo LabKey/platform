@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.assay.PublishConfirmAction"%>
+<%@ page import="org.labkey.api.study.TimepointType"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.study.TimepointType" %>
+<%@ page import="org.labkey.study.assay.PublishConfirmAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -47,9 +47,9 @@
 </script>
 <% if (bean.isMismatched()) { %>
 <p>
-    To reshow this form with Participant IDs and <%= dateOrVisit %> associated with
+    To reshow this form with Participant IDs and <%=h(dateOrVisit)%> associated with
     the specimens in the study, click on the Reset with Specimen Data button. To reshow with information from the assay,
     click on the Reset with Assay Data button.
 </p>
 <% } %>
-    Participant IDs and <%= dateOrVisit %> are required for all rows.
+    Participant IDs and <%=h(dateOrVisit)%> are required for all rows.

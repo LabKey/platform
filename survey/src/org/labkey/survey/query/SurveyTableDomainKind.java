@@ -15,19 +15,17 @@
  */
 package org.labkey.survey.query;
 
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
-import org.json.JSONObject;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.module.SimpleModule;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-
-import java.util.Map;
 
 /**
  * User: klum

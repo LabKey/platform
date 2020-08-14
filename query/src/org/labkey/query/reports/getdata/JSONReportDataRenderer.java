@@ -18,17 +18,7 @@ package org.labkey.query.reports.getdata;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ReportingApiQueryResponse;
-import org.labkey.api.data.ShowRows;
-import org.labkey.api.data.Sort;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.view.ViewContext;
-import org.labkey.query.controllers.QueryController;
-import org.springframework.validation.Errors;
-
-import java.util.List;
 
 /**
  * Writes a JSON response containing the column metadata and actual data rows back to the client

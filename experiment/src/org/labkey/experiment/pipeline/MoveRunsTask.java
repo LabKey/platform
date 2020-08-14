@@ -15,42 +15,40 @@
  */
 package org.labkey.experiment.pipeline;
 
-import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobException;
-import org.labkey.api.pipeline.RecordedActionSet;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.ExperimentDataHandler;
-import org.labkey.api.exp.XarSource;
-import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.XarFormatException;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.experiment.XarExporter;
-import org.labkey.experiment.LSIDRelativizer;
-import org.labkey.experiment.DataURLRelativizer;
-import org.labkey.experiment.XarReader;
-import org.labkey.experiment.api.ExpRunImpl;
-import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveType;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.exp.ExperimentDataHandler;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.XarSource;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.experiment.DataURLRelativizer;
+import org.labkey.experiment.LSIDRelativizer;
+import org.labkey.experiment.XarExporter;
+import org.labkey.experiment.XarReader;
+import org.labkey.experiment.api.ExpRunImpl;
+import org.labkey.experiment.api.ExperimentServiceImpl;
 
-import java.net.URI;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Path;
 import java.sql.BatchUpdateException;
-import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -144,7 +142,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
 
     public static class MoveRunsXarSource extends XarSource
     {
-        private static final Logger _log = Logger.getLogger(MoveRunsXarSource.class);
+        private static final Logger _log = LogManager.getLogger(MoveRunsXarSource.class);
 
         private final String _xml;
         private File _logFile;

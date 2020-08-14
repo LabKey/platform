@@ -15,7 +15,12 @@
  */
 package org.labkey.api.query;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 
 /**

@@ -16,7 +16,8 @@
 package org.labkey.api.cache;
 
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.ehcache.EhCacheProvider;
 import org.labkey.api.collections.CollectionUtils;
@@ -41,7 +42,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class CacheManager
 {
-    private static final Logger LOG = Logger.getLogger(CacheManager.class);
+    private static final Logger LOG = LogManager.getLogger(CacheManager.class);
 
     // TODO: Millisecond granularity seems misleading (EhCache uses seconds) and silly
     public static final long SECOND = DateUtils.MILLIS_PER_SECOND;

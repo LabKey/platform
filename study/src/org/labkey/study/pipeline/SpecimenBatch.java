@@ -35,7 +35,6 @@ import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.io.Serializable;
-import java.sql.SQLException;
 
 /**
  * User: brittp

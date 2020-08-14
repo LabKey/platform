@@ -16,8 +16,6 @@
 
 package org.labkey.query.sql;
 
-import org.labkey.api.query.FieldKey;
-
 /**
  * User: matthewb
  * Date: Dec 1, 2010

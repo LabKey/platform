@@ -25,9 +25,9 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.MockSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.TableInfo;
 
 import java.util.Collection;
 import java.util.Map;

@@ -15,9 +15,9 @@
  */
 package org.labkey.study.specimen.report.participant;
 
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
-import org.labkey.api.data.SimpleFilter;
 
 import java.util.List;
 

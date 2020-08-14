@@ -18,7 +18,6 @@ package org.labkey.api.admin;
 
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
-import org.labkey.api.admin.ImportException;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 

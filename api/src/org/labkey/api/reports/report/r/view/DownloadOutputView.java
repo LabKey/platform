@@ -16,20 +16,14 @@
 
 package org.labkey.api.reports.report.r.view;
 
-import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Collections;
 
 /**
  * User: Karl Lum

@@ -22,9 +22,10 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.spi.LoggingEvent;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LogEvent;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -282,9 +283,9 @@ public class AdminController extends SpringActionController
         FileListAction.class
     );
 
-    private static final Logger LOG = Logger.getLogger(AdminController.class);
+    private static final Logger LOG = LogManager.getLogger(AdminController.class);
     @SuppressWarnings("LoggerInitializedWithForeignClass")
-    private static final Logger CLIENT_LOG = Logger.getLogger(LogAction.class);
+    private static final Logger CLIENT_LOG = LogManager.getLogger(LogAction.class);
     private static final String HEAP_MEMORY_KEY = "Total Heap Memory";
 
     private static long _errorMark = 0;
@@ -711,7 +712,7 @@ public class AdminController extends SpringActionController
 
     public static class MaintenanceBean
     {
-        public String content;
+        public HtmlString content;
         public ActionURL loginURL;
     }
 
@@ -743,25 +744,25 @@ public class AdminController extends SpringActionController
             boolean startupInProgress = ModuleLoader.getInstance().isStartupInProgress();
             boolean maintenanceMode = AppProps.getInstance().isUserRequestedAdminOnlyMode();
 
-            String content = "This site is currently undergoing maintenance, only site admins may login at this time.";
+            HtmlString content = HtmlString.of("This site is currently undergoing maintenance, only site admins may login at this time.");
             if (upgradeInProgress)
             {
                 _title = "Upgrade in progress";
-                content = "Upgrade in progress: only site admins may login at this time. Your browser will be redirected when startup is complete.";
+                content = HtmlString.of("Upgrade in progress: only site admins may login at this time. Your browser will be redirected when startup is complete.");
             }
             else if (startupInProgress)
             {
                 _title = "Startup in progress";
-                content = "Startup in progress: only site admins may login at this time. Your browser will be redirected when startup is complete.";
+                content = HtmlString.of("Startup in progress: only site admins may login at this time. Your browser will be redirected when startup is complete.");
             }
             else if (maintenanceMode)
             {
                 WikiRenderingService wikiService = WikiRenderingService.get();
-                content =  wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
+                content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
             }
 
             if (content == null)
-                content = _title;
+                content = HtmlString.of(_title);
 
             ActionURL loginURL = null;
             if (getUser().isGuest())
@@ -960,7 +961,7 @@ public class AdminController extends SpringActionController
             {
                 WikiRenderingService renderingService = WikiRenderingService.get();
                 // Copy all the warnings to the top
-                String html = renderingService.getFormattedHtml(WikiRendererType.RADEOX, errorSource.toString());
+                HtmlString html = renderingService.getFormattedHtml(WikiRendererType.RADEOX, errorSource.toString());
                 views.addView(new HtmlView(html), 0);
             }
 
@@ -1010,7 +1011,7 @@ public class AdminController extends SpringActionController
 
         private final String _component;
 
-        private String _html;
+        private HtmlString _html;
         private String _errors = "";
 
         CreditsView(String creditsFilename, @Nullable String wikiSource, @NotNull Collection<String> filenames, String fileType, String foundWhere, String component, String title, String wikiSourceSearchPattern)
@@ -1030,8 +1031,8 @@ public class AdminController extends SpringActionController
             if (StringUtils.isNotEmpty(wikiSource))
             {
                 WikiRenderingService wikiService = WikiRenderingService.get();
-                String html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource);
-                _html = "<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n" + html;
+                HtmlString html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource);
+                _html = HtmlStringBuilder.of(HtmlString.unsafe("<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n")).append(html).getHtmlString();
             }
         }
 
@@ -4321,7 +4322,7 @@ public class AdminController extends SpringActionController
             FolderWriterImpl writer = new FolderWriterImpl();
             FolderExportContext ctx = new FolderExportContext(getUser(), container, PageFlowUtil.set(form.getTypes()),
                     form.getFormat(), form.isIncludeSubfolders(), form.getExportPhiLevel(), form.isShiftDates(),
-                    form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
+                    form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
 
             switch(form.getLocation())
             {
@@ -4566,7 +4567,7 @@ public class AdminController extends SpringActionController
                 // the source template folder so that the zip file can be passed to the pipeline processes.
                 FolderExportContext ctx = new FolderExportContext(getUser(), sourceContainer,
                         getRegisteredFolderWritersForImplicitExport(sourceContainer), "new", false,
-                        PHI.NotPHI, false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
+                        PHI.NotPHI, false, false, false, new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
                 FolderWriterImpl writer = new FolderWriterImpl();
                 String zipFileName = FileUtil.makeFileNameWithTimestamp(sourceContainer.getName(), "folder.zip");
                 try (ZipFile zip = new ZipFile(pipelineUnzipDir, zipFileName))
@@ -6759,7 +6760,7 @@ public class AdminController extends SpringActionController
 
                         FolderExportContext exportCtx = new FolderExportContext(getUser(), sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), "new",
                                 form.getTemplateIncludeSubfolders(), PHI.NotPHI, false, false, false,
-                                new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
+                                new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
 
                         c = ContainerManager.createContainerFromTemplate(parent, folderName, folderTitle, sourceContainer, getUser(), exportCtx);
                     }
@@ -7627,17 +7628,18 @@ public class AdminController extends SpringActionController
                     eventId = Integer.parseInt(s);
             }
             catch (NumberFormatException x) {}
-            LoggingEvent[] events = SessionAppender.getLoggingEvents(getViewContext().getRequest());
-            ArrayList<Map<String, Object>> list = new ArrayList<>(events.length);
-            for (LoggingEvent e : events)
+            Map<LogEvent, String> events = SessionAppender.getLoggingEvents(getViewContext().getRequest());
+            ArrayList<Map<String, Object>> list = new ArrayList<>(events.size());
+            for (Map.Entry<LogEvent, String> entry : events.entrySet())
             {
-                if (eventId==0 || eventId<Integer.parseInt(e.getProperty("eventId")))
+                if (eventId==0 || eventId<Integer.parseInt(entry.getValue()))
                 {
+                    LogEvent e = entry.getKey();
                     HashMap<String, Object> m = new HashMap<>();
-                    m.put("eventId", e.getProperty("eventId"));
+                    m.put("eventId", entry.getValue());
                     m.put("level", e.getLevel().toString());
-                    m.put("message", e.getMessage());
-                    m.put("timestamp", new Date(e.getTimeStamp()));
+                    m.put("message", e.getMessage().getFormattedMessage());
+                    m.put("timestamp", new Date(e.getTimeMillis()));
                     list.add(m);
                 }
             }
@@ -7753,10 +7755,10 @@ public class AdminController extends SpringActionController
             if (form.logging != on)
             {
                 if (!form.logging)
-                    Logger.getLogger(AdminController.class).info("turn session logging OFF");
+                    LogManager.getLogger(AdminController.class).info("turn session logging OFF");
                 SessionAppender.setLoggingForSession(getViewContext().getRequest(), form.logging);
                 if (form.logging)
-                    Logger.getLogger(AdminController.class).info("turn session logging ON");
+                    LogManager.getLogger(AdminController.class).info("turn session logging ON");
             }
             return true;
         }
@@ -9520,7 +9522,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            Collection<BlacklistFilter.Suspicious> list = BlacklistFilter.reportSuspicious();
+            Collection<BlockListFilter.Suspicious> list = BlockListFilter.reportSuspicious();
             StringBuilder sb = new StringBuilder();
             if (list.isEmpty())
             {
@@ -9530,7 +9532,7 @@ public class AdminController extends SpringActionController
             {
                 sb.append("<table class='table'>");
                 sb.append("<thead><th>host (user)</th><th>user-agent</th><th>count</th></thead>\n");
-                for (BlacklistFilter.Suspicious s : list)
+                for (BlockListFilter.Suspicious s : list)
                 {
                     sb.append("<tr><td>")
                             .append(PageFlowUtil.filter(s.host));

@@ -48,11 +48,11 @@
 %>
     <tr class="<%=h(plateNum % 2 == 1 ? "labkey-alternate-row" : "labkey-row")%>">
         <td style="font-weight:bold"><%= plateNum++ %></td>
-        <td align=left><%=Luc5Assay.intString(assay.getControlRange(plate, null))%></td>
-        <td align="left"><%=Luc5Assay.intString(assay.getVirusControlMean(plate, null))%> &plusmn;
-            <%=Luc5Assay.percentString(assay.getVirusControlPlusMinus(plate, null))%></td>
-        <td align=left><%=Luc5Assay.intString(assay.getCellControlMean(plate, null))%> &plusmn;
-            <%=Luc5Assay.percentString(assay.getCellControlPlusMinus(plate, null))%></td>
+        <td align=left><%=h(Luc5Assay.intString(assay.getControlRange(plate, null)))%></td>
+        <td align="left"><%=h(Luc5Assay.intString(assay.getVirusControlMean(plate, null)))%> &plusmn;
+            <%=h(Luc5Assay.percentString(assay.getVirusControlPlusMinus(plate, null)))%></td>
+        <td align=left><%=h(Luc5Assay.intString(assay.getCellControlMean(plate, null)))%> &plusmn;
+            <%=h(Luc5Assay.percentString(assay.getCellControlPlusMinus(plate, null)))%></td>
     </tr>
 <%
         }
@@ -69,17 +69,17 @@
 <table class="labkey-data-region-legacy labkey-show-borders">
     <tr class="labkey-row">
         <td style="text-align:left; font-weight: bold;">Range</td>
-        <td align=left><%=Luc5Assay.intString(assay.getControlRange(plate, null))%></td>
+        <td align=left><%=h(Luc5Assay.intString(assay.getControlRange(plate, null)))%></td>
     </tr>
     <tr class="labkey-alternate-row">
         <td style="text-align:left; font-weight: bold;">Virus Control</td>
-        <td align="left"><%=Luc5Assay.intString(assay.getVirusControlMean(plate, null))%> &plusmn;
-            <%=Luc5Assay.percentString(assay.getVirusControlPlusMinus(plate, null))%></td>
+        <td align="left"><%=h(Luc5Assay.intString(assay.getVirusControlMean(plate, null)))%> &plusmn;
+            <%=h(Luc5Assay.percentString(assay.getVirusControlPlusMinus(plate, null)))%></td>
     </tr>
     <tr class="labkey-row">
         <td style="text-align:left; font-weight: bold;">Cell Control</td>
-        <td align=left><%=Luc5Assay.intString(assay.getCellControlMean(plate, null))%> &plusmn;
-            <%=Luc5Assay.percentString(assay.getCellControlPlusMinus(plate, null))%></td>
+        <td align=left><%=h(Luc5Assay.intString(assay.getCellControlMean(plate, null)))%> &plusmn;
+            <%=h(Luc5Assay.percentString(assay.getCellControlPlusMinus(plate, null)))%></td>
     </tr>
 </table>
 <%
@@ -105,7 +105,7 @@
         for (Map.Entry<String, Object> virusEntry : virusNames.entrySet())
         {
 %>
-        <td align=left><%=Luc5Assay.intString(assay.getControlRange(plate, virusEntry.getKey()))%></td>
+        <td align=left><%=h(Luc5Assay.intString(assay.getControlRange(plate, virusEntry.getKey())))%></td>
 <%
         }
 %>
@@ -116,8 +116,8 @@
         for (Map.Entry<String, Object> virusEntry : virusNames.entrySet())
         {
 %>
-        <td align="left"><%=Luc5Assay.intString(assay.getVirusControlMean(plate, virusEntry.getKey()))%> &plusmn;
-            <%=Luc5Assay.percentString(assay.getVirusControlPlusMinus(plate, virusEntry.getKey()))%></td>
+        <td align="left"><%=h(Luc5Assay.intString(assay.getVirusControlMean(plate, virusEntry.getKey())))%> &plusmn;
+            <%=h(Luc5Assay.percentString(assay.getVirusControlPlusMinus(plate, virusEntry.getKey())))%></td>
 <%
         }
 %>
@@ -128,8 +128,8 @@
         for (Map.Entry<String, Object> virusEntry : virusNames.entrySet())
         {
 %>
-        <td align=left><%=Luc5Assay.intString(assay.getCellControlMean(plate, virusEntry.getKey()))%> &plusmn;
-            <%=Luc5Assay.percentString(assay.getCellControlPlusMinus(plate, virusEntry.getKey()))%></td>
+        <td align=left><%=h(Luc5Assay.intString(assay.getCellControlMean(plate, virusEntry.getKey())))%> &plusmn;
+            <%=h(Luc5Assay.percentString(assay.getCellControlPlusMinus(plate, virusEntry.getKey())))%></td>
 <%
         }
 %>

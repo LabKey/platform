@@ -1,7 +1,8 @@
 package org.labkey.api.security;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.labkey.api.data.AES;
 import org.labkey.api.settings.AppProps;
@@ -10,7 +11,7 @@ import java.util.Map;
 
 public class ConfigurationSettings
 {
-    private static final Logger LOG = Logger.getLogger(ConfigurationSettings.class);
+    private static final Logger LOG = LogManager.getLogger(ConfigurationSettings.class);
 
     private final Map<String, Object> _standardSettings;
     private final Map<String, Object> _properties;

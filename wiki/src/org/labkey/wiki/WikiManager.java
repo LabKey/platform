@@ -16,7 +16,8 @@
 package org.labkey.wiki;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -96,7 +97,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class WikiManager implements WikiService
 {
-    private static final Logger LOG = Logger.getLogger(WikiManager.class);
+    private static final Logger LOG = LogManager.getLogger(WikiManager.class);
     private static final WikiManager _instance = new WikiManager();
 
     public static final WikiRendererType DEFAULT_WIKI_RENDERER_TYPE = WikiRendererType.HTML;
@@ -532,7 +533,7 @@ public class WikiManager implements WikiService
     }
 
 
-    public String updateAttachments(User user, Wiki wiki, List<String> deleteNames, List<AttachmentFile> files)
+    public String updateAttachments(User user, Wiki wiki, @Nullable List<String> deleteNames, @Nullable List<AttachmentFile> files)
     {
         AttachmentService attsvc = getAttachmentService();
         boolean changes = false;
@@ -942,6 +943,23 @@ public class WikiManager implements WikiService
         {
             deleteWiki(user, c, wiki, true);
         }
+    }
+
+    @Override
+    public @Nullable AttachmentParent getAttachmentParent(Container c, User user, String wikiName)
+    {
+        Wiki wiki = WikiSelectManager.getWiki(c, wikiName);
+        if (wiki != null)
+            return wiki.getAttachmentParent();
+        return null;
+    }
+
+    @Override
+    public void updateAttachments(Container c, User user, String wikiName, @Nullable List<AttachmentFile> attachmentFiles, @Nullable List<String> deleteAttachmentNames)
+    {
+        Wiki wiki = WikiSelectManager.getWiki(c, wikiName);
+        if (wiki != null)
+            updateAttachments(user, wiki, deleteAttachmentNames, attachmentFiles);
     }
 
     public static class TestCase extends Assert

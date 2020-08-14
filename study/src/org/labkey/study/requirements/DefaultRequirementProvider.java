@@ -16,15 +16,27 @@
 
 package org.labkey.study.requirements;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.security.*;
+import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.study.StudySchema;
 
-import java.util.*;
 import java.lang.reflect.Array;
-import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp

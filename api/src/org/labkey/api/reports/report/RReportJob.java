@@ -18,7 +18,8 @@ package org.labkey.api.reports.report;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -51,7 +52,7 @@ import static org.labkey.api.security.SecurityManager.TRANSFORM_SESSION_ID;
  */
 public class RReportJob extends PipelineJob implements Serializable
 {
-    private static final Logger _log = Logger.getLogger(RReportJob.class);
+    private static final Logger _log = LogManager.getLogger(RReportJob.class);
     private static final ThreadLocal<String> _jobIdentifier = new ThreadLocal<>();
 
     public static final String PROCESSING_STATUS = "Processing";

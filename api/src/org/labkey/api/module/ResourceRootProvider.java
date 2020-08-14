@@ -16,9 +16,9 @@
 package org.labkey.api.module;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.util.Path;
 
 import java.util.Collection;

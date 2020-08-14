@@ -50,7 +50,7 @@
     String renderId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
     String filterRenderId = "participant-filter-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
-<style type="text/css" media="<%=isPrint ? "screen" : "print"%>">
+<style type="text/css" media="<%=h(isPrint ? "screen" : "print")%>">
     #headerpanel,
     div.labkey-app-bar,
     .discussion-toggle,
@@ -88,8 +88,8 @@
     }
 </style>
 
-<div id="<%=filterRenderId%>" class="report-filter-window-outer" style="position:<%=bean.isAllowOverflow() ? "absolute" : "absolute"%>;"></div>
-<div id="<%=renderId%>"></div>
+<div id="<%=h(filterRenderId)%>" class="report-filter-window-outer" style="position:<%=h(bean.isAllowOverflow() ? "absolute" : "absolute")%>;"></div>
+<div id="<%=h(renderId)%>"></div>
 <script type="text/javascript">
 
     Ext4.onReady(function(){
@@ -99,9 +99,9 @@
             subjectVisitColumn: <%=q(org.labkey.api.study.StudyService.get().getSubjectVisitColumnName(getContainer()))%>,
             subjectNoun     : {singular : <%=q(s.getSubjectNounSingular())%>, plural : <%=q(s.getSubjectNounPlural())%>, columnName: <%=q(s.getSubjectColumnName())%>},
             visitBased      : <%=s.getTimepointType().isVisitBased()%>,
-            renderTo        : '<%= renderId %>',
-            filterDiv       : '<%=filterRenderId%>',
-            id              : '<%= bean.getComponentId() %>',
+            renderTo        : <%=q(renderId)%>,
+            filterDiv       : <%=q(filterRenderId)%>,
+            id              : <%=q(bean.getComponentId())%>,
             reportId        : <%=q(reportId)%>,
             allowCustomize  : true,
             allowShare      : <%=c.hasPermission(user, ShareReportPermission.class)%>,

@@ -28,7 +28,7 @@ import java.util.TreeMap;
 
 public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlString, BUILDER extends DisplayElementBuilder<T, BUILDER>> implements HasHtmlString
 {
-    String text;
+    HtmlString html;
     String href;
     String id;
     String onClick;

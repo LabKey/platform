@@ -19,7 +19,18 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.EditSpecimenDataPermission;
-import org.labkey.study.security.permissions.*;
+import org.labkey.study.security.permissions.LockSpecimensPermission;
+import org.labkey.study.security.permissions.ManageDisplaySettingsPermission;
+import org.labkey.study.security.permissions.ManageNewRequestFormPermission;
+import org.labkey.study.security.permissions.ManageNotificationsPermission;
+import org.labkey.study.security.permissions.ManageRequestRequirementsPermission;
+import org.labkey.study.security.permissions.ManageRequestSettingsPermission;
+import org.labkey.study.security.permissions.ManageRequestStatusesPermission;
+import org.labkey.study.security.permissions.ManageRequestsPermission;
+import org.labkey.study.security.permissions.ManageSpecimenActorsPermission;
+import org.labkey.study.security.permissions.ManageStudyPermission;
+import org.labkey.study.security.permissions.RequestSpecimensPermission;
+import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
 
 /*
 * User: Dave

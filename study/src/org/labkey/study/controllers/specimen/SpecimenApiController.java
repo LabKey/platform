@@ -17,23 +17,46 @@ package org.labkey.study.controllers.specimen;
 
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
-import org.labkey.api.security.*;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiVersion;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.action.*;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.data.Container;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.importer.RequestabilityManager;
-import org.labkey.study.specimen.settings.RepositorySettings;
-import org.labkey.study.security.permissions.RequestSpecimensPermission;
-import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.study.model.*;
+import org.labkey.study.importer.RequestabilityManager;
+import org.labkey.study.model.AdditiveType;
+import org.labkey.study.model.DerivativeType;
+import org.labkey.study.model.LocationImpl;
+import org.labkey.study.model.PrimaryType;
+import org.labkey.study.model.SpecimenRequest;
+import org.labkey.study.model.SpecimenRequestStatus;
+import org.labkey.study.model.SpecimenTypeSummary;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.Vial;
+import org.labkey.study.security.permissions.ManageRequestsPermission;
+import org.labkey.study.security.permissions.RequestSpecimensPermission;
+import org.labkey.study.specimen.settings.RepositorySettings;
 import org.springframework.validation.BindException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 /*
  * User: brittp

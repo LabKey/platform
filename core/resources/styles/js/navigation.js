@@ -379,13 +379,13 @@
         // if toggle element is in left half of screen then left align the menu
         var inLeftHemisphere = (me.offset().left + 100) < (win.width() / 2);
 
-        if (spaceDown < 0) {
-            if (spaceUp > 0 || spaceUp > spaceDown) {
-                me.removeClass('dropdown').addClass('dropup');
-            } else {
-                me.removeClass('dropup').addClass('dropdown');
-            }
+        // Issue 41102 - See if we have enough space below to render the whole menu
+        if (spaceDown < 0 && spaceUp > 0) {
+            // We've got enough space to render up, so use it
+            me.removeClass('dropdown').addClass('dropup');
         } else {
+            // Whether we have enough space to render down or not, expand downwards because the whole page will extend
+            // to let the user get to the rest of the menu items as needed
             me.removeClass('dropup').addClass('dropdown');
         }
 

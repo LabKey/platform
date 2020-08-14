@@ -34,6 +34,8 @@ import java.util.Map;
  */
 public interface InventoryService
 {
+    String PRODUCT_ID = "freezerManager";
+
     static void setInstance(InventoryService impl)
     {
         ServiceRegistry.get().registerService(InventoryService.class, impl);

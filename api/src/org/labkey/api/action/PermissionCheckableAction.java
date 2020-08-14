@@ -165,7 +165,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             methodsAllowed = methodsAllowedAnnotation.value();
         if (Arrays.stream(methodsAllowed).noneMatch(s -> s.equals(method)))
         {
-            throw new BadRequestException(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed: " + method, null);
+            throw new BadRequestException("Method Not Allowed: " + method, HttpServletResponse.SC_METHOD_NOT_ALLOWED, null);
         }
 
         boolean requiresSiteAdmin = actionClass.isAnnotationPresent(RequiresSiteAdmin.class);

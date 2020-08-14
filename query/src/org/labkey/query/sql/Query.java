@@ -19,7 +19,7 @@ package org.labkey.query.sql;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -248,7 +248,7 @@ public class Query
         if (null == _querySource)
             throw new IllegalStateException("SQL has not been specified");
 
-        Logger.getLogger(Query.class).debug("Query.parse()\n" + _querySource);
+        LogManager.getLogger(Query.class).debug("Query.parse()\n" + _querySource);
         _parse(_querySource, skipSuggestedColumns);
         
         for (QueryException e : _parseErrors)
@@ -644,7 +644,7 @@ public class Query
         }
         catch (RuntimeException x)
         {
-            Logger.getLogger(Query.class).error("error", x);
+            LogManager.getLogger(Query.class).error("error", x);
             throw Query.wrapRuntimeException(x, _querySource);
         }
     }

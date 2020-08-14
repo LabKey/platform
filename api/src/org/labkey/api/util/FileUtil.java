@@ -19,7 +19,8 @@ package org.labkey.api.util;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -63,7 +64,7 @@ import java.util.stream.Stream;
  */
 public class FileUtil
 {
-    private static final Logger LOG = Logger.getLogger(FileUtil.class);
+    private static final Logger LOG = LogManager.getLogger(FileUtil.class);
 
     private static File _tempDir = null;
 

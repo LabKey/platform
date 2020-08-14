@@ -16,7 +16,8 @@
 package org.labkey.api.exp.api;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -53,7 +54,7 @@ import java.util.Map;
 
 public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 {
-    protected static final Logger LOG = Logger.getLogger(DefaultExperimentSaveHandler.class);
+    protected static final Logger LOG = LogManager.getLogger(DefaultExperimentSaveHandler.class);
 
     @Override
     public void beforeSave(ViewContext context, JSONObject rootJson, ExpProtocol protocol)
