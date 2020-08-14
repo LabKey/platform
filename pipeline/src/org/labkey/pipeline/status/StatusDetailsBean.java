@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -166,7 +167,10 @@ public class StatusDetailsBean
     // skipping offset characters and closing the PrintWriter when complete.
     private static long transferTo(StringBuilder out, Path p, long offset) throws IOException
     {
-        try (BufferedReader br = Files.newBufferedReader(p, StringUtilsLabKey.DEFAULT_CHARSET);
+        // Pipeline log files are written in platform default encoding.
+        // See PipelineJob.createPrintWriter() and PipelineJob.OutputLogger.write()
+        // Use platform default encoding when reading the log file.
+        try (BufferedReader br = Files.newBufferedReader(p, Charset.defaultCharset());
              PrintWriter pw = new PrintWriter(new StringBuilderWriter(out)))
         {
             if (offset > 0)
