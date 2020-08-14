@@ -46,7 +46,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Job;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -1175,7 +1174,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
         try
         {
-            return new PrintWriter(new BufferedWriter(new FileWriter(outputFile, StringUtilsLabKey.DEFAULT_CHARSET, append)));
+            return new PrintWriter(new BufferedWriter(new FileWriter(outputFile, append)));
         }
         catch (IOException e)
         {
@@ -1513,7 +1512,7 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             String formattedDate = DateUtil.formatDateTime(new Date(), datePattern);
 
-            try (PrintWriter writer = new PrintWriter(new FileWriter(_file, StringUtilsLabKey.DEFAULT_CHARSET, true)))
+            try (PrintWriter writer = new PrintWriter(new FileWriter(_file, true)))
             {
                 var line = formattedDate + " " +
                         String.format("%-5s", level) +
