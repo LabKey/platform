@@ -124,7 +124,7 @@
             String LDAPDomain = AuthenticationManager.getLdapDomain();
             if (LDAPDomain != null && LDAPDomain.length() > 0 && !AuthenticationManager.ALL_DOMAINS.equals(LDAPDomain))
             {
-                %>, non-<%=LDAPDomain%><%
+                %>, non-<%=h(LDAPDomain)%><%
             }
             %> users</label><br><br>
         </td></tr>

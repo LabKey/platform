@@ -34,7 +34,7 @@
 Note that only the latest version of each wiki page is copied.    
 </td></tr>
 <tr><td>&nbsp;</td></tr>
-<%=text(bean.folderList)%>
+<%=bean.folderList%>
 </table><br>
 
 <table>
