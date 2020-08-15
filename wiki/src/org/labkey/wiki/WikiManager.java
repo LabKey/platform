@@ -533,7 +533,7 @@ public class WikiManager implements WikiService
     }
 
 
-    public String updateAttachments(User user, Wiki wiki, List<String> deleteNames, List<AttachmentFile> files)
+    public String updateAttachments(User user, Wiki wiki, @Nullable List<String> deleteNames, @Nullable List<AttachmentFile> files)
     {
         AttachmentService attsvc = getAttachmentService();
         boolean changes = false;
@@ -943,6 +943,23 @@ public class WikiManager implements WikiService
         {
             deleteWiki(user, c, wiki, true);
         }
+    }
+
+    @Override
+    public @Nullable AttachmentParent getAttachmentParent(Container c, User user, String wikiName)
+    {
+        Wiki wiki = WikiSelectManager.getWiki(c, wikiName);
+        if (wiki != null)
+            return wiki.getAttachmentParent();
+        return null;
+    }
+
+    @Override
+    public void updateAttachments(Container c, User user, String wikiName, @Nullable List<AttachmentFile> attachmentFiles, @Nullable List<String> deleteAttachmentNames)
+    {
+        Wiki wiki = WikiSelectManager.getWiki(c, wikiName);
+        if (wiki != null)
+            updateAttachments(user, wiki, deleteAttachmentNames, attachmentFiles);
     }
 
     public static class TestCase extends Assert

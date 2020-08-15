@@ -948,15 +948,14 @@ public class AnnouncementsController extends SpringActionController
             return new VBox(threadView, respondView);
         }
 
-
         @Override
         public void addNavTrail(NavTree root)
         {
             new BeginAction(getViewContext()).addNavTrail(root);
             if (_parent != null)
             {
-                root.addChild(_parent.getTitle(), "thread.view?rowId=" + _parent.getRowId())
-                        .addChild("Respond to " + getSettings().getConversationName());
+                root.addChild(_parent.getTitle(), getThreadURL(getContainer(), _parent.getRowId()));
+                root.addChild("Respond to " + getSettings().getConversationName());
             }
          }
     }
@@ -1283,7 +1282,7 @@ public class AnnouncementsController extends SpringActionController
             if (null != urlHelper)
                 throw new RedirectException(urlHelper);
             else
-                throw new RedirectException(new ActionURL(ThreadAction.class, getContainer()).addParameter("rowId",ann.getRowId()));
+                throw new RedirectException(getThreadURL(getContainer(), ann.getParent(), ann.getRowId()));
         }
 
         @Override
@@ -1296,11 +1295,10 @@ public class AnnouncementsController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             new BeginAction(getViewContext()).addNavTrail(root);
-            root.addChild(_ann.getTitle(), "thread.view?rowId=" + _ann.getRowId());
-            root.addChild("Respond to " + getSettings().getConversationName());
+            root.addChild(_ann.getTitle(), getThreadURL(getContainer(), _ann.getParent(), _ann.getRowId()));
+            root.addChild("Edit Response to " + getSettings().getConversationName());
         }
     }
-
 
     public static ActionURL getThreadURL(Container c, String threadId, int rowId)
     {
@@ -1310,6 +1308,13 @@ public class AnnouncementsController extends SpringActionController
         return url;
     }
 
+    // Note: ThreadAction expects that rowId is a top-level message, not a response
+    public static ActionURL getThreadURL(Container c, int rowId)
+    {
+        ActionURL url = new ActionURL(ThreadAction.class, c);
+        url.addParameter("rowId", rowId);
+        return url;
+    }
 
     @RequiresPermission(ReadPermission.class)
     public class ThreadAction extends SimpleViewAction<AnnouncementForm>

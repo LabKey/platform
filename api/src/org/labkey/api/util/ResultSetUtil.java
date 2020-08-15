@@ -26,6 +26,7 @@ import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.data.CachedResultSets;
 import org.labkey.api.data.ResultSetMetaDataImpl;
+import org.labkey.api.query.AliasManager;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -188,26 +189,13 @@ public class ResultSetUtil
     }
 
 
-    /* copied from AliasManager, should have shared JS XML specific versions */
-    private static boolean isLegalNameChar(char ch, boolean first)
-    {
-        if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z' || ch == '_')
-            return true;
-        if (first)
-            return false;
-        if (ch >= '0' && ch <= '9')
-            return true;
-        return false;
-    }
-
-
     public static String legalNameFromName(String str)
     {
         StringBuilder buf = null;
 
         for (int i = 0; i < str.length(); i++)
         {
-            if (isLegalNameChar(str.charAt(i), i == 0))
+            if (AliasManager.isLegalNameChar(str.charAt(i), i == 0))
                 continue;
             if (buf == null)
             {
