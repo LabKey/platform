@@ -71,8 +71,15 @@ public interface WikiService
 
     /**
      * Update the content of a wiki
+     *
+     * @param wikiName The name of the wiki to update
+     * @param content The new String content
+     * @param newVersionThreshold The interval in milliseconds since the last update that will trigger a new wiki version
+     *                            to be created. This can be useful when frequent updates are made but we want to avoid
+     *                            the proliferation of individual wiki versions.
+     * @return
      */
-    boolean updateContent(Container c, User user, String wikiName, String content);
+    boolean updateContent(Container c, User user, String wikiName, String content, @Nullable Integer newVersionThreshold);
 
     void deleteWiki(Container c, User user, String wikiName, boolean deleteSubtree) throws SQLException;
 
