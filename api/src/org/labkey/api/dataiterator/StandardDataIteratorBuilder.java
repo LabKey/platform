@@ -19,6 +19,7 @@ package org.labkey.api.dataiterator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -60,7 +61,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
     DataIteratorContext _context;
     final Container _c;
     final User _user;
-
+    final CaseInsensitiveHashSet dontRequire = new CaseInsensitiveHashSet();
     ValidatorIterator _it;
 
 
@@ -88,6 +89,14 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
         _useImportAliases = context.getInsertOption().useImportAliases;
     }
 
+    /*
+     * This is a way to indicate that SDIB should ignore the required constraint on a column.
+     * This can be used if the required column will provided by a later step in the DI.
+     */
+    public void addDoNotRequireColumn(String name)
+    {
+        dontRequire.add(name);
+    }
 
     public BatchValidationException getErrors()
     {
@@ -251,6 +260,8 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
 
     boolean isRequiredForInsert(@NotNull ColumnInfo col, @Nullable DomainProperty dp)
     {
+        if (dontRequire.contains(col.getName()))
+            return false;
         return col.isRequiredForInsert(dp);
     }
 }

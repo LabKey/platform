@@ -90,7 +90,7 @@ public class StatementDataIterator extends AbstractDataIterator
     CPUTimer _elapsed = new CPUTimer("StatementDataIterator@" + System.identityHashCode(this) + ".elapsed");
     CPUTimer _execute = new CPUTimer("StatementDataIterator@" + System.identityHashCode(this) + ".execute()");
 
-    protected StatementDataIterator(DataIterator data, DataIteratorContext context, ParameterMapStatement... maps)
+    public StatementDataIterator(DataIterator data, DataIteratorContext context, ParameterMapStatement... maps)
     {
         super(context);
 
@@ -104,7 +104,7 @@ public class StatementDataIterator extends AbstractDataIterator
     }
 
 
-    void setUseAsynchronousExecute(boolean useAsynchronousExecute)
+    public void setUseAsynchronousExecute(boolean useAsynchronousExecute)
     {
         _useAsynchronousExecute = useAsynchronousExecute && null == _rowIdIndex && null == _objectIdIndex && null == _objectUriIndex;
     }
