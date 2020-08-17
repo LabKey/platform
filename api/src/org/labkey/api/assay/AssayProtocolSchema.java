@@ -27,7 +27,25 @@ import org.labkey.api.assay.query.BatchListQueryView;
 import org.labkey.api.assay.query.ResultsQueryView;
 import org.labkey.api.assay.query.RunListQueryView;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
@@ -762,6 +780,30 @@ public abstract class AssayProtocolSchema extends AssaySchema
         col.setURL(fkse.remapFieldKeys(null, map));
     }
 
+    /**
+     * Transform an illegal name into a safe version. All non-letter characters
+     * become underscores, and the first character must be a letter. Retain this implementation for backwards
+     * compatibility with copied to study column names. See issue 41030.
+     */
+    private String sanitizeName(String originalName)
+    {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true; // first character is special
+        for (int i = 0; i < originalName.length(); i++)
+        {
+            char c = originalName.charAt(i);
+            if (AliasManager.isLegalNameChar(c, first))
+            {
+                sb.append(c);
+                first = false;
+            }
+            else if (!first)
+            {
+                sb.append('_');
+            }
+        }
+        return sb.toString();
+    }
 
     /**
      * Adds columns to an assay data table, providing a link to any datasets that have
@@ -799,7 +841,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
                 String studyName = assayDataset.getStudy().getLabel();
                 if (studyName == null)
                     continue; // No study in that folder
-                String studyColumnName = "copied_to_" + AliasManager.legalNameFromName(studyName);
+                String studyColumnName = "copied_to_" + sanitizeName(studyName);
 
                 // column names must be unique. Prevent collisions
                 while (usedColumnNames.contains(studyColumnName))

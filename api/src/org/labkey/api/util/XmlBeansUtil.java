@@ -15,7 +15,12 @@
  */
 package org.labkey.api.util;
 
-import org.apache.xmlbeans.*;
+import org.apache.xmlbeans.XmlCursor;
+import org.apache.xmlbeans.XmlError;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
+import org.apache.xmlbeans.XmlOptions;
+import org.apache.xmlbeans.XmlTokenSource;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;

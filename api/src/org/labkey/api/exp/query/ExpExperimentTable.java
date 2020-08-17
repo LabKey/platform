@@ -18,8 +18,8 @@ package org.labkey.api.exp.query;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 
 public interface ExpExperimentTable extends ExpTable<ExpExperimentTable.Column>
 {

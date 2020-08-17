@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -30,7 +31,6 @@
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page import="org.labkey.study.view.StudySummaryWebPartFactory" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudySummaryWebPartFactory.StudySummaryBean> me = (JspView<StudySummaryWebPartFactory.StudySummaryBean>) HttpView.currentView();
@@ -41,7 +41,7 @@
 
     if (null == bean.getStudy())
     {
-        out.println("<p>This folder does not contain a study.</p>");
+        out.println(unsafe("<p>This folder does not contain a study.</p>"));
         if (c.hasPermission(user, AdminPermission.class))
         {
             ActionURL createURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);

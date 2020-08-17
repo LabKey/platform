@@ -18,7 +18,8 @@ package org.labkey.study;
 
 import org.apache.commons.collections4.bag.HashBag;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -188,7 +189,7 @@ import java.util.stream.Collectors;
 
 public class StudyModule extends SpringModule implements SearchService.DocumentProvider
 {
-    private static final Logger LOG = Logger.getLogger(StudyModule.class);
+    private static final Logger LOG = LogManager.getLogger(StudyModule.class);
 
     public static final String MODULE_NAME = "Study";
 

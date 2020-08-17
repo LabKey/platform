@@ -16,8 +16,8 @@
 
 package org.labkey.api.audit.query;
 
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DisplayColumnFactory;
 
 /**
  * User: Karl Lum

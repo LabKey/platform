@@ -25,9 +25,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.view.ViewForm;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 public class DomainForm extends ViewForm
 {
     private Domain _domain;

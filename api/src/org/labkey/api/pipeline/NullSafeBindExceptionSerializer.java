@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.labkey.api.action.NullSafeBindException;
-import org.labkey.api.util.Pair;
 
 import java.io.IOException;
 

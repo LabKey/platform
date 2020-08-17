@@ -142,7 +142,7 @@
                         SelectBuilder parentBuilder = new SelectBuilder()
                             .name("parent")
                             .id(ID_PREFIX + "parent")
-                            .style("width:600px");
+                            .addStyle("width:600px");
                         parentBuilder.addOption(new OptionBuilder().value("-1").label("[none]").selected(model.getParent() == -1).build());
                         model.getPossibleParents().forEach(pp->{
                             StringBuilder indent = new StringBuilder();

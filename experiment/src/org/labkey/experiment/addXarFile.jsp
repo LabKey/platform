@@ -27,4 +27,4 @@
     <%= button("Upload").submit(true) %>
 </labkey:form>
 </p>
-<p>To import a <em>.xar</em> or <em>.xar.xml</em> file that is already on the server's disk, please use the <a href="<%=h(urlProvider(PipelineUrls.class).urlSetup(getContainer()))%>">Data Pipeline</a> instead.</p>
+<p>To import a <em>.xar</em> or <em>.xar.xml</em> file that is already on the server's disk, please use the <a href="<%=h(urlProvider(PipelineUrls.class).urlBrowse(getContainer()))%>">Data Pipeline</a> instead.</p>

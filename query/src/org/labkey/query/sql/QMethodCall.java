@@ -17,13 +17,17 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MethodInfo;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
-import org.labkey.api.data.*;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.ListIterator;
 
 

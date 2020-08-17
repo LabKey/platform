@@ -18,11 +18,9 @@ package org.labkey.query.olap;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
-import org.labkey.api.module.Module;
 import org.labkey.api.view.ActionURL;
 import org.labkey.query.controllers.OlapController;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 /**

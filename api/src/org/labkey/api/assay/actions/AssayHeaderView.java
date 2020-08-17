@@ -16,23 +16,26 @@
 
 package org.labkey.api.assay.actions;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayHeaderLinkProvider;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.security.DesignAssayPermission;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: jeckels

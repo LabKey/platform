@@ -15,7 +15,8 @@
  */
 package org.labkey.pipeline.mule;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.pipeline.PipelineJob;
@@ -41,7 +42,7 @@ import java.util.Set;
 
 public class PipelineJobRunnerRemoteExecution implements Callable, ResumableDescriptor
 {
-    private static Logger _log = Logger.getLogger(PipelineJobRunnerRemoteExecution.class);
+    private static Logger _log = LogManager.getLogger(PipelineJobRunnerRemoteExecution.class);
 
     public PipelineJobRunnerRemoteExecution()
     {

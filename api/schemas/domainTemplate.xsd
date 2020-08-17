@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema
-    xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    xmlns:dat="http://labkey.org/data/xml"
-    xmlns:t="http://labkey.org/data/xml/domainTemplate"
-    xmlns="http://labkey.org/data/xml/domainTemplate"
-    targetNamespace="http://labkey.org/data/xml/domainTemplate"
-    elementFormDefault="qualified"
-    attributeFormDefault="unqualified">
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:dat="http://labkey.org/data/xml"
+        xmlns="http://labkey.org/data/xml/domainTemplate"
+        targetNamespace="http://labkey.org/data/xml/domainTemplate"
+        elementFormDefault="qualified"
+        attributeFormDefault="unqualified">
 
     <xs:import namespace="http://labkey.org/data/xml" schemaLocation="tableInfo.xsd"/>
 

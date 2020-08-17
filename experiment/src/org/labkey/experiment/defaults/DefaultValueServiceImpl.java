@@ -16,7 +16,7 @@
 package org.labkey.experiment.defaults;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -158,7 +158,7 @@ public class DefaultValueServiceImpl implements DefaultValueService
                     }
                     catch (ConversionException e)
                     {
-                        Logger.getLogger(DefaultValueServiceImpl.class).warn("Unable to convert default value '" + value + "' for property " + property.getName() + ", dropping it");
+                        LogManager.getLogger(DefaultValueServiceImpl.class).warn("Unable to convert default value '" + value + "' for property " + property.getName() + ", dropping it");
                     }
                 }
             }

@@ -20,7 +20,8 @@
 <%@ page import="org.labkey.api.issues.IssueDetailHeaderLinkProvider" %>
 <%@ page import="org.labkey.api.issues.IssuesListDefService" %>
 <%@ page import="org.labkey.api.security.User"%>
-<%@ page import="org.labkey.api.security.permissions.InsertPermission"%>
+<%@ page import="org.labkey.api.security.UserManager"%>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -44,7 +45,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.stream.Stream" %>
-<%@ page import="org.labkey.api.security.UserManager" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -101,7 +102,7 @@
     for (Issue.Comment comment : commentLinkedList)
     {
         // Determine if the comment has attachments
-        hasAttachments = hasAttachments || !bean.renderAttachments(context, comment).isEmpty();
+        hasAttachments = hasAttachments || !HtmlString.isEmpty(bean.renderAttachments(context, comment));
     }
 
     String commentTextStr = "The related " + names.singularName.toLowerCase() + " has " + StringUtilsLabKey.pluralize(commentCount, "comment");
@@ -114,7 +115,7 @@
     relatedIssues.append(q(issueDef.getName())).append(",");
 
     relatedIssues.append("{");
-    relatedIssues.append("callbackURL : ").append(bean.getCallbackURL() == null ? null : q(bean.getCallbackURL()));
+    relatedIssues.append("callbackURL : ").append(q(bean.getCallbackURL() == null ? null : bean.getCallbackURL()));
     relatedIssues.append(", body :").append(q(commentTextStr));
     relatedIssues.append(", title :").append(q(issue.getTitle()));
     relatedIssues.append(", skipPost :").append(true);
@@ -229,25 +230,25 @@
 <table class="issue-fields" style="width:75%; max-width: 90vw">
     <tr>
         <td valign="top"><table class="lk-fields-table">
-            <tr><%=text(bean.renderLabel(bean.getLabel("Status", false)))%><td><%=h(issue.getStatus())%></td></tr><%
+            <tr><%=bean.renderLabel(bean.getLabel("Status", false))%><td><%=h(issue.getStatus())%></td></tr><%
             for (DomainProperty prop : extraColumns)
             {%>
-                <%=text(bean.renderColumn(prop, getViewContext()))%><%
+                <%=bean.renderColumn(prop, getViewContext())%><%
             }%>
 
             <%=text(bean.renderAdditionalDetailInfo())%>
         </table></td>
         <td valign="top"><table class="lk-fields-table">
-            <tr><%=text(bean.renderLabel(bean.getLabel("Opened", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=text(UserManager.getUserDetailsHTMLLink(c, user, issue.getCreatedBy()))%></td></tr>
-            <tr><%=text(bean.renderLabel(bean.getLabel("Changed", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=text(UserManager.getUserDetailsHTMLLink(c, user, issue.getModifiedBy()))%></td></tr>
-            <tr><%=text(bean.renderLabel(bean.getLabel("Resolved", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " + UserManager.getUserDetailsHTMLLink(c, user, issue.getResolvedBy()) : "")%></td></tr>
-            <tr><%=text(bean.renderLabel(bean.getLabel("Resolution", false)))%><td><%=h(issue.getResolution())%></td></tr><%
+            <tr><%=bean.renderLabel(bean.getLabel("Opened", false))%><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=text(UserManager.getUserDetailsHTMLLink(c, user, issue.getCreatedBy()))%></td></tr>
+            <tr><%=bean.renderLabel(bean.getLabel("Changed", false))%><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=text(UserManager.getUserDetailsHTMLLink(c, user, issue.getModifiedBy()))%></td></tr>
+            <tr><%=bean.renderLabel(bean.getLabel("Resolved", false))%><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " + UserManager.getUserDetailsHTMLLink(c, user, issue.getResolvedBy()) : "")%></td></tr>
+            <tr><%=bean.renderLabel(bean.getLabel("Resolution", false))%><td><%=h(issue.getResolution())%></td></tr><%
             if (bean.isVisible("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
             {%>
-            <tr><%=text(bean.renderLabel("Duplicate"))%><td><%
+            <tr><%=bean.renderLabel(HtmlString.of("Duplicate"))%><td><%
                 if (bean.isVisible("duplicate"))
                 {%>
-                <%=text(bean.writeInput("duplicate", String.valueOf(issue.getDuplicate()), 10))%><%
+                <%=bean.writeInput("duplicate", String.valueOf(issue.getDuplicate()), 10)%><%
                 }
                 else
                 {%>
@@ -257,28 +258,28 @@
             }
             if (!issue.getDuplicates().isEmpty())
             {%>
-            <tr><%=text(bean.renderLabel(bean.getLabel("Duplicates", false)))%><td><%=bean.renderDuplicates(issue.getDuplicates())%></td></tr><%
+            <tr><%=bean.renderLabel(bean.getLabel("Duplicates", false))%><td><%=bean.renderDuplicates(issue.getDuplicates())%></td></tr><%
             }
             if (!issue.getRelatedIssues().isEmpty())
             {%>
-            <tr><%=text(bean.renderLabel(bean.getLabel("Related", false)))%><td><%=bean.renderRelatedIssues(issue.getRelatedIssues())%></td></tr><%
+            <tr><%=bean.renderLabel(bean.getLabel("Related", false))%><td><%=bean.renderRelatedIssues(issue.getRelatedIssues())%></td></tr><%
             }
             for (DomainProperty prop : column1Props)
             {%>
-            <%=text(bean.renderColumn(prop, getViewContext()))%><%
+            <%=bean.renderColumn(prop, getViewContext())%><%
             }%>
         </table></td>
         <td valign="top" width="33%"><table class="lk-fields-table">
-            <tr><%=text(bean.renderLabel(bean.getLabel("Closed", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getClosed()))%><%= text(issue.getClosedBy() != null ? " by " + UserManager.getUserDetailsHTMLLink(c, user, issue.getClosedBy()) : "" )%></td></tr>
+            <tr><%=bean.renderLabel(bean.getLabel("Closed", false))%><td nowrap="true"><%=h(bean.writeDate(issue.getClosed()))%><%= text(issue.getClosedBy() != null ? " by " + UserManager.getUserDetailsHTMLLink(c, user, issue.getClosedBy()) : "" )%></td></tr>
             <%
                 if (hasUpdatePerms)
                 {%>
-            <tr><%=text(bean.renderLabel(bean.getLabel("Notify", false)))%><td><%=bean.getNotifyList()%></td></tr><%
+            <tr><%=bean.renderLabel(bean.getLabel("Notify", false))%><td><%=bean.getNotifyList()%></td></tr><%
             }
 
             for (DomainProperty prop : column2Props)
             {%>
-            <%=text(bean.renderColumn(prop, getViewContext()))%><%
+            <%=bean.renderColumn(prop, getViewContext())%><%
             }%>
         </table></td>
     </tr>
@@ -314,7 +315,7 @@ if (!issue.getComments().contains(comment))
             {%>
         <div style="font-weight:bold;">Related # <%=comment.getIssue().getIssueId()%> </div><%
             }%>
-        <%=comment.getComment()%>
+        <%=comment.getHtmlComment()%>
         <%=bean.renderAttachments(context, comment)%>
         <%if (j != commentLinkedList.size() - 1) {%>
         <hr>
@@ -322,6 +323,6 @@ if (!issue.getComments().contains(comment))
     </div>
 <% }
 if (bean.getCallbackURL() != null) { %>
-    <input type="hidden" name="callbackURL" value="<%=bean.getCallbackURL()%>"/>
+    <input type="hidden" name="callbackURL" value="<%=h(bean.getCallbackURL())%>"/>
 <% } %>
 </labkey:panel>

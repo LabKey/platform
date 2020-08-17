@@ -19,10 +19,10 @@ package org.labkey.api.data;
 import org.labkey.api.query.AbstractNestableDataRegion;
 import org.labkey.api.query.QuerySettings;
 
-import java.io.Writer;
 import java.io.IOException;
-import java.sql.SQLException;
+import java.io.Writer;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 

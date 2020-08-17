@@ -70,13 +70,13 @@ public abstract class AbstractMatrixProtocolSchema extends AssayProtocolSchema
     {
         if (name.equals(getDataBySampleTableName()))
         {
-            return getDataBySampleTable(cf, rowAxisId, colAxisId, valueMeasureName, title); //TODO: change
+            return getDataBySampleTable(cf, rowAxisId, colAxisId, valueMeasureName, name, title); //TODO: change
         }
 
         return super.createTable(name, cf);
     }
 
-    public CrosstabTableInfo getDataBySampleTable(ContainerFilter cf, String rowAxisId, String colAxisId, String valueMeasureName, String title)
+    public CrosstabTableInfo getDataBySampleTable(ContainerFilter cf, String rowAxisId, String colAxisId, String valueMeasureName, String name, String title)
     {
         CrosstabSettings settings = new CrosstabSettings(getDataTableInfo(cf));
         CrosstabTable cti;
@@ -101,6 +101,7 @@ public abstract class AbstractMatrixProtocolSchema extends AssayProtocolSchema
         cti = new CrosstabTable(settings, members);
         cti.setDefaultVisibleColumns(defaultCols);
         cti.setTitle(title);
+        cti.setName(name);
 
         return cti;
     }

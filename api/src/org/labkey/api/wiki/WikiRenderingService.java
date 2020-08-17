@@ -3,6 +3,7 @@ package org.labkey.api.wiki;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.HtmlString;
 
 import java.util.Collection;
 import java.util.Map;
@@ -10,8 +11,8 @@ import java.util.Objects;
 
 public interface WikiRenderingService
 {
-    String WIKI_PREFIX = "<div class=\"labkey-wiki\">";
-    String WIKI_SUFFIX = "</div>";
+    HtmlString WIKI_PREFIX = HtmlString.unsafe("<div class=\"labkey-wiki\">");
+    HtmlString WIKI_SUFFIX = HtmlString.unsafe("</div>");
 
     static @NotNull WikiRenderingService get()
     {
@@ -30,8 +31,8 @@ public interface WikiRenderingService
      */
     void registerMacroProvider(String name, MacroProvider provider);
 
-    String getFormattedHtml(WikiRendererType rendererType, String source);
-    String getFormattedHtml(WikiRendererType rendererType, String source, String attachPrefix, Collection<? extends Attachment> attachments);
+    HtmlString getFormattedHtml(WikiRendererType rendererType, String source);
+    HtmlString getFormattedHtml(WikiRendererType rendererType, String source, String attachPrefix, Collection<? extends Attachment> attachments);
 
     WikiRenderer getRenderer(WikiRendererType rendererType, String hrefPrefix,
                              String attachPrefix, Map<String, String> nameTitleMap,

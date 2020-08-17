@@ -17,7 +17,7 @@ package org.labkey.announcements.model;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -63,6 +63,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MailHelper.BulkEmailer;
@@ -314,7 +315,7 @@ public class AnnouncementManager
 
         if (toList.isEmpty())
         {
-            Logger.getLogger(AnnouncementManager.class).warn("New " + name.toLowerCase() + " requires moderator review, but no moderators are authorized in this folder: " + c.getPath());
+            LogManager.getLogger(AnnouncementManager.class).warn("New " + name.toLowerCase() + " requires moderator review, but no moderators are authorized in this folder: " + c.getPath());
         }
         else
         {
@@ -1015,7 +1016,7 @@ public class AnnouncementManager
                 {
                     if (notificationBean == null)
                         return null;
-                    return notificationBean.body == null ? "" : notificationBean.body;
+                    return notificationBean.body == null ? "" : notificationBean.body.toString();
                 }
             });
 
@@ -1184,7 +1185,7 @@ public class AnnouncementManager
         private final AnnouncementModel announcementModel;
         private final AnnouncementModel parentModel;
         private final boolean isResponse;
-        private final String body;
+        private final HtmlString body;
         private final String bodyText;
         private final Settings settings;
         private final ActionURL removeURL;
@@ -1198,8 +1199,8 @@ public class AnnouncementManager
                                      AnnouncementModel a, boolean isResponse, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationBean.Reason reason)
         {
             this.recipient = recipient;
-            this.threadURL = new ActionURL(AnnouncementsController.ThreadAction.class, c).addParameter("rowId", a.getRowId());
-            this.threadParentURL = new ActionURL(AnnouncementsController.ThreadAction.class, c).addParameter("rowId", parent.getRowId());
+            this.threadURL = AnnouncementsController.getThreadURL(c, a.getRowId());
+            this.threadParentURL = AnnouncementsController.getThreadURL(c, parent.getRowId());
             this.boardPath = c.getPath();
             this.boardURL = AnnouncementsController.getBeginURL(c);
             this.siteURL = ActionURL.getBaseServerURL();
@@ -1218,7 +1219,7 @@ public class AnnouncementManager
             }
             else
             {
-                this.body = a.getBody();
+                this.body = HtmlString.EMPTY_STRING;
             }
         }
     }

@@ -21,7 +21,8 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -101,7 +102,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     Map<String,String> _missingValues = Collections.emptyMap();
     Map<String,Integer> _inputNameMap = null;
 
-    private static final Logger LOG = Logger.getLogger(SimpleTranslator.class);
+    private static final Logger LOG = LogManager.getLogger(SimpleTranslator.class);
 
     public SimpleTranslator(DataIterator source, DataIteratorContext context)
     {

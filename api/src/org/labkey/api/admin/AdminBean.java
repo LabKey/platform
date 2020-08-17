@@ -26,7 +26,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 

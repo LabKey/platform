@@ -16,9 +16,9 @@
 
 package org.labkey.api.query;
 
-import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -39,7 +39,9 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
@@ -51,9 +53,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 public class QuerySettings
 {
     public static final String URL_PARAMETER_PREFIX = "param.";
+    private static final String parseError = "Could not parse parameter '%s' with value '%s'";
 
     private String _schemaName;
     private String _queryName;
@@ -144,7 +150,7 @@ public class QuerySettings
         PropertyValues pvs = context.getBindPropertyValues();
         if (null == pvs)
         {
-            Logger.getLogger(QuerySettings.class).warn("PropertyValues not set");
+            LogManager.getLogger(QuerySettings.class).warn("PropertyValues not set");
             pvs = context.getActionURL().getPropertyValues();
         }
         return pvs;
@@ -172,7 +178,7 @@ public class QuerySettings
             }
             catch (IllegalArgumentException ex)
             {
-                _showRows = ShowRows.PAGINATED;
+                throw new BadRequestException(String.format(parseError, QueryParam.showRows.name(), showRowsParam), SC_BAD_REQUEST, ex);
             }
         }
     }
@@ -226,19 +232,25 @@ public class QuerySettings
             {
                 setViewName(viewName);
             }
-            if (_getParameter(param(QueryParam.ignoreFilter)) != null)
-            {
-                _ignoreUserFilter = true;
-            }
+            String ignoreFilter = _getParameter(param(QueryParam.ignoreFilter));
+            if (isNotBlank(ignoreFilter))
+                _ignoreUserFilter = (Boolean) ConvertUtils.convert(ignoreFilter, Boolean.class);
 
-            setReportId(ReportService.get().getReportIdentifier(_getParameter(param(QueryParam.reportId)), null, null));
+            String reportId = _getParameter(param(QueryParam.reportId));
+            if (isNotBlank(reportId))
+            {
+                var identifier = ReportService.get().getReportIdentifier(reportId, null, null);
+                if (null == identifier)
+                    throw new NotFoundException("Could not find report for reportId: " + reportId);
+                setReportId(identifier);
+            }
         }
 
         // Ignore maxRows and offset parameters when not PAGINATED.
         if (_showRows == ShowRows.PAGINATED)
         {
             String offsetParam = _getParameter(param(QueryParam.offset));
-            if (offsetParam != null)
+            if (isNotBlank(offsetParam))
             {
                 try
                 {
@@ -246,11 +258,14 @@ public class QuerySettings
                     if (offset > 0)
                         _offset = offset;
                 }
-                catch (NumberFormatException ignored) { }
+                catch (NumberFormatException nfe)
+                {
+                    throw new BadRequestException(String.format(parseError, "offset", offsetParam), SC_BAD_REQUEST, nfe);
+                }
             }
 
             String maxRowsParam = _getParameter(param(QueryParam.maxRows));
-            if (maxRowsParam != null)
+            if (isNotBlank(maxRowsParam))
             {
                 try
                 {
@@ -263,13 +278,22 @@ public class QuerySettings
                     if (_maxRows == Table.ALL_ROWS)
                         _showRows = ShowRows.ALL;
                 }
-                catch (NumberFormatException ignored) { }
+                catch (NumberFormatException nfe)
+                {
+                    throw new BadRequestException(String.format(parseError, "maxRows", maxRowsParam), SC_BAD_REQUEST, nfe);
+                }
             }
         }
 
         String containerFilterNameParam = _getParameter(param(QueryParam.containerFilterName));
-        if (containerFilterNameParam != null)
+        if (isNotBlank(containerFilterNameParam))
+        {
+            // fail fast
+            if (null == ContainerFilter.getType(containerFilterNameParam))
+                throw new BadRequestException(String.format(parseError, "containerFilterName", containerFilterNameParam), SC_BAD_REQUEST);
+
             setContainerFilterName(containerFilterNameParam);
+        }
 
         String returnURL = _getParameter(ActionURL.Param.returnUrl.name());
         if (returnURL == null)
@@ -288,7 +312,10 @@ public class QuerySettings
                 url.setReadOnly();
                 setReturnUrl(new ReturnURLString(url));
             }
-            catch (URISyntaxException | IllegalArgumentException ignored) { }
+            catch (URISyntaxException | IllegalArgumentException use)
+            {
+                throw new BadRequestException(String.format(parseError, "returnUrl", returnURL), SC_BAD_REQUEST, use);
+            }
         }
 
         String columns = StringUtils.trimToNull(_getParameter(param(QueryParam.columns)));
@@ -313,7 +340,9 @@ public class QuerySettings
 
         String allowHeaderLock = StringUtils.trimToNull(_getParameter(param(QueryParam.allowHeaderLock)));
         if (null != allowHeaderLock)
-            setAllowHeaderLock(BooleanUtils.toBoolean(allowHeaderLock));
+        {
+            setAllowHeaderLock((Boolean)ConvertUtils.convert(allowHeaderLock,Boolean.class));
+        }
     }
 
     public @NotNull Map<String, Object> getQueryParameters()

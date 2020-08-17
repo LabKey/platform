@@ -17,14 +17,14 @@ package org.labkey.study.specimen.report.specimentype;
 
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.element.Option;
 import org.labkey.api.util.element.Select;
-import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 import org.labkey.study.SpecimenManager;
-import org.labkey.api.util.Pair;
+import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.labkey.api.util.HtmlString.unsafe;
 

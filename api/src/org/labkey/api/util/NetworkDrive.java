@@ -16,7 +16,8 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.pipeline.PipelineJobService;
 
 import java.io.File;
@@ -111,7 +112,7 @@ public class NetworkDrive
         p.waitFor();
     }
 
-    private static Logger _log = Logger.getLogger(NetworkDrive.class);
+    private static Logger _log = LogManager.getLogger(NetworkDrive.class);
 
     /**
      * @return whether the file exists, mounting the drive if needed

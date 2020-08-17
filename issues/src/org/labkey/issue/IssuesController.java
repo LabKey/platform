@@ -20,7 +20,8 @@ import org.apache.commons.beanutils.BeanMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -103,9 +104,11 @@ import org.labkey.api.util.Button;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.element.Input.InputBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -166,7 +169,7 @@ import java.util.TreeSet;
 
 public class IssuesController extends SpringActionController
 {
-    private static final Logger _log = Logger.getLogger(IssuesController.class);
+    private static final Logger _log = LogManager.getLogger(IssuesController.class);
     private static final String helpTopic = "issues";
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
         IssuesController.class,
@@ -976,7 +979,7 @@ public class IssuesController extends SpringActionController
                         // update the duplicate issue
                         if (duplicateOf != null)
                         {
-                            duplicateOf.addComment(getUser(), "<em>Issue " + issue.getIssueId() + " marked as duplicate of this issue.</em>");
+                            duplicateOf.addComment(getUser(), HtmlString.unsafe("<em>Issue " + issue.getIssueId() + " marked as duplicate of this issue.</em>"));
                             IssueManager.saveIssue(getUser(), getContainer(), duplicateOf);
                         }
 
@@ -1163,7 +1166,7 @@ public class IssuesController extends SpringActionController
                 {
                     StringBuilder sb = new StringBuilder();
                     sb.append("<em>Issue ").append(issue.getIssueId()).append(" marked as duplicate of this issue.</em>");
-                    duplicateOf.addComment(user, sb.toString());
+                    duplicateOf.addComment(user, HtmlString.unsafe(sb.toString()));
                     IssueManager.saveIssue(user, c, duplicateOf);
                 }
 
@@ -2257,7 +2260,7 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public String getExtraHtml(ViewContext ctx)
+        public HtmlString getExtraHtml(ViewContext ctx)
         {
             String q = ctx.getActionURL().getParameter("q");
 
@@ -2276,7 +2279,7 @@ public class IssuesController extends SpringActionController
                 appendStatus(html, "Closed", status, "Closed", true, statusResearchURL);
 
                 html.append("</td></tr></table>");
-                return html.toString();
+                return HtmlString.unsafe(html.toString());
             }
             else
             {
@@ -2284,14 +2287,13 @@ public class IssuesController extends SpringActionController
             }
         }
 
-        @Nullable
         @Override
-        public String getHiddenInputsHtml(ViewContext ctx)
+        public HtmlString getHiddenInputsHtml(ViewContext ctx)
         {
             String status = ctx.getActionURL().getParameter("status");
             if (status != null)
             {
-                return "<input type='hidden' id='search-type' name='status' value='" + PageFlowUtil.filter(status) + "'>";
+                return new InputBuilder().type("hidden").id("search-type").name("status").value(status).getHtmlString();
             }
 
             return null;
@@ -2393,7 +2395,7 @@ public class IssuesController extends SpringActionController
             {
                 JSONObject jsonComment = new JSONObject(new BeanMap(c));
                 jsonComment.put("createdByName", c.getCreatedByName(user));
-                jsonComment.put("comment", c.getComment());
+                jsonComment.put("comment", c.getHtmlComment());
                 comments.put(comments.length(),  jsonComment);
                 // ATTACHMENTS
             }

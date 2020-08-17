@@ -16,10 +16,17 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnLogging;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MethodInfo;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 abstract public class AbstractMethodInfo implements MethodInfo
 {

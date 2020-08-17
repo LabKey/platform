@@ -15,13 +15,13 @@
  */
 package org.labkey.api.security.roles;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.UserPrincipal;
-import org.jetbrains.annotations.NotNull;
+import org.labkey.api.security.permissions.Permission;
 
 import java.util.Collection;
 import java.util.Collections;

@@ -15,16 +15,21 @@
  */
 package org.labkey.api.util;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
  * Lightweight utility to capture how much time is spent doing specifically instrumented actions.
  */
 public class CPUTimer
 {
-    private static final Logger _log = Logger.getLogger(CPUTimer.class);
+    private static final Logger _log = LogManager.getLogger(CPUTimer.class);
 
 
 	//

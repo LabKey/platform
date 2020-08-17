@@ -22,9 +22,9 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.model.Vial;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.Vial;
 
 /**
  * User: brittp

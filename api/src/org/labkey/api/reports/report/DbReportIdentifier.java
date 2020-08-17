@@ -15,7 +15,8 @@
  */
 package org.labkey.api.reports.report;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
@@ -37,7 +38,7 @@ public class DbReportIdentifier extends AbstractReportIdentifier
 {
     protected static final String PREFIX = "db:";
 
-    private static Logger LOG = Logger.getLogger(DbReportIdentifier.class);
+    private static Logger LOG = LogManager.getLogger(DbReportIdentifier.class);
 
     private final int _id;
 

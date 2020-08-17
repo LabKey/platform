@@ -15,9 +15,8 @@
  */
 package org.labkey.study.query;
 
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.ColumnInfo;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.SQLFragment;

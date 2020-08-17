@@ -19,7 +19,8 @@ package org.labkey.list.model;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -88,7 +89,7 @@ import java.util.Set;
 
 public class ListManager implements SearchService.DocumentProvider
 {
-    private static final Logger LOG = Logger.getLogger(ListManager.class);
+    private static final Logger LOG = LogManager.getLogger(ListManager.class);
     private static final String LIST_SEQUENCE_NAME = "org.labkey.list.Lists";
     private static final ListManager INSTANCE = new ListManager();
 
@@ -1032,11 +1033,13 @@ public class ListManager implements SearchService.DocumentProvider
         // The "search user" might not have access
         if (null != ti)
         {
-            ColumnInfo keyColumn = ti.getColumn(list.getKeyName());
+            // 'unwrap' ListTable to get schema table for update
+            TableInfo sti = ((ListTable)ti).getSchemaTableInfo();
+            ColumnInfo keyColumn = sti.getColumn(list.getKeyName());
             if (null != keyColumn)
             {
                 String keySelectName = keyColumn.getSelectName();
-                new SqlExecutor(ti.getSchema()).execute("UPDATE " + getListTableName(ti) + " SET LastIndexed = ? WHERE " +
+                new SqlExecutor(sti.getSchema()).execute("UPDATE " + getListTableName(sti) + " SET LastIndexed = ? WHERE " +
                         keySelectName + " = ?", new Timestamp(ms), pk);
             }
         }

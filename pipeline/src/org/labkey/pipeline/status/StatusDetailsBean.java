@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -58,14 +59,15 @@ public class StatusDetailsBean
     public final List<StatusDetailFile> files;
     public final List<StatusDetailRun> runs;
     public final StatusDetailLog log;
+    public final Integer fetchCount;
 
     // private constructor for parent/split job status
     private StatusDetailsBean(Container c, PipelineStatusFile psf)
     {
-        this(c, psf, null, null, null, null, null);
+        this(c, psf, null, null, null, null, null, null);
     }
 
-    public StatusDetailsBean(Container c, PipelineStatusFile psf, List<StatusDetailFile> files, List<StatusDetailRun> runs, StatusDetailsBean parentStatus, List<StatusDetailsBean> splitStatus, StatusDetailLog log)
+    public StatusDetailsBean(Container c, PipelineStatusFile psf, List<StatusDetailFile> files, List<StatusDetailRun> runs, StatusDetailsBean parentStatus, List<StatusDetailsBean> splitStatus, StatusDetailLog log, Integer fetchCount)
     {
         this.rowId = psf.getRowId();
         this.jobId = psf.getJobId();
@@ -87,9 +89,10 @@ public class StatusDetailsBean
         this.files = files;
         this.runs = runs;
         this.log = log;
+        this.fetchCount = fetchCount;
     }
 
-    public static StatusDetailsBean create(Container c, PipelineStatusFile psf, long logOffset)
+    public static StatusDetailsBean create(Container c, PipelineStatusFile psf, long logOffset, int fetchCount)
     {
         var statusRuns = ExperimentService.get().getExpRunsForJobId(psf.getRowId()).stream().map(StatusDetailRun::create).collect(toList());
         var statusFiles = Collections.emptyList();
@@ -157,14 +160,17 @@ public class StatusDetailsBean
                     .collect(toList());
         }
 
-        return new StatusDetailsBean(c, psf, statusFiles, statusRuns, parentStatus, splitStatus, statusLog);
+        return new StatusDetailsBean(c, psf, statusFiles, statusRuns, parentStatus, splitStatus, statusLog, fetchCount);
     }
 
     // Copy the file content from Path to the PrintWriter,
     // skipping offset characters and closing the PrintWriter when complete.
     private static long transferTo(StringBuilder out, Path p, long offset) throws IOException
     {
-        try (BufferedReader br = Files.newBufferedReader(p, StringUtilsLabKey.DEFAULT_CHARSET);
+        // Pipeline log files are written in platform default encoding.
+        // See PipelineJob.createPrintWriter() and PipelineJob.OutputLogger.write()
+        // Use platform default encoding when reading the log file.
+        try (BufferedReader br = Files.newBufferedReader(p, Charset.defaultCharset());
              PrintWriter pw = new PrintWriter(new StringBuilderWriter(out)))
         {
             if (offset > 0)

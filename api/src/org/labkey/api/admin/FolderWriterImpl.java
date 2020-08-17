@@ -16,7 +16,8 @@
 
 package org.labkey.api.admin;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -33,7 +34,7 @@ import java.util.Set;
  */
 public class FolderWriterImpl extends BaseFolderWriter
 {
-    private static final Logger LOG = Logger.getLogger(FolderWriterImpl.class);
+    private static final Logger LOG = LogManager.getLogger(FolderWriterImpl.class);
 
     private final Collection<FolderWriter> _writers;
 

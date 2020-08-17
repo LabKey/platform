@@ -27,7 +27,6 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.AutoReportListAction" %>
 <%@ page import="java.util.Iterator" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -47,7 +46,7 @@
     String subjectNounPlural = StudyService.get().getSubjectNounPlural(getContainer());
 %>
 <script>
-    var CREATE_REQUEST_BASE_LINK = '<%= createRequestURL.getLocalURIString() %>';
+    var CREATE_REQUEST_BASE_LINK = <%=q(createRequestURL.toString())%>;
     <%
     if (bean.getSelectedRequest() != null)
     {

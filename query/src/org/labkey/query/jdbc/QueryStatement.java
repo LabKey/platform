@@ -15,7 +15,8 @@
  */
 package org.labkey.query.jdbc;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
@@ -37,7 +38,7 @@ public class QueryStatement implements Statement
     final QueryConnection _conn;
     boolean _closed = false;
     ResultSet _rs = null;
-    static Logger _log = Logger.getLogger(QueryStatement.class);
+    static Logger _log = LogManager.getLogger(QueryStatement.class);
 
     QueryStatement(QueryConnection conn)
     {

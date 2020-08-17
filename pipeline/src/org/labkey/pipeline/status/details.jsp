@@ -227,18 +227,22 @@
     </div>
     <br>
     <div id="log-container">
-        <% if (status.log == null || status.log.records == null) { %>
+        <% if (status.log == null) { %>
         <em>Log file doesn't exist.</em>
         <% } else { %>
         <div id="log-data">
-            <% for (var record : status.log.records) { %>
-            <pre class="labkey-log-text <%=h(logTextClass(record))%>"
-                 data-multiline="<%=h(record.isMultiline())%>"
-                 data-stacktrace="<%=h(record.isStackTrace())%>"
-                 data-level="<%=h(record.getLevel())%>"
-            ><%=h(record.getLines())%></pre>
-            <% } %>
+            <% if (!status.log.success && status.log.message != null) { %>
+            <pre class="labkey-log-text bg-warning text-danger"><%=h(status.log.message)%></pre>
+            <% } else if (status.log.records != null) { %>
+                <% for (var record : status.log.records) { %>
+                <pre class="labkey-log-text <%=h(logTextClass(record))%>"
+                     data-multiline="<%=h(record.isMultiline())%>"
+                     data-stacktrace="<%=h(record.isStackTrace())%>"
+                     data-level="<%=h(record.getLevel())%>"
+                ><%=h(record.getLines())%></pre>
+                <% } %>
         </div>
+            <% } %>
         <% } %>
     </div>
 </labkey:panel>
@@ -338,13 +342,17 @@
     scrollLog(false);
 </script>
 
-<% if (status.active) { %>
+<%-- fetch updates if the job is active or there was an error reading the log file on first render. --%>
+<% if (status.active || status.log == null || !status.log.success) { %>
 <script type="application/javascript">
     (function () {
 
         let active = <%=status.active%>;
         let nextOffset = <%=nextOffset%>;
         let fetchCount = 0;
+
+        let offsetUnchangedCount = 0;
+        const MAX_UNCHANGED_COUNT = 3;
 
         function updateField(el, text) {
             if (text !== null && text !== undefined)
@@ -591,9 +599,14 @@
             return template.content.childNodes;
         }
 
+        // Return true if the process is not complete or it is complete but the offset
+        // hasn't changed after fetching a few times. This can happen if the job state
+        // is COMPLETE or ERROR and we failed to read the last chunk of the log file.
+        function shouldFetchUpdate() {
+            return active || offsetUnchangedCount < MAX_UNCHANGED_COUNT;
+        }
+
         function fetchStatus() {
-            if (!active)
-                return;
 
             LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('pipeline-status', 'statusDetails.api', null, {
@@ -606,15 +619,18 @@
                     if (result.success) {
                         let status = result.data;
                         active = status.active;
-                        if (active) {
-                            // add the next chunk of log data and scroll
-                            if (status.log && status.log.nextOffset) {
-                                nextOffset = status.log.nextOffset;
-                            }
-                            setTimeout(fetchStatus, 500);
+
+                        if (status.log && status.log.nextOffset > nextOffset) {
+                            nextOffset = status.log.nextOffset;
+                            offsetUnchangedCount = 0;
                         }
                         else {
+                            // we failed to read the log file or the log file hasn't changed since last fetch
+                            offsetUnchangedCount++;
+                            console.log("offset " + nextOffset + " unchanged (" + offsetUnchangedCount + ")");
+                        }
 
+                        if (!active) {
                             // disable the cancel button
                             if (cancelBtnEl) {
                                 cancelBtnEl.classList.add('labkey-disabled-button');
@@ -631,7 +647,7 @@
                                 showDataBtnEl.classList.remove('hidden');
                             }
 
-                            // if redirect=1, navigate to the imported run
+                            // if complete and redirect=1, navigate to the imported run
                             if (status.status.toLowerCase() === <%=q(TaskStatus.complete.name())%> && LABKEY.ActionURL.getParameter('redirect') === '1') {
                                 let redirect = status.dataUrl;
                                 if (redirect) {
@@ -654,20 +670,32 @@
                         updateSplitStatus(status.splitStatus);
                         updateLog(status.log);
                     }
+                    else {
+                        offsetUnchangedCount++;
+                    }
+
+                    // fetch again if the process is active or the offset hasn't
+                    // changed for a while or there was an error fetching the log
+                    if (shouldFetchUpdate()) {
+                        setTimeout(fetchStatus, 500 + (500 * offsetUnchangedCount));
+                    }
                 }),
                 failure: LABKEY.Utils.getCallbackWrapper(function (err) {
-                    if (err.exception) {
-                        let errorListEl = document.getElementById('error-list');
-                        let msgEl = document.createElement("DIV");
-                        msgEl.classList.add('labkey-error');
-                        msgEl.innerHTML = LABKEY.Utils.encodeHtml(err.exception);
-                        errorListEl.appendChild(msgEl);
+                    let msg = "Error getting pipeline status";
+                    if (err && err.exception) {
+                        msg = err.exception;
                     }
+
+                    let errorListEl = document.getElementById('error-list');
+                    let msgEl = document.createElement("DIV");
+                    msgEl.classList.add('labkey-error');
+                    msgEl.innerHTML = LABKEY.Utils.encodeHtml(msg);
+                    errorListEl.appendChild(msgEl);
                 }, false)
             });
         }
 
-        if (active) {
+        if (shouldFetchUpdate()) {
             setTimeout(fetchStatus, 500);
         }
     })();

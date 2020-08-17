@@ -17,22 +17,10 @@ package org.labkey.query.olap;
 
 
 import org.json.JSONObject;
-import org.olap4j.Axis;
 import org.olap4j.CellSet;
-import org.olap4j.CellSetAxis;
-import org.olap4j.CellSetAxisMetaData;
 import org.olap4j.OlapConnection;
-import org.olap4j.OlapException;
-import org.olap4j.Position;
 import org.olap4j.metadata.Cube;
-import org.olap4j.metadata.Hierarchy;
 import org.olap4j.metadata.Level;
-import org.olap4j.metadata.Member;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.ListIterator;
 
 
 /**

@@ -17,6 +17,7 @@ package org.labkey.api.util.element;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.element.Option.OptionBuilder;
 
@@ -31,7 +32,6 @@ public class Select extends Input
 {
     private final boolean _multiple;
     private final List<Option> _options;
-    private final List<String> _styles;
     private final String _selected;
 
     private Select(SelectBuilder builder)
@@ -39,7 +39,6 @@ public class Select extends Input
         super(builder);
         _multiple = builder._multiple;
         _options = builder._options;
-        _styles = builder._styles;
         _selected = builder._selected;
     }
 
@@ -70,14 +69,8 @@ public class Select extends Input
             sb.append(" size=\"").append(getSize()).append("\"");
         if (isMultiple())
             sb.append(" multiple");
-        if (!_styles.isEmpty())
-        {
-            sb.append(" style=\"");
-            _styles.forEach(s ->
-                sb.append(PageFlowUtil.filter(s)).append(";")
-            );
-            sb.append("\"");
-        }
+
+        doStyles(sb);
 
         doInputEvents(sb);
 
@@ -106,7 +99,6 @@ public class Select extends Input
     public static class SelectBuilder extends InputBuilder<SelectBuilder>
     {
         private final List<Option> _options = new ArrayList<>();
-        private final List<String> _styles = new ArrayList<>();
 
         private boolean _multiple;
         // Alternative way to specify the selected option - useful when adding options as Strings or Objects
@@ -201,27 +193,15 @@ public class Select extends Input
             );
         }
 
-        public SelectBuilder style(String style)
-        {
-            _styles.add(style);
-            return this;
-        }
-
-        public SelectBuilder style(List<String> styles)
-        {
-            _styles.addAll(styles);
-            return this;
-        }
-
         public SelectBuilder multiple(boolean multiple)
         {
             _multiple = multiple;
             return this;
         }
 
-        public SelectBuilder selected(Object key)
+        public SelectBuilder selected(@Nullable Object key)
         {
-            _selected = key.toString();
+            _selected = null != key ? key.toString() : null;
             return this;
         }
 

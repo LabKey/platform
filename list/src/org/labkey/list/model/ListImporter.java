@@ -16,7 +16,7 @@
 
 package org.labkey.list.model;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;

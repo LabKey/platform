@@ -28,6 +28,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Tuple3;
 import org.springframework.validation.Errors;
@@ -401,12 +402,12 @@ public class Issue extends Entity implements Serializable, Cloneable
 
 
     // UNDONE: MAKE work in Table version
-    public Comment addComment(User user, String text)
+    public Comment addComment(User user, HtmlString html)
     {
         Comment comment = new Comment();
         comment.beforeInsert(user, getContainerId());
         comment.setIssue(this);
-        comment.setComment(text);
+        comment.setHtmlComment(html);
 
         _comments.add(comment);
         if (null == _added)
@@ -678,7 +679,7 @@ public class Issue extends Entity implements Serializable, Cloneable
     {
         private Issue issue;
         private int commentId;
-        private String comment;
+        private HtmlString comment;
 
         public Comment()
         {
@@ -689,7 +690,7 @@ public class Issue extends Entity implements Serializable, Cloneable
             return DateUtil.formatDateTime(getCreated(),"EEE, d MMM yyyy HH:mm:ss");
         }
 
-        public Comment(String comment)
+        public Comment(HtmlString comment)
         {
             this.comment = comment;
         }
@@ -719,14 +720,19 @@ public class Issue extends Entity implements Serializable, Cloneable
             return UserManager.getDisplayName(getCreatedBy(), currentUser);
         }
 
-        public String getComment()
+        public HtmlString getHtmlComment()
         {
             return comment;
         }
 
-        public void setComment(String comment)
+        public void setHtmlComment(HtmlString comment)
         {
             this.comment = comment;
+        }
+
+        public void setComment(String comment)
+        {
+            setHtmlComment(HtmlString.unsafe(comment));
         }
 
         @Override
@@ -738,13 +744,13 @@ public class Issue extends Entity implements Serializable, Cloneable
         }
     }
 
-    public class IssueEvent implements Comparable<IssueEvent>
+    public static class IssueEvent implements Comparable<IssueEvent>
     {
-        private String containerFormattedDate;
-        private String fullTimestamp;
-        private Long millis;
-        private String name;
-        private String user;
+        private final String containerFormattedDate;
+        private final String fullTimestamp;
+        private final Long millis;
+        private final String name;
+        private final String user;
 
         public IssueEvent(String containerFormattedDate, String fullTimestamp, Long millis, String name, String user)
         {

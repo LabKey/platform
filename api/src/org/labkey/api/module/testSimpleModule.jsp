@@ -1,4 +1,3 @@
-<%@ page import="org.junit.Test" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.SimpleModule" %>
 <%@ page import="org.labkey.api.util.GUID" %>

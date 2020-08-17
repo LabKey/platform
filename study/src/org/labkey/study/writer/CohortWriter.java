@@ -24,10 +24,10 @@ import org.labkey.study.model.Participant;
 import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.xml.CohortMode;
 import org.labkey.study.xml.CohortType;
 import org.labkey.study.xml.CohortsDocument;
 import org.labkey.study.xml.StudyDocument;
-import org.labkey.study.xml.CohortMode;
 
 import java.util.Collection;
 import java.util.List;

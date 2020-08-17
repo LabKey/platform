@@ -18,9 +18,9 @@ package org.labkey.study.importer;
 
 import org.labkey.api.exp.api.ExpMaterial;
 
-import java.util.Map;
-import java.util.Date;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.Map;
 
 /**
  * User: brittp
