@@ -1745,6 +1745,15 @@ public class DavController extends SpringActionController
                 resourceWriter.beginResponse(getResponse());
 
                 WebdavResource resource = root;
+
+                Map<String, Boolean> rootPermissions = new HashMap<>();
+                rootPermissions.put("canRead", resource.canRead(getUser(), false));
+                rootPermissions.put("canUpload", resource.canCreate(getUser(), false));
+                rootPermissions.put("canEdit", resource.canWrite(getUser(), false));
+                rootPermissions.put("canDelete", resource.canDelete(getUser(), false));
+                rootPermissions.put("canRename", resource.canRename(getUser(), false));
+                resourceWriter.writeProperty("permissions", rootPermissions);
+
                 if (resource.isCollection())
                 {
                     Collection<String> listPaths = resource.listNames();  // 17749
