@@ -35,7 +35,7 @@
     ViewContext context = getViewContext();
 
     Report report = bean.getReport(context);
-    boolean confirm = bean.getConfirmed() != null ? Boolean.parseBoolean(bean.getConfirmed()) : false;
+    boolean confirm = bean.getConfirmed() != null && Boolean.parseBoolean(bean.getConfirmed());
 %>
 
 <script type="text/javascript">
@@ -65,29 +65,29 @@
 </table>
 
 <labkey:form method="post" action="<%=new ActionURL(ReportsController.SaveReportViewAction.class, getContainer())%>" onsubmit="return validateForm();">
-    <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=StringUtils.trimToEmpty(bean.getSchemaName())%>">
-    <input type="hidden" name="<%=QueryParam.queryName%>" value="<%=StringUtils.trimToEmpty(bean.getQueryName())%>">
-    <input type="hidden" name="<%=QueryParam.viewName%>" value="<%=StringUtils.trimToEmpty(bean.getViewName())%>">
-    <input type="hidden" name="redirectUrl" value="<%=bean.getRedirectUrl()%>">
+    <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=h(StringUtils.trimToEmpty(bean.getSchemaName()))%>">
+    <input type="hidden" name="<%=QueryParam.queryName%>" value="<%=h(StringUtils.trimToEmpty(bean.getQueryName()))%>">
+    <input type="hidden" name="<%=QueryParam.viewName%>" value="<%=h(StringUtils.trimToEmpty(bean.getViewName()))%>">
+    <input type="hidden" name="redirectUrl" value="<%=h(bean.getRedirectUrl())%>">
     <table>
     <tr>
 <%
     if (confirm)
     {
 %>
-        <td>There is already a report called: <i><%=report.getDescriptor().getReportName()%></i>.<br/>Overwrite the existing report?
+        <td>There is already a report called: <i><%=h(report.getDescriptor().getReportName())%></i>.<br/>Overwrite the existing report?
         <input type=hidden name=confirmed value=1>
-        <input type=hidden name=label value="<%=bean.getLabel()%>">
+        <input type=hidden name=label value="<%=h(bean.getLabel())%>">
 <%
     } else {
 %>
         <td><b>Save Report</b></td>
         <td>Name:&nbsp;<input id="reportName" name="label" value="<%=h(bean.getLabel())%>">
-        <input type=hidden name=srcURL value="<%=getActionURL().getLocalURIString()%>">
+        <input type=hidden name=srcURL value="<%=h(getActionURL())%>">
 <%
     }
 %>
-        <input type=hidden name=reportType value="<%=report.getDescriptor().getReportType()%>">
+        <input type=hidden name=reportType value="<%=h(report.getDescriptor().getReportType())%>">
         <input type=hidden name=params value="<%=h(bean.getParams())%>"></td>
 
 <%--
@@ -121,14 +121,14 @@
 %>
         <tr>
             <td><input type="checkbox" value="true" name="shareReport"<%=checked(bean.getShareReport())%>>Make this report available to all users.</td>
-            <td colspan=2>description:<textarea name="description" style="width: 100%;" rows="2"><%=StringUtils.trimToEmpty(bean.getDescription())%></textarea></td>
+            <td colspan=2>description:<textarea name="description" style="width: 100%;" rows="2"><%=h(StringUtils.trimToEmpty(bean.getDescription()))%></textarea></td>
         </tr>
 <%
     } else {
 %>
         <tr>
             <td></td>
-            <td colspan=2>description:&nbsp;<textarea name="description" style="width: 100%;" rows="2"><%=StringUtils.trimToEmpty(bean.getDescription())%></textarea></td>
+            <td colspan=2>description:&nbsp;<textarea name="description" style="width: 100%;" rows="2"><%=h(StringUtils.trimToEmpty(bean.getDescription()))%></textarea></td>
         </tr>
 <%
     }

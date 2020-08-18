@@ -68,17 +68,18 @@
                     Map<DomainProperty, DisplayColumnGroup> groups = helper.getGroups();
                     for (int i = 0; i < helper.getSampleNames().size(); i++)
                     {
-                        %><%= separator %>
+                        %><%=h(separator)%>
                         <a href="#" onclick="{<%
                         for (Map.Entry<PropertyDescriptor, Object> propEntry : entry.getKey().getPropertyValues().entrySet())
                         {
                             DisplayColumnGroup group = groups.get(propEntry.getKey());
                             if (group != null && group.isCopyable())
                             {
-                                %>document.getElementsByName('<%= group.getColumns().get(i).getColumnInfo().getPropertyName() %>')[0].value = '<%= h(propEntry.getValue()) %>';
-                                if (document.getElementsByName('<%= group.getColumns().get(i).getColumnInfo().getPropertyName() %>')[0].onchange != null)
+                                String propName = group.getColumns().get(i).getColumnInfo().getPropertyName();
+                                %>document.getElementsByName(<%=q(propName)%>)[0].value = '<%=h(propEntry.getValue())%>';
+                                if (document.getElementsByName(<%=q(propName)%>)[0].onchange != null)
                                 {
-                                    document.getElementsByName('<%= group.getColumns().get(i).getColumnInfo().getPropertyName() %>')[0].onchange();
+                                    document.getElementsByName(<%=q(propName)%>)[0].onchange();
                                 } <%
                             }
                         }

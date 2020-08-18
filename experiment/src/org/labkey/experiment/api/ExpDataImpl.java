@@ -876,7 +876,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             {
                 String dataclass = ctx.getActionURL().getParameter(PROPERTY);
                 ActionURL url = ctx.cloneActionURL().deleteParameter(PROPERTY);
-                url.replaceParameter("_dc", String.valueOf((int)Math.round(1000 * Math.random())));
+                url.replaceParameter("_dc", (int)Math.round(1000 * Math.random()));
 
                 StringBuilder html = new StringBuilder();
                 html.append("<div class=\"labkey-search-filter\">");

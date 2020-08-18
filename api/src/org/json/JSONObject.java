@@ -1186,6 +1186,16 @@ public class JSONObject extends HashMap<String, Object> implements HasHtmlString
     }
 
     /**
+     * Make a pretty-printed JSON text of this JSONObject
+     * @param indentFactor Number of spaces to add to each level of indentation
+     * @return HtmlString holding the JSON representation
+     */
+    public HtmlString getHtmlString(int indentFactor)
+    {
+        return HtmlString.unsafe(toString(indentFactor));
+    }
+
+    /**
      * Make a prettyprinted JSON text of this JSONObject.
      * <p>
      * Warning: This method assumes that the data structure is acyclical.

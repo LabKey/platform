@@ -1086,7 +1086,7 @@ public class WikiController extends SpringActionController
             ct.setInitialLevel(1);
 
             CopyBean bean = new CopyBean();
-            bean.folderList = ct.render().toString();           // folder tree
+            bean.folderList = ct.getHtmlString();               // folder tree
             bean.destContainer = c.getPath();                   // hidden input
             bean.sourceContainer = form.getSourceContainer();   // hidden input
             Container sourceContainer = getSourceContainer(form.getSourceContainer());
@@ -1110,7 +1110,7 @@ public class WikiController extends SpringActionController
 
     public class CopyBean
     {
-        public String folderList;
+        public HtmlString folderList;
         public String destContainer;
         public String sourceContainer;
         public ActionURL cancelURL;

@@ -344,11 +344,17 @@ public class ActionURL extends URLHelper implements Cloneable
 
     public ActionURL replaceParameter(Enum key, long value)
     {
-        return replaceParameter(key.toString(), Long.toString(value));
+        return replaceParameter(key.toString(), value);
     }
 
     @Override
     public ActionURL replaceParameter(String key, String value)
+    {
+        return (ActionURL) super.replaceParameter(key, value);
+    }
+
+    @Override
+    public ActionURL replaceParameter(String key, long value)
     {
         return (ActionURL) super.replaceParameter(key, value);
     }

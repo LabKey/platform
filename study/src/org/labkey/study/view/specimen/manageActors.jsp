@@ -88,7 +88,7 @@
                         <%
                             for (LocationImpl location : study.getLocations())
                             {
-                            %><a href="<%= h(buildURL(ShowGroupMembersAction.class)) + "id=" + actor.getRowId() + "&locationId=" + location.getRowId() %>"><%= h(location.getDisplayName()) %></a><br><%
+                            %><a href="<%=h(urlFor(ShowGroupMembersAction.class).addParameter("id", actor.getRowId()).addParameter("locationId", location.getRowId()))%>"><%= h(location.getDisplayName()) %></a><br><%
                             }
                         }
                         else

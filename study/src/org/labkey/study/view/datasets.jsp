@@ -110,7 +110,7 @@
             }
 
             String datasetLabel = (dataset.getLabel() != null ? dataset.getLabel() : "" + dataset.getDatasetId());
-            tds.add(TR(TD(link(datasetLabel).href(datasetURL.replaceParameter("datasetId", String.valueOf(dataset.getDatasetId()))).clearClasses())));
+            tds.add(TR(TD(link(datasetLabel).href(datasetURL.replaceParameter("datasetId", dataset.getDatasetId())).clearClasses())));
         }
 
         TABLE(tds.toArray()).appendTo(out);

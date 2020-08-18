@@ -82,9 +82,9 @@ else
         {
             %><tr style=""><%
         }
-        %><td align=right><span style="font-size:7pt;"><%=null!=st.prop?""+st.prop.getPropertyId():"&nbsp;"%></span></td>
+        %><td align=right><span style="font-size:7pt;"><%=null != st.prop ? h(st.prop.getPropertyId()) : HtmlString.NBSP%></span></td>
         <td><%=toCell(st.getName())%></td>
-        <td><%=st.hasMv()?"X":"&nbsp;"%></td>
+        <td><%=st.hasMv() ? h("X") : HtmlString.NBSP%></td>
         <td><%=toCell(st.colName)%></td>
         <td><%=toCell(st.mvColName)%></td>
         <td><%=toCell(st.fix)%></td>

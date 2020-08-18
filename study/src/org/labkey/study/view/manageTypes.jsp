@@ -160,7 +160,7 @@
     ActionURL details = new ActionURL(DatasetDetailsAction.class, c);
     for (Dataset def : datasets)
     {
-        details.replaceParameter("id",String.valueOf(def.getDatasetId()));
+        details.replaceParameter("id", def.getDatasetId());
         ViewCategory viewCategory = def.getViewCategory();
         Cohort cohort = def.getCohort();
         boolean isShared = def.isShared();

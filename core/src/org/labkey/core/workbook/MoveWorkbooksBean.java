@@ -15,6 +15,7 @@
  */
 package org.labkey.core.workbook;
 
+import org.json.JSONArray;
 import org.labkey.api.data.Container;
 
 import java.util.ArrayList;
@@ -27,7 +28,7 @@ import java.util.List;
 */
 public class MoveWorkbooksBean
 {
-    private List<Container> _workbooks = new ArrayList<>();
+    private final List<Container> _workbooks = new ArrayList<>();
 
     public void addWorkbook(Container workbook)
     {
@@ -39,16 +40,10 @@ public class MoveWorkbooksBean
         return _workbooks;
     }
 
-    public String getIDInitializer()
+    public JSONArray getIDInitializer()
     {
-        StringBuilder ids = new StringBuilder();
-        String sep = "";
-        for (Container wb : _workbooks)
-        {
-            ids.append(sep);
-            ids.append(wb.getRowId());
-            sep = ",";
-        }
-        return ids.toString();
+        return _workbooks.stream()
+            .map(Container::getRowId)
+            .collect(JSONArray.collector());
     }
 }

@@ -49,7 +49,7 @@
     }
     catch (IllegalArgumentException ex)
     {
-        %><%=ex.getMessage()%><%
+        %><%=h(ex.getMessage())%><%
     }
 
     boolean apiKeys = AppProps.getInstance().isAllowApiKeys();
