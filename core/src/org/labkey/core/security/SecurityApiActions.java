@@ -2070,6 +2070,8 @@ public class SecurityApiActions
             Container c = getContainer();
             if (!c.isRoot() && !c.getProject().hasPermission(getUser(), AdminPermission.class))
                 throw new UnauthorizedException("You must be an administrator at the project level to add new users.");
+            else if (!c.isRoot() && !c.getProject().hasPermission(getUser(), UserManagementPermission.class))
+                throw new UnauthorizedException("You do not have permissions to create new users.");
             else if (c.isRoot() && !getUser().hasRootPermission(UserManagementPermission.class))
                 throw new UnauthorizedException("You do not have permissions to create new users.");
 
