@@ -54,6 +54,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AddNewUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -2070,9 +2071,9 @@ public class SecurityApiActions
             Container c = getContainer();
             if (!c.isRoot() && !c.getProject().hasPermission(getUser(), AdminPermission.class))
                 throw new UnauthorizedException("You must be an administrator at the project level to add new users.");
-            else if (!c.isRoot() && !c.getProject().hasPermission(getUser(), UserManagementPermission.class))
+            else if (!c.isRoot() && !c.getProject().hasPermission(getUser(), AddNewUserPermission.class))
                 throw new UnauthorizedException("You do not have permissions to create new users.");
-            else if (c.isRoot() && !getUser().hasRootPermission(UserManagementPermission.class))
+            else if (c.isRoot() && !getUser().hasRootPermission(AddNewUserPermission.class))
                 throw new UnauthorizedException("You do not have permissions to create new users.");
 
             String[] rawEmails = form.getEmail() == null ? null : form.getEmail().split(";");

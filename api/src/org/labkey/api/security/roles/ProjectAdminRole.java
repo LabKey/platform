@@ -20,6 +20,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.permissions.AddNewUserPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 
 import java.util.Collections;
@@ -36,7 +37,7 @@ public class ProjectAdminRole extends AbstractRole
         super("Project Administrator",
             "Project Administrators have full control over the project, but not the entire system.",
             FolderAdminRole.PERMISSIONS,
-            Collections.singletonList(UserManagementPermission.class)
+            Collections.singletonList(AddNewUserPermission.class)
         );
 
         excludeGuests();

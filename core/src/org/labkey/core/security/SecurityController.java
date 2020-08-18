@@ -61,6 +61,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AddNewUserPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -1303,7 +1304,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresPermission(UserManagementPermission.class)
+    @RequiresPermission(AddNewUserPermission.class)
     public class AddUsersAction extends FormViewAction<AddUsersForm>
     {
         @Override

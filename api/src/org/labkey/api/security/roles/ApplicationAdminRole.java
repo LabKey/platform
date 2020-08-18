@@ -31,7 +31,8 @@ public class ApplicationAdminRole extends AbstractRootContainerRole
         ApplicationAdminPermission.class,
         TroubleShooterPermission.class,
         EnableRestrictedModules.class,
-        UserManagementPermission.class
+        UserManagementPermission.class,
+        AddNewUserPermission.class
     );
 
     public ApplicationAdminRole()
