@@ -94,7 +94,15 @@ public class NestableDataRegion extends AbstractNestableDataRegion
             while (nestedRS.next())
             {
                 Object outerValue = ctx.getRow().get(_uniqueColumnName);
-                Object innerValue = nestedRS.getInt(_uniqueColumnName);
+                Object innerValue = null;
+                if (outerValue instanceof Integer)
+                {
+                    innerValue = nestedRS.getInt(_uniqueColumnName);
+                }
+                if (outerValue instanceof Long)
+                {
+                    innerValue = nestedRS.getLong(_uniqueColumnName);
+                }
                 if (!Objects.equals(outerValue, innerValue))
                 {
                     throw new IllegalArgumentException("Ids do not match for the outer and inner result sets for column " + _uniqueColumnName + " - " + outerValue + " vs " + innerValue);
