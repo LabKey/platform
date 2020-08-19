@@ -718,7 +718,7 @@ public class StudyController extends BaseStudyController
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
                                         replaceParameter(DATASET_REPORT_ID_PARAMETER_NAME, report.getDescriptor().getReportId().toString()).
-                                        replaceParameter(DatasetDefinition.DATASETKEY, String.valueOf(def.getDatasetId()));
+                                        replaceParameter(DatasetDefinition.DATASETKEY, def.getDatasetId());
 
                 return HttpView.redirect(url);
             }
@@ -5070,8 +5070,8 @@ public class StudyController extends BaseStudyController
                     {
                         ActionURL returnUrl = getViewContext().cloneActionURL()
                             .replaceParameter("ff_snapshotName", form.getSnapshotName())
-                            .replaceParameter("ff_updateDelay", String.valueOf(form.getUpdateDelay()))
-                            .replaceParameter("ff_snapshotDatasetId", String.valueOf(form.getSnapshotDatasetId()));
+                            .replaceParameter("ff_updateDelay", form.getUpdateDelay())
+                            .replaceParameter("ff_snapshotDatasetId", form.getSnapshotDatasetId());
 
                         _successURL = new ActionURL(StudyController.EditTypeAction.class, getContainer())
                                 .addParameter("datasetId", def.getDatasetId())

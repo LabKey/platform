@@ -53,16 +53,15 @@
     {
         ActionURL detailsURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, study.getContainer());
         detailsURL.addParameter("datasetId", def.getDatasetId());
-        String detailsLink = detailsURL.getLocalURIString();
         rowCount++;
     %>
 
     <tr class="<%=h(rowCount % 2 == 1 ? "labkey-alternate-row" : "labkey-row")%>">
         <td><input type="checkbox" name="datasetIds" value="<%=def.getDatasetId()%>"></td>
-        <td><a href="<%=detailsLink%>"><%=def.getDatasetId()%></a></td>
-        <td><a href="<%=detailsLink%>"><%= h(def.getLabel()) %></a></td>
+        <td><a href="<%=h(detailsURL)%>"><%=def.getDatasetId()%></a></td>
+        <td><a href="<%=h(detailsURL)%>"><%= h(def.getLabel()) %></a></td>
         <td><%= h(def.getViewCategory() != null ? def.getViewCategory().getLabel() : null) %></td>
-        <td><%= def.getType() %></td>
+        <td><%= h(def.getType()) %></td>
         <td align="right"><%=StudyManager.getInstance().getNumDatasetRows(getUser(), def)%></td>
     </tr>
     <%

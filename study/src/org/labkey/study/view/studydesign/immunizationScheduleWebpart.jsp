@@ -118,7 +118,7 @@
                         visitTreatments.put(treatmentVisitMap.getVisitId(), treatmentVisitMap.getTreatmentId());
                     }
 %>
-                    <tr class="row-outer <%=index % 2 == 0 ? "alternate-row" : ""%>" outer-index="<%=index-1%>">
+                    <tr class="row-outer <%=h(index % 2 == 0 ? "alternate-row" : "")%>" outer-index="<%=index-1%>">
                         <td class="cell-display " data-index="Label"><%=h(cohort.getLabel())%></td>
                         <td class="cell-display " data-index="SubjectCount"><%=cohort.getSubjectCount() != null ? cohort.getSubjectCount() : HtmlString.EMPTY_STRING%></td>
 <%

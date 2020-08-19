@@ -42,7 +42,7 @@
         else
             url = urls.getSummaryRedirectURL(c);
 
-        url.replaceParameter("rowId", ""+ protocol.getRowId());
+        url.replaceParameter("rowId", protocol.getRowId());
         %>
 <b><a href="<%=url%>"><%=h(protocol.getName())%></a></b>
 <%      if (null != protocol.getDescription())

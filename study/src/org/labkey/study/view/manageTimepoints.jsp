@@ -112,7 +112,7 @@ to assign dataset data to the correct timepoints.</p>
         rowCount++;
 %>
     <tr class="<%=h(rowCount % 2 == 1 ? "labkey-alternate-row" : "labkey-row")%>">
-        <td width="20"><%= iconLink("fa fa-pencil", "edit", editTimepointURL.replaceParameter("id", String.valueOf(timepoint.getRowId()))) %></td>
+        <td width="20"><%= iconLink("fa fa-pencil", "edit", editTimepointURL.replaceParameter("id", timepoint.getRowId())) %></td>
         <td><%=h(timepoint.getLabel())%></td>
         <td><%=h(timepoint.getFormattedSequenceNumMin())%></td>
         <td><%=h(timepoint.getFormattedSequenceNumMax())%></td>

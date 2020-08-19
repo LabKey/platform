@@ -54,7 +54,7 @@
         }
 %>
         <tr class="<%=getShadeRowClass(rowIndex++)%>">
-            <td valign="top"><strong><pre><%=entry.getKey()%></pre></strong></td>
+            <td valign="top"><strong><pre><%=h(entry.getKey())%></pre></strong></td>
             <td valign="top"><% if (message != null) { %>
                 <strong class="labkey-error"><pre><%= h(message) %></pre></strong>
                 <pre>Full details:</pre>

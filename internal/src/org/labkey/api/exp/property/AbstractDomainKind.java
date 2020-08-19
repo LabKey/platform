@@ -53,7 +53,6 @@ import java.util.Set;
  */
 public abstract class AbstractDomainKind<T> extends DomainKind<T>
 {
-
     public static final String OBJECT_URI_COLUMN_NAME = "lsid";
 
     @Override
@@ -61,7 +60,6 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
     {
         return null;
     }
-
 
     @Override
     public boolean canCreateDefinition(User user, Container container)

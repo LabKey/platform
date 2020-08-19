@@ -172,7 +172,7 @@ public class SingleCohortFilter extends BaseCohortFilter
         else
         {
             url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortFilterType, getType().name());
-            url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortId, "" + getCohortId());
+            url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortId, getCohortId());
         }
         return url;
     }

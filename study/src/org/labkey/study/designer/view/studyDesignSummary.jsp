@@ -108,7 +108,7 @@ This study was created from a vaccine study protocol with the following descript
     <br>
 <%
     ActionURL url = new ActionURL(DesignerController.DesignerAction.class, info.getContainer());
-    url.replaceParameter("studyId", String.valueOf(info.getStudyId()));
+    url.replaceParameter("studyId", info.getStudyId());
 %>
 <%=link("View Complete Protocol", url)%>
 <%

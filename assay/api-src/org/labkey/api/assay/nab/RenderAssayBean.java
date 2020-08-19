@@ -305,7 +305,7 @@ public class RenderAssayBean extends RenderAssayForm
     {
         ExpRun run = _assay.getRun();
         ActionURL pageUrl = context.getActionURL().clone();
-        pageUrl.replaceParameter("rowId", "" + run.getRowId());
+        pageUrl.replaceParameter("rowId", run.getRowId());
         String discussionTitle = "Discuss Run " + run.getRowId() + ": " + run.getName();
         String entityId = run.getLSID();
         DiscussionService service = DiscussionService.get();

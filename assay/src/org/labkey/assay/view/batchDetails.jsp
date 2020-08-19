@@ -38,8 +38,8 @@
 %>
 <script type="text/javascript">
 LABKEY.page = LABKEY.page || {};
-LABKEY.page.assay = <%= new JSONObject(assay).toString(2) %>;
-LABKEY.page.batch = new LABKEY.Exp.RunGroup(<%=batchJson.toString(2)%>);
+LABKEY.page.assay = <%= new JSONObject(assay).getHtmlString(2) %>;
+LABKEY.page.batch = new LABKEY.Exp.RunGroup(<%=batchJson.getHtmlString(2)%>);
 LABKEY.page.batch.batchProtocolId = <%= protocol.getRowId() %>;
 LABKEY.page.batch.loaded = true;
 </script>
