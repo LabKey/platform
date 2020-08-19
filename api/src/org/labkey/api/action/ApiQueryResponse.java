@@ -67,7 +67,7 @@ public class ApiQueryResponse implements ApiResponse
     protected RenderContext _ctx = null;
     private ViewContext _viewContext;
     private boolean _schemaEditable = false;
-    private boolean _includeLookupInfo = true;
+    private final boolean _includeLookupInfo;
     private String _schemaName = null;
     protected String _queryName = null;
     protected long _offset = 0;                   //starting offset row number
@@ -84,6 +84,8 @@ public class ApiQueryResponse implements ApiResponse
     private boolean _includeDisplayValues;
     private List<FieldKey> _columnFilter;
     private boolean _includeMetaData;
+
+    private ApiResponseWriter.Format _format = ApiResponseWriter.Format.JSON;
 
     // TODO: This is silly... switch to builder pattern, or at least a constructor that takes reasonable strategies
     public ApiQueryResponse(QueryView view, boolean schemaEditable, boolean includeLookupInfo,
@@ -226,9 +228,9 @@ public class ApiQueryResponse implements ApiResponse
 
     protected Results getResults() throws Exception
     {
-        // We're going to be writing JSON back, which is tolerant of extra spaces, so allow async so we
-        // can monitor if the client has stopped listening
-        _dataRegion.setAllowAsync(true);
+        // If we're going to be writing JSON back, which is tolerant of extra spaces, allow async so we
+        // can monitor if the client has stopped listening. XML doesn't take kindly to leading spaces
+        _dataRegion.setAllowAsync(_format.isJson());
         try
         {
             return _dataRegion.getResults(_ctx);
@@ -641,5 +643,10 @@ public class ApiQueryResponse implements ApiResponse
     public void setColumnFilter(List<FieldKey> columnFilter)
     {
         _columnFilter = columnFilter;
+    }
+
+    public void setFormat(ApiResponseWriter.Format format)
+    {
+        _format = format;
     }
 }

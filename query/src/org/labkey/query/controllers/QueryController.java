@@ -2880,6 +2880,7 @@ public class QueryController extends SpringActionController
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
                         form.isIncludeDisplayValues());
             }
+            response.setFormat(getResponseFormat());
             response.includeStyle(form.isIncludeStyle());
 
             // Issues 29515 and 32269 - force key and other non-requested columns to be sent back, but only if the client has
@@ -3103,6 +3104,7 @@ public class QueryController extends SpringActionController
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
                         form.isIncludeDisplayValues());
             }
+            response.setFormat(getResponseFormat());
             response.includeStyle(form.isIncludeStyle());
 
             return response;
