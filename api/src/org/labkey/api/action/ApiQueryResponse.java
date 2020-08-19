@@ -67,7 +67,7 @@ public class ApiQueryResponse implements ApiResponse
     protected RenderContext _ctx = null;
     private ViewContext _viewContext;
     private boolean _schemaEditable = false;
-    private boolean _includeLookupInfo = true;
+    private final boolean _includeLookupInfo;
     private String _schemaName = null;
     protected String _queryName = null;
     protected long _offset = 0;                   //starting offset row number
@@ -116,6 +116,7 @@ public class ApiQueryResponse implements ApiResponse
 
     public ApiQueryResponse()
     {
+        _includeLookupInfo = true;
         _metaDataOnly = true;
     }
 

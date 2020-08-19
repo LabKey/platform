@@ -3104,8 +3104,8 @@ public class QueryController extends SpringActionController
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
                         form.isIncludeDisplayValues());
             }
-            response.includeStyle(form.isIncludeStyle());
             response.setFormat(getResponseFormat());
+            response.includeStyle(form.isIncludeStyle());
 
             return response;
         }
