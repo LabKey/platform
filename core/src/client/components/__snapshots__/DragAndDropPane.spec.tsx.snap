@@ -7,9 +7,12 @@ exports[`<DragAndDropPane/> Drag is disabled 1`] = `
   <Connect(Droppable)
     direction="vertical"
     droppableId="ssoConfigurations"
+    getContainerForClone={[Function]}
     ignoreContainerClipping={false}
     isCombineEnabled={false}
     isDropDisabled={false}
+    mode="standard"
+    renderClone={null}
     type="DEFAULT"
   >
     <Component />
@@ -24,9 +27,12 @@ exports[`<DragAndDropPane/> Editable 1`] = `
   <Connect(Droppable)
     direction="vertical"
     droppableId="ssoConfigurations"
+    getContainerForClone={[Function]}
     ignoreContainerClipping={false}
     isCombineEnabled={false}
     isDropDisabled={false}
+    mode="standard"
+    renderClone={null}
     type="DEFAULT"
   >
     <Component />
@@ -41,9 +47,12 @@ exports[`<DragAndDropPane/> View-only 1`] = `
   <Connect(Droppable)
     direction="vertical"
     droppableId="ssoConfigurations"
+    getContainerForClone={[Function]}
     ignoreContainerClipping={false}
     isCombineEnabled={false}
     isDropDisabled={false}
+    mode="standard"
+    renderClone={null}
     type="DEFAULT"
   >
     <Component />
