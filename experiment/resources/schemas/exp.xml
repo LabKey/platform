@@ -1036,11 +1036,6 @@
         <column columnName="ErrorMessage"/>
         <column columnName="Properties"/>
         <column columnName="Container"/>
-      </columns>
-    </table>
-    <table tableName="ValidatorReference" tableDbType="TABLE">
-      <columns>
-        <column columnName="ValidatorId"/>
         <column columnName="PropertyId"/>
       </columns>
     </table>
