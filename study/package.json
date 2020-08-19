@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "setup": "npm ci",
-    "build": "npm run build-prod",
+    "build": "npm run build-dev",
     "start": "bnr build:watch",
     "build-dev": "npm run clean && bnr build:dev",
     "build-prod": "npm run clean && bnr build:prod",
