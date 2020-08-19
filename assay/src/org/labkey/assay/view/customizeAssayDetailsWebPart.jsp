@@ -51,14 +51,14 @@
         nameToId.put(provider.getName() + ": " + protocol.getName(), protocol.getRowId());
     }
 %>
-<p><%=bean.description%></p>
+<p><%=h(bean.description)%></p>
 
 <labkey:form action="<%=postUrl%>" method="post">
     <table class="lk-fields-table">
         <tr>
             <td class="labkey-form-label">Assay</td>
             <td>
-                <select name="<%=AssayBaseWebPartFactory.PROTOCOL_ID_KEY %>">
+                <select name="<%=h(AssayBaseWebPartFactory.PROTOCOL_ID_KEY)%>">
                     <%
                         for (Map.Entry<String, Integer> entry : nameToId.entrySet())
                         {
@@ -73,7 +73,7 @@
         </tr>
         <tr>
             <td class="labkey-form-label">Show buttons in web part</td>
-            <td><input type="checkbox" name="<%=AssayBaseWebPartFactory.SHOW_BUTTONS_KEY%>" value="true"<%=checked(showButtons)%>></td>
+            <td><input type="checkbox" name="<%=h(AssayBaseWebPartFactory.SHOW_BUTTONS_KEY)%>" value="true"<%=checked(showButtons)%>></td>
         </tr>
         <tr>
             <td/>

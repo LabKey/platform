@@ -43,11 +43,11 @@
     int graphCount = 0;
     for (int firstSample = 0; firstSample < sampleCount; firstSample += maxSamplesPerGraph)
     {
-        graphAction.replaceParameter("firstSample", "" + firstSample);
-        graphAction.replaceParameter("maxSamples", "" + maxSamplesPerGraph);
+        graphAction.replaceParameter("firstSample", firstSample);
+        graphAction.replaceParameter("maxSamples", maxSamplesPerGraph);
         ActionURL zoomGraphURL = graphAction.clone();
-        zoomGraphURL.replaceParameter("width", "" + 800);
-        zoomGraphURL.replaceParameter("height", "" + 600);
+        zoomGraphURL.replaceParameter("width", 800);
+        zoomGraphURL.replaceParameter("height", 600);
 %>
         <td><a href="<%=zoomGraphURL%>" target="_blank">
             <img src="<%=graphAction%>" alt="Neutralization Graph">

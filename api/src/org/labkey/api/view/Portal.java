@@ -27,6 +27,8 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.CompareType;
@@ -72,6 +74,7 @@ import org.labkey.api.util.element.CsrfInput;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
@@ -1676,6 +1679,12 @@ public class Portal implements ModuleChangeListener
             }
 
             return view;
+        }
+        catch (BadRequestException x)
+        {
+            BindException errors = new BindException(new Object(), "form");
+            errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
+            return new SimpleErrorView(errors,false);
         }
         catch(Throwable t)
         {

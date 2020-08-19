@@ -2268,7 +2268,7 @@ public class IssuesController extends SpringActionController
             {
                 String status = ctx.getActionURL().getParameter("status");
                 ActionURL statusResearchURL = ctx.cloneActionURL().deleteParameter("status");
-                statusResearchURL.replaceParameter("_dc", String.valueOf((int)Math.round(1000 * Math.random())));
+                statusResearchURL.replaceParameter("_dc", (int)Math.round(1000 * Math.random()));
 
                 StringBuilder html = new StringBuilder("<table width=100% cellpadding=\"0\" cellspacing=\"0\"><tr>\n");
                 html.append("<td class=\"labkey-search-filter\">&nbsp;");

@@ -39,10 +39,10 @@
     <%
         for (String id : DataRegionSelection.getSelected(getViewContext(), false))
         { %>
-            <input type="hidden" name="<%= DataRegion.SELECT_CHECKBOX_NAME%>" value="<%= h(id) %>" /><%
+            <input type="hidden" name="<%=h(DataRegion.SELECT_CHECKBOX_NAME)%>" value="<%= h(id) %>" /><%
         }
     %>
-    <input type="hidden" name="<%= DataRegionSelection.DATA_REGION_SELECTION_KEY %>" value="<%= bean.getDataRegionSelectionKey() %>" />
+    <input type="hidden" name="<%=h(DataRegionSelection.DATA_REGION_SELECTION_KEY)%>" value="<%=h(bean.getDataRegionSelectionKey())%>" />
     <input type="hidden" name="targetContainerId" />
 <table class="labkey-data-region">
 <tr>
@@ -52,7 +52,7 @@
     </td>
 </tr>
 <tr><td>&nbsp;</td></tr>
-<%=bean.getContainerTree().render()%>
+<%=bean.getContainerTree().getHtmlString()%>
 </table>
 
 </labkey:form>

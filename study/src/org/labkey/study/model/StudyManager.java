@@ -4460,7 +4460,7 @@ public class StudyManager
         }
 
         ActionURL view = new ActionURL(StudyController.DatasetAction.class, null);
-        view.replaceParameter("datasetId", String.valueOf(dsd.getDatasetId()));
+        view.replaceParameter("datasetId", dsd.getDatasetId());
         view.setExtraPath(dsd.getContainer().getId());
 
         SimpleDocumentResource r = new SimpleDocumentResource(new Path(docid), docid,

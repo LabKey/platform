@@ -61,6 +61,8 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -284,7 +286,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     public HttpView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnURL)
     {
         boolean hasErrors = null != errors && errors.hasErrors();
-        String errorHtml = getErrorHtml(files);      // TODO: Get rid of getErrorHtml() -- use errors collection
+        HtmlString errorHtml = getErrorHtml(files);      // TODO: Get rid of getErrorHtml() -- use errors collection
 
         if (null == errorHtml && !hasErrors)
             return null;
@@ -300,31 +302,30 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
 
-    private String getErrorHtml(List<AttachmentFile> files)
+    private @Nullable HtmlString getErrorHtml(List<AttachmentFile> files)
     {
-        StringBuilder errorHtml = new StringBuilder();
+        HtmlStringBuilder builder = HtmlStringBuilder.of();
 
         for (AttachmentFile file : files)
         {
             String error = file.getError();
 
             if (null != error)
-                errorHtml.append(error).append("<br><br>");
+                builder.append(error).append(HtmlString.unsafe("<br><br>"));
         }
 
-        if (errorHtml.length() > 0)
-            return errorHtml.toString();
-        else
-            return null;
+        HtmlString html = builder.getHtmlString();
+
+        return HtmlString.isEmpty(html) ? null : html;
     }
 
 
     public static class ErrorView extends JspView<Object>
     {
-        public String errorHtml;
+        public HtmlString errorHtml;
         public URLHelper returnURL;
 
-        private ErrorView(String errorHtml, BindException errors, URLHelper returnURL)
+        private ErrorView(HtmlString errorHtml, BindException errors, URLHelper returnURL)
         {
             super("/org/labkey/core/attachment/showErrors.jsp", new Object(), errors);
             this.errorHtml = errorHtml;

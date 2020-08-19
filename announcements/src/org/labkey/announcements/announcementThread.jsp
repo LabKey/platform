@@ -60,7 +60,7 @@ ActionURL discussionSrc = null;
 if (!bean.embedded && null != announcementModel.getDiscussionSrcURL())
 {
     discussionSrc = DiscussionServiceImpl.fromSaved(announcementModel.getDiscussionSrcURL());
-    discussionSrc.replaceParameter("discussion.id", "" + announcementModel.getRowId());
+    discussionSrc.replaceParameter("discussion.id", announcementModel.getRowId());
 }
 
 if (!bean.print && null != discussionSrc)
@@ -262,8 +262,8 @@ if (!bean.isResponse && !bean.print)
         {
             // UNDONE: respond in place
             URLHelper url = bean.currentURL.clone();
-            url.replaceParameter("discussion.id",""+ announcementModel.getRowId());
-            url.replaceParameter("discussion.reply","1");
+            url.replaceParameter("discussion.id", announcementModel.getRowId());
+            url.replaceParameter("discussion.reply", "1");
             %>
         <%= button("Respond").href(url) %>&nbsp;<%
         }

@@ -216,7 +216,8 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
         SUBJECT_VISIT(2),
         SUBJECT_VISIT_OTHER(3);
         
-        private int _cardinality;
+        private final int _cardinality;
+
         KeyType(int cardinality)
         {
             _cardinality = cardinality;

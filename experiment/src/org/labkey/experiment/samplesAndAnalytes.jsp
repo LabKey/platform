@@ -44,7 +44,7 @@
             if (isStudySample)
                 url = urlProvider(SamplesUrls.class).getSamplesURL(sampleType.getContainer());
             else
-                url = new ActionURL(ExperimentController.ShowSampleTypeAction.class, sampleType.getContainer()).replaceParameter("rowId", "" + sampleType.getRowId());
+                url = new ActionURL(ExperimentController.ShowSampleTypeAction.class, sampleType.getContainer()).replaceParameter("rowId", sampleType.getRowId());
             %>
     <a style="font-weight:bold" href="<%=url%>"><%=h(isStudySample ? sampleType.getContainer().getName() : sampleType.getName())%></a>
                 <br><%=h(sampleType.getDescription() != null ? sampleType.getDescription() : sampleType.getContainer().getPath())%>

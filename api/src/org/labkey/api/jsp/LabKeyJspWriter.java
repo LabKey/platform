@@ -60,7 +60,7 @@ public class LabKeyJspWriter extends JspWriterWrapper
     }
 
     @Override
-    public void print(char[] s) throws IOException
+    public void print(char[] s)
     {
         throw new IllegalStateException("A JSP is attempting to render a character array!");
     }
