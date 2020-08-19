@@ -20,7 +20,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -94,6 +95,8 @@ import java.util.function.BooleanSupplier;
  */
 public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext, HasPermission, Parameter.JdbcParameterValue
 {
+    private static final Logger LOG = LogManager.getLogger(Container.class);
+
     private GUID _id;
     private Path _path;
     private Date _created;
@@ -932,7 +935,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         props.put("name", module.getName());
 
         props.save();
-        ContainerManager.notifyContainerChange(getId());
+        ContainerManager.notifyContainerChange(getId(), ContainerManager.Property.Modules);
         _defaultModule = null;
     }
 
@@ -965,7 +968,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         props.save();
-        ContainerManager.notifyContainerChange(getId());
+        ContainerManager.notifyContainerChange(getId(), ContainerManager.Property.Modules);
     }
 
     public void appendWorkbookModulesToParent(Set<Module> newModules, @Nullable User user)
@@ -1322,9 +1325,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public void setType(String typeString)
     {
-        _containerType = ContainerTypeRegistry.get().getType(typeString);
-        if (_containerType == null)
-            throw new IllegalArgumentException("Unknown container type: " + typeString);
+        ContainerType type = ContainerTypeRegistry.get().getType(typeString);
+        if (type == null)
+            LOG.warn("Unknown container type: " + typeString);
+        else
+            _containerType = type;
     }
 
     public static class ContainerException extends Exception
@@ -1571,7 +1576,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 iconFile = dir.getFile();
             if (!NetworkDrive.exists(iconFile))
             {
-                Logger.getLogger(Container.class).warn("Could not find specified icon: "+iconPath);
+                LOG.warn("Could not find specified icon: " + iconPath);
                 iconPath = FolderType.NONE.getFolderIconPath();
             }
             if (!iconPath.startsWith("/"))

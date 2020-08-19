@@ -1,6 +1,7 @@
 package org.labkey.experiment.api;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,7 +30,7 @@ import java.util.stream.Collectors;
 
 public class ExperimentStressTest
 {
-    private static final Logger LOG = Logger.getLogger(ExperimentStressTest.class);
+    private static final Logger LOG = LogManager.getLogger(ExperimentStressTest.class);
 
     @Before
     public void setup()

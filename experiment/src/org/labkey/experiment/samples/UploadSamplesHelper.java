@@ -17,7 +17,8 @@
 package org.labkey.experiment.samples;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -81,7 +82,7 @@ import java.util.function.Supplier;
 
 public abstract class UploadSamplesHelper
 {
-    private static final Logger _log = Logger.getLogger(UploadSamplesHelper.class);
+    private static final Logger _log = LogManager.getLogger(UploadSamplesHelper.class);
     private static final String MATERIAL_LSID_SUFFIX = "ToBeReplaced";
 
 
@@ -301,7 +302,8 @@ public abstract class UploadSamplesHelper
                                                                                        @Nullable MaterialSource source,
                                                                                        RemapCache cache,
                                                                                        Map<Integer, ExpMaterial> materialMap,
-                                                                                       Map<Integer, ExpData> dataMap)
+                                                                                       Map<Integer, ExpData> dataMap,
+                                                                                       Map<String, ExpSampleType> sampleTypes)
             throws ValidationException, ExperimentException
     {
         Map<ExpMaterial, String> parentMaterials = new HashMap<>();
@@ -342,7 +344,8 @@ public abstract class UploadSamplesHelper
                 String namePart = QueryKey.decodePart(parts[1]);
                 if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT))
                 {
-                    if (!findMaterialSource(c, user, namePart))
+                    ExpSampleType sampleType = sampleTypes.computeIfAbsent(namePart, (name) -> SampleTypeService.get().getSampleType(c, user, name));
+                    if (sampleType == null)
                         throw new ValidationException(String.format("Invalid import alias: parent SampleType [%1$s] does not exist or may have been deleted", namePart));
 
                     if (isEmptyParent)
@@ -496,13 +499,6 @@ public abstract class UploadSamplesHelper
     {
         return ExperimentService.get().findExpData(c, user, dataClassName, dataName, cache, dataCache);
     }
-
-
-    private static boolean findMaterialSource(Container c, User user, String parentName)
-    {
-        return SampleTypeService.get().getSampleType(c, user, parentName) != null;
-    }
-
 
     /* this might be generally useful
      * See SimpleTranslator.selectAll(@NotNull Set<String> skipColumns) for similar functionality, but SampleTranslator

@@ -27,7 +27,25 @@ import org.labkey.api.assay.query.BatchListQueryView;
 import org.labkey.api.assay.query.ResultsQueryView;
 import org.labkey.api.assay.query.RunListQueryView;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
@@ -116,12 +134,6 @@ public abstract class AssayProtocolSchema extends AssaySchema
     public static SchemaKey schemaName(@NotNull AssayProvider provider, @NotNull ExpProtocol protocol)
     {
         return SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), protocol.getName());
-    }
-
-    @Deprecated
-    public AssayProtocolSchema(User user, Container container, @NotNull ExpProtocol protocol, @Nullable Container targetStudy)
-    {
-        this(user, container, AssayService.get().getProvider(protocol), protocol, targetStudy);
     }
 
     public AssayProtocolSchema(User user, Container container, @NotNull AssayProvider provider, @NotNull ExpProtocol protocol, @Nullable Container targetStudy)
@@ -247,15 +259,6 @@ public abstract class AssayProtocolSchema extends AssaySchema
         return table;
     }
 
-
-    // NOTE: Subclasses should override to add any additional provider specific tables.
-    @Deprecated // TODO: ContainerFilter - remove
-    protected TableInfo createProviderTable(String name)
-    {
-        throw new IllegalStateException();
-    }
-
-
     // NOTE: Subclasses should override to add any additional provider specific tables.
     protected TableInfo createProviderTable(String name, ContainerFilter cf)
     {
@@ -360,23 +363,6 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
         return result;
     }
-
-//    /** Implementations may return null if they don't have any data associated with them */
-//    /* TODO ContainerFilter - remove. Implementations that override this method still need to be upgraded to use createDataTable(ContainerFilter cf). */
-//    @Nullable
-//    @Deprecated
-//    public TableInfo createDataTable(boolean includeCopiedToStudyColumns)
-//    {
-//        throw new IllegalStateException();
-//    }
-//
-//    /** Implementations may return null if they don't have any data associated with them */
-//    // TODO ContainerFilter - make abstract. Update assays that don't override this method.
-//    @Nullable
-//    public TableInfo createDataTable(ContainerFilter cf, boolean includeCopiedToStudyColumns)
-//    {
-//        return createDataTable(includeCopiedToStudyColumns);
-//    }
 
     /** Implementations may return null if they don't have any data associated with them */
     @Nullable
@@ -700,20 +686,37 @@ public abstract class AssayProtocolSchema extends AssaySchema
                             QueryView allResultsQueryView = createAllResultsQueryView(viewContext, qs);
 
                             DataView dataView = allResultsQueryView.createDataView();
-                            try (Results r = dataView.getDataRegion().getResults(dataView.getRenderContext()))
+
+                            RenderContext renderContext = dataView.getRenderContext();
+                            try (Results r = dataView.getDataRegion().getResults(renderContext))
                             {
-                                final int rowCount = r.getSize();
+                                final int rowCount = r.countAll();
 
                                 baseQueryView.setMessageSupplier(dataRegion -> {
-                                    if (dataRegion.getTotalRows() != null && dataRegion.getTotalRows() < rowCount)
+                                    try
                                     {
-                                        long count = rowCount - dataRegion.getTotalRows();
-                                        String msg = count > 1 ? "There are " + count + " rows not shown due to unapproved QC state."
-                                                : "There is one row not shown due to unapproved QC state.";
-                                        DataRegion.Message drm = new DataRegion.Message(msg, DataRegion.MessageType.WARNING, DataRegion.MessagePart.view);
-                                        return Collections.singletonList(drm);
+                                        // Issue 40921: Getting all results for the data region requires an operation that iterates
+                                        // through and counts the total rows in the data region. getAggregateResults
+                                        // with ALL_ROWS will perform this calculation
+                                        int maxRows = dataRegion.getSettings().getMaxRows();
+                                        dataRegion.getSettings().setMaxRows(Table.ALL_ROWS);
+                                        dataRegion.getAggregateResults(renderContext);
+                                        dataRegion.getSettings().setMaxRows(maxRows);
+
+                                        if (dataRegion.getTotalRows() != null && dataRegion.getTotalRows() < rowCount)
+                                        {
+                                            long count = rowCount - dataRegion.getTotalRows();
+                                            String msg = count > 1 ? "There are " + count + " rows not shown due to unapproved QC state."
+                                                    : "There is one row not shown due to unapproved QC state.";
+                                            DataRegion.Message drm = new DataRegion.Message(msg, DataRegion.MessageType.WARNING, DataRegion.MessagePart.view);
+                                            return Collections.singletonList(drm);
+                                        }
+                                        return Collections.emptyList();
                                     }
-                                    return Collections.emptyList();
+                                    catch(IOException e)
+                                    {
+                                        throw new RuntimeException(e);
+                                    }
                                 });
                             }
                         }
@@ -777,6 +780,30 @@ public abstract class AssayProtocolSchema extends AssaySchema
         col.setURL(fkse.remapFieldKeys(null, map));
     }
 
+    /**
+     * Transform an illegal name into a safe version. All non-letter characters
+     * become underscores, and the first character must be a letter. Retain this implementation for backwards
+     * compatibility with copied to study column names. See issue 41030.
+     */
+    private String sanitizeName(String originalName)
+    {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true; // first character is special
+        for (int i = 0; i < originalName.length(); i++)
+        {
+            char c = originalName.charAt(i);
+            if (AliasManager.isLegalNameChar(c, first))
+            {
+                sb.append(c);
+                first = false;
+            }
+            else if (!first)
+            {
+                sb.append('_');
+            }
+        }
+        return sb.toString();
+    }
 
     /**
      * Adds columns to an assay data table, providing a link to any datasets that have
@@ -814,7 +841,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
                 String studyName = assayDataset.getStudy().getLabel();
                 if (studyName == null)
                     continue; // No study in that folder
-                String studyColumnName = "copied_to_" + AliasManager.legalNameFromName(studyName);
+                String studyColumnName = "copied_to_" + sanitizeName(studyName);
 
                 // column names must be unique. Prevent collisions
                 while (usedColumnNames.contains(studyColumnName))

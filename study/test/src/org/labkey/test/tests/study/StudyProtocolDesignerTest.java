@@ -494,7 +494,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
         SelectRowsResponse response;
         try
         {
-            response = command.execute(createDefaultConnection(true), folderPath);
+            response = command.execute(createDefaultConnection(), folderPath);
         }
         catch (IOException | CommandException e)
         {

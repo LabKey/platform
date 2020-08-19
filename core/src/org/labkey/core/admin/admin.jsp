@@ -27,10 +27,9 @@
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.NavTree"%>
-<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.core.admin.AdminController"%>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.Map" %>
@@ -229,10 +228,10 @@
                 <tr><td class="labkey-column-header">User</td><td class="labkey-column-header">Last Activity</td></tr>
                 <%
                     int count = 0;
-                    for (Pair<String, Long> pair : bean.active)
+                    for (var activeUser : bean.active)
                     {
                 %>
-                <tr class="<%=getShadeRowClass(count)%>"><td><%=h(pair.getKey())%></td><td><%=pair.getValue()%> minutes ago</td></tr>
+                <tr class="<%=getShadeRowClass(count)%>"><td><%=h(activeUser.email)%></td><td><%=activeUser.minutes%> minutes ago</td></tr>
                 <%
                         count++;
                     } %>

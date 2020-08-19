@@ -21,14 +21,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
-import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
@@ -60,8 +61,8 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -122,7 +123,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         return (SampleTypeServiceImpl) SampleTypeService.get();
     }
 
-    private static final Logger LOG = Logger.getLogger(SampleTypeServiceImpl.class);
+    private static final Logger LOG = LogManager.getLogger(SampleTypeServiceImpl.class);
 
     // SampleType -> Container cache
     private final Cache<String, String> sampleTypeCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleTypeToContainer");
@@ -597,13 +598,13 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
             throws ExperimentException
     {
         return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3,
-                parentCol, nameExpression, templateInfo, null);
+                parentCol, nameExpression, templateInfo, null, null);
     }
 
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases)
+                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor)
         throws ExperimentException
     {
         if (name == null)
@@ -641,6 +642,11 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         int nameExpMax = materialSourceTable.getColumn("NameExpression").getScale();
         if (nameExpression != null && nameExpression.length() > nameExpMax)
             throw new ExperimentException("Name expression may not exceed " + nameExpMax + " characters.");
+
+        // Validate the label color length
+        int labelColorMax = materialSourceTable.getColumn("LabelColor").getScale();
+        if (labelColor != null && labelColor.length() > labelColorMax)
+            throw new ExperimentException("Label color may not exceed " + labelColorMax + " characters.");
 
         Lsid lsid = getSampleTypeLsid(name, c);
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
@@ -700,6 +706,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         source.setMaterialLSIDPrefix(new Lsid.LsidBuilder("Sample", c.getRowId() + "." + PageFlowUtil.encode(name), "").toString());
         if (nameExpression != null)
             source.setNameExpression(nameExpression);
+        source.setLabelColor(labelColor);
         source.setContainer(c);
         source.setMaterialParentImportAliasMap(importAliasJson);
 
@@ -856,6 +863,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
                 st.setNameExpression(sampleIdPattern);
             }
 
+            st.setLabelColor(options.getLabelColor());
             st.setImportAliasMap(options.getImportAliases());
         }
 
@@ -972,8 +980,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         return event;
     }
 
-    @Override
-    public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata)
+    private SampleTimelineAuditEvent createAuditRecord(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(container.getId(), comment);
         if (container.getProject() != null)
@@ -988,6 +995,20 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
             event.setSampleTypeId(type.getRowId());
         }
         event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(container, metadata));
+        return event;
+    }
+
+    @Override
+    public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata)
+    {
+        AuditLogService.get().addEvent(user, createAuditRecord(user, container, comment, sample, metadata));
+    }
+
+    @Override
+    public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata, String updateType)
+    {
+        SampleTimelineAuditEvent event = createAuditRecord(user, container, comment, sample, metadata);
+        event.setInventoryUpdateType(updateType);
         AuditLogService.get().addEvent(user, event);
     }
 }

@@ -28,8 +28,8 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="java.util.List" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -67,7 +67,7 @@
 %>
 <labkey:errors/>
 
-<labkey:form action="<%=h(buildURL(SpecimenController.ManageSpecimenCommentsAction.class))%>" name="manageComments" method="post">
+<labkey:form action="<%=buildURL(SpecimenController.ManageSpecimenCommentsAction.class)%>" name="manageComments" method="post">
     <table class="lk-fields-table">
         <tr>
             <td><b>Note:</b> Only users with read access to the selected dataset(s) will be able to view comment

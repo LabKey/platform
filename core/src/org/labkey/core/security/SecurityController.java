@@ -51,6 +51,8 @@ import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.external.tools.ExternalToolsViewProvider;
+import org.labkey.api.external.tools.ExternalToolsViewService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -83,6 +85,8 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DotRunner;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
@@ -269,12 +273,18 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public ActionURL getApiKeyURL(@NotNull URLHelper returnURL)
+        @Nullable
+        public ActionURL getExternalToolsViewURL(User user, @NotNull URLHelper returnURL)
         {
-            ActionURL url = new ActionURL(ApiKeyAction.class, ContainerManager.getRoot());
-            url.addReturnURL(returnURL);
-
-            return url;
+            long viewCount = ExternalToolsViewService.get().getExternalAccessViewProviders().stream().
+                    filter(externalToolsViewProvider -> externalToolsViewProvider.getViews(user).size() > 0).count();
+            if (viewCount > 0)
+            {
+                ActionURL url = new ActionURL(ExternalToolsViewAction.class, ContainerManager.getRoot());
+                url.addReturnURL(returnURL);
+                return url;
+            }
+            return null;
         }
     }
 
@@ -640,7 +650,7 @@ public class SecurityController extends SpringActionController
         root.addChild(group.getName() + " Group");
     }
 
-    private ModelAndView renderGroup(Group group, BindException errors, List<String> messages)
+    private ModelAndView renderGroup(Group group, BindException errors, List<HtmlString> messages)
     {
         // validate that group is in the current project!
         Container c = getContainer();
@@ -684,7 +694,7 @@ public class SecurityController extends SpringActionController
     {
         private Group _group;
         private ActionURL _successURL;
-        private List<String> _messages = new ArrayList<>();
+        private List<HtmlString> _messages = new ArrayList<>();
 
         @Override
         public ModelAndView getView(UpdateMembersForm form, boolean reshow, BindException errors) throws Exception
@@ -822,7 +832,7 @@ public class SecurityController extends SpringActionController
                     List<User> addUsers = new ArrayList<>(addEmails.size());
                     for (ValidEmail email : addEmails)
                     {
-                        String addMessage = SecurityManager.addUser(getViewContext(), email, form.getSendEmail(), form.getMailPrefix());
+                        HtmlString addMessage = SecurityManager.addUser(getViewContext(), email, form.getSendEmail(), form.getMailPrefix());
                         if (addMessage != null)
                             _messages.add(addMessage);
 
@@ -1234,7 +1244,7 @@ public class SecurityController extends SpringActionController
         private String newUsers;
         private String _cloneUser;
         private boolean _skipProfile;
-        private String _message = null;
+        private HtmlStringBuilder _message = HtmlStringBuilder.of("");
         private String _provider = null;
 
         public void setProvider(String provider)
@@ -1282,15 +1292,21 @@ public class SecurityController extends SpringActionController
 
         public void addMessage(String message)
         {
-            if (_message == null)
-                _message = message;
-            else
-                _message += "<br/>" + message;
+            if (_message.length() != 0)
+                _message.append(HtmlString.unsafe("<br/>"));
+            _message.append(message);
         }
 
-        public String getMessage()
+        public void addMessage(HtmlString message)
         {
-            return _message;
+            if (_message.length() != 0)
+                _message.append(HtmlString.unsafe("<br/>"));
+            _message.append(message);
+        }
+
+        public HtmlString getMessage()
+        {
+            return _message.getHtmlString();
         }
     }
 
@@ -1365,13 +1381,13 @@ public class SecurityController extends SpringActionController
 
             for (ValidEmail email : emails)
             {
-                String result = SecurityManager.addUser(getViewContext(), email, form.getSendMail(), null, extraParams, form.getProvider(), true);
+                HtmlString result = SecurityManager.addUser(getViewContext(), email, form.getSendMail(), null, extraParams, form.getProvider(), true);
                 User user = UserManager.getUser(email);
 
-                if (result == null && user != null)
+                if (HtmlString.isBlank(result) && user != null)
                 {
                     ActionURL url = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), user.getUserId(), returnURL);
-                    result = PageFlowUtil.filter(email) + " was already a registered system user.  Click <a href=\"" + url.getEncodedLocalURIString() + "\">here</a> to see this user's profile and history.";
+                    result = HtmlString.unsafe(PageFlowUtil.filter(email) + " was already a registered system user.  Click <a href=\"" + url.getEncodedLocalURIString() + "\">here</a> to see this user's profile and history.");
                 }
                 else if (userToClone != null)
                 {
@@ -1381,7 +1397,7 @@ public class SecurityController extends SpringActionController
                         clonePermissions(userToClone, email);
                 }
                 if (user != null)
-                    form.addMessage(String.format("%s<meta userId='%d' email='%s'/>", result, user.getUserId(), PageFlowUtil.filter(user.getEmail())));
+                    form.addMessage(HtmlString.unsafe(String.format("%s<meta userId='%d' email='%s'/>", result, user.getUserId(), PageFlowUtil.filter(user.getEmail()))));
                 else
                     form.addMessage(result);
             }
@@ -1923,22 +1939,38 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresLogin
-    public class ApiKeyAction extends SimpleViewAction<ReturnUrlForm>
+    public class ExternalToolsViewAction extends SimpleViewAction<ReturnUrlForm>
     {
         @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
-            if (!PopupUserView.allowApiKeyPage(getUser()))
-                throw new UnauthorizedException("API keys are not configured on this site. Contact a site administrator.");
+            VBox view = new VBox();
+            int viewCount = 0;
+            for (ExternalToolsViewProvider externalAccessViewProvider : ExternalToolsViewService.get().getExternalAccessViewProviders())
+            {
+                for (ModelAndView providerView : externalAccessViewProvider.getViews(getUser()))
+                {
+                    view.addView(providerView);
+                    ++viewCount;
+                }
+            }
+
+            //using view.isEmpty() || !view.hasView() wasn't reliable, so resorting to this count approach
+            if (viewCount == 0)
+            {
+                view.addView(new JspView<>("/org/labkey/core/security/nothingEnabled.jsp", form));
+            }
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            return new JspView<>("/org/labkey/core/security/apiKey.jsp", form);
+            view.addView(new JspView<>("/org/labkey/core/security/externalToolsBase.jsp", form));
+
+            return view;
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("API Keys");
+            root.addChild("External Tool Access");
         }
     }
 

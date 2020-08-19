@@ -15,9 +15,9 @@
  */
 package org.labkey.api.module;
 
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-import java.lang.annotation.ElementType;
 
 /**
  * Tag for the very small set of actions that users are allowed to access while the server is in the midst

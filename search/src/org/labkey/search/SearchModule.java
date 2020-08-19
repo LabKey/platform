@@ -16,7 +16,8 @@
 
 package org.labkey.search;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.audit.AuditLogService;
@@ -54,7 +55,7 @@ import java.util.Set;
 public class SearchModule extends DefaultModule
 {
     // package logger for use with logger-manage.view
-    static final Logger _logPackage = Logger.getLogger(SearchModule.class.getPackage().getName());
+    static final Logger _logPackage = LogManager.getLogger(SearchModule.class.getPackage().getName());
 
     @Override
     public String getName()
@@ -136,7 +137,7 @@ public class SearchModule extends DefaultModule
             AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "full-text search", new ActionURL(SearchController.AdminAction.class, null));
 
             CacheManager.addListener(() -> {
-                Logger.getLogger(SearchService.class).info("Purging SearchService queues");
+                LogManager.getLogger(SearchService.class).info("Purging SearchService queues");
                 ss.purgeQueues();
             });
         }

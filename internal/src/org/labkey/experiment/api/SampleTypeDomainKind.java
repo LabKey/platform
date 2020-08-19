@@ -18,7 +18,8 @@ package org.labkey.experiment.api;
 
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -38,8 +39,8 @@ import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
@@ -99,7 +100,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
                 new PropertyStorageSpec.Index(true, "lsid")
         )));
 
-        logger = Logger.getLogger(SampleTypeDomainKind.class);
+        logger = LogManager.getLogger(SampleTypeDomainKind.class);
     }
 
     public SampleTypeDomainKind()
@@ -318,6 +319,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         if (StringUtils.isNotBlank(options.getNameExpression()) && options.getNameExpression().length() > nameExpMax)
             throw new IllegalArgumentException("Value for Name Expression field may not exceed " + nameExpMax + " characters.");
 
+        int labelColorMax = materialSourceTI.getColumn("LabelColor").getScale();
+        if (StringUtils.isNotBlank(options.getLabelColor()) && options.getLabelColor().length() > labelColorMax)
+            throw new IllegalArgumentException("Value for Label Color field may not exceed " + labelColorMax + " characters.");
+
         Map<String, String> aliasMap = options.getImportAliases();
         if (aliasMap == null || aliasMap.size() == 0)
             return;
@@ -389,6 +394,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         int idCol3 = -1;
         int parentCol = -1;
         String nameExpression = null;
+        String labelColor = null;
         Map<String, String> aliases = null;
 
         if (arguments != null)
@@ -400,14 +406,14 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             idCol3 = idCols.size() > 2 ? idCols.get(2) : -1;
             parentCol = arguments.getParentCol() != null ? arguments.getParentCol() : -1;
 
-
             nameExpression = StringUtils.trimToNull(arguments.getNameExpression());
+            labelColor = StringUtils.trimToNull(arguments.getLabelColor());
             aliases = arguments.getImportAliases();
         }
         ExpSampleType st;
         try
         {
-            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo, aliases);
+            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo, aliases, labelColor);
         }
         catch (SQLException e)
         {

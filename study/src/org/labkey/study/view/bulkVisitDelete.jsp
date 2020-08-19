@@ -17,24 +17,24 @@
 %>
 
 <%@ page import="org.labkey.api.study.TimepointType"%>
+<%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.study.SpecimenManager" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DeleteVisitsForm" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
-<%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.study.SpecimenManager" %>
-<%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page import="org.labkey.study.model.VisitMapKey" %>
+<%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page import="java.util.Collections" %>
-<%@ page import="java.util.Map" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -74,7 +74,7 @@
     <span style="font-weight: bold;">Note: this will also delete any related dataset and specimen rows.</span>
 </p>
 <labkey:errors/>
-<labkey:form action="<%=h(buildURL(StudyController.BulkDeleteVisitsAction.class))%>" name="bulkDeleteVisits" method="POST">
+<labkey:form action="<%=buildURL(StudyController.BulkDeleteVisitsAction.class)%>" name="bulkDeleteVisits" method="POST">
 <table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
         <td class="labkey-column-header"><input type="checkbox" onchange="toggleAllRows(this);"></td>

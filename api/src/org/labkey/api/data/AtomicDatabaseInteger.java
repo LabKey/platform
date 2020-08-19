@@ -15,7 +15,7 @@
  */
 package org.labkey.api.data;
 
-import org.apache.log4j.Level;
+import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;

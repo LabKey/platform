@@ -26,7 +26,7 @@ JspView<Set<ExperimentRunType>> me = (JspView<Set<ExperimentRunType>>) HttpView.
 
 for (ExperimentRunType type : me.getModelBean())
 { %>
-    <a href="<%= ExperimentController.ExperimentUrlsImpl.get().getShowRunsURL(getContainer(), type) %>"><%= type.getDescription() %></a><br/>
+    <a href="<%= ExperimentController.ExperimentUrlsImpl.get().getShowRunsURL(getContainer(), type) %>"><%=h(type.getDescription())%></a><br/>
 <%
 }
 %>

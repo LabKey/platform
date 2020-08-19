@@ -17,6 +17,8 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
@@ -43,6 +45,7 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     private String _parentCol;
 
     private String _nameExpression;
+    private String _labelColor;
 
     private String _materialParentImportAliasMap;
 
@@ -124,6 +127,16 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
         _nameExpression = nameExpression;
     }
 
+    public String getLabelColor()
+    {
+        return _labelColor;
+    }
+
+    public void setLabelColor(String labelColor)
+    {
+        _labelColor = labelColor;
+    }
+
     public String getMaterialParentImportAliasMap()
     {
         return _materialParentImportAliasMap;
@@ -169,4 +182,9 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
         return getName().compareToIgnoreCase(o.getName());
     }
 
+    @Override
+    public @Nullable ExpSampleTypeImpl getExpObject()
+    {
+        return new ExpSampleTypeImpl(this);
+    }
 }

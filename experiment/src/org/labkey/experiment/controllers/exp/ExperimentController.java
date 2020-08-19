@@ -19,7 +19,8 @@ package org.labkey.experiment.controllers.exp;
 import au.com.bytecode.opencsv.CSVWriter;
 import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.jetbrains.annotations.NotNull;
@@ -27,7 +28,25 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiJsonWriter;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleApiJsonForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.actions.UploadWizardAction;
@@ -128,12 +147,12 @@ import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.DOM.LK;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -142,6 +161,7 @@ import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TidyUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DataView;
@@ -162,30 +182,7 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.experiment.ChooseExperimentTypeBean;
-import org.labkey.experiment.ConfirmDeleteView;
-import org.labkey.experiment.CustomPropertiesView;
-import org.labkey.experiment.DataClassWebPart;
-import org.labkey.experiment.DerivedSamplePropertyHelper;
-import org.labkey.experiment.DotGraph;
-import org.labkey.experiment.ExpDataFileListener;
-import org.labkey.experiment.ExperimentRunDisplayColumn;
-import org.labkey.experiment.ExperimentRunGraph;
-import org.labkey.experiment.LSIDRelativizer;
-import org.labkey.experiment.LineageGraphDisplayColumn;
-import org.labkey.experiment.MoveRunsBean;
-import org.labkey.experiment.NoPipelineRootSetView;
-import org.labkey.experiment.ParentChildView;
-import org.labkey.experiment.ProtocolApplicationDisplayColumn;
-import org.labkey.experiment.ProtocolDisplayColumn;
-import org.labkey.experiment.ProtocolWebPart;
-import org.labkey.experiment.RunGroupWebPart;
-import org.labkey.experiment.SampleTypeDisplayColumn;
-import org.labkey.experiment.SampleTypeWebPart;
-import org.labkey.experiment.StandardAndCustomPropertiesView;
-import org.labkey.experiment.XarExportPipelineJob;
-import org.labkey.experiment.XarExportType;
-import org.labkey.experiment.XarExporter;
+import org.labkey.experiment.*;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
@@ -276,7 +273,7 @@ import static org.labkey.api.util.DOM.cl;
  */
 public class ExperimentController extends SpringActionController
 {
-    private static final Logger _log = Logger.getLogger(ExperimentController.class);
+    private static final Logger _log = LogManager.getLogger(ExperimentController.class);
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ExperimentController.class);
     private static final String GUEST_DIRECTORY_NAME = "guest";
 
@@ -572,7 +569,6 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    @ActionNames("showMaterialSource,showSampleType") // Referenced in labkey-ui-components components/src/util/URLResolver.ts TODO: migrate
     public class ShowSampleTypeAction extends SimpleViewAction<ExpObjectForm>
     {
         private ExpSampleTypeImpl _sampleType;
@@ -611,6 +607,7 @@ public class ExperimentController extends SpringActionController
             detailsView.getDataRegion().getDisplayColumn("Name").setURL(null);
             detailsView.getDataRegion().getDisplayColumn("LSID").setVisible(false);
             detailsView.getDataRegion().getDisplayColumn("MaterialLSIDPrefix").setVisible(false);
+            detailsView.getDataRegion().getDisplayColumn("LabelColor").setVisible(false);
             detailsView.setTitle("Sample Type Properties");
             detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).setStyle(ButtonBar.Style.separateButtons);
 
@@ -2062,7 +2059,7 @@ public class ExperimentController extends SpringActionController
         public Object execute(ParseForm form, BindException errors) throws Exception
         {
             if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
-                throw new BadRequestException(HttpServletResponse.SC_BAD_REQUEST, "Expected MultipartHttpServletRequest when posting files.", null);
+                throw new BadRequestException("Expected MultipartHttpServletRequest when posting files.", HttpServletResponse.SC_BAD_REQUEST, null);
 
             MultipartFile formFile = getFileMap().get("file");
             if (formFile == null)
@@ -2371,7 +2368,7 @@ public class ExperimentController extends SpringActionController
                             PageFlowUtil.filter(form.getHtmlFragment()) +
                             "</textarea><br>" +
                             "<input type=\"submit\">" +
-                            "<input type=hidden name='X-LABKEY-CSRF' value=\"" + CSRFUtil.getExpectedToken(getViewContext()) + "\">" +
+                            new CsrfInput(getViewContext()) +
                             "</form>";
             return new HtmlView(html);
         }
@@ -2384,7 +2381,7 @@ public class ExperimentController extends SpringActionController
             if (!base.endsWith("/")) base += "/";
 
             String baseTag = "<base href=\"" + PageFlowUtil.filter(base) + "\"/>";
-            String css = PageFlowUtil.getStylesheetIncludes(getContainer());
+            HtmlString css = PageFlowUtil.getStylesheetIncludes(getContainer());
             String htmlFragment = StringUtils.trimToEmpty(form.getHtmlFragment());
             String html = "<html><head>" + baseTag + css + "</head><body>" + htmlFragment + "</body></html>";
 
@@ -3358,7 +3355,6 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(DesignSampleTypePermission.class)
-    @ActionNames("deleteSampleTypes,deleteMaterialSource")  // Referenced in labkey-ui-components components/samples/actions.ts TODO: migrate
     public class DeleteSampleTypesAction extends AbstractDeleteAction
     {
         @Override
@@ -3488,8 +3484,8 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    @ActionNames("getSampleTypeApi,getSampleSetApi") // Referenced in labkey-ui-components components/samples/actions.ts TODO: migrate
-    public class GetSampleTypeApiAction extends ReadOnlyApiAction<SampleTypeForm>
+    @ActionNames("getSampleType,getSampleTypeApi") // Referenced in labkey-ui-components components/samples/actions.ts TODO: migrate getSampleTypeApi -> getSampleType
+    public class GetSampleTypeAction extends ReadOnlyApiAction<SampleTypeForm>
     {
         @Override
         public void validateForm(SampleTypeForm form, Errors errors)
@@ -3503,16 +3499,17 @@ public class ExperimentController extends SpringActionController
         {
             ExpSampleTypeImpl st = form.getSampleType(getContainer());
 
-            return getSampleTypeApiResponse(st);
+            return getSampleTypeResponse(st);
         }
     }
 
     @NotNull
-    private static ApiSimpleResponse getSampleTypeApiResponse(ExpSampleType st) throws IOException
+    private static ApiSimpleResponse getSampleTypeResponse(ExpSampleType st) throws IOException
     {
         Map<String,Object> sampleType = new HashMap<>();
         sampleType.put("name", st.getName());
         sampleType.put("nameExpression", st.getNameExpression());
+        sampleType.put("labelColor", st.getLabelColor());
         sampleType.put("description", st.getDescription());
         sampleType.put("importAliases", st.getImportAliasMap());
         sampleType.put("lsid", st.getLSID());
@@ -3756,7 +3753,7 @@ public class ExperimentController extends SpringActionController
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
             if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
-                throw new BadRequestException(HttpServletResponse.SC_BAD_REQUEST, "Expected MultipartHttpServletRequest when posting files.", null);
+                throw new BadRequestException("Expected MultipartHttpServletRequest when posting files.", HttpServletResponse.SC_BAD_REQUEST, null);
 
             if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
             {
@@ -4629,10 +4626,6 @@ public class ExperimentController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            if (!container.hasPermission(getUser(), UpdatePermission.class))
-            {
-                throw new UnauthorizedException();
-            }
             obj.setComment(getUser(), form.getComment());
 
             if (form.isRedirect())

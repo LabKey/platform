@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.search.umls.UmlsController" %>
 <%@ page import="org.labkey.api.util.PollingUtil" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.search.umls.UmlsController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -34,7 +33,7 @@ String pollURL = null==pollKey ? null : pollKey.getUrl();
     <input name="path" value="<%=h(request.getParameter("path"))%>"><input type="submit" name="START" value="START"></labkey:form>
 <div style="display:<%=null==pollURL?"none":"block"%>"><span id="status"></span></div>
 <script type="text/javascript">
-var url = <%=PageFlowUtil.jsString(pollURL)%>;
+var url = <%=q(pollURL)%>;
 var task=null;
 var req=null;
 var stopped=false;

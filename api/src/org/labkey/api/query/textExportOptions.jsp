@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
@@ -118,7 +117,7 @@
 </table>
 <script>
     (function($) {
-        LABKEY.DataRegion.registerPane(<%=PageFlowUtil.jsString(model.getDataRegionName())%>, function(dr) {
+        LABKEY.DataRegion.registerPane(<%=q(model.getDataRegionName())%>, function(dr) {
             var delimEl = $("#<%=h(delimGUID)%>"),
                 quoteEl = $("#<%=h(quoteGUID)%>"),
                 exportSelectedEl = $("#<%=h(exportSelectedId)%>"),
@@ -127,11 +126,11 @@
             var includeSignButton = <%=model.isIncludeSignButton()%>;
 
             var doTsvExport = function(isSign) {
-                var exportRegionName = <%=PageFlowUtil.jsString(exportRegionName)%>;
+                var exportRegionName = <%=q(exportRegionName)%>;
                 var selectedParam = exportRegionName + '.showRows=SELECTED';
                 var url = isSign ?
-                        <%=PageFlowUtil.jsString(model.getSignTsvURL().toString())%> :
-                        <%=PageFlowUtil.jsString(model.getTsvURL().toString())%>;
+                        <%=q(model.getSignTsvURL().toString())%> :
+                        <%=q(model.getTsvURL().toString())%>;
                 if (exportSelectedEl.is(':checked')) {
                     if (url.indexOf(exportRegionName + '.showRows=ALL') == -1) {
                         url = url+'&'+selectedParam;

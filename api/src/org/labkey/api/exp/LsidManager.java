@@ -15,7 +15,8 @@
  */
 package org.labkey.api.exp;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProtocolSchema;
@@ -54,7 +55,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class LsidManager
 {
-    private static Logger LOG = Logger.getLogger(LsidManager.class);
+    private static Logger LOG = LogManager.getLogger(LsidManager.class);
     private static final LsidManager INSTANCE = new LsidManager();
 
     private final Map<String, Map<String, LsidHandler>> _authorityMap = new ConcurrentHashMap<>();

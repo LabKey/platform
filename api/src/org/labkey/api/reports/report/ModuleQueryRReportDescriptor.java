@@ -20,10 +20,10 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.template.ClientDependency;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.HashMap;
 
 /*
 * User: Dave

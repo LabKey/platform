@@ -16,6 +16,7 @@
 
 package org.labkey.api.admin;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.time.DateUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CoreSchema;
@@ -25,7 +26,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
@@ -33,9 +33,20 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class AdminBean
 {
+    public static class ActiveUser
+    {
+        public final String email;
+        public final long minutes;
+        ActiveUser(String email, Long minutes)
+        {
+            this.email = email;
+            this.minutes = null==minutes ? 0 : minutes.longValue();
+        }
+    }
     public final String javaVendor = System.getProperty("java.vendor");
     public final String javaRuntimeName = System.getProperty("java.runtime.name");
     public final String javaVersion = System.getProperty("java.runtime.version");
@@ -50,8 +61,9 @@ public class AdminBean
     public final String serverGuid = AppProps.getInstance().getServerGUID();
     public final String serverSessionGuid = AppProps.getInstance().getServerSessionGUID();
     public final String servletContainer = ModuleLoader.getServletContext().getServerInfo();
+    @JsonIgnore
     public final DbScope scope = CoreSchema.getInstance().getSchema().getScope();
-    public final List<Pair<String, Long>> active = UserManager.getRecentUsers(System.currentTimeMillis() - DateUtils.MILLIS_PER_HOUR);
+    public final List<ActiveUser> active;
 
     public final String userEmail;
     public final List<Module> modules;
@@ -65,6 +77,8 @@ public class AdminBean
         userEmail = user.getEmail();
         modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
         modules.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
+        active = UserManager.getRecentUsers(System.currentTimeMillis() - DateUtils.MILLIS_PER_HOUR).stream()
+                 .map(p -> new ActiveUser(p.first, p.second)).collect(Collectors.toList());
     }
 
     public List<NavTree> getLinks(ViewContext ctx)

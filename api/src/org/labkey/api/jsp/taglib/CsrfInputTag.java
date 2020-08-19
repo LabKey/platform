@@ -16,10 +16,8 @@
 
 package org.labkey.api.jsp.taglib;
 
-import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.element.CsrfInput;
 
-import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.PageContext;
 import java.io.IOException;
 
 public class CsrfInputTag extends SimpleTagBase
@@ -27,7 +25,6 @@ public class CsrfInputTag extends SimpleTagBase
     @Override
     public void doTag() throws IOException
     {
-        String csrf = CSRFUtil.getExpectedToken(this.getJspContext());
-        getOut().print("<input type=hidden name='" + CSRFUtil.csrfName + "' value='" + h(csrf) + "'>");
+        getOut().print(new CsrfInput(getJspContext()));
     }
 }

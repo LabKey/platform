@@ -352,6 +352,7 @@
       <column columnName="IdCol3"/>
       <column columnName="ParentCol"/>
       <column columnName="NameExpression"/>
+      <column columnName="LabelColor"/>
       <column columnName="CreatedBy">
         <fk>
           <fkColumnName>UserId</fkColumnName>

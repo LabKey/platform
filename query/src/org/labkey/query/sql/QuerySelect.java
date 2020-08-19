@@ -16,7 +16,8 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -63,7 +64,7 @@ import java.util.stream.Collectors;
 
 public class QuerySelect extends QueryRelation implements Cloneable
 {
-    private static final Logger _log = Logger.getLogger(QuerySelect.class);
+    private static final Logger _log = LogManager.getLogger(QuerySelect.class);
 
     String _queryText;
     private Map<FieldKey, SelectColumn> _columns;
@@ -1256,6 +1257,8 @@ groupByLoop:
                 else
                     markAllSelected(_query);
                 SQLFragment s = getSql();
+                if (!getParseErrors().isEmpty())
+                    throw getParseErrors().get(0);
                 SQLFragment f = new SQLFragment();
                 f.append("(").append(s).append(") ").append(alias);
 
@@ -1764,8 +1767,6 @@ groupByLoop:
     @Override
     Collection<String> getKeyColumns()
     {
-        if (!_resolved)
-            throw new IllegalStateException();
         // TODO handle multi column primary keys
         // TODO handle group by/distinct
         if (_tables.size() != 1 || null != _distinct || null != _groupBy || this.isAggregate())

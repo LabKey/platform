@@ -18,18 +18,18 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.exp.api.ExpSampleType" %>
 <%@ page import="org.labkey.api.study.SamplesUrls" %>
+<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.experiment.api.ExpSampleTypeImpl" %>
 <%@ page import="org.labkey.experiment.api.SampleTypeServiceImpl" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container proj = getContainer().getProject();
     if (proj == null || proj.isRoot())
     {
-        out.print("No current project.");
+        out.print(h("No current project."));
     }
     else
     {
@@ -44,7 +44,7 @@
             if (isStudySample)
                 url = urlProvider(SamplesUrls.class).getSamplesURL(sampleType.getContainer());
             else
-                url = new ActionURL(ExperimentController.ShowSampleTypeAction.class, sampleType.getContainer()).replaceParameter("rowId", "" + sampleType.getRowId());
+                url = new ActionURL(ExperimentController.ShowSampleTypeAction.class, sampleType.getContainer()).replaceParameter("rowId", sampleType.getRowId());
             %>
     <a style="font-weight:bold" href="<%=url%>"><%=h(isStudySample ? sampleType.getContainer().getName() : sampleType.getName())%></a>
                 <br><%=h(sampleType.getDescription() != null ? sampleType.getDescription() : sampleType.getContainer().getPath())%>

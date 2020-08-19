@@ -23,16 +23,15 @@
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -71,7 +70,7 @@
     String showTabs = Report.renderParam.showTabs.name();
 %>
 
-<labkey:form name="frmCustomize" method="post" action="<%=h(webPart.getCustomizePostURL(context))%>">
+<labkey:form name="frmCustomize" method="post" action="<%=webPart.getCustomizePostURL(context)%>">
     <table class="lk-fields-table">
         <tr>
             <td class="labkey-form-label">Web Part Title:</td>
@@ -80,7 +79,7 @@
         <tr>
             <td class="labkey-form-label">Report or Chart:</td>
             <td>
-                <select id="reportId" name="<%=Report.renderParam.reportId.name()%>" onchange="getSectionNames(this);">
+                <select id="reportId" name="<%=Report.renderParam.reportId%>" onchange="getSectionNames(this);">
                     <%
                         for (String reportName : reportNames)
                         {
@@ -129,11 +128,10 @@
         // ajax call to get report section names
         if (element)
         {
-            var url = "<%=h(urlProvider(ReportUrls.class).urlReportSections(c))%>";
+            var url = "<%=h(urlProvider(ReportUrls.class).urlReportSections(c).addParameter(sectionName, pm.get(sectionName)))%>";
 
-            url = url.concat("&<%=PageFlowUtil.encode(ReportDescriptor.Prop.reportId.name())%>=");
+            url = url.concat("&<%=unsafe(PageFlowUtil.encode(ReportDescriptor.Prop.reportId.name()))%>=");
             url = url.concat(element.value);
-            url = url.concat("&<%=PageFlowUtil.encode(sectionName)%>=<%=PageFlowUtil.encode(pm.get(sectionName))%>");
 
             LABKEY.Ajax.request({
                 url: url,

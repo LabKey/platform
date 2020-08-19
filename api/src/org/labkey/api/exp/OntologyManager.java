@@ -18,7 +18,8 @@ package org.labkey.api.exp;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -96,7 +97,7 @@ import static org.labkey.api.search.SearchService.PROPERTY;
  */
 public class OntologyManager
 {
-    private static final Logger _log = Logger.getLogger(OntologyManager.class);
+    private static final Logger _log = LogManager.getLogger(OntologyManager.class);
     private static final Cache<String, Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 10000, "Property maps");
     private static final Cache<String, Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "ObjectIds");
     private static final Cache<Pair<String, GUID>, PropertyDescriptor> propDescCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 40000, CacheManager.UNLIMITED, "Property descriptors"), new CacheLoader<>()
@@ -457,7 +458,7 @@ public class OntologyManager
         ValidatorContext validatorCache = new ValidatorContext(c, user);
 
         Connection conn = null;
-        Parameter.ParameterMap parameterMap = null;
+        ParameterMapStatement parameterMap = null;
 
         Map<String, Object> currentRow = null;
 
@@ -705,7 +706,7 @@ public class OntologyManager
          * <p>
          * TODO maybe this can be handled declaratively? see UpdateableTableInfo
          */
-        void bindAdditionalParameters(Map<String, Object> map, Parameter.ParameterMap target) throws ValidationException;
+        void bindAdditionalParameters(Map<String, Object> map, ParameterMapStatement target) throws ValidationException;
     }
 
 

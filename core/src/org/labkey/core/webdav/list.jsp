@@ -18,6 +18,7 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.apache.commons.lang3.time.FastDateFormat" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
@@ -118,7 +119,7 @@
         long modified = info.getLastModified();
         %><tr class="<%=getShadeRowClass(shade)%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>?listing=html"><%=h(name)%></a></td><%
         %><td align="right">&nbsp;</td><%
-        %><td align="right" nowrap><%=modified==0?"&nbsp;":dateFormat.format(new Date(modified))%></td></tr><%
+        %><td align="right" nowrap><%=modified==0 ? HtmlString.NBSP : h(dateFormat.format(new Date(modified)))%></td></tr><%
         out.println();
     }
     for (Map.Entry<String, WebdavResource> entry : dirs.entrySet())
@@ -129,7 +130,7 @@
         long modified = info.getLastModified();
         %><tr class="<%=getShadeRowClass(shade)%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>?listing=html"><%=h(name)%></a></td><%
         %><td align="right">&nbsp;</td><%
-        %><td align="right" nowrap><%=modified==0?"&nbsp;":dateFormat.format(new Date(modified))%></td></tr><%
+        %><td align="right" nowrap><%=modified==0 ? HtmlString.NBSP : h(dateFormat.format(new Date(modified)))%></td></tr><%
         out.println();
     }
     for (Map.Entry<String, WebdavResource> entry : files.entrySet())
@@ -147,7 +148,7 @@
             %><tr class="<%=getShadeRowClass(shade)%>"><td align="left"><%=h(name)%></td><%
         }
         %><td align="right"><%=info.getContentLength()%></td><%
-        %><td align="right" nowrap><%=modified==0?"&nbsp;":dateFormat.format(new Date(modified))%></td></tr><%
+        %><td align="right" nowrap><%=modified==0 ? HtmlString.NBSP : h(dateFormat.format(new Date(modified)))%></td></tr><%
         out.println();
     }
 %></table>
@@ -168,7 +169,7 @@ This is a WebDav enabled directory.<br>
         String comma = "";
         for (int i=0 ; i<can.size() ; i++)
         {
-            %><%=comma%><%=(i==can.size()-1 && i > 1) ? "and ":""%><%=can.get(i)%><%
+            %><%=h(comma)%><%=h((i==can.size()-1 && i > 1) ? "and ":"")%><%=h(can.get(i))%><%
             comma = ", ";
         }
         %> files in this directory.<br><%

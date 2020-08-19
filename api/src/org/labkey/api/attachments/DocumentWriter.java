@@ -16,8 +16,8 @@
 
 package org.labkey.api.attachments;
 
-import java.io.OutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * Something that knows how to absorb the content of a file or document, including some basic metadata.

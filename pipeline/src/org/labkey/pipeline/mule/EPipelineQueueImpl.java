@@ -16,14 +16,14 @@
 package org.labkey.pipeline.mule;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobData;
-import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineStatusFile;
-import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.RemoteExecutionEngine;
+import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JobRunner;
 import org.labkey.pipeline.api.AbstractPipelineQueue;
@@ -59,7 +59,7 @@ import java.util.Map;
  */
 public class EPipelineQueueImpl extends AbstractPipelineQueue
 {
-    private static Logger _log = Logger.getLogger(EPipelineQueueImpl.class);
+    private static Logger _log = LogManager.getLogger(EPipelineQueueImpl.class);
     private static final String PIPELINE_QUEUE_NAME = "PipelineQueue";
 
     private static ThreadLocal<List<PipelineJob>> _outboundJobs = new ThreadLocal<>();
@@ -310,12 +310,6 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
                 RequestContext.clear();
             }
         }        
-    }
-
-    @Override
-    public PipelineJob findJobInMemory(Container c, String statusFile)
-    {
-        throw new UnsupportedOperationException("No useful information about jobs in memory.");
     }
 
     @Override

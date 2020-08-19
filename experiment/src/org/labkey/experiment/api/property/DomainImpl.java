@@ -161,7 +161,7 @@ public class DomainImpl implements Domain
     }
 
     @Override
-    public synchronized DomainKind<?> getDomainKind()
+    public DomainKind<?> getDomainKind()
     {
         return _dd.getDomainKind();
     }

@@ -24,7 +24,8 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -250,7 +251,7 @@ import static org.labkey.api.util.PageFlowUtil.filter;
  */
 public class StudyController extends BaseStudyController
 {
-    private static final Logger _log = Logger.getLogger(StudyController.class);
+    private static final Logger _log = LogManager.getLogger(StudyController.class);
 
     private static final String PARTICIPANT_CACHE_PREFIX = "Study_participants/participantCache";
     private static final String EXPAND_CONTAINERS_KEY = StudyController.class.getName() + "/expandedContainers";
@@ -717,7 +718,7 @@ public class StudyController extends BaseStudyController
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
                                         replaceParameter(DATASET_REPORT_ID_PARAMETER_NAME, report.getDescriptor().getReportId().toString()).
-                                        replaceParameter(DatasetDefinition.DATASETKEY, String.valueOf(def.getDatasetId()));
+                                        replaceParameter(DatasetDefinition.DATASETKEY, def.getDatasetId());
 
                 return HttpView.redirect(url);
             }
@@ -2722,7 +2723,8 @@ public class StudyController extends BaseStudyController
                 @Override
                 public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
                 {
-                    out.write(PageFlowUtil.link("Download Data File").href("downloadTsv.view?id=" + ctx.get("RowId")).toString());
+                    ActionURL url = new ActionURL(DownloadTsvAction.class, ctx.getContainer()).addParameter("id", String.valueOf(ctx.get("RowId")));
+                    out.write(PageFlowUtil.link("Download Data File").href(url).toString());
                 }
             };
             dr.addDisplayColumn(dc);
@@ -5068,8 +5070,8 @@ public class StudyController extends BaseStudyController
                     {
                         ActionURL returnUrl = getViewContext().cloneActionURL()
                             .replaceParameter("ff_snapshotName", form.getSnapshotName())
-                            .replaceParameter("ff_updateDelay", String.valueOf(form.getUpdateDelay()))
-                            .replaceParameter("ff_snapshotDatasetId", String.valueOf(form.getSnapshotDatasetId()));
+                            .replaceParameter("ff_updateDelay", form.getUpdateDelay())
+                            .replaceParameter("ff_snapshotDatasetId", form.getSnapshotDatasetId());
 
                         _successURL = new ActionURL(StudyController.EditTypeAction.class, getContainer())
                                 .addParameter("datasetId", def.getDatasetId())
@@ -7331,10 +7333,15 @@ public class StudyController extends BaseStudyController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class ExportParticipantTransformsAction extends SimpleViewAction<Object>
+    public class ExportParticipantTransformsAction extends FormHandlerAction<Object>
     {
         @Override
-        public ModelAndView getView(Object form, BindException errors) throws Exception
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
             Study study = StudyManager.getInstance().getStudy(getContainer());
             if (study != null)
@@ -7360,16 +7367,16 @@ public class StudyController extends BaseStudyController
                     writer.write(getViewContext().getResponse());
                 }
 
-                return null;
+                return false;  // Don't redirect
             }
             else
                 throw new IllegalStateException("A study does not exist in this folder");
         }
 
         @Override
-        public void addNavTrail(NavTree root)
+        public URLHelper getSuccessURL(Object o)
         {
-            throw new UnsupportedOperationException();
+            throw new IllegalStateException();
         }
     }
 
@@ -7542,7 +7549,17 @@ public class StudyController extends BaseStudyController
         {
             if (null == _study)
                 return 0;
-            return StudyManager.getInstance().setImportedAlternateParticipantIds(_study, dl, errors);
+            int rows = StudyManager.getInstance().setImportedAlternateParticipantIds(_study, dl, errors);
+
+            // Insert a clear warning at the top that the mappings have not been imported, #36517
+            if (errors.hasErrors())
+            {
+                List<ValidationException> rowErrors = errors.getRowErrors();
+                int count = rowErrors.size();
+                rowErrors.add(0, new ValidationException("Warning: NONE of participant mappings have been imported because this mapping file contains " + (1 == count ? "an error" : "errors") + "! Please correct the following:"));
+            }
+
+            return rows;
         }
 
         @Override

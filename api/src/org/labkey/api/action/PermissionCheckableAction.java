@@ -17,6 +17,7 @@ package org.labkey.api.action;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.module.AllowedOutsideImpersonationProject;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.ContextualRoles;
@@ -33,8 +34,8 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ConfigurationException;
@@ -152,11 +153,10 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
 
         Container c = context.getContainer();
         User user = context.getUser();
-
-        if (c.isForbiddenProject(user))
-            throw new ForbiddenProjectException();
-
         Class<? extends Controller> actionClass = getClass();
+
+        if (!actionClass.isAnnotationPresent(AllowedOutsideImpersonationProject.class) && c.isForbiddenProject(user))
+            throw new ForbiddenProjectException();
 
         Method method = context.getMethod();
         HttpUtil.Method[] methodsAllowed = arrayGetPost;
@@ -165,7 +165,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             methodsAllowed = methodsAllowedAnnotation.value();
         if (Arrays.stream(methodsAllowed).noneMatch(s -> s.equals(method)))
         {
-            throw new BadRequestException(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed: " + method, null);
+            throw new BadRequestException("Method Not Allowed: " + method, HttpServletResponse.SC_METHOD_NOT_ALLOWED, null);
         }
 
         boolean requiresSiteAdmin = actionClass.isAnnotationPresent(RequiresSiteAdmin.class);

@@ -15,7 +15,8 @@
  */
 package org.labkey.study.visitmanager;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -36,7 +37,7 @@ import java.util.TimerTask;
 public class PurgeParticipantsTask extends TimerTask
 {
     private final Map<Container, Set<String>> _potentiallyDeletedParticipants;
-    private static final Logger _logger = Logger.getLogger(PurgeParticipantsTask.class);
+    private static final Logger _logger = LogManager.getLogger(PurgeParticipantsTask.class);
 
     public PurgeParticipantsTask(Map<Container, Set<String>> potentiallyDeletedParticipants)
     {

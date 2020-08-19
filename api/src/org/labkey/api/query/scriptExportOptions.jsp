@@ -64,7 +64,7 @@
                 Map.Entry<String, ActionURL> entry = iter.next();
             %>
                 <td valign="center">
-                    <label><input type="radio" <%= first ? "id=\"" + guid + "\"" : "" %> name="scriptExportType"<%=checked(first)%> value="<%=h(entry.getValue()) %>"/>
+                    <label><input type="radio" <%=text(first ? "id=\"" + guid + "\"" : "")%> name="scriptExportType"<%=checked(first)%> value="<%=h(entry.getValue()) %>"/>
                         <%= h(entry.getKey())%>
                     </label>
                 </td><%

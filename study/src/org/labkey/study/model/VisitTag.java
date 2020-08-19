@@ -18,7 +18,6 @@ package org.labkey.study.model;
 import org.labkey.api.data.ObjectFactory;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Map;
 

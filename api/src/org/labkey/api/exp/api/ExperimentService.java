@@ -16,7 +16,7 @@
 
 package org.labkey.api.exp.api;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -413,11 +413,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpExperimentTable createExperimentTable(String name, UserSchema schema, ContainerFilter cf);
 
-    @Deprecated // TODO ContainerFilter
-    default ExpMaterialTable createMaterialTable(String name, UserSchema schema)
-    {
-        return createMaterialTable(name, schema, null);
-    }
     ExpMaterialTable createMaterialTable(String name, UserSchema schema, ContainerFilter cf);
 
     ExpMaterialInputTable createMaterialInputTable(String name, ExpSchema expSchema, ContainerFilter cf);

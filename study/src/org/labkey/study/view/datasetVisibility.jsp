@@ -17,6 +17,8 @@
 %>
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper"%>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.element.Select.SelectBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -96,7 +98,7 @@
     {
 %>
 
-<labkey:form action="<%=h(buildURL(StudyController.DatasetVisibilityAction.class))%>" method="POST">
+<labkey:form action="<%=buildURL(StudyController.DatasetVisibilityAction.class)%>" method="POST">
 
 <p>Datasets can be hidden on the study overview screen.</p>
 <p>Hidden data can always be viewed, but is not shown by default.</p>
@@ -116,6 +118,7 @@
         for (Map.Entry<Integer, StudyController.DatasetVisibilityData> entry : bean.entrySet())
         {
             int id = entry.getKey().intValue();
+            String prefix = "dataset[" + id + "].";
             StudyController.DatasetVisibilityData data = entry.getValue();
             if (data.empty)
                 emptyDatasets.add(id);
@@ -123,7 +126,7 @@
         <tr data-datasetid="<%=id%>">
             <td><%= id %></td>
             <td>
-                <input type="text" size="20" name="<%="dataset[" + id + "].label"%>" value="<%= h(data.label != null ? data.label : "") %>" placeholder="Dataset label required" <%=readonly(data.inherited)%>>
+                <%=input().name(prefix + "label").value(data.label).size(20).placeholder("Dataset label required").readOnly(data.inherited).className(null)%>
             </td>
             <td>
                 <div id="<%=h(id + "-viewcategory")%>"></div>
@@ -138,23 +141,18 @@
                     }
                     else
                     {
-                    %>
-                    <select name="<%="dataset[" + id + "].cohort"%>" <%=disabled(data.inherited)%>>
-                        <labkey:options value="<%=data.cohort%>" map="<%=cohortOpts%>"/>
-                    </select>
-                    <%
+                        SelectBuilder select = select().name(prefix + "cohort").disabled(data.inherited).addOptions(cohortOpts).selected(data.cohort).className(null);
+                        out.println(select);
                     }
                 %>
             </td>
             <td>
-                <select name="<%="dataset[" + id + "].status"%>" <%=disabled(data.inherited)%>>
-                    <labkey:options value="<%=data.status%>" map="<%=statusOpts%>"/>
-                </select>
+                <%=select().name(prefix + "status").disabled(data.inherited).addOptions(statusOpts).selected(data.status).className(null)%>
             </td>
             <td align="center">
-                <labkey:checkbox name='<%="dataset[" + id + "].visible"%>' id='<%="dataset[" + id + "].visible"%>' value="true" checked="<%=data.visible%>"/>
+                <%=input().type("checkbox").name(prefix + "visible").id(prefix + "visible").value("true").checked(data.visible)%>
             </td>
-            <td><%= text(data.empty ? "empty" : "&nbsp;") %></td>
+            <td><%=data.empty ? h("empty") : HtmlString.NBSP%></td>
         </tr>
     <%
         }

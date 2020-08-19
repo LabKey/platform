@@ -17,8 +17,8 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.study.controllers.BaseStudyController.StudyJspView"%>
-<%@ page import="org.labkey.study.controllers.StudyController.BulkImportTypesForm"%>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController"%>
+<%@ page import="org.labkey.study.controllers.StudyController.BulkImportTypesForm" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -111,7 +111,7 @@ For more information about the schema definition format, see <%=helpLink("Datase
     </tr>
 </table>
 
-<labkey:form action="<%=h(buildURL(StudyController.BulkImportDataTypesAction.class))%>" method="POST" enctype="multipart/form-data">
+<labkey:form action="<%=buildURL(StudyController.BulkImportDataTypesAction.class)%>" method="POST" enctype="multipart/form-data">
     <table>
         <tr>
             <td class=labkey-form-label>Header of column containing dataset Name (e.g., platename)<span class="labkey-error">*</span></td>

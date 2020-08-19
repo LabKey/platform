@@ -31,7 +31,7 @@
 <%@ page import="org.labkey.api.search.SearchUtils.HtmlParseException" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.Formats" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Path" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -117,15 +117,17 @@
                 Path path = Path.parse(hit.docid.substring(4));
                 if (path.startsWith(dav))
                     path = dav.relativize(path);
-                if (path.startsWith(containerPath))
+                if (path.startsWith(containerPath) || path.startsWith(new Path(c.getId())))
                 {
-                    Path rel = containerPath.relativize(path);
+                    Path rel;
+                    if (path.startsWith(containerPath))
+                        rel = containerPath.relativize(path);
+                    else
+                        rel = path.subpath(1, path.size());
                     if (rel.startsWith(files) || rel.startsWith(pipeline))
                     {
-                        if (path.size() > 0) path = path.getParent();
-                        text = path.toString("/","");
-
-                        if (rel.size() > 0) rel = rel.getParent();
+                        rel = rel.getParent();
+                        text = c.getParsedPath().append(rel).toString("/","");
                         url = urlProvider(ProjectUrls.class).getFileBrowserURL(c, rel.toString("/",""));
                     }
                 }
@@ -297,7 +299,7 @@
             <% } %>
             <input type="hidden" name="_dc" value="<%=h(Math.round(1000 * Math.random()))%>">
             <%
-                String hiddenInputs = template.getHiddenInputsHtml(ctx);
+                HtmlString hiddenInputs = template.getHiddenInputsHtml(ctx);
                 if (hiddenInputs != null)
                     out.print(hiddenInputs);
             %>
@@ -431,11 +433,11 @@
     </div>
 </div>
 <%
-    String extraHtml = template.getExtraHtml(ctx);
+    HtmlString extraHtml = template.getExtraHtml(ctx);
     if (null != extraHtml)
     {
 %>
-<div class="col-md-12"><%=text(extraHtml)%></div>
+<div class="col-md-12"><%=extraHtml%></div>
 <%
     }
 %>
@@ -499,7 +501,9 @@
                     {
                         String summary = StringUtils.trimToNull(hit.summary);
                         if (null != summary)
-                            %><%=h(summary, false).toString().replace("&lt;br&gt;", "<br>")%><%
+                        {
+                            %><%=unsafe(h(summary, false).toString().replace("&lt;br&gt;", "<br>"))%><%
+                        }
                     }
                 %>
                 </div>
@@ -521,7 +525,7 @@
                         int newOffset = offset - hitsPerPage;
 
                         if (newOffset > 0)
-                            previousURL.replaceParameter("offset", String.valueOf(newOffset));
+                            previousURL.replaceParameter("offset", newOffset);
                         else
                             previousURL.deleteParameter("offset");
                 %>
@@ -538,7 +542,7 @@
                     if (pageNo < pageCount)
                     {
                 %>
-                <a href="<%=h(currentURL.clone().replaceParameter("offset", String.valueOf(offset + hitsPerPage)))%>">Next &gt;</a>
+                <a href="<%=h(currentURL.clone().replaceParameter("offset", offset + hitsPerPage))%>">Next &gt;</a>
                 <%
                     }
                 %>
@@ -599,14 +603,14 @@
     +function($){
         'use strict';
 
-        var advFormCtSelector = '#' + <%=PageFlowUtil.jsString(advFormCt)%>;
+        var advFormCtSelector = '#' + <%=q(advFormCt)%>;
 
         function getAdvForm() {
-            return $('#' + <%=PageFlowUtil.jsString(advFormId)%>);
+            return $('#' + <%=q(advFormId)%>);
         }
 
         function getSearchForm() {
-            return $('#' + <%=PageFlowUtil.jsString(searchFormId)%>);
+            return $('#' + <%=q(searchFormId)%>);
         }
 
         $(function() {

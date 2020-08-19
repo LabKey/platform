@@ -16,7 +16,8 @@
 
 package org.labkey.api.util;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.settings.AppProps;
 
@@ -41,7 +42,7 @@ import java.security.SecureRandom;
  */
 public class HttpsUtil
 {
-    private static final Logger LOG = Logger.getLogger(HttpsUtil.class);
+    private static final Logger LOG = LogManager.getLogger(HttpsUtil.class);
     private static final HostnameVerifier _hostnameVerifier = (urlHostName, session) -> true;
 
     private static SSLSocketFactory _socketFactory;

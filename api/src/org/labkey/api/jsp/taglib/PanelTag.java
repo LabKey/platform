@@ -15,17 +15,22 @@
  */
 package org.labkey.api.jsp.taglib;
 
-import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.UnexpectedException;
 
-import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.BodyTagSupport;
 import java.io.IOException;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.H3;
+import static org.labkey.api.util.DOM.cl;
 
 public class PanelTag extends BodyTagSupport
 {
     private String className = null;
-    private String id = null;
     private String type = "default";
     private String title = null;
     private Integer width = null;
@@ -38,18 +43,6 @@ public class PanelTag extends BodyTagSupport
     public void setClassName(String className)
     {
         this.className = className;
-    }
-
-    @Override
-    public String getId()
-    {
-        return id;
-    }
-
-    @Override
-    public void setId(String id)
-    {
-        this.id = id;
     }
 
     public String getType()
@@ -82,61 +75,38 @@ public class PanelTag extends BodyTagSupport
         this.width = width;
     }
 
+    HtmlString endTag;
+
     @Override
-    public int doStartTag() throws JspException
+    public int doStartTag()
     {
-        // TODO: HtmlString
-
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("<div class=\"panel panel-" + getType());
-        if (StringUtils.isNotEmpty(getClassName()))
-            sb.append(" " + getClassName().trim());
-        sb.append("\"");
-
-        if (StringUtils.isNoneEmpty(getId()))
-            sb.append(" id=\"" + getId() + "\"");
-
         String style = getWidth() != null ? "width: " + getWidth() + "px;" : "";
-        if (StringUtils.isNoneEmpty(style))
-            sb.append(" style=\"" + style + "\"");
 
-        sb.append(">");
+        var panel = DIV(cl("panel", "panel-" + getType(), getClassName()).at(DOM.Attribute.id, getId(), DOM.Attribute.style, style),
+                isBlank(getTitle()) ? null :
+                    DIV(cl("panel-heading"),
+                        H3(cl("panel-title", "pull-left"), getTitle()),
+                        DIV(cl("clearfix"))
+                    ),
+                DIV(cl("panel-body"), DOM.BODY_PLACE_HOLDER)
+            );
+        endTag = DOM.renderTemplate(panel, pageContext.getOut());
 
-        if (StringUtils.isNoneEmpty(getTitle()))
-        {
-            sb.append("<div class=\"panel-heading\">");
-            sb.append(" <h3 class=\"panel-title pull-left\">" + PageFlowUtil.filter(title) + "</h3>");
-            sb.append(" <div class=\"clearfix\"></div>");
-            sb.append("</div>");
-        }
-
-        sb.append("<div class=\"panel-body\">");
-
-        print(sb);
         return BodyTagSupport.EVAL_BODY_INCLUDE;
     }
 
     @Override
-    public int doEndTag() throws JspException
-    {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("</div></div>");
-
-        print(sb);
-        return BodyTagSupport.EVAL_PAGE;
-    }
-
-    private void print(StringBuilder sb) throws JspException
+    public int doEndTag()
     {
         try
         {
-            pageContext.getOut().print(sb.toString());
+            pageContext.getOut().print(endTag);
         }
-        catch (IOException e)
+        catch(IOException x)
         {
-            throw new JspException(e);
+            throw UnexpectedException.wrap(x);
         }
+
+        return BodyTagSupport.EVAL_PAGE;
     }
 }

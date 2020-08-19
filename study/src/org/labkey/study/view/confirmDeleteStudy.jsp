@@ -16,8 +16,8 @@
  */
 %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
-<%@ page import="java.util.Collection" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="java.util.Collection" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <script>
@@ -31,7 +31,7 @@
         return confirmed;
     }
 </script>
-<labkey:form action="<%=h(buildURL(StudyController.DeleteStudyAction.class))%>" method="post" onsubmit="return deleteStudy_onSubmit();">
+<labkey:form action="<%=buildURL(StudyController.DeleteStudyAction.class)%>" method="post" onsubmit="return deleteStudy_onSubmit();">
 This will delete all study data in this folder.
 <ul>
 <%

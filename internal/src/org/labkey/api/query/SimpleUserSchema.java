@@ -17,7 +17,8 @@
 package org.labkey.api.query;
 
 import com.google.common.collect.Iterables;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -35,6 +36,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
@@ -72,7 +74,7 @@ import java.util.stream.Collectors;
  */
 public class SimpleUserSchema extends UserSchema
 {
-    private static final Logger _log = Logger.getLogger(SimpleUserSchema.class);
+    private static final Logger _log = LogManager.getLogger(SimpleUserSchema.class);
 
     // CaseInsensitiveTreeSet preserves case of the table names (from XML), unlike CaseInsensitiveHashSet
     private final Set<String> _available = new CaseInsensitiveTreeSet();
@@ -549,19 +551,19 @@ public class SimpleUserSchema extends UserSchema
         }
 
         @Override
-        public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
+        public ParameterMapStatement insertStatement(Connection conn, User user) throws SQLException
         {
             return StatementUtils.insertStatement(conn, getRealTable(), null, user, false, true);
         }
 
         @Override
-        public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns) throws SQLException
+        public ParameterMapStatement updateStatement(Connection conn, User user, Set<String> columns) throws SQLException
         {
             return StatementUtils.updateStatement(conn, getRealTable(), null, user, false, true);
         }
 
         @Override
-        public Parameter.ParameterMap deleteStatement(Connection conn)
+        public ParameterMapStatement deleteStatement(Connection conn)
         {
             throw new UnsupportedOperationException();
         }

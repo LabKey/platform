@@ -20,10 +20,10 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.Pair;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class QOrder extends QNode
 {

@@ -23,6 +23,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
         {
             this.name = st.getName();
             this.nameExpression = st.getNameExpression();
+            this.labelColor = st.getLabelColor();
             this.domainId = st.getDomain().getTypeId();
             this.rowId = st.getRowId();
             this.lsid = st.getLSID();
@@ -42,6 +43,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
     }
 
     private String nameExpression;
+    private String labelColor;
     private Map<String, String> importAliases;
     private int rowId;
     private int domainId;
@@ -122,6 +124,16 @@ public class SampleTypeDomainKindProperties implements Cloneable
     public String getNameExpression()
     {
         return this.nameExpression;
+    }
+
+    public void setLabelColor(String labelColor)
+    {
+        this.labelColor = labelColor;
+    }
+
+    public String getLabelColor()
+    {
+        return this.labelColor;
     }
 
     public void setName(String name)

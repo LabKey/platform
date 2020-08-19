@@ -16,19 +16,19 @@
  */
 %>
 <%@ page import="org.json.JSONObject"%>
+<%@ page import="org.labkey.api.assay.AssayProvider" %>
+<%@ page import="org.labkey.api.assay.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.api.exp.api.AssayJSONConverter" %>
 <%@ page import="org.labkey.api.exp.api.ExpExperiment" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
+<%@ page import="org.labkey.api.exp.api.ExperimentJSONConverter" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentService" %>
-<%@ page import="org.labkey.api.assay.actions.AssayRunUploadForm" %>
-<%@ page import="org.labkey.api.assay.AssayProvider" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.NotFoundException" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.assay.AssayController" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.exp.api.ExperimentJSONConverter" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -65,13 +65,13 @@
 %>
 <script type="text/javascript">
 LABKEY.page = LABKEY.page || {};
-LABKEY.page.assay = <%= new JSONObject(assay).toString(2) %>;
+LABKEY.page.assay = <%= new JSONObject(assay).getHtmlString(2)%>;
 <%
  if (batchId > 0)
  {
     ExpExperiment batch = lookupBatch(batchId);
     JSONObject batchJson = AssayJSONConverter.serializeBatch(batch, provider, protocol, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
-    %>LABKEY.page.batch = new LABKEY.Exp.RunGroup(<%=batchJson.toString(2)%>);<%
+    %>LABKEY.page.batch = new LABKEY.Exp.RunGroup(<%=batchJson.getHtmlString(2)%>);<%
  }
  else
  {

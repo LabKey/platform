@@ -16,7 +16,7 @@
 
 package org.labkey.list.model;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
@@ -32,6 +32,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ImportTypesHelper;
+import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptor;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
@@ -39,6 +40,7 @@ import org.labkey.api.exp.list.ListDefinition.KeyType;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
@@ -64,6 +66,7 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -289,10 +292,11 @@ public class ListImporter
     public void processMany(VirtualFile listsDir, Container c, User user, List<String> errors, Logger log) throws Exception
     {
         XmlObject listXml = listsDir.getXmlBean(ListWriter.SCHEMA_FILENAME);
+        Collection<ValidatorImporter> validatorImporters = new LinkedList<>();
 
         //create list tables in the db as defined in lists.xml
         if (listXml != null)
-            createDefinedLists(listsDir, listXml, c, user, errors, log);
+            createDefinedLists(listsDir, listXml, c, user, validatorImporters, errors, log);
 
         Map<String, String> fileTypeMap = new HashMap<>();
 
@@ -330,6 +334,11 @@ public class ListImporter
             }
         }
 
+        // All the lists have been imported, so now save the validators. See #40343.
+        // This could be generalized to benefit datasets, specimens, etc.
+        for (ValidatorImporter vi : validatorImporters)
+            vi.process();
+
         log.info(StringUtilsLabKey.pluralize(successfulLists, "list") + " imported successfully");
         if (failedLists > 0)
         {
@@ -345,7 +354,7 @@ public class ListImporter
         }
     }
 
-    private boolean createNewList(Container c, User user, String listName, Collection<Integer> preferredListIds, TableType listXml, @Nullable ListsDocument.Lists.List listSettingsXml, List<String> errors) throws Exception
+    private boolean createNewList(Container c, User user, String listName, Collection<Integer> preferredListIds, TableType listXml, @Nullable ListsDocument.Lists.List listSettingsXml, Collection<ValidatorImporter> validatorImporters, List<String> errors) throws Exception
     {
         final String keyName = listXml.getPkColumnName();
 
@@ -400,11 +409,10 @@ public class ListImporter
                 if (columnXml.getIsKeyField() && !columnName.equalsIgnoreCase(keyName))
                     throw new ImportException("More than one key specified: '" + keyName + "' and '" + columnName + "'");
 
-
                 return true;
             }
         };
-        return ListManager.get().importListSchema(list, TYPE_NAME_COLUMN, importHelper, user, errors);
+        return ListManager.get().importListSchema(list, TYPE_NAME_COLUMN, importHelper, user, validatorImporters, errors);
     }
 
     private KeyType getKeyType(TableType listXml, String keyName) throws ImportException
@@ -428,7 +436,7 @@ public class ListImporter
         throw new ImportException("pkColumnName is set to \"" + keyName + "\" but column is not defined.");
     }
 
-    private void createDefinedLists(VirtualFile listsDir, XmlObject listXml, Container c, User user, List<String> errors, Logger log) throws Exception
+    private void createDefinedLists(VirtualFile listsDir, XmlObject listXml, Container c, User user, Collection<ValidatorImporter> validatorImporters, List<String> errors, Logger log) throws Exception
     {
         TablesDocument tablesDoc;
         try
@@ -526,7 +534,7 @@ public class ListImporter
                 try
                 {
                     log.info("Recreating list: " + name);
-                    boolean success = createNewList(c, user, name, preferredListIds, tableType, listSettingsMap.get(name), errors);
+                    boolean success = createNewList(c, user, name, preferredListIds, tableType, listSettingsMap.get(name), validatorImporters, errors);
                     assert success;
                 }
                 catch (ImportException e)
@@ -544,6 +552,48 @@ public class ListImporter
             if (null == metadataXml)
                 queryDef.setMetadataXml(null);
             */
+        }
+    }
+
+    // This is a general-purpose validator importing class that should work for datasets and specimens as well as lists,
+    // if needed. Look at usages of ImportPropertyDescriptor.validators. #40343
+    static class ValidatorImporter
+    {
+        private final int _typeId;
+        private final List<ImportPropertyDescriptor> _properties;
+        private final User _user;
+
+        public ValidatorImporter(int typeId, List<ImportPropertyDescriptor> properties, User user)
+        {
+            _typeId = typeId;
+            _properties = properties;
+            _user = user;
+        }
+
+        public void process() throws Exception
+        {
+            boolean hasValidator = false;
+            Domain domain = PropertyService.get().getDomain(_typeId);
+
+            if (null != domain)
+            {
+                for (ImportPropertyDescriptor ipd : _properties)
+                {
+                    if (!ipd.validators.isEmpty())
+                    {
+                        DomainProperty domainProperty = domain.getPropertyByURI(ipd.pd.getURI());
+
+                        if (null != domainProperty)
+                        {
+                            ipd.validators.forEach(domainProperty::addValidator);
+                            if (!domainProperty.getValidators().isEmpty())
+                                hasValidator = true;
+                        }
+                    }
+                }
+                if (hasValidator)
+                    domain.save(_user);
+            }
         }
     }
 

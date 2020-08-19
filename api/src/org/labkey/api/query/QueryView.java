@@ -17,7 +17,8 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.jetbrains.annotations.NotNull;
@@ -116,7 +117,7 @@ public class QueryView extends WebPartView<Object>
     public static final String EXCEL_WEB_QUERY_EXPORT_TYPE = "excelWebQuery";
     public static final String DATAREGIONNAME_DEFAULT = "query";
 
-    private static final Logger _log = Logger.getLogger(QueryView.class);
+    private static final Logger _log = LogManager.getLogger(QueryView.class);
     private static final Map<String, ExportScriptFactory> _exportScriptFactories = new ConcurrentSkipListMap<>();
 
     protected static final String INSERT_DATA_TEXT = "Insert Data";
@@ -706,15 +707,6 @@ public class QueryView extends WebPartView<Object>
             url.addParameter(parameterToAdd, parameterValue);
         ActionButton actionButton = new ActionButton(label, url);
         return actionButton;
-    }
-
-    /**
-     * @deprecated Use {@link ButtonBar#add(DisplayElement...)}
-     */
-    @Deprecated
-    protected void addButton(ButtonBar bar, ActionButton button)
-    {
-        bar.add(button);
     }
 
     protected String param(QueryParam param)

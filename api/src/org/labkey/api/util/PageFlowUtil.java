@@ -18,7 +18,8 @@ package org.labkey.api.util;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -161,7 +162,7 @@ public class PageFlowUtil
         xml
     }
 
-    private static final Logger _log = Logger.getLogger(PageFlowUtil.class);
+    private static final Logger _log = LogManager.getLogger(PageFlowUtil.class);
     private static final String _newline = System.getProperty("line.separator");
 
     private static final Pattern urlPatternStart = Pattern.compile("((http|https|ftp|mailto)://\\S+).*");
@@ -272,7 +273,7 @@ public class PageFlowUtil
                                 if (href.endsWith("."))
                                     href = href.substring(0, href.length() - 1);
                                 // for html/xml careful of " and "> and "/>
-                                int lastQuote = Math.max(href.lastIndexOf("\""),href.lastIndexOf("\'"));
+                                int lastQuote = Math.max(href.lastIndexOf("\""), href.lastIndexOf("'"));
                                 if (lastQuote >= href.length()-3)
                                     href = href.substring(0, lastQuote);
                                 String filterHref = filter(href, false, false);
@@ -371,18 +372,10 @@ public class PageFlowUtil
         if (cs == null)
             return "''";
 
-        String s = cs.toString();
-
-        // UNDONE: what behavior do we want for tainted strings? IllegalArgumentException()?
-        if (cs instanceof Taintable && ((Taintable)cs).isTainted())
-        {
-            if (s.toLowerCase().contains("<script"))
-                return "''";
-        }
-        return jsString(s);
+        return jsString(cs.toString());
     }
 
-
+    @Deprecated // usages look wrong to me -- they should just use q()?
     static public HtmlString jsString(HtmlString hs)
     {
         return HtmlString.unsafe(jsString(hs.toString()));
@@ -756,7 +749,7 @@ public class PageFlowUtil
      */
     static private final boolean COMPRESS_OBJECT_STREAMS = true;
 
-    static public String encodeObject(Object o) throws IOException
+    static public HtmlString encodeObject(Object o) throws IOException
     {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         OutputStream osCompressed;
@@ -785,7 +778,7 @@ public class PageFlowUtil
             w.write(json.toString());
         }
         osCompressed.close();
-        return new String(Base64.encodeBase64(byteArrayOutputStream.toByteArray(), true), StringUtilsLabKey.DEFAULT_CHARSET);
+        return HtmlString.unsafe(new String(Base64.encodeBase64(byteArrayOutputStream.toByteArray(), true), StringUtilsLabKey.DEFAULT_CHARSET));
     }
 
     public static <T> T decodeObject(Class<T> cls, String encoded) throws IOException
@@ -1427,7 +1420,7 @@ public class PageFlowUtil
         return '"';
     }
 
-    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 37 usages.
+    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 35 usages.
     public static String textLink(String text, URLHelper url)
     {
         return link(text).href(url).toString();
@@ -1548,24 +1541,24 @@ public class PageFlowUtil
     }
 
 
-    public static String getAppIncludes(ViewContext context, @Nullable  LinkedHashSet<ClientDependency> resources)
+    public static HtmlString getAppIncludes(ViewContext context, @Nullable  LinkedHashSet<ClientDependency> resources)
     {
         return _getStandardIncludes(context, null, resources, false, false);
     }
 
 
-    public static String getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
+    public static HtmlString getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
     {
         return _getStandardIncludes(context, null, resources, true, includePostParameters);
     }
 
-    public static String getStandardIncludes(ViewContext context, PageConfig config)
+    public static HtmlString getStandardIncludes(ViewContext context, PageConfig config)
     {
         return _getStandardIncludes(context, config, config.getClientDependencies(), true, config.shouldIncludePostParameters());
     }
 
 
-    private static String _getStandardIncludes(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources,
+    private static HtmlString _getStandardIncludes(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources,
             boolean includeDefaultResources, boolean includePostParameters)
 
     {
@@ -1584,7 +1577,7 @@ public class PageFlowUtil
             }
         }
 
-        StringBuilder sb = new StringBuilder(getIncludes(context, config, resources, includeDefaultResources, includePostParameters));
+        HtmlStringBuilder builder = HtmlStringBuilder.of(getIncludes(context, config, resources, includeDefaultResources, includePostParameters));
 
         if (currentId != -1)
         {
@@ -1592,31 +1585,28 @@ public class PageFlowUtil
             ids.add(currentId);
             ids.addAll(MemTracker.get().getUnviewed(context.getUser()));
 
-            sb.append(MiniProfiler.renderInitScript(currentId, ids, getServerSessionHash()));
+            builder.append(MiniProfiler.renderInitScript(currentId, ids, getServerSessionHash()));
         }
 
-        return sb.toString();
+        return builder.getHtmlString();
     }
 
-
-    public static StringBuilder getFaviconIncludes(Container c)
+    public static HtmlString getFaviconIncludes(Container c)
     {
-        StringBuilder sb = new StringBuilder();
-
         ResourceURL faviconURL = TemplateResourceHandler.FAVICON.getURL(c);
 
-        sb.append("<link rel=\"shortcut icon\" href=\"");
-        sb.append(PageFlowUtil.filter(faviconURL));
-        sb.append("\">\n");
+        HtmlStringBuilder builder = HtmlStringBuilder.of()
+            .append(HtmlString.unsafe("<link rel=\"shortcut icon\" href=\""))
+            .append(faviconURL)
+            .append(HtmlString.unsafe("\">\n"))
+            .append(HtmlString.unsafe("<link rel=\"icon\" href=\""))
+            .append(faviconURL)
+            .append(HtmlString.unsafe("\">\n"));
 
-        sb.append("<link rel=\"icon\" href=\"");
-        sb.append(PageFlowUtil.filter(faviconURL));
-        sb.append("\">\n");
-
-        return sb;
+        return builder.getHtmlString();
     }
 
-    private static String getIncludes(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> extraResources,
+    private static HtmlString getIncludes(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> extraResources,
               boolean includeDefaultResources, boolean includePostParameters)
     {
         Container c = context.getContainer();
@@ -1648,25 +1638,24 @@ public class PageFlowUtil
 
         resources.removeIf(Objects::isNull);
 
-        StringBuilder sb = getFaviconIncludes(c);
-        sb.append(getLabkeyJS(context, config, resources, includePostParameters));
-        sb.append(getStylesheetIncludes(c, resources, includeDefaultResources));
-        sb.append(getManifestIncludes(c, resources));
-        sb.append(getJavaScriptIncludes(c, resources));
-
-        return sb.toString();
+        return HtmlStringBuilder.of(getFaviconIncludes(c))
+            .append(getLabkeyJS(context, config, resources, includePostParameters))
+            .append(getStylesheetIncludes(c, resources, includeDefaultResources))
+            .append(getManifestIncludes(c, resources))
+            .append(getJavaScriptIncludes(c, resources))
+            .getHtmlString();
     }
 
     // Outputs <link> elements for standard stylesheets (but not Ext stylesheets). Note hrefs are relative, so callers may
     // need to output a <base> element prior to calling.
-    public static String getStylesheetIncludes(Container c)
+    public static HtmlString getStylesheetIncludes(Container c)
     {
         return getStylesheetIncludes(c, null, true);
     }
 
     // Outputs <link> elements for standard stylesheets, Ext stylesheets, and client dependency stylesheets, as required.
     // Note that hrefs are relative, so callers may need to output a <base> element prior to calling.
-    private static String getStylesheetIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources, boolean includeDefaultResources)
+    private static HtmlString getStylesheetIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources, boolean includeDefaultResources)
     {
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
         StringBuilder sb = new StringBuilder();
@@ -1703,10 +1692,12 @@ public class PageFlowUtil
             }
         }
 
-        if (resources != null)
-            writeCss(c, sb, resources, preIncludedCss);
+        HtmlStringBuilder builder = HtmlStringBuilder.of(HtmlString.unsafe(sb.toString()));
 
-        return sb.toString();
+        if (resources != null)
+            writeCss(c, builder, resources, preIncludedCss);
+
+        return builder.getHtmlString();
     }
 
     @NotNull
@@ -1748,8 +1739,10 @@ public class PageFlowUtil
         return extCSS;
     }
 
-    private static void writeCss(Container c, StringBuilder sb, LinkedHashSet<ClientDependency> resources, Set<String> preIncludedCss)
+    private static void writeCss(Container c, HtmlStringBuilder builder, LinkedHashSet<ClientDependency> resources, Set<String> preIncludedCss)
     {
+        // TODO: Use HtmlStringBuilder throughout rendering
+        StringBuilder sb = new StringBuilder();
         Set<String> cssFiles = new HashSet<>();
         if (resources != null)
         {
@@ -1800,11 +1793,13 @@ public class PageFlowUtil
             }
             sb.append(");\n</script>\n");
         }
+
+        builder.append(HtmlString.unsafe(sb.toString()));
     }
 
-    // Manifest files are included as links in the HTML head.  These files are used to identify resources for progressive
-    // web apps like flash page and home page link icons.  There can be multiple on the same page.
-    private static String getManifestIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources)
+    // Manifest files are included as links in the HTML head. These files are used to identify resources for progressive
+    // web apps like flash page and home page link icons. There can be multiple on the same page.
+    private static HtmlString getManifestIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -1836,10 +1831,12 @@ public class PageFlowUtil
             }
         }
 
-        return sb.toString();
+        // TODO: Rewrite the above using LinkBuilder
+        return HtmlString.unsafe(sb.toString());
     }
 
-    public static final String extJsRoot()
+    // TODO: Remove... unused? (Move string to JSpBase.getExtJs3Root())
+    public static String extJsRoot()
     {
         return "ext-3.4.1";
     }
@@ -1892,28 +1889,39 @@ public class PageFlowUtil
     }
 
 
-    public static String getLabkeyJS(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
+    public static HtmlString getLabkeyJS(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
     {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("<script src=\"").append(staticResourceUrl("/labkey.js")).append("\" type=\"text/javascript\"></script>\n");
+        HtmlStringBuilder builder = HtmlStringBuilder.of()
+            .append(getScriptTag("/labkey.js"));
 
         // Include client-side error reporting scripts only if necessary and as early as possible.
         if ((AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP) || AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER)) &&
                 (AppProps.getInstance().getExceptionReportingLevel() != ExceptionReportingLevel.NONE || AppProps.getInstance().isSelfReportExceptions()))
         {
-            sb.append("<script src=\"").append(staticResourceUrl("/stacktrace.min.js")).append("\" type=\"text/javascript\"></script>\n");
-            sb.append("<script src=\"").append(staticResourceUrl("/mothership.js")).append("\" type=\"text/javascript\"></script>\n");
+            builder
+                .append(getScriptTag("/stacktrace.min.js"))
+                .append(getScriptTag("/mothership.js"));
         }
 
-        sb.append("<script type=\"text/javascript\">\n");
-        sb.append("LABKEY.init(").append(jsInitObject(context, config, resources, includePostParameters)).append(");\n");
-        sb.append("</script>\n");
-
-        return sb.toString();
+        return builder
+            .append(HtmlString.unsafe("<script type=\"text/javascript\">\n"))
+            .append(HtmlString.unsafe("LABKEY.init("))
+            .append(jsInitObject(context, config, resources, includePostParameters))
+            .append(HtmlString.unsafe(");\n"))
+            .append(HtmlString.unsafe("</script>\n"))
+            .getHtmlString();
     }
 
-    private static String getJavaScriptIncludes(Container c, LinkedHashSet<ClientDependency> resources)
+    private static HtmlString getScriptTag(String path)
+    {
+        return HtmlStringBuilder.of()
+            .append(HtmlString.unsafe("<script src=\""))
+            .append(staticResourceUrl(path))
+            .append(HtmlString.unsafe("\" type=\"text/javascript\"></script>\n"))
+            .getHtmlString();
+    }
+
+    private static HtmlString getJavaScriptIncludes(Container c, LinkedHashSet<ClientDependency> resources)
     {
         /*
            scripts: the scripts that should be explicitly included
@@ -1949,7 +1957,8 @@ public class PageFlowUtil
             sb.append("\" type=\"text/javascript\"></script>\n");
         }
 
-        return sb.toString();
+        // TODO: Use DOM or HtmlString above
+        return HtmlString.unsafe(sb.toString());
     }
 
     /** use this version if you don't care which errors are html parsing errors and which are safety warnings */
@@ -2589,7 +2598,7 @@ public class PageFlowUtil
         public void testEncodeObject() throws Exception
         {
             TestBean bean = new TestBean(5,"five",new Date(DateUtil.parseISODateTime("2005-05-05 05:05:05")));
-            String s = encodeObject(bean);
+            String s = encodeObject(bean).toString();
 
             TestBean copy = decodeObject(TestBean.class, s);
             assertNotNull(copy);
@@ -2638,44 +2647,6 @@ public class PageFlowUtil
     static private String h(Object o)
     {
         return PageFlowUtil.filter(o);
-    }
-
-    static public <T> String strSelect(String selectName, Map<T,String> map, T current)
-    {
-        return strSelect(selectName, map.keySet(), map.values(), current);
-    }
-
-    static public String strSelect(String selectName, Collection<?> values, Collection<String> labels, Object current)
-    {
-        if (values.size() != labels.size())
-            throw new IllegalArgumentException();
-        StringBuilder ret = new StringBuilder();
-        ret.append("<select name=\"");
-        ret.append(h(selectName));
-        ret.append("\">");
-        boolean found = false;
-        Iterator itValue;
-        Iterator<String> itLabel;
-        for (itValue  = values.iterator(), itLabel = labels.iterator();
-             itValue.hasNext() && itLabel.hasNext();)
-        {
-            Object value = itValue.next();
-            String label = itLabel.next();
-            boolean selected = !found && Objects.equals(current, value);
-            ret.append("\n<option value=\"");
-            ret.append(h(value));
-            ret.append("\"");
-            if (selected)
-            {
-                ret.append(" SELECTED");
-                found = true;
-            }
-            ret.append(">");
-            ret.append(h(label));
-            ret.append("</option>");
-        }
-        ret.append("</select>");
-        return ret.toString();
     }
 
     /**

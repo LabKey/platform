@@ -1,6 +1,6 @@
 package org.labkey.api.data;
 
-import org.apache.log4j.Level;
+import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.arrays.IntegerArray;
 import org.labkey.api.collections.CaseInsensitiveHashMap;

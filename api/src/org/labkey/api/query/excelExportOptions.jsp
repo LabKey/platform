@@ -108,7 +108,7 @@
 </table>
 <script type="text/javascript">
     (function($) {
-        LABKEY.DataRegion.registerPane(<%=PageFlowUtil.jsString(model.getDataRegionName())%>, function(dr) {
+        LABKEY.DataRegion.registerPane(<%=q(model.getDataRegionName())%>, function(dr) {
             var xlsExportEl = $("#<%=h(xlsGUID)%>");
             var xlsxExportEl = $("#<%=h(xlsxGUID)%>");
             var iqyExportEl = $("#<%=h(iqyGUID)%>");
@@ -119,32 +119,32 @@
             var exportSelectedLabelEl = $("#<%=h(exportSelectedId + "_label")%>");
 
             var doExcelExport = function(isSign) {
-                var exportUrl, exportParams, exportRegionName = <%=PageFlowUtil.jsString(exportRegionName)%>;
+                var exportUrl, exportParams, exportRegionName = <%=q(exportRegionName)%>;
 
                 if (xlsxExportEl.is(':checked')) {
                     if (isSign) {
-                        exportUrl = <%=PageFlowUtil.jsString(model.getSignXlsxURL().getPath())%>;
-                        exportParams = <%=text( new JSONObject(model.getSignXlsxURL().getParameterMap()).toString(2) )%>;
+                        exportUrl = <%=q(model.getSignXlsxURL().getPath())%>;
+                        exportParams = <%=new JSONObject(model.getSignXlsxURL().getParameterMap()).getHtmlString(2)%>;
                     }
                     else {
-                        exportUrl = <%=PageFlowUtil.jsString(model.getXlsxURL().getPath())%>;
-                        exportParams = <%=text( new JSONObject(model.getXlsxURL().getParameterMap()).toString(2) )%>;
+                        exportUrl = <%=q(model.getXlsxURL().getPath())%>;
+                        exportParams = <%=new JSONObject(model.getXlsxURL().getParameterMap()).getHtmlString(2)%>;
                     }
                 }
                 else if (xlsExportEl.is(':checked')) {
                     if (isSign) {
-                        exportUrl = <%=PageFlowUtil.jsString(model.getSignXlsURL().getPath())%>;
-                        exportParams = <%=text( new JSONObject(model.getSignXlsURL().getParameterMap()).toString(2) )%>;
+                        exportUrl = <%=q(model.getSignXlsURL().getPath())%>;
+                        exportParams = <%=new JSONObject(model.getSignXlsURL().getParameterMap()).getHtmlString(2)%>;
                     }
                     else {
-                        exportUrl = <%=PageFlowUtil.jsString(model.getXlsURL().getPath())%>;
-                        exportParams = <%=text( new JSONObject(model.getXlsURL().getParameterMap()).toString(2) )%>;
+                        exportUrl = <%=q(model.getXlsURL().getPath())%>;
+                        exportParams = <%=new JSONObject(model.getXlsURL().getParameterMap()).getHtmlString(2)%>;
                     }
                 <% if (model.getIqyURL() != null) { %>
                 }
                 else if (iqyExportEl.is(':checked')) {
                     <%-- Excel Web Query doesn't work with POSTs, so always do it as a GET.  It also is not supported for all tables. --%>
-                    window.location = <%=PageFlowUtil.jsString(model.getIqyURL().toString())%>;
+                    window.location = <%=q(model.getIqyURL().toString())%>;
                     return false;
                 <% } %>
                 }

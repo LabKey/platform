@@ -16,9 +16,9 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.study.StudySchema;
-import org.labkey.api.study.StudyService;
 
 public class SimpleSpecimenTable extends AbstractSpecimenTable
 {

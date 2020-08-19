@@ -31,10 +31,10 @@ import java.util.regex.Pattern;
  * Time: 10:44:58 AM
  */
 
-// Used for linking to resources that have a container but aren't pageflow actions.  Examples include logos, favicons, and stylesheets.
+// Used for linking to resources that have a container but aren't pageflow actions. Examples include logos, favicons, and stylesheets.
 public class ResourceURL extends URLHelper
 {
-    private static Pattern urlPattern = Pattern.compile("(/.*)?/([\\w-]*)\\.(.*)");
+    private static final Pattern urlPattern = Pattern.compile("(/.*)?/([\\w-]*)\\.(.*)");
 
     public ResourceURL(String resource, Container c)
     {

@@ -19,7 +19,7 @@ package org.labkey.query.sql;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -248,7 +248,7 @@ public class Query
         if (null == _querySource)
             throw new IllegalStateException("SQL has not been specified");
 
-        Logger.getLogger(Query.class).debug("Query.parse()\n" + _querySource);
+        LogManager.getLogger(Query.class).debug("Query.parse()\n" + _querySource);
         _parse(_querySource, skipSuggestedColumns);
         
         for (QueryException e : _parseErrors)
@@ -644,7 +644,7 @@ public class Query
         }
         catch (RuntimeException x)
         {
-            Logger.getLogger(Query.class).error("error", x);
+            LogManager.getLogger(Query.class).error("error", x);
             throw Query.wrapRuntimeException(x, _querySource);
         }
     }
@@ -1705,7 +1705,11 @@ public class Query
         new SqlTest("WITH UserCTE AS (SELECT 1001 as UserId) \n" +
                 "SELECT U1.UserId Expr1, U2.UserId Expr2\n" +
                 "FROM UserCTE AS U1, UserCTE AS U2 \n" +
-                "WHERE U1.UserId = U2.UserId", 2, 1)
+                "WHERE U1.UserId = U2.UserId", 2, 1),
+
+        // 40830, this query caused a problem because it has no simple field references (only an expression) and so
+        // getSuggestedColumns() is not called on the inner SELECT and therefore resolveFields() was not called before getKeyColumns()
+        new SqlTest("SELECT Name || '-' || Label FROM (SELECT Name, Label FROM core.Modules) M")
     };
 
 
@@ -1740,7 +1744,7 @@ public class Query
         new SqlTest("SELECT regr_slope(seven, d), day FROM R GROUP BY day", 2, 7),
         new SqlTest("SELECT regr_sxx(seven, d), day FROM R GROUP BY day", 2, 7),
         new SqlTest("SELECT regr_sxy(seven, d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT regr_syy(seven, d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT regr_syy(seven, d), day FROM R GROUP BY day", 2, 7)
     };
 
 
@@ -1771,6 +1775,8 @@ public class Query
 
         // UNDONE: should work since R.seven and seven are the same
         new FailTest("SELECT R.seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6)"),
+
+        new FailTest("SELECT A.Name FROM core.Modules A FULL JOIN core.Modules B ON B.Name=C.Name FULL JOIN core.Modules C ON A.Name=C.Name") // Missing from-clause entry
 	};
 
     private static final InvolvedColumnsTest[] involvedColumnsTests = new InvolvedColumnsTest[]

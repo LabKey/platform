@@ -18,7 +18,8 @@ package org.labkey.core.portal;
 
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
@@ -109,7 +110,7 @@ public class ProjectController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ProjectController.class);
 
-    private static final Logger _log = Logger.getLogger(ProjectController.class);
+    private static final Logger _log = LogManager.getLogger(ProjectController.class);
 
     public static class ProjectUrlsImpl implements ProjectUrls
     {
@@ -1304,7 +1305,6 @@ public class ProjectController extends SpringActionController
             String titleHref = StringUtils.trimToEmpty(request.getParameter("webpart.titleHref"));
             if (null != titleHref && titleHref.length() > 0)
                 view.setTitleHref(titleHref);
-
 
             return view.renderToApiResponse();
         }

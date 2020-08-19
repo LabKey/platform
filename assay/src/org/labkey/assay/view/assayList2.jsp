@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.assay.AssayService" %>
+<%@ page import="org.labkey.api.assay.AssayUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerFilter" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
-<%@ page import="org.labkey.api.assay.AssayService" %>
-<%@ page import="org.labkey.api.assay.AssayUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -42,7 +42,7 @@
         else
             url = urls.getSummaryRedirectURL(c);
 
-        url.replaceParameter("rowId", ""+ protocol.getRowId());
+        url.replaceParameter("rowId", protocol.getRowId());
         %>
 <b><a href="<%=url%>"><%=h(protocol.getName())%></a></b>
 <%      if (null != protocol.getDescription())

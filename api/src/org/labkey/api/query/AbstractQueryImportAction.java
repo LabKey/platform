@@ -25,6 +25,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExtFormResponseWriter;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -45,7 +46,6 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.PageFlowUtil;
@@ -176,12 +176,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     public void setAcceptZeroResults(boolean acceptZeroResults)
     {
         _importViewBean.acceptZeroResults = acceptZeroResults;
-    }
-
-    @Deprecated
-    public ModelAndView getDefaultImportView(FORM form, JSONArray extraFields, BindException errors)
-    {
-        return getDefaultImportView(form, errors);
     }
 
     public ModelAndView getDefaultImportView(FORM form, BindException errors)

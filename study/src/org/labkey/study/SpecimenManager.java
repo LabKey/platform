@@ -19,7 +19,7 @@ package org.labkey.study;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.collections4.comparators.ComparableComparator;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
@@ -69,11 +69,11 @@ import org.labkey.api.study.StudyCachable;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.SimpleHasHtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -2244,7 +2244,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         }
     }
 
-    public enum SpecimenTypeLevel implements EnumHasHtmlString<SpecimenTypeLevel>
+    public enum SpecimenTypeLevel implements SimpleHasHtmlString
     {
         PrimaryType()
         {
@@ -2727,7 +2727,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                 }
                 catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
                 {
-                    Logger.getLogger(SpecimenManager.class).error(e);
+                    LogManager.getLogger(SpecimenManager.class).error(e);
                 }
             }
             ret.add(summary);

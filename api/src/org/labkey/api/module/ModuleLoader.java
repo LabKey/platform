@@ -19,9 +19,8 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Appender;
-import org.apache.log4j.Logger;
-import org.apache.log4j.RollingFileAppender;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.Constants;
@@ -114,7 +113,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -140,7 +138,7 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
  */
 public class ModuleLoader implements Filter, MemTrackerListener
 {
-    private static final Logger _log = Logger.getLogger(ModuleLoader.class);
+    private static final Logger _log = LogManager.getLogger(ModuleLoader.class);
     private static final Map<String, Throwable> _moduleFailures = new HashMap<>();
     private static final Map<String, Module> _controllerNameToModule = new HashMap<>();
     private static final Map<String, SchemaDetails> _schemaNameToSchemaDetails = new CaseInsensitiveHashMap<>();
@@ -272,9 +270,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
 
         // CONSIDER: could optimize more by not
-
-
-        rollErrorLogFile(_log);
 
         setJavaVersion();
 
@@ -785,39 +780,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 AppProps.getInstance().setProjectRoot(FileUtil.getAbsoluteCaseSensitiveFile(projectRoot).toString());
                 // set the root only once
                 break;
-            }
-        }
-    }
-
-    /** We want to roll the file every time the server starts, which isn't directly supported by Log4J so we do it manually */
-    private void rollErrorLogFile(Logger logger)
-    {
-        while (logger != null && !logger.getAllAppenders().hasMoreElements())
-        {
-            logger = (Logger)logger.getParent();
-        }
-
-        if (logger == null)
-        {
-            return;
-        }
-
-        for (Enumeration e2 = logger.getAllAppenders(); e2.hasMoreElements();)
-        {
-            final Appender appender = (Appender)e2.nextElement();
-            if (appender instanceof RollingFileAppender && "ERRORS".equals(appender.getName()))
-            {
-                RollingFileAppender rfa = (RollingFileAppender)appender;
-                String fileName = rfa.getFile();
-                if (fileName == null)
-                {
-                    throw new IllegalStateException("Error rolling labkey-errors.log file, likely a file permissions problem in CATALINA_HOME/logs");
-                }
-                File f = new File(fileName);
-                if (f.exists() && f.length() > 0)
-                {
-                    rfa.rollOver();
-                }
             }
         }
     }
@@ -1526,6 +1488,16 @@ public class ModuleLoader implements Filter, MemTrackerListener
         {
             runDropScripts();
             runCreateScripts();
+        }
+    }
+
+    // Runs the drop and create scripts in a single module
+    public void recreateViews(Module module)
+    {
+        synchronized (UPGRADE_LOCK)
+        {
+            runScripts(module, SchemaUpdateType.Before);
+            runScripts(module, SchemaUpdateType.After);
         }
     }
 

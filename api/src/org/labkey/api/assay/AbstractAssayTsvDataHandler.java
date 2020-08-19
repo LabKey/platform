@@ -17,7 +17,8 @@
 package org.labkey.api.assay;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
@@ -102,7 +103,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     };
 
-    private static final Logger LOG = Logger.getLogger(AbstractAssayTsvDataHandler.class);
+    private static final Logger LOG = LogManager.getLogger(AbstractAssayTsvDataHandler.class);
     private Map<String, AssayPlateMetadataService.MetadataLayer> _rawPlateMetadata;
 
     protected abstract boolean allowEmptyData();

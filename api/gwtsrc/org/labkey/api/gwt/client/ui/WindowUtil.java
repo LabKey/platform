@@ -17,7 +17,8 @@
 package org.labkey.api.gwt.client.ui;
 
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.ui.DialogBox;
+import com.google.gwt.user.client.ui.Widget;
 
 /**
  * User: Mark Igra

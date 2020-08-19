@@ -26,6 +26,8 @@ import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.exp.xml.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
@@ -66,39 +68,17 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
-import org.labkey.experiment.api.Data;
-import org.labkey.experiment.api.DataInput;
-import org.labkey.experiment.api.ExpDataImpl;
-import org.labkey.experiment.api.ExpExperimentImpl;
-import org.labkey.experiment.api.ExpMaterialImpl;
-import org.labkey.experiment.api.ExpProtocolApplicationImpl;
-import org.labkey.experiment.api.ExpProtocolImpl;
-import org.labkey.experiment.api.ExpRunImpl;
-import org.labkey.experiment.api.ExpSampleTypeImpl;
-import org.labkey.experiment.api.Experiment;
-import org.labkey.experiment.api.ExperimentRun;
-import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.IdentifiableEntity;
-import org.labkey.experiment.api.Material;
-import org.labkey.experiment.api.MaterialInput;
-import org.labkey.experiment.api.Protocol;
-import org.labkey.experiment.api.ProtocolAction;
-import org.labkey.experiment.api.ProtocolActionPredecessor;
-import org.labkey.experiment.api.ProtocolActionStepDetail;
-import org.labkey.experiment.api.ProtocolApplication;
-import org.labkey.experiment.api.RunItem;
-import org.labkey.experiment.api.SampleTypeServiceImpl;
+import org.labkey.experiment.api.*;
 import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AbstractXarImporter;
@@ -829,6 +809,9 @@ public class XarReader extends AbstractXarImporter
 
             vals.setFilePathRoot(FileUtil.getAbsolutePath(_xarSource.getRootPath()));     //  FileUtil.getAbsolutePath(runContext.getContainer(), _job.getPipeRoot().getRootNioPath()));
             vals.setContainer(getContainer());
+
+            // remember which job created the run so we can show this run on the job details page
+            vals.setJobId(PipelineService.get().getJobId(_job.getUser(), _job.getContainer(), _job.getJobGUID()));
 
             ExpRunImpl impl = new ExpRunImpl(vals);
             try

@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.reports.report.JavaScriptReport.JavaScriptReportBean" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -43,10 +42,10 @@
             var getDataConfig = {
                 source: {
                     <% if (bean.model.hasContainerFilter()) { %>
-                        containerFilter: <%=PageFlowUtil.jsString(bean.model.getContainerFilterTypeName())%>,
+                        containerFilter: <%=q(bean.model.getContainerFilterTypeName())%>,
                     <% } %>
-                    schemaName: LABKEY.SchemaKey.fromString(<%=PageFlowUtil.jsString(bean.model.getSchemaName())%>),
-                    queryName: <%=PageFlowUtil.jsString(bean.model.getQueryName())%>
+                    schemaName: LABKEY.SchemaKey.fromString(<%=q(bean.model.getSchemaName())%>),
+                    queryName: <%=q(bean.model.getQueryName())%>
                 },
                 transforms: []
             };

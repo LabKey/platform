@@ -15,15 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.json.JSONArray"%>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager"%>
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.UserManager"%>
 <%@ page import="org.labkey.api.settings.AppProps"%>
-<%@ page import="org.labkey.api.study.Location"%>
+<%@ page import="org.labkey.api.study.Location" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.util.HtmlString"%>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -37,6 +38,7 @@
 <%@ page import="org.labkey.study.model.SpecimenRequestStatus" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.Vial" %>
+<%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
@@ -79,20 +81,11 @@
     String availableStudyName = ContainerManager.getAvailableChildContainerName(c, "New Study");
 %>
 <script type="text/javascript">
-    var NONSITE_ACTORS = [<%
-    boolean first = true;
-    for (SpecimenRequestActor actor : actors)
-    {
-        if (!actor.isPerSite())
-        {
-            if (first)
-                first = false;
-            else
-                out.print(", ");
-            out.print("" + actor.getRowId());
-        }
-    }
-%>];
+    var NONSITE_ACTORS = <%=Arrays.stream(actors)
+        .filter(actor->!actor.isPerSite())
+        .map(SpecimenRequestActor::getRowId)
+        .collect(JSONArray.collector())%>;
+
     setCookieToRequestId(<%= bean.getSpecimenRequest().getRowId()%>);
 
 
@@ -423,7 +416,7 @@
                             .addParameter("listType", SpecimenController.LabSpecimenListsBean.Type.PROVIDING.toString())) : HtmlString.EMPTY_STRING %>
     </td>
 </tr>
-<labkey:form action="<%=h(buildURL(SpecimenController.ManageRequestAction.class))%>" name="addRequirementForm" enctype="multipart/form-data" method="POST">
+<labkey:form action="<%=buildURL(SpecimenController.ManageRequestAction.class)%>" name="addRequirementForm" enctype="multipart/form-data" method="POST">
         <input type="hidden" name="id" value="<%= bean.getSpecimenRequest().getRowId()%>">
         <tr class="labkey-wp-header">
             <th align="left">Current Requirements</th>

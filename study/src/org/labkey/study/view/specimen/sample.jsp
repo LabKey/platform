@@ -25,7 +25,6 @@
 <%@ page import="org.labkey.study.model.SpecimenComment" %>
 <%@ page import="org.labkey.study.model.Vial" %>
 <%@ page import="org.labkey.study.security.permissions.SetSpecimenCommentsPermission" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.SpecimenEventBean> me = (JspView<SpecimenController.SpecimenEventBean>) HttpView.currentView();

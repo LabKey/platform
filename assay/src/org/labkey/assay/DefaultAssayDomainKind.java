@@ -15,8 +15,8 @@
  */
 package org.labkey.assay;
 
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.assay.AssayDomainKind;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 
 import java.util.Set;

@@ -16,7 +16,7 @@
 package org.labkey.api.module;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -68,7 +68,7 @@ public class SimpleModuleContainerListener extends ContainerManager.AbstractCont
         if (userSchema == null)
             return;
 
-        Logger.getLogger(SimpleModuleContainerListener.class).debug("Purging schema '" + schemaName + "' in container '" + c.getPath() + "'...");
+        LogManager.getLogger(SimpleModuleContainerListener.class).debug("Purging schema '" + schemaName + "' in container '" + c.getPath() + "'...");
 
         // Walk over the dbSchema's tables -- it's faster than walking the UserSchema's tables
         List<TableInfo> sorted = dbSchema.getSortedTables();

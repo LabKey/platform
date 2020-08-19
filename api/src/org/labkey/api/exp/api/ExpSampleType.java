@@ -94,6 +94,10 @@ public interface ExpSampleType extends ExpObject
     /** @return true if this SampleSet has a name expression. */
     boolean hasNameExpression();
 
+    /** @return label color hex value if set. */
+    @Nullable
+    String getLabelColor();
+
     /**
      * Generate sample names for each row map in <code>maps</code> sample group.
      * If a row map already has a non-null value for the "name" key, no sample name will be generated.

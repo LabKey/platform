@@ -18,7 +18,6 @@ package org.labkey.api.assay.plate;
 
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.assay.plate.PlateTemplate;
 
 import java.io.File;
 import java.util.Map;

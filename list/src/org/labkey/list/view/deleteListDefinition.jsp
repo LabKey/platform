@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.exp.list.ListDefinition" %>
-<%@ page import="org.labkey.list.controllers.ListController" %>
 <%@ page import="org.labkey.list.view.ListDefinitionForm" %>
 <%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>

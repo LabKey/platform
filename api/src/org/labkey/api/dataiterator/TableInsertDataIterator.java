@@ -25,6 +25,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
@@ -248,7 +249,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             _scope = ((UpdateableTableInfo)_table).getSchemaTableInfo().getSchema().getScope();
             _conn = _scope.getConnection();
 
-            Parameter.ParameterMap stmt;
+            ParameterMapStatement stmt;
             if (_insertOption.mergeRows)
             {
                 stmt = getMergeStatement(constants);
@@ -260,12 +261,12 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
 
             if (_context.getInsertOption().batch && null == _rowIdIndex && null == _objectIdIndex)
             {
-                _stmts = new Parameter.ParameterMap[]{stmt, stmt.copy()};
+                _stmts = new ParameterMapStatement[]{stmt, stmt.copy()};
                 setUseAsynchronousExecute(true);
             }
             else
             {
-                _stmts = new Parameter.ParameterMap[]{stmt};
+                _stmts = new ParameterMapStatement[]{stmt};
                 setUseAsynchronousExecute(false);
             }
 
@@ -279,9 +280,9 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         }
     }
 
-    protected Parameter.ParameterMap getInsertStatement(Map<String, Object> constants) throws SQLException
+    protected ParameterMapStatement getInsertStatement(Map<String, Object> constants) throws SQLException
     {
-        Parameter.ParameterMap stmt;
+        ParameterMapStatement stmt;
         if (_insertOption.identity_insert)
             setAutoIncrement(INSERT.ON);
 
@@ -297,9 +298,9 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         return stmt;
     }
 
-    protected Parameter.ParameterMap getMergeStatement(Map<String, Object> constants) throws SQLException
+    protected ParameterMapStatement getMergeStatement(Map<String, Object> constants) throws SQLException
     {
-        Parameter.ParameterMap stmt;
+        ParameterMapStatement stmt;
         if (_context.supportsAutoIncrementKey())
             setAutoIncrement(INSERT.ON);
 
@@ -332,7 +333,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
 
     @Override
     @Nullable
-    protected Parameter getMvParameter(@NotNull Parameter.ParameterMap stmt, @NotNull FieldKey mvFieldKey)
+    protected Parameter getMvParameter(@NotNull ParameterMapStatement stmt, @NotNull FieldKey mvFieldKey)
     {
         Parameter mv = super.getMvParameter(stmt, mvFieldKey);
         if (null == mv)

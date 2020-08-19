@@ -21,7 +21,7 @@ Ext4.define('LABKEY.query.browser.Tree', {
                 extend: 'Ext.data.Model',
                 proxy: {
                     type: 'ajax',
-                    url: LABKEY.ActionURL.buildURL('query', 'getSchemaQueryTree.api', null, {showHidden : this.showHidden, withHtmlEncoding:true}),
+                    url: LABKEY.ActionURL.buildURL('query', 'getSchemaQueryTree.api', null, { showHidden : this.showHidden }),
                     // don't use the "_dc" defeat cache parameter
                     noCache: false,
                     listeners: {
@@ -36,7 +36,7 @@ Ext4.define('LABKEY.query.browser.Tree', {
                     {name: 'description'},
                     {name: 'hidden', type: 'boolean', defaultValue: false},
                     {name: 'name'},
-                    {name: 'qtip'},
+                    {name: 'qtip', convert: function(_, rec) { return Ext4.htmlEncode(rec.raw.description); } },
                     {name: 'schemaName'},
                     {name: 'queryName'},
                     {name: 'queryLabel'},
@@ -119,19 +119,5 @@ Ext4.define('LABKEY.query.browser.Tree', {
             window.location.href = url + window.location.hash;
         else
             window.location.href = url;
-
-        // TODO: Cannot show/hide nodes in ExtJS 4.2.1 -- Optimially, use TreeStore.filter() in ExtJS 4.2.3
-//        this.getRootNode().cascadeBy(function(node) {
-//            if (showHidden)
-//            {
-//                if (node.hidden)
-//                    node.ui.show();
-//            }
-//            else
-//            {
-//                if (node.hidden)
-//                    node.ui.hide();
-//            }
-//        }, this);
     }
 });

@@ -18,8 +18,8 @@
 <%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.assay.ModuleAssayProvider" %>
 <%@ page import="org.labkey.assay.AssayController" %>
+<%@ page import="org.labkey.assay.ModuleAssayProvider" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -29,7 +29,7 @@
 %>
 <script type="text/javascript">
 LABKEY.page = LABKEY.page || {};
-LABKEY.page.assay = <%= new JSONObject(assay).toString(2) %>;
+LABKEY.page.assay = <%= new JSONObject(assay).getHtmlString(2) %>;
 </script>
 <p>
 <%

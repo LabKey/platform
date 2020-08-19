@@ -22,7 +22,12 @@ import org.labkey.api.query.JavaScriptExportScriptModel;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.view.*;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspTemplate;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 
 import javax.script.ScriptEngine;

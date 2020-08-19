@@ -23,7 +23,8 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -175,9 +176,9 @@ import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
 
 public class ExperimentServiceImpl implements ExperimentService
 {
-    private static final Logger LOG = Logger.getLogger(ExperimentServiceImpl.class);
+    private static final Logger LOG = LogManager.getLogger(ExperimentServiceImpl.class);
 
-    private Cache<String, Protocol> protocolCache;
+    private Cache<String, ExpProtocolImpl> protocolCache;
 
     private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "DataClass", (containerId, argument) ->
     {
@@ -218,7 +219,7 @@ public class ExperimentServiceImpl implements ExperimentService
             dataClassCache.remove(c.getId());
     }
 
-    synchronized Cache<String, Protocol> getProtocolCache()
+    synchronized Cache<String, ExpProtocolImpl> getProtocolCache()
     {
         if (protocolCache == null)
         {
@@ -627,6 +628,18 @@ public class ExperimentServiceImpl implements ExperimentService
         return materials;
     }
 
+    @NotNull
+    public List<ExpMaterialImpl> getExpMaterialsByLSID(Collection<String> lsids)
+    {
+        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.LSID.name()), lsids);
+        TableSelector selector = new TableSelector(getTinfoMaterial(), filter, null);
+
+        final List<ExpMaterialImpl> materials = new ArrayList<>(lsids.size());
+        selector.forEach(material -> materials.add(new ExpMaterialImpl(material)), Material.class);
+
+        return materials;
+    }
+
     @Override
     @NotNull
     public List<ExpMaterialImpl> getExpMaterials(Container container, User user, Set<String> sampleNames, @Nullable ExpSampleType sampleType, boolean throwIfMissing, boolean createIfMissing)
@@ -913,23 +926,18 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public ExpProtocolImpl getExpProtocol(int rowid, boolean useCache)
     {
-        Protocol result;
+        ExpProtocolImpl result = null;
 
         if (useCache)
         {
             result = getProtocolCache().get("ROWID/" + rowid);
             if (null != result)
-                return new ExpProtocolImpl(result);
+                return result;
         }
 
-        result = new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("RowId"), rowid), null).getObject(Protocol.class);
+        Protocol p = new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("RowId"), rowid), null).getObject(Protocol.class);
 
-        if (null != result && useCache)
-        {
-            cacheProtocol(result);
-        }
-
-        return result == null ? null : new ExpProtocolImpl(result);
+        return toExpProtocol(p, useCache);
     }
 
 
@@ -941,35 +949,34 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public ExpProtocolImpl getExpProtocol(String lsid, boolean useCache)
     {
-        Protocol result;
-
         if (useCache)
         {
-            result = getProtocolCache().get(getCacheKey(lsid));
+            ExpProtocolImpl result = getProtocolCache().get(getCacheKey(lsid));
             if (null != result)
-                return new ExpProtocolImpl(result);
+                return result;
         }
 
-        result = new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("LSID"), lsid), null).getObject(Protocol.class);
+        Protocol p = new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("LSID"), lsid), null).getObject(Protocol.class);
 
-        if (null != result && useCache)
-        {
-            cacheProtocol(result);
-        }
-
-        return result == null ? null : new ExpProtocolImpl(result);
+        return toExpProtocol(p, useCache);
     }
 
-    private void cacheProtocol(Protocol p)
+    @NotNull
+    private ExpProtocolImpl toExpProtocol(@Nullable Protocol p, boolean cache)
     {
-        Cache<String, Protocol> c = getProtocolCache();
-        c.put(getCacheKey(p.getLSID()), p);
-        c.put("ROWID/" + p.getRowId(), p);
+        ExpProtocolImpl result = p == null ? null : new ExpProtocolImpl(p);
+        if (cache && result != null)
+        {
+            Cache<String, ExpProtocolImpl> c = getProtocolCache();
+            c.put(getCacheKey(result.getLSID()), result);
+            c.put("ROWID/" + result.getRowId(), result);
+        }
+        return result;
     }
 
     private void uncacheProtocol(Protocol p)
     {
-        Cache<String, Protocol> c = getProtocolCache();
+        Cache<String, ExpProtocolImpl> c = getProtocolCache();
         c.remove(getCacheKey(p.getLSID()));
         c.remove("ROWID/" + p.getRowId());
         //TODO I don't think we're using a DbCache for protocols...
@@ -1261,11 +1268,10 @@ public class ExperimentServiceImpl implements ExperimentService
     public ExpObject findObjectFromLSID(String lsid)
     {
         Identifiable id = LsidManager.get().getObject(lsid);
-        if (id instanceof ExpObject)
-        {
-            return (ExpObject) id;
-        }
-        return null;
+        if (id == null)
+            return null;
+
+        return id.getExpObject();
     }
 
     @Override
@@ -5637,26 +5643,26 @@ public class ExperimentServiceImpl implements ExperimentService
 
             ExpProtocolImpl parentProtocol = run.getProtocol();
 
-            List<ProtocolAction> actions = getProtocolActions(parentProtocol.getRowId());
+            List<ExpProtocolActionImpl> actions = parentProtocol.getSteps();
             if (actions.size() != 3)
             {
                 throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol, it should have three");
             }
-            ProtocolAction action1 = actions.get(0);
-            assert action1.getSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;
-            assert action1.getChildProtocolId() == parentProtocol.getRowId();
+            ExpProtocolActionImpl action1 = actions.get(0);
+            assert action1.getActionSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;
+            assert action1.getChildProtocol().getRowId() == parentProtocol.getRowId();
 
             context.addSubstitution("ExperimentRun.RowId", Integer.toString(run.getRowId()));
 
             Date date = new Date();
 
-            ProtocolAction action2 = actions.get(1);
-            assert action2.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE;
-            ExpProtocol protocol2 = getExpProtocol(action2.getChildProtocolId());
+            ExpProtocolActionImpl action2 = actions.get(1);
+            assert action2.getActionSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE;
+            ExpProtocol protocol2 = action2.getChildProtocol();
 
-            ProtocolAction action3 = actions.get(2);
-            assert action3.getSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE;
-            ExpProtocol outputProtocol = getExpProtocol(action3.getChildProtocolId());
+            ExpProtocolActionImpl action3 = actions.get(2);
+            assert action3.getActionSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE;
+            ExpProtocol outputProtocol = action3.getChildProtocol();
             assert outputProtocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput : "Expected third protocol to be of type ExperimentRunOutput but was " + outputProtocol.getApplicationType();
 
             ExpProtocolApplicationImpl protApp1 = new ExpProtocolApplicationImpl(new ProtocolApplication());
@@ -5665,7 +5671,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
             for (ExpProtocolApplicationImpl existingProtApp : run.getProtocolApplications())
             {
-                if (existingProtApp.getProtocol().equals(parentProtocol) && existingProtApp.getActionSequence() == action1.getSequence())
+                if (existingProtApp.getProtocol().equals(parentProtocol) && existingProtApp.getActionSequence() == action1.getActionSequence())
                 {
                     protApp1 = existingProtApp;
                 }
@@ -5675,7 +5681,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     {
                         existingProtApp.delete(user);
                     }
-                    else if (existingProtApp.getActionSequence() == action2.getSequence())
+                    else if (existingProtApp.getActionSequence() == action2.getActionSequence())
                     {
                         protApp2 = existingProtApp;
                     }
@@ -5684,7 +5690,7 @@ public class ExperimentServiceImpl implements ExperimentService
                         throw new IllegalStateException("Unexpected existing protocol application: " + existingProtApp.getLSID() + " with sequence " + existingProtApp.getActionSequence());
                     }
                 }
-                else if (existingProtApp.getProtocol().equals(outputProtocol) && existingProtApp.getActionSequence() == action3.getSequence())
+                else if (existingProtApp.getProtocol().equals(outputProtocol) && existingProtApp.getActionSequence() == action3.getActionSequence())
                 {
                     protApp3 = existingProtApp;
                 }
@@ -5775,10 +5781,10 @@ public class ExperimentServiceImpl implements ExperimentService
         return run;
     }
 
-    private ExpProtocolApplication initializeProtocolApplication(ExpProtocolApplication protApp, Date activityDate, ProtocolAction action, ExpRun run, ExpProtocol parentProtocol, XarContext context ) throws XarFormatException
+    private ExpProtocolApplication initializeProtocolApplication(ExpProtocolApplication protApp, Date activityDate, ExpProtocolActionImpl action, ExpRun run, ExpProtocol parentProtocol, XarContext context ) throws XarFormatException
     {
         protApp.setActivityDate(activityDate);
-        protApp.setActionSequence(action.getSequence());
+        protApp.setActionSequence(action.getActionSequence());
         protApp.setRun(run);
         protApp.setProtocol(parentProtocol);
         Map<String, ProtocolParameter> parentParams = parentProtocol.getProtocolParameters();
@@ -5845,24 +5851,24 @@ public class ExperimentServiceImpl implements ExperimentService
                 helper.addRunParams(run._object, user.getUserId());
 
                 // protocol applications
-                ExpProtocol parentProtocol = run.getProtocol();
+                ExpProtocolImpl parentProtocol = run.getProtocol();
 
-                List<ProtocolAction> actions = getProtocolActions(parentProtocol.getRowId());
+                List<ExpProtocolActionImpl> actions = parentProtocol.getSteps();
                 if (actions.size() != 3)
                 {
                     throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol, it should have three");
                 }
-                ProtocolAction action1 = actions.get(0);
-                assert action1.getSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;
-                assert action1.getChildProtocolId() == parentProtocol.getRowId();
+                ExpProtocolActionImpl action1 = actions.get(0);
+                assert action1.getActionSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;
+                assert action1.getChildProtocol().getRowId() == parentProtocol.getRowId();
 
-                ProtocolAction action2 = actions.get(1);
-                assert action2.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE;
-                ExpProtocol protocol2 = getExpProtocol(action2.getChildProtocolId());
+                ExpProtocolActionImpl action2 = actions.get(1);
+                assert action2.getActionSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE;
+                ExpProtocol protocol2 = action2.getChildProtocol();
 
-                ProtocolAction action3 = actions.get(2);
-                assert action3.getSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE;
-                ExpProtocol outputProtocol = getExpProtocol(action3.getChildProtocolId());
+                ExpProtocolActionImpl action3 = actions.get(2);
+                assert action3.getActionSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE;
+                ExpProtocol outputProtocol = action3.getChildProtocol();
                 assert outputProtocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput : "Expected third protocol to be of type ExperimentRunOutput but was " + outputProtocol.getApplicationType();
 
                 ExpProtocolApplicationImpl protApp1 = new ExpProtocolApplicationImpl(new ProtocolApplication());
@@ -5938,7 +5944,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     userId));
         }
 
-        public void addProtocolApp(ExpProtocolApplicationImpl protApp, Date activityDate, ProtocolAction action, ExpProtocol protocol,
+        public void addProtocolApp(ExpProtocolApplicationImpl protApp, Date activityDate, ExpProtocolActionImpl action, ExpProtocol protocol,
                                    ExpRun run, SimpleRunRecord runRecord)
         {
             _protAppRecords.add(new ProtocolAppRecord(protApp, activityDate, action, protocol, run, runRecord));
@@ -6052,8 +6058,8 @@ public class ExperimentServiceImpl implements ExperimentService
                 rec._protApp._object.setRowId(rowId);
 
                 // wire the input materials to the protocol inputs for actions 1&2
-                if (rec._action.getSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE ||
-                        rec._action.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
+                if (rec._action.getActionSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE ||
+                        rec._action.getActionSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
                 {
                     // optimize, should be only 1 material input
                     for (Map.Entry<ExpMaterial, String> entry : rec._runRecord.getInputMaterialMap().entrySet())
@@ -6065,7 +6071,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     }
                 }
                 // wire the output materials to the protocol input for the last action
-                else if (rec._action.getSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE)
+                else if (rec._action.getActionSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE)
                 {
                     for (Map.Entry<ExpMaterial, String> entry : rec._runRecord.getOutputMaterialMap().entrySet())
                     {
@@ -6082,8 +6088,8 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             for (ProtocolAppRecord rec : protAppRecords)
             {
-                if (rec._action.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE ||
-                        rec._action.getSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE)
+                if (rec._action.getActionSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE ||
+                        rec._action.getActionSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE)
                 {
                     // optimize, should be only 1 material input
                     for (Map.Entry<ExpData, String> entry : rec._runRecord.getInputDataMap().entrySet())
@@ -6096,7 +6102,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     }
                 }
                 // wire the output materials to the protocol input for the last action
-                else if (rec._action.getSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE)
+                else if (rec._action.getActionSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE)
                 {
                     for (Map.Entry<ExpData, String> entry : rec._runRecord.getOutputDataMap().entrySet())
                     {
@@ -6114,7 +6120,7 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             for (ProtocolAppRecord rec : protAppRecords)
             {
-                if (rec._action.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
+                if (rec._action.getActionSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
                 {
                     for (ExpMaterial outputMaterial : rec._runRecord.getOutputMaterialMap().keySet())
                     {
@@ -6133,7 +6139,7 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             for (ProtocolAppRecord rec : protAppRecords)
             {
-                if (rec._action.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
+                if (rec._action.getActionSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
                 {
                     for (ExpData outputData : rec._runRecord.getOutputDataMap().keySet())
                     {
@@ -6185,12 +6191,12 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             ExpProtocolApplicationImpl _protApp;
             Date _activityDate;
-            ProtocolAction _action;
+            ExpProtocolActionImpl _action;
             ExpProtocol _protocol;
             ExpRun _run;
             SimpleRunRecord _runRecord;
 
-            public ProtocolAppRecord(ExpProtocolApplicationImpl protApp, Date activityDate, ProtocolAction action, ExpProtocol protocol,
+            public ProtocolAppRecord(ExpProtocolApplicationImpl protApp, Date activityDate, ExpProtocolActionImpl action, ExpProtocol protocol,
                                      ExpRun run, SimpleRunRecord runRecord)
             {
                 _protApp = protApp;
@@ -7091,7 +7097,7 @@ public class ExperimentServiceImpl implements ExperimentService
             final User user = TestContext.get().getUser();
             final Container c = JunitUtil.getTestContainer();
             final ViewBackgroundInfo info = new ViewBackgroundInfo(c, user, null);
-            final Logger log = Logger.getLogger(ExperimentServiceImpl.class);
+            final Logger log = LogManager.getLogger(ExperimentServiceImpl.class);
 
             // assert no MaterialInput exp.object exist
             assertEquals(0L, countMaterialInputObjects(c));

@@ -17,8 +17,8 @@ package org.labkey.api.announcements;
 
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 
 /**
  * User: arauch

@@ -88,9 +88,9 @@ public class ResultSetCollapser extends ResultSetImpl
         {
             if (!lastValue.equals(getObject(_columnName)))
             {
-                return true;
+                return hasNext(true);
             }
         }
-        return false;
+        return hasNext(false);
     }
 }

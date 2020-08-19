@@ -76,7 +76,7 @@ public interface SampleTypeService
 
     @NotNull
     ExpSampleType createSampleType(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                   String nameExpression, @Nullable TemplateInfo templateInfo, Map<String, String> importAliases)
+                                   String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor)
             throws ExperimentException, SQLException;
 
     @NotNull
@@ -143,4 +143,6 @@ public interface SampleTypeService
     void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, QueryService.AuditAction action, List<Map<String, Object>>... params);
 
     void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata);
+
+    void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata, String updateType);
 }

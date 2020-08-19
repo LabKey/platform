@@ -19,12 +19,12 @@
 <%@ page import="org.labkey.api.exp.api.AssayJSONConverter" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
 <%@ page import="org.labkey.api.exp.api.ExpRun" %>
+<%@ page import="org.labkey.api.exp.api.ExperimentJSONConverter" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.assay.ModuleAssayProvider" %>
 <%@ page import="org.labkey.assay.AssayController" %>
+<%@ page import="org.labkey.assay.ModuleAssayProvider" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.exp.api.ExperimentJSONConverter" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ModuleAssayProvider.RunDetailsBean> me = (JspView<ModuleAssayProvider.RunDetailsBean>) HttpView.currentView();
@@ -38,8 +38,8 @@
 %>
 <script type="text/javascript">
 LABKEY.page = LABKEY.page || {};
-LABKEY.page.assay = <%= new JSONObject(assay).toString(2) %>;
-LABKEY.page.run = new LABKEY.Exp.Run(<%= runJson.toString(2) %>);
+LABKEY.page.assay = <%= new JSONObject(assay).getHtmlString(2) %>;
+LABKEY.page.run = new LABKEY.Exp.Run(<%= runJson.getHtmlString(2) %>);
 </script>
 <p>
 <%

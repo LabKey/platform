@@ -295,6 +295,18 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return _object.getNameExpression() != null;
     }
 
+    // NOTE: intentionally not public in ExpSampleType interface
+    public void setLabelColor(String labelColor)
+    {
+        _object.setLabelColor(labelColor);
+    }
+
+    @Override
+    public @Nullable String getLabelColor()
+    {
+        return _object.getLabelColor();
+    }
+
     @Nullable
     public NameGenerator getNameGenerator()
     {

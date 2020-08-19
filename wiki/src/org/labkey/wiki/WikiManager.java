@@ -16,7 +16,8 @@
 package org.labkey.wiki;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -80,6 +81,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -96,7 +98,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class WikiManager implements WikiService
 {
-    private static final Logger LOG = Logger.getLogger(WikiManager.class);
+    private static final Logger LOG = LogManager.getLogger(WikiManager.class);
     private static final WikiManager _instance = new WikiManager();
 
     public static final WikiRendererType DEFAULT_WIKI_RENDERER_TYPE = WikiRendererType.HTML;
@@ -218,6 +220,19 @@ public class WikiManager implements WikiService
 
     public boolean updateWiki(User user, Wiki wikiNew, WikiVersion versionNew, boolean copyHistory)
     {
+        return updateWiki(user, wikiNew, versionNew, copyHistory, true);
+    }
+
+    /**
+     * Update an existing wiki with new content.
+     *
+     * @param copyHistory true to propagate the user and date created from the previous wiki version, else just use the current user
+     *                    and current date.
+     * @param createNewVersion by default we create a new wiki version for each update, if this is set to false we will update
+     *                         the latest wiki version.
+     */
+    private boolean updateWiki(User user, Wiki wikiNew, WikiVersion versionNew, boolean copyHistory, boolean createNewVersion)
+    {
         DbScope scope = comm.getSchema().getScope();
         Container c = wikiNew.lookupContainer();
         boolean uncacheAllContent = true;
@@ -249,21 +264,29 @@ public class WikiManager implements WikiService
                 versionNew.setPageEntityId(entityId);
                 if (!copyHistory)
                 {
-                  versionNew.setCreated(new Date(System.currentTimeMillis()));
-                  versionNew.setCreatedBy(user.getUserId());
+                    versionNew.setCreated(new Date(System.currentTimeMillis()));
+                    versionNew.setCreatedBy(user.getUserId());
                 }
                 //if copying wiki with history, avoid overwriting 'created by' user
                 User userToInsert = (copyHistory) ? null : user;
-                //get version number for new version
-                versionNew.setVersion(WikiSelectManager.getNextVersionNumber(wikiNew));
-                //insert initial version for this page
-                versionNew = Table.insert(userToInsert, comm.getTableInfoPageVersions(), versionNew);
 
-                //update version reference in Pages table.
-                wikiNew.setPageVersionId(versionNew.getRowId());
-                Table.update(userToInsert, comm.getTableInfoPages(), wikiNew, wikiNew.getEntityId());
+                if (createNewVersion)
+                {
+                    //get version number for new version
+                    versionNew.setVersion(WikiSelectManager.getNextVersionNumber(wikiNew));
+                    //insert initial version for this page
+                    versionNew = Table.insert(userToInsert, comm.getTableInfoPageVersions(), versionNew);
+
+                    //update version reference in Pages table.
+                    wikiNew.setPageVersionId(versionNew.getRowId());
+                    Table.update(userToInsert, comm.getTableInfoPages(), wikiNew, wikiNew.getEntityId());
+                }
+                else
+                {
+                    versionNew.setVersion(versionOld.getVersion());
+                    Table.update(userToInsert, comm.getTableInfoPageVersions(), versionNew, versionNew.getRowId());
+                }
             }
-
             transaction.commit();
         }
         finally
@@ -532,7 +555,7 @@ public class WikiManager implements WikiService
     }
 
 
-    public String updateAttachments(User user, Wiki wiki, List<String> deleteNames, List<AttachmentFile> files)
+    public String updateAttachments(User user, Wiki wiki, @Nullable List<String> deleteNames, @Nullable List<AttachmentFile> files)
     {
         AttachmentService attsvc = getAttachmentService();
         boolean changes = false;
@@ -896,6 +919,80 @@ public class WikiManager implements WikiService
     {
         for (WikiChangeListener l : listeners)
             l.wikiDeleted(user, c, name);
+    }
+
+    @Override
+    public String getContent(Container c, String wikiName)
+    {
+        Wiki wiki = WikiSelectManager.getWiki(c, wikiName);
+        if (null == wiki)
+            return null;
+        WikiVersion version = wiki.getLatestVersion();
+        if (version != null)
+            return version.getBody();
+
+        return null;
+    }
+
+    @Override
+    public boolean updateContent(Container c, User user, String wikiName, String content, @Nullable Integer newVersionThreshold)
+    {
+        if (content != null)
+        {
+            Wiki wiki = WikiSelectManager.getWiki(c, wikiName);
+            if (wiki != null)
+            {
+                WikiVersion version = wiki.getLatestVersion();
+                if (version != null)
+                {
+                    // only update if something has changed
+                    if (!content.equals(version.getBody()))
+                    {
+                        version.setBody(content);
+                        boolean createNewVersion = true;
+
+                        if (newVersionThreshold != null)
+                        {
+                            Calendar cal = Calendar.getInstance();
+                            cal.setTime(new Date());
+                            cal.add(Calendar.MILLISECOND, - newVersionThreshold);
+
+                            // only update if the wiki was updated outside of the specified time window
+                            createNewVersion = wiki.getModified().before(cal.getTime());
+                        }
+                        return updateWiki(user, wiki, version, false, createNewVersion);
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public void deleteWiki(Container c, User user, String wikiName, boolean deleteSubtree) throws SQLException
+    {
+        Wiki wiki = WikiSelectManager.getWiki(c, wikiName);
+        if (wiki != null)
+        {
+            deleteWiki(user, c, wiki, true);
+        }
+    }
+
+    @Override
+    public @Nullable AttachmentParent getAttachmentParent(Container c, User user, String wikiName)
+    {
+        Wiki wiki = WikiSelectManager.getWiki(c, wikiName);
+        if (wiki != null)
+            return wiki.getAttachmentParent();
+        return null;
+    }
+
+    @Override
+    public void updateAttachments(Container c, User user, String wikiName, @Nullable List<AttachmentFile> attachmentFiles, @Nullable List<String> deleteAttachmentNames)
+    {
+        Wiki wiki = WikiSelectManager.getWiki(c, wikiName);
+        if (wiki != null)
+            updateAttachments(user, wiki, deleteAttachmentNames, attachmentFiles);
     }
 
     public static class TestCase extends Assert

@@ -57,7 +57,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 public class RolapReader
 {
-//    static Logger _log = Logger.getLogger(RolapReader.class);
+//    static Logger _log = LogManager.getLogger(RolapReader.class);
 
     private Document _document;
     private String schemaName;

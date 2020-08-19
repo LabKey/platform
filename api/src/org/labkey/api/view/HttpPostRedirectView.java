@@ -15,9 +15,9 @@
  */
 package org.labkey.api.view;
 
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.element.CsrfInput;
 
 import java.io.PrintWriter;
 import java.util.Collection;
@@ -34,8 +34,8 @@ import java.util.Map;
  */
 public class HttpPostRedirectView extends HttpView
 {
-    final String _url;
-    final Collection<? extends Map.Entry<String, String>> _hiddenInputs;
+    private final String _url;
+    private final Collection<? extends Map.Entry<String, String>> _hiddenInputs;
 
     public HttpPostRedirectView(String url, Map<String, String> hiddenInputs)
     {
@@ -55,7 +55,7 @@ public class HttpPostRedirectView extends HttpView
         out.println("<html>");
         out.println("<body onload='document.forms[\"form\"].submit()'>");
         out.println("<form name='form' method='POST' action='" + PageFlowUtil.filter(_url) + "'>");
-        out.println("<input type=hidden name='X-LABKEY-CSRF' value='" + CSRFUtil.getExpectedToken(getViewContext()) + "'>");
+        out.println(new CsrfInput(getViewContext()).toString());
         for (Map.Entry<String, String> pair : _hiddenInputs)
         {
             out.println("<input type='hidden' name='" + PageFlowUtil.filter(pair.getKey()) + "' value='" + PageFlowUtil.filter(pair.getValue()) + "'>");

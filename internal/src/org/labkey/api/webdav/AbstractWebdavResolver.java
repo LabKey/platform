@@ -29,7 +29,6 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeEvent;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -257,7 +256,7 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
                     if (s != null)
                         children.addAll(s);
                 }
-                // providers might not be registred if !isStartupComplete();
+                // providers might not be registered if !isStartupComplete();
                 if (!ModuleLoader.getInstance().isStartupComplete())
                     return children;
                 _children = children;
@@ -302,10 +301,9 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
         @NotNull
         public Collection<String> listNames()
         {
-            Set<String> set = new TreeSet<>();
-//            if (null != _attachmentResource)
+            //            if (null != _attachmentResource)
 //                set.addAll(_attachmentResource.listNames());
-            set.addAll(getWebFoldersNames(true));
+            Set<String> set = new TreeSet<>(getWebFoldersNames(true));
             ArrayList<String> list = new ArrayList<>(set);
             Collections.sort(list);
             return list;
@@ -397,6 +395,4 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
 
         abstract protected void invalidate(Path containerPath, boolean recursive);
     }
-
-
 }

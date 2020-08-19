@@ -16,7 +16,8 @@
 
 package org.labkey.assay;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
@@ -37,6 +38,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -66,7 +68,7 @@ import java.util.Set;
 public class PlateController extends SpringActionController
 {
     private static final SpringActionController.DefaultActionResolver _actionResolver = new DefaultActionResolver(PlateController.class);
-    private static final Logger _log = Logger.getLogger(PlateController.class);
+    private static final Logger _log = LogManager.getLogger(PlateController.class);
 
     public PlateController()
     {
@@ -259,9 +261,9 @@ public class PlateController extends SpringActionController
 
     public static class CopyTemplateBean
     {
-        private String _treeHtml;
-        private String _templateName;
-        private String _selectedDestination;
+        private final HtmlString _treeHtml;
+        private final String _templateName;
+        private final String _selectedDestination;
         private List<? extends PlateTemplate> _destinationTemplates;
 
         public CopyTemplateBean(final Container container, final User user, final String templateName, final String selectedDestination)
@@ -300,7 +302,7 @@ public class PlateController extends SpringActionController
                 }
             }
 
-            _treeHtml = tree.render().toString();
+            _treeHtml = tree.getHtmlString();
         }
 
         public String getSelectedDestination()
@@ -308,7 +310,7 @@ public class PlateController extends SpringActionController
             return _selectedDestination;
         }
 
-        public String getTreeHtml()
+        public HtmlString getTreeHtml()
         {
             return _treeHtml;
         }

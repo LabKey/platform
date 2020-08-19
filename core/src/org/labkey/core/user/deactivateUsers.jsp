@@ -29,8 +29,8 @@
     ActionURL urlPost = getViewContext().cloneActionURL();
     urlPost.deleteParameters();
 %>
-<p>Are sure you want to <b><%=bean.isActivate() ? "reactivate" : "deactivate"%></b>
-    the following <%=bean.getUsers().size() > 1 ? "users" : "user"%>?</p>
+<p>Are sure you want to <b><%=h(bean.isActivate() ? "reactivate" : "deactivate")%></b>
+    the following <%=h(bean.getUsers().size() > 1 ? "users" : "user")%>?</p>
     <ul>
     <%
         for (User user : bean.getUsers())
@@ -39,8 +39,8 @@
         } 
     %>
     </ul>
-<labkey:form action="<%=urlPost.getEncodedLocalURIString()%>" method="post">
-    <input type="hidden" name="redirUrl" value="<%=bean.getRedirUrl().getEncodedLocalURIString()%>"/>
+<labkey:form action="<%=urlPost%>" method="post">
+    <input type="hidden" name="redirUrl" value="<%=h(bean.getRedirUrl())%>"/>
     <%
         for (User user : bean.getUsers())
         {

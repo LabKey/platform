@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.controllers.StudyController"%>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
 <%@ page import="org.labkey.study.model.SpecimenRequestActor" %>
 <%@ page import="org.labkey.study.model.SpecimenRequestRequirement" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -53,7 +53,7 @@ function verifyNewRequirement(prefix)
     return true;
 }
 </script>
-<labkey:form action="<%=h(buildURL(SpecimenController.ManageDefaultReqsAction.class))%>" name="manageDefaultReqs" method="POST">
+<labkey:form action="<%=buildURL(SpecimenController.ManageDefaultReqsAction.class)%>" name="manageDefaultReqs" method="POST">
         <labkey:panel title="Requirements of Each Originating Lab">
             <table class="labkey-data-region-legacy" style="width: 650px;">
                 <tr>
@@ -66,7 +66,7 @@ function verifyNewRequirement(prefix)
                     {
                 %>
                 <tr>
-                    <td><%= link("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId()))).usePost() %></td>
+                    <td><%= link("Delete", deleteDefaultRequirement.replaceParameter("id", requirement.getRowId())).usePost() %></td>
                     <td><%= h(requirement.getActor().getLabel()) %></td>
                     <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
                 </tr>
@@ -109,7 +109,7 @@ function verifyNewRequirement(prefix)
                     {
                 %>
                 <tr>
-                    <td><%= link("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId()))).usePost() %></td>
+                    <td><%= link("Delete", deleteDefaultRequirement.replaceParameter("id", requirement.getRowId())).usePost() %></td>
                     <td><%= h(requirement.getActor().getLabel()) %></td>
                     <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
                 </tr>
@@ -152,7 +152,7 @@ function verifyNewRequirement(prefix)
                     {
                 %>
                 <tr>
-                    <td><%= link("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId()))).usePost() %></td>
+                    <td><%= link("Delete", deleteDefaultRequirement.replaceParameter("id", requirement.getRowId())).usePost() %></td>
                     <td><%= h(requirement.getActor().getLabel()) %></td>
                     <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
                 </tr>
@@ -195,7 +195,7 @@ function verifyNewRequirement(prefix)
                     {
                 %>
                 <tr>
-                    <td><%= link("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId()))).usePost() %></td>
+                    <td><%= link("Delete", deleteDefaultRequirement.replaceParameter("id", requirement.getRowId())).usePost() %></td>
                     <td><%= h(requirement.getActor().getLabel()) %></td>
                     <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
                 </tr>
@@ -225,6 +225,6 @@ function verifyNewRequirement(prefix)
                 </tr>
             </table>
         </labkey:panel>
-    <input type="hidden" name="nextPage" value="<%=new ActionURL(SpecimenController.ManageDefaultReqsAction.class, getContainer()).getLocalURIString()%>">
+    <input type="hidden" name="nextPage" value="<%=h(urlFor(SpecimenController.ManageDefaultReqsAction.class))%>">
 </labkey:form>
 <%= link("manage study", StudyController.ManageStudyAction.class) %>

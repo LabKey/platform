@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.model.SpecimenRequestActor" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.model.LocationImpl"%>
-<%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.specimen.ShowGroupMembersAction"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
-<%@ page import="org.labkey.study.controllers.specimen.ShowGroupMembersAction" %>
+<%@ page import="org.labkey.study.model.LocationImpl" %>
+<%@ page import="org.labkey.study.model.SpecimenRequestActor" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -47,7 +47,7 @@
     }
 %>
 <labkey:errors/>
-<labkey:form action="<%=h(buildURL(SpecimenController.ManageActorsAction.class))%>" name="manageActors" method="POST">
+<labkey:form action="<%=buildURL(SpecimenController.ManageActorsAction.class)%>" name="manageActors" method="POST">
     <table class="lk-fields-table">
         <tr>
             <td>&nbsp;</td>
@@ -88,7 +88,7 @@
                         <%
                             for (LocationImpl location : study.getLocations())
                             {
-                            %><a href="<%= h(buildURL(ShowGroupMembersAction.class)) + "id=" + actor.getRowId() + "&locationId=" + location.getRowId() %>"><%= h(location.getDisplayName()) %></a><br><%
+                            %><a href="<%=h(urlFor(ShowGroupMembersAction.class).addParameter("id", actor.getRowId()).addParameter("locationId", location.getRowId()))%>"><%= h(location.getDisplayName()) %></a><br><%
                             }
                         }
                         else

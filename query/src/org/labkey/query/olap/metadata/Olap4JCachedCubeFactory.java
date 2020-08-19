@@ -39,12 +39,12 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import static org.labkey.query.olap.metadata.CachedCube._Dimension;
+import static org.labkey.query.olap.metadata.CachedCube._EmptyNamedList;
 import static org.labkey.query.olap.metadata.CachedCube._Hierarchy;
 import static org.labkey.query.olap.metadata.CachedCube._Level;
-import static org.labkey.query.olap.metadata.CachedCube._Member;
 import static org.labkey.query.olap.metadata.CachedCube._Measure;
+import static org.labkey.query.olap.metadata.CachedCube._Member;
 import static org.labkey.query.olap.metadata.CachedCube._NamedList;
-import static org.labkey.query.olap.metadata.CachedCube._EmptyNamedList;
 
 /**
  * Created by matthew on 4/25/14.

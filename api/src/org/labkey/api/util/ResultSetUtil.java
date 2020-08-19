@@ -17,7 +17,8 @@ package org.labkey.api.util;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -25,6 +26,7 @@ import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.data.CachedResultSets;
 import org.labkey.api.data.ResultSetMetaDataImpl;
+import org.labkey.api.query.AliasManager;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -42,7 +44,7 @@ import java.util.Map;
 
 public class ResultSetUtil
 {
-    private static final Logger _log = Logger.getLogger(ResultSetUtil.class);
+    private static final Logger _log = LogManager.getLogger(ResultSetUtil.class);
     public static final boolean STRICT_CHECKING = false;  // If true, throws when ResultSets are closed more than once. Clean up ResultSet closing for #34406.
 
     private ResultSetUtil()
@@ -187,26 +189,13 @@ public class ResultSetUtil
     }
 
 
-    /* copied from AliasManager, should have shared JS XML specific versions */
-    private static boolean isLegalNameChar(char ch, boolean first)
-    {
-        if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z' || ch == '_')
-            return true;
-        if (first)
-            return false;
-        if (ch >= '0' && ch <= '9')
-            return true;
-        return false;
-    }
-
-
     public static String legalNameFromName(String str)
     {
         StringBuilder buf = null;
 
         for (int i = 0; i < str.length(); i++)
         {
-            if (isLegalNameChar(str.charAt(i), i == 0))
+            if (AliasManager.isLegalNameChar(str.charAt(i), i == 0))
                 continue;
             if (buf == null)
             {

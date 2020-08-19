@@ -21,8 +21,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryNestingOption;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -140,6 +140,7 @@ public class NestedRenderContext extends RenderContext
         return result;
     }
 
+    @NotNull
     @Override
     public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName, List<Aggregate> aggregatesIn,
             Map<String, Object> parameters, boolean async) throws IOException

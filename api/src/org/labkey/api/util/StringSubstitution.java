@@ -15,9 +15,9 @@
  */
 package org.labkey.api.util;
 
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import java.util.regex.MatchResult;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * <code>StringSubstitution</code> runs regular expression string substitution

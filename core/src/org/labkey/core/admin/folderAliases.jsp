@@ -31,7 +31,7 @@
         <td>
             For example, if you enter <b>/otherproject/otherfolder</b> below,
             URLs directed to a folder with name <b>/otherproject/otherfolder</b>
-            will be redirected to this folder, <b><%= getContainer().getPath() %></b>.
+            will be redirected to this folder, <b><%=h(getContainer().getPath())%></b>.
         </td>
     </tr>
     <tr>
@@ -40,7 +40,7 @@
     </tr>
     <tr>
         <td>
-        <labkey:form action="<%=h(buildURL(AdminController.FolderAliasesAction.class))%>" method="post">
+        <labkey:form action="<%=buildURL(AdminController.FolderAliasesAction.class)%>" method="post">
             <textarea rows="4" cols="40" name="aliases"><%
                 StringBuilder sb = new StringBuilder();
                 String separator = "";
@@ -49,7 +49,7 @@
                     sb.append(separator);
                     separator = "\r\n";
                     sb.append(path);
-                }%><%= sb.toString() %></textarea><br><br>
+                }%><%=h(sb.toString())%></textarea><br><br>
             <%= button("Save Aliases").submit(true) %>
             <%= button("Cancel").href(urlProvider(AdminUrls.class).getManageFoldersURL(getContainer())) %>
         </labkey:form>

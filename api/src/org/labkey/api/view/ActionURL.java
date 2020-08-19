@@ -26,9 +26,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.SimpleAction;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.SimpleHasHtmlString;
 import org.labkey.api.util.URLHelper;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -52,7 +52,7 @@ public class ActionURL extends URLHelper implements Cloneable
         return AppProps.getInstance().getUseContainerRelativeURL();
     }
 
-    public enum Param implements EnumHasHtmlString<Param>
+    public enum Param implements SimpleHasHtmlString
     {
         returnUrl,
         redirectUrl,    // mostly deprecated for returnUrl
@@ -344,11 +344,17 @@ public class ActionURL extends URLHelper implements Cloneable
 
     public ActionURL replaceParameter(Enum key, long value)
     {
-        return replaceParameter(key.toString(), Long.toString(value));
+        return replaceParameter(key.toString(), value);
     }
 
     @Override
     public ActionURL replaceParameter(String key, String value)
+    {
+        return (ActionURL) super.replaceParameter(key, value);
+    }
+
+    @Override
+    public ActionURL replaceParameter(String key, long value)
     {
         return (ActionURL) super.replaceParameter(key, value);
     }

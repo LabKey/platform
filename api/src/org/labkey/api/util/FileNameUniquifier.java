@@ -16,8 +16,8 @@
 
 package org.labkey.api.util;
 
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Uniquify filenames by inserting _n immediately before the extension when another file of the same name is

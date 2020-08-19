@@ -15,10 +15,10 @@
  */
 package org.labkey.api.security.roles;
 
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 
 /*
 * User: Dave

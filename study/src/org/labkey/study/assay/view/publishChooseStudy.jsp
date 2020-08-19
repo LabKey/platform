@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.study.assay.AssayPublishService" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.element.Input" %>
 <%@ page import="org.labkey.api.util.element.Option" %>
@@ -153,11 +154,11 @@
     }
 %>
 
-<labkey:form method="POST" id="copyForm" layout="horizontal" action="<%=h(postURL.getLocalURIString())%>">
+<labkey:form method="POST" id="copyForm" layout="horizontal" action="<%=postURL.getLocalURIString()%>">
     <%
         if (unambiguous)
         {
-            String label = "All data is marked for copying to study <b>" + h(firstStudy.getLabel()) + "</b> in folder <b>" + h(firstStudy.getContainer().getPath()) + "</b>.";
+            HtmlString label = HtmlString.unsafe("All data is marked for copying to study <b>" + h(firstStudy.getLabel()) + "</b> in folder <b>" + h(firstStudy.getContainer().getPath()) + "</b>.");
     %>
     <labkey:input type="displayfield" value="<%=label%>"/>
     <labkey:input type="checkbox" label="Copy to a different study" id="chooseStudy" onChange="toggleStudies();"/>

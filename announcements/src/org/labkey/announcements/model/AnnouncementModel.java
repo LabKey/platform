@@ -30,6 +30,7 @@ import org.labkey.api.data.Entity;
 import org.labkey.api.data.Transient;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService;
@@ -212,7 +213,7 @@ public class AnnouncementModel extends Entity implements Serializable
         return new ActionURL(ThreadAction.class, container);
     }
 
-    public String translateBody()
+    public HtmlString translateBody()
     {
         ActionURL attachPrefix = AnnouncementsController.getDownloadURL(this, "");
 
@@ -236,12 +237,12 @@ public class AnnouncementModel extends Entity implements Serializable
     }
 
     @Transient
-    public String getFormattedHtml()
+    public HtmlString getFormattedHtml()
     {
         return getFormattedHtml(null);
     }
 
-    private String getFormattedHtml(@Nullable String attachPrefix)
+    private HtmlString getFormattedHtml(@Nullable String attachPrefix)
     {
         WikiRenderingService renderingService = WikiRenderingService.get();
 

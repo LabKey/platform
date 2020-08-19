@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.specimen.ShowGroupMembersAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -27,7 +27,7 @@
 %>
 <labkey:errors/>
 <span>
-<labkey:form action="<%=h(buildURL(ShowGroupMembersAction.class))%>" method="POST">
+<labkey:form action="<%=buildURL(ShowGroupMembersAction.class)%>" method="POST">
     <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
 <%
     if (bean.getMembers() == null || bean.getMembers().length <= 0)

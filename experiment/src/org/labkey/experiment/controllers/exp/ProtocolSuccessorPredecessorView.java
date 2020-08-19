@@ -16,7 +16,6 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
