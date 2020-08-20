@@ -638,7 +638,8 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         }
         else if ("replaced".equalsIgnoreCase(message))
         {
-            message = "File replaced in " + c.getContainerNoun() + ": " + c.getPath();
+            String path = ("/".equals(c.getPath())) ? c.getPath() : this.getPath().toString();
+            message = "File replaced in " + c.getContainerNoun() + ": " + path;
         }
         else if ("fileDeleteFailed".equalsIgnoreCase(message))
         {
