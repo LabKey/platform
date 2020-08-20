@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "setup": "npm ci",
-    "build": "bnr clean && bnr build-themes:dev && bnr build-pages:prod",
+    "build": "npm run build-dev",
     "build-dev": "bnr clean && bnr build-themes:dev && bnr build-pages:dev",
     "build-prod": "bnr clean && bnr build-themes:prod && bnr build-pages:prod",
     "clean": "bnr clean",
