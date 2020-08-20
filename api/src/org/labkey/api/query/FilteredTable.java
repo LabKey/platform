@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -275,11 +276,17 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     }
 
 
-    private String filterName(ColumnInfo c)
-	{
-		return c.getAlias();
-	}
+    private final static String filterNameAlias = "'' !" + FilteredTable.class.getName() + "! ''";
+    private final static String filterNameAliasDot = filterNameAlias + ".";
 
+    private SQLFragment filterName(ColumnInfo c)
+	{
+	    // This is kinda messed up because getFromSQL() doesn't use a known alias in the from clause
+        // CONSIDER: always use "_x" and track down and fix usages that assume known table name
+        SQLFragment name = c.getValueSql(filterNameAlias);
+		name.setRawSQL(StringUtils.replace(name.getRawSQL(),filterNameAliasDot,""));
+		return name;
+	}
 
     final public void addCondition(SQLFragment condition, FieldKey... fieldKeys)
     {
@@ -353,7 +360,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         checkLocked();
         assertCorrectParentTable(col);
         SQLFragment frag = new SQLFragment();
-        frag.append(col.getSelectName());
+        frag.append(filterName(col));
         frag.append(" = ");
         frag.appendStringLiteral(value);
         addCondition(frag, col.getFieldKey());
