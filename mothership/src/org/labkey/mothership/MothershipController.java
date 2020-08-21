@@ -78,6 +78,8 @@ import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.mothership.query.MothershipSchema;
+import org.labkey.mothership.view.ExceptionListWebPart;
+import org.labkey.mothership.view.LinkBar;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -188,7 +190,7 @@ public class MothershipController extends SpringActionController
             settings.getBaseSort().insertSortColumn(FieldKey.fromParts("BuildTime"), Sort.SortDirection.DESC);
 
             QueryView queryView = schema.createView(getViewContext(), settings, errors);
-            return new VBox(getLinkBar(), queryView);
+            return new VBox(new LinkBar(), queryView);
         }
 
         @Override
@@ -364,16 +366,7 @@ public class MothershipController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
-            QuerySettings settings = schema.getSettings(getViewContext(), "ExceptionSummary", MothershipSchema.EXCEPTION_STACK_TRACE_TABLE_NAME);
-            settings.getBaseSort().insertSortColumn(FieldKey.fromParts("ExceptionStackTraceId"), Sort.SortDirection.DESC);
-
-            QueryView queryView = schema.createView(getViewContext(), settings, errors);
-            queryView.setShowDetailsColumn(false);
-            queryView.setShadeAlternatingRows(true);
-            queryView.setShowBorders(true);
-
-            return new VBox(getLinkBar(), queryView);
+            return new ExceptionListWebPart(getUser(), getContainer(), errors);
         }
 
         @Override
@@ -401,7 +394,7 @@ public class MothershipController extends SpringActionController
 
             QueryView gridView = schema.createView(getViewContext(), settings, errors);
 
-            return new VBox(getLinkBar(), gridView);
+            return new VBox(new LinkBar(), gridView);
         }
 
         @Override
@@ -450,7 +443,7 @@ public class MothershipController extends SpringActionController
             form.setCreateIssueURL(MothershipManager.get().getCreateIssueURL(getContainer()));
             form.setIssuesContainer(MothershipManager.get().getIssuesContainer(getContainer()));
 
-            return new VBox(getLinkBar(), new JspView<>("/org/labkey/mothership/editUpgradeMessage.jsp", form));
+            return new VBox(new LinkBar(), new JspView<>("/org/labkey/mothership/editUpgradeMessage.jsp", form));
         }
 
         @Override
@@ -915,7 +908,7 @@ public class MothershipController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             HtmlView graphView = new HtmlView("Installations", "<img src=\"mothership-showActiveInstallationGraph.view\" height=\"400\" width=\"800\" /><br/><br/><img src=\"mothership-showRegistrationInstallationGraph.view\" height=\"400\" width=\"800\" />");
-            return new VBox(getLinkBar(), new UnbuggedExceptionsGridView(), new UnassignedExceptionsGridView(), graphView);
+            return new VBox(new LinkBar(), new UnbuggedExceptionsGridView(), new UnassignedExceptionsGridView(), graphView);
         }
     }
 
@@ -977,11 +970,6 @@ public class MothershipController extends SpringActionController
             return MothershipManager.get().getUpgradeMessage(getContainer());
         }
         return "";
-    }
-
-    private JspView getLinkBar()
-    {
-        return new JspView("/org/labkey/mothership/view/linkBar.jsp");
     }
 
     public static abstract class ServerInfoForm
