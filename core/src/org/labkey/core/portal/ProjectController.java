@@ -345,18 +345,9 @@ public class ProjectController extends SpringActionController
             PageConfig page = getPageConfig();
             page.setHelpTopic(folderType.getHelpTopic());
             page.setNavTrail(Collections.emptyList());
-            HttpView template = null;
 
             Template t = isPrint() ? Template.Print : Template.Home;
-            try
-            {
-                template = t.getTemplate(getViewContext(), new VBox(), page);
-            }
-            catch (BadRequestException e)
-            {
-                ExceptionUtil.handleException(getViewContext().getRequest(), getViewContext().getResponse(), e, e.getMessage(), false);
-                return null;
-            }
+            HttpView<?> template = t.getTemplate(getViewContext(), new VBox(), page);
 
             String pageId = form.getPageId();
             if (pageId == null)
