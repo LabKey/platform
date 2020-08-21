@@ -280,13 +280,13 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     private final static String filterNameAliasDot = filterNameAlias + ".";
 
     private SQLFragment filterName(ColumnInfo c)
-	{
-	    // This is kinda messed up because getFromSQL() doesn't use a known alias in the from clause
+    {
+        // This is kinda messed up because getFromSQL() doesn't use a known alias in the from clause
         // CONSIDER: always use "_x" and track down and fix usages that assume known table name
         SQLFragment name = c.getValueSql(filterNameAlias);
-		name.setRawSQL(StringUtils.replace(name.getRawSQL(),filterNameAliasDot,""));
-		return name;
-	}
+        name.setRawSQL(StringUtils.replace(name.getRawSQL(),filterNameAliasDot,""));
+        return name;
+    }
 
     final public void addCondition(SQLFragment condition, FieldKey... fieldKeys)
     {
