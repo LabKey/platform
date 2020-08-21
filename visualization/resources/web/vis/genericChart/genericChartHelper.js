@@ -374,17 +374,18 @@ LABKEY.vis.GenericChartHelper = new function(){
         var scales = {};
         var data = LABKEY.Utils.isArray(measureStore.rows) ? measureStore.rows : measureStore.records();
         var fields = LABKEY.Utils.isObject(measureStore.metaData) ? measureStore.metaData.fields : measureStore.getResponseMetadata().fields;
-        var subjectColumn = _getStudySubjectInfo().columnName;
+        var subjectColumn = getStudySubjectInfo().columnName;
+        var tableName = getStudySubjectInfo().tableName + 'Visit';
         var valExponentialDigits = 6;
+
+        // Issue 38105: For box plot of study visit labels, don't sort alphabetically
+        var sortFnX = measures.x && measures.x.fieldKey === (tableName + '/Visit') ? undefined : LABKEY.vis.discreteSortFn;
 
         if (chartType === "box_plot")
         {
-            // Issue 38105: For box plot of study visit labels, don't sort alphabetically
-            var sortFn = measures.x && measures.x.fieldKey === 'ParticipantVisit/Visit' ? undefined : LABKEY.vis.discreteSortFn;
-
             scales.x = {
                 scaleType: 'discrete', // Force discrete x-axis scale for box plots.
-                sortFn: sortFn,
+                sortFn: sortFnX,
                 tickLabelMax: DEFAULT_TICK_LABEL_MAX
             };
 
@@ -431,7 +432,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             {
                 scales.x = {
                     scaleType: 'discrete',
-                    sortFn: LABKEY.vis.discreteSortFn,
+                    sortFn: sortFnX,
                     tickLabelMax: DEFAULT_TICK_LABEL_MAX
                 };
 
@@ -1376,7 +1377,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         return t == 'date';
     };
 
-    var _getStudySubjectInfo = function()
+    var getStudySubjectInfo = function()
     {
         var studyCtx = LABKEY.getModuleContext("study") || {};
         return LABKEY.Utils.isObject(studyCtx.subject) ? studyCtx.subject : {
@@ -1714,6 +1715,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         getDistinctYAxisSides : getDistinctYAxisSides,
         getYMeasureAes : getYMeasureAes,
         getDefaultMeasuresLabel: getDefaultMeasuresLabel,
+        getStudySubjectInfo: getStudySubjectInfo,
         ensureMeasuresAsArray: ensureMeasuresAsArray,
         isNumericType: isNumericType,
         generateLabels: generateLabels,
