@@ -82,7 +82,7 @@ public class PageTemplate extends JspView<PageConfig>
 
         WikiService wikiService = WikiService.get();
 
-        WebPartView header = null;
+        WebPartView<?> header = null;
         if (ModuleLoader.getInstance().isStartupComplete() && null != wikiService && null != c && null != c.getProject())
         {
             header = wikiService.getView(c.getProject(), "_header", false);
@@ -90,10 +90,7 @@ public class PageTemplate extends JspView<PageConfig>
                 header.setFrame(FrameType.NONE); // 12336: Explicitly don't frame the _header override.
         }
 
-        if (null != header)
-            setView("header", header);
-        else
-            setView("header", new Header(page));
+        setView("header", header == null ? new Header(page) : header);
 
         // TODO: This is being side-effected by isHidePageTitle() check. That setting should be moved to PageConfig
         setBody(body);
@@ -136,7 +133,7 @@ public class PageTemplate extends JspView<PageConfig>
             page.setNavTrail(appNavTrail);
 
         //allow views to have flag to hide title
-        if (getBody() instanceof WebPartView && ((WebPartView) getBody()).isHidePageTitle())
+        if (getBody() instanceof WebPartView && ((WebPartView<?>) getBody()).isHidePageTitle())
             appBar.setPageTitle(null);
 
         return appBar;
@@ -159,7 +156,7 @@ public class PageTemplate extends JspView<PageConfig>
 
     protected ModelAndView getBodyTemplate(PageConfig page, ModelAndView body)
     {
-        JspView view = new JspView<>("/org/labkey/core/view/template/bootstrap/body.jsp", page);
+        JspView<?> view = new JspView<>("/org/labkey/core/view/template/bootstrap/body.jsp", page);
 
         Container c = this.getViewContext().getContainer();
         TemplateProperties banner = new BannerProperties(c);
@@ -171,12 +168,12 @@ public class PageTemplate extends JspView<PageConfig>
         return view;
     }
 
-    protected HttpView getNavigationView(ViewContext context, PageConfig page)
+    protected HttpView<NavigationModel> getNavigationView(ViewContext context, PageConfig page)
     {
         NavigationModel model = new NavigationModel(context, page);
         addClientDependencies(model.getClientDependencies());
 
-        JspView view = new JspView<>("/org/labkey/core/view/template/bootstrap/navigation.jsp", model);
+        JspView<NavigationModel> view = new JspView<>("/org/labkey/core/view/template/bootstrap/navigation.jsp", model);
         view.setFrame(FrameType.NONE);
         return view;
     }
@@ -187,11 +184,11 @@ public class PageTemplate extends JspView<PageConfig>
         // TODO: This doesn't feel right, however, there are certain views that should only be applied to the "bodyTemplate"
         if (WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(name))
         {
-            HttpView body = ((HttpView) getView("bodyTemplate"));
+            HttpView<?> body = ((HttpView<?>) getView("bodyTemplate"));
 
             if (body != null)
             {
-                HttpView right = (HttpView) body.getView(WebPartFactory.LOCATION_RIGHT);
+                HttpView<?> right = (HttpView<?>) body.getView(WebPartFactory.LOCATION_RIGHT);
 
                 if (right == null)
                     body.setView(WebPartFactory.LOCATION_RIGHT, new VBox(view));
@@ -283,20 +280,20 @@ public class PageTemplate extends JspView<PageConfig>
                         WebPartFactory factory = Portal.getPortalPart(part.getName());
                         if (null != factory)
                         {
-                            WebPartView view = factory.getWebPartView(_context, part);
+                            WebPartView<?> view = factory.getWebPartView(_context, part);
                             if (!view.isEmpty())
                             {
                                 addClientDependencies(view.getClientDependencies());
                             }
                         }
                     }
+                    catch (BadRequestException x)
+                    {
+                        // re-throw BadRequestException to let it bubble up to the top level
+                        throw x;
+                    }
                     catch (Exception x)
                     {
-                        if (x instanceof BadRequestException)
-                        {
-                            // re-throw BadRequestException
-                            throw new BadRequestException(x.getMessage(), x);
-                        }
                         LOG.error("Failed to add client dependencies", x);
                     }
                 }
