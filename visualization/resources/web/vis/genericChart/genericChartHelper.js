@@ -375,11 +375,12 @@ LABKEY.vis.GenericChartHelper = new function(){
         var data = LABKEY.Utils.isArray(measureStore.rows) ? measureStore.rows : measureStore.records();
         var fields = LABKEY.Utils.isObject(measureStore.metaData) ? measureStore.metaData.fields : measureStore.getResponseMetadata().fields;
         var subjectColumn = getStudySubjectInfo().columnName;
-        var tableName = getStudySubjectInfo().tableName + 'Visit';
+        var visitTableName = getStudySubjectInfo().tableName + 'Visit';
+        var visitColName = visitTableName + '/Visit';
         var valExponentialDigits = 6;
 
-        // Issue 38105: For box plot of study visit labels, don't sort alphabetically
-        var sortFnX = measures.x && measures.x.fieldKey === (tableName + '/Visit') ? undefined : LABKEY.vis.discreteSortFn;
+        // Issue 38105: For plots with study visit labels on the x-axis, don't sort alphabetically
+        var sortFnX = measures.x && measures.x.fieldKey === visitColName ? undefined : LABKEY.vis.discreteSortFn;
 
         if (chartType === "box_plot")
         {
