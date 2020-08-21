@@ -29,6 +29,7 @@ import org.labkey.api.settings.BannerProperties;
 import org.labkey.api.settings.FooterProperties;
 import org.labkey.api.settings.TemplateProperties;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -291,6 +292,11 @@ public class PageTemplate extends JspView<PageConfig>
                     }
                     catch (Exception x)
                     {
+                        if (x instanceof BadRequestException)
+                        {
+                            // re-throw BadRequestException
+                            throw new BadRequestException(x.getMessage(), x);
+                        }
                         LOG.error("Failed to add client dependencies", x);
                     }
                 }

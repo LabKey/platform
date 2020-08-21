@@ -58,6 +58,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -65,6 +66,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -343,9 +345,18 @@ public class ProjectController extends SpringActionController
             PageConfig page = getPageConfig();
             page.setHelpTopic(folderType.getHelpTopic());
             page.setNavTrail(Collections.emptyList());
+            HttpView template = null;
 
             Template t = isPrint() ? Template.Print : Template.Home;
-            HttpView template = t.getTemplate(getViewContext(), new VBox(), page);
+            try
+            {
+                template = t.getTemplate(getViewContext(), new VBox(), page);
+            }
+            catch (BadRequestException e)
+            {
+                ExceptionUtil.handleException(getViewContext().getRequest(), getViewContext().getResponse(), e, e.getMessage(), false);
+                return null;
+            }
 
             String pageId = form.getPageId();
             if (pageId == null)
