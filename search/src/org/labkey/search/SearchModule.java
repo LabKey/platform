@@ -43,7 +43,6 @@ import org.labkey.search.model.AbstractSearchService;
 import org.labkey.search.model.DavCrawler;
 import org.labkey.search.model.DocumentConversionServiceImpl;
 import org.labkey.search.model.LuceneSearchServiceImpl;
-import org.labkey.search.umls.UmlsController;
 import org.labkey.search.view.SearchWebPartFactory;
 
 import javax.servlet.ServletContext;
@@ -105,7 +104,6 @@ public class SearchModule extends DefaultModule
     protected void init()
     {
         addController("search", SearchController.class);
-        addController("umls", UmlsController.class);
         LuceneSearchServiceImpl ss = new LuceneSearchServiceImpl();
         SearchService.setInstance(ss);
         ss.addResourceResolver("dav", new AbstractSearchService.ResourceResolver()
@@ -133,7 +131,6 @@ public class SearchModule extends DefaultModule
 
         if (null != ss)
         {
-            ss.addSearchCategory(UmlsController.umlsCategory);
             AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "full-text search", new ActionURL(SearchController.AdminAction.class, null));
 
             CacheManager.addListener(() -> {
