@@ -526,6 +526,12 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return HtmlString.of(null == date ? "" : DateUtil.formatDateTime(getContainer(), date));
     }
 
+    // Format date & time using the specified date & time format and HTML filter the result
+    public HtmlString formatDateTime(Date date, String pattern)
+    {
+        return HtmlString.of(null == date ? "" : DateUtil.formatDateTime(date, pattern));
+    }
+
     public String getMessage(ObjectError e)
     {
         if (e == null)
