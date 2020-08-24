@@ -28,6 +28,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.BannerProperties;
 import org.labkey.api.settings.FooterProperties;
 import org.labkey.api.settings.TemplateProperties;
+import org.labkey.api.util.ErrorRenderer;
+import org.labkey.api.util.ErrorTemplate;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HttpView;
@@ -97,7 +100,15 @@ public class PageTemplate extends JspView<PageConfig>
 
         page.setAppBar(generateAppBarModel(context, page));
 
-        setView("navigation", getNavigationView(context, page));
+        try
+        {
+            setView("navigation", getNavigationView(context, page));
+        }
+        catch (Exception x)
+        {
+            ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(((BadRequestException) x).getStatus(), x.getMessage(), x, context.getRequest(), false, false);
+            setView("error", new ErrorTemplate(renderer, page));
+        }
         setView("footer", new FooterProperties(c).getView());
     }
 

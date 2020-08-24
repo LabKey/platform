@@ -81,6 +81,9 @@
 
         if (null != me.getView("navigation"))
             me.include(me.getView("navigation"),out);
+
+        if (null != me.getView("error"))
+            me.include(me.getView("error"),out);
 %>
 </div>
 <%
