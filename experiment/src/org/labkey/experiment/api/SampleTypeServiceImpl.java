@@ -900,15 +900,16 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
     }
 
     @Override
-    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
+    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
     {
-        return createAuditRecord(c, getCommentDetailed(action), row, updatedRow, action);
+        // not doing anything with userComment at the moment
+        return createAuditRecord(c, getCommentDetailed(action), row, updatedRow, action, userComment);
     }
 
     @Override
-    protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, int rowCount, @Nullable Map<String, Object> row)
+    protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
     {
-        return createAuditRecord(c, String.format(action.getCommentSummary(), rowCount), row, null);
+        return createAuditRecord(c, String.format(action.getCommentSummary(), rowCount), row, userComment);
     }
 
     @Override
@@ -925,14 +926,15 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         });
     }
 
-    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
+    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, @Nullable String userComment)
     {
-        return createAuditRecord(c, comment, row, updatedRow, null);
+        return createAuditRecord(c, comment, row, null, null, userComment);
     }
 
-    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow, @Nullable QueryService.AuditAction action)
+    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow, @Nullable QueryService.AuditAction action, @Nullable String userComment)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c.getId(), comment);
+        event.setUserComment(userComment);
 
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
@@ -980,7 +982,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         return event;
     }
 
-    private SampleTimelineAuditEvent createAuditRecord(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata)
+    private SampleTimelineAuditEvent createAuditRecord(Container container, String comment, ExpMaterial sample, Map<String, Object> metadata, @Nullable String userComment)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(container.getId(), comment);
         if (container.getProject() != null)
@@ -999,15 +1001,15 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
     }
 
     @Override
-    public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata)
+    public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata, @Nullable String userComment)
     {
-        AuditLogService.get().addEvent(user, createAuditRecord(user, container, comment, sample, metadata));
+        AuditLogService.get().addEvent(user, createAuditRecord(container, comment, sample, metadata, userComment));
     }
 
     @Override
-    public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata, String updateType)
+    public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata, String updateType, @Nullable String userComment)
     {
-        SampleTimelineAuditEvent event = createAuditRecord(user, container, comment, sample, metadata);
+        SampleTimelineAuditEvent event = createAuditRecord(container, comment, sample, metadata, userComment);
         event.setInventoryUpdateType(updateType);
         AuditLogService.get().addEvent(user, event);
     }

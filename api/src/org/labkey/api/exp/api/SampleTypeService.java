@@ -140,9 +140,9 @@ public interface SampleTypeService
 
     boolean parentAliasHasCorrectFormat(String parentAlias);
 
-    void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, QueryService.AuditAction action, List<Map<String, Object>>... params);
+    void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, @Nullable String userComment, QueryService.AuditAction action, List<Map<String, Object>>... params);
 
-    void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata);
+    void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata, @Nullable String userComment);
 
-    void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata, String updateType);
+    void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata, String updateType, @Nullable String userComment);
 }

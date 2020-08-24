@@ -20,8 +20,8 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         MERGE("Sample was registered or updated.", "Registered"),
         UPDATE("Sample was updated.", "Updated");
 
-        private String _comment;
-        private String _actionLabel;
+        private final String _comment;
+        private final String _actionLabel;
 
         SampleTimelineEventType(String comment, String actionLabel)
         {
@@ -75,6 +75,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     private boolean _isLineageUpdate;
     private String _metadata;
     private String _inventoryUpdateType;
+    private String _userComment;
 
     public SampleTimelineAuditEvent()
     {
@@ -164,6 +165,16 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     public void setInventoryUpdateType(String inventoryUpdateType)
     {
         _inventoryUpdateType = inventoryUpdateType;
+    }
+
+    public String getUserComment()
+    {
+        return _userComment;
+    }
+
+    public void setUserComment(String userComment)
+    {
+        _userComment = userComment;
     }
 
     @Override
