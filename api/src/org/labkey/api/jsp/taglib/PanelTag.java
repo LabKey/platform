@@ -17,7 +17,6 @@ package org.labkey.api.jsp.taglib;
 
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 
 import javax.servlet.jsp.tagext.BodyTagSupport;

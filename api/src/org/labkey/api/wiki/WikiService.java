@@ -91,6 +91,8 @@ public interface WikiService
 
     /**
      * Update the attachments on a wiki. Note, attachment changes do not update the wiki version.
+     * If an error occurs, a non-null String will be returned containing the error message.
      */
-    void updateAttachments(Container c, User user, String wikiName, @Nullable List<AttachmentFile> attachmentFiles, @Nullable List<String> deleteAttachmentNames);
+    @Nullable
+    String updateAttachments(Container c, User user, String wikiName, @Nullable List<AttachmentFile> attachmentFiles, @Nullable List<String> deleteAttachmentNames);
 }
