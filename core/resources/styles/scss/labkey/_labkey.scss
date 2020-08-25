@@ -225,6 +225,7 @@ pre.labkey-log-text.multiline.expanded::before {
   content: '\f147'; /* fa-minus-square-o */
   float: left;
   margin-left: -1.4em;
+  cursor: pointer;
 }
 
 // add [+] icon before multiline block
@@ -233,6 +234,7 @@ pre.labkey-log-text.multiline.collapsed::before {
   content: '\f196'; /* fa-plus-square-o */
   float: left;
   margin-left: -1.4em;
+  cursor: pointer;
 }
 
 //TODO: Can remove if _frameNavigation is removed

@@ -239,7 +239,7 @@
                      data-multiline="<%=h(record.isMultiline())%>"
                      data-stacktrace="<%=h(record.isStackTrace())%>"
                      data-level="<%=h(record.getLevel())%>"
-                ><%=h(record.getLines())%></pre>
+                ><div><%=h(record.getLines())%></div></pre>
                 <% } %>
         </div>
             <% } %>
@@ -541,7 +541,9 @@
                         'data-multiline="' + record.multiline + '"' +
                         'data-stacktrace="' + record.stackTrace + '"' +
                         'data-level="' + LABKEY.Utils.encodeHtml(record.level) + '">' +
+                        '<div>' +
                         LABKEY.Utils.encodeHtml(record.lines) +
+                        '</div>' +
                         '</pre>';
 
                 nodes.push(createDomNode(html));
