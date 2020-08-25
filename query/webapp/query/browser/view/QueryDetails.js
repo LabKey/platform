@@ -363,7 +363,27 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
     formatDependencies : function () {
 
         const dependencies = this.queriesCache.getDependencies(LABKEY.container.id, this.schemaName, this.queryName);
+
+        // issue : 40993 sort dependencies by type, schemaName and name
+        let sortFn = function(a, b){
+            // group by type
+            let type = a.type.localeCompare(b.type);
+            if (type !== 0)
+                return type;
+
+            // schema name
+            let schemaName = a.schemaDisplayName.toLowerCase().localeCompare(b.schemaDisplayName.toLowerCase());
+            if (schemaName !== 0)
+                return schemaName;
+
+            // query name
+            return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+        };
+
         if (dependencies){
+            dependencies.dependees.sort(sortFn);
+            dependencies.dependents.sort(sortFn);
+
             let tpl = new Ext4.XTemplate(
                 '<h3 style="padding-top: 1.0em">Dependency Report</h3>',
                 '<span>The queries or tables that this query or table depends on and the queries or tables that depend on it.</span>',
