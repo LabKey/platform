@@ -1745,6 +1745,15 @@ public class DavController extends SpringActionController
                 resourceWriter.beginResponse(getResponse());
 
                 WebdavResource resource = root;
+
+                Map<String, Boolean> rootPermissions = new HashMap<>();
+                rootPermissions.put("canRead", resource.canRead(getUser(), false));
+                rootPermissions.put("canUpload", resource.canCreate(getUser(), false));
+                rootPermissions.put("canEdit", resource.canWrite(getUser(), false));
+                rootPermissions.put("canDelete", resource.canDelete(getUser(), false));
+                rootPermissions.put("canRename", resource.canRename(getUser(), false));
+                resourceWriter.writeProperty("permissions", rootPermissions);
+
                 if (resource.isCollection())
                 {
                     Collection<String> listPaths = resource.listNames();  // 17749
@@ -2754,6 +2763,11 @@ public class DavController extends SpringActionController
             json.key("iconHref").value(resource.getIconHref());
             json.key("iconFontCls").value(resource.getIconFontCls());
             json.key("options").value(determineMethodsAllowed(resource));
+            json.key("canDelete").value(resource.canDelete(getUser(), false));
+            json.key("canRename").value(resource.canRename(getUser(), false));
+            json.key("canEdit").value(resource.canWrite(getUser(), false));
+            json.key("canUpload").value(resource.canCreate(getUser(), false));
+            json.key("canRead").value(resource.canRead(getUser(), false));
 
             long created = resource.getCreated();
             if (Long.MIN_VALUE != created)

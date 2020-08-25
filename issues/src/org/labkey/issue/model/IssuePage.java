@@ -19,6 +19,7 @@ package org.labkey.issue.model;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Collections2;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -592,7 +593,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         }
     }
 
-    public HtmlString getLabel(String columnName, boolean markIfRequired)
+    public HtmlString getLabel(@NotNull String columnName, boolean markIfRequired)
     {
         var col = IssuesSchema.getInstance().getTableInfoIssues().getColumn(columnName);
         String name = null;
@@ -603,7 +604,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             name = col.getLabel();
 
         String capitalizedColumnName;
-        if (columnName != null && columnName.length() > 1)
+        if (columnName.length() > 1)
             capitalizedColumnName = columnName.substring(0,1).toUpperCase() + columnName.substring(1); // capitalize
         else
             capitalizedColumnName = columnName;
@@ -653,7 +654,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                     .append(HtmlString.unsafe("\">&nbsp;"))
                     .append(a.getName());
 
-                builder.append(new LinkBuilder(icon.getHtmlString()).href(download).target("_blank"));
+                builder.append(new LinkBuilder(icon.getHtmlString()).href(download).target("_blank").clearClasses());
                 builder.append(HtmlString.unsafe("</td></tr>"));
             }
             builder.append(HtmlString.unsafe("</table>"));
