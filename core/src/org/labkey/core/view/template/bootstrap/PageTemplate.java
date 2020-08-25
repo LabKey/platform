@@ -47,6 +47,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiService;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -93,23 +94,23 @@ public class PageTemplate extends JspView<PageConfig>
                 header.setFrame(FrameType.NONE); // 12336: Explicitly don't frame the _header override.
         }
 
-        setView("header", header == null ? new Header(page) : header);
-
-        // TODO: This is being side-effected by isHidePageTitle() check. That setting should be moved to PageConfig
-        setBody(body);
-
-        page.setAppBar(generateAppBarModel(context, page));
-
         try
         {
+            setView("header", header == null ? new Header(page) : header);
+
+            // TODO: This is being side-effected by isHidePageTitle() check. That setting should be moved to PageConfig
+            setBody(body);
+
+            page.setAppBar(generateAppBarModel(context, page));
             setView("navigation", getNavigationView(context, page));
+            setView("footer", new FooterProperties(c).getView());
         }
         catch (Exception x)
         {
-            ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(((BadRequestException) x).getStatus(), x.getMessage(), x, context.getRequest(), false, false);
+            // TODO : ErrorPage populate apt response code
+            ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_OK, x.getMessage(), x, context.getRequest(), false, false);
             setView("error", new ErrorTemplate(renderer, page));
         }
-        setView("footer", new FooterProperties(c).getView());
     }
 
     private AppBar generateAppBarModel(ViewContext context, PageConfig page)

@@ -65,7 +65,8 @@ public class PageConfig
         Wizard,
         Body,
         Custom,  // must be handled by module
-        App;
+        App,
+        Error;
 
         public @Nullable HttpView<PageConfig> getTemplate(ViewContext context, ModelAndView body, PageConfig page)
         {

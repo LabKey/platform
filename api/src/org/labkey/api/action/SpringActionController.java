@@ -41,6 +41,8 @@ import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ErrorRenderer;
+import org.labkey.api.util.ErrorTemplate;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.MemTracker;
@@ -54,6 +56,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
@@ -385,6 +388,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         ActionURL url = context.getActionURL();
         long startTime = System.currentTimeMillis();
         Controller controller = null;
+        PageConfig pageConfig = null;
 
         try
         {
@@ -426,7 +430,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 }
             }
 
-            PageConfig pageConfig = defaultPageConfig();
+            pageConfig = defaultPageConfig();
 
             if (controller instanceof HasViewContext)
                 ((HasViewContext)controller).setViewContext(context);
@@ -506,7 +510,17 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
         catch (Throwable x)
         {
-            handleException(x);
+            ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_OK, x.getMessage(), x, context.getRequest(), false, false);
+            try
+            {
+                ModelAndView render = PageConfig.Template.Error.getTemplate(context, new ErrorTemplate(renderer, pageConfig), pageConfig);
+                render.getView().render(render.getModel(), context.getRequest(), context.getResponse());
+            }
+            catch (Exception e)
+            {
+                // TODO : ErrorPage populate apt repsonse code
+                return new ErrorTemplate(renderer, pageConfig);
+            }
             throwable = x;
         }
         finally
