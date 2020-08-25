@@ -8137,7 +8137,10 @@ public class AdminController extends SpringActionController
                                         TD(SPAN(at(title,className), className.substring(className.lastIndexOf(".")+1))),
                                         TD(SPAN(at(title,fullPathToModule),shortPathToModule)),
                                         TD(schemas.stream().map(s -> createHtmlFragment(s, BR()))),
-                                        null == externalModulesDir ? null : TD(!replaceableModule ? NBSP : PageFlowUtil.link("Update Module").href(getUpdateURL(moduleContext.getName()))),
+
+                                        TD((AppProps.getInstance().isDevMode()) ? PageFlowUtil.link("Edit module").href(getModuleEditorURL(moduleContext.getName())) : NBSP),
+//                                        , null == externalModulesDir ? null : TD(!replaceableModule ? NBSP : PageFlowUtil.link("Update Module").href(getUpdateURL(moduleContext.getName()))),
+
                                         !hasAdminOpsPerm ? null : TD(!deleteableModule ? NBSP :  PageFlowUtil.link("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : "")))).href(getDeleteURL(moduleContext.getName())))
                                     );
                                 })
@@ -8164,6 +8167,13 @@ public class AdminController extends SpringActionController
                 return url;
             url = new ActionURL(UpdateModuleAction.class, ContainerManager.getRoot());
             url.addParameter("name", name);
+            return url;
+        }
+
+        private ActionURL getModuleEditorURL(String name)
+        {
+            ActionURL url = ModuleEditorService.get().getModuleEditorURL(name);
+            url.addParameter("module", name); // necessary?
             return url;
         }
 
