@@ -61,6 +61,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -96,7 +97,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.PopupUserView;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
@@ -1303,7 +1303,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresPermission(UserManagementPermission.class)
+    @RequiresPermission(AddUserPermission.class)
     public class AddUsersAction extends FormViewAction<AddUsersForm>
     {
         @Override

@@ -22,6 +22,6 @@ public class UserManagementPermission extends AdminPermission
 {
     public UserManagementPermission()
     {
-        super("User Management", "Allows a role to manage users (create, delete, deactivate) for the server");
+        super("User Management", "Allows a role to manage users (delete, deactivate) for the server");
     }
 }
