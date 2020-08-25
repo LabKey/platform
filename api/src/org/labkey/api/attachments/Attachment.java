@@ -50,6 +50,7 @@ public class Attachment implements Serializable
     private String _container;   // container path
     private int _createdBy;
     private long _created;
+    private int _documentSize;
     private File _file;
     private Date _lastIndexed;
 
@@ -333,5 +334,15 @@ public class Attachment implements Serializable
     public void setFile(File file)
     {
         _file = file;
+    }
+
+    public int getDocumentSize()
+    {
+        return _documentSize;
+    }
+
+    public void setDocumentSize(int documentSize)
+    {
+        _documentSize = documentSize;
     }
 }
