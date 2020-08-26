@@ -388,7 +388,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
         ActionURL url = context.getActionURL();
         long startTime = System.currentTimeMillis();
         Controller controller = null;
-        PageConfig pageConfig = null;
 
         try
         {
@@ -430,7 +429,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 }
             }
 
-            pageConfig = defaultPageConfig();
+            PageConfig pageConfig = defaultPageConfig();
 
             if (controller instanceof HasViewContext)
                 ((HasViewContext)controller).setViewContext(context);
