@@ -17,6 +17,7 @@ package org.labkey.api.security.roles;
 
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.EnableRestrictedModules;
 import org.labkey.api.security.permissions.Permission;
@@ -35,7 +36,8 @@ public class ApplicationAdminRole extends AbstractRootContainerRole
         ApplicationAdminPermission.class,
         TroubleShooterPermission.class,
         EnableRestrictedModules.class,
-        UserManagementPermission.class
+        UserManagementPermission.class,
+        AddUserPermission.class
     );
 
     public ApplicationAdminRole()

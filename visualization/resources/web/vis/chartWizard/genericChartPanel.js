@@ -720,9 +720,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var dataRegion = LABKEY.DataRegions[this.panelDataRegionName];
         var sortKey = 'lsid'; // needed to keep expected ordering for legend data
 
-        // Issue 38105: For box plot of study visit labels, sort by visit display order and then sequenceNum
-        if (this.renderType === 'box_plot' && this.measures.x && this.measures.x.fieldKey === 'ParticipantVisit/Visit') {
-            sortKey = 'ParticipantVisit/Visit/DisplayOrder, ParticipantVisit/SequenceNum';
+        // Issue 38105: For plots with study visit labels on the x-axis, sort by visit display order and then sequenceNum
+        var visitTableName = LABKEY.vis.GenericChartHelper.getStudySubjectInfo().tableName + 'Visit';
+        if (this.measures.x && this.measures.x.fieldKey === visitTableName + '/Visit') {
+            var displayOrderColName = visitTableName + '/Visit/DisplayOrder';
+            var seqNumColName = visitTableName + '/SequenceNum';
+            sortKey = displayOrderColName + ', ' + seqNumColName;
         }
 
         var config = {

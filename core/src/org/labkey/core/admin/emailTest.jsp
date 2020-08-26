@@ -20,17 +20,17 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.springframework.validation.Errors" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AdminController.EmailTestForm> me = (JspView<AdminController.EmailTestForm>) HttpView.currentView();
     AdminController.EmailTestForm form = me.getModelBean();
-    Errors errors = me.getErrors();
 %>
 
 <p>Use the form below to test your server's email configuration. This will attempt to send an email
-message to the address specified in the 'To' text box containing the content specificed in the
+message to the address specified in the 'To' text box containing the content specified in the
 'Body' text box.</p>
 
 <% if (null != form.getException()) { %>
@@ -40,19 +40,20 @@ message to the address specified in the 'To' text box containing the content spe
 <% }%>
 
 <labkey:form action="<%=new ActionURL(AdminController.EmailTestAction.class, getContainer()).getLocalURIString()%>" method="POST">
-    <table>
+    <table class="lk-fields-table">
         <tr>
-            <td class="labkey-form-label">To</td>
-            <td><input type="text" name="to" value="<%=h(StringUtils.trimToEmpty(form.getTo()))%>" size="20"/></td>
+            <td class="labkey-form-label"><label for="emailTo">To</label></td>
+            <td><input type="text" name="to" id="emailTo" value="<%=h(StringUtils.trimToEmpty(form.getTo()))%>" size="20" style="width: 100%"/></td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Body</td>
+            <td class="labkey-form-label"><label for="emailBody">Body</label></td>
             <td>
-                <textarea rows="20" cols="60" name="body"><%=h(StringUtils.trimToEmpty(form.getBody()))%></textarea>
+                <textarea rows="10" cols="80" name="body" id="emailBody"><%=h(StringUtils.trimToEmpty(form.getBody()))%></textarea>
             </td>
         </tr>
         <tr>
             <td colspan="2" style="text-align:right">
+                <%= button("Cancel").href(PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()) %>
                 <%= button("Send").submit(true) %>
             </td>
         </tr>
