@@ -706,7 +706,7 @@ LABKEY.Query = new function()
         * @param {boolean} [config.transacted] Whether all of the updates should be done in a single transaction, so they all succeed or all fail. Defaults to true
          * @param {string} [config.auditBehavior] Audit behavior for this particular action, used to override behavior
          * set on the underlying table.
-         * @param {string} [config.auditUserComment] Can be used to provide a comment from the user that will be attached to certain detailed audit logs.
+         * @param {string} [config.auditUserComment] Can be used to provide a comment from the user that will be attached to certain detailed audit log records.
          * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request
