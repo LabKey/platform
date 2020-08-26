@@ -108,7 +108,7 @@
             </td>
             <td valign="top"><%=h(protocolApplication.getApplicationType().name())%></td>
             <td valign="top">
-                <a href="<%=ExperimentController.ExperimentUrlsImpl.get().getProtocolDetailsURL(protocolApplication.getProtocol())%>"><%=h(protocolApplication.getProtocol().getName())%></a>
+                <a href="<%=h(ExperimentController.ExperimentUrlsImpl.get().getProtocolDetailsURL(protocolApplication.getProtocol()))%>"><%=h(protocolApplication.getProtocol().getName())%></a>
             </td>
             <td valign="top"><%=formatDate(protocolApplication.getActivityDate())%></td>
             <td valign="top"><%=formatDate(protocolApplication.getStartTime())%></td>

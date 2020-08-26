@@ -42,7 +42,7 @@
         else
             url = new ActionURL(StudyController.BeginAction.class, study.getContainer());
         %>
-<span class="highlightregion"></span><b><a href="<%=url%>"><%=h(study.getLabel())%></a></b>
+<span class="highlightregion"></span><b><a href="<%=h(url)%>"><%=h(study.getLabel())%></a></b>
             <br>(<%=h(study.getContainer().getPath())%>)
         <br>
 <%

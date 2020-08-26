@@ -96,7 +96,7 @@
         <td class="lk-form-label"><b>Query Table</b></td>
         <td>
             <% if (table != null) { %>
-                <a href="<%=urlSchemaBrowser%>">
+                <a href="<%=h(urlSchemaBrowser)%>">
                 <%=h(table.getPublicSchemaName() + " " + table.getPublicName())%>
                 </a>
             <% } %>

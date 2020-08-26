@@ -134,7 +134,12 @@ public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlSt
 
     public BUILDER nofollow()
     {
-        this.rel = "nofollow";
+        return rel("nofollow");
+    }
+
+    public BUILDER rel(String rel)
+    {
+        this.rel = rel;
         return getThis();
     }
 

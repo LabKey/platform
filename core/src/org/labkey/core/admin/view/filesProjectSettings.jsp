@@ -191,7 +191,7 @@
             Enable or disable the available cloud stores within this folder using the checkboxes below.
             The cloud module must be enabled within this folder and
             cloud accounts and stores must be first configured in the
-            <a href="<%=urlProvider(CloudUrls.class).urlAdmin()%>">site admin preferences</a>
+            <a href="<%=h(urlProvider(CloudUrls.class).urlAdmin())%>">site admin preferences</a>
             prior to enabling them within a folder.
             <br>
             <em>Cloud stores disabled at the site-level cannot be enabled within a folder.</em>

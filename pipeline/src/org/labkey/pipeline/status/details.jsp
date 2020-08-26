@@ -126,7 +126,7 @@
             <td class="lk-form-label">Files:</td>
             <td id="files-list">
                 <% for (var file : status.files) { %>
-                <a href="<%=file.viewUrl%>"><%=h(file.name)%></a><br>
+                <a href="<%=h(file.viewUrl)%>"><%=h(file.name)%></a><br>
                 <% } %>
             </td>
         </tr>
@@ -191,7 +191,7 @@
             <td class="lk-form-label">Completed Runs:</td>
             <td id="runs-list">
                 <% for (var run : status.runs) { %>
-                <a href="<%=run.url%>" id="run-<%=run.rowId%>"><%=h(run.name)%></a><br>
+                <a href="<%=h(run.url)%>" id="run-<%=run.rowId%>"><%=h(run.name)%></a><br>
                 <% } %>
             </td>
         </tr>
