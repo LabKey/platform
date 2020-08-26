@@ -12,7 +12,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     public static final String EVENT_TYPE = "SampleTimelineEvent";
 
     public static final String SAMPLE_TIMELINE_EVENT_TYPE = "SampleTimelineEventType";
-    public static final String AUDIT_USER_COMMENT = "userComment";
+
     public enum SampleTimelineEventType
     {
         INSERT("Sample was registered.", "Registered"),
