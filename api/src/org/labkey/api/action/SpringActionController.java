@@ -510,17 +510,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
         catch (Throwable x)
         {
-            ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_OK, x.getMessage(), x, context.getRequest(), false, false);
-            try
-            {
-                ModelAndView render = PageConfig.Template.Error.getTemplate(context, new ErrorTemplate(renderer, pageConfig), pageConfig);
-                render.getView().render(render.getModel(), context.getRequest(), context.getResponse());
-            }
-            catch (Exception e)
-            {
-                // TODO : ErrorPage populate apt repsonse code
-                return new ErrorTemplate(renderer, pageConfig);
-            }
+            handleException(x, context);
             throwable = x;
         }
         finally
@@ -536,7 +526,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
 
-    protected void handleException(Throwable x)
+    protected void handleException(Throwable x, ViewContext context)
     {
         HttpServletRequest request = getViewContext().getRequest();
         HttpServletResponse response = getViewContext().getResponse();
@@ -553,7 +543,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             }
         }
             
-        ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false);
+        ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false, context);
         if (null != errorURL)
             ExceptionUtil.doErrorRedirect(response, errorURL.toString());
     }

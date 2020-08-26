@@ -53,6 +53,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.PageConfig;
 import org.springframework.dao.DataAccessResourceFailureException;
 
 import javax.servlet.ServletException;
@@ -595,14 +596,19 @@ public class ExceptionUtil
         return false;
     }
 
-    // This is called by SpringActionController (to display unhandled exceptions) and called directly by AuthFilter.doFilter() (to display startup errors and bypass normal request handling)
     public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure)
     {
-        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG);
+        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, null);
+    }
+
+    // This is called by SpringActionController (to display unhandled exceptions) and called directly by AuthFilter.doFilter() (to display startup errors and bypass normal request handling)
+    public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure, @Nullable ViewContext context)
+    {
+        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, context);
     }
 
     static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure,
-        SearchService ss, Logger log)
+        SearchService ss, Logger log, @Nullable ViewContext context)
     {
         try
         {
@@ -846,40 +852,45 @@ public class ExceptionUtil
         }
         else
         {
-            ErrorView errorView = ExceptionUtil.getErrorView(responseStatus, message, unhandledException, request, startupFailure);
+            ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, false, startupFailure);
 
             if (ex instanceof UnauthorizedException)
             {
                 if (ex instanceof ForbiddenProjectException)
                 {
                     // Not allowed in the project... don't offer Home or Folder buttons
-                    errorView.setIncludeHomeButton(false);
-                    errorView.setIncludeFolderButton(false);
+                    renderer.setIncludeHomeButton(false);
+                    renderer.setIncludeFolderButton(false);
                 }
 
                 // Provide "Stop Impersonating" button if unauthorized while impersonating
                 if (user.isImpersonated())
-                    errorView.setIncludeStopImpersonatingButton(true);
+                    renderer.setIncludeStopImpersonatingButton(true);
+            }
+
+            HttpView<?> errorView;
+            if (null != context)
+            {
+                PageConfig pageConfig = new PageConfig();
+                errorView = PageConfig.Template.Home.getTemplate(context, new ErrorTemplate(renderer), pageConfig);
+                if (null != errorView)
+                    pageConfig.addClientDependencies(errorView.getClientDependencies());
+
+            }
+            else
+            {
+                errorView = new ErrorTemplate(renderer);
             }
 
             try
             {
-                response.setContentType("text/html");
-                if (null == responseStatusMessage)
-                    response.setStatus(responseStatus);
-                else
-                    response.setStatus(responseStatus, responseStatusMessage);
-                for (Map.Entry<String, String> entry : headers.entrySet())
-                    response.addHeader(entry.getKey(), entry.getValue());
-                errorView.render(request, response);
+                errorView.getView().render(errorView.getModel(), context.getRequest(), context.getResponse());
             }
-            catch (IllegalStateException ignored)
+            catch (Exception e)
             {
+                log.error("Global.handleException", e);
             }
-            catch (Exception x)
-            {
-                log.error("Global.handleException", x);
-            }
+
         }
 
         return null;
@@ -1076,7 +1087,7 @@ public class ExceptionUtil
                 }
             };
             ExceptionUtil.decorateException(ex, ExceptionInfo.SkipMothershipLogging, "true", true);
-            ActionURL url = ExceptionUtil.handleException(req, res, ex, message, false, dummySearch, dummyLog);
+            ActionURL url = ExceptionUtil.handleException(req, res, ex, message, false, dummySearch, dummyLog, null);
             ExceptionResponse ret = new ExceptionResponse();
             ret.redirect = url;
             ret.response = res;

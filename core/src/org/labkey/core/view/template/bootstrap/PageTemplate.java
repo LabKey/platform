@@ -109,7 +109,7 @@ public class PageTemplate extends JspView<PageConfig>
         {
             // TODO : ErrorPage populate apt response code
             ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_OK, x.getMessage(), x, context.getRequest(), false, false);
-            setView("error", new ErrorTemplate(renderer, page));
+            setView("error", new ErrorTemplate(renderer));
         }
     }
 

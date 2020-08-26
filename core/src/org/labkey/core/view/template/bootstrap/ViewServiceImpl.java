@@ -93,10 +93,6 @@ public class ViewServiceImpl implements ViewService
             {
                 return new PageTemplate(context, body, page);
             }
-            case Error:
-            {
-                return new ErrorTemplate(context, body, page);
-            }
         }
 
         throw new IllegalStateException("Unknown Template");

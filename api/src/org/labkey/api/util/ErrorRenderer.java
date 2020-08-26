@@ -41,6 +41,52 @@ public class ErrorRenderer
     private final ErrorRendererProperties _errorRendererProps;
     private final String _title;
 
+    // TODO: ErrorPage use these in React app
+    private boolean _includeHomeButton = true;
+    private boolean _includeBackButton = true;
+    private boolean _includeFolderButton = true;
+    private boolean _includeStopImpersonatingButton = false;
+
+    public boolean isIncludeHomeButton()
+    {
+        return _includeHomeButton;
+    }
+
+    public void setIncludeHomeButton(boolean includeHomeButton)
+    {
+        _includeHomeButton = includeHomeButton;
+    }
+
+    public boolean isIncludeBackButton()
+    {
+        return _includeBackButton;
+    }
+
+    public void setIncludeBackButton(boolean includeBackButton)
+    {
+        _includeBackButton = includeBackButton;
+    }
+
+    public boolean isIncludeFolderButton()
+    {
+        return _includeFolderButton;
+    }
+
+    public void setIncludeFolderButton(boolean includeFolderButton)
+    {
+        _includeFolderButton = includeFolderButton;
+    }
+
+    public boolean isIncludeStopImpersonatingButton()
+    {
+        return _includeStopImpersonatingButton;
+    }
+
+    public void setIncludeStopImpersonatingButton(boolean includeStopImpersonatingButton)
+    {
+        _includeStopImpersonatingButton = includeStopImpersonatingButton;
+    }
+
     ErrorRenderer(int status, String heading, Throwable x, boolean isStartupFailure)
     {
         _status = status;

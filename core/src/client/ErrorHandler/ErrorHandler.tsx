@@ -18,7 +18,9 @@ interface ErrorHandlerProps {
 export class ErrorHandler extends React.Component<ErrorHandlerProps> {
     render() {
         return (
-            <h3>Hello world!</h3>
+            <div className='labkey-error'>
+                <h3>{this.props.context.message}</h3>
+            </div>
         );
     }
 }
