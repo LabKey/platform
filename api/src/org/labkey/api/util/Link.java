@@ -64,7 +64,7 @@ public class Link extends DisplayElement implements HasHtmlString
         return out;
     }
 
-    @Override // TODO: HtmlString - remove this
+    @Override
     public String toString()
     {
         return getHtmlString().toString();

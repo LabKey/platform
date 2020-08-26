@@ -31,6 +31,7 @@ import org.labkey.remoteapi.query.UpdateRowsCommand;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestTimeoutException;
+import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.categories.Search;
 import org.labkey.test.util.SearchHelper;
@@ -132,6 +133,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
         _containerHelper.deleteProject(getProjectName(), afterTest);
         if (afterTest)
         {
+            beginAt(WebTestHelper.buildURL("search", "search"));
             _searchHelper.assertNoSearchResult(DATA_CLASS_2_NAME);
         }
     }
