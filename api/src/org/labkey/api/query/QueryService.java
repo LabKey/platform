@@ -442,7 +442,7 @@ public interface QueryService
      */
     void addAuditEvent(QueryView queryView, String comment, @Nullable Integer dataRowCount);
     void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment, @Nullable Integer dataRowCount);
-    void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, AuditAction action, List<Map<String, Object>>... params);
+    void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, @Nullable String userComment, AuditAction action, List<Map<String, Object>>... params);
     void addSummaryAuditEvent(User user, Container c, TableInfo table, AuditAction action, Integer dataRowCount);
 
     /**
