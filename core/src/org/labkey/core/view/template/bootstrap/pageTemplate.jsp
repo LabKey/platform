@@ -30,7 +30,6 @@
     PageTemplate me = (PageTemplate) HttpView.currentView();
     PageConfig model = me.getModelBean();
     ActionURL url = getActionURL();
-    boolean errorViewPresent = null != me.getView("error");
 
     if (model.getFrameOption() != PageConfig.FrameOption.ALLOW)
         response.setHeader("X-FRAME-OPTIONS", model.getFrameOption().name());
@@ -82,23 +81,14 @@
 
         if (null != me.getView("navigation"))
             me.include(me.getView("navigation"),out);
-
-        if (errorViewPresent)
-            me.include(me.getView("error"),out);
 %>
 </div>
 <%
     }
 %>
-<% if (!errorViewPresent)
-{
-%>
-    <div class="lk-body-ct">
-        <% me.include(me.getView("bodyTemplate"), out); %>
-    </div>
-<%
-}
-%>
+<div class="lk-body-ct">
+    <% me.include(me.getView("bodyTemplate"), out); %>
+</div>
 <% if (null != me.getView("footer")) { %>
 <footer class="footer-block">
     <div class="footer-content">

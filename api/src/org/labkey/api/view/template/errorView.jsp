@@ -10,21 +10,18 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("http://localhost:3001/errorHandler.js");
-//        dependencies.add("core/gen/errorHandler");
+//        dependencies.add("http://localhost:3001/errorHandler.js");
+        dependencies.add("core/gen/errorHandler");
     }
 %>
 <%
     ErrorTemplate me = (ErrorTemplate) HttpView.currentView();
     ErrorRenderer model = me.getModelBean();
 
-    String uniqueId = "" + UniqueID.getServerSessionScopedUID();
-    String appId = "error-handler-app-" + uniqueId;
+    String appId = "error-handler-app-" + UniqueID.getServerSessionScopedUID();
 %>
 
-<div>
-    <div id="<%=h(appId)%>"></div>
-</div>
+<div id="<%=h(appId)%>"></div>
 
 <script type="application/javascript">
     LABKEY.App.loadApp('errorHandler', <%=q(appId)%>, {

@@ -850,8 +850,9 @@ public class ExceptionUtil
                 log.error("Global.handleException", x);
             }
         }
-        else
+        else if (context != null)
         {
+            // 7629: Error page redesign -- development in-progress. This path shows the new error view.
             ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, false, startupFailure);
 
             if (ex instanceof UnauthorizedException)
@@ -868,29 +869,65 @@ public class ExceptionUtil
                     renderer.setIncludeStopImpersonatingButton(true);
             }
 
-            HttpView<?> errorView;
-            if (null != context)
-            {
-                PageConfig pageConfig = new PageConfig();
-                errorView = PageConfig.Template.Home.getTemplate(context, new ErrorTemplate(renderer), pageConfig);
-                if (null != errorView)
-                    pageConfig.addClientDependencies(errorView.getClientDependencies());
+            PageConfig pageConfig = new PageConfig();
+            pageConfig.setTemplate(PageConfig.Template.Home);
 
-            }
-            else
+            HttpView<?> errorView = pageConfig.getTemplate().getTemplate(context, new ErrorTemplate(renderer), pageConfig);
+
+            if (null == errorView)
             {
-                errorView = new ErrorTemplate(renderer);
+                log.error("Failed to create errorView in response to exception", ex);
+                return null;
             }
+
+            pageConfig.addClientDependencies(errorView.getClientDependencies());
 
             try
             {
-                errorView.getView().render(errorView.getModel(), context.getRequest(), context.getResponse());
+                errorView.getView().render(errorView.getModel(), request, response);
             }
             catch (Exception e)
             {
                 log.error("Global.handleException", e);
             }
+        }
+        else
+        {
+            // 7629: Error page redesign -- development in-progress. This path shows the old error view.
+            ErrorView errorView = ExceptionUtil.getErrorView(responseStatus, message, unhandledException, request, startupFailure);
 
+            if (ex instanceof UnauthorizedException)
+            {
+                if (ex instanceof ForbiddenProjectException)
+                {
+                    // Not allowed in the project... don't offer Home or Folder buttons
+                    errorView.setIncludeHomeButton(false);
+                    errorView.setIncludeFolderButton(false);
+                }
+
+                // Provide "Stop Impersonating" button if unauthorized while impersonating
+                if (user.isImpersonated())
+                    errorView.setIncludeStopImpersonatingButton(true);
+            }
+
+            try
+            {
+                response.setContentType("text/html");
+                if (null == responseStatusMessage)
+                    response.setStatus(responseStatus);
+                else
+                    response.setStatus(responseStatus, responseStatusMessage);
+                for (Map.Entry<String, String> entry : headers.entrySet())
+                    response.addHeader(entry.getKey(), entry.getValue());
+                errorView.render(request, response);
+            }
+            catch (IllegalStateException ignored)
+            {
+            }
+            catch (Exception x)
+            {
+                log.error("Global.handleException", x);
+            }
         }
 
         return null;

@@ -28,9 +28,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.BannerProperties;
 import org.labkey.api.settings.FooterProperties;
 import org.labkey.api.settings.TemplateProperties;
-import org.labkey.api.util.ErrorRenderer;
-import org.labkey.api.util.ErrorTemplate;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HttpView;
@@ -47,7 +44,6 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiService;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -94,23 +90,15 @@ public class PageTemplate extends JspView<PageConfig>
                 header.setFrame(FrameType.NONE); // 12336: Explicitly don't frame the _header override.
         }
 
-        try
-        {
-            setView("header", header == null ? new Header(page) : header);
+        setView("header", header == null ? new Header(page) : header);
 
-            // TODO: This is being side-effected by isHidePageTitle() check. That setting should be moved to PageConfig
-            setBody(body);
+        // TODO: This is being side-effected by isHidePageTitle() check. That setting should be moved to PageConfig
+        setBody(body);
 
-            page.setAppBar(generateAppBarModel(context, page));
-            setView("navigation", getNavigationView(context, page));
-            setView("footer", new FooterProperties(c).getView());
-        }
-        catch (Exception x)
-        {
-            // TODO : ErrorPage populate apt response code
-            ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_OK, x.getMessage(), x, context.getRequest(), false, false);
-            setView("error", new ErrorTemplate(renderer));
-        }
+        page.setAppBar(generateAppBarModel(context, page));
+
+        setView("navigation", getNavigationView(context, page));
+        setView("footer", new FooterProperties(c).getView());
     }
 
     private AppBar generateAppBarModel(ViewContext context, PageConfig page)

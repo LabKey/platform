@@ -509,7 +509,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
         catch (Throwable x)
         {
-            handleException(x, context);
+            handleException(x);
             throwable = x;
         }
         finally
@@ -525,7 +525,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
 
-    protected void handleException(Throwable x, ViewContext context)
+    protected void handleException(Throwable x)
     {
         HttpServletRequest request = getViewContext().getRequest();
         HttpServletResponse response = getViewContext().getResponse();
@@ -542,7 +542,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             }
         }
             
-        ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false, context);
+        ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false, getViewContext());
         if (null != errorURL)
             ExceptionUtil.doErrorRedirect(response, errorURL.toString());
     }
