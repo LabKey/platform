@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -233,8 +234,15 @@ public class QuerySettings
                 setViewName(viewName);
             }
             String ignoreFilter = _getParameter(param(QueryParam.ignoreFilter));
-            if (isNotBlank(ignoreFilter))
-                _ignoreUserFilter = (Boolean) ConvertUtils.convert(ignoreFilter, Boolean.class);
+            try
+            {
+                if (isNotBlank(ignoreFilter))
+                    _ignoreUserFilter = (Boolean) ConvertUtils.convert(ignoreFilter, Boolean.class);
+            }
+            catch (ConversionException e)
+            {
+                throw new BadRequestException(String.format(parseError, "ignoreFilter", ignoreFilter), SC_BAD_REQUEST, e);
+            }
 
             String reportId = _getParameter(param(QueryParam.reportId));
             if (isNotBlank(reportId))
@@ -341,7 +349,14 @@ public class QuerySettings
         String allowHeaderLock = StringUtils.trimToNull(_getParameter(param(QueryParam.allowHeaderLock)));
         if (null != allowHeaderLock)
         {
-            setAllowHeaderLock((Boolean)ConvertUtils.convert(allowHeaderLock,Boolean.class));
+            try
+            {
+                setAllowHeaderLock((Boolean) ConvertUtils.convert(allowHeaderLock, Boolean.class));
+            }
+            catch (ConversionException e)
+            {
+                throw new BadRequestException(String.format(parseError, "allowHeaderLock", allowHeaderLock), SC_BAD_REQUEST, e);
+            }
         }
     }
 
