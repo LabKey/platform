@@ -126,7 +126,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             case GET:
                 return handleGet();
         }
-        throw new BadRequestException("Method Not Allowed: " + getViewContext().getRequest().getMethod(), HttpServletResponse.SC_METHOD_NOT_ALLOWED, null);
+        throw new BadRequestException("Method Not Allowed: " + getViewContext().getRequest().getMethod(), null, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
     }
 
 
