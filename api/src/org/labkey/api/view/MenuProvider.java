@@ -5,5 +5,5 @@ import org.labkey.api.security.User;
 
 public interface MenuProvider
 {
-    void addMenuItems(Container c, User user, NavTrees trees);
+    void addMenuItems(Container c, User user, DeveloperMenuNavTrees trees);
 }
