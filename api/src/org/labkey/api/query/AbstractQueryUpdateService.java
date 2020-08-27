@@ -96,6 +96,7 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
+import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment;
 
 public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
@@ -444,8 +445,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (!isBulkLoad())
         {
             AuditBehaviorType auditBehavior = configParameters != null ? (AuditBehaviorType) configParameters.get(AuditBehavior) : null;
-
-            getQueryTable().addAuditEvent(user, container, auditBehavior, auditAction, parameters);
+            String userComment = configParameters == null ? null : (String) configParameters.get(AuditUserComment);
+            getQueryTable().addAuditEvent(user, container, auditBehavior, userComment, auditAction, parameters);
         }
     }
 

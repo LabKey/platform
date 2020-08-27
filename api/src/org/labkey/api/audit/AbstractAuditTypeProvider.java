@@ -74,6 +74,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public static final String COLUMN_NAME_ROW_ID = "RowId";
     public static final String COLUMN_NAME_CONTAINER = "Container";
     public static final String COLUMN_NAME_COMMENT = "Comment";
+    public static final String COLUMN_NAME_USER_COMMENT = "UserComment";
     public static final String COLUMN_NAME_EVENT_TYPE = "EventType";
     public static final String COLUMN_NAME_CREATED = "Created";
     public static final String COLUMN_NAME_CREATED_BY = "CreatedBy";

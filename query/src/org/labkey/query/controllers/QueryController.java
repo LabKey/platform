@@ -98,7 +98,6 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -3741,7 +3740,7 @@ public class QueryController extends SpringActionController
             List<Map<String, Object>> rowsToProcess = new ArrayList<>();
 
             // NOTE RowMapFactory is faster, but for update it's important to preserve missing v explicit NULL values
-            // Do we need to support some soft of UNDEFINED and NULL instance of MvFieldWrapper?
+            // Do we need to support some sort of UNDEFINED and NULL instance of MvFieldWrapper?
             RowMapFactory<Object> f = null;
             if (commandType == CommandType.insert || commandType == CommandType.insertWithKeys)
                 f = new RowMapFactory<>();
@@ -3778,6 +3777,11 @@ public class QueryController extends SpringActionController
                 {
                     AuditBehaviorType behaviorType = AuditBehaviorType.valueOf(auditBehavior);
                     configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
+                    String auditComment = json.getString("auditUserComment");
+                    if (!StringUtils.isEmpty(auditComment))
+                    {
+                        configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
+                    }
                 }
                 catch (IllegalArgumentException ignored)
                 {
