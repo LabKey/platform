@@ -53,6 +53,7 @@ public abstract class AuditHandler
                     case DETAILED:
                         AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, userComment, 0, null);
                         AuditLogService.get().addEvent(user, event);
+                        return;
                 }
             }
 
