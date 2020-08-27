@@ -540,8 +540,6 @@ public class XarReader extends AbstractXarImporter
                     IdentifiableEntity.diff(oldProp.isShownInInsertView(), newProp.isShownInInsertView(), key + " hidden", diffs);
                     IdentifiableEntity.diff(oldProp.isShownInUpdateView(), newProp.isShownInUpdateView(), key + " hidden", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyURI(), newProp.getPropertyURI(), key + " property URI", diffs);
-                    IdentifiableEntity.diff(oldProp.getPropertyDescriptor().getSearchTerms(), newProp.getPropertyDescriptor().getSearchTerms(), key + " search terms", diffs);
-                    IdentifiableEntity.diff(oldProp.getPropertyDescriptor().getSemanticType(), newProp.getPropertyDescriptor().getSemanticType(), key + " semantic type", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyDescriptor().getRangeURI(), newProp.getPropertyDescriptor().getRangeURI(), key + " range URI", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyDescriptor().getConceptURI(), newProp.getPropertyDescriptor().getConceptURI(), key + " concept URI", diffs);
                     IdentifiableEntity.diff(oldProp.isMvEnabled(), newProp.isMvEnabled(), key + " qc enabled", diffs);

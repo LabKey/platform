@@ -421,11 +421,8 @@ public class PropertyServiceImpl implements PropertyService
             {
                 uri = LsidUtils.resolveLsidFromTemplate(xProp.getOntologyURI(), context);
             }
-            prop.getPropertyDescriptor().setOntologyURI(uri);
         }
         
-        prop.getPropertyDescriptor().setSearchTerms(xProp.getSearchTerms());
-        prop.getPropertyDescriptor().setSemanticType(xProp.getSemanticType());
         prop.setURL(xProp.getURL());
         Set<String> importAliases = new LinkedHashSet<>();
         if (xProp.isSetImportAliases())
