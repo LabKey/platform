@@ -31,7 +31,7 @@
     CustomizeBean bean = me.getModelBean();
     DiscussionService.Settings settings = bean.settings;
 
-%><labkey:form action="<%=h(buildURL(AnnouncementsController.CustomizeAction.class))%>" method="post">
+%><labkey:form action="<%=buildURL(AnnouncementsController.CustomizeAction.class)%>" method="post">
 <%=generateReturnUrlFormField(bean.returnURL)%>
 <table class="lk-fields-table">
     <tr>
@@ -135,7 +135,7 @@
     </tr>
     <tr>
         <td class="labkey-form-label">Include Assigned To</td>
-        <td><table><tr><td><input type="checkbox" name="assignedTo"<%=checked(settings.hasAssignedTo())%>><td class="labkey-form-label">Default Assigned To</td><td><%=text(bean.assignedToSelect)%></td></tr></table></td>
+        <td><table><tr><td><input type="checkbox" name="assignedTo"<%=checked(settings.hasAssignedTo())%>><td class="labkey-form-label">Default Assigned To</td><td><%=bean.assignedToSelect%></td></tr></table></td>
     </tr>
     <tr>
         <td class="labkey-form-label">Include Format Picker</td>

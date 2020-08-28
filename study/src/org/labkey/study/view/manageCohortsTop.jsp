@@ -24,8 +24,8 @@
 <%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="java.util.List" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -36,7 +36,7 @@
 %>
 <labkey:errors/>
 
-<labkey:form action="<%=h(buildURL(CohortController.ManageCohortsAction.class))%>" name="manageCohorts" method="POST">
+<labkey:form action="<%=buildURL(CohortController.ManageCohortsAction.class)%>" name="manageCohorts" method="POST">
     <input type="hidden" name="reshow" value="true">
     <input type="hidden" name="clearParticipants" value="false">
     <input type="hidden" name="updateParticipants" value="false">

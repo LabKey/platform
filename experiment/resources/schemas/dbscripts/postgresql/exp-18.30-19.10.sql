@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
--- Removing active sample sets
+-- Removing active sample types
 SELECT core.fn_dropifexists('ActiveMaterialSource', 'exp', 'TABLE', NULL);
 
 CREATE SCHEMA IF NOT EXISTS expsampleset;

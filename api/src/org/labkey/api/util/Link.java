@@ -24,8 +24,10 @@ import java.io.Writer;
 import java.util.Collections;
 
 import static org.labkey.api.util.DOM.A;
+import static org.labkey.api.util.DOM.Attribute.href;
+import static org.labkey.api.util.DOM.Attribute.onclick;
+import static org.labkey.api.util.DOM.Attribute.target;
 import static org.labkey.api.util.DOM.at;
-import static org.labkey.api.util.DOM.Attribute.*;
 
 public class Link extends DisplayElement implements HasHtmlString
 {
@@ -57,12 +59,12 @@ public class Link extends DisplayElement implements HasHtmlString
                 .data(null != lb.tooltip, "tt", "tooltip")
                 .data(null != lb.tooltip, "placement","top")
                 .data(null != lb.tooltip, "original-title", lb.tooltip),
-            lb.iconCls!=null ? null : lb.text
+            lb.iconCls!=null ? null : lb.html
         ).appendTo(out);
         return out;
     }
 
-    @Override // TODO: HtmlString - remove this
+    @Override
     public String toString()
     {
         return getHtmlString().toString();
@@ -83,8 +85,13 @@ public class Link extends DisplayElement implements HasHtmlString
 
         public LinkBuilder(@NotNull String text)
         {
+            this(HtmlString.of(text));
+        }
+
+        public LinkBuilder(@NotNull HtmlString html)
+        {
             this();
-            this.text = text;
+            this.html = html;
         }
 
         @Override

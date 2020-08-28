@@ -17,11 +17,11 @@ package org.labkey.visualization.report;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.settings.FolderSettingsCache;
+import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.ClientDependency;

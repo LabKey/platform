@@ -16,7 +16,7 @@
 
 package org.labkey.assay.plate.query;
 
-import org.labkey.assay.query.AssayDbSchema;
+import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
@@ -30,7 +30,7 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PropertyForeignKey;
-import org.labkey.api.assay.plate.WellGroup;
+import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -15,7 +15,8 @@
  */
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.CustomViewInfo;
@@ -39,7 +40,7 @@ import java.util.Map;
 
 public class AnalyticsProviderItem
 {
-    private static final Logger LOG = Logger.getLogger(AnalyticsProviderItem.class);
+    private static final Logger LOG = LogManager.getLogger(AnalyticsProviderItem.class);
 
     private FieldKey _fieldKey;
     private String _name;

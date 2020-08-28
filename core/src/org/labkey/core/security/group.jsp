@@ -34,6 +34,7 @@
 <%@ page import="org.labkey.core.security.SecurityApiActions" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page import="org.labkey.core.security.SecurityController.GroupAction" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -153,15 +154,15 @@
 
 </script>
 
-<labkey:form id="groupMembersForm" action="<%=h(buildURL(GroupAction.class))%>" method="POST" layout="horizontal">
+<labkey:form id="groupMembersForm" action="<%=buildURL(GroupAction.class)%>" method="POST" layout="horizontal">
 <%
 if (bean.messages.size() > 0)
 {
     %><b>System membership status for new group members:</b><br>
     <div id="messages"><%
-    for (String message : bean.messages)
+    for (HtmlString message : bean.messages)
     {
-        %><%= text(message) %><br><%
+        %><%= message %><br><%
     }
     %></div><br><%
 }
@@ -315,7 +316,7 @@ if (!bean.isSystemGroup)
     if (bean.members.size() == 0)
     {
         %>
-        <labkey:form action="<%=h(buildURL(SecurityController.StandardDeleteGroupAction.class))%>" method="POST">
+        <labkey:form action="<%=buildURL(SecurityController.StandardDeleteGroupAction.class)%>" method="POST">
         <%= button("Delete Empty Group").submit(true).onClick("return confirm('Permanently delete group " + bean.groupName + "?')") %>
         <input type="hidden" name="group" value="<%= h(bean.groupName) %>">
         </labkey:form>

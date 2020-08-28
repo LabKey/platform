@@ -17,8 +17,7 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -125,15 +124,17 @@
                     },{
                         xtype: 'button',
                         text: 'Export',
-                        handler: function() {window.location = <%= PageFlowUtil.jsString(new ActionURL(StudyController.ExportParticipantTransformsAction.class, getContainer()).toString())%>;}
+                        handler: function() {
+                            LABKEY.Utils.postToAction(<%=q(new ActionURL(StudyController.ExportParticipantTransformsAction.class, getContainer()).toString())%>);
+                        }
                     },{
                         xtype: 'button',
                         text: 'Import',
-                        handler: function() {window.location = <%= PageFlowUtil.jsString(new ActionURL(StudyController.ImportAlternateIdMappingAction.class, getContainer()).toString())%>;}
+                        handler: function() {window.location = <%= q(new ActionURL(StudyController.ImportAlternateIdMappingAction.class, getContainer()).toString())%>;}
                     },{
                         xtype: 'button',
-                        text: 'Change or Merge ' + <%= PageFlowUtil.jsString(subjectNounColName) %>,
-                        handler: function() {window.location = <%= PageFlowUtil.jsString(new ActionURL(StudyController.MergeParticipantsAction.class, getContainer()).toString())%>;}
+                        text: 'Change or Merge ' + <%= q(subjectNounColName) %>,
+                        handler: function() {window.location = <%= q(new ActionURL(StudyController.MergeParticipantsAction.class, getContainer()).toString())%>;}
                     }]
                 }]
             });
@@ -312,7 +313,7 @@
                             if (field.jsonType == 'string' || field.jsonType == 'int')
                             {
                                 // Filter out some built-in columns
-                                if (field.name != 'lsid' && field.name != <%= PageFlowUtil.jsString(subjectNounColName)%>)
+                                if (field.name != 'lsid' && field.name != <%= q(subjectNounColName)%>)
                                 {
                                     filteredFields.push({ name: field.name });
                                 }

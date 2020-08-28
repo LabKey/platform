@@ -21,7 +21,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**

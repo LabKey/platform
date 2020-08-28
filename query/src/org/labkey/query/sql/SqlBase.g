@@ -56,8 +56,8 @@ tokens
 {
 	package org.labkey.query.sql.antlr;
 
-    import org.apache.log4j.Category;
-    import org.labkey.query.sql.SqlParser;
+    import org.apache.logging.log4j.Logger;
+    import org.apache.logging.log4j.LogManager;
 }
 
 
@@ -108,7 +108,7 @@ tokens
 
 @lexer::members
 {
-    Category _log = Category.getInstance(SqlParser.class);
+    Logger _log = LogManager.getLogger(org.labkey.query.sql.SqlParser.class);
     
     protected void setPossibleID(boolean possibleID)
     {

@@ -21,8 +21,8 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
 
 import java.util.Collections;
 

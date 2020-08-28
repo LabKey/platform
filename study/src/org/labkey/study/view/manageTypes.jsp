@@ -126,7 +126,7 @@
     String name = c.isProject() ? "project" : "folder";
     ActionURL url = c.isProject() ? urls.getProjectSettingsURL(c) : urls.getFolderSettingsURL(c);
 %>
-<labkey:form id="manageTypesForm" action="<%=h(buildURL(ManageTypesAction.class))%>" method="POST">
+<labkey:form id="manageTypesForm" action="<%=buildURL(ManageTypesAction.class)%>" method="POST">
     <table class="lk-fields-table">
         <tr><td>Default date-time format:</td><td><%=h(StringUtils.trimToEmpty(dateTimeFormat))%></td></tr>
         <tr><td>Default number format:</td><td><%=h(StringUtils.trimToEmpty(numberFormat))%></td></tr>
@@ -160,7 +160,7 @@
     ActionURL details = new ActionURL(DatasetDetailsAction.class, c);
     for (Dataset def : datasets)
     {
-        details.replaceParameter("id",String.valueOf(def.getDatasetId()));
+        details.replaceParameter("id", def.getDatasetId());
         ViewCategory viewCategory = def.getViewCategory();
         Cohort cohort = def.getCohort();
         boolean isShared = def.isShared();

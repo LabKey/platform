@@ -16,7 +16,8 @@
 
 package org.labkey.api.exp.property;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -36,7 +37,7 @@ import java.util.Map;
 
 public class SystemProperty
 {
-    static final private Logger _log = Logger.getLogger(SystemProperty.class);
+    static final private Logger _log = LogManager.getLogger(SystemProperty.class);
     static private Map<String, SystemProperty> _systemProperties = new LinkedHashMap<>();
     static private boolean _registered = false;
 

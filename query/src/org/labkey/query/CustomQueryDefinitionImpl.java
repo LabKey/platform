@@ -15,11 +15,11 @@
  */
 package org.labkey.query;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.query.persist.QueryDef;
-import org.labkey.api.data.Container;
 
 /**
  * User: jeckels

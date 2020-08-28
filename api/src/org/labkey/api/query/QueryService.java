@@ -382,31 +382,40 @@ public interface QueryService
 
     enum AuditAction
     {
-        INSERT("A row was inserted.",
-                "%s row(s) were inserted.",
+        INSERT("%s row(s) were inserted.",
+                "%s was inserted.",
                 "inserted"),
-        UPDATE("A row was updated.",
-                "%s row(s) were updated.",
+        UPDATE("%s row(s) were updated.",
+                "%s was updated.",
                 "updated"),
-        DELETE("A row was deleted.",
-                "%s row(s) were deleted.",
+        DELETE("%s row(s) were deleted.",
+                "%s was deleted.",
                 "deleted"),
-        TRUNCATE("Table was truncated.",
-                "All rows were deleted.",
+        TRUNCATE("All rows were deleted.",
+                "Table was truncated",
                 "deleted"),
-        MERGE("A row was inserted or updated.",
-                "%s row(s) were inserted or updated.",
+        MERGE("%s row(s) were inserted or updated.",
+                "%s was inserted or updated.",
                 "inserted or updated");
 
         String _commentDetailed;
+        String _commentDetailedFormat;
         String _commentSummary;
         String _verbPastTense;
+        static String vowels = "aeiou";
 
-        AuditAction(String commentDetailed, String commentSummary, String verbPastTense)
+        AuditAction(String commentSummary, String commentDetailedFormat, String verbPastTense)
         {
-            _commentDetailed = commentDetailed;
             _commentSummary = commentSummary;
             _verbPastTense = verbPastTense;
+            _commentDetailedFormat = commentDetailedFormat;
+            _commentDetailed = String.format(commentDetailedFormat, "A row");
+        }
+
+        public String getCommentDetailed(String noun)
+        {
+            String prefix = vowels.contains(noun.substring(0, 1).toLowerCase()) ? "An " : "A ";
+            return String.format(_commentDetailedFormat, prefix + noun);
         }
 
         public String getCommentDetailed()
@@ -433,7 +442,7 @@ public interface QueryService
      */
     void addAuditEvent(QueryView queryView, String comment, @Nullable Integer dataRowCount);
     void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment, @Nullable Integer dataRowCount);
-    void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, AuditAction action, List<Map<String, Object>>... params);
+    void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, @Nullable String userComment, AuditAction action, List<Map<String, Object>>... params);
     void addSummaryAuditEvent(User user, Container c, TableInfo table, AuditAction action, Integer dataRowCount);
 
     /**

@@ -19,7 +19,8 @@ package org.labkey.wiki;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -117,7 +118,7 @@ import java.util.stream.Collectors;
 
 public class WikiController extends SpringActionController
 {
-    private static final Logger LOG = Logger.getLogger(WikiController.class);
+    private static final Logger LOG = LogManager.getLogger(WikiController.class);
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(WikiController.class);
     private static final boolean SHOW_CHILD_REORDERING = false;
 
@@ -1085,7 +1086,7 @@ public class WikiController extends SpringActionController
             ct.setInitialLevel(1);
 
             CopyBean bean = new CopyBean();
-            bean.folderList = ct.render().toString();           // folder tree
+            bean.folderList = ct.getHtmlString();               // folder tree
             bean.destContainer = c.getPath();                   // hidden input
             bean.sourceContainer = form.getSourceContainer();   // hidden input
             Container sourceContainer = getSourceContainer(form.getSourceContainer());
@@ -1109,7 +1110,7 @@ public class WikiController extends SpringActionController
 
     public class CopyBean
     {
-        public String folderList;
+        public HtmlString folderList;
         public String destContainer;
         public String sourceContainer;
         public ActionURL cancelURL;
@@ -1644,7 +1645,7 @@ public class WikiController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(WikiNameForm wikiNameForm)
         {
-            return new VersionAction(getViewContext(), _wiki,_wikiversion).getUrl();
+            return new VersionAction(getViewContext(), _wiki, _wikiversion).getUrl();
         }
 
         @Override

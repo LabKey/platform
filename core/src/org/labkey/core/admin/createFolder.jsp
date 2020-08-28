@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.json.JSONArray"%>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -288,7 +287,7 @@
                                     value: ft.name,
                                     boxLabel: ft.label,
                                     labelWidth: 500,
-                                    checked: ft.name == <%=PageFlowUtil.jsString(folderTypeName)%>,
+                                    checked: ft.name == <%=q(folderTypeName)%>,
                                     listeners: {
                                         scope: this,
                                         single: true,
@@ -318,7 +317,7 @@
                     text: 'Cancel',
                     cls: 'labkey-button',
                     handler: function(btn) {
-                        window.location = <%= PageFlowUtil.jsString(form.getReturnURLHelper(new ActionURL(ProjectController.StartAction.class, ContainerManager.getHomeContainer())).toString()) %>;
+                        window.location = <%= q(form.getReturnURLHelper(new ActionURL(ProjectController.StartAction.class, ContainerManager.getHomeContainer())).toString()) %>;
                     }
                 },{
                     text: 'Next',

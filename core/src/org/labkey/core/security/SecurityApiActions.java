@@ -54,6 +54,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -2070,7 +2071,9 @@ public class SecurityApiActions
             Container c = getContainer();
             if (!c.isRoot() && !c.getProject().hasPermission(getUser(), AdminPermission.class))
                 throw new UnauthorizedException("You must be an administrator at the project level to add new users.");
-            else if (c.isRoot() && !getUser().hasRootPermission(UserManagementPermission.class))
+            else if (!c.isRoot() && !c.getProject().hasPermission(getUser(), AddUserPermission.class))
+                throw new UnauthorizedException("You do not have permissions to create new users.");
+            else if (c.isRoot() && !getUser().hasRootPermission(AddUserPermission.class))
                 throw new UnauthorizedException("You do not have permissions to create new users.");
 
             String[] rawEmails = form.getEmail() == null ? null : form.getEmail().split(";");
@@ -2084,13 +2087,17 @@ public class SecurityApiActions
 
             for (ValidEmail email : validEmails)
             {
-                String msg = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), form.getOptionalMessage());
+                HtmlString msg = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), form.getOptionalMessage());
                 User user = UserManager.getUser(email);
                 if (null == user)
-                    throw new IllegalArgumentException(null != msg ? msg : "Error creating new user account.");
+                {
+                    // NOTE IAE should not accept formatted HTML
+                    // throw new IllegalArgumentException(null != msg ? msg : "Error creating new user account.");
+                    throw new IllegalArgumentException("Error creating new user account.");
+                }
 
-                boolean isNew = msg != null;
-                HtmlString htmlMsg = msg == null ? HtmlString.of(email + " was already a registered system user.") : HtmlString.unsafe(msg);
+                boolean isNew = !HtmlString.isBlank(msg);
+                HtmlString htmlMsg = HtmlString.isBlank(msg) ? HtmlString.of(email + " was already a registered system user.") : msg;
 
                 // Allow tests to create users that immediately register as having "logged in"
                 if (getUser().hasSiteAdminPermission() && form.isSkipFirstLogin())

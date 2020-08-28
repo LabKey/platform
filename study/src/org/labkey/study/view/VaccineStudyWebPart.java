@@ -15,16 +15,7 @@
  */
 package org.labkey.study.view;
 
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.study.Study;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
-import org.labkey.study.designer.StudyDesignInfo;
-import org.labkey.study.designer.StudyDesignManager;
-import org.labkey.study.model.StudyManager;
-
-import java.awt.*;
-import java.sql.SQLException;
 
 /**
  * User: markigra

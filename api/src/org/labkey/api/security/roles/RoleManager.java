@@ -16,7 +16,7 @@
 package org.labkey.api.security.roles;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.labkey.api.data.ContainerManager;
@@ -97,7 +97,7 @@ public class RoleManager
     {
         Role role = _nameToRoleMap.get(name);
         if (null == role)
-            Logger.getLogger(RoleManager.class).warn("Could not resolve the role " + name + "! The role may no longer exist, or may not yet be registered.");
+            LogManager.getLogger(RoleManager.class).warn("Could not resolve the role " + name + "! The role may no longer exist, or may not yet be registered.");
         return role;
     }
 
@@ -105,7 +105,7 @@ public class RoleManager
     {
         Role role = _classToRoleMap.get(clazz);
         if (null == role)
-            Logger.getLogger(RoleManager.class).warn("Could not resolve the role " + clazz.getName() + "! Did you forget to register the role with RoleManager.register()?");
+            LogManager.getLogger(RoleManager.class).warn("Could not resolve the role " + clazz.getName() + "! Did you forget to register the role with RoleManager.register()?");
         return role;
     }
 
@@ -119,7 +119,7 @@ public class RoleManager
     {
         Permission perm = (Permission) _classToRoleMap.get(clazz);
         if (null == perm)
-            Logger.getLogger(RoleManager.class).warn("Could not resolve the permission " + clazz.getName() + "! If this is not part of a role, you must register it separately with RoleManager.register().");
+            LogManager.getLogger(RoleManager.class).warn("Could not resolve the permission " + clazz.getName() + "! If this is not part of a role, you must register it separately with RoleManager.register().");
         return perm;
     }
 
@@ -127,7 +127,7 @@ public class RoleManager
     {
         Permission perm = (Permission) _nameToRoleMap.get(uniqueName);
         if (null == perm)
-            Logger.getLogger(RoleManager.class).warn("Could not resolve the permission " + uniqueName + "! The permission may no longer exist, or may not yet be registered.");
+            LogManager.getLogger(RoleManager.class).warn("Could not resolve the permission " + uniqueName + "! The permission may no longer exist, or may not yet be registered.");
         return perm;
     }
 
@@ -170,7 +170,7 @@ public class RoleManager
             }
             catch (InstantiationException | IllegalAccessException e)
             {
-                Logger.getLogger(RoleManager.class).error("Exception while instantiating permission " + permClass, e);
+                LogManager.getLogger(RoleManager.class).error("Exception while instantiating permission " + permClass, e);
             }
         }
 

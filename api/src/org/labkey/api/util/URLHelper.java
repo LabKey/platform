@@ -22,13 +22,15 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.beans.MutablePropertyValues;
@@ -58,11 +60,10 @@ import java.util.stream.Collectors;
 /**
  * Represents a URL, typically within this instance of LabKey Server.
  */
-public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlString
+public class URLHelper implements Cloneable, Serializable, HasHtmlString
 {
-    private static final Logger LOG = Logger.getLogger(URLHelper.class);
+    private static final Logger LOG = LogManager.getLogger(URLHelper.class);
 
-    protected boolean _tainted = false;
     protected String _scheme = "http";
     protected String _host = null;
     protected int _port = 80;
@@ -651,6 +652,10 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
         return addParameter(key, value);
     }
 
+    public URLHelper replaceParameter(String key, long value)
+    {
+        return replaceParameter(key, Long.toString(value));
+    }
 
     // CONSIDER: convert URLHelper implementation to use PropertyValues internally
     public PropertyValues getPropertyValues()
@@ -853,14 +858,6 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
             }
         }
     }
-
-
-    @Override
-    public boolean isTainted()
-    {
-        return _tainted;
-    }
-
 
     public void addFilter(String dataRegionName, FieldKey field, CompareType ct, Object value)
     {

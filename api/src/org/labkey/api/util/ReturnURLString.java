@@ -17,7 +17,8 @@ package org.labkey.api.util;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConvertHelper;
@@ -25,8 +26,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
 
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -41,7 +40,7 @@ import java.util.stream.Collectors;
  */
 public class ReturnURLString
 {
-    private static final Logger LOG = Logger.getLogger(ReturnURLString.class);
+    private static final Logger LOG = LogManager.getLogger(ReturnURLString.class);
 
     private final @Nullable URLHelper _url;
 

@@ -40,7 +40,7 @@ LabKey Server includes some simple built-in profiling tools.
 Some of them incur overhead to track or take space in the UI, and are thus configurable here.
 
 <labkey:errors/>
-<labkey:form action="<%=h(buildURL(MiniProfilerController.ManageAction.class))%>" method="POST">
+<labkey:form action="<%=buildURL(MiniProfilerController.ManageAction.class)%>" method="POST">
     <table class="labkey-manage-display">
         <tr>
             <td class="labkey-form-label" style="width: 200px;"><label for="collectTroubleshootingStackTraces">Capture stack traces until server shutdown<%=helpPopup("Capture stack traces",

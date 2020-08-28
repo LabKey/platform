@@ -88,7 +88,7 @@ public class StudyExportTest extends StudyManualTest
         modifyDatasetColumn(MODIFIED_DATASET);
         setDemographicsBit();
 
-        _listHelper.importListArchive(getFolderName(), new File(TestFileUtils.getLabKeyRoot(), "remoteapi/r/test/listArchive.zip"));
+        _listHelper.importListArchive(getFolderName(), TestFileUtils.getSampleData("lists/ListOfPeople.lists.zip"));
 
         // export new study to zip file using "xml" formats
         exportStudy(true);

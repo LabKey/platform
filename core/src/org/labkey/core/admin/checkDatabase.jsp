@@ -31,7 +31,7 @@
 
 <labkey:errors/>
 
-<labkey:form action="<%=h(buildURL(AdminController.GetSchemaXmlDocAction.class))%>" method="get">
+<labkey:form action="<%=buildURL(AdminController.GetSchemaXmlDocAction.class)%>" method="get">
     <table>
         <tr><td>Check table consistency:&nbsp;</td>
         <td> <%= button("Do Database Check").href(new ActionURL(AdminController.DoCheckAction.class, ContainerManager.getRoot())) %>&nbsp;</td></tr>

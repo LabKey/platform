@@ -68,37 +68,37 @@ public class WikiEditModel
 
     public String getRedir()
     {
-        return PageFlowUtil.jsString(_redir);
+        return _redir;
     }
 
     public String getCancelRedir()
     {
-        return null == _cancelRedir ? "null" : PageFlowUtil.jsString(_cancelRedir);
+        return _cancelRedir;
     }
 
     public String getBody()
     {
-        return null == _wikiVersion || null  == _wikiVersion.getBody() ? "null" : PageFlowUtil.jsString(_wikiVersion.getBody());
+        return null == _wikiVersion ? null : _wikiVersion.getBody();
     }
 
     public String getName()
     {
-        return null == _wiki ? getDefName() : PageFlowUtil.jsString(_wiki.getName());
+        return null == _wiki ? getDefName() : _wiki.getName();
     }
 
     public String getTitle()
     {
-        return null == _wikiVersion || null == _wikiVersion.getTitle() ? "null" : PageFlowUtil.jsString(_wikiVersion.getTitle());
+        return null == _wikiVersion ? null : _wikiVersion.getTitle();
     }
 
     public String getEntityId()
     {
-        return null == _wiki ? "null" : "'" + _wiki.getEntityId() + "'";
+        return null == _wiki ? null : _wiki.getEntityId();
     }
 
-    public String getRowId()
+    public Integer getRowId()
     {
-        return null == _wiki ? "null" : String.valueOf(_wiki.getRowId());
+        return null == _wiki ? null : _wiki.getRowId();
     }
 
     public int getParent()
@@ -114,10 +114,13 @@ public class WikiEditModel
     public String getRendererType()
     {
         if (null == _wikiVersion)
-            return _format != null ? PageFlowUtil.jsString(_format)
-                    : PageFlowUtil.jsString(WikiManager.DEFAULT_WIKI_RENDERER_TYPE.name());
+        {
+            return _format != null ? _format : WikiManager.DEFAULT_WIKI_RENDERER_TYPE.name();
+        }
         else
-            return PageFlowUtil.jsString(_wikiVersion.getRendererTypeEnum().name());
+        {
+            return _wikiVersion.getRendererTypeEnum().name();
+        }
     }
 
     public Set<WikiTree> getPossibleParents()
@@ -132,7 +135,7 @@ public class WikiEditModel
 
     public String getDefName()
     {
-        return null == _defName ? "null" : PageFlowUtil.jsString(_defName);
+        return _defName;
     }
 
     public boolean useVisualEditor()

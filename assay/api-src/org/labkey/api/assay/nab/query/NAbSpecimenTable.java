@@ -16,35 +16,55 @@
 
 package org.labkey.api.assay.nab.query;
 
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
+import org.labkey.api.assay.dilution.DilutionDataHandler;
 import org.labkey.api.assay.dilution.DilutionManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.assay.AssayProtocolSchema;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
 {
     private static final FieldKey CONTAINER_FIELD_KEY = FieldKey.fromParts("Container");
+
+    public static final String PERCENT_NEUT_MAX_PROP = "PercentNeutralizationMax";
+    public static final String PERCENT_NEUT_INIT_DILUTION_PROP = "PercentNeutralizationInitialDilution";
 
     public NAbSpecimenTable(AssayProtocolSchema schema, ContainerFilter cf)
     {
         super(DilutionManager.getTableInfoNAbSpecimen(), schema, cf);
 
         wrapAllColumns(true);
+        setTitle(DilutionManager.NAB_SPECIMEN_TABLE_NAME);
+        setName("Data");
 
         // TODO - add columns for all of the different cutoff values
         ExprColumn selectedAUC = new ExprColumn(this, "AUC", getSelectedCurveFitAUC(false), JdbcType.DECIMAL);
         ExprColumn selectedPositiveAUC = new ExprColumn(this, "PositiveAUC", getSelectedCurveFitAUC(true), JdbcType.DECIMAL);
         addColumn(selectedAUC);
         addColumn(selectedPositiveAUC);
+
+        ExprColumn percNeutMax = new ExprColumn(this, PERCENT_NEUT_MAX_PROP, getPercentNeutralizationMax(), JdbcType.DECIMAL);
+        percNeutMax.setHidden(true);
+        addColumn(percNeutMax);
+        ExprColumn percNeutInitDilution = new ExprColumn(this, PERCENT_NEUT_INIT_DILUTION_PROP, getPercentNeutralizationInitialDilution(), JdbcType.DECIMAL);
+        percNeutInitDilution.setHidden(true);
+        addColumn(percNeutInitDilution);
 
         addCondition(getRealTable().getColumn("ProtocolID"), _userSchema.getProtocol().getRowId());
     }
@@ -91,11 +111,36 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
         return sql;
     }
 
+    private SQLFragment getPercentNeutralizationMax()
+    {
+        return new SQLFragment("(SELECT MAX(PercentNeutralization) FROM ")
+            .append(DilutionManager.getTableInfoDilutionData(), "dd")
+            .append(" WHERE dd.RunDataId = ").append(ExprColumn.STR_TABLE_ALIAS + ".RowId)");
+    }
+
+    private SQLFragment getPercentNeutralizationInitialDilution()
+    {
+        return new SQLFragment("(SELECT PercentNeutralization FROM ")
+            .append(DilutionManager.getTableInfoDilutionData(), "dd")
+            .append(" WHERE dd.RunDataId = ").append(ExprColumn.STR_TABLE_ALIAS + ".RowId")
+            .append(" AND dd.DilutionOrder = 1)");
+    }
+
     @Override
     protected ColumnInfo resolveColumn(String name)
     {
         ColumnInfo columnInfo;
         columnInfo = super.resolveColumn(name);
         return columnInfo;
+    }
+
+    public List<PropertyDescriptor> getAdditionalDataProperties(ExpProtocol protocol)
+    {
+        DilutionAssayProvider provider = (DilutionAssayProvider) AssayService.get().getProvider(protocol);
+        DilutionDataHandler dataHandler = provider.getDataHandler();
+        List<PropertyDescriptor> propertyDescriptors = new ArrayList<>();
+        propertyDescriptors.add(dataHandler.getTypedPropertyDescriptor(getContainer(), protocol, PERCENT_NEUT_MAX_PROP, PropertyType.DECIMAL));
+        propertyDescriptors.add(dataHandler.getTypedPropertyDescriptor(getContainer(), protocol, PERCENT_NEUT_INIT_DILUTION_PROP, PropertyType.DECIMAL));
+        return propertyDescriptors;
     }
 }

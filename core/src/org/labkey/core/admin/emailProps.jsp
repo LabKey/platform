@@ -17,16 +17,22 @@
 %>
 <%@ page import="org.labkey.api.util.MailHelper" %>
 <%@ page import="java.util.Properties" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.collections.CaseInsensitiveHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Properties emailProps = MailHelper.getSession().getProperties();
+    Set<String> obscuredProps = new CaseInsensitiveHashSet(
+            "mail.smtp.user",
+            "mail.smtp.password"
+    );
 %>
 
-<table>
+<table class="lk-fields-table">
     <% for(Object key : emailProps.keySet()) { %>
     <tr>
         <td class="labkey-form-label"><%=h(key.toString())%></td>
-        <td><%=h(emailProps.get(key))%></td>
+        <td><%=h(obscuredProps.contains(key.toString()) ? "********" : emailProps.get(key))%></td>
     </tr>
     <% } %>
 </table>

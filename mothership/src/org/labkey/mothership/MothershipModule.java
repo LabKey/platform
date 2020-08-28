@@ -36,8 +36,14 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartConfigurationException;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 import org.labkey.mothership.query.MothershipSchema;
+import org.labkey.mothership.view.ExceptionListWebPart;
 
 import java.beans.PropertyChangeEvent;
 import java.util.Collection;
@@ -76,7 +82,16 @@ public class MothershipModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Collections.emptyList();
+        return Collections.singletonList(
+                new BaseWebPartFactory("Exception List", false, false)
+                {
+                    @Override
+                    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, Portal.@NotNull WebPart webPart) throws WebPartConfigurationException
+                    {
+                        return new ExceptionListWebPart(portalCtx.getUser(), portalCtx.getContainer(), null);
+                    }
+                }
+        );
     }
 
     @Override

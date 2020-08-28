@@ -18,13 +18,13 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.query.AbstractQueryImportAction" %>
-<%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="static org.labkey.api.util.HtmlString.NDASH" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
-<%@ page import="static org.labkey.api.query.QueryUpdateService.InsertOption.MERGE" %>
 <%@ page import="org.labkey.api.query.QueryUpdateService" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="static org.labkey.api.util.HtmlString.NDASH" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="static org.labkey.api.query.QueryUpdateService.InsertOption.MERGE" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%!
     @Override
@@ -58,7 +58,7 @@
         if (bean.urlExcelTemplates.size() == 1)
         {
             Pair<String, String> p = bean.urlExcelTemplates.get(0);
-            %><%= button(p.first).href(p.second) %><br>&nbsp;<br><%
+            %><%= button(p.first).href(p.second).usePost() %><br>&nbsp;<br><%
         }
         else
         {

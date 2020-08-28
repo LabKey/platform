@@ -17,7 +17,8 @@ package org.labkey.filecontent;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.IntegerConverter;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -80,7 +81,7 @@ import static org.labkey.api.files.FileContentService.PIPELINE_LINK;
  */
 public class FileQueryUpdateService extends AbstractQueryUpdateService
 {
-    private static final Logger _log = Logger.getLogger(FileQueryUpdateService.class);
+    private static final Logger _log = LogManager.getLogger(FileQueryUpdateService.class);
     private Container _container;
     private Set<FieldKey> _columns;
     private Domain _domain;

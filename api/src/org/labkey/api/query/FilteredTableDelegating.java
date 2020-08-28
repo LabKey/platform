@@ -19,12 +19,9 @@ package org.labkey.api.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.PHI;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.WrappedColumnInfo;
 
 /**
  * This is an alternate implementation of FilteredTable.  It is exactly the same except the default implementation of wrapColumn(), using WrappedColumnInfo instead of ExprColumn()

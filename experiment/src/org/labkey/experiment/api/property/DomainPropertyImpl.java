@@ -635,8 +635,7 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void delete(User user)
     {
-        for (IPropertyValidator validator : getValidators())
-            DomainPropertyManager.get().removePropertyValidator(user, this, validator);
+        DomainPropertyManager.get().removeValidatorsForPropertyDescriptor(getContainer(), getPropertyId());
         DomainPropertyManager.get().deleteConditionalFormats(getPropertyId());
 
         DomainKind kind = getDomain().getDomainKind();
@@ -696,7 +695,7 @@ public class DomainPropertyImpl implements DomainProperty
         for (PropertyValidatorImpl validator : ensureValidators())
         {
             if (validator.isDeleted())
-                DomainPropertyManager.get().removePropertyValidator(user, this, validator);
+                DomainPropertyManager.get().removePropertyValidator(this, validator);
             else
                 DomainPropertyManager.get().savePropertyValidator(user, this, validator);
         }
@@ -716,8 +715,11 @@ public class DomainPropertyImpl implements DomainProperty
     {
         if (validator != null)
         {
+            if (0 != validator.getPropertyId() && getPropertyId() != validator.getPropertyId())
+                throw new IllegalStateException();
             PropertyValidator impl = new PropertyValidator();
             impl.copy(validator);
+            impl.setPropertyId(getPropertyId());
             ensureValidators().add(new PropertyValidatorImpl(impl));
         }
     }

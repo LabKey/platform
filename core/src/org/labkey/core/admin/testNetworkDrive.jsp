@@ -16,8 +16,9 @@
  */
 %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.core.admin.TestNetworkDriveBean" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.core.admin.TestNetworkDriveBean" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
@@ -31,7 +32,7 @@
     Drive contents:<br/>
     <ul>
         <% for (String file : bean.getFiles()) { %>
-            <li><%= file %></li>
+            <li><%=h(file)%></li>
         <% } %>
     </ul>
 <% } %>

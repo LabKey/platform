@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.files.FileContentService"%>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.io.File" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -129,7 +128,7 @@
             buttons: [{
                 xtype: 'button',
                 cls: 'labkey-button',
-                text: <%= PageFlowUtil.jsString(getContainer().getFolderType().getExtraSetupSteps(getContainer()).isEmpty() ? "Finish" : "Next") %>,
+                text: <%=q(getContainer().getFolderType().getExtraSetupSteps(getContainer()).isEmpty() ? "Finish" : "Next")%>,
                 handler: function(btn){
                     var f = btn.up('form').getForm();
                     f.submit();

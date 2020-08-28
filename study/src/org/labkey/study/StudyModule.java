@@ -18,7 +18,8 @@ package org.labkey.study;
 
 import org.apache.commons.collections4.bag.HashBag;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -151,7 +152,7 @@ import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
 import org.labkey.study.specimen.SpecimenCommentAuditProvider;
-import org.labkey.study.specimen.SpecimenSampleSetDomainKind;
+import org.labkey.study.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.study.specimen.SpecimenSearchWebPart;
 import org.labkey.study.specimen.SpecimenWebPart;
 import org.labkey.study.specimen.settings.RepositorySettings;
@@ -188,7 +189,7 @@ import java.util.stream.Collectors;
 
 public class StudyModule extends SpringModule implements SearchService.DocumentProvider
 {
-    private static final Logger LOG = Logger.getLogger(StudyModule.class);
+    private static final Logger LOG = LogManager.getLogger(StudyModule.class);
 
     public static final String MODULE_NAME = "Study";
 
@@ -257,7 +258,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new VialDomainKind());
         PropertyService.get().registerDomainKind(new SpecimenEventDomainKind());
         PropertyService.get().registerDomainKind(new StudyPersonnelDomainKind());
-        PropertyService.get().registerDomainKind(new SpecimenSampleSetDomainKind());
+        PropertyService.get().registerDomainKind(new SpecimenSampleTypeDomainKind());
 
         // study design domains
         PropertyService.get().registerDomainKind(new StudyProductDomainKind());

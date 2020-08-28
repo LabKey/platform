@@ -16,7 +16,6 @@
 
 package org.labkey.assay.plate.query;
 
-import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
@@ -28,6 +27,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyForeignKey;
+import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.ArrayList;
 import java.util.List;

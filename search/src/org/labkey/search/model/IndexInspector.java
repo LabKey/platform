@@ -29,8 +29,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.TSVWriter;
-import org.labkey.api.data.TextWriter;
-import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;

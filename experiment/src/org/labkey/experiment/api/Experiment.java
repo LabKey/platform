@@ -15,6 +15,9 @@
  */
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.api.ExpExperiment;
+
 import java.io.Serializable;
 
 /**
@@ -100,5 +103,11 @@ public class Experiment extends IdentifiableEntity implements Serializable
     public void setBatchProtocolId(Integer batchProtocolId)
     {
         _batchProtocolId = batchProtocolId;
+    }
+
+    @Override
+    public @Nullable ExpExperimentImpl getExpObject()
+    {
+        return new ExpExperimentImpl(this);
     }
 }

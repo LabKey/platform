@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page import="org.labkey.api.announcements.EmailOption" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.announcements.EmailPreferencesPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -39,7 +39,7 @@
     }
 </script>
 <b><%=h(message)%></b>
-<labkey:form action="<%=h(buildURL(AnnouncementsController.EmailPreferencesAction.class))%>" method="post">
+<labkey:form action="<%=buildURL(AnnouncementsController.EmailPreferencesAction.class)%>" method="post">
     <br>Send email notifications for these <%=h(conversationName)%>s<br>
     <input type="radio" value="<%=EmailOption.MESSAGES_NONE.getValue()%>" name="emailPreference"<%=checked(emailPreference == EmailOption.MESSAGES_NONE.getValue())%>>
     <b>None</b> - Don't send me any email for this message board<br>

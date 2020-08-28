@@ -15,12 +15,11 @@
  */
 package org.labkey.study.specimen.report.request;
 
-import org.apache.xpath.operations.Bool;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.element.Option;
 import org.labkey.api.util.element.Select;
 import org.labkey.study.specimen.report.specimentype.TypeReportFactory;
-import org.labkey.api.util.Pair;
 
 import java.util.List;
 

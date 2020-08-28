@@ -232,6 +232,14 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
                 PipelineJob.TaskStatus.splitWaiting.matches(_status);
     }
 
+    // We can retry if the job is in ERROR or CANCELLED and we still have the serialized job info
+    public boolean isRetryable()
+    {
+        return (PipelineJob.TaskStatus.error.matches(_status) ||
+                PipelineJob.TaskStatus.cancelled.matches(_status)) &&
+                getJobStore() != null;
+    }
+
     public boolean isEmailStatus()
     {
         return _jobParent == null && _emailStatuses.contains(_status);

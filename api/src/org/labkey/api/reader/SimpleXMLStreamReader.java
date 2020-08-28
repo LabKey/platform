@@ -16,16 +16,17 @@
 
 package org.labkey.api.reader;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.BeanObjectFactory;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import java.io.InputStream;
-import java.util.regex.Pattern;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * User: arauch
@@ -34,7 +35,7 @@ import java.util.HashMap;
  */
 public class SimpleXMLStreamReader extends XMLStreamReaderWrapper
 {
-    private static Logger _log = Logger.getLogger(SimpleXMLStreamReader.class);
+    private static Logger _log = LogManager.getLogger(SimpleXMLStreamReader.class);
     private static Pattern _blankPattern = Pattern.compile("");
 
     public SimpleXMLStreamReader(InputStream stream) throws XMLStreamException

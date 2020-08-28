@@ -36,13 +36,13 @@
 <script type="text/javascript">
     function toggleBulkProperties()
     {
-        if (document.getElementById('<%= BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME %>On').checked)
+        if (document.getElementById(<%=q(BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME + "On")%>).checked)
         {
-            document.getElementById('<%= BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME%>').style.display='block';
+            document.getElementById(<%=q(BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME)%>).style.display='block';
         }
         else
         {
-            document.getElementById('<%= BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME%>').style.display='none';
+            document.getElementById(<%=q(BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME)%>).style.display='none';
         }
     }
 </script>
@@ -50,8 +50,8 @@
 <table>
     <tr>
         <td>
-            <input type="radio" id="<%= BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME %>Off"<%=checked(!useBulk)%> value="off"
-            onclick="toggleBulkProperties()" name="<%= BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME %>">
+            <input type="radio" id="<%=h(BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME)%>Off"<%=checked(!useBulk)%> value="off"
+            onclick="toggleBulkProperties()" name="<%=h(BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME)%>">
         </td>
         <td>
             Enter run properties for each run separately by entering values into a form
@@ -59,8 +59,8 @@
     </tr>
     <tr>
         <td>
-            <input type="radio" id="<%= BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME %>On"<%=checked(useBulk)%> value="on"
-            onclick="toggleBulkProperties()" name="<%= BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME %>">
+            <input type="radio" id="<%=h(BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME)%>On"<%=checked(useBulk)%> value="on"
+            onclick="toggleBulkProperties()" name="<%=h(BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME)%>">
         </td>
         <td>
             Specify run properties for all runs at once with tab-separated values (TSV)<%=helpPopup("Bulk Properties", form.getHelpPopupHTML(), true)%>
@@ -68,15 +68,15 @@
     </tr>
     <tr>
         <td/>
-        <td id="<%= BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME %>" <%= !useBulk ? "style=\"display: none;\"" : "" %>>
+        <td id="<%=h(BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME)%>" <%=h(!useBulk ? "style=\"display: none;\"" : "")%>>
             <% if (form.getTemplateURL() != null) { %><%=link("download Excel template", form.getTemplateURL())%><br/><% } %>
             <textarea style="width: 100%"
                     rows="5" cols="80"
-                    name="<%= BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME %>"><%=h(existingValue) %></textarea>
+                    name="<%=h(BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME)%>"><%=h(existingValue) %></textarea>
         </td>
     </tr>
 </table>
 <script type="text/javascript">
     // Allow tabs in the TSV text area
-    Ext.EventManager.on('<%= BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME%>', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
+    Ext.EventManager.on(<%=q(BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME)%>, 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
 </script>

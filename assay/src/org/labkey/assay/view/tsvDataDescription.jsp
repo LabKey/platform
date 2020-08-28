@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.ColumnRenderProperties" %>
-<%@ page import="org.labkey.api.exp.property.DomainProperty" %>
-<%@ page import="org.labkey.api.assay.actions.AssayRunUploadForm" %>
-<%@ page import="org.labkey.assay.actions.TemplateAction" %>
 <%@ page import="org.labkey.api.assay.AssayProvider" %>
 <%@ page import="org.labkey.api.assay.AssayUrls" %>
 <%@ page import="org.labkey.api.assay.PipelineDataCollector" %>
+<%@ page import="org.labkey.api.assay.actions.AssayRunUploadForm" %>
+<%@ page import="org.labkey.api.data.ColumnRenderProperties" %>
+<%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.assay.actions.TemplateAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();

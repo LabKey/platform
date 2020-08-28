@@ -16,8 +16,8 @@
 
 package org.labkey.query.controllers;
 
-import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryForm;
 
 public class NewQueryForm extends QueryForm
 {

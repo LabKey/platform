@@ -23,7 +23,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.util.EnumHasHtmlString;
+import org.labkey.api.util.SimpleHasHtmlString;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 
 import java.util.HashMap;
@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
  * User: jeckels
  * Date: Nov 21, 2005
  */
-public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
+public enum LSIDRelativizer implements SimpleHasHtmlString
 {
     /** Keeps the original LSID from the source server */
     ABSOLUTE("Absolute")

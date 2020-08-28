@@ -1,6 +1,11 @@
 package org.labkey.api.security;
 
+import org.apache.commons.codec.binary.Base64;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
+import org.labkey.api.data.AES;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ConfigurationException;
 
 public abstract class SaveConfigurationForm
 {
@@ -48,5 +53,22 @@ public abstract class SaveConfigurationForm
     public void setEnabled(boolean enabled)
     {
         _enabled = enabled;
+    }
+
+    public @Nullable String getEncryptedProperties()
+    {
+        return null;
+    }
+
+    protected String encodeEncryptedProperties(JSONObject map)
+    {
+        if (Encryption.isMasterEncryptionPassPhraseSpecified())
+        {
+            return Base64.encodeBase64String(AES.get().encrypt(map.toString()));
+        }
+        else
+        {
+            throw new ConfigurationException("Can't save this configuration: MasterEncryptionKey has not been specified in " + AppProps.getInstance().getWebappConfigurationFilename());
+        }
     }
 }

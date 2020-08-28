@@ -19,11 +19,11 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.labkey.api.data.CrosstabTableInfo;
-import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.ExcelColumn;
-import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.CrosstabMember;
+import org.labkey.api.data.CrosstabTableInfo;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ExcelColumn;
+import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.Results;
 import org.labkey.api.util.Pair;
 

@@ -16,7 +16,8 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
@@ -83,7 +84,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     private final boolean _devMode = AppProps.getInstance().isDevMode();
     protected String _debugViewDescription = null;
 
-    private static final Logger LOG = Logger.getLogger(WebPartView.class);
+    private static final Logger LOG = LogManager.getLogger(WebPartView.class);
 
 
     @Override
@@ -374,17 +375,21 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                 }
                 catch (RedirectException x)
                 {
-                    Logger.getLogger(WebPartView.class).warn("Shouldn't throw redirect during renderView()", x);
+                    LogManager.getLogger(WebPartView.class).warn("Shouldn't throw redirect during renderView()", x);
                     throw x;
                 }
                 catch (UnauthorizedException x)
                 {
-                    Logger.getLogger(WebPartView.class).warn("Shouldn't throw unauthorized during renderView()", x);
+                    LogManager.getLogger(WebPartView.class).warn("Shouldn't throw unauthorized during renderView()", x);
                     errorHtml = ExceptionUtil.getUnauthorizedMessage(getViewContext());
                 }
                 catch (NotFoundException x)
                 {
                     errorHtml = HtmlString.of("Not Found : " + x.getMessage());
+                }
+                catch (BadRequestException x)
+                {
+                    errorHtml = HtmlString.of(x.getMessage());
                 }
                 catch (Throwable t)
                 {
@@ -398,7 +403,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
                     if (!ExceptionUtil.isIgnorable(exceptionToRender))
                     {
-                        Logger log = Logger.getLogger(WebPartView.class);
+                        Logger log = LogManager.getLogger(WebPartView.class);
                         ActionURL url = getViewContext().getActionURL();
                         log.error("renderView() exception in " + getClass().getName() + (null != url ? " while responding to " + getViewContext().getActionURL().getLocalURIString() : ""), exceptionToRender);
                         log.error("View creation stacktrace:" + ExceptionUtil.renderStackTrace(_creationStackTrace));

@@ -16,6 +16,7 @@
 
 package org.labkey.study.view;
 
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.JspView;
 
@@ -29,23 +30,23 @@ public class StudyToolsWebPart extends JspView<StudyToolsWebPart.StudyToolsBean>
 {
     public static class Item
     {
-        private String _label;
-        private String _icon;
-        private URLHelper _url;
+        private final HtmlString _label;
+        private final HtmlString _icon;
+        private final URLHelper _url;
 
         public Item(String label, String icon, URLHelper url)
         {
-            _label = label;
-            _icon = icon;
+            _label = HtmlString.of(label);
+            _icon = HtmlString.of(icon);
             _url = url;
         }
 
-        public String getLabel()
+        public HtmlString getLabel()
         {
             return _label;
         }
 
-        public String getIcon()
+        public HtmlString getIcon()
         {
             return _icon;
         }
@@ -58,9 +59,8 @@ public class StudyToolsWebPart extends JspView<StudyToolsWebPart.StudyToolsBean>
 
     public static class StudyToolsBean
     {
-        private boolean _wide;
-        private List<Item> _items;
-
+        private final boolean _wide;
+        private final List<Item> _items;
 
         public StudyToolsBean(boolean wide, List<Item> items)
         {

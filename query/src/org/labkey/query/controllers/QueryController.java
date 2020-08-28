@@ -25,7 +25,8 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlValidationError;
@@ -200,7 +201,7 @@ import static org.labkey.api.util.DOM.cl;
 
 public class QueryController extends SpringActionController
 {
-    private static final Logger LOG = Logger.getLogger(QueryController.class);
+    private static final Logger LOG = LogManager.getLogger(QueryController.class);
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryController.class,
             ValidateQueryAction.class,
@@ -957,7 +958,7 @@ public class QueryController extends SpringActionController
                     //
                 }
                 errors.reject("ERROR_MSG", e.toString());
-                Logger.getLogger(QueryController.class).error("Error", e);
+                LogManager.getLogger(QueryController.class).error("Error", e);
             }
 
             Renderable moduleWarning = null;
@@ -1276,7 +1277,14 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
-            QueryView queryView = form.getQueryView();
+            QueryView queryView = null;
+
+            if (!errors.hasErrors())
+                queryView = form.getQueryView();
+
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors, true);
+
             if (isPrint())
             {
                 queryView.setPrintView(true);
@@ -2880,6 +2888,7 @@ public class QueryController extends SpringActionController
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
                         form.isIncludeDisplayValues());
             }
+            response.setFormat(getResponseFormat());
             response.includeStyle(form.isIncludeStyle());
 
             // Issues 29515 and 32269 - force key and other non-requested columns to be sent back, but only if the client has
@@ -3103,6 +3112,7 @@ public class QueryController extends SpringActionController
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
                         form.isIncludeDisplayValues());
             }
+            response.setFormat(getResponseFormat());
             response.includeStyle(form.isIncludeStyle());
 
             return response;
@@ -3730,7 +3740,7 @@ public class QueryController extends SpringActionController
             List<Map<String, Object>> rowsToProcess = new ArrayList<>();
 
             // NOTE RowMapFactory is faster, but for update it's important to preserve missing v explicit NULL values
-            // Do we need to support some soft of UNDEFINED and NULL instance of MvFieldWrapper?
+            // Do we need to support some sort of UNDEFINED and NULL instance of MvFieldWrapper?
             RowMapFactory<Object> f = null;
             if (commandType == CommandType.insert || commandType == CommandType.insertWithKeys)
                 f = new RowMapFactory<>();
@@ -3767,6 +3777,11 @@ public class QueryController extends SpringActionController
                 {
                     AuditBehaviorType behaviorType = AuditBehaviorType.valueOf(auditBehavior);
                     configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
+                    String auditComment = json.getString("auditUserComment");
+                    if (!StringUtils.isEmpty(auditComment))
+                    {
+                        configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
+                    }
                 }
                 catch (IllegalArgumentException ignored)
                 {
@@ -5271,7 +5286,7 @@ public class QueryController extends SpringActionController
                 }
                 catch (Exception e)
                 {
-                    Logger.getLogger(QueryController.class).error("Error", e);
+                    LogManager.getLogger(QueryController.class).error("Error", e);
                     errors.reject(ERROR_MSG, "An exception occurred: " + e);
                     return false;
                 }
@@ -6045,7 +6060,7 @@ public class QueryController extends SpringActionController
                 if (null != x.getCause() && x != x.getCause())
                     x = x.getCause();
                 html.add("<br>" + PageFlowUtil.filter(x.toString()));
-                Logger.getLogger(QueryController.class).debug(expr,x);
+                LogManager.getLogger(QueryController.class).debug(expr,x);
             }
             if (null != e)
             {

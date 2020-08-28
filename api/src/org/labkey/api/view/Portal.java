@@ -20,12 +20,15 @@ import org.apache.commons.collections4.Factory;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.CompareType;
@@ -61,16 +64,17 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.Button;
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.ModuleChangeListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.element.CsrfInput;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
@@ -91,8 +95,22 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.util.DOM.*;
-import static org.labkey.api.util.DOM.Attribute.*;
+import static org.labkey.api.util.DOM.Attribute.action;
+import static org.labkey.api.util.DOM.Attribute.method;
+import static org.labkey.api.util.DOM.Attribute.name;
+import static org.labkey.api.util.DOM.Attribute.type;
+import static org.labkey.api.util.DOM.Attribute.value;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.HR;
+import static org.labkey.api.util.DOM.INPUT;
+import static org.labkey.api.util.DOM.LK;
+import static org.labkey.api.util.DOM.OPTION;
+import static org.labkey.api.util.DOM.Renderable;
+import static org.labkey.api.util.DOM.SELECT;
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.cl;
+import static org.labkey.api.util.DOM.createHtml;
 
 /**
  * Manages the configuration of portal pages, which can be configured by admins to show
@@ -100,7 +118,7 @@ import static org.labkey.api.util.DOM.Attribute.*;
  */
 public class Portal implements ModuleChangeListener
 {
-    private static final Logger LOG = Logger.getLogger(Portal.class);
+    private static final Logger LOG = LogManager.getLogger(Portal.class);
     private static final WebPartBeanLoader FACTORY = new WebPartBeanLoader();
 
     public static final String FOLDER_PORTAL_PAGE = "folder";
@@ -1286,15 +1304,14 @@ public class Portal implements ModuleChangeListener
                 OPTIONS.add(OPTION(at(value, name), displayName));
         });
 
-       return createHtml(
+        return createHtml(
                 DIV(
                         LK.FORM(
                                 at(method, "POST", action, urlProvider().getAddWebPartURL(c))
                                         .cl("form-inline").cl(pullClass).cl(visibilityClass),
 
-                                INPUT(
-                                        at(type, "hidden", name, "X-LABKEY-CSRF", value, CSRFUtil.getExpectedToken(viewContext))
-                                ),
+                                new CsrfInput(viewContext),
+
                                 INPUT(
                                         at(type, "hidden", name, "pageId", value, bean.pageId)
                                 ),
@@ -1662,6 +1679,12 @@ public class Portal implements ModuleChangeListener
             }
 
             return view;
+        }
+        catch (BadRequestException x)
+        {
+            BindException errors = new BindException(new Object(), "form");
+            errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
+            return new SimpleErrorView(errors,false);
         }
         catch(Throwable t)
         {

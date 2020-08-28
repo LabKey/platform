@@ -17,8 +17,9 @@
 package org.labkey.bigiron.mssql;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -72,7 +73,7 @@ import java.util.stream.Collectors;
 // Dialect specifics for Microsoft SQL Server
 abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 {
-    private static final Logger LOG = Logger.getLogger(BaseMicrosoftSqlServerDialect.class);
+    private static final Logger LOG = LogManager.getLogger(BaseMicrosoftSqlServerDialect.class);
 
     // SQLServer limits maximum index key size of 900 bytes
     private static final int MAX_INDEX_SIZE = 900;
@@ -320,6 +321,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     protected void checkSqlScript(String lowerNoComments, String lowerNoCommentsNoWhiteSpace, Collection<String> errors)
     {
+        if (lowerNoComments.startsWith("use ") || lowerNoComments.contains("\nuse "))
+            errors.add("USE statements are prohibited");
     }
 
 

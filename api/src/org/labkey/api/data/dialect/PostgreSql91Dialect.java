@@ -898,7 +898,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     protected void checkSqlScript(String lowerNoComments, String lowerNoCommentsNoWhiteSpace, Collection<String> errors)
     {
         if (lowerNoCommentsNoWhiteSpace.contains("setsearch_pathto"))
-            errors.add("Do not use \"SET search_path TO <schema>\".  Instead, schema-qualify references to all objects.");
+            errors.add("Do not use \"SET search_path TO <schema>\". Instead, schema-qualify references to all objects.");
 
         if (!lowerNoCommentsNoWhiteSpace.endsWith(";"))
             errors.add("Script must end with a semicolon");

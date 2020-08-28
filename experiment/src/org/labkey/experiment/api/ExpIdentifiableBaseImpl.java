@@ -82,7 +82,7 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
 
     /**
      * Get the objectId used as the value in the exp.object.ownerObjectId column
-     * e.g., for Material in a SampleSet, this value is the SampleSet's objectId.
+     * e.g., for Material in a SampleType, this value is the SampleType's objectId.
      */
     public @Nullable Integer getParentObjectId()
     {

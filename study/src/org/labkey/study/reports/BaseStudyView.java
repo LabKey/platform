@@ -16,16 +16,13 @@
 
 package org.labkey.study.reports;
 
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.StudySchema;
-import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.VisitImpl;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
+import org.labkey.api.view.HttpView;
+import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitImpl;
 
 import java.util.HashMap;
 import java.util.List;

@@ -23,7 +23,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.List;
-import java.util.Set;
 import java.util.function.Supplier;
 
 /**

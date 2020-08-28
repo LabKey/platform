@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.query.controllers.QueryController" %>
+<%@ page import="org.labkey.query.controllers.QueryController.RemoteQueryConnectionUrls" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -49,18 +49,17 @@
     {
         for (String field : connectionMap.keySet())
         {
-            %> <labkey:link href="<%= QueryController.RemoteQueryConnectionUrls.urlEditRemoteConnection(c, connectionMap.get(field))%>" text="edit"/> <%
-            %> <labkey:link href="<%= QueryController.RemoteQueryConnectionUrls.urlDeleteRemoteConnection(c, connectionMap.get(field))%>" text="delete"/> <%
-            %> <labkey:link href="<%= QueryController.RemoteQueryConnectionUrls.urlTestRemoteConnection(c, connectionMap.get(field))%>" text="test"/> <%
-            %> <%= h(connectionMap.get(field)) %> <br/> <%
+            %><%=link("edit").href(RemoteQueryConnectionUrls.urlEditRemoteConnection(c, connectionMap.get(field)))%><%
+            %><%=link("delete").href(RemoteQueryConnectionUrls.urlDeleteRemoteConnection(c, connectionMap.get(field)))%><%
+            %><%=link("test").href(RemoteQueryConnectionUrls.urlTestRemoteConnection(c, connectionMap.get(field)))%><%
+            %><%=h(connectionMap.get(field))%>
+            <br/><%
         }
 %> <p/>
 <%
         if (hasAdminOpsPerm)
         {
-%>
-            <labkey:link href="<%= QueryController.RemoteQueryConnectionUrls.urlCreateRemoteConnection(c) %>" text="create new connection"/>
-<%
+            %><%=link("create new connection").href(RemoteQueryConnectionUrls.urlCreateRemoteConnection(c))%><%
         }
     }
 %>

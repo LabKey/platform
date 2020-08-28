@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -29,7 +28,7 @@
     DataRegion.ParameterViewBean bean = (DataRegion.ParameterViewBean)HttpView.currentModel();
 %>
 <%-- NOTE: div id must match DataRegion.js expected <table> element so it can be removed in DataRegion.destroy() --%>
-<div id=<%=PageFlowUtil.qh(bean.dataRegionDomId)%>></div>
+<div id=<%=qh(bean.dataRegionDomId)%>></div>
 <script type="text/javascript">
 (function(){
 var regionDomId = <%=q(bean.dataRegionDomId)%>;

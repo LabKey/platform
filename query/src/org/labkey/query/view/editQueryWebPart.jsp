@@ -16,7 +16,6 @@
  */
 %>
 
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
@@ -70,7 +69,7 @@
             name : 'queryName'
         }));
 
-        var allowEnable = <%=PageFlowUtil.jsString(props.get("queryName"))%>;
+        var allowEnable = <%=q(props.get("queryName"))%>;
         queryName.on('enable', function(){if(!allowEnable) queryName.disable();}, this);
 
         var viewName = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeViewComboConfig({
@@ -99,7 +98,7 @@
                 xtype: 'textfield',
                 fieldLabel: 'Web Part Title',
                 name : 'title',
-                value : <%=PageFlowUtil.jsString(props.get("title"))%>
+                value : <%=q(props.get("title"))%>
             }, schemaName, {
                 xtype : 'radiogroup',
                 fieldLabel: 'Query and View',
@@ -111,7 +110,7 @@
                     name : 'selectQuery',
                     boxLabel : 'Show the list of queries in this schema.',
                     value : false,
-                    checked : !<%=PageFlowUtil.jsString(props.get("queryName"))%>,
+                    checked : !<%=q(props.get("queryName"))%>,
                     listeners : {
                         change : function(cb, nv, ov){
                             if (nv) {
@@ -128,7 +127,7 @@
                     boxLabel : 'Show the contents of a specific query and view.',
                     width : 500,
                     value : true,
-                    checked : <%=PageFlowUtil.jsString(props.get("queryName"))%>,
+                    checked : <%=q(props.get("queryName"))%>,
                     listeners : {
                         change : function(cb, nv){
                             if (nv) {
@@ -223,7 +222,7 @@
                     if (queryForm) {
                         if (validate()) {
                             queryForm.getForm().submit({
-                                url : <%=PageFlowUtil.jsString(h(part.getCustomizePostURL(ctx)))%>,
+                                url : <%=q(part.getCustomizePostURL(ctx).getLocalURIString())%>,
                                 success : function(){},
                                 failure : function(){}
                             });

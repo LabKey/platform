@@ -176,9 +176,18 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
 
     public class WebFolderResource extends AbstractWebFolderResource
     {
+        private final String documentId;
+
         WebFolderResource(WebdavResolver resolver, Container c)
         {
             super(resolver, c);
+            documentId =  "dav:" + _resolver.getRootPath().append(_c.getId()).toString("/","/");
+        }
+
+        @Override
+        public String getDocumentId()
+        {
+            return documentId;
         }
 
         @Override

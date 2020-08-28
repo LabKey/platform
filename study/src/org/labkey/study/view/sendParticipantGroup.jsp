@@ -73,7 +73,7 @@
 
     <b>Message link:</b>
     <div><%=h(sendGroupUrl.getBaseServerURI() + PageFlowUtil.decode(sendGroupUrl.toString()))%></div>
-    <div><a class="labkey-text-link" target="_blank" href="<%=h(sendGroupUrl)%>">Preview Link</a></div>
+    <div><a class="labkey-text-link" target="_blank" href="<%=h(sendGroupUrl)%>" rel="noopener noreferrer">Preview Link</a></div>
     <br/>
 
     <input type="hidden" name="rowId" value="<%=h(bean.getRowId())%>">

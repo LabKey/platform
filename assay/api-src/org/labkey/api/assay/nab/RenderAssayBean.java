@@ -15,7 +15,8 @@
  */
 package org.labkey.api.assay.nab;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
@@ -73,7 +74,7 @@ import java.util.Set;
  */
 public class RenderAssayBean extends RenderAssayForm
 {
-    private static final Logger LOG = Logger.getLogger(RenderAssayBean.class);
+    private static final Logger LOG = LogManager.getLogger(RenderAssayBean.class);
     private ViewContext _context;
     private DilutionAssayRun _assay;
     private boolean _printView;
@@ -304,7 +305,7 @@ public class RenderAssayBean extends RenderAssayForm
     {
         ExpRun run = _assay.getRun();
         ActionURL pageUrl = context.getActionURL().clone();
-        pageUrl.replaceParameter("rowId", "" + run.getRowId());
+        pageUrl.replaceParameter("rowId", run.getRowId());
         String discussionTitle = "Discuss Run " + run.getRowId() + ": " + run.getName();
         String entityId = run.getLSID();
         DiscussionService service = DiscussionService.get();

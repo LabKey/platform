@@ -17,8 +17,8 @@
 package org.labkey.experiment.types;
 
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exp.PropertyDescriptor;
 
 import java.util.HashSet;
 

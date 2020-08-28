@@ -15,7 +15,8 @@
  */
 package org.labkey.core.notification;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -72,7 +73,7 @@ import java.util.Map.Entry;
  */
 public class EmailServiceImpl implements EmailService
 {
-    private static final Logger _log = Logger.getLogger(EmailService.class);
+    private static final Logger _log = LogManager.getLogger(EmailService.class);
     private static final String EMAIL_PREF_CATEGORY = "EmailService.emailPrefs";
 
     @Override
@@ -336,9 +337,6 @@ public class EmailServiceImpl implements EmailService
             EmailMessage msg = getBaseMessage();
             File attachment = JunitUtil.getSampleData(null, PROTOCOL_ATTACHMENT_PATH);
 
-            if (attachment == null)
-                return;
-
             assertTrue("Couldn't find " + attachment, attachment.isFile());
 
             List<String> lines = Files.readAllLines(Paths.get(attachment.toURI()), Charset.defaultCharset());
@@ -372,9 +370,6 @@ public class EmailServiceImpl implements EmailService
         {
             EmailMessage msg = getBaseMessage();
             File studySampleData = JunitUtil.getSampleData(null, "study");
-
-            if (studySampleData == null)
-                return;
 
             List<File> attachmentList = Collections.singletonList(new File(studySampleData, name));
 

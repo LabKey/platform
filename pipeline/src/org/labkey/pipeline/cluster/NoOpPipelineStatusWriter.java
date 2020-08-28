@@ -15,8 +15,8 @@
  */
 package org.labkey.pipeline.cluster;
 
-import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineStatusFile;
 
 /**
  * Used when running a job through a remote execution engine. The cluster itself may handle giving the web

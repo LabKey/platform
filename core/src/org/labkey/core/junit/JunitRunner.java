@@ -17,7 +17,8 @@
 package org.labkey.core.junit;
 
 import junit.framework.TestCase;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.runner.Description;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Request;
@@ -40,7 +41,7 @@ import java.util.stream.Collectors;
 */
 public class JunitRunner
 {
-    private static final Logger LOG = Logger.getLogger(JunitRunner.class);
+    private static final Logger LOG = LogManager.getLogger(JunitRunner.class);
 
     public static class RunnerResult
     {

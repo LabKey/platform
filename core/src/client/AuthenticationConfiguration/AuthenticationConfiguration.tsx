@@ -1,17 +1,19 @@
 import React, { PureComponent } from 'react';
 import { Button, Alert } from 'react-bootstrap';
-import { Ajax, ActionURL } from '@labkey/api';
-import { LoadingSpinner } from "@labkey/components";
+import { ActionURL, Ajax, Utils } from '@labkey/api';
+import { LoadingSpinner, resolveErrorMessage } from '@labkey/components';
 
 import GlobalSettings from '../components/GlobalSettings';
 import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
 import { reorder, isEquivalent, addOrUpdateAnAuthConfig } from './utils';
-import {Actions, AuthConfig, AuthConfigProvider, GlobalSettingsOptions} from "../components/models";
+import { Actions, AuthConfig, AuthConfigProvider, GlobalSettingsOptions } from '../components/models';
 
-import "@labkey/components/dist/components.css"
+import '@labkey/components/dist/components.css';
 import './authenticationConfiguration.scss';
 
 interface State {
+    error: string;
+    initError: string;
     loading: boolean;
     formConfigurations: AuthConfig[];
     ssoConfigurations: AuthConfig[];
@@ -38,6 +40,8 @@ export class App extends PureComponent<{}, Partial<State>> {
         };
 
         this.state = {
+            error: undefined,
+            initError: undefined,
             loading: true,
             formConfigurations: null,
             ssoConfigurations: null,
@@ -64,14 +68,15 @@ export class App extends PureComponent<{}, Partial<State>> {
 
     loadInitialConfigData = (): void => {
         Ajax.request({
-            url: ActionURL.buildURL('login', 'InitialMount'),
-            method: 'GET',
-            scope: this,
-            failure: function(error) {
-                alert('Error: ' + error);
-            },
-            success: function(result) {
-                const response = JSON.parse(result.response);
+            url: ActionURL.buildURL('login', 'initialMount.api'),
+            failure: Utils.getCallbackWrapper(error => {
+                console.error('Failed to load initial configuration', error);
+                this.setState({
+                    loading: false,
+                    initError: resolveErrorMessage(error),
+                });
+            }, undefined, true),
+            success: Utils.getCallbackWrapper(response => {
                 const { formConfigurations, ssoConfigurations, secondaryConfigurations } = response;
                 const dirtinessData = {
                     globalSettings: response.globalSettings,
@@ -82,7 +87,7 @@ export class App extends PureComponent<{}, Partial<State>> {
                 const authCount = formConfigurations.length + ssoConfigurations.length;
                 const loading = false;
                 this.setState({ ...response, dirtinessData, authCount, loading });
-            },
+            }),
         });
     };
 
@@ -114,6 +119,10 @@ export class App extends PureComponent<{}, Partial<State>> {
         // Do not warn about navigating away if user has pressed 'save'
         window.removeEventListener('beforeunload', this.handleLeavePage);
 
+        if (this.state.error) {
+            this.setState({ error: undefined });
+        }
+
         const form = new FormData();
 
         Object.keys(this.state.globalSettings).map(item => {
@@ -138,14 +147,16 @@ export class App extends PureComponent<{}, Partial<State>> {
         }
 
         Ajax.request({
-            url: ActionURL.buildURL('login', 'SaveSettings'),
+            url: ActionURL.buildURL('login', 'saveSettings.api'),
             method: 'POST',
             form,
-            scope: this,
-            failure: function(error) {
-                alert('Error: ' + error);
-            },
-            success: function() {
+            failure: Utils.getCallbackWrapper(error => {
+                console.error('Failed to save settings', error);
+                this.setState({
+                    error: resolveErrorMessage(error),
+                });
+            }, undefined, true),
+            success: () => {
                 window.location.assign(ActionURL.buildURL('admin', 'showAdmin'));
             },
         });
@@ -165,10 +176,8 @@ export class App extends PureComponent<{}, Partial<State>> {
         });
     };
 
-    getAuthConfigArray = (configType: AuthConfig[]): AuthConfig[] => {
-        return configType.map((auth: any) => {
-            return auth.configuration;
-        });
+    getAuthConfigArray = (configType: AuthConfig[]): number[] => {
+        return configType.map(auth => auth.configuration);
     };
 
     onDragEnd = (result: {[key: string]: any;}): void => {
@@ -199,18 +208,20 @@ export class App extends PureComponent<{}, Partial<State>> {
 
     onDelete = (configuration: number, configType: string): void => {
         Ajax.request({
-            url: ActionURL.buildURL('login', 'deleteConfiguration'),
+            url: ActionURL.buildURL('login', 'deleteConfiguration.api'),
             method: 'POST',
             params: { configuration },
-            scope: this,
-            failure: function(error) {
-                alert('Error: ' + error);
-            },
-            success: function() {
+            failure: Utils.getCallbackWrapper(error => {
+                console.error('Failed to delete configuration', error);
+                this.setState({
+                    error: resolveErrorMessage(error),
+                });
+            }, undefined, true),
+            success: Utils.getCallbackWrapper(() => {
                 this.setState((state) => ({
                     [configType]: state[configType].filter(auth => auth.configuration !== configuration)
-                }))
-            },
+                }));
+            }),
         });
     };
 
@@ -229,6 +240,8 @@ export class App extends PureComponent<{}, Partial<State>> {
         const alertText =
             'You have unsaved changes to your authentication configurations. Click "Save and Finish" to apply these changes.';
         const {
+            error,
+            initError,
             loading,
             globalSettings,
             dirty,
@@ -245,10 +258,16 @@ export class App extends PureComponent<{}, Partial<State>> {
             return <LoadingSpinner/>;
         }
 
+        if (initError) {
+            return <Alert bsStyle="danger">{initError}</Alert>;
+        }
+
         let authCount = formConfigurations.length + ssoConfigurations.length;
 
         return (
             <div className="parent-panel">
+                {error && <Alert bsStyle="danger">{error}</Alert>}
+
                 <GlobalSettings
                     globalSettings={globalSettings as GlobalSettingsOptions}
                     canEdit={canEdit}

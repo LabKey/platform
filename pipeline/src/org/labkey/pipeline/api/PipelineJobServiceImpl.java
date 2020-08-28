@@ -16,7 +16,8 @@
 package org.labkey.pipeline.api;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.SchemaType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -91,7 +92,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
 {
     public static final String MODULE_PIPELINE_DIR = "pipeline";
 
-    private static final Logger LOG = Logger.getLogger(PipelineJobServiceImpl.class);
+    private static final Logger LOG = LogManager.getLogger(PipelineJobServiceImpl.class);
     private static final String PIPELINE_TOOLS_ERROR = "Failed to locate %s. Use the site pipeline tools settings to specify where it can be found. (Currently '%s')";
     private static final String INSTALLED_PIPELINE_TOOL_ERROR = "Failed to locate %s. Check tool install location defined in pipelineConfig.xml. (Currently '%s')";
     private static final String MODULE_TASKS_DIR = "tasks";

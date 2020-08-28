@@ -64,7 +64,7 @@ import java.util.regex.Pattern;
 
 
 @SuppressWarnings({"UnnecessarySemicolon"})
-public class GUID implements Serializable, Parameter.JdbcParameterValue
+public class GUID implements Serializable, Parameter.JdbcParameterValue, SimpleHasHtmlString
 {
     private static final int version  =       0x00001000;
     private static final int reserved =       0x00008000;

@@ -32,7 +32,7 @@
     <tr>
         <td>Copy <b><%= h(bean.getTemplateName()) %></b> to:</td>
     </tr>
-    <%= text(bean.getTreeHtml()) %>
+    <%=bean.getTreeHtml()%>
     <tr>
         <td>
             <br>

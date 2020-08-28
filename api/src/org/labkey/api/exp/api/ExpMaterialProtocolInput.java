@@ -30,7 +30,6 @@ public interface ExpMaterialProtocolInput extends ExpProtocolInput
      */
     String matches(@NotNull User user, @NotNull Container c, @NotNull ExpMaterial material);
 
-    /** If non-null, the ExpSampleSet that the input ExpMaterial must come from.  If null, any ExpMaterial is allowed. */
-    @Nullable ExpSampleSet getType();
-
+    /** If non-null, the ExpSampleType that the input ExpMaterial must come from. If null, any ExpMaterial is allowed. */
+    @Nullable ExpSampleType getType();
 }

@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.exp.list.ListDefinition"%>
 <%@ page import="org.labkey.api.exp.list.ListService" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
@@ -67,23 +66,23 @@ If you want to let users change the list that's displayed or customize the view 
         var sqvModel = Ext4.create('LABKEY.sqv.Model', {});
         var title = Ext4.create('Ext.form.field.Text', {
             name : 'title',
-            value :  <%=PageFlowUtil.jsString(props.get("title"))%>,
+            value :  <%=q(props.get("title"))%>,
             fieldLabel : 'Title',
             width: 400
         });
-        var queryCombo = ('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
+        var queryCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
             defaultSchema : 'lists',
             // Only include actual lists -- no custom queries
             includeUserQueries: false,
             fieldLabel : 'List',
             name: 'listName',
-            initialValue : <%=PageFlowUtil.jsString(listName)%>,
+            initialValue : <%=q(listName)%>,
             width: 400
         }));
 
         var viewCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeViewComboConfig({
             name : 'viewName',
-            initialValue : <%=PageFlowUtil.jsString(props.get("viewName"))%>,
+            initialValue : <%=q(props.get("viewName"))%>,
             width: 400
         }));
 
@@ -94,7 +93,7 @@ If you want to let users change the list that's displayed or customize the view 
                     if(myPanel.getForm().isValid()){
 
                         myPanel.getForm().submit({
-                            url : <%=PageFlowUtil.jsString(h(part.getCustomizePostURL(ctx)))%>,
+                            url : <%=q((part.getCustomizePostURL(ctx)).getLocalURIString())%>,
                             success : function(){},
                             failure : function(){}
                         });
@@ -114,6 +113,5 @@ If you want to let users change the list that's displayed or customize the view 
             standardSubmit: true,
             items : [title, queryCombo, viewCombo, submitButton, { xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF }]
         });
-
     });
 </script>

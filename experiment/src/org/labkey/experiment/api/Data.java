@@ -17,8 +17,8 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -122,5 +122,11 @@ public class Data extends RunItem
         Data data = (Data) o;
 
         return !(getRowId() == 0 || getRowId() != data.getRowId());
+    }
+
+    @Override
+    public @Nullable ExpDataImpl getExpObject()
+    {
+        return new ExpDataImpl(this);
     }
 }

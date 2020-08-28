@@ -15,8 +15,9 @@
  */
 package org.labkey.api.script;
 
-import org.mozilla.javascript.*;
-import org.mozilla.javascript.tools.shell.Global;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ImporterTopLevel;
+import org.mozilla.javascript.ScriptableObject;
 
 /**
  * User: kevink

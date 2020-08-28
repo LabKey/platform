@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls"%>
 <%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
@@ -32,7 +31,7 @@
 <script type="text/javascript">
     window.onbeforeunload = LABKEY.beforeunload();
 
-    var DEFAULT_SCRIPT_VALUE = <%= PageFlowUtil.jsString(bean.getDefaultScript()) %>;
+    var DEFAULT_SCRIPT_VALUE = <%= q(bean.getDefaultScript()) %>;
 
     function setCustomScriptState(disabled)
     {
@@ -40,7 +39,7 @@
         return true;
     }
 </script>
-<labkey:form action="<%=h(buildURL(StudyController.CustomizeParticipantViewAction.class))%>" name="editorForm" method="POST">
+<labkey:form action="<%=buildURL(StudyController.CustomizeParticipantViewAction.class)%>" name="editorForm" method="POST">
     <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl())%>">
     <input type="hidden" name="reshow" value="false">
     <input type="hidden" name="participantId" value="<%= h(bean.getParticipantId()) %>">
@@ -92,7 +91,7 @@
 %>
         <tr>
             <td>
-                This custom participant view is defined in an active module.  It cannot be edited via this interface.
+                This custom participant view is defined in an active module. It cannot be edited via this interface.
             </td>
         </tr>
         <tr>
@@ -111,11 +110,11 @@
 %>
 <table width="100%">
     <tr class="labkey-wp-header">
-        <th><%= h(subjectNoun) %> View Preview <%= bean.isEditable() ? "(Save to refresh)" : "" %></th>
+        <th><%= h(subjectNoun) %> View Preview <%= h(bean.isEditable() ? "(Save to refresh)" : "") %></th>
     </tr>
     <tr>
         <td>
-            <%= useCustomView ? bean.getCustomScript() : bean.getDefaultScript() %>
+            <%= unsafe(useCustomView ? bean.getCustomScript() : bean.getDefaultScript()) %>
         </td>
     </tr>
 </table>

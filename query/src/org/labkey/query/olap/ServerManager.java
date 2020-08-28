@@ -25,7 +25,8 @@ import mondrian.server.StringRepositoryContentFinder;
 import mondrian.spi.CatalogLocator;
 import mondrian.spi.DataSourceChangeListener;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -112,7 +113,7 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 public class ServerManager
 {
-    private static final Logger LOG = Logger.getLogger(ServerManager.class);
+    private static final Logger LOG = LogManager.getLogger(ServerManager.class);
 
     private static final Map<String, ServerReferenceCount> SERVERS = new HashMap<>();
     private static final Object SERVERS_LOCK = new Object();

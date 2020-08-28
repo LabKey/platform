@@ -18,9 +18,9 @@ package org.labkey.api.security;
 
 import org.labkey.api.security.roles.HasContextualRoles;
 
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-import java.lang.annotation.ElementType;
 
 /**
  * Annotation to add additional contextual roles during permission checking.

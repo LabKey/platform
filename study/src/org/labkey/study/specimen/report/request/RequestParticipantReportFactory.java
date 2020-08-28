@@ -15,24 +15,27 @@
  */
 package org.labkey.study.specimen.report.request;
 
-import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HtmlString;
-import org.labkey.study.model.Participant;
-import org.labkey.study.specimen.report.SpecimenVisitReport;
-import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.SpecimenManager;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.VisitImpl;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.Visit;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
+import org.labkey.study.SpecimenManager;
+import org.labkey.study.controllers.specimen.SpecimenController;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.Participant;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitImpl;
+import org.labkey.study.specimen.report.SpecimenVisitReport;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: brittp

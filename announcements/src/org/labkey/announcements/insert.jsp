@@ -59,7 +59,7 @@
     window.onbeforeunload = LABKEY.beforeunload(LABKEY.isDirty());
 </script>
 
-<labkey:form method="POST" enctype="multipart/form-data" action="<%=h(insertUrl)%>" id="insertMessageForm" onsubmit="return onSubmit(this);">
+<labkey:form method="POST" enctype="multipart/form-data" action="<%=insertUrl%>" id="insertMessageForm" onsubmit="return onSubmit(this);">
 <labkey:input type="hidden" name="cancelUrl" value="<%=cancelURL%>" />
 <%=generateReturnUrlFormField(cancelURL)%>
 <labkey:input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>" />
@@ -76,7 +76,7 @@
 <%
     if (settings.hasStatus())
     {
-        %><tr><td class='labkey-form-label'>Status</td><td colspan="2"><%=text(bean.statusSelect)%></td></tr><%
+        %><tr><td class='labkey-form-label'>Status</td><td colspan="2"><%=bean.statusSelect%></td></tr><%
     }
     if (settings.hasAssignedTo())
     {
@@ -132,9 +132,8 @@
         <select name="rendererType" id="rendererType" onChange="LABKEY.setDirty(true);"><%
             for (WikiRendererType type : bean.renderers)
             {
-                String value = type.name();
                 String displayName = type.getDisplayName();
-        %><option<%=selected(type == bean.currentRendererType)%> value="<%=h(value)%>"><%=h(displayName)%></option><%
+        %><option<%=selected(type == bean.currentRendererType)%> value="<%=type%>"><%=h(displayName)%></option><%
             }
         %></select></td></tr><%
     }
@@ -174,7 +173,7 @@ else
 <%
     for (WikiRendererType renderer : WikiRendererType.values()) {
 %>
-    <div class="help-<%=renderer.name()%>" style="display:none">
+    <div class="help-<%=renderer%>" style="display:none">
         <% me.include(renderer.getSyntaxHelpView(), out); %>
     </div>
 <%

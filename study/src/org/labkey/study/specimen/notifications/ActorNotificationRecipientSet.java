@@ -24,8 +24,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.ShowGroupMembersAction;
-import org.labkey.study.model.SpecimenRequestActor;
 import org.labkey.study.model.LocationImpl;
+import org.labkey.study.model.SpecimenRequestActor;
 import org.labkey.study.model.StudyManager;
 
 /**

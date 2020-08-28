@@ -81,7 +81,7 @@ public class DataRegionSelection
 
     /**
      * Composes a selection key string used to uniquely identify the selected items
-     * of a given dataregion.  Nulls are allowed.
+     * of a given dataregion. Nulls are allowed.
      */
     public static String getSelectionKey(String schemaName, String queryName, String viewName, String dataRegionName)
     {

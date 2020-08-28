@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.workbook.MoveWorkbooksBean" %>
@@ -27,7 +28,7 @@
     MoveWorkbooksBean bean = (MoveWorkbooksBean)me.getModelBean();
     List<Container> workbooks = bean.getWorkbooks();
 
-    String noun = workbooks.size() > 1 ? "workbooks" : "workbook";
+    HtmlString noun = h(workbooks.size() > 1 ? "workbooks" : "workbook");
     String buttonCaption = workbooks.size() > 1 ? "Move Workbooks" : "Move Workbook";
 %>
 
@@ -42,7 +43,7 @@ to the selected folder:</div>
 <script type="text/javascript">
 
     var _containerTree;
-    var _workbookIds = [<%=bean.getIDInitializer()%>];
+    var _workbookIds = <%=bean.getIDInitializer()%>;
     var _curIndex = 0;
     var _newParentId;
     var _newParentPath;

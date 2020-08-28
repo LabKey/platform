@@ -20,12 +20,12 @@
 <%@ page import="org.labkey.api.data.RenderContext" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.wiki.WikiController.VersionBean" %>
 <%@ page import="org.labkey.wiki.WikiSelectManager" %>
 <%@ page import="org.labkey.wiki.model.WikiVersion" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -70,18 +70,18 @@ else
 
         if (fOutputMakeCurrent)
         {
-            %><tr><td align=right colspan="2"><labkey:form method="POST" action="<%=h(bean.makeCurrentURL)%>">
+            %><tr><td align=right colspan="2"><labkey:form method="POST" action="<%=bean.makeCurrentURL%>">
                 <%= button("Make Current").submit(true) %></labkey:form></td></tr><%
         }%>
 
-       <tr><td colspan=2>&nbsp;</td></tr>
-       <tr><td colspan=2 class="labkey-title-area-line"></td></tr>
-       <tr><td colspan=2>&nbsp;</td></tr>
-       <tr>
-           <td align="left">
-               <%=link("page", bean.pageURL)%>&nbsp;<%=link("history", bean.versionsURL)%>&nbsp;<%=link("source", bean.sourceURL)%>
-           </td>
-           <td align="right">
+        <tr><td colspan=2>&nbsp;</td></tr>
+        <tr><td colspan=2 class="labkey-title-area-line"></td></tr>
+        <tr><td colspan=2>&nbsp;</td></tr>
+        <tr>
+            <td align="left">
+                <%=link("page", bean.pageURL)%>&nbsp;<%=link("history", bean.versionsURL)%>&nbsp;<%=link("source", bean.sourceURL)%>
+            </td>
+            <td align="right">
 <%
 
         WikiVersion[] versions = WikiSelectManager.getAllVersions(bean.wiki);
@@ -108,8 +108,8 @@ else
         }
     %>
             </td>
-       </tr>
-       <tr>
+        </tr>
+        <tr>
             <td align="left">
                 <i>Created by:</i> <%=h(bean.createdBy)%>,
                 <i>Date:</i> <%=formatDateTime(bean.created)%>

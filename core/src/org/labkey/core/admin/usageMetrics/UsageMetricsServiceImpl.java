@@ -15,7 +15,8 @@
  */
 package org.labkey.core.admin.usageMetrics;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
@@ -36,7 +37,7 @@ import java.util.stream.Collectors;
  */
 public class UsageMetricsServiceImpl implements UsageMetricsService
 {
-    private static Logger LOG = Logger.getLogger(UsageMetricsServiceImpl.class);
+    private static Logger LOG = LogManager.getLogger(UsageMetricsServiceImpl.class);
 
     private final Map<UsageReportingLevel, Map<String, Set<UsageMetricsProvider>>> moduleUsageReports = new ConcurrentHashMap<>();
 

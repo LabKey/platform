@@ -31,6 +31,7 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -76,7 +77,7 @@
     }
 
     span.closeicon {
-        background-image: url(<%=request.getContextPath()%>/ext-4.2.1/resources/ext-theme-classic-sandbox/images/tools/tool-sprites.gif);
+        background-image: url(<%=getContextPath()%>/ext-4.2.1/resources/ext-theme-classic-sandbox/images/tools/tool-sprites.gif);
     }
 
     td.tree-node-selected {
@@ -103,32 +104,32 @@ Ext4.onReady(function(){
     var editor = Ext4.create('Security.panel.PermissionEditor', {
         renderTo: 'tabBoxDiv',
         minHeight: 450,
-        isSiteRoot: <%= c.isRoot() ? "true" : "false" %>,
-        isRootUserManager: <%= user.hasRootPermission(UserManagementPermission.class) ? "true" : "false" %>,
-        isProjectRoot: <%=(c.isProject())?"true":"false"%>,
-        isProjectAdmin: <%=project != null && project.hasPermission(user, AdminPermission.class) ? "true" : "false"%>,
-        canInherit: <%=(!c.isProject() && !c.isRoot())?"true":"false"%>,
+        isSiteRoot: <%= JavaScriptFragment.bool(c.isRoot()) %>,
+        isRootUserManager: <%= JavaScriptFragment.bool(user.hasRootPermission(UserManagementPermission.class)) %>,
+        isProjectRoot: <%= JavaScriptFragment.bool(c.isProject()) %>,
+        isProjectAdmin: <%= JavaScriptFragment.bool(project != null && project.hasPermission(user, AdminPermission.class)) %>,
+        canInherit: <%= JavaScriptFragment.bool(!c.isProject() && !c.isRoot()) %>,
         securityCache: Ext4.create('Security.util.SecurityCache', {
-            root: <%=PageFlowUtil.jsString(root.getId())%>,
-            project: <%=project==null?"null":PageFlowUtil.jsString(project.getId())%>,
+            root: <%=q(root.getId())%>,
+            project: <%= project==null ? JavaScriptFragment.NULL : q(project.getId()) %>,
 
             // 16762 - Provide a projectPath, should be considered for folder
-            projectPath: <%=project==null?"null":PageFlowUtil.jsString(project.getPath())%>,
-            folder: <%=PageFlowUtil.jsString(c.getId())%>,
+            projectPath: <%= project==null ? JavaScriptFragment.NULL : q(project.getPath()) %>,
+            folder: <%= q(c.getId()) %>,
             global: true
         }),
         autoResize: {
             skipHeight: false
         },
-        doneURL: <%=doneURL==null?"null":PageFlowUtil.jsString(doneURL.getLocalURIString())%>
+        doneURL: <%= doneURL==null ? JavaScriptFragment.NULL : q(doneURL.getLocalURIString()) %>
     <% if (!c.isRoot()) { %>
         ,treeConfig: {
-           requiredPermission: '<%=RoleManager.getPermission(AdminPermission.class).getUniqueName()%>',
+           requiredPermission: <%=q(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>,
            showContainerTabs: true,
            project: {
-               id : '<%=project.getRowId()%>',
-               name: <%=PageFlowUtil.jsString(project.getName())%>,
-               securityHref: <%=PageFlowUtil.qh(new ActionURL(SecurityController.PermissionsAction.class, project).getLocalURIString())%>
+               id : '<%= project.getRowId() %>',
+               name: <%= q(project.getName()) %>,
+               securityHref: <%= qh(new ActionURL(SecurityController.PermissionsAction.class, project).getLocalURIString()) %>
            }
         }
     <% } %>
@@ -167,12 +168,12 @@ Ext4.onReady(function(){
             continue;
         counter++;
         String id = "moduleSecurityView" + counter;
-        %><div id='<%=id%>' class="x4-hide-display"><%
+        %><div id='<%= h(id) %>' class="x4-hide-display"><%
         view.setFrame(WebPartView.FrameType.NONE);
         me.include(view,out);
         %></div>
         <script type="text/javascript">
-            viewTabs.push({contentEl:<%=PageFlowUtil.jsString(id)%>, title:<%=PageFlowUtil.jsString(view.getTitle())%>, autoScroll:true, autoHeight: false});
+            viewTabs.push({contentEl:<%=q(id)%>, title:<%=q(view.getTitle())%>, autoScroll:true, autoHeight: false});
         </script>
         <%
     }

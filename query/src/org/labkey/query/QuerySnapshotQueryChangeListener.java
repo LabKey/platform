@@ -15,7 +15,7 @@
  */
 package org.labkey.query;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -96,7 +96,7 @@ public class QuerySnapshotQueryChangeListener implements QueryChangeListener
             }
             catch (Exception e)
             {
-                Logger.getLogger(QuerySnapshotQueryChangeListener.class).error("An error occurred upgrading query snapshot properties: ", e);
+                LogManager.getLogger(QuerySnapshotQueryChangeListener.class).error("An error occurred upgrading query snapshot properties: ", e);
             }
         }
     }

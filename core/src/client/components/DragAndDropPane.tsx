@@ -22,7 +22,7 @@ export default class DragAndDropPane extends PureComponent<Props> {
         const DragAndDropAuthRows = authConfigs.map((authConfig, index) => (
             <Draggable
                 key={authConfig.configuration}
-                draggableId={authConfig.configuration}
+                draggableId={authConfig.configuration.toString()}
                 index={index}
                 isDragDisabled={this.props.isDragDisabled}>
                 {provided => (

@@ -15,9 +15,9 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.collections.ResultSetRowMapFactory;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;

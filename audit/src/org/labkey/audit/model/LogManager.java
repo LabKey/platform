@@ -16,7 +16,7 @@
 
 package org.labkey.audit.model;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
@@ -53,7 +53,7 @@ import java.util.Map;
  */
 public class LogManager
 {
-    private static final Logger _log = Logger.getLogger(LogManager.class);
+    private static final Logger _log = org.apache.logging.log4j.LogManager.getLogger(LogManager.class);
     private static final LogManager _instance = new LogManager();
     private static final int COMMENT_MAX = 500;
     private static final int STRING_KEY_MAX = 1000;
@@ -76,7 +76,7 @@ public class LogManager
 
     public <K extends AuditTypeEvent> K _insertEvent(User user, K type)
     {
-        Logger auditLogger = Logger.getLogger("org.labkey.audit.event." + type.getEventType().replaceAll(" ", ""));
+        Logger auditLogger = org.apache.logging.log4j.LogManager.getLogger("org.labkey.audit.event." + type.getEventType().replaceAll(" ", ""));
         auditLogger.info(type.getAuditLogMessage());
 
         AuditTypeProvider provider = AuditLogService.get().getAuditProvider(type.getEventType());

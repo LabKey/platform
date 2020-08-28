@@ -32,7 +32,11 @@ import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * A JSONObject is an unordered collection of name/value pairs. Its
@@ -1179,6 +1183,16 @@ public class JSONObject extends HashMap<String, Object> implements HasHtmlString
     public HtmlString getHtmlString()
     {
         return HtmlString.unsafe(toString());
+    }
+
+    /**
+     * Make a pretty-printed JSON text of this JSONObject
+     * @param indentFactor Number of spaces to add to each level of indentation
+     * @return HtmlString holding the JSON representation
+     */
+    public HtmlString getHtmlString(int indentFactor)
+    {
+        return HtmlString.unsafe(toString(indentFactor));
     }
 
     /**

@@ -225,7 +225,7 @@ Ext4.define('File.panel.Actions', {
                 else {
                     var descriptionText = 'File Actions, such as <b>Import Data</b>, are not available for the contents of this File Browser. ' +
                             'An administrator may have set a pipeline override or configured the display of non-file content. ' +
-                            '<a href="https://www.labkey.org/Documentation/wiki-page.view?name=fileManagementAdmin#actions" target="_blank">(more info...)</a>' +
+                            '<a href="https://www.labkey.org/Documentation/wiki-page.view?name=fileManagementAdmin#actions" target="_blank" rel="noopener noreferrer">(more info...)</a>' +
                             '<br/><br/>';
                     if (LABKEY.ActionURL.getController() === 'filecontent') {
                         descriptionText += LABKEY.Utils.textLink({text: "Go To Pipeline Directory", href: LABKEY.ActionURL.buildURL('pipeline', 'browse')});

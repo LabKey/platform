@@ -16,8 +16,8 @@
 package org.labkey.api.action;
 
 import org.jetbrains.annotations.NotNull;
-import org.springframework.validation.BindException;
 import org.springframework.beans.PropertyValues;
+import org.springframework.validation.BindException;
 
 public interface HasBindParameters
 {

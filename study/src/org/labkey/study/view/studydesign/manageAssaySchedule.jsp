@@ -70,7 +70,7 @@
 Enter assay schedule information in the grids below.
 <div>
     <ul>
-        <li <%=form.isUseAlternateLookupFields() ? "style='display:none;'" : ""%>>
+        <li <%=unsafe(form.isUseAlternateLookupFields() ? "style='display:none;'" : "")%>>
             Configure dropdown options for assays, labs, sample types, and units at the project
             level to be shared across study designs or within this folder for
             study specific properties: 
@@ -109,7 +109,7 @@ Enter assay schedule information in the grids below.
             Select the <%=h(visitNoun.toLowerCase())%>s for each assay in the schedule
             portion of the grid to define the expected assay schedule for the study.
         </li>
-        <li <%=!form.isUseAlternateLookupFields() ? "style='display:none;'" : ""%>>
+        <li <%=unsafe(!form.isUseAlternateLookupFields() ? "style='display:none;'" : "")%>>
             Use the manage locationss page to further configure information about the locations for this study.
             <%= link("Manage Locations", StudyController.ManageLocationsAction.class) %>
         </li>

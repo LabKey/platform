@@ -18,8 +18,6 @@ package org.labkey.study.view;
 
 import org.labkey.api.view.JspView;
 
-import javax.servlet.ServletException;
-
 /**
  * User: Mark Igra
  * Date: Aug 8, 2006

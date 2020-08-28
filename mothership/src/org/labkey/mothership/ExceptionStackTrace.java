@@ -21,9 +21,9 @@ import org.junit.Test;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HashHelpers;
 
-import java.io.StringReader;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.Date;
 
 /**

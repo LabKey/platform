@@ -15,11 +15,11 @@
  */
 package org.labkey.api.laboratory.assay;
 
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.laboratory.DataProvider;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.AssayProvider;
 
 import java.util.Collection;
 import java.util.List;

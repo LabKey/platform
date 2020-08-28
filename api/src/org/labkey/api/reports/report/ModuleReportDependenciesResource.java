@@ -15,7 +15,7 @@
  */
 package org.labkey.api.reports.report;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.view.template.ClientDependency;
@@ -67,7 +67,7 @@ public class ModuleReportDependenciesResource extends ModuleReportResource
             }
             catch(XmlException e)
             {
-                Logger.getLogger(ModuleReportDependenciesResource.class).warn("Unable to load report metadata from file "
+                LogManager.getLogger(ModuleReportDependenciesResource.class).warn("Unable to load report metadata from file "
                         + _metaDataFile.getPath(), e);
             }
         }

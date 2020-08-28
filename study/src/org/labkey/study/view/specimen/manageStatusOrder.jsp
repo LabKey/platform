@@ -80,7 +80,7 @@ function orderModule(down)
 }
 </script>
 
-<labkey:form action="<%=h(buildURL(SpecimenController.ManageStatusOrderAction.class))%>" name="reorder" method="POST">
+<labkey:form action="<%=buildURL(SpecimenController.ManageStatusOrderAction.class)%>" name="reorder" method="POST">
     <table>
         <tr>
             <td style="padding-right: 20px;">

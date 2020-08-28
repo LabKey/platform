@@ -46,7 +46,7 @@ public class SpecimenMergeTest extends BaseWebDriverTest
     protected static final File SPECIMEN_TEMP_DIR = StudyHelper.getStudyTempDir();
     protected int pipelineJobCount = 3;
 
-    protected String _studyDataRoot = null;
+    protected final String _studyDataRoot = StudyHelper.getPipelinePath();
 
     @Override
     public List<String> getAssociatedModules()
@@ -69,7 +69,6 @@ public class SpecimenMergeTest extends BaseWebDriverTest
     @Override
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
-        _studyDataRoot = TestFileUtils.getLabKeyRoot() + "/sampledata/study";
         File tempDir = SPECIMEN_TEMP_DIR;
         if (tempDir.exists())
         {
@@ -107,8 +106,6 @@ public class SpecimenMergeTest extends BaseWebDriverTest
 
     protected void setUpSteps()
     {
-        _studyDataRoot = TestFileUtils.getLabKeyRoot() + "/sampledata/study";
-
         _containerHelper.createProject(PROJECT_NAME, null);
 
         _containerHelper.createSubfolder(PROJECT_NAME, PROJECT_NAME, FOLDER_NAME, "Study", null);

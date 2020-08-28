@@ -18,8 +18,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.roles.RoleManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies"%>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -40,7 +39,7 @@
             height: 700,
             minWidth: 600,
             selected: <%= c.getRowId() %>,
-            requiredPermission: <%=PageFlowUtil.jsString(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>,
+            requiredPermission: <%=q(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>,
             showContainerTabs: true
         });
     });

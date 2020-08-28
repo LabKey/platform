@@ -16,8 +16,8 @@
 
 package org.labkey.api.writer;
 
-import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 
 /*
 * User: adam

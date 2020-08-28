@@ -15,7 +15,8 @@
  */
 package org.labkey.announcements.model;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
@@ -28,6 +29,7 @@ import org.labkey.api.message.digest.MessageDigest;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -53,7 +55,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 {
     private static final CommSchema _comm = CommSchema.getInstance();
     private static final CoreSchema _core = CoreSchema.getInstance();
-    private static final Logger _log = Logger.getLogger(AnnouncementDigestProvider.class);
+    private static final Logger _log = LogManager.getLogger(AnnouncementDigestProvider.class);
 
     // Retrieve from this container all messages with a body or attachments that were marked as "approved" during the given
     // timespan. Messages are grouped by thread and threads are sorted by earliest post within each thread.
@@ -286,9 +288,9 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
                 if (!dailyDigestBean.settings.isSecure())
                 {
-                    String body = ann.getFormattedHtml();
+                    HtmlString body = ann.getFormattedHtml();
                     sb.append("<tr><td style=\"padding-left:35px;\">");
-                    sb.append(body);
+                    sb.append(body.toString());
                     sb.append("</td></tr>");
                 }
             }

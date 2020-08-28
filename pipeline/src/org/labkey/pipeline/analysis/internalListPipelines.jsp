@@ -16,12 +16,12 @@
  */
 %>
 <%@ page import="org.labkey.api.pipeline.PipelineJobService" %>
-<%@ page import="org.labkey.api.pipeline.TaskPipeline" %>
 <%@ page import="org.labkey.api.pipeline.TaskId" %>
-<%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.api.pipeline.TaskPipeline" %>
+<%@ page import="org.labkey.api.pipeline.file.FileAnalysisTaskPipeline" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.pipeline.analysis.AnalysisController" %>
-<%@ page import="org.labkey.api.pipeline.file.FileAnalysisTaskPipeline" %>
+<%@ page import="java.util.Collection" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%

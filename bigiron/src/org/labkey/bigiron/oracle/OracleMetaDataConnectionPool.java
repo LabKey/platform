@@ -17,7 +17,8 @@ package org.labkey.bigiron.oracle;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.ConnectionPool;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SqlSelector;
@@ -34,7 +35,7 @@ public class OracleMetaDataConnectionPool extends ConnectionPool
     private int _openCursorsMax;
     private final DbScope _dbScope;
     private final int _openCursorTarget;
-    private static final Logger LOG = Logger.getLogger(OracleMetaDataConnectionPool.class);
+    private static final Logger LOG = LogManager.getLogger(OracleMetaDataConnectionPool.class);
 
     public OracleMetaDataConnectionPool(DbScope scope)
     {

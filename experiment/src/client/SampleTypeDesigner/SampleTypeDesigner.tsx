@@ -36,7 +36,7 @@ interface State {
     message?: string
 }
 
-const UPDATE_SAMPLE_SET_ACTION = 'updateMaterialSource';
+const UPDATE_SAMPLE_TYPE_ACTION = 'updateMaterialSource';
 
 export class App extends React.PureComponent<any, State> {
 
@@ -47,8 +47,8 @@ export class App extends React.PureComponent<any, State> {
 
         const action = ActionURL.getAction();
         let message;
-        if (action === UPDATE_SAMPLE_SET_ACTION && !this.getRowIdParam()) {
-            message = 'RowId parameter not supplied. Unable to determine which Sample Set to edit.';
+        if (action === UPDATE_SAMPLE_TYPE_ACTION && !this.getRowIdParam()) {
+            message = 'RowId parameter not supplied. Unable to determine which Sample Type to edit.';
         }
 
         this.state = {
@@ -78,12 +78,12 @@ export class App extends React.PureComponent<any, State> {
                         .then((sampleType: DomainDetails) => {
                             this.setState(()=> ({sampleType, isLoading: false}));
                         }).catch(error => {
-                            this.setState(() => ({message: 'Sample set does not exist in this container for domainId ' + domainId + '.', isLoading: false}));
+                            this.setState(() => ({message: 'Sample type does not exist in this container for domainId ' + domainId + '.', isLoading: false}));
                         }
                     );
                 })
                 .catch(error => {
-                    this.setState(() => ({message: 'Sample set does not exist in this container for rowId ' + rowId + '.', isLoading: false}));
+                    this.setState(() => ({message: 'Sample type does not exist in this container for rowId ' + rowId + '.', isLoading: false}));
                 });
         }
         else {
@@ -119,14 +119,14 @@ export class App extends React.PureComponent<any, State> {
     onComplete = (response: DomainDesign) => {
         const rowId = this.getRowIdParam();
         const url = rowId
-            ? ActionURL.buildURL('experiment', 'showMaterialSource', getServerContext().container.path, {rowId: rowId})
-            : ActionURL.buildURL('experiment', 'listMaterialSources', getServerContext().container.path);
+            ? ActionURL.buildURL('experiment', 'showSampleType', getServerContext().container.path, {rowId: rowId})
+            : ActionURL.buildURL('experiment', 'listSampleTypes', getServerContext().container.path);
 
         this.navigate(url);
     };
 
     onCancel = () => {
-        this.navigate(ActionURL.buildURL('experiment', 'listMaterialSources', getServerContext().container.path));
+        this.navigate(ActionURL.buildURL('experiment', 'listSampleTypes', getServerContext().container.path));
     };
 
     navigate(defaultUrl: string) {

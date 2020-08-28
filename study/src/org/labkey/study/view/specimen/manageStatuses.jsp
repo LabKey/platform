@@ -26,7 +26,6 @@
 <%@ page import="org.labkey.study.specimen.settings.StatusSettings" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -46,7 +45,7 @@ function showSystemRows(value)
 }
 
 </script>
-<labkey:form action="<%=h(buildURL(SpecimenController.ManageStatusesAction.class))%>" name="manageStatuses" method="POST">
+<labkey:form action="<%=buildURL(SpecimenController.ManageStatusesAction.class)%>" name="manageStatuses" method="POST">
     <p>
         Request statuses help a coordinator organize and track requests through the system and
         communicate progress to requesters. All requests do not need to pass through all states.

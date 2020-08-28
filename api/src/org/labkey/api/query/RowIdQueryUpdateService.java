@@ -15,13 +15,12 @@
  */
 package org.labkey.api.query;
 
-import org.apache.commons.beanutils.converters.IntegerConverter;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
-import org.labkey.api.data.Container;
 
-import java.util.Map;
 import java.sql.SQLException;
+import java.util.Map;
 
 /*
 * User: Dave

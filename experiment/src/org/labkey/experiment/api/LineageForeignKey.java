@@ -30,7 +30,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -113,7 +113,7 @@ class LineageForeignKey extends AbstractForeignKey
             @Override
             List<? extends ExpObject> getItems(UserSchema s)
             {
-                return SampleSetService.get().getSampleSets(s.getContainer(), s.getUser(), true);
+                return SampleTypeService.get().getSampleTypes(s.getContainer(), s.getUser(), true);
             }
         },
         ExperimentRun("Runs", "ExperimentRun")
@@ -192,7 +192,7 @@ class LineageForeignKey extends AbstractForeignKey
                     var type = "All";
                     if (null != cpasType)
                     {
-                        var ss = SampleSetService.get().getSampleSet(cpasType);
+                        var ss = SampleTypeService.get().getSampleType(cpasType);
                         if (null != ss)
                             type = ss.getName();
                     }

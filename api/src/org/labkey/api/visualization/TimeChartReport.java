@@ -21,8 +21,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
-import java.io.IOException;
-
 /*
 * User: brittp
 * Date: Jan 28, 2011

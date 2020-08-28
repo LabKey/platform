@@ -23,8 +23,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.SimpleHasHtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.CohortFilter.Type;
 import org.labkey.study.model.CohortImpl;
@@ -46,7 +46,7 @@ import java.util.Set;
  */
 public class CohortFilterFactory
 {
-    public static enum Params implements EnumHasHtmlString<Params>
+    public enum Params implements SimpleHasHtmlString
     {
         cohortFilterType
         {
@@ -169,7 +169,7 @@ public class CohortFilterFactory
     }
 
 
-    static enum CohortFilterField
+    enum CohortFilterField
     {
         currentCohortLabel("ParticipantId/Cohort/Label"){
             @Override

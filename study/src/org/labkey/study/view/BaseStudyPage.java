@@ -16,12 +16,20 @@
 
 package org.labkey.study.view;
 
-import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.study.model.*;
-import org.labkey.api.jsp.JspBase;
 import org.labkey.api.data.Container;
+import org.labkey.api.jsp.JspBase;
 import org.labkey.api.security.User;
-import org.labkey.api.study.*;
+import org.labkey.api.study.Visit;
+import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.study.model.AssaySpecimenConfigImpl;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.LocationImpl;
+import org.labkey.study.model.ProductImpl;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.TreatmentImpl;
+import org.labkey.study.model.VisitImpl;
 
 import java.util.List;
 

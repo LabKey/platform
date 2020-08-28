@@ -274,10 +274,10 @@
             for (Portal.WebPart menu : model.getCustomMenus())
             {
                 String safeName = getSafeName(menu);
-                %>__menus[<%=PageFlowUtil.jsString(safeName)%>] = {};<%
+                %>__menus[<%=q(safeName)%>] = {};<%
                     for (Map.Entry<String,String> entry : menu.getPropertyMap().entrySet())
                     {
-                        %>__menus[<%=PageFlowUtil.jsString(safeName)%>][<%=PageFlowUtil.jsString(entry.getKey())%>] = <%=PageFlowUtil.jsString(entry.getValue())%>;<%
+                        %>__menus[<%=q(safeName)%>][<%=q(entry.getKey())%>] = <%=q(entry.getValue())%>;<%
                     }
             }
         %>

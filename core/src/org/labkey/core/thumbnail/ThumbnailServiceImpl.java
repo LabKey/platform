@@ -15,7 +15,8 @@
  */
 package org.labkey.core.thumbnail;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -43,7 +44,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class ThumbnailServiceImpl implements ThumbnailService
 {
-    private static final Logger LOG = Logger.getLogger(ThumbnailServiceImpl.class);
+    private static final Logger LOG = LogManager.getLogger(ThumbnailServiceImpl.class);
     private static final BlockingQueue<ThumbnailRenderingBean> QUEUE = new LinkedBlockingQueue<>(1000);
     private static final ThumbnailGeneratingThread THREAD = new ThumbnailGeneratingThread();
 

@@ -140,8 +140,8 @@ public class StudySimpleExportTest extends StudyBaseTest
 
         DomainFormPanel fieldsEditor = editDatasetPage.getFieldsPanel();
         fieldsEditor.manuallyDefineFields(new FieldDefinition("TestInt").setLabel("TestInt").setType(FieldDefinition.ColumnType.Integer)
-                .setValidator(new FieldDefinition.RangeValidator("numberValidator", "numberValidator",
-                        "TestInt must equals '999'.", FieldDefinition.RangeType.Equals, "999")).setRequired(false));
+                .setValidators(List.of(new FieldDefinition.RangeValidator("numberValidator", "numberValidator",
+                        "TestInt must equals '999'.", FieldDefinition.RangeType.Equals, "999"))).setRequired(false));
         fieldsEditor.addField(new FieldDefinition("TestString").setLabel("TestRequiredString").setType(FieldDefinition.ColumnType.String)
                 .setRequired(true));
         // Format "TestDate" as "Date"

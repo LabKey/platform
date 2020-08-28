@@ -35,8 +35,8 @@ public class JobStatusLogView extends ReaderView
     private String _previousLine;
     private String _previousLogLevel;
 
-    private static final Set<String> ERROR_LOG_LEVELS = new CaseInsensitiveHashSet(PageFlowUtil.set("ERROR", "FATAL"));
-    private static final Set<String> LOG_LEVELS = new CaseInsensitiveHashSet(PageFlowUtil.set("DEBUG", "INFO", "WARN", "ERROR", "FATAL"));
+    public static final Set<String> ERROR_LOG_LEVELS = new CaseInsensitiveHashSet(PageFlowUtil.set("ERROR", "FATAL"));
+    public static final Set<String> LOG_LEVELS = new CaseInsensitiveHashSet(PageFlowUtil.set("DEBUG", "INFO", "WARN", "ERROR", "FATAL"));
 
     public JobStatusLogView(InputStream in, boolean showDetails, @Nullable String prefix, @Nullable String suffix)
     {

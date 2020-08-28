@@ -26,6 +26,13 @@ public interface HasHtmlString extends DOM.Renderable
      */
     HtmlString getHtmlString();
 
+    /**
+     * Must be consistent with {@code HtmlString}; see above. This method definition is a no-op (Object implements toString()),
+     * but included here as reminder of the consistency requirement. Also makes for easy inspection to verify consistency.
+     * @return A String that's consistent with {@code HtmlString}
+     */
+    String toString();
+
     @Override
     default Appendable appendTo(Appendable builder)
     {

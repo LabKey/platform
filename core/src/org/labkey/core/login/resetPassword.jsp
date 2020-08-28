@@ -36,7 +36,7 @@
     ActionURL doneURL = AppProps.getInstance().getHomePageActionURL();
     String errors = formatMissedErrorsStr("form");
 %>
-<labkey:form method="POST" action="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>" className="auth-form">
+<labkey:form method="POST" action="<%=buildURL(LoginController.ResetPasswordAction.class)%>" className="auth-form">
     <div class="auth-header">Reset Password</div>
     <% if (errors.length() > 0) { %>
         <%=unsafe(errors)%>

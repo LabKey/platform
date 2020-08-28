@@ -25,7 +25,7 @@
     JspView<AuthenticationConfigurationForm> me = (JspView<AuthenticationConfigurationForm>) HttpView.currentView();
     AuthenticationConfigurationForm form = me.getModelBean();
 %>
-<labkey:form action="<%=h(buildURL(TestSsoController.ValidateAction.class))%>" method="post" layout="horizontal">
+<labkey:form action="<%=buildURL(TestSsoController.ValidateAction.class)%>" method="post" layout="horizontal">
     <input type="hidden" name="configuration" value="<%=h(form.getConfiguration())%>">
     <labkey:input type="text" name="email" value="" size="50"
                   label="SSO Test Authentication"

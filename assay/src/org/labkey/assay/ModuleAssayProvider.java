@@ -16,7 +16,8 @@
 
 package org.labkey.assay;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
@@ -24,6 +25,15 @@ import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayDataType;
+import org.labkey.api.assay.AssayPipelineProvider;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssaySaveHandler;
+import org.labkey.api.assay.AssayTableMetadata;
+import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.assay.TsvDataHandler;
+import org.labkey.api.assay.actions.AssayRunUploadForm;
+import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataRunInput;
@@ -46,15 +56,6 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.assay.actions.AssayRunUploadForm;
-import org.labkey.api.assay.actions.UploadWizardAction;
-import org.labkey.api.assay.AssayDataType;
-import org.labkey.api.assay.AssayPipelineProvider;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssaySaveHandler;
-import org.labkey.api.assay.AssayTableMetadata;
-import org.labkey.api.assay.AssayUrls;
-import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.PageFlowUtil;
@@ -91,7 +92,7 @@ import java.util.Set;
  */
 public class ModuleAssayProvider extends TsvAssayProvider
 {
-    private static final Logger LOG = Logger.getLogger(ModuleAssayProvider.class);
+    private static final Logger LOG = LogManager.getLogger(ModuleAssayProvider.class);
     private static final String DOMAINS_DIR_NAME = "domains";
 
     public static class ModuleAssayException extends RuntimeException

@@ -16,11 +16,11 @@
 package org.labkey.api.laboratory.assay;
 
 import org.json.JSONObject;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 

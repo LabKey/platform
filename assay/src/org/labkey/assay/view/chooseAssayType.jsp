@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.assay.AssayProvider" %>
+<%@ page import="org.labkey.api.assay.AssayService" %>
+<%@ page import="org.labkey.api.assay.AssayUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
 <%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
-<%@ page import="org.labkey.api.assay.AssayProvider" %>
-<%@ page import="org.labkey.api.assay.AssayService" %>
-<%@ page import="org.labkey.api.assay.AssayUrls" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>

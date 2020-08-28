@@ -15,7 +15,6 @@
  */
 package org.labkey.issue.view;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.BaseWebPartFactory;

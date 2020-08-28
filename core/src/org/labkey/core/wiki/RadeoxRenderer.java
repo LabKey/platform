@@ -16,7 +16,8 @@
 package org.labkey.core.wiki;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Before;
@@ -24,6 +25,7 @@ import org.junit.Test;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
@@ -646,7 +648,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
      */
     public static class LinkTestFilter extends LocaleRegexTokenFilter
     {
-        private static final Logger log = Logger.getLogger(org.radeox.filter.LinkTestFilter.class);
+        private static final Logger log = LogManager.getLogger(org.radeox.filter.LinkTestFilter.class);
         private MessageFormat urlFormatter;
 
 
@@ -885,7 +887,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         private void test(String wiki, String html)
         {
             assertEquals(html, HtmlString.toString(_r.format(wiki).getHtml()));
-            assertEquals(WikiRenderingService.WIKI_PREFIX + html + WikiRenderingService.WIKI_SUFFIX, _wrs.getFormattedHtml(WikiRendererType.RADEOX, wiki));
+            assertEquals(HtmlStringBuilder.of(WikiRenderingService.WIKI_PREFIX).append(HtmlString.unsafe(html)).append(WikiRenderingService.WIKI_SUFFIX).getHtmlString(), _wrs.getFormattedHtml(WikiRendererType.RADEOX, wiki));
         }
 
         @Test

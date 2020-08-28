@@ -50,6 +50,18 @@ public class PropertyValidatorImpl implements IPropertyValidator
     }
 
     @Override
+    public int getPropertyId()
+    {
+        return _validator.getPropertyId();
+    }
+
+    @Override
+    public void setPropertyId(int propertyId)
+    {
+        edit().setPropertyId(propertyId);
+    }
+
+    @Override
     public String getName()
     {
         return _validator.getName();
@@ -163,11 +175,18 @@ public class PropertyValidatorImpl implements IPropertyValidator
 
         if (isNew())
         {
+            if (0 == _validator.getPropertyId())
+                throw new IllegalStateException("Validator requires a valid propertyId");
             setContainer(container.getId());
             return new PropertyValidatorImpl(Table.insert(user, DomainPropertyManager.get().getTinfoValidator(), _validator));
         }
         else
-            return new PropertyValidatorImpl(Table.update(user, DomainPropertyManager.get().getTinfoValidator(), _validator, getRowId()));
+        {
+            String cid = _validator.getContainer();
+            int propid = _validator.getPropertyId();
+            int rowid = _validator.getRowId();
+            return new PropertyValidatorImpl(Table.update(user, DomainPropertyManager.get().getTinfoValidator(), _validator, new Object[] {cid, propid, rowid}));
+        }
     }
 
     public void delete()

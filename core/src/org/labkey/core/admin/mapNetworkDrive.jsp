@@ -16,12 +16,12 @@
      */
 %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
+<%@ page import="org.labkey.api.settings.NetworkDriveProps" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.FilesSiteSettingsAction" %>
-<%@ page import="org.labkey.api.settings.NetworkDriveProps" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -95,7 +95,7 @@
     <% } %>
 </labkey:form>
 
-<labkey:form name="networkdrivetest" action="<%=h(buildURL(AdminController.ShowNetworkDriveTestAction.class))%>" enctype="multipart/form-data" method="post" target="_new">
+<labkey:form name="networkdrivetest" action="<%=buildURL(AdminController.ShowNetworkDriveTestAction.class)%>" enctype="multipart/form-data" method="post" target="_new">
     <input type="hidden" name="networkDriveLetter" value="" />
     <input type="hidden" name="networkDrivePath" value="" />
     <input type="hidden" name="networkDriveUser" value="" />

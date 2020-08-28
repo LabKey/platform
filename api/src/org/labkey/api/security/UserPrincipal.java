@@ -22,8 +22,8 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.security.roles.Role;
 
-import java.security.Principal;
 import java.io.Serializable;
+import java.security.Principal;
 import java.util.Set;
 
 /**

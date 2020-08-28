@@ -95,7 +95,7 @@
             vertical-align: bottom;
         }
     </style>
-    <labkey:form action="<%=h(buildURL(AdminController.RenameFolderAction.class))%>" method="post">
+    <labkey:form action="<%=buildURL(AdminController.RenameFolderAction.class)%>" method="post">
         <%=formatMissedErrors("form")%>
         <ul class="name-setings-form">
             <li>

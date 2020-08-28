@@ -4,11 +4,13 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Iterators;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.jsp.taglib.ErrorsTag;
+import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.context.NoSuchMessageException;
@@ -50,6 +52,86 @@ public class DOM
     {
         Appendable appendTo(Appendable sb);
     }
+
+
+    /*
+     * BODY_PLACE_HOLDER and TemplateAppendableWrapper are used to make it possible to efficiently implement an HTML wrapper
+     * frame using DOM, even if the 'body' of the frame is not available yet.  For instance this can use use to implement
+     * Jsp tags that extend BodyTagSupport.  It can also be used to implement subclasses of WebPartFrame.
+     *
+     * The DOM Renderable objects write to the normal output Appendable until it hits BODY_PLACE_HOLDER.  At that point the
+     * output is captured in an StringBuilder.  The caller can stash the markup generated after BODY_PLACE_HOLDER and
+     * render that markup after the body is rendered.
+     */
+
+    private static final String BODY_PLACE_HOLDER_STRING = "<!-- org.labkey.api.util.DOM.BODYCONTENT!" + GUID.makeHash() + "-->";
+
+    public static final Renderable BODY_PLACE_HOLDER = sb -> {
+        try
+        {
+            if (sb instanceof TemplateAppendableWrapper)
+                ((TemplateAppendableWrapper)sb).bufferRemainingOutput();
+            else
+                sb.append(BODY_PLACE_HOLDER_STRING);
+            return sb;
+        }
+        catch (Exception x)
+        {
+            throw UnexpectedException.wrap(x);
+        }
+    };
+
+    private static final class TemplateAppendableWrapper implements Appendable
+    {
+        final Appendable out;
+        final StringBuilder sb = new StringBuilder();
+        Appendable current;
+
+        TemplateAppendableWrapper(Appendable out)
+        {
+            this.out = out;
+            this.current = out;
+        }
+
+        void bufferRemainingOutput()
+        {
+            this.current = sb;
+        }
+
+        HtmlString getEndMarkup()
+        {
+            return HtmlString.unsafe(sb.toString());
+        }
+
+        @Override
+        public Appendable append(CharSequence csq) throws IOException
+        {
+            current.append(csq);
+            return this;
+        }
+
+        @Override
+        public Appendable append(CharSequence csq, int start, int end) throws IOException
+        {
+            current.append(csq, start, end);
+            return this;
+        }
+
+        @Override
+        public Appendable append(char c) throws IOException
+        {
+            current.append(c);
+            return this;
+        }
+    }
+
+    public static HtmlString renderTemplate(Renderable r, Appendable out)
+    {
+        var wrapper = new TemplateAppendableWrapper(out);
+        r.appendTo(wrapper);
+        return wrapper.getEndMarkup();
+    }
+
 
     public enum Element
     {
@@ -268,7 +350,16 @@ public class DOM
         multiple,
         muted,
         name,
-        novalidate,
+        novalidate
+        {
+            @Override
+            Appendable render(Appendable builder, Object value) throws IOException
+            {
+                if (value != Boolean.FALSE)
+                    builder.append(" novalidate");
+                return builder;
+            }
+        },
         onabort,
         onafterprint,
         onbeforeprint,
@@ -675,12 +766,12 @@ public class DOM
                 for (var attr : attrs)
                 {
                     if (attr.getKey() == Attribute.method && "POST".equalsIgnoreCase(String.valueOf(attr.getValue())))
+                    {
                         isPost = true;
+                        break;
+                    }
                 }
-            var csrfInput = !isPost ? null : DOM.INPUT(at(
-                    Attribute.type,"hidden",
-                    Attribute.name,CSRFUtil.csrfName,
-                    Attribute.value,CSRFUtil.getExpectedToken(HttpView.currentContext())));
+            var csrfInput = !isPost ? null : new CsrfInput(HttpView.currentContext());
             return DOM.FORM(attrs, body, csrfInput);
         }
 
@@ -728,7 +819,7 @@ public class DOM
                     catch (NoSuchMessageException nsme)
                     {
                         ExceptionUtil.logExceptionToMothership(context.getRequest(), nsme);
-                        Logger log = Logger.getLogger(ErrorsTag.class);
+                        Logger log = LogManager.getLogger(ErrorsTag.class);
                         log.error("Failed to find a message: " + error, nsme);
                         return createHtmlFragment("Unknown error: " + error, BR());
                     }
@@ -765,9 +856,16 @@ public class DOM
         html.append(" ");
         html.append(key.name());
         html.append("=\"");
-        String s = String.valueOf(value);
-        if (StringUtils.isNotBlank(s))
-            html.append(filter(s));
+        if (value instanceof HtmlString)
+        {
+            html.append(value.toString());
+        }
+        else
+        {
+            String s = String.valueOf(value);
+            if (StringUtils.isNotBlank(s))
+                html.append(filter(s));
+        }
         html.append("\"");
         return html;
     }
@@ -802,6 +900,11 @@ public class DOM
         else if (body.getClass().isArray())
         {
             for (var i : (Object[]) body)
+                appendBody(builder, i);
+        }
+        else if (body instanceof Iterable)
+        {
+            for (var i : ((Iterable)body))
                 appendBody(builder, i);
         }
         else if (body instanceof Stream)

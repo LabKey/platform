@@ -44,7 +44,7 @@
         width: 100px;
     }
 </style>
-<labkey:form method="POST" id="setPasswordForm" action="<%=h(buildURL(bean.action))%>" layout="horizontal" className="auth-form">
+<labkey:form method="POST" id="setPasswordForm" action="<%=buildURL(bean.action)%>" layout="horizontal" className="auth-form">
     <% if (bean.title != null) { %>
         <div class="auth-header"><%=h(bean.title)%></div>
     <% } %>

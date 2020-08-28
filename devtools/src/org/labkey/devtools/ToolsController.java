@@ -134,7 +134,7 @@ public class ToolsController extends SpringActionController
                             try (BufferedReader reader = Files.newBufferedReader(gaPath, StringUtilsLabKey.DEFAULT_CHARSET))
                             {
                                 reader.lines()
-                                    .filter(line -> !line.isEmpty() && !line.startsWith("*"))
+                                    .filter(line -> !line.isEmpty() && !line.startsWith("*") && !line.startsWith("#"))
                                     .forEach(line -> {
                                         int idx = line.indexOf(' ');
                                         String filename = line.substring(0, idx);

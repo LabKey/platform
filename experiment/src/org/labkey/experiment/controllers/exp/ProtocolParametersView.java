@@ -16,11 +16,8 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import org.labkey.api.view.JspView;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExperimentService;
-
-import java.sql.SQLException;
+import org.labkey.api.view.JspView;
 
 /**
  * User: jeckels

@@ -15,7 +15,8 @@
  */
 package org.labkey.api.module;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
@@ -44,7 +45,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
  */
 public class ModuleResourceResolver implements Resolver
 {
-    private static final Logger LOG = Logger.getLogger(ModuleResourceResolver.class);
+    private static final Logger LOG = LogManager.getLogger(ModuleResourceResolver.class);
     private static final BlockingCache<String, Resource> CACHE = CacheManager.getBlockingStringKeyCache(50000, CacheManager.DAY, "Module resources", null);
     private static final FileSystemWatcher WATCHER = FileSystemWatchers.get();
 

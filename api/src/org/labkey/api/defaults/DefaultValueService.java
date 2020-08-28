@@ -16,15 +16,15 @@
 package org.labkey.api.defaults;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Manages sets of values to be used as defaults when a user comes to a data entry form.

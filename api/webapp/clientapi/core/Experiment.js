@@ -467,10 +467,10 @@ LABKEY.Experiment.saveBatch({
 
         /**
          * Saves materials.
-         * @deprecated Use LABKEY.Query.insertRows({schemaName: 'Samples', queryName: '&lt;sample set name>', ...});
+         * @deprecated Use LABKEY.Query.insertRows({schemaName: 'Samples', queryName: '&lt;sample types name>', ...});
          *
          * @param config An object that contains the following configuration parameters
-         * @param config.name name of the sample set
+         * @param config.name name of the sample types
          * @param config.materials An array of LABKEY.Exp.Material objects to be saved.
          * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with the following parameters:
@@ -905,7 +905,7 @@ LABKEY.Exp.SampleSet.prototype.getDomain = function (config)
 };
 
 /**
- * Create a new Sample Set definition.
+ * Create a new Sample Type definition.
  * @param {Function} config.success Required callback function.
  * @param {Function} [config.failure] Failure callback function.
  * @param {LABKEY.Domain.DomainDesign} config.domainDesign The domain design to save.
@@ -922,7 +922,7 @@ LABKEY.Exp.SampleSet.prototype.getDomain = function (config)
  * @example
  * var domainDesign = {
  *   name: "BoyHowdy",
- *   description: "A client api created sample set",
+ *   description: "A client api created sample types",
  *   fields: [{
  *     name: 'TestName',
  *     label: 'The First Field',

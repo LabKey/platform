@@ -15,6 +15,9 @@
  */
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.api.ExpObject;
+
 public class DataProtocolInput extends AbstractProtocolInput
 {
     protected Integer _dataClassId;
@@ -33,5 +36,11 @@ public class DataProtocolInput extends AbstractProtocolInput
     public String getObjectType()
     {
         return ExpDataImpl.DEFAULT_CPAS_TYPE;
+    }
+
+    @Override
+    public @Nullable ExpDataProtocolInputImpl getExpObject()
+    {
+        return new ExpDataProtocolInputImpl(this);
     }
 }

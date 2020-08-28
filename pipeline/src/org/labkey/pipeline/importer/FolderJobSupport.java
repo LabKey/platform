@@ -18,8 +18,6 @@ package org.labkey.pipeline.importer;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.writer.VirtualFile;
 
-import java.io.File;
-
 /**
  * User: cnathe
  * Date: Jan 18, 2012

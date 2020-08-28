@@ -70,7 +70,7 @@
                     for (int col = 0; col < plate.getColumns(); col++)
                     {
                 %>
-                <td align=right class="<%=String.format("%s-%s-%s", plateIndex+1, row, col)%>">
+                <td align=right class="<%=h(String.format("%s-%s-%s", plateIndex+1, row, col))%>">
                     <%=h(wellFormat != null ? String.format(wellFormat, plate.getWell(row, col).getValue()) : Luc5Assay.intString(plate.getWell(row, col).getValue()))%></td>
                 <%
                     }

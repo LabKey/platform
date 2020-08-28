@@ -17,9 +17,11 @@ package org.labkey.core;
 
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Appender;
-import org.apache.log4j.Logger;
-import org.apache.log4j.RollingFileAppender;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AdminConsoleService;
@@ -43,6 +45,7 @@ import org.labkey.api.data.dialect.SqlDialectRegistry;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
+import org.labkey.api.external.tools.ExternalToolsViewService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.message.settings.MessageConfigService;
@@ -209,6 +212,7 @@ import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
+import org.labkey.core.security.ApiKeyViewProvider;
 import org.labkey.core.security.SecurityApiActions;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.security.validators.PermissionsValidator;
@@ -219,6 +223,7 @@ import org.labkey.core.thumbnail.ThumbnailServiceImpl;
 import org.labkey.core.user.UserController;
 import org.labkey.core.vcs.VcsServiceImpl;
 import org.labkey.core.view.ShortURLServiceImpl;
+import org.labkey.core.view.external.tools.ExternalToolsViewServiceImpl;
 import org.labkey.core.view.template.bootstrap.CoreWarningProvider;
 import org.labkey.core.view.template.bootstrap.ViewServiceImpl;
 import org.labkey.core.view.template.bootstrap.WarningServiceImpl;
@@ -257,7 +262,7 @@ import java.util.Set;
  */
 public class CoreModule extends SpringModule implements SearchService.DocumentProvider
 {
-    private static final Logger LOG = Logger.getLogger(CoreModule.class);
+    private static final Logger LOG = LogManager.getLogger(CoreModule.class);
 
     static
     {
@@ -290,6 +295,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         ContainerService.setInstance(new ContainerServiceImpl());
         FolderSerializationRegistry.setInstance(new FolderSerializationRegistryImpl());
+        ExternalToolsViewService.setInstance(new ExternalToolsViewServiceImpl());
+        ExternalToolsViewService.get().registerExternalAccessViewProvider(new ApiKeyViewProvider());
 
         // Register the default DataLoaders during init so they are available to sql upgrade scripts
         DataLoaderServiceImpl dls = new DataLoaderServiceImpl();
@@ -821,18 +828,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 {
                 }
 
-                Logger logger = Logger.getLogger(ActionsTsvWriter.class);
+                Logger logger = LogManager.getLogger(ActionsTsvWriter.class);
 
                 if (null != logger)
                 {
-                    LOG.info("Starting to log statistics for actions prior to web application shut down");
-                    Appender appender = logger.getAppender("ACTION_STATS");
-
-                    if (appender instanceof RollingFileAppender)
-                        ((RollingFileAppender)appender).rollOver();
-                    else
-                        Logger.getLogger(CoreModule.class).warn("Could not rollover the action stats tsv file--there was no appender named ACTION_STATS, or it is not a RollingFileAppender.");
-
                     StringBuilder buf = new StringBuilder();
 
                     try (TSVWriter writer = new ActionsTsvWriter())
@@ -841,7 +840,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     }
                     catch (IOException e)
                     {
-                        Logger.getLogger(CoreModule.class).error("Exception exporting action stats", e);
+                        LogManager.getLogger(CoreModule.class).error("Exception exporting action stats", e);
                     }
 
                     logger.info(buf.toString());

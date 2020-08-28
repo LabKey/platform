@@ -15,13 +15,13 @@
  */
 package org.labkey.study.query;
 
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.LookupForeignKey;
 import org.labkey.study.StudySchema;
 
 /**

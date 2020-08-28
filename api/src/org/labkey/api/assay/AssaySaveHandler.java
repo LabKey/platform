@@ -16,7 +16,6 @@
 
 package org.labkey.api.assay;
 
-import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.exp.api.ExperimentSaveHandler;
 
 /**

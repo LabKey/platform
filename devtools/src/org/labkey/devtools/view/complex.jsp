@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.collections4.IteratorUtils" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.api.action.SpringActionController" %>
 <%@ page import="org.labkey.devtools.TestController" %>
 <%@ page import="org.springframework.validation.BindingResult" %>
 <%@ page import="org.springframework.validation.Errors" %>
@@ -26,7 +26,6 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Enumeration" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.apache.commons.collections4.IteratorUtils" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -35,7 +34,9 @@
         String err = formatErrorsForPathStr(path);
         if (null != err && err.length() > 0)
         {
-            out.println("<tr><td colspan=2>" + err + "</td></tr>");
+            out.print(unsafe("<tr><td colspan=2>"));
+            out.print(unsafe(err)); // TODO: Switch once formatErrorsForPathStr() returns HtmlString
+            out.println(unsafe("</td></tr>"));
         }
     }
 
@@ -65,7 +66,7 @@
     {%>
         <table class="labkey-bordered labkey-alternate-row">
             <%errorRow(out,"form.beans["+i+"].a");%>
-            <tr><td>a</td><td><input type=checkbox name="beans[<%=i%>].a" <%=checked(form.getBeans().get(i).getA())%>><input type=hidden name="<%=SpringActionController.FIELD_MARKER%>beans[<%=i%>].a"></td></tr>
+            <tr><td>a</td><td><input type=checkbox name="beans[<%=i%>].a" <%=checked(form.getBeans().get(i).getA())%>><input type=hidden name="<%=getSpringFieldMarker()%>beans[<%=i%>].a"></td></tr>
             <%errorRow(out,"form.beans["+i+"].b");%>
             <tr><td>b</td><td><input name="beans[<%=i%>].b" value="<%=h(form.getBeans().get(i).getB())%>"></td></tr>
             <%errorRow(out,"form.beans["+i+"].c");%>
@@ -117,22 +118,30 @@ for (ObjectError e : getAllErrors(pageContext))
 <%=h(form.toString())%>
 </pre>
 <%
-    out.println("<hr><b>attributes</b><br>");
+    out.println(unsafe("<hr><b>attributes</b><br>"));
     Enumeration<String> e = request.getAttributeNames();
     while (e.hasMoreElements())
     {
         String name = e.nextElement();
-        out.println("<b>" + h(name) + ":</b> " + h(String.valueOf(request.getAttribute(name))) + "<br>");
+        out.print(unsafe("<b>"));
+        out.print(h(name));
+        out.print(unsafe(":</b> "));
+        out.print(h(String.valueOf(request.getAttribute(name))));
+        out.print(unsafe("<br>"));
     }
 
-    out.println("<hr><b>parameters</b><br>");
+    out.println(unsafe("<hr><b>parameters</b><br>"));
     Enumeration<String> f = request.getParameterNames();
     while (f.hasMoreElements())
     {
         String name = f.nextElement();
-        out.println("<b>" + h(name) + ":</b> " + h(String.valueOf(request.getParameter(name))) + "<br>");
+        out.print(unsafe("<b>"));
+        out.print(h(name));
+        out.print(unsafe(":</b> "));
+        out.print(h(String.valueOf(request.getParameter(name))));
+        out.print(unsafe("<br>"));
     }
-    out.println("<br>");
+    out.println(unsafe("<br>"));
 %><hr>
 </div>
 <%!

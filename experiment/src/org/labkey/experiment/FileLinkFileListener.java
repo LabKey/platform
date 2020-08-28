@@ -15,7 +15,8 @@
  */
 package org.labkey.experiment;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -47,7 +48,7 @@ import java.util.Collection;
  */
 public class FileLinkFileListener implements FileListener
 {
-    private static final Logger LOG = Logger.getLogger(FileLinkFileListener.class);
+    private static final Logger LOG = LogManager.getLogger(FileLinkFileListener.class);
 
     @Override
     public String getSourceName()

@@ -16,15 +16,15 @@
 
 package org.labkey.api.audit.query;
 
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 
-import java.util.Set;
 import java.util.Collections;
+import java.util.Set;
 
 /**
  * User: Karl Lum

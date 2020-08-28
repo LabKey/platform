@@ -820,6 +820,16 @@ public class JSONArray implements HasHtmlString
     }
 
     /**
+     * Make a pretty-printed JSON text of this JSONArray
+     * @param indentFactor Number of spaces to add to each level of indentation
+     * @return HtmlString holding the JSON representation
+     */
+    public HtmlString getHtmlString(int indentFactor)
+    {
+        return HtmlString.unsafe(toString(indentFactor));
+    }
+
+    /**
      * Make a prettyprinted JSON text of this JSONArray.
      * Warning: This method assumes that the data structure is acyclical.
      * @param indentFactor The number of spaces to add to each level of

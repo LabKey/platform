@@ -16,9 +16,15 @@
 
 package org.labkey.query.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseTableType;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryUpdateService;
@@ -39,7 +45,7 @@ import java.util.List;
 
 public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable<ExternalSchema> implements UpdateableTableInfo
 {
-    private static final Logger _logger = Logger.getLogger(ExternalSchemaTable.class);
+    private static final Logger _logger = LogManager.getLogger(ExternalSchemaTable.class);
 
     private Container _container;
     protected TableType _metadata;

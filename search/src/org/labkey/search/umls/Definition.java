@@ -20,7 +20,6 @@ import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.ResultSetSelector;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Map;
 

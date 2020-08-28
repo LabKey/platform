@@ -20,12 +20,12 @@ import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.pipeline.protocol.xml.PipelineProtocolPropsDocument;
 import org.labkey.api.util.NetworkDrive;
 
-import java.io.IOException;
-import java.io.File;
 import java.beans.PropertyDescriptor;
-import java.util.Map;
-import java.util.HashMap;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A protocol captures settings to be used when running a pipeline. Values are often passed to tools

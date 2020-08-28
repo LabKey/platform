@@ -18,7 +18,6 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.json.JSONArray" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.data.xml.externalSchema.TemplateSchemaType" %>
@@ -120,7 +119,7 @@ var external = <%=isExternal%>;
 var schemaIndex = 3;
 
 schemaType = new Ext.form.Hidden({name:'schemaType', value:schemaType});
-var userSchemaText = new Ext.form.TextField({name:'userSchemaName', fieldLabel:'Schema Name', allowBlank:false, helpPopup:{title:'Schema Name', html:<%=PageFlowUtil.qh(bean.getHelpHTML("UserSchemaName"))%>}, value:<%=q(def.getUserSchemaName())%>});
+var userSchemaText = new Ext.form.TextField({name:'userSchemaName', fieldLabel:'Schema Name', allowBlank:false, helpPopup:{title:'Schema Name', html:<%=qh(bean.getHelpHTML("UserSchemaName"))%>}, value:<%=q(def.getUserSchemaName())%>});
 
 // Admin can only choose from the data sources in the drop down.  Selecting a data source updates the schemas drop down below.
 var dataSourceCombo = new Ext.form.ComboBox({
@@ -146,7 +145,7 @@ var templateComboBox = new LABKEY.ext.ComboBox({
     valueField:'name',
     displayField:'name',
     hidden:external,
-    helpPopup:{title:'Schema Template', html:<%=PageFlowUtil.qh(bean.getHelpHTML("SchemaTemplate"))%>},
+    helpPopup:{title:'Schema Template', html:<%=qh(bean.getHelpHTML("SchemaTemplate"))%>},
     value: <%=q(initialTemplateName)%>
 });
 
@@ -166,7 +165,7 @@ var sourceSchemaCombo = new Ext.form.ComboBox({
     editable:true,
     triggerAction:'all',
     helpPopup:{title:'Source Schema Name',
-    html:<%=PageFlowUtil.qh(bean.getHelpHTML("SourceSchemaName"))%>},
+    html:<%=qh(bean.getHelpHTML("SourceSchemaName"))%>},
     value:<%=q(def.getSourceSchemaName() != null ? def.getSourceSchemaName() : (initialTemplate != null ? initialTemplate.getSourceSchemaName() : ""))%>,
     disabled:<%=initialTemplate != null%>,
     tpl: '<tpl for="."><div class="x-combo-list-item">{field1:htmlEncode}</div></tpl>'
@@ -180,7 +179,7 @@ if (external)
         fieldLabel:'Editable',
         helpPopup:{
             title:'Editable',
-            html:<%=PageFlowUtil.qh(bean.getHelpHTML("Editable"))%>
+            html:<%=qh(bean.getHelpHTML("Editable"))%>
         }
     });
     var indexableCheckBox = new LABKEY.ext.Checkbox({
@@ -188,7 +187,7 @@ if (external)
         fieldLabel:'Index Schema Meta Data',
         helpPopup:{
             title:'Index Schema Meta Data',
-            html:<%=PageFlowUtil.qh(bean.getHelpHTML("Indexable"))%>
+            html:<%=qh(bean.getHelpHTML("Indexable"))%>
         },
         checked:<%=def.isIndexable()%>
     });
@@ -197,7 +196,7 @@ if (external)
         fieldLabel:'Fast Cache Refresh',
         helpPopup:{
             title:'Fast Cache Refresh',
-            html:<%=PageFlowUtil.qh(bean.getHelpHTML("FastCacheRefresh"))%>
+            html:<%=qh(bean.getHelpHTML("FastCacheRefresh"))%>
         },
         checked:<%=def.isFastCacheRefresh()%>
     });
@@ -209,7 +208,7 @@ var metaDataTextArea = new Ext.form.TextArea({
     width:800, height:400,
     resizable:true,
     autoCreate:{tag:"textarea", style:"font-family:'Courier'", autocomplete:"off", wrap:"off"},
-    helpPopup:{title:'Meta Data', html:<%=PageFlowUtil.qh(bean.getHelpHTML("MetaData"))%>},
+    helpPopup:{title:'Meta Data', html:<%=qh(bean.getHelpHTML("MetaData"))%>},
     value: <%=q(def.getMetaData() != null ? def.getMetaData() : (initialTemplate != null && initialTemplate.getMetadata() != null ? initialTemplate.getMetadata().toString() : ""))%>,
     disabled:<%=initialTemplate != null%>
 });
@@ -236,7 +235,7 @@ var initialTables = <%=new JSONArray(tables)%>;
 // create the table grid
 var grid = new Ext.grid.GridPanel({
     fieldLabel:'Tables',
-    helpPopup:{title:'Tables', html:<%=PageFlowUtil.qh(bean.getHelpHTML("Tables"))%>},
+    helpPopup:{title:'Tables', html:<%=qh(bean.getHelpHTML("Tables"))%>},
     title:'&nbsp;',
     store: tablesStore,
     columns: [
@@ -260,7 +259,7 @@ var DatabaseSchemaNamePanel = Ext.extend(Ext.Panel, {
         this.layoutConfig = {columns:2};
         this.items = [sourceSchemaCombo, includeSystemCheckBox];
         this.border = false;
-        this.helpPopup = {title:'Source Schema Name', html:<%=PageFlowUtil.qh(bean.getHelpHTML("SourceSchemaName"))%>};
+        this.helpPopup = {title:'Source Schema Name', html:<%=qh(bean.getHelpHTML("SourceSchemaName"))%>};
         this.defaults = {cellCls:'systemSchemaStyleClass'};
         DatabaseSchemaNamePanel.superclass.initComponent.apply(this, arguments);
     }

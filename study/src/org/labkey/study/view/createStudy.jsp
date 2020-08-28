@@ -37,7 +37,7 @@
 </style>
 
 <labkey:errors/>
-<labkey:form action="<%=h(buildURL(StudyController.CreateStudyAction.class))%>" method="POST">
+<labkey:form action="<%=buildURL(StudyController.CreateStudyAction.class)%>" method="POST">
         <labkey:panel title="Look and Feel Properties">
             <table class="lk-fields-table">
                 <tr>

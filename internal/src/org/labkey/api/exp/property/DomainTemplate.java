@@ -15,7 +15,7 @@
  */
 package org.labkey.api.exp.property;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
@@ -102,21 +102,21 @@ public class DomainTemplate
     {
         if (moduleName == null || groupName == null || templateName == null)
         {
-            Logger.getLogger(DomainTemplate.class).warn("Module, group, and template name required to get domain template");
+            LogManager.getLogger(DomainTemplate.class).warn("Module, group, and template name required to get domain template");
             return null;
         }
 
         Module module = ModuleLoader.getInstance().getModule(moduleName);
         if (module == null)
         {
-            Logger.getLogger(DomainTemplate.class).warn("Module '" + moduleName + "' for domain template not found");
+            LogManager.getLogger(DomainTemplate.class).warn("Module '" + moduleName + "' for domain template not found");
             return null;
         }
 
         DomainTemplateGroup group = DomainTemplateGroup.get(module, groupName);
         if (group == null)
         {
-            Logger.getLogger(DomainTemplate.class).warn("Domain template group '" + groupName + "' not found in module '" + moduleName + "'");
+            LogManager.getLogger(DomainTemplate.class).warn("Domain template group '" + groupName + "' not found in module '" + moduleName + "'");
             return null;
         }
 

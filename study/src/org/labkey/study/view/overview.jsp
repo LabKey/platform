@@ -106,7 +106,7 @@
         out.print(viewLink);
     }
 %>
-<labkey:form action="<%=h(buildURL(StudyController.OverviewAction.class))%>" name="changeFilterForm" method="GET">
+<labkey:form action="<%=buildURL(StudyController.OverviewAction.class)%>" name="changeFilterForm" method="GET">
     <input type="hidden" name="showAll" value="<%= text(bean.showAll ? "1" : "0") %>">
     <br><br>
     <%

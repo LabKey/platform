@@ -16,14 +16,23 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import org.labkey.api.view.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.Collapsible;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.NavTreeManager;
+import org.labkey.api.view.SimpleTextDisplayElement;
+import org.labkey.api.view.VBox;
 import org.springframework.validation.BindException;
 
 /**

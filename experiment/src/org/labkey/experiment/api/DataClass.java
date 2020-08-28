@@ -17,6 +17,7 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -103,5 +104,11 @@ public class DataClass extends IdentifiableEntity implements Comparable<DataClas
     public int compareTo(@NotNull DataClass o)
     {
         return getName().compareToIgnoreCase(o.getName());
+    }
+
+    @Override
+    public @Nullable ExpDataClassImpl getExpObject()
+    {
+        return new ExpDataClassImpl(this);
     }
 }

@@ -19,7 +19,8 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jfree.util.StringUtils;
@@ -59,7 +60,7 @@ public class DateUtil
     {
     }
 
-    private static final Logger LOG = Logger.getLogger(DateUtil.class);
+    private static final Logger LOG = LogManager.getLogger(DateUtil.class);
     private static final Map<Integer, TimeZone> tzCache = new ConcurrentHashMap<>();
     private static final Locale _localeDefault = Locale.getDefault();
     private static final TimeZone _timezoneDefault = TimeZone.getDefault();
@@ -250,7 +251,8 @@ public class DateUtil
         // North America
         est(-5*60),edt(-4*60),cst(-6*60),cdt(-5*60),mst(-7*60),mdt(-6*60),pst(-8*60),pdt(-7*60),
         // Europe
-        cet("CET"), wet("WET")
+        wet("WET"), cet("CET"), eet("EET"),
+        west(+1*60), cest(+2*60), eest(+3*60)
         ;
 
         TimeZone tz=null;
@@ -2046,6 +2048,34 @@ Parse:
             assertEquals(onlyDate.getTime(), expectedDate.getTime());
             assertEquals(sqlDate.getTime(), combineDateTime(onlyDate, onlyTime).getTime());
             assertEquals(onlyTime.getTime(), new Date(70, 0, 1, 0, 0, 0).getTime());
+        }
+
+        int h(long m)
+        {
+            long hrs = m / (60*60*1000L);
+            return (int)(hrs % 24);
+        }
+
+        @Test
+        public void summerTime()
+        {
+            // see https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=41109
+            // NOTE: WET, CET, EET automatically adjust according to the date (summer/winter).
+            //       WEST, CEST, EEST do not adjust. They are hard coded to summer offset.
+            assertEquals(12, h(parseDateTime("2020/1/1 12:00pm WET")));
+            assertEquals(11, h(parseDateTime("2020/6/1 12:00pm WET")));
+            assertEquals(11, h(parseDateTime("2020/1/1 12:00pm WEST")));
+            assertEquals(11, h(parseDateTime("2020/6/1 12:00pm WEST")));
+
+            assertEquals(11, h(parseDateTime("2020/1/1 12:00pm CET")));
+            assertEquals(10, h(parseDateTime("2020/6/1 12:00pm CET")));
+            assertEquals(10, h(parseDateTime("2020/1/1 12:00pm CEST")));
+            assertEquals(10, h(parseDateTime("2020/6/1 12:00pm CEST")));
+
+            assertEquals(10, h(parseDateTime("2020/1/1 12:00pm EET")));
+            assertEquals( 9, h(parseDateTime("2020/6/1 12:00pm EET")));
+            assertEquals( 9, h(parseDateTime("2020/1/1 12:00pm EEST")));
+            assertEquals( 9, h(parseDateTime("2020/6/1 12:00pm EEST")));
         }
     }
 }

@@ -26,6 +26,7 @@ import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Visit;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HtmlView;
@@ -110,9 +111,9 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
             return _currentURL;
         }
 
-        public String getDescriptionHtml()
+        public HtmlString getDescriptionHtml()
         {
-            String html = getStudy().getDescriptionHtml();
+            String html = getStudy().getDescriptionHtml().toString();
 
             // Hack!  Remove div so we can nestle the edit icon up to the text
             if (html.endsWith("</div>"))
@@ -121,7 +122,7 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
                 html = html.substring(0, html.length() - 6);
             }
 
-            return html;
+            return HtmlString.unsafe(html);
         }
 
         public String getInvestigator(){

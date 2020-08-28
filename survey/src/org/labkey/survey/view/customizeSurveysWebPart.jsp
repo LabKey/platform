@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
@@ -92,7 +91,7 @@ This webpart displays a list of survey instances created by the end user. Select
                         {
                             surveyDesignPanel.getForm().submit({
                                 submitEmptyText: false,
-                                url : <%=PageFlowUtil.jsString(h(part.getCustomizePostURL(ctx)))%>,
+                                url : <%=q(part.getCustomizePostURL(ctx).getLocalURIString())%>,
                                 success : function(){},
                                 failure : function(){}
                             });

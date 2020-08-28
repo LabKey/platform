@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.exp.api.ExpProtocol"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
 
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%

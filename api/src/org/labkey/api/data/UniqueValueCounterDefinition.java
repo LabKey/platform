@@ -15,8 +15,6 @@
  */
 package org.labkey.api.data;
 
-import org.labkey.api.exp.api.ExpSampleSet;
-
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;

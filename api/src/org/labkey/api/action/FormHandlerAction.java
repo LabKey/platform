@@ -16,9 +16,9 @@
 
 package org.labkey.api.action;
 
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.validation.BindException;
 import org.labkey.api.view.NavTree;
+import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
 /**
  * User: matthewb

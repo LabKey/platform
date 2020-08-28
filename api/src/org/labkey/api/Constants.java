@@ -40,7 +40,7 @@ public class Constants
      */
     public static double getEarliestUpgradeVersion()
     {
-        return 18.1;
+        return 18.2;
     }
 
     /**
@@ -75,6 +75,14 @@ public class Constants
     public static int getMaxContainers()
     {
         return 100_000;
+    }
+
+    /**
+     * Returns the maximum number of projects supported by the system
+     */
+    public static int getMaxProjects()
+    {
+        return 1000;
     }
 
     public static Collection<Double> getMajorSchemaVersions()

@@ -19,11 +19,11 @@ package org.labkey.mothership;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.JsonPathException;
-import com.jayway.jsonpath.PathNotFoundException;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jfree.chart.ChartColor;
 import org.jfree.chart.ChartFactory;
@@ -37,7 +37,6 @@ import org.jfree.data.time.Day;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.xy.XYDataset;
-import org.json.JSONObject;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -58,8 +57,6 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.DateUtil;
@@ -73,7 +70,6 @@ import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -82,6 +78,8 @@ import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.mothership.query.MothershipSchema;
+import org.labkey.mothership.view.ExceptionListWebPart;
+import org.labkey.mothership.view.LinkBar;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -112,7 +110,7 @@ import java.util.stream.Collectors;
 public class MothershipController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(MothershipController.class);
-    private static final Logger _log = Logger.getLogger(MothershipController.class);
+    private static final Logger _log = LogManager.getLogger(MothershipController.class);
 
     public MothershipController()
     {
@@ -192,7 +190,7 @@ public class MothershipController extends SpringActionController
             settings.getBaseSort().insertSortColumn(FieldKey.fromParts("BuildTime"), Sort.SortDirection.DESC);
 
             QueryView queryView = schema.createView(getViewContext(), settings, errors);
-            return new VBox(getLinkBar(), queryView);
+            return new VBox(new LinkBar(), queryView);
         }
 
         @Override
@@ -368,16 +366,7 @@ public class MothershipController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
-            QuerySettings settings = schema.getSettings(getViewContext(), "ExceptionSummary", MothershipSchema.EXCEPTION_STACK_TRACE_TABLE_NAME);
-            settings.getBaseSort().insertSortColumn(FieldKey.fromParts("ExceptionStackTraceId"), Sort.SortDirection.DESC);
-
-            QueryView queryView = schema.createView(getViewContext(), settings, errors);
-            queryView.setShowDetailsColumn(false);
-            queryView.setShadeAlternatingRows(true);
-            queryView.setShowBorders(true);
-
-            return new VBox(getLinkBar(), queryView);
+            return new ExceptionListWebPart(getUser(), getContainer(), errors);
         }
 
         @Override
@@ -405,7 +394,7 @@ public class MothershipController extends SpringActionController
 
             QueryView gridView = schema.createView(getViewContext(), settings, errors);
 
-            return new VBox(getLinkBar(), gridView);
+            return new VBox(new LinkBar(), gridView);
         }
 
         @Override
@@ -454,7 +443,7 @@ public class MothershipController extends SpringActionController
             form.setCreateIssueURL(MothershipManager.get().getCreateIssueURL(getContainer()));
             form.setIssuesContainer(MothershipManager.get().getIssuesContainer(getContainer()));
 
-            return new VBox(getLinkBar(), new JspView<>("/org/labkey/mothership/editUpgradeMessage.jsp", form));
+            return new VBox(new LinkBar(), new JspView<>("/org/labkey/mothership/editUpgradeMessage.jsp", form));
         }
 
         @Override
@@ -919,7 +908,7 @@ public class MothershipController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             HtmlView graphView = new HtmlView("Installations", "<img src=\"mothership-showActiveInstallationGraph.view\" height=\"400\" width=\"800\" /><br/><br/><img src=\"mothership-showRegistrationInstallationGraph.view\" height=\"400\" width=\"800\" />");
-            return new VBox(getLinkBar(), new UnbuggedExceptionsGridView(), new UnassignedExceptionsGridView(), graphView);
+            return new VBox(new LinkBar(), new UnbuggedExceptionsGridView(), new UnassignedExceptionsGridView(), graphView);
         }
     }
 
@@ -981,11 +970,6 @@ public class MothershipController extends SpringActionController
             return MothershipManager.get().getUpgradeMessage(getContainer());
         }
         return "";
-    }
-
-    private JspView getLinkBar()
-    {
-        return new JspView("/org/labkey/mothership/view/linkBar.jsp");
     }
 
     public static abstract class ServerInfoForm

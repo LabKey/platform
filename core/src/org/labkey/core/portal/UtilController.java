@@ -15,7 +15,8 @@
  */
 package org.labkey.core.portal;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.RequiresPermission;
@@ -41,7 +42,7 @@ import java.io.File;
 public class UtilController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(UtilController.class);
-    private static final Logger _log = Logger.getLogger(ProjectController.class);
+    private static final Logger _log = LogManager.getLogger(ProjectController.class);
 
     public UtilController()
     {

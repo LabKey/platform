@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.query.controllers.OlapController" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -124,14 +125,14 @@
     <tr>
         <td valign="top" class="labkey-form-label">Defaults:</td>
         <td>
-            <textarea name="defaults" id="defaults"><%=text(defaults == null ? "" : defaults.toString(OlapController.APP_CONTEXT_JSON_INDENT))%></textarea>
+            <textarea name="defaults" id="defaults"><%=defaults == null ? HtmlString.EMPTY_STRING : defaults.getHtmlString(OlapController.APP_CONTEXT_JSON_INDENT)%></textarea>
         </td>
     </tr>
 
     <tr>
         <td valign="top" class="labkey-form-label">Values:</td>
         <td>
-            <textarea name="values" id="values"><%=text(values == null ? "" : values.toString(OlapController.APP_CONTEXT_JSON_INDENT))%></textarea>
+            <textarea name="values" id="values"><%=values == null ? HtmlString.EMPTY_STRING : values.getHtmlString(OlapController.APP_CONTEXT_JSON_INDENT)%></textarea>
         </td>
     </tr>
 </p>

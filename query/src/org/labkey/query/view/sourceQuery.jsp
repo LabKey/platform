@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.query.QueryAction"%>
 <%@ page import="org.labkey.api.query.QueryDefinition"%>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -98,18 +97,18 @@
         var query = {
             schema    : LABKEY.ActionURL.getParameter('schemaName'),
             query     : LABKEY.ActionURL.getParameter('query.queryName'),
-            executeUrl: <%= PageFlowUtil.jsString(null==exeUrl ? null : exeUrl.toString()) %>,
+            executeUrl: <%= q(null==exeUrl ? null : exeUrl.toString()) %>,
             canEdit   : <%= canEdit %>,
             canDelete : <%= canDelete %>,
             canEditSql   : <%= canEdit && queryDef.isSqlEditable() %>,
             canEditMetaData   : <%=canEdit && queryDef.isMetadataEditable() %>,
             builtIn   : <%= builtIn %>,
-            metadataEdit : <%= queryDef.isMetadataEditable() %>,
-            propEdit     : <%=  queryDef.isMetadataEditable() && !builtIn %>,
-            queryText    : <%=PageFlowUtil.jsString(action._form.ff_queryText)%>,
-            metadataText : <%=PageFlowUtil.jsString(action._form.ff_metadataText)%>,
-            help         : <%=PageFlowUtil.qh(new HelpTopic(sqlHelpTopic).toString())%>,
-            metadataHelp : <%=PageFlowUtil.qh(new HelpTopic(metadataHelpTopic).toString())%>
+            metadataEdit : <%=queryDef.isMetadataEditable()%>,
+            propEdit     : <%=queryDef.isMetadataEditable() && !builtIn%>,
+            queryText    : <%=q(action._form.ff_queryText)%>,
+            metadataText : <%=q(action._form.ff_metadataText)%>,
+            help         : <%=q(new HelpTopic(sqlHelpTopic).getHelpTopicHref())%>,
+            metadataHelp : <%=q(new HelpTopic(metadataHelpTopic).getHelpTopicHref())%>
         };
 
         var tabMap = {

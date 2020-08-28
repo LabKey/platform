@@ -33,7 +33,7 @@
                 <label>
                     <input type="checkbox" id="searchable" name="searchable"<%=checked(getContainer().isSearchable())%>>
                 Include this folder's content in multi-folder search results</label>
-                <input type="hidden" name="<%=text(SpringActionController.FIELD_MARKER)%>searchable">
+                <input type="hidden" name="<%=getSpringFieldMarker()%>searchable">
             </td>
         </tr>
     </table>

@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.labkey.api.action.PermissionCheckableAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -41,6 +42,7 @@ import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.security.roles.SubmitterRole;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.UnauthorizedException;
@@ -48,6 +50,7 @@ import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -137,7 +140,7 @@ public abstract class AbstractActionPermissionTest extends Assert
                     UserManager.deleteUser(oldUser.getUserId());
             }
         }
-        catch(Exception e)
+        catch (Exception e)
         {}
     }
 
@@ -153,7 +156,7 @@ public abstract class AbstractActionPermissionTest extends Assert
                 users.put(email, user);
             }
         }
-        catch(Exception e)
+        catch (Exception e)
         {}
 
         return users;
@@ -166,17 +169,17 @@ public abstract class AbstractActionPermissionTest extends Assert
             assertPermission(_c, action, user);
 
             assertPermission(_c, action,
-                _users.get(READER_EMAIL), _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
-                _users.get(FOLDER_ADMIN_EMAIL),
+                    _users.get(READER_EMAIL), _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
+                    _users.get(FOLDER_ADMIN_EMAIL),
                 /*
                 ProjectAdmin doesn't automatically get read permission in subfolder!
                 _users.get(PROJECT_ADMIN_EMAIL),
                 */
-                _users.get(APPLICATION_ADMIN_EMAIL), _users.get(SITE_ADMIN_EMAIL)
+                    _users.get(APPLICATION_ADMIN_EMAIL), _users.get(SITE_ADMIN_EMAIL)
             );
 
             assertNoPermission(_c, action,
-                _users.get(SUBMITTER_EMAIL)
+                    _users.get(SUBMITTER_EMAIL)
             );
         }
     }
@@ -188,15 +191,15 @@ public abstract class AbstractActionPermissionTest extends Assert
             assertPermission(_c, action, user);
 
             assertPermission(_c, action,
-                _users.get(SUBMITTER_EMAIL), _users.get(AUTHOR_EMAIL),
-                _users.get(EDITOR_EMAIL), _users.get(FOLDER_ADMIN_EMAIL),
-                /* _users.get(PROJECT_ADMIN_EMAIL), */
-                _users.get(APPLICATION_ADMIN_EMAIL),
-                _users.get(SITE_ADMIN_EMAIL)
+                    _users.get(SUBMITTER_EMAIL), _users.get(AUTHOR_EMAIL),
+                    _users.get(EDITOR_EMAIL), _users.get(FOLDER_ADMIN_EMAIL),
+                    /* _users.get(PROJECT_ADMIN_EMAIL), */
+                    _users.get(APPLICATION_ADMIN_EMAIL),
+                    _users.get(SITE_ADMIN_EMAIL)
             );
 
             assertNoPermission(_c, action,
-                _users.get(READER_EMAIL)
+                    _users.get(READER_EMAIL)
             );
         }
     }
@@ -208,14 +211,14 @@ public abstract class AbstractActionPermissionTest extends Assert
             assertPermission(_c, action, user);
 
             assertPermission(_c, action,
-                _users.get(EDITOR_EMAIL), _users.get(FOLDER_ADMIN_EMAIL),
-                /* _users.get(PROJECT_ADMIN_EMAIL), */
-                _users.get(APPLICATION_ADMIN_EMAIL),
-                _users.get(SITE_ADMIN_EMAIL)
+                    _users.get(EDITOR_EMAIL), _users.get(FOLDER_ADMIN_EMAIL),
+                    /* _users.get(PROJECT_ADMIN_EMAIL), */
+                    _users.get(APPLICATION_ADMIN_EMAIL),
+                    _users.get(SITE_ADMIN_EMAIL)
             );
 
             assertNoPermission(_c, action,
-                _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL), _users.get(AUTHOR_EMAIL)
+                    _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL), _users.get(AUTHOR_EMAIL)
             );
         }
     }
@@ -225,15 +228,28 @@ public abstract class AbstractActionPermissionTest extends Assert
         assertForAdminPermission(_c, user, actions);
     }
 
+    // NOTE: Some actions vary required permissions based on GET vs POST
+    // choose supported Http method for permission test
+    private HttpUtil.Method supportedMethod(PermissionCheckableAction action, HttpUtil.Method m)
+    {
+        MethodsAllowed annotation = action.getClass().getAnnotation(MethodsAllowed.class);
+        if (null == annotation)
+            return m;
+        HttpUtil.Method[] allowed = annotation.value();
+        if (Arrays.stream(allowed).anyMatch(a -> m==a))
+            return m;
+        return m== HttpUtil.Method.POST ? HttpUtil.Method.GET : HttpUtil.Method.POST;
+    }
+
     public void assertForAdminPermission(Container c, User user, PermissionCheckableAction... actions)
     {
         for (PermissionCheckableAction action : actions)
         {
             assertPermission(c, action, user);
 
-            assertPermission(c, action,
-                _users.get(APPLICATION_ADMIN_EMAIL), _users.get(SITE_ADMIN_EMAIL)
-            );
+            assertPermission(c, action, _users.get(SITE_ADMIN_EMAIL));
+
+            assertPermission(HttpUtil.Method.GET, c, action, _users.get(APPLICATION_ADMIN_EMAIL));
 
             if (c.isRoot())
                 assertNoPermission(c, action, _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL));
@@ -243,8 +259,8 @@ public abstract class AbstractActionPermissionTest extends Assert
                 assertPermission(c, action, _users.get(FOLDER_ADMIN_EMAIL));
 
             assertNoPermission(c, action,
-                _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL),
-                _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL)
+                    _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL),
+                    _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL)
             );
         }
     }
@@ -261,14 +277,14 @@ public abstract class AbstractActionPermissionTest extends Assert
             assertPermission(c, action, user);
 
             assertPermission(c, action,
-                _users.get(SITE_ADMIN_EMAIL)
+                    _users.get(SITE_ADMIN_EMAIL)
             );
 
             assertNoPermission(c, action,
-                _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL),
-                _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
-                _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL),
-                _users.get(APPLICATION_ADMIN_EMAIL)
+                    _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL),
+                    _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
+                    _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL),
+                    _users.get(APPLICATION_ADMIN_EMAIL)
             );
         }
     }
@@ -285,13 +301,13 @@ public abstract class AbstractActionPermissionTest extends Assert
             assertPermission(c, action, user);
 
             assertPermission(c, action,
-                _users.get(APPLICATION_ADMIN_EMAIL), _users.get(SITE_ADMIN_EMAIL)
+                    _users.get(APPLICATION_ADMIN_EMAIL), _users.get(SITE_ADMIN_EMAIL)
             );
 
             assertNoPermission(c, action,
-                _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL),
-                _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
-                _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL)
+                    _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL),
+                    _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
+                    _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL)
             );
         }
     }
@@ -303,10 +319,10 @@ public abstract class AbstractActionPermissionTest extends Assert
             assertPermission(_c, action, user, _users.get(SITE_ADMIN_EMAIL));
 
             assertNoPermission(_c, action,
-                _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL),
-                _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
-                _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL),
-                _users.get(APPLICATION_ADMIN_EMAIL)
+                    _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL),
+                    _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
+                    _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL),
+                    _users.get(APPLICATION_ADMIN_EMAIL)
             );
         }
     }
@@ -316,30 +332,30 @@ public abstract class AbstractActionPermissionTest extends Assert
         for (PermissionCheckableAction action : actions)
         {
             assertPermission(_c, action,
-                _users.get(FOLDER_ADMIN_EMAIL),
-                _users.get(APPLICATION_ADMIN_EMAIL),
-                _users.get(SITE_ADMIN_EMAIL)
+                    _users.get(FOLDER_ADMIN_EMAIL),
+                    _users.get(APPLICATION_ADMIN_EMAIL),
+                    _users.get(SITE_ADMIN_EMAIL)
             );
 
             assertNoPermission(_c, action,
-                _users.get(SUBMITTER_EMAIL),
-                _users.get(READER_EMAIL),
-                _users.get(AUTHOR_EMAIL),
-                _users.get(EDITOR_EMAIL),
-                _users.get(TRUSTED_AUTHOR_EMAIL)
+                    _users.get(SUBMITTER_EMAIL),
+                    _users.get(READER_EMAIL),
+                    _users.get(AUTHOR_EMAIL),
+                    _users.get(EDITOR_EMAIL),
+                    _users.get(TRUSTED_AUTHOR_EMAIL)
             );
 
             // If TrustedAnalystRole exists then TRUSTED_EDITOR_EMAIL user should have permission to execute this action; if not, it shouldn't
             if (null != TRUSTED_ANALYST_ROLE)
             {
                 assertPermission(_c, action,
-                    _users.get(TRUSTED_EDITOR_EMAIL)
+                        _users.get(TRUSTED_EDITOR_EMAIL)
                 );
             }
             else
             {
                 assertNoPermission(_c, action,
-                    _users.get(TRUSTED_EDITOR_EMAIL)
+                        _users.get(TRUSTED_EDITOR_EMAIL)
                 );
             }
         }
@@ -347,9 +363,15 @@ public abstract class AbstractActionPermissionTest extends Assert
 
     private void assertPermission(Container c, PermissionCheckableAction action, User... users)
     {
+        assertPermission(HttpUtil.Method.POST, c, action, users);
+    }
+
+    private void assertPermission(HttpUtil.Method defaultMethod, Container c, PermissionCheckableAction action, User... users)
+    {
+        HttpUtil.Method method = supportedMethod(action, defaultMethod);
         for (User u : users)
         {
-            action.setViewContext(makeContext(u, c));
+            action.setViewContext(makeContext(u, c, method));
 
             try
             {
@@ -382,6 +404,12 @@ public abstract class AbstractActionPermissionTest extends Assert
 
     private ViewContext makeContext(User u, Container c)
     {
+        // use POST by default, because MutableApiAction does not support GET and will throw BadRequestException
+        return makeContext(u, c, HttpUtil.Method.POST);
+    }
+
+    private ViewContext makeContext(User u, Container c, final HttpUtil.Method method)
+    {
         HttpServletRequest w = new HttpServletRequestWrapper(TestContext.get().getRequest())
         {
             @Override
@@ -390,6 +418,12 @@ public abstract class AbstractActionPermissionTest extends Assert
                 if (CSRFUtil.csrfName.equals(name))
                     return CSRFUtil.getExpectedToken(TestContext.get().getRequest(), null);
                 return super.getParameter(name);
+            }
+
+            @Override
+            public String getMethod()
+            {
+                return method.name();
             }
         };
 

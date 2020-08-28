@@ -16,8 +16,9 @@
 package org.labkey.api.security;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.apache.log4j.Priority;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -30,9 +31,9 @@ import java.util.List;
  * Date: 2013-02-01
  */
 
-public class SecurityLogger extends Logger
+public class SecurityLogger extends org.apache.logging.log4j.core.Logger
 {
-    private static final Logger _log = Logger.getLogger(SecurityManager.class);
+    private static final Logger _log = LogManager.getLogger(SecurityManager.class);
 
     static SecurityLogger instance = new SecurityLogger("SecurityLogger");
 
@@ -102,7 +103,7 @@ public class SecurityLogger extends Logger
 
     private SecurityLogger(String name)
     {
-        super(name);
+        super((LoggerContext) LogManager.getContext(), name, _log.getMessageFactory());
     }
 
 
@@ -208,12 +209,6 @@ public class SecurityLogger extends Logger
     public boolean isDebugEnabled()
     {
         return _log.isDebugEnabled();
-    }
-
-    @Override
-    public boolean isEnabledFor(Priority level)
-    {
-        return _log.isEnabledFor(level);
     }
 
     @Override
