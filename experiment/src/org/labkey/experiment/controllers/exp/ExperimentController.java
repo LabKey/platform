@@ -130,6 +130,7 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFactory;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresNoPermission;
@@ -2059,7 +2060,7 @@ public class ExperimentController extends SpringActionController
         public Object execute(ParseForm form, BindException errors) throws Exception
         {
             if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
-                throw new BadRequestException("Expected MultipartHttpServletRequest when posting files.", HttpServletResponse.SC_BAD_REQUEST, null);
+                throw new BadRequestException("Expected MultipartHttpServletRequest when posting files.");
 
             MultipartFile formFile = getFileMap().get("file");
             if (formFile == null)
@@ -3660,6 +3661,28 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
+        protected void configureLoader(DataLoader loader) throws IOException
+        {
+            super.configureLoader(loader);
+
+            // Issue 40302: Unable to use samples or data class with integer like names as material or data input
+            // treat lineage columns as string values
+            ColumnDescriptor[] cols = loader.getColumns();
+            for (ColumnDescriptor col : cols)
+            {
+                String name = col.name.toLowerCase();
+                if (name.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase() + "/") ||
+                    name.startsWith(ExpMaterial.MATERIAL_OUTPUT_CHILD.toLowerCase() + "/") ||
+                    name.startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase() + "/") ||
+                    name.startsWith(ExpData.DATA_OUTPUT_CHILD.toLowerCase() + "/"))
+                {
+                    col.clazz = String.class;
+                    col.converter = TabLoader.noopConverter;
+                }
+            }
+        }
+
+        @Override
         protected Map<String, String> getRenamedColumns()
         {
             final String renameParamPrefix = "importAlias.";
@@ -3753,7 +3776,7 @@ public class ExperimentController extends SpringActionController
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
             if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
-                throw new BadRequestException("Expected MultipartHttpServletRequest when posting files.", HttpServletResponse.SC_BAD_REQUEST, null);
+                throw new BadRequestException("Expected MultipartHttpServletRequest when posting files.");
 
             if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
             {

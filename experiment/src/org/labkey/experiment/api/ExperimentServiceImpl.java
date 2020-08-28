@@ -138,23 +138,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
@@ -616,6 +600,18 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
+    @Nullable
+    public ExpMaterialImpl getExpMaterial(Container c, User u, int rowId, @Nullable ExpSampleType sampleType)
+    {
+        List<ExpMaterialImpl> materials = getExpMaterials(c, u, List.of(rowId), sampleType);
+        if (materials.isEmpty())
+            return null;
+        if (materials.size() > 1)
+            throw new IllegalArgumentException("Expected 0 or 1 samples, got: " + materials.size());
+        return materials.get(0);
+    }
+
+    @Override
     @NotNull
     public List<ExpMaterialImpl> getExpMaterials(Collection<Integer> rowids)
     {
@@ -638,6 +634,27 @@ public class ExperimentServiceImpl implements ExperimentService
         selector.forEach(material -> materials.add(new ExpMaterialImpl(material)), Material.class);
 
         return materials;
+    }
+
+    @Override
+    @Nullable
+    public List<ExpMaterialImpl> getExpMaterials(Container container, User user, Collection<Integer> rowIds, @Nullable ExpSampleType sampleType)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addInClause(FieldKey.fromParts("RowId"), rowIds);
+        if (sampleType != null)
+            filter.addCondition(FieldKey.fromParts("CpasType"), sampleType.getLSID());
+
+        // SampleType may live in different container
+        ContainerFilter.CurrentPlusProjectAndShared containerFilter = new ContainerFilter.CurrentPlusProjectAndShared(container, user);
+        SimpleFilter.FilterClause clause = containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container"));
+        filter.addClause(clause);
+
+        return new TableSelector(getTinfoMaterial(), TableSelector.ALL_COLUMNS, filter, null)
+                .getArrayList(Material.class)
+                .stream()
+                .map(ExpMaterialImpl::new)
+                .collect(toList());
     }
 
     @Override
@@ -1432,69 +1449,83 @@ public class ExperimentServiceImpl implements ExperimentService
 
     @Override
     public ExpData findExpData(Container c, User user,
+                            @NotNull ExpDataClass dataClass,
                             @NotNull String dataClassName, String dataName,
                             RemapCache cache, Map<Integer, ExpData> dataCache)
             throws ValidationException
     {
-        Integer rowId;
         try
         {
-            rowId = ConvertHelper.convert(dataName, Integer.class);
+            Integer rowId = ConvertHelper.convert(dataName, Integer.class);
+
+            // first attempt to resolve by rowId
+            ExpData data = dataCache.computeIfAbsent(rowId, (x) -> getExpData(dataClass, rowId));
+            if (data != null)
+                return data;
         }
         catch (ConversionException e1)
         {
-            try
-            {
-                rowId = cache.remap(ExpSchema.SCHEMA_EXP_DATA, dataClassName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, dataName);
-                if (rowId == null)
-                    return null;
-            }
-            catch (ConversionException e2)
-            {
-                throw new ValidationException("Failed to resolve '" + dataName + "' into a data. " + e2.getMessage());
-            }
+            // ignore
         }
 
-        ExperimentServiceImpl svc = ExperimentServiceImpl.get();
-        return rowId == null ? null : dataCache.computeIfAbsent(rowId, svc::getExpData);
+        // Issue 40302: Unable to use samples or data class with integer like names as material or data input
+        // Either dataName failed to parse as a rowId or the rowId didn't resolve. Attempt to resolve by alternate key.
+        try
+        {
+            Integer rowId = cache.remap(ExpSchema.SCHEMA_EXP_DATA, dataClassName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, dataName);
+            if (rowId == null)
+                return null;
+
+            return dataCache.computeIfAbsent(rowId, (x) -> getExpData(dataClass, rowId));
+        }
+        catch (ConversionException e2)
+        {
+            throw new ValidationException("Failed to resolve '" + dataName + "' into a data. " + e2.getMessage());
+        }
     }
 
     @Override
-    public @Nullable ExpMaterial findExpMaterial(Container c, User user, String sampleTypeName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
+    public @Nullable ExpMaterial findExpMaterial(Container c, User user, ExpSampleType sampleType, String sampleTypeName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
             throws ValidationException
     {
-        Integer rowId;
         try
         {
-            rowId = ConvertHelper.convert(sampleName, Integer.class);
+            Integer rowId = ConvertHelper.convert(sampleName, Integer.class);
+
+            // first attempt to resolve by rowId
+            ExpMaterial material = materialCache.computeIfAbsent(rowId, (x) -> getExpMaterial(c, user, rowId, sampleType));
+            if (material != null)
+                return material;
         }
         catch (ConversionException e1)
         {
-            try
-            {
-                if (sampleTypeName == null)
-                    rowId = cache.remap(ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
-                else
-                    rowId = cache.remap(SamplesSchema.SCHEMA_SAMPLES, sampleTypeName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
-
-                if (rowId == null)
-                    return null;
-            }
-            catch (ConversionException e2)
-            {
-                StringBuilder sb = new StringBuilder();
-                sb.append("Failed to resolve '" + sampleName + "' into a sample.");
-                if (sampleTypeName == null)
-                {
-                    sb.append(" Use 'MaterialInputs/<SampleTypeName>' column header to resolve parent samples from a specific SampleType.");
-                }
-                sb.append(" " + e2.getMessage());
-                throw new ValidationException(sb.toString());
-            }
+            // ignore
         }
 
-        ExperimentServiceImpl svc = ExperimentServiceImpl.get();
-        return materialCache.computeIfAbsent(rowId, svc::getExpMaterial);
+        // Issue 40302: Unable to use samples or data class with integer like names as material or data input
+        // Either sampleName failed to parse as a rowId or the rowId didn't resolve. Attempt to resolve by alternate key.
+        try
+        {
+            Integer rowId = (sampleTypeName == null) ?
+                    cache.remap(ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName) :
+                    cache.remap(SamplesSchema.SCHEMA_SAMPLES, sampleTypeName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
+
+            if (rowId == null)
+                return null;
+
+            return materialCache.computeIfAbsent(rowId, (x) -> getExpMaterial(c, user, rowId, sampleType));
+        }
+        catch (ConversionException e2)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Failed to resolve '" + sampleName + "' into a sample.");
+            if (sampleTypeName == null)
+            {
+                sb.append(" Use 'MaterialInputs/<SampleTypeName>' column header to resolve parent samples from a specific SampleType.");
+            }
+            sb.append(" " + e2.getMessage());
+            throw new ValidationException(sb.toString());
+        }
     }
 
     @Override

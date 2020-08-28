@@ -126,21 +126,21 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
-    public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, QueryService.AuditAction auditAction, List<Map<String, Object>>[] parameters)
+    public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, List<Map<String, Object>>[] parameters)
     {
         if (getUserSchema().getName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
         {
             // Special case sample auditing to help build a useful timeline view
-            SampleTypeService.get().addAuditEvent(user, container, this, auditBehavior, auditAction, parameters);
+            SampleTypeService.get().addAuditEvent(user, container, this, auditBehavior, userComment, auditAction, parameters);
         }
         else
         {
-            super.addAuditEvent(user, container, auditBehavior, auditAction, parameters);
+            super.addAuditEvent(user, container, auditBehavior, userComment, auditAction, parameters);
         }
     }
 
     @Override
-    public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, QueryService.AuditAction auditAction, Map<String, Object> parameters)
+    public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, Map<String, Object> parameters)
     {
         // Special case sample auditing to help build a useful timeline view
         if (getUserSchema().getName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
@@ -164,11 +164,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     }
                 }
             }
-            SampleTypeService.get().addAuditEvent(user, container, this, auditBehavior, auditAction, Collections.singletonList(params));
+            SampleTypeService.get().addAuditEvent(user, container, this, auditBehavior, userComment, auditAction, Collections.singletonList(params));
         }
         else
         {
-            super.addAuditEvent(user, container, auditBehavior, auditAction, parameters);
+            super.addAuditEvent(user, container, auditBehavior, userComment, auditAction, parameters);
         }
     }
 
