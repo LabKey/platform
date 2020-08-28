@@ -318,7 +318,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
         errors = new ArrayList<>();
         Path dir = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY);
-        Collection<TableType> metadata = QueryService.get().findMetadataOverride(this, name, false, true, errors, dir);
+        Collection<TableType> metadata = QueryService.get().findMetadataOverride(this, name, false, false, errors, dir);
         if (errors.isEmpty())
             table.overlayMetadata(metadata, this, errors);
     }
