@@ -290,10 +290,10 @@ public abstract class UploadSamplesHelper
      * support for mapping DataClass or SampleSet objects as a parent input using the column name format:
      * DataInputs/<data class name> or MaterialInputs/<sample type name>. Either / or . works as a delimiter
      *
-     * @param parentNames set of (parent column name, parent value) pairs.  Parent values that are empty
-     *                    indicate tha parent should be removed.
      * @param runItem the item whose parents are being modified.  If provided, existing parents of the item
      *                will be incorporated into the resolved inputs and outputs
+     * @param parentNames set of (parent column name, parent value) pairs.  Parent values that are empty
+     *                    indicate tha parent should be removed.
      * @throws ExperimentException
      */
     @NotNull
@@ -303,7 +303,8 @@ public abstract class UploadSamplesHelper
                                                                                        RemapCache cache,
                                                                                        Map<Integer, ExpMaterial> materialMap,
                                                                                        Map<Integer, ExpData> dataMap,
-                                                                                       Map<String, ExpSampleType> sampleTypes)
+                                                                                       Map<String, ExpSampleType> sampleTypes,
+                                                                                       Map<String, ExpDataClass> dataClasses)
             throws ValidationException, ExperimentException
     {
         Map<ExpMaterial, String> parentMaterials = new HashMap<>();
@@ -328,7 +329,7 @@ public abstract class UploadSamplesHelper
                 {
                     if (!isEmptyParent)
                     {
-                        ExpMaterial sample = findMaterial(c, user, null, parentValue, cache, materialMap);
+                        ExpMaterial sample = findMaterial(c, user, null, null, parentValue, cache, materialMap);
                         if (sample != null)
                             parentMaterials.put(sample, sampleRole(sample));
                         else
@@ -355,7 +356,7 @@ public abstract class UploadSamplesHelper
                     }
                     else
                     {
-                        ExpMaterial sample = findMaterial(c, user, namePart, parentValue, cache, materialMap);
+                        ExpMaterial sample = findMaterial(c, user, sampleType, namePart, parentValue, cache, materialMap);
                         if (sample != null)
                             parentMaterials.put(sample, sampleRole(sample));
                         else
@@ -365,9 +366,13 @@ public abstract class UploadSamplesHelper
                  }
                 else if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_OUTPUT_CHILD))
                 {
+                    ExpSampleType sampleType = sampleTypes.computeIfAbsent(namePart, (name) -> SampleTypeService.get().getSampleType(c, user, name));
+                    if (sampleType == null)
+                        throw new ValidationException(String.format("Invalid import alias: child SampleType [%1$s] does not exist or may have been deleted", namePart));
+
                     if (!isEmptyParent)
                     {
-                        ExpMaterial sample = findMaterial(c, user, namePart, parentValue, cache, materialMap);
+                        ExpMaterial sample = findMaterial(c, user, sampleType, namePart, parentValue, cache, materialMap);
                         if (sample != null)
                             childMaterials.put(sample, sampleRole(sample));
                         else
@@ -376,8 +381,10 @@ public abstract class UploadSamplesHelper
                 }
                 else if (parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT))
                 {
-                    if (source != null)
-                        ensureTargetColumnLookup(user, c, source, parentColName, "exp.data", namePart);
+                    ExpDataClass dataClass = dataClasses.computeIfAbsent(namePart, (name) -> ExperimentService.get().getDataClass(c, user, name));
+                    if (dataClass == null)
+                        throw new ValidationException(String.format("Invalid import alias: parent DataClass [%1$s] does not exist or may have been deleted", namePart));
+
                     if (isEmptyParent)
                     {
                         if (isMerge)
@@ -385,7 +392,7 @@ public abstract class UploadSamplesHelper
                     }
                     else
                     {
-                        ExpData data = findData(c, user, namePart, parentValue, cache, dataMap);
+                        ExpData data = findData(c, user, dataClass, namePart, parentValue, cache, dataMap);
                         if (data != null)
                             parentData.put(data, dataRole(data, user));
                         else
@@ -394,9 +401,13 @@ public abstract class UploadSamplesHelper
                 }
                 else if (parts[0].equalsIgnoreCase(ExpData.DATA_OUTPUT_CHILD))
                 {
+                    ExpDataClass dataClass = dataClasses.computeIfAbsent(namePart, (name) -> ExperimentService.get().getDataClass(c, user, name));
+                    if (dataClass == null)
+                        throw new ValidationException(String.format("Invalid import alias: child DataClass [%1$s] does not exist or may have been deleted", namePart));
+
                     if (!isEmptyParent)
                     {
-                        ExpData data = findData(c, user, namePart, parentValue, cache, dataMap);
+                        ExpData data = findData(c, user, dataClass, namePart, parentValue, cache, dataMap);
                         if (data != null)
                             childData.put(data, dataRole(data, user));
                         else
@@ -471,33 +482,17 @@ public abstract class UploadSamplesHelper
         return new Lsid.LsidBuilder(source.getMaterialLSIDPrefix() + MATERIAL_LSID_SUFFIX);
     }
 
-    // CONSIDER: This method shouldn't update the domain to make the property into a lookup..
-    private static void ensureTargetColumnLookup(User user, Container c, MaterialSource source, String propName, String schemaName, String queryName) throws ExperimentException
-    {
-        Domain domain = PropertyService.get().getDomain(c, source.getLSID());
-        if (domain != null)
-        {
-            DomainProperty prop = domain.getPropertyByName(propName);
-            if (prop != null && prop.getLookup() == null)
-            {
-                prop.setLookup(new Lookup(c, schemaName, queryName));
-                prop.setHidden(true);
-                domain.save(user);
-            }
-        }
-    }
 
-
-    private static ExpMaterial findMaterial(Container c, User user, String sampleTypeName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
+    private static ExpMaterial findMaterial(Container c, User user, ExpSampleType sampleType, String sampleTypeName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
             throws ValidationException
     {
-        return ExperimentService.get().findExpMaterial(c, user, sampleTypeName, sampleName, cache, materialCache);
+        return ExperimentService.get().findExpMaterial(c, user, sampleType, sampleTypeName, sampleName, cache, materialCache);
     }
 
-    private static ExpData findData(Container c, User user, @NotNull String dataClassName, String dataName, RemapCache cache, Map<Integer, ExpData> dataCache)
+    private static ExpData findData(Container c, User user, @NotNull ExpDataClass dataClass, @NotNull String dataClassName, String dataName, RemapCache cache, Map<Integer, ExpData> dataCache)
             throws ValidationException
     {
-        return ExperimentService.get().findExpData(c, user, dataClassName, dataName, cache, dataCache);
+        return ExperimentService.get().findExpData(c, user, dataClass, dataClassName, dataName, cache, dataCache);
     }
 
     /* this might be generally useful
