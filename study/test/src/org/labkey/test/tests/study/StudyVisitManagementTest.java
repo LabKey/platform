@@ -35,6 +35,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.Study;
 import org.labkey.test.pages.StartImportPage;
+import org.labkey.test.pages.pipeline.PipelineStatusDetailsPage;
 import org.labkey.test.pages.query.ExecuteQueryPage;
 import org.labkey.test.pages.study.DeleteMultipleVisitsPage;
 import org.labkey.test.pages.study.ManageVisitPage;
@@ -188,7 +189,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         // test the reload without first removing the overlapping visits
         importFolderArchiveWithFailureFlag(archive, true, 3, true);
         clickAndWait(Locator.linkWithText("ERROR"));
-        assertElementPresent(Locator.tagContainingText("pre", "ERROR: New visit 2 week Post-V#1 (400.0 - 499.0) overlaps existing visit 2 week Post-V#1 (401.0)"));
+        new PipelineStatusDetailsPage(getDriver()).assertLogTextContains("ERROR: New visit 2 week Post-V#1 (400.0 - 499.0) overlaps existing visit 2 week Post-V#1 (401.0)");
 
         // delete some visits so that the reload will have the failure case
         deleteMultipleVisits(Arrays.asList("2 week Post-V#1", "411.0 - 491.0", "4 week Post-V#1", "1 week Post-V#2"));
@@ -285,7 +286,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     private void verifyUndefinedVisitError(String errorMsgPrefix, @NotNull List<String> definedVisits, @Nullable List<String> undefinedVisits)
     {
         clickAndWait(Locator.linkWithText("ERROR"));
-        assertElementPresent(Locator.tagContainingText("pre", "ERROR: " + errorMsgPrefix + " " + StringUtils.join(undefinedVisits, ", ")));
+        new PipelineStatusDetailsPage(getDriver()).assertLogTextContains(errorMsgPrefix + " " + StringUtils.join(undefinedVisits, ", "));
         verifyStudyVisits(definedVisits, undefinedVisits);
     }
 

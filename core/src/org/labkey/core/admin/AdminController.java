@@ -244,6 +244,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.labkey.api.data.MultiValuedRenderContext.VALUE_DELIMITER_REGEX;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Configuration;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Diagnostics;
 import static org.labkey.api.util.DOM.A;
@@ -5788,7 +5789,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-
+    /** Renders only the groups that are assigned roles in this container */
     private static class FolderGroupColumn extends DataColumn
     {
         private final Set<String> _assignmentSet;
@@ -5809,7 +5810,7 @@ public class AdminController extends SpringActionController
                 StringBuilder sb = new StringBuilder();
                 String delim = "";
 
-                for (String name : value.split(","))
+                for (String name : value.split(VALUE_DELIMITER_REGEX))
                 {
                     if (_assignmentSet.contains(name))
                     {
