@@ -28,15 +28,15 @@ public class NotFoundException extends HttpStatusException
 {
     public NotFoundException()
     {
-        this(null);
+        this(HttpServletResponse.SC_NOT_FOUND + ": page not found");
     }
 
-    public NotFoundException(String string)
+    public NotFoundException(@Nullable String string)
     {
         this(string, null);
     }
     
-    public NotFoundException(String string, @Nullable Throwable cause)
+    public NotFoundException(@Nullable String string, @Nullable Throwable cause)
     {
         super(string, cause, HttpServletResponse.SC_NOT_FOUND);
     }
