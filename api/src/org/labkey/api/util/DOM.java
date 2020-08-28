@@ -549,11 +549,6 @@ public class DOM
                 attrs.add(new Pair<>(key,elseValue));
             return this;
         }
-        public _Attributes id(String id)
-        {
-            at(Attribute.id, id);
-            return this;
-        }
         public _Attributes data(String datakey, Object value)
         {
             if (null == expandos)
@@ -611,6 +606,41 @@ public class DOM
                 it = Iterators.concat(it,(Iterator<Map.Entry<Object, Object>>)(Iterator)expandos.iterator());
             return it;
         }
+
+        // builder style methods
+        public _Attributes colspan(int c)
+        {
+            return at(Attribute.colspan,c);
+        }
+        public _Attributes id(String id)
+        {
+            return at(Attribute.id,id);
+        }
+        public _Attributes method(String m)
+        {
+            return at(Attribute.method,m.toUpperCase());
+        }
+        public _Attributes name(String n)
+        {
+            return at(Attribute.name,n);
+        }
+        public _Attributes type(String t)
+        {
+            return at(Attribute.type,t);
+        }
+        public _Attributes value(String v)
+        {
+            return at(Attribute.value,v);
+        }
+        public _Attributes value(int v)
+        {
+            return at(Attribute.value,String.valueOf(v));
+        }
+    }
+
+    public static _Attributes at()
+    {
+        return new _Attributes();
     }
 
     public static _Attributes at(Map map)
