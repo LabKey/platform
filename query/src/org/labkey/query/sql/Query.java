@@ -1879,11 +1879,11 @@ public class Query
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
 			Container qtest = getSubfolder();
-            ListService s = ListService.get();
+            ListService listService = ListService.get();
             UserSchema lists = (UserSchema)DefaultSchema.get(user, c).getSchema("lists");
             assertNotNull(lists);
 
-            ListDefinition R = s.createList(c, "R", ListDefinition.KeyType.AutoIncrementInteger);
+            ListDefinition R = listService.createList(c, "R", ListDefinition.KeyType.AutoIncrementInteger);
             R.setKeyName("rowid");
             addProperties(R);
             R.save(user);
@@ -1894,7 +1894,7 @@ public class Query
             if (context.getErrors().hasErrors())
                 fail(context.getErrors().getRowErrors().get(0).toString());
 
-            ListDefinition S = s.createList(qtest, "S", ListDefinition.KeyType.AutoIncrementInteger);
+            ListDefinition S = listService.createList(qtest, "S", ListDefinition.KeyType.AutoIncrementInteger);
             S.setKeyName("rowid");
             addProperties(S);
             S.save(user);
@@ -1967,6 +1967,7 @@ public class Query
             QuerySchema schema = lists;
             if (null != container)
                 schema = schema.getSchema("Folder").getSchema(container.getPath()).getSchema("lists");
+            requireNonNull(schema);
 
 			try
 			{
@@ -1990,7 +1991,7 @@ public class Query
             Container c = JunitUtil.getTestContainer();
 
             lists = DefaultSchema.get(user, c).getSchema("lists");
-            if (1==1 || null == lists)
+            if (null == lists)
             {
                 _tearDown();
                 _setUp();
@@ -2276,6 +2277,36 @@ public class Query
                 count++;
             }
             Assert.assertEquals("Expected to find " + Rsize + " rows in lists.R table", Rsize, count);
+        }
+
+
+        static SqlTest containerTests[] = new SqlTest[]
+        {
+            new SqlTest("SELECT name FROM core.containers", 1, 1),
+            new SqlTest("SELECT name FROM core.containers[ContainerFilter='Current']", 1, 1),
+            new SqlTest("SELECT name FROM core.containers[ContainerFilter='CurrentAndFirstChildren']", 1, 2),
+            new SqlTest("SELECT A.name FROM core.containers[ContainerFilter='CurrentAndFirstChildren'] A inner join core.containers B on A.entityId = B.entityId", 1, 1)
+        };
+
+
+        @Test
+        public void testContainerAnnotation() throws Exception
+        {
+            // note getPrimarySchema() will return NULL if there are no lists yet
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+
+            if (null == lists)
+            {
+                _tearDown();
+                _setUp();
+                lists = DefaultSchema.get(user, c).getSchema("lists");
+            }
+
+            for (SqlTest test : containerTests)
+            {
+                test.validate(this, null);
+            }
         }
 
 

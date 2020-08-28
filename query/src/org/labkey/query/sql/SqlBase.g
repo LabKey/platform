@@ -390,10 +390,10 @@ tableAnnotations
     : (LBRACKET annotations RBRACKET)!
 
     // Issues(CurrentAndSubfolders) R
-    | (OPEN! value=IDENT CLOSE! {addAnnotation("ContainerFilter",value);})!
+    // | (OPEN! value=IDENT CLOSE! {addAnnotation("ContainerFilter",value);})!
 
     // Issues @ContainerFilter='CurrentAndSubfolders' R
-    | at_annotations!
+    / | at_annotations!
     ;
 
 
