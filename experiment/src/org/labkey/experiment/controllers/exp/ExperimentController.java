@@ -130,6 +130,7 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFactory;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresNoPermission;
@@ -3657,6 +3658,28 @@ public class ExperimentController extends SpringActionController
             if (null != t)
                 setTarget(t);
             _auditBehaviorType = form.getAuditBehavior();
+        }
+
+        @Override
+        protected void configureLoader(DataLoader loader) throws IOException
+        {
+            super.configureLoader(loader);
+
+            // Issue 40302: Unable to use samples or data class with integer like names as material or data input
+            // treat lineage columns as string values
+            ColumnDescriptor[] cols = loader.getColumns();
+            for (ColumnDescriptor col : cols)
+            {
+                String name = col.name.toLowerCase();
+                if (name.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase() + "/") ||
+                    name.startsWith(ExpMaterial.MATERIAL_OUTPUT_CHILD.toLowerCase() + "/") ||
+                    name.startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase() + "/") ||
+                    name.startsWith(ExpData.DATA_OUTPUT_CHILD.toLowerCase() + "/"))
+                {
+                    col.clazz = String.class;
+                    col.converter = TabLoader.noopConverter;
+                }
+            }
         }
 
         @Override
