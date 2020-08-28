@@ -2295,9 +2295,12 @@ public class Query
             new SqlTest("SELECT name FROM core.containers", 1, 1),
             new SqlTest("SELECT name FROM core.containers[ContainerFilter='Current']", 1, 1),
             new SqlTest("SELECT name FROM core.containers[ContainerFilter='CurrentAndFirstChildren']", 1, 2),
+
             // test caching of resolved tables, these two references to core.containers should not be shared
             new SqlTest("SELECT A.name FROM core.containers[ContainerFilter='CurrentAndFirstChildren'] A inner join core.containers B on A.entityId = B.entityId", 1, 1),
-            new SqlTest("SELECT A.name FROM core.containers A inner join core.containers[ContainerFilter='CurrentAndFirstChildren'] B on A.entityId = B.entityId", 1, 1)
+            new SqlTest("SELECT A.name FROM core.containers A inner join core.containers[ContainerFilter='CurrentAndFirstChildren'] B on A.entityId = B.entityId", 1, 1),
+            new SqlTest("SELECT A.name FROM core.containers[ContainerFilter='AllInProject'] A inner join core.containers[ContainerFilter='CurrentAndFirstChildren'] B on A.entityId = B.entityId", 1, 2),
+            new SqlTest("SELECT A.name FROM core.containers[ContainerFilter='CurrentAndFirstChildren'] A inner join core.containers[ContainerFilter='AllInProject'] B on A.entityId = B.entityId", 1, 2)
         };
 
 
