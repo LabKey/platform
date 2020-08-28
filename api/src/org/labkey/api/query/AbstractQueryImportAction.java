@@ -407,22 +407,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             //di = wrap(di, ve);
             //importData(di, ve);
 
-            //apply known columns so loader can do better type conversion
-            if (loader != null && _target != null)
-                loader.setKnownColumns(_target.getColumns());
-
-            Map<String, String> renamedColumns = getRenamedColumns();
-            if (loader != null && renamedColumns != null)
-            {
-                ColumnDescriptor[]  columnDescriptors = loader.getColumns();
-                for (ColumnDescriptor columnDescriptor : columnDescriptors)
-                {
-                    if (renamedColumns.containsKey(columnDescriptor.getColumnName()))
-                    {
-                        columnDescriptor.name = renamedColumns.get(columnDescriptor.getColumnName());
-                    }
-                }
-            }
+            configureLoader(loader);
 
             int rowCount = importData(loader, file, originalName, ve, getAuditBehaviorType());
 
@@ -443,6 +428,26 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 file.closeInputStream();
             if (null != dataFile && !Boolean.parseBoolean(saveToPipeline))
                 dataFile.delete();
+        }
+    }
+
+    protected void configureLoader(DataLoader loader) throws IOException
+    {
+        //apply known columns so loader can do better type conversion
+        if (loader != null && _target != null)
+            loader.setKnownColumns(_target.getColumns());
+
+        Map<String, String> renamedColumns = getRenamedColumns();
+        if (loader != null && renamedColumns != null)
+        {
+            ColumnDescriptor[]  columnDescriptors = loader.getColumns();
+            for (ColumnDescriptor columnDescriptor : columnDescriptors)
+            {
+                if (renamedColumns.containsKey(columnDescriptor.getColumnName()))
+                {
+                    columnDescriptor.name = renamedColumns.get(columnDescriptor.getColumnName());
+                }
+            }
         }
     }
 

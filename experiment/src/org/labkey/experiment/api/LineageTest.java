@@ -54,8 +54,10 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -236,10 +238,13 @@ public class LineageTest extends ExpProvisionedTableTestHelper
     }
 
     // Issue 29361: Support updating lineage for DataClasses
+    // Issue 40302: Unable to use samples or data class with integer like names as material or data input
     @Test
     public void testUpdateLineage() throws Exception
     {
         final User user = TestContext.get().getUser();
+
+        final String numericSampleName = "100";
 
         // setup sample type
         List<GWTPropertyDescriptor> sampleProps = new ArrayList<>();
@@ -250,7 +255,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
                 "MySamples", null, sampleProps, Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
         final ExpMaterial s1 = ExperimentService.get().createExpMaterial(c,
-                st.generateSampleLSID().setObjectId("S-1").toString(), "S-1");
+                st.generateSampleLSID().setObjectId(numericSampleName).toString(), numericSampleName);
         s1.setCpasType(st.getLSID());
         s1.save(user);
 
@@ -265,12 +270,12 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         final String myDataClassName = "MyData";
         final ExpDataClassImpl myDataClass = ExperimentServiceImpl.get().createDataClass(c, user, myDataClassName, null, dcProps, emptyList(), null);
 
-        // Import data and derive from "S-1"
+        // Import data and derive from "100"
         List<Map<String, Object>> rows = new ArrayList<>();
         rows.add(CaseInsensitiveHashMap.of(
                 "name", "bob",
                 "age", "10",
-                "MaterialInputs/MySamples", "S-1"
+                "MaterialInputs/MySamples", numericSampleName
         ));
 
         final UserSchema schema = QueryService.get().getUserSchema(user, c, expDataSchemaKey);
