@@ -839,17 +839,27 @@ public class Query
             return null;
         }
 
-        // check if we've resolved the exact same table
+        // check the cache to see if we've resolved this exact same table already
         _resolveCache.computeIfAbsent(currentSchema, k -> new HashMap<>());
         Pair<QuerySchema, TableInfo> found = _resolveCache.get(currentSchema).get(cacheKey);
         if (null != found)
         {
+            // ensure that the table has the same containerFilter that we asked for, otherwise don't return cached TableInfo
             TableInfo ti = found.second;
-            if (null != ti.getContainerFilter())
+            ContainerFilter cachedTableCF = ti.getContainerFilter();
+            if (null != cachedTableCF)
             {
-                ContainerFilter cf = ti.getContainerFilter();
-                if (null == cfType ? cf.equals(getContainerFilter()) : cf.getType() == cfType)
+                if (null != cfType)
+                {
+                    // explicit containerfilter e.g. due to SQL table annotation TABLE[ContainerFilter='Current']
+                    if (cfType == cachedTableCF.getType())
+                        return new QueryTable(this, found.first, found.second, alias);
+                }
+                // compare against default container filter for this query
+                else if (cachedTableCF.equals(getContainerFilter()))
+                {
                     return new QueryTable(this, found.first, found.second, alias);
+                }
             }
         }
 
@@ -2285,7 +2295,9 @@ public class Query
             new SqlTest("SELECT name FROM core.containers", 1, 1),
             new SqlTest("SELECT name FROM core.containers[ContainerFilter='Current']", 1, 1),
             new SqlTest("SELECT name FROM core.containers[ContainerFilter='CurrentAndFirstChildren']", 1, 2),
-            new SqlTest("SELECT A.name FROM core.containers[ContainerFilter='CurrentAndFirstChildren'] A inner join core.containers B on A.entityId = B.entityId", 1, 1)
+            // test caching of resolved tables, these two references to core.containers should not be shared
+            new SqlTest("SELECT A.name FROM core.containers[ContainerFilter='CurrentAndFirstChildren'] A inner join core.containers B on A.entityId = B.entityId", 1, 1),
+            new SqlTest("SELECT A.name FROM core.containers A inner join core.containers[ContainerFilter='CurrentAndFirstChildren'] B on A.entityId = B.entityId", 1, 1)
         };
 
 

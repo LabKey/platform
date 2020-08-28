@@ -663,12 +663,12 @@ groupByLoop:
                 for (var entry : annotations.entrySet())
                 {
                     var value = entry.getValue();
-                    switch (entry.getKey())
+                    switch (entry.getKey().toLowerCase())
                     {
                         case "containerfilter":
                             if (!(value instanceof String))
                             {
-                                _query.getParseErrors().add(new QueryParseException("@ContainerFilter annotation requires a string value", null, node.getLine(), node.getColumn()));
+                                _query.getParseErrors().add(new QueryParseException("ContainerFilter annotation requires a string value", null, node.getLine(), node.getColumn()));
                                 continue;
                             }
                             cfType = ContainerFilter.getType((String)value);
