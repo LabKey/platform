@@ -6182,7 +6182,6 @@ public class AdminController extends SpringActionController
         private boolean showAll;
         private boolean confirmed = false;
         private boolean addAlias = false;
-        private boolean recurse = false;
         private String templateSourceId;
         private String[] templateWriterTypes;
         private boolean templateIncludeSubfolders = false;
@@ -6296,16 +6295,6 @@ public class AdminController extends SpringActionController
         public void setAddAlias(boolean addAlias)
         {
             this.addAlias = addAlias;
-        }
-
-        public boolean getRecurse()
-        {
-            return recurse;
-        }
-
-        public void setRecurse(boolean recurse)
-        {
-            this.recurse = recurse;
         }
 
         public String getTarget()
@@ -7183,22 +7172,7 @@ public class AdminController extends SpringActionController
             // Must be site/app admin to delete a project
             for (Container c : targets)
             {
-                if (!form.getRecurse() && !c.getChildren().isEmpty())
-                {
-                    throw new IllegalStateException("This container has children: " + c.getPath());  // UI should prevent this case
-                }
-            }
-
-            for (Container c : targets)
-            {
-                if (form.getRecurse())
-                {
-                    ContainerManager.deleteAll(c, getUser());
-                }
-                else
-                {
-                    ContainerManager.delete(c, getUser());
-                }
+                ContainerManager.deleteAll(c, getUser());
             }
 
             _deleted.addAll(targets);

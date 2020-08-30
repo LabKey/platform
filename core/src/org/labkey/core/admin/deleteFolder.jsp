@@ -38,27 +38,8 @@
     List<Container> containersToDelete = form.getTargetContainers(getContainer());
     Container primaryContainer = getContainer();
     User user = getUser();
-    boolean recurse = form.getRecurse();
 
-    // The intent of this is that is recurce is explcitly set (i.e. the user has already confirmed), defer to that.
-    // otherwise: if zero containers have children, allow direct delete.  if any have children, force the extra confirm step.
-    boolean showFinalConfirmation = recurse;
-    if (!showFinalConfirmation)
-    {
-        boolean anyHaveChildren = false;
-        for (Container c : containersToDelete)
-        {
-            if (c.hasChildren())
-            {
-                anyHaveChildren = true;
-                break;
-            }
-        }
-
-        showFinalConfirmation = !anyHaveChildren;
-    }
-
-    String message = containersToDelete.size() == 1 ? containersToDelete.get(0).isProject() ? "project and its subfolders" : ("folder" + (recurse ? "s" : "")) : "folders";
+    String message = containersToDelete.size() == 1 ? containersToDelete.get(0).isProject() ? "project and its subfolders" : "folder" : "folders";
 
     %>
         <table class="labkey-data-region">
@@ -77,110 +58,101 @@
 
         if (c.equals(ContainerManager.getHomeContainer()))
         {
-            %><tr><td>You cannot delete the home project.</td></tr>
+            %>
+            <tr><td>You cannot delete the home project.</td></tr>
             <tr><td>
                 <%= button("OK").href(urlProvider(AdminUrls.class).getManageFoldersURL(c)) %>
             </td></tr>
-            </table><%
+            </table>
+            <%
 
             return;
         }
 
         if (c.equals(ContainerManager.getSharedContainer()))
         {
-            %><tr><td>You cannot delete the Shared project.</td></tr>
+            %>
+            <tr><td>You cannot delete the Shared project.</td></tr>
             <tr><td>
                 <%= button("OK").href(urlProvider(AdminUrls.class).getManageFoldersURL(c)) %>
             </td></tr>
-            </table><%
+            </table>
+            <%
 
             return;
         }
 
-        // Attempting recursive delete.  Could be first or second confirmation page.  Either way, user must have
-        // admin permissions to the entire tree.
+        // A user must have admin permissions to the entire tree.
         if (c.hasChildren() && !ContainerManager.hasTreePermission(c, user, AdminPermission.class))
         {
-            %><tr><td>This <%=h(containerType)%> has <%=h(childrenDescription)%>s, but you don't have administrative permissions to all the <%=h(childrenDescription)%>s.</td></tr>
+            %>
+            <tr><td>This <%=h(containerType)%> has <%=h(childrenDescription)%>s, but you don't have administrative permissions to all the <%=h(childrenDescription)%>s.</td></tr>
             <tr><td>&nbsp;</td></tr>
             <tr><td>
                 <%= button("Back").href(urlProvider(AdminUrls.class).getManageFoldersURL(primaryContainer)) %>
             </td></tr>
-            </table><%
+            </table>
+            <%
 
             return;
         }
-
-        boolean showSummary = recurse || !c.hasChildren();
-        if (showSummary)
-        {
             // Simplify the confirmation message in this case
-            boolean singleEmptyContainer = !c.hasChildren() && ModuleLoader.getInstance().getModuleSummaries(c).isEmpty();
-            if (!singleEmptyContainer)
+        boolean singleEmptyContainer = !c.hasChildren() && ModuleLoader.getInstance().getModuleSummaries(c).isEmpty();
+        if (!singleEmptyContainer)
+        {
+            Set<Container> containers = ContainerManager.getAllChildren(c);
+            %>
+            <td><ul><%
+
+            for (Container container : containers)
             {
-                Set<Container> containers = ContainerManager.getAllChildren(c);
-                %>
-                <td><ul><%
+                Collection<String> messages = ModuleLoader.getInstance().getModuleSummaries(container);
 
-                for (Container container : containers)
+                %><li><%=h(container.getPath().substring(1))%><%
+
+                if (null != messages && messages.size() > 0)
                 {
-                    Collection<String> messages = ModuleLoader.getInstance().getModuleSummaries(container);
+                    %>, containing the following objects:<ul class=star><%
 
-                    %><li><%=h(container.getPath().substring(1))%><%
-
-                    if (null != messages && messages.size() > 0)
+                    for (String m : messages)
                     {
-                        %>, containing the following objects:<ul class=star><%
-
-                        for (String m : messages)
-                        {
-                            %><li><%=h(m)%></li><%
-                        } %>
-                        </ul><%
+                        %><li><%=h(m)%></li><%
                     } %>
-                    </li>
-                    <%
+                    </ul><%
                 } %>
-                </ul></td></tr><%
-            }
-            else
-            { %>
-                <tr><td><ul><li><%=h(c.getPath().substring(1))%><%=h(c.canHaveChildren() ? ", all its subfolders," : "")%> and all the objects it contains</li></ul></td></tr>
-            <%
-            }%>
-            </table>
-
-            <%
+                </li>
+                <%
+            } %>
+            </ul></td></tr><%
         }
         else
         {
             %>
-                <tr><td>This <%=h(containerType)%> has <%=h(childrenDescription)%>s.  If you continue you will <b>permanently delete</b> the <%=h(containerType)%>, its <%=h(childrenDescription)%>s, and all the objects they contain.
-                    The next page will summarize some of the objects in these folders and give you another chance to cancel.</td></tr>
-                <tr><td>&nbsp;</td></tr>
-                <tr><td>Cancel now to preserve these folders and objects.</td></tr>
-                <tr><td>&nbsp;</td></tr>
-            </table>
-
+            <tr><td><ul><li><%=h(c.getPath().substring(1))%><%=h(c.canHaveChildren() ? ", all its subfolders," : "")%> and all the objects it contains</li></ul></td></tr>
             <%
         }
+            %>
+        </table>
+
+        <%
+
     }
 
-    if (showFinalConfirmation)
-    {
         String containerType = containersToDelete.size() == 1 ? containersToDelete.get(0).getContainerNoun() : "";
         String name = containersToDelete.size() == 1 ? containersToDelete.get(0).getName() : "these " + containersToDelete.size() +" folders";
-        boolean showSubfolder = containersToDelete.size() == 1 ? false : recurse;
-        boolean usePlural = containersToDelete.size() == 1 ? recurse : true;
+        boolean showSubfolder = containersToDelete.size() != 1;
+        boolean hasSubFolders = containersToDelete.size() == 1 && containersToDelete.get(0).getChildren().size() != 0;
+        boolean usePlural = containersToDelete.size() > 1 || hasSubFolders;;
 
         %>
-        <%=h(containersToDelete.size() > 1 || recurse ? "They" : "It")%> may contain other objects that are not listed.
+        <%=h(usePlural ? "They" : "It")%> may contain other objects that are not listed.
         <br><br>
         <table>
-            <tr><td>Are you <u>sure</u> you want to permanently delete <%=h(containerType)%> <b><%=h(name)%></b><%=h(showSubfolder ? ", all its subfolders," : "")%> and all the objects <%=h(usePlural ? "they contain" : "it contains")%>?</td></tr>
+            <tr><td>Are you <u>sure</u> you want to permanently delete <%=h(containerType)%> <b><%=h(name)%></b><%=h(showSubfolder || hasSubFolders ? ", all its subfolders," : "")%> and all the objects <%=h(usePlural ? "they contain" : "it contains")%>?</td></tr>
             <tr><td>&nbsp;</td></tr>
         </table>
-        <labkey:form action='<%=buildURL(AdminController.DeleteFolderAction.class) + (recurse ? "recurse=1" : "")%>' method="post">
+
+        <labkey:form action='<%=h(buildURL(AdminController.DeleteFolderAction.class))%>' method="post">
             <% if (form.getReturnUrl() != null) { %>
                 <input type="hidden" name="returnUrl" value="<%=h(form.getReturnUrl())%>"/>
             <% } %>
@@ -192,21 +164,6 @@
                 <%
             }
             %>
-            <%= button("Delete").disableOnClick(true).submit(true) %>
+            <%= button("Yes, delete all").disableOnClick(true).submit(true) %>
             <%= button("Cancel").href(urlProvider(AdminUrls.class).getManageFoldersURL(getContainer())) %>
         </labkey:form>
-        <%
-    }
-    else
-    {
-        Set<String> ids = containersToDelete.stream().map(Container::getId).collect(Collectors.toSet());
-        String targetStr = "&targets=" + StringUtils.join(ids, "&targets=");
-        %>
-
-        <%= button("Delete All Folders").disableOnClick(true).primary(true).href(buildURL(AdminController.DeleteFolderAction.class) + "recurse=1" + targetStr) %>
-        <%= button("Cancel").href(urlProvider(AdminUrls.class).getManageFoldersURL(getContainer())) %>
-
-        <%
-    }
-
-%>
