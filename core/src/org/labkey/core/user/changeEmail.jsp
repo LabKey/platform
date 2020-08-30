@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.user.UserController" %>
 <%@ page import="org.labkey.core.user.UserController.ChangeEmailAction" %>
+<%@ page import="org.labkey.api.security.permissions.UpdateUserPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     String errors = formatMissedErrorsStr("form");
@@ -35,7 +36,7 @@
     JspView<UserController.UserForm> me = (JspView<UserController.UserForm>) HttpView.currentView();
     UserController.UserForm form = me.getModelBean();
     ActionURL cancelURL = new ActionURL(UserController.DetailsAction.class, getContainer()).addParameter("userId", form.getUserId());
-    boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
+    boolean isUserManager = getUser().hasRootPermission(UpdateUserPermission.class);
     String currentEmail = form.getUser().getEmail();
 
     if (form.getIsChangeEmailRequest())
