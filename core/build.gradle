@@ -9,6 +9,7 @@ dependencies {
    external 'radeox:radeox:1.0-b2'
    implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
    jspImplementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
+   external "commons-fileupload:commons-fileupload:${commonsFileuploadVersion}"
 }
 
 BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
