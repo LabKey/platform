@@ -18,10 +18,12 @@ package org.labkey.api.view;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.SkipMothershipLogging;
 
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * Signals to the HTTP client that the request is not authorized, via a 401 status code.
  */
-public class UnauthorizedException extends RuntimeException implements SkipMothershipLogging
+public class UnauthorizedException extends HttpStatusException
 {
     /** Options for how the client should be informed of not being allowed to see a resource */
     public enum Type
@@ -43,7 +45,7 @@ public class UnauthorizedException extends RuntimeException implements SkipMothe
 
     public UnauthorizedException(String message)
     {
-        super(StringUtils.defaultIfEmpty(message, "User does not have permission to perform this operation."));
+        super(StringUtils.defaultIfEmpty(message, "User does not have permission to perform this operation."), null, HttpServletResponse.SC_UNAUTHORIZED);
     }
 
     public void setType(Type type)

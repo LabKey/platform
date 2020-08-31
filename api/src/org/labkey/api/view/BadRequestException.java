@@ -16,19 +16,16 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.util.SkipMothershipLogging;
 
+import org.jetbrains.annotations.Nullable;
 import javax.servlet.http.HttpServletResponse;
 
 /**
  * Indicates that the client made a bad HTTP request, typically resulting in a 400 HTTP response code and avoiding much
  * of the standard exception logging code for server-side bugs.
  */
-public class BadRequestException extends RuntimeException implements SkipMothershipLogging
+public class BadRequestException extends HttpStatusException
 {
-    final int status;
-
     public BadRequestException(String message)
     {
         this(message, null);
@@ -41,12 +38,6 @@ public class BadRequestException extends RuntimeException implements SkipMothers
 
     public BadRequestException(String message, @Nullable Exception x, int httpStatusCode)
     {
-        super(StringUtils.defaultIfEmpty(message, "BAD REQUEST"), x);
-        this.status = httpStatusCode;
-    }
-
-    public int getStatus()
-    {
-        return status;
+        super(StringUtils.defaultIfEmpty(message, "BAD REQUEST"), x, httpStatusCode);
     }
 }
