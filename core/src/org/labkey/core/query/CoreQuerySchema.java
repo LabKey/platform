@@ -148,7 +148,12 @@ public class CoreQuerySchema extends UserSchema
         if (CONTAINERS_TABLE_NAME.equalsIgnoreCase(name))
             return getContainers(cf);
         if (USERS_MSG_SETTINGS_TABLE_NAME.equalsIgnoreCase(name) && getContainer().hasPermission(getUser(), AdminPermission.class))
-            return new UsersMsgPrefTable(this, CoreSchema.getInstance().getSchema().getTable(USERS_TABLE_NAME)).init();
+        {
+            UsersMsgPrefTable result = new UsersMsgPrefTable(this, CoreSchema.getInstance().getSchema().getTable(USERS_TABLE_NAME));
+            result.init();
+            addGroupsColumn(result);
+            return result;
+        }
         // Files table is not visible
         if (FILES_TABLE_NAME.equalsIgnoreCase(name))
             return getFilesTable();

@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -126,7 +127,8 @@ public class ValidEmail
             if (uidColumn != null)
             {
                 LOG.debug("Found field in users table to use to match against login form: " + uidColumn.getName());
-                Collection<Map<String, Object>> matchingUsers = new TableSelector(usersTable, new SimpleFilter(uidColumn.getFieldKey(), rawEmail), null).getMapCollection();
+                // Do a case-insensitive search for the username
+                Collection<Map<String, Object>> matchingUsers = new TableSelector(usersTable, new SimpleFilter(new SimpleFilter.SQLClause(new SQLFragment("LOWER(uid) = LOWER(?)", rawEmail), uidColumn.getFieldKey())), null).getMapCollection();
                 if (matchingUsers.size() == 1)
                 {
                     String fullEmail = (String) matchingUsers.iterator().next().get("Email");

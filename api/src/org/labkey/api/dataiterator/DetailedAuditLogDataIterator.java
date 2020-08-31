@@ -38,7 +38,8 @@ import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
 public class DetailedAuditLogDataIterator extends AbstractDataIterator
 {
     public enum AuditConfigs {
-        AuditBehavior;
+        AuditBehavior,
+        AuditUserComment;
     }
 
     final DataIterator _data;
@@ -85,7 +86,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
                 auditType = auditConfigurable.getAuditBehavior();
 
             if (auditType == DETAILED)
-                _table.addAuditEvent(_user, _container, auditType, _auditAction, ((MapDataIterator) _data).getMap());
+                _table.addAuditEvent(_user, _container, auditType, (String) _context.getConfigParameter(AuditConfigs.AuditUserComment), _auditAction, ((MapDataIterator) _data).getMap());
         }
 
         return true;
