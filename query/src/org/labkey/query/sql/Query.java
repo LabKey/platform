@@ -2001,14 +2001,13 @@ public class Query
             Container c = JunitUtil.getTestContainer();
 
             lists = DefaultSchema.get(user, c).getSchema("lists");
-            if (null == lists)
+            if (1==1 || null == lists)
             {
                 _tearDown();
                 _setUp();
                 lists = DefaultSchema.get(user, c).getSchema("lists");
             }
 
-            assertNotNull(lists);
             assertNotNull(lists);
             TableInfo Rinfo = lists.getTable("R");
             assertNotNull(Rinfo);
@@ -2311,7 +2310,7 @@ public class Query
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
 
-            if (null == lists)
+            if (1==1 || null == lists)
             {
                 _tearDown();
                 _setUp();
