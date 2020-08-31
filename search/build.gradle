@@ -20,6 +20,7 @@ dependencies {
     external "org.codelibs:jhighlight:1.0.3"
     external "org.apache.james:apache-mime4j-core:${mime4jVersion}"
     external "org.apache.james:apache-mime4j-dom:${mime4jVersion}"
+    external "org.apache.pdfbox:pdfbox:${pdfboxVersion}"
 }
 
 // TODO move resources files into resources directory to avoid this overlap
