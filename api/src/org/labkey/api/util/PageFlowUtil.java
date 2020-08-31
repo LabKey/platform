@@ -1597,10 +1597,10 @@ public class PageFlowUtil
 
         HtmlStringBuilder builder = HtmlStringBuilder.of()
             .append(HtmlString.unsafe("<link rel=\"shortcut icon\" href=\""))
-            .append(faviconURL)
+            .append(faviconURL.toString())
             .append(HtmlString.unsafe("\">\n"))
             .append(HtmlString.unsafe("<link rel=\"icon\" href=\""))
-            .append(faviconURL)
+            .append(faviconURL.toString())
             .append(HtmlString.unsafe("\">\n"));
 
         return builder.getHtmlString();
