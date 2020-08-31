@@ -246,6 +246,16 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpDataClass getDataClass(int rowId);
 
     /**
+     * Get materials by rowId in this, project, or shared container and within the provided sample type.
+     *
+     * @param container       Samples will be found within this container, project, or shared container.
+     * @param user            Samples will only be resolved within containers that the user has ReadPermission.
+     * @param rowIds          The set of samples rowIds.
+     * @param sampleType      Optional sample type that the samples must live in.
+     */
+    List<? extends ExpMaterial> getExpMaterials(Container container, User user, Collection<Integer> rowIds, @Nullable ExpSampleType sampleType);
+
+    /**
      * Get materials with the given names, optionally within the provided sample type.
      * If the materials don't exist, throw an exception if <code>throwIfMissing</code> is true
      * or create new materials if <code>createIfMissing</code> is true, otherwise missing samples
@@ -270,6 +280,16 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @Nullable
     ExpMaterial getExpMaterial(int rowid);
 
+    /**
+     * Get material by rowId in this, project, or shared container and within the provided sample type.
+     *
+     * @param container       Sample will be found within this container, project, or shared container.
+     * @param user            Sample will only be resolved within containers that the user has ReadPermission.
+     * @param rowId           The sample rowId.
+     * @param sampleType      Optional sample type that the sample must live in.
+     */
+    ExpMaterial getExpMaterial(Container c, User u, int rowId, @Nullable ExpSampleType sampleType);
+
     @NotNull List<? extends ExpMaterial> getExpMaterials(Collection<Integer> rowids);
 
     ExpMaterial getExpMaterial(String lsid);
@@ -280,11 +300,13 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @NotNull List<? extends ExpMaterial> getExpMaterialsByName(String name, Container container, User user);
 
     @Nullable ExpData findExpData(Container c, User user,
+                                  @NotNull ExpDataClass dataClass,
                                   @NotNull String dataClassName, String dataName,
                                   RemapCache cache, Map<Integer, ExpData> dataCache)
             throws ValidationException;
 
     @Nullable ExpMaterial findExpMaterial(Container c, User user,
+                                          ExpSampleType sampleType,
                                           String sampleTypeName, String sampleName,
                                           RemapCache cache, Map<Integer, ExpMaterial> materialCache)
             throws ValidationException;

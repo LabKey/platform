@@ -848,6 +848,12 @@ public class Input extends DisplayElement implements HasHtmlString
             return (T)this;
         }
 
+        public T value(int value)
+        {
+            _value = HtmlString.unsafe(String.valueOf(value));
+            return (T)this;
+        }
+
         public T needsWrapping(Boolean wrapped)
         {
             _needsWrapping = wrapped;

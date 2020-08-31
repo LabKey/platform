@@ -16,6 +16,7 @@
 package org.labkey.api.inventory;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -43,7 +44,7 @@ public interface InventoryService
 
     static InventoryService get() { return ServiceRegistry.get().getService(InventoryService.class); }
 
-    void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, QueryService.AuditAction action, List<Map<String, Object>>... params);
+    void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, @Nullable String userComment, QueryService.AuditAction action, List<Map<String, Object>>... params);
 
     @NotNull
     List<Map<String, Object>> getSampleStorageLocationData(User user, Container container, int sampleId);

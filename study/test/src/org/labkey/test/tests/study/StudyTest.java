@@ -570,7 +570,7 @@ public class StudyTest extends StudyBaseTest
     {
         startCreateParticipantGroup();
         setFormElement(Locator.name(LABEL_FIELD), listName);
-        DataRegionTable table = DataRegion(getDriver()).withName("demoDataRegion").waitFor();
+        DataRegionTable table = DataRegion(getDriver()).withName("demoDataRegion").timeout(WAIT_FOR_PAGE).waitFor();
 
         if(filtered)
         {
