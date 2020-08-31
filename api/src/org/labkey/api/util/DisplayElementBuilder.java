@@ -26,7 +26,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import java.util.Map;
 import java.util.TreeMap;
 
-public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlString, BUILDER extends DisplayElementBuilder<T, BUILDER>> implements HasHtmlString
+public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlString, BUILDER extends DisplayElementBuilder<T, BUILDER>> implements HasHtmlString, SafeToRender
 {
     HtmlString html;
     String href;

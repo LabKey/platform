@@ -179,7 +179,7 @@
                 externalEditSettings.redirectUrl = <%=q(externalConfig.containsKey("redirectUrl") ? externalConfig.get("redirectUrl").toString(): "")%>;
                 externalEditSettings.externalUrl = <%=q(externalConfig.containsKey("externalUrl") ? externalConfig.get("externalUrl").toString(): "")%>;
                 externalEditSettings.isEditing = <%=externalConfig.containsKey("editing") && (boolean) externalConfig.get("editing")%>;
-                externalEditSettings.isDocker = <%=externalConfig.get("isDocker")%>;
+                externalEditSettings.isDocker = <%=(Boolean)externalConfig.get("isDocker")%>;
             <% } %>
 
             var panel = Ext4.create('LABKEY.ext4.ScriptReportPanel', {

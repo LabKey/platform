@@ -236,8 +236,8 @@
             <% } else if (status.log.records != null) { %>
                 <% for (var record : status.log.records) { %>
                 <pre class="labkey-log-text <%=h(logTextClass(record))%>"
-                     data-multiline="<%=h(record.isMultiline())%>"
-                     data-stacktrace="<%=h(record.isStackTrace())%>"
+                     data-multiline="<%=record.isMultiline()%>"
+                     data-stacktrace="<%=record.isStackTrace()%>"
                      data-level="<%=h(record.getLevel())%>"
                 ><div><%=h(record.getLines())%></div></pre>
                 <% } %>

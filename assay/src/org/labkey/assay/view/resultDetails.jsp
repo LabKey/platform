@@ -48,8 +48,8 @@
 %>
 <script type="text/javascript">
 LABKEY.page = LABKEY.page || {};
-LABKEY.page.assay = <%= new JSONObject(assay).getHtmlString(2) %>;
-LABKEY.page.result = <%= result.getHtmlString(2) %>;
+LABKEY.page.assay = <%= new JSONObject(assay).getJavaScriptFragment(2) %>;
+LABKEY.page.result = <%= result.getJavaScriptFragment(2) %>;
 </script>
 <p>
 <%

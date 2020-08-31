@@ -241,7 +241,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return HtmlString.of(url == null ? null : url.toString());
     }
 
-    // Note: If you have a stream, consider using JSONArray.collector() instead
+    // Note: If you have a stream, use JSONArray.collector()
     public JSONArray toJsonArray(Collection<?> c)
     {
         return new JSONArray(c);
@@ -251,12 +251,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
     {
         return new JSONObject(c);
     }
-
-    public JSONObject toJsonObject(Stream<Object> c)
-    {
-        return new JSONObject(c);
-    }
-
 
     /**
      * Quotes a javascript string.
@@ -412,7 +406,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.urlProvider(inter);
     }
 
-    public HasHtmlString iconLink(String iconCls, String tooltip, URLHelper url)
+    public LinkBuilder iconLink(String iconCls, String tooltip, URLHelper url)
     {
         return new LinkBuilder().iconCls(iconCls).tooltip(tooltip).href(url);
     }

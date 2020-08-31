@@ -5,6 +5,7 @@ package org.labkey.api.util;
  * method returns an encoded version of the class's {@code toString()} method. Classes that implement this interface can be
  * safely rendered by JSPs.
  */
+@Deprecated // TODO: Delete this
 public interface SimpleHasHtmlString extends HasHtmlString
 {
     @Override
@@ -12,4 +13,7 @@ public interface SimpleHasHtmlString extends HasHtmlString
     {
         return HtmlString.of(toString());
     }
+
+    @Override
+    String toString();
 }
