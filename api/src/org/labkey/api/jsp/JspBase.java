@@ -64,7 +64,6 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import static org.labkey.api.util.HtmlString.EMPTY_STRING;
 
@@ -268,6 +267,16 @@ public abstract class JspBase extends JspContext implements HasViewContext
     final protected JavaScriptFragment q(HtmlString hs)
     {
         return null == hs ? JavaScriptFragment.NULL : JavaScriptFragment.unsafe(PageFlowUtil.jsString(hs.toString()));
+    }
+
+    /**
+     * Convenience method that returns a local URL as a properly escaped JavaScript identifier.
+     * @param url Some URLHelper
+     * @return A relative URL in a properly escaped single-quoted string literal JavaScriptFragment
+     */
+    final protected JavaScriptFragment q(@NotNull URLHelper url)
+    {
+        return q(url.toString());
     }
 
     // TODO: Very, very temporary; just for backward compatibility. Eliminate ASAP.
