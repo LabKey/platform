@@ -27,6 +27,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ExpectedException;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.HttpStatusException;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
@@ -275,8 +276,8 @@ public abstract class ApiResponseWriter implements AutoCloseable
             write((ValidationException) e);
             return;
         }
-        if (e instanceof NotFoundException)
-            status = HttpServletResponse.SC_NOT_FOUND;
+        if (e instanceof HttpStatusException)
+            status = ((HttpStatusException)e).getStatus();
         else
             status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 

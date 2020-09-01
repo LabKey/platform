@@ -370,7 +370,7 @@ joinExpression
 
 
 fromRange
-	: (tableSpecification { weakKeywords(); } (AS? identifier)?) -> ^(RANGE tableSpecification identifier?)
+	: (tableSpecificationWithAnnotation { weakKeywords(); } (AS? identifier)?) -> ^(RANGE tableSpecificationWithAnnotation identifier?)
 	| OPEN
 	    ( (subQuery) => subQuery CLOSE (AS? identifier)? -> ^(RANGE subQuery identifier?)
 	    | joinExpression CLOSE -> joinExpression
@@ -378,7 +378,26 @@ fromRange
 	;
 
 
-// Usually a simple dotted identifer 'path' such as "core.users".
+tableSpecificationWithAnnotation
+    :  table=tableSpecification (tableAnnotations!)? { ((SupportsAnnotations)table.getTree()).setAnnotations(getAnnotations()); }
+    ;
+
+
+// multiple patterns for playing around with ContainerFilter annotation
+// TODO pick one
+tableAnnotations
+    // Issues[ContainerFilter='CurrentAndSubfolders'] R
+    : (LBRACKET annotations RBRACKET)!
+
+    // Issues(CurrentAndSubfolders) R
+    // | (OPEN! value=IDENT CLOSE! {addAnnotation("ContainerFilter",value);})!
+
+    // Issues @ContainerFilter='CurrentAndSubfolders' R
+    / | at_annotations!
+    ;
+
+
+// Usually a simple dotted identifer 'path' such as "core.users"
 // however we support an 'escape' syntax as well such as "Folder.{moduleProperty('ehr','sharedFolder')}.specieslookup"
 tableSpecification
     :  ( { weakKeywords(); } tableSpecificationPart DOT^ )* identifier
@@ -397,7 +416,7 @@ onClause
 
 
 groupByClause
-	: GROUP^ 'by'! expression annotations ( COMMA! expression annotations)*
+	: GROUP^ 'by'! expression ( COMMA! expression )*
 	;
 
 
@@ -407,7 +426,7 @@ pivotClause
     
 
 orderByClause
-	: ORDER^ 'by'! orderElement annotations ( COMMA! orderElement annotations)*
+	: ORDER^ 'by'! orderElement ( COMMA! orderElement )*
 	;
 
 
@@ -443,7 +462,7 @@ selectedPropertiesList
 
 
 selectedProperty
-	: e=aliasedSelectExpression^ (annotations!)? { ((SupportsAnnotations)e.getTree()).setAnnotations(getAnnotations()); }
+	: e=aliasedSelectExpression^ (at_annotations!)? { ((SupportsAnnotations)e.getTree()).setAnnotations(getAnnotations()); }
 	| starAtom
 	;
 
@@ -468,20 +487,28 @@ constantAlias
     ;
 
 
+// example: @title('MyColumn') @hidden
+// alternate: @title='My Column'
+at_annotations
+    : (at_annotation!)*
+    ;
+
+
+at_annotation
+    :   (label=ANNOTATION_LABEL ( (OPEN! value=constant CLOSE!) | (EQ! value=constant) )? {addAnnotation(label.getText(),null==value?null:value.getTree());})!
+    ;
+
+
+// JDBC like
+// example: ContainerFilter=CurrentAndSubfolders; Key=RowId;
 annotations
-    : (annotation!)*
+    : (annotation!) (SEMI! annotation!)* (SEMI!)?
     ;
 
 
 annotation
-    :   (label=ANNOTATION_LABEL (EQ! value=constant)? {addAnnotation(label.getText(),null==value?null:value.getTree());})!
+    :   (label=IDENT (EQ! value=constant)? {addAnnotation(label.getText(),null==value?null:value.getTree());})!
     ;
-
-
-annotation_label
-    :   ANNOTATION_LABEL
-    ;
-
 
 // expressions
 // Note that most of these expressions follow the pattern
@@ -812,6 +839,9 @@ BIT_OR: '|';
 BIT_XOR: '^';
 BIT_AND: '&';
 
+LBRACKET: '[';
+RBRACKET: ']';
+SEMI: ';';
 
 ANNOTATION_LABEL
     : '@' ID_START_LETTER ( ID_LETTER )*
