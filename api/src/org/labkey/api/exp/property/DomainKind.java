@@ -130,7 +130,7 @@ abstract public class DomainKind<T>  implements Handler<String>
      * @param user User
      * @return The newly created Domain.
      */
-    abstract public Domain createDomain(GWTDomain domain, T options, Container container, User user, @Nullable TemplateInfo templateInfo);
+    abstract public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, T options, Container container, User user, @Nullable TemplateInfo templateInfo);
 
     /**
      * Update a Domain definition appropriate for this DomainKind.

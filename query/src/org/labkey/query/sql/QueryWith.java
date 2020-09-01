@@ -54,7 +54,7 @@ public class QueryWith
                     if (expr instanceof QQuery || expr instanceof QUnion)
                     {
                         QIdentifier alias = (QIdentifier) qAs.getFirstChild();
-                        QTable table = new QTable((QExpr) expr);
+                        QTable table = new QTable((QExpr) expr, null);
                         table.setAlias(alias);
                         FieldKey aliasKey = table.getAlias();
                         if (null == aliasKey)
