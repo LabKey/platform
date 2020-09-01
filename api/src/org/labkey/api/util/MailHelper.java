@@ -270,7 +270,7 @@ public class MailHelper
     {
         try
         {
-        _log.log(Level.WARN, ERROR_MESSAGE +
+            _log.error(ERROR_MESSAGE +
                 "\nfrom: " + StringUtils.join(m.getFrom(), "; ") + "\n" +
                 "to: " + StringUtils.join(m.getRecipients(RecipientType.TO), "; ") + "\n" +
                 "subject: " + m.getSubject(), e);

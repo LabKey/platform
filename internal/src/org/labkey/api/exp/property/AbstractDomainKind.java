@@ -102,7 +102,7 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, T arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, T arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         return null;
     }
