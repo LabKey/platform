@@ -33,6 +33,7 @@ import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
@@ -287,9 +288,9 @@ public class PageTemplate extends JspView<PageConfig>
                             }
                         }
                     }
-                    catch (BadRequestException x)
+                    catch (BadRequestException | NotFoundException x)
                     {
-                        // re-throw BadRequestException to let it bubble up to the top level
+                        // re-throw BadRequestException or NotFoundException to let it bubble up to the top level
                         throw x;
                     }
                     catch (Exception x)
