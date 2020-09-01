@@ -598,17 +598,17 @@ public class ExceptionUtil
 
     public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure)
     {
-        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, null);
+        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, null, null);
     }
 
     // This is called by SpringActionController (to display unhandled exceptions) and called directly by AuthFilter.doFilter() (to display startup errors and bypass normal request handling)
-    public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure, @Nullable ViewContext context)
+    public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure, @Nullable ViewContext context, @Nullable PageConfig pageConfig)
     {
-        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, context);
+        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, context, pageConfig);
     }
 
     static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure,
-        SearchService ss, Logger log, @Nullable ViewContext context)
+        SearchService ss, Logger log, @Nullable ViewContext context, @Nullable PageConfig pageConfig)
     {
         try
         {
@@ -867,28 +867,47 @@ public class ExceptionUtil
                 // Provide "Stop Impersonating" button if unauthorized while impersonating
                 if (user.isImpersonated())
                     renderer.setIncludeStopImpersonatingButton(true);
+
+                renderer.setErrorType(ErrorRenderer.ErrorType.permission);
             }
 
-            PageConfig pageConfig = new PageConfig();
-            pageConfig.setTemplate(PageConfig.Template.Home);
-
-            HttpView<?> errorView = pageConfig.getTemplate().getTemplate(context, new ErrorTemplate(renderer), pageConfig);
-
-            if (null == errorView)
+            if (pageConfig == null)
             {
-                log.error("Failed to create errorView in response to exception", ex);
-                return null;
+                pageConfig = new PageConfig();
+                pageConfig.setTemplate(PageConfig.Template.Home);
             }
-
-            pageConfig.addClientDependencies(errorView.getClientDependencies());
+            renderer.setErrorType(ErrorRenderer.ErrorType.execution);
+            HttpView<?> errorView;
 
             try
             {
+                errorView = pageConfig.getTemplate().getTemplate(context, new ErrorTemplate(renderer), pageConfig);
+
+                if (null == errorView)
+                {
+                    log.error("Failed to create errorView in response to exception", ex);
+                    return null;
+                }
+
+                pageConfig.addClientDependencies(errorView.getClientDependencies());
                 errorView.getView().render(errorView.getModel(), request, response);
             }
             catch (Exception e)
             {
-                log.error("Global.handleException", e);
+                // try to render just the react app
+                try
+                {
+                    // TODO : ErrorPage, this app template doesn't work
+                    errorView = PageConfig.Template.App.getTemplate(context, new ErrorTemplate(renderer), pageConfig);
+                    pageConfig.addClientDependencies(errorView.getClientDependencies());
+                    errorView.getView().render(errorView.getModel(), request, response);
+
+                }
+                catch (Exception exc)
+                {
+                    log.error("Global.handleException", e);
+                }
+
             }
         }
         else
@@ -1124,7 +1143,7 @@ public class ExceptionUtil
                 }
             };
             ExceptionUtil.decorateException(ex, ExceptionInfo.SkipMothershipLogging, "true", true);
-            ActionURL url = ExceptionUtil.handleException(req, res, ex, message, false, dummySearch, dummyLog, null);
+            ActionURL url = ExceptionUtil.handleException(req, res, ex, message, false, dummySearch, dummyLog, null, null);
             ExceptionResponse ret = new ExceptionResponse();
             ret.redirect = url;
             ret.response = res;

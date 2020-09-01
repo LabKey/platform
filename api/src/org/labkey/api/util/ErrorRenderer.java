@@ -47,6 +47,16 @@ public class ErrorRenderer
     private boolean _includeFolderButton = true;
     private boolean _includeStopImpersonatingButton = false;
 
+    private ErrorType _errorType;
+
+    enum ErrorType
+    {
+        general,
+        permission,
+        configuration,
+        execution
+    }
+
     public boolean isIncludeHomeButton()
     {
         return _includeHomeButton;
@@ -280,5 +290,15 @@ public class ErrorRenderer
     public String getTitle()
     {
         return _title;
+    }
+
+    public String getErrorType()
+    {
+        return _errorType.toString();
+    }
+
+    public void setErrorType(ErrorType errorType)
+    {
+        _errorType = errorType;
     }
 }

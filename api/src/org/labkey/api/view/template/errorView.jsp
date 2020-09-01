@@ -26,5 +26,6 @@
 <script type="application/javascript">
     LABKEY.App.loadApp('errorHandler', <%=q(appId)%>, {
         message: "<%=unsafe(model.getHeading())%>",
+        errorType: "<%=unsafe(model.getErrorType())%>"
     });
 </script>

@@ -1,9 +1,14 @@
 import React from 'react';
 
 import '@labkey/components/dist/components.css';
+import './errorHandler.scss';
+import { ErrorTopSection } from '../components/ErrorTopSection';
+
+import { ErrorType } from './ErrorType';
 
 export interface AppContext {
     message: string;
+    errorType: ErrorType;
 }
 
 interface ErrorHandlerProps {
@@ -12,10 +17,12 @@ interface ErrorHandlerProps {
 
 export class ErrorHandler extends React.Component<ErrorHandlerProps> {
     render() {
+        const { errorType } = this.props.context;
+
         return (
-            <div className="labkey-error">
-                <h3>{this.props.context.message}</h3>
-            </div>
+            <>
+                <ErrorTopSection errorType={errorType} />
+            </>
         );
     }
 }
