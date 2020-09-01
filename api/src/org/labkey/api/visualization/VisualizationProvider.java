@@ -49,7 +49,7 @@ public abstract class VisualizationProvider<SchemaType extends UserSchema>
 
     public abstract void addExtraSelectColumns(VisualizationSourceColumn.Factory factory, IVisualizationSourceQuery query);
 
-    public abstract void appendAggregates(StringBuilder sql, Map<String, Set<VisualizationSourceColumn>> columnAliases, Map<String, VisualizationIntervalColumn> intervals, String queryAlias, IVisualizationSourceQuery joinQuery);
+    public abstract void appendAggregates(StringBuilder sql, Map<String, Set<VisualizationSourceColumn>> columnAliases, Map<String, VisualizationIntervalColumn> intervals, String queryAlias, IVisualizationSourceQuery joinQuery, boolean forSelect);
 
     /** @return true if the column is one that is needed to correctly join between separate queries */
     public abstract boolean isJoinColumn(VisualizationSourceColumn column, Container container);
