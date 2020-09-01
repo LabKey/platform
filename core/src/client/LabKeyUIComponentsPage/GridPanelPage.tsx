@@ -1,20 +1,18 @@
 import React, { PureComponent, ChangeEvent } from 'react';
 import { Panel, Button, Grid, Row, Col } from 'react-bootstrap';
-import { GridPanelWithModel, SchemaQuery } from '@labkey/components';
+import { GridPanelWithModel, QueryConfig, SchemaQuery } from '@labkey/components';
 
 interface State {
     schemaName?: string;
     queryName?: string;
-    schemaQuery?: SchemaQuery;
-    id?: string;
+    queryConfig?: QueryConfig;
 }
 
 class GridPanelExample extends PureComponent<{}, State> {
     readonly state = {
-        id: undefined,
         queryName: '',
         schemaName: '',
-        schemaQuery: undefined,
+        queryConfig: undefined,
     };
 
     onFormChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -32,19 +30,24 @@ class GridPanelExample extends PureComponent<{}, State> {
             return;
         }
 
-        this.setState({ id: `gpe-${schemaName}-${queryName}`, schemaQuery: SchemaQuery.create(schemaName, queryName) });
+        this.setState({
+            queryConfig: {
+                id: `gpe-${schemaName}-${queryName}`,
+                schemaQuery: SchemaQuery.create(schemaName, queryName),
+            },
+        });
     };
 
     render() {
-        const { id, queryName, schemaName, schemaQuery } = this.state;
+        const { queryConfig, queryName, schemaName } = this.state;
         let body = (
             <div>
-                Enter a Schema, Query, View
+                Enter a Schema, Query
             </div>
         );
 
-        if (id && schemaQuery) {
-            body = <GridPanelWithModel queryConfig={{ id, schemaQuery }} />
+        if (queryConfig) {
+            body = <GridPanelWithModel queryConfig={queryConfig} />
         }
 
         return (
