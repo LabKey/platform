@@ -217,7 +217,7 @@ WITH : 'with';
 
 // public entry point
 parseSelect
-	: parameters? commonTableExpressions? selectStatement EOF
+	: parameters? commonTableExpressions? selectStatement SEMI? EOF
 	    -> ^(STATEMENT parameters? commonTableExpressions? selectStatement?)
 	;
 
@@ -393,7 +393,7 @@ tableAnnotations
     // | (OPEN! value=IDENT CLOSE! {addAnnotation("ContainerFilter",value);})!
 
     // Issues @ContainerFilter='CurrentAndSubfolders' R
-    / | at_annotations!
+    // | at_annotations!
     ;
 
 
