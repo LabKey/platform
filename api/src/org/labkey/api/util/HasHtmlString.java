@@ -17,7 +17,7 @@ package org.labkey.api.util;
 
 import java.io.IOException;
 
-public interface HasHtmlString extends DOM.Renderable
+public interface HasHtmlString extends SafeToRender, DOM.Renderable
 {
     /**
      * Must be consistent with {@code toString()}! JSP rendering of objects will call {@code obj.getHtmlString().toString()}

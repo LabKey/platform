@@ -2858,6 +2858,15 @@ public class QueryController extends SpringActionController
                 throw new NotFoundException("The view named '" + form.getViewName() + "' does not exist for this user!");
             }
 
+            TableInfo t = view.getTable();
+            if (null == t)
+            {
+                List<QueryException> qpes = view.getParseErrors();
+                if (!qpes.isEmpty())
+                    throw qpes.get(0);
+                throw new NotFoundException(form.getQueryName());
+            }
+
             boolean isEditable = isQueryEditable(view.getTable());
             boolean metaDataOnly = form.getQuerySettings().getMaxRows() == 0;
             boolean arrayMultiValueColumns = getRequestedApiVersion() >= 16.2;

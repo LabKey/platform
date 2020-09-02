@@ -412,7 +412,7 @@ public class VisTestSchema extends UserSchema
         }
 
         @Override
-        public void appendAggregates(StringBuilder sql, Map columnAliases, Map intervals, String queryAlias, IVisualizationSourceQuery joinQuery)
+        public void appendAggregates(StringBuilder sql, Map columnAliases, Map intervals, String queryAlias, IVisualizationSourceQuery joinQuery, boolean forSelect)
         {
 
         }
