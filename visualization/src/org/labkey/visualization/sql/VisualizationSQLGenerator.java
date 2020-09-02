@@ -69,16 +69,16 @@ import java.util.stream.Collectors;
  */
 public class VisualizationSQLGenerator implements HasViewContext
 {
-    private Map<String, VisualizationSourceQuery> _sourceQueries = new LinkedHashMap<>();
-    private Map<String, VisualizationIntervalColumn> _intervals = new HashMap<>();
-    private List<VisualizationSourceColumn> _groupBys = new ArrayList<>();
-    private Set<VisualizationSourceColumn> _whereNotNulls = new LinkedHashSet<>();
-    private Set<VisualizationSourceColumn> _pivots = new LinkedHashSet<>();
-    private Map<FieldKey, Set<String>> _allFilters = new LinkedHashMap<>();
-    private Map<FieldKey, ColumnInfo> _filterColTypes = new LinkedHashMap<>();
+    private final Map<String, VisualizationSourceQuery> _sourceQueries = new LinkedHashMap<>();
+    private final Map<String, VisualizationIntervalColumn> _intervals = new HashMap<>();
+    private final List<VisualizationSourceColumn> _groupBys = new ArrayList<>();
+    private final Set<VisualizationSourceColumn> _whereNotNulls = new LinkedHashSet<>();
+    private final Set<VisualizationSourceColumn> _pivots = new LinkedHashSet<>();
+    private final Map<FieldKey, Set<String>> _allFilters = new LinkedHashMap<>();
+    private final Map<FieldKey, ColumnInfo> _filterColTypes = new LinkedHashMap<>();
 
     private ViewContext _viewContext;
-    private VisualizationSourceColumn.Factory _columnFactory = new VisualizationSourceColumn.Factory();
+    private final VisualizationSourceColumn.Factory _columnFactory = new VisualizationSourceColumn.Factory();
     private boolean _metaDataOnly;
     private boolean _joinToFirst;
     private Integer _limit;
@@ -108,7 +108,7 @@ public class VisualizationSQLGenerator implements HasViewContext
     }
 
 
-    private Map<String, VisualizationProvider> _providers = new CaseInsensitiveHashMap<>();
+    private final Map<String, VisualizationProvider> _providers = new CaseInsensitiveHashMap<>();
 
     public VisualizationProvider ensureVisualizationProvider(String schemaName, VisualizationProvider.ChartType type)
     {
@@ -492,7 +492,9 @@ public class VisualizationSQLGenerator implements HasViewContext
         StringBuilder aggregatedSQL = new StringBuilder("SELECT ");
         String separator;
         Set<VisualizationSourceQuery> groupByQueries = new LinkedHashSet<>();
-        StringBuilder groupByAndSelectSQL = new StringBuilder();
+
+        StringBuilder groupByAndOrderBySQL = new StringBuilder();   // may not include AS and @ annotations
+        StringBuilder selectSQL = new StringBuilder();              // can include AS and @ annotations
 
         for (VisualizationSourceColumn groupByColumn : _groupBys)
         {
@@ -507,15 +509,17 @@ public class VisualizationSQLGenerator implements HasViewContext
 
         for (VisualizationSourceQuery groupByQuery : groupByQueries)
         {
-            groupByQuery.appendColumnNames(groupByAndSelectSQL, groupByQuery.getSelects(_columnFactory, false), false, false, false);
+            groupByQuery.appendColumnNames(groupByAndOrderBySQL, groupByQuery.getSelects(_columnFactory, false), false, false, false);
         }
+        selectSQL.append(groupByAndOrderBySQL);
 
         for (VisualizationProvider provider : _providers.values())
         {
-            provider.appendAggregates(groupByAndSelectSQL, columnAliases, _intervals, "x", joinQuery);
+            provider.appendAggregates(groupByAndOrderBySQL, columnAliases, _intervals, "x", joinQuery, false);
+            provider.appendAggregates(selectSQL, columnAliases, _intervals, "x", joinQuery, true);
         }
 
-        aggregatedSQL.append(groupByAndSelectSQL);
+        aggregatedSQL.append(selectSQL);
         aggregatedSQL.append(", COUNT(*) AS AggregateCount \n");
         for (IVisualizationSourceQuery query : queries)
         {
@@ -565,13 +569,13 @@ public class VisualizationSQLGenerator implements HasViewContext
         }
 
         aggregatedSQL.append("\nGROUP BY ");
-        aggregatedSQL.append(groupByAndSelectSQL);
+        aggregatedSQL.append(groupByAndOrderBySQL);
 
         // For now, always sort by the GROUP BY columns - the ones requested by the client with the "groupBys" parameter,
         // and the interval columns. The sorts parameter is ignored in the aggregation case.
         // We should use the sort parameter instead, but it makes SQL generation much harder
         aggregatedSQL.append("\nORDER BY ");
-        aggregatedSQL.append(groupByAndSelectSQL);
+        aggregatedSQL.append(groupByAndOrderBySQL);
         if (findSchema(_groupBys).getDbSchema().getSqlDialect().isSqlServer() && _limit == null)
             aggregatedSQL.append(" LIMIT 1000000");
 
