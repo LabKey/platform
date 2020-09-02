@@ -8145,7 +8145,7 @@ public class AdminController extends SpringActionController
                                         TD(SPAN(at(title,fullPathToModule),shortPathToModule)),
                                         TD(schemas.stream().map(s -> createHtmlFragment(s, BR()))),
 
-                                        TD((AppProps.getInstance().isDevMode()) ? getModuleEditorLink(moduleContext) : NBSP),
+                                        TD(getModuleEditorLink(moduleContext)),
 
                                         !hasAdminOpsPerm ? null : TD(!deleteableModule ? NBSP :  PageFlowUtil.link("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : "")))).href(getDeleteURL(moduleContext.getName())))
                                     );
