@@ -20,6 +20,7 @@ import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
@@ -51,12 +52,11 @@ public class PopupDeveloperView extends PopupMenuView
 
     public static List<NavTree> getNavTree(ViewContext context)
     {
-        ArrayList<NavTree> items = new ArrayList<>();
-        NavTrees trees = new NavTrees(items);
-        PROVIDERS.forEach(p -> p.addMenuItems(context.getContainer(), context.getUser(), trees));
-        items.sort(Comparator.comparing(NavTree::getText));
+        DeveloperMenuNavTrees trees = new DeveloperMenuNavTrees();
 
-        return items;
+        PROVIDERS.forEach(p -> p.addMenuItems(context.getContainer(), context.getUser(), trees));
+
+        return trees.toNavTrees();
     }
 
     public static void registerMenuProvider(MenuProvider provider)
@@ -67,26 +67,26 @@ public class PopupDeveloperView extends PopupMenuView
     static
     {
         registerMenuProvider((c, user, items) -> {
-            items.add(new NavTree("JavaScript API Reference", "https://www.labkey.org/download/clientapi_docs/javascript-api/"));
+            items.add(DeveloperMenuNavTrees.Section.referenceDocs, new NavTree("JavaScript API Reference", "https://www.labkey.org/download/clientapi_docs/javascript-api/"));
 
             String memTrackerURL = PageFlowUtil.urlProvider(AdminUrls.class).getTrackedAllocationsViewerURL().getLocalURIString(false);
             NavTree memTrackerNavTree = new NavTree("Memory Allocations");
             memTrackerNavTree.setScript("window.open('" + memTrackerURL + "','memoryallocations','width=500,height=400,location=0,menubar=0,resizable=1,status=0,alwaysRaised=yes')");
-            items.add(memTrackerNavTree);
+            items.add(DeveloperMenuNavTrees.Section.monitoring, memTrackerNavTree);
 
             if (!c.isRoot())
-                items.add(new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c)));
+                items.add(DeveloperMenuNavTrees.Section.tools, new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c)));
 
             if (user.hasRootPermission(PlatformDeveloperPermission.class))
             {
                 String consoleURL = PageFlowUtil.urlProvider(AdminUrls.class).getSessionLoggingURL().getLocalURIString(false);
                 NavTree consoleNavTree = new NavTree("Server JavaScript Console");
                 consoleNavTree.setScript("window.open('" + consoleURL + "','javascriptconsole','width=400,height=400,location=0,menubar=0,resizable=1,status=0,alwaysRaised=yes')");
-                items.add(consoleNavTree);
+                items.add(DeveloperMenuNavTrees.Section.monitoring, consoleNavTree);
             }
 
-            items.add(new NavTree("UI Style Guide", PageFlowUtil.urlProvider(CoreUrls.class).getStyleGuideURL(c)));
-            items.add(new NavTree("XML Schema Reference", "https://www.labkey.org/download/schema-docs/xml-schemas"));
+            items.add(DeveloperMenuNavTrees.Section.referenceDocs, new NavTree("XML Schema Reference", "https://www.labkey.org/download/schema-docs/xml-schemas"));
+            items.add(DeveloperMenuNavTrees.Section.referenceDocs, new NavTree("SQL Reference", new HelpTopic("labkeySql").getHelpTopicHref()));
         });
     }
 }

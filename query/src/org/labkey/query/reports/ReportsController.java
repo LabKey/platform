@@ -877,37 +877,31 @@ public class ReportsController extends SpringActionController
                     resultsView.addView(report.renderReport(getViewContext()));
             }
 
-            // TODO: assert?
-            if (null != resultsView)
-            {
-                Map<String, Object> resultProperties = new HashMap<>();
+            Map<String, Object> resultProperties = new HashMap<>();
 
-                LinkedHashSet<ClientDependency> dependencies = resultsView.getClientDependencies();
-                LinkedHashSet<String> cssScripts = new LinkedHashSet<>();
-                addScriptDependencies(bean, dependencies, cssScripts);
+            LinkedHashSet<ClientDependency> dependencies = resultsView.getClientDependencies();
+            LinkedHashSet<String> cssScripts = new LinkedHashSet<>();
+            addScriptDependencies(bean, dependencies, cssScripts);
 
-                LinkedHashSet<String> includes = new LinkedHashSet<>();
-                LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
-                PageFlowUtil.getJavaScriptFiles(getContainer(), dependencies, includes, implicitIncludes);
+            LinkedHashSet<String> includes = new LinkedHashSet<>();
+            LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
+            PageFlowUtil.getJavaScriptFiles(getContainer(), dependencies, includes, implicitIncludes);
 
-                MockHttpServletResponse mr = new MockHttpServletResponse();
-                mr.setCharacterEncoding(StringUtilsLabKey.DEFAULT_CHARSET.displayName());
-                resultsView.render(getViewContext().getRequest(), mr);
+            MockHttpServletResponse mr = new MockHttpServletResponse();
+            mr.setCharacterEncoding(StringUtilsLabKey.DEFAULT_CHARSET.displayName());
+            resultsView.render(getViewContext().getRequest(), mr);
 
-                if (mr.getStatus() != HttpServletResponse.SC_OK){
-                    resultsView.render(getViewContext().getRequest(), getViewContext().getResponse());
-                    return null;
-                }
-
-                resultProperties.put("html", mr.getContentAsString());
-                resultProperties.put("requiredJsScripts", includes);
-                resultProperties.put("requiredCssScripts", cssScripts);
-                resultProperties.put("implicitJsIncludes", implicitIncludes);
-                resultProperties.put("moduleContext", PageFlowUtil.getModuleClientContext(getViewContext(), dependencies));
-                return new ApiSimpleResponse(resultProperties);
+            if (mr.getStatus() != HttpServletResponse.SC_OK){
+                resultsView.render(getViewContext().getRequest(), getViewContext().getResponse());
+                return null;
             }
 
-            return null;
+            resultProperties.put("html", mr.getContentAsString());
+            resultProperties.put("requiredJsScripts", includes);
+            resultProperties.put("requiredCssScripts", cssScripts);
+            resultProperties.put("implicitJsIncludes", implicitIncludes);
+            resultProperties.put("moduleContext", PageFlowUtil.getModuleClientContext(getViewContext(), dependencies));
+            return new ApiSimpleResponse(resultProperties);
         }
 
         private void addScriptDependencies(ScriptReportBean bean, LinkedHashSet<ClientDependency> clientDependencies, LinkedHashSet<String> cssScripts)
