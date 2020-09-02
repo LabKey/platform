@@ -168,7 +168,6 @@
       <column columnName="EntityId"/>
       <column columnName="Created">
         <formatString>DateTime</formatString>
-        <displayWidth>0</displayWidth>
         <description>Contains the time at which this run was created</description>
       </column>
       <column columnName="CreatedBy">

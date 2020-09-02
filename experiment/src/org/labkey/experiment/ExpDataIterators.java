@@ -44,6 +44,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -418,6 +419,7 @@ public class ExpDataIterators
         final Map<String, Set<Pair<String, String>>> _parentNames;
         /** Cache sample type lookups because even though we do caching in SampleTypeService, it's still a lot of overhead to check permissions for the user */
         final Map<String, ExpSampleType> _sampleTypes = new HashMap<>();
+        final Map<String, ExpDataClass> _dataClasses = new HashMap<>();
 
         final Container _container;
         final User _user;
@@ -553,13 +555,13 @@ public class ExpDataIterators
                         if (_isSample && _context.getInsertOption().mergeRows)
                         {
                             pair = UploadSamplesHelper.resolveInputsAndOutputs(
-                                    _user, _container, runItem, parentNames, null, cache, materialCache, dataCache, _sampleTypes);
+                                    _user, _container, runItem, parentNames, null, cache, materialCache, dataCache, _sampleTypes, _dataClasses);
 
                         }
                         else
                         {
                             pair = UploadSamplesHelper.resolveInputsAndOutputs(
-                                    _user, _container, null, parentNames, null, cache, materialCache, dataCache, _sampleTypes);
+                                    _user, _container, null, parentNames, null, cache, materialCache, dataCache, _sampleTypes, _dataClasses);
 
                         }
 

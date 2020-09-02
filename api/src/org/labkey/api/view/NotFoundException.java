@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.SkipMothershipLogging;
 
 import javax.servlet.http.HttpServletResponse;
@@ -23,20 +24,20 @@ import javax.servlet.http.HttpServletResponse;
  * Throw to indicate that the client has referred to a resource that does not exist. Uncaught, this will
  * bubble up to the top level and be returned via a 404 HTTP response code.
  */
-public class NotFoundException extends RuntimeException implements SkipMothershipLogging
+public class NotFoundException extends HttpStatusException
 {
     public NotFoundException()
     {
-        super("" + HttpServletResponse.SC_NOT_FOUND + ": page not found");
+        this(HttpServletResponse.SC_NOT_FOUND + ": page not found");
     }
 
-    public NotFoundException(String string)
+    public NotFoundException(@Nullable String string)
     {
-        super(string);
+        this(string, null);
     }
     
-    public NotFoundException(String string, Throwable cause)
+    public NotFoundException(@Nullable String string, @Nullable Throwable cause)
     {
-        super(string, cause);
+        super(string, cause, HttpServletResponse.SC_NOT_FOUND);
     }
 }
