@@ -40,15 +40,6 @@ class GridPanelExample extends PureComponent<{}, State> {
 
     render() {
         const { queryConfig, queryName, schemaName } = this.state;
-        let body = (
-            <div>
-                Enter a Schema, Query
-            </div>
-        );
-
-        if (queryConfig) {
-            body = <GridPanelWithModel queryConfig={queryConfig} />
-        }
 
         return (
             <div>
@@ -82,7 +73,9 @@ class GridPanelExample extends PureComponent<{}, State> {
                     </Row>
                 </Grid>
 
-                {body}
+                {queryConfig === undefined && <div>Enter a Schema, Query</div>}
+
+                {queryConfig !== undefined && <GridPanelWithModel queryConfig={queryConfig} />}
             </div>
         );
     }
