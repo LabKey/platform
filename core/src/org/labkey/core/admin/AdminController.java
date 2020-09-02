@@ -8178,8 +8178,7 @@ public class AdminController extends SpringActionController
 
         private ActionURL getModuleEditorURL(String name)
         {
-            ActionURL url = ModuleEditorService.get().getModuleEditorURL(name);
-            return url;
+            return ModuleEditorService.get().getModuleEditorURL(name);
         }
 
         private ActionURL getCreateURL()
