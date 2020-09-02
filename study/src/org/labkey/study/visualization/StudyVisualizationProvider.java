@@ -128,7 +128,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
 
 
     @Override
-    public void appendAggregates(StringBuilder sql, Map<String, Set<VisualizationSourceColumn>> columnAliases, Map<String, VisualizationIntervalColumn> intervals, String queryAlias, IVisualizationSourceQuery joinQuery)
+    public void appendAggregates(StringBuilder sql, Map<String, Set<VisualizationSourceColumn>> columnAliases, Map<String, VisualizationIntervalColumn> intervals, String queryAlias, IVisualizationSourceQuery joinQuery, boolean forSelect)
     {
         for (Map.Entry<String, VisualizationIntervalColumn> entry : intervals.entrySet())
         {
@@ -153,7 +153,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
                     sql.append(queryAlias);
                     sql.append(".");
                     sql.append(col.getSQLAlias());
-                    if (null != col.getLabel())
+                    if (forSelect && null != col.getLabel())
                         sql.append(" @title='").append(StringUtils.replace(col.getLabel(), "'", "''")).append("'");
                 }
             }
