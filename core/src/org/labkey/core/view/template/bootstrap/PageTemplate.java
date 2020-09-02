@@ -289,7 +289,7 @@ public class PageTemplate extends JspView<PageConfig>
                     }
                     catch (HttpStatusException x)
                     {
-                        // re-throw BadRequestException or NotFoundException to let it bubble up to the top level
+                        // re-throw HttpStatusException to let it bubble up to the top level
                         throw x;
                     }
                     catch (Exception x)
