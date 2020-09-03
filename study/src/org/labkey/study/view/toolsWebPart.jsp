@@ -31,7 +31,7 @@
         %>
         <td style="text-align:center;vertical-align:bottom;padding-top:1em">
             <span class="tool-icon">
-                <a href="<%=item.getUrl()%>">
+                <a href="<%=h(item.getUrl())%>">
                     <img src="<%=item.getIcon()%>" alt="[<%=item.getLabel()%><%=h(" Icon")%>]"><br>
                     <%=item.getLabel()%>
                 </a>

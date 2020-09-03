@@ -125,14 +125,14 @@
     <tr>
         <td valign="top" class="labkey-form-label">Defaults:</td>
         <td>
-            <textarea name="defaults" id="defaults"><%=defaults == null ? HtmlString.EMPTY_STRING : defaults.getHtmlString(OlapController.APP_CONTEXT_JSON_INDENT)%></textarea>
+            <textarea name="defaults" id="defaults"><%=defaults == null ? HtmlString.EMPTY_STRING : defaults.getJavaScriptFragment(OlapController.APP_CONTEXT_JSON_INDENT)%></textarea>
         </td>
     </tr>
 
     <tr>
         <td valign="top" class="labkey-form-label">Values:</td>
         <td>
-            <textarea name="values" id="values"><%=values == null ? HtmlString.EMPTY_STRING : values.getHtmlString(OlapController.APP_CONTEXT_JSON_INDENT)%></textarea>
+            <textarea name="values" id="values"><%=values == null ? HtmlString.EMPTY_STRING : values.getJavaScriptFragment(OlapController.APP_CONTEXT_JSON_INDENT)%></textarea>
         </td>
     </tr>
 </p>
