@@ -15,11 +15,12 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.StudyController"%>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
 <%@ page import="org.labkey.study.model.SpecimenRequestActor" %>
 <%@ page import="org.labkey.study.model.SpecimenRequestRequirement" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -68,7 +69,7 @@ function verifyNewRequirement(prefix)
                 <tr>
                     <td><%= link("Delete", deleteDefaultRequirement.replaceParameter("id", requirement.getRowId())).usePost() %></td>
                     <td><%= h(requirement.getActor().getLabel()) %></td>
-                    <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
+                    <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : HtmlString.NBSP %></td>
                 </tr>
                 <%
                     }
@@ -111,7 +112,7 @@ function verifyNewRequirement(prefix)
                 <tr>
                     <td><%= link("Delete", deleteDefaultRequirement.replaceParameter("id", requirement.getRowId())).usePost() %></td>
                     <td><%= h(requirement.getActor().getLabel()) %></td>
-                    <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
+                    <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : HtmlString.NBSP %></td>
                 </tr>
                 <%
                     }
@@ -154,7 +155,7 @@ function verifyNewRequirement(prefix)
                 <tr>
                     <td><%= link("Delete", deleteDefaultRequirement.replaceParameter("id", requirement.getRowId())).usePost() %></td>
                     <td><%= h(requirement.getActor().getLabel()) %></td>
-                    <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
+                    <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : HtmlString.NBSP %></td>
                 </tr>
                 <%
                     }
@@ -197,7 +198,7 @@ function verifyNewRequirement(prefix)
                 <tr>
                     <td><%= link("Delete", deleteDefaultRequirement.replaceParameter("id", requirement.getRowId())).usePost() %></td>
                     <td><%= h(requirement.getActor().getLabel()) %></td>
-                    <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
+                    <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : HtmlString.NBSP %></td>
                 </tr>
                 <%
                     }

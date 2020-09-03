@@ -38,7 +38,7 @@
         <title><%=h(ann.getTitle())%></title>
         <link><%=h(bean.url)%><%=ann.getRowId()%>&amp;_print=1</link>
         <description><%=h(ann.getBody())%></description>
-        <pubDate><%=ann.getCreated()%></pubDate>
+        <pubDate><%=unsafe(ann.getCreated().toString())%></pubDate>
     </item><%
     }%>
 </channel>

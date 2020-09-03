@@ -124,21 +124,21 @@
                 if (xlsxExportEl.is(':checked')) {
                     if (isSign) {
                         exportUrl = <%=q(model.getSignXlsxURL().getPath())%>;
-                        exportParams = <%=new JSONObject(model.getSignXlsxURL().getParameterMap()).getHtmlString(2)%>;
+                        exportParams = <%=new JSONObject(model.getSignXlsxURL().getParameterMap()).getJavaScriptFragment(2)%>;
                     }
                     else {
                         exportUrl = <%=q(model.getXlsxURL().getPath())%>;
-                        exportParams = <%=new JSONObject(model.getXlsxURL().getParameterMap()).getHtmlString(2)%>;
+                        exportParams = <%=new JSONObject(model.getXlsxURL().getParameterMap()).getJavaScriptFragment(2)%>;
                     }
                 }
                 else if (xlsExportEl.is(':checked')) {
                     if (isSign) {
                         exportUrl = <%=q(model.getSignXlsURL().getPath())%>;
-                        exportParams = <%=new JSONObject(model.getSignXlsURL().getParameterMap()).getHtmlString(2)%>;
+                        exportParams = <%=new JSONObject(model.getSignXlsURL().getParameterMap()).getJavaScriptFragment(2)%>;
                     }
                     else {
                         exportUrl = <%=q(model.getXlsURL().getPath())%>;
-                        exportParams = <%=new JSONObject(model.getXlsURL().getParameterMap()).getHtmlString(2)%>;
+                        exportParams = <%=new JSONObject(model.getXlsURL().getParameterMap()).getJavaScriptFragment(2)%>;
                     }
                 <% if (model.getIqyURL() != null) { %>
                 }

@@ -17,6 +17,7 @@
 package org.labkey.api.wiki;
 
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.util.SimpleHasHtmlString;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -27,7 +28,7 @@ import org.labkey.api.view.JspView;
  * User: Tamra Myers
  * Date: Aug 17, 2006
  */
-public enum WikiRendererType implements SimpleHasHtmlString
+public enum WikiRendererType implements SafeToRenderEnum
 {
     RADEOX
         {

@@ -50,7 +50,7 @@
                 {
             %>
             <tr>
-                <td align="center"><input type="checkbox" name="delete" value="<%= member %>"></td>
+                <td align="center"><input type="checkbox" name="delete" value="<%=h(member)%>"></td>
                 <td><%= text(member.isActive() ? "" : "<del>")%><%=h(member.getAutocompleteName(getContainer(), getUser()))%><%=text(member.isActive() ? "" : "</del> (inactive)") %></td>
             </tr>
             <%

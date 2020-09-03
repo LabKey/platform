@@ -80,7 +80,7 @@
         {
 %>
             <span class="button-icon">
-                <a href="<%=createProjectUrl%>" title="New Project">
+                <a href="<%=h(createProjectUrl)%>" title="New Project">
                     <span class="fa-stack fa-1x" alt="New Project">
                       <i class="fa fa-folder fa-stack-2x"></i>
                       <i class="fa fa-plus fa-stack-1x" style="color: white;"></i>
@@ -91,7 +91,7 @@
         }
 %>
             <span class="button-icon">
-                <a href="<%=createFolderUrl%>" title="New Subfolder">
+                <a href="<%=h(createFolderUrl)%>" title="New Subfolder">
                     <span class="fa-stack fa-1x" alt="New Subfolder">
                       <i class="fa fa-folder-o fa-stack-2x"></i>
                       <i class="fa fa-plus-circle fa-stack-1x"></i>
@@ -99,7 +99,7 @@
                 </a>
             </span>
             <span class="button-icon">
-                <a href="<%=folderManagementUrl%>" title="Folder Management">
+                <a href="<%=h(folderManagementUrl)%>" title="Folder Management">
                     <span class="fa fa-gear fa-lg" alt="Folder Management"></span>
                 </a>
             </span>
