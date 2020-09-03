@@ -1,30 +1,26 @@
-import React, { PureComponent } from 'react';
+import React, { PureComponent, ChangeEvent } from 'react';
 import { Panel, Button, Grid, Row, Col } from 'react-bootstrap';
-import { GridPanel, InjectedQueryModels, withQueryModels, SchemaQuery } from '@labkey/components';
+import { GridPanelWithModel, QueryConfig, SchemaQuery } from '@labkey/components';
 
 interface State {
     schemaName?: string;
     queryName?: string;
+    queryConfig?: QueryConfig;
 }
 
-class GridPanelExampleImpl extends PureComponent<{} & InjectedQueryModels, State> {
-    constructor(props) {
-        super(props);
+class GridPanelExample extends PureComponent<{}, State> {
+    readonly state = {
+        queryName: '',
+        schemaName: '',
+        queryConfig: undefined,
+    };
 
-        this.state = {
-            schemaName: '',
-            queryName: '',
-        };
-    }
-
-    onFormChange = (e) => {
+    onFormChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         this.setState(() => ({ [name]: value }));
     };
 
     applySchemaQuery = () => {
-        const { queryModels, actions } = this.props;
-        const { model } = queryModels;
         let { schemaName, queryName } = this.state;
         schemaName = schemaName.trim() || undefined;
         queryName = queryName.trim() || undefined;
@@ -34,28 +30,16 @@ class GridPanelExampleImpl extends PureComponent<{} & InjectedQueryModels, State
             return;
         }
 
-        const schemaQuery = SchemaQuery.create(schemaName, queryName);
-
-        if (model !== undefined) {
-            actions.setSchemaQuery(model.id, schemaQuery);
-        } else {
-            actions.addModel({ schemaQuery, id: 'model' }, true);
-        }
+        this.setState({
+            queryConfig: {
+                id: `gpe-${schemaName}-${queryName}`,
+                schemaQuery: SchemaQuery.create(schemaName, queryName),
+            },
+        });
     };
 
     render() {
-        const { queryModels, actions } = this.props;
-        const { model } = queryModels;
-        const { schemaName, queryName } = this.state;
-        let body = (
-            <div>
-                Enter a Schema, Query, View
-            </div>
-        );
-
-        if (model !== undefined) {
-            body = <GridPanel actions={actions} model={model} />
-        }
+        const { queryConfig, queryName, schemaName } = this.state;
 
         return (
             <div>
@@ -63,12 +47,24 @@ class GridPanelExampleImpl extends PureComponent<{} & InjectedQueryModels, State
                     <Row>
                         <Col xs={4}>
                             <label htmlFor="schemaName">Schema</label>
-                            <input id="schemaName" name="schemaName" type="text" value={schemaName} onChange={this.onFormChange}/>
+                            <input
+                                id="schemaName"
+                                name="schemaName"
+                                type="text"
+                                value={schemaName}
+                                onChange={this.onFormChange}
+                            />
                         </Col>
 
                         <Col xs={4}>
                             <label htmlFor="queryName">Query</label>
-                            <input id="queryName" name="queryName" type="text" value={queryName} onChange={this.onFormChange}/>
+                            <input
+                                id="queryName"
+                                name="queryName"
+                                type="text"
+                                value={queryName}
+                                onChange={this.onFormChange}
+                            />
                         </Col>
 
                         <Col xs={4}>
@@ -77,13 +73,13 @@ class GridPanelExampleImpl extends PureComponent<{} & InjectedQueryModels, State
                     </Row>
                 </Grid>
 
-                {body}
+                {queryConfig === undefined && <div>Enter a Schema, Query</div>}
+
+                {queryConfig !== undefined && <GridPanelWithModel queryConfig={queryConfig} />}
             </div>
         );
     }
 }
-
-const GridPanelExample = withQueryModels<{}>(GridPanelExampleImpl);
 
 export class GridPanelPage extends PureComponent {
     render() {

@@ -18,6 +18,7 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.util.SimpleHasHtmlString;
 
 /**
@@ -25,7 +26,7 @@ import org.labkey.api.util.SimpleHasHtmlString;
  * User: markigra
  * Date: Oct 31, 2007
  */
-public enum TimepointType implements SimpleHasHtmlString
+public enum TimepointType implements SafeToRenderEnum
 {
     /** Events should be explicitly assigned a visit number */
     VISIT(true),

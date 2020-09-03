@@ -179,7 +179,7 @@ function orderModule(listName, hiddenElName, down)
                 %>
                 </select>
                 <input type="hidden" name="chronologicalOrder" value="<%= h(orderedList) %>">
-                <input type="hidden" name="returnUrl" value="<%= returnURL %>">
+                <input type="hidden" name="returnUrl" value="<%=h(returnURL)%>">
             </td>
             <td align="center" valign="center">
                 <%= button("Move Up").href("#").onClick("return orderModule('chronologicalOrderItems', 'chronologicalOrder', 0)") %><br><br>

@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
  * Used to assert that a character sequence is valid, properly encoded JavaScript. Similar to HtmlString, though this class
  * is just a simple wrapper; it doesn't (yet) provide filtering, a builder, or other useful mechanisms of HtmlString.
  */
-public class JavaScriptFragment
+public class JavaScriptFragment implements SafeToRender
 {
     public static final JavaScriptFragment EMPTY_STRING = JavaScriptFragment.unsafe("''");
     public static final JavaScriptFragment NULL = JavaScriptFragment.unsafe(" null ");
