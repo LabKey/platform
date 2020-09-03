@@ -10,6 +10,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
+        dependencies.add("clientapi"); // added this for App Template
 //        dependencies.add("http://localhost:3001/errorHandler.js");
         dependencies.add("core/gen/errorHandler");
     }

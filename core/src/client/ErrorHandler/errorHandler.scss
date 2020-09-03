@@ -3,19 +3,22 @@
 }
 
 .labkey-error-heading {
-  color : #AF1D21;
-  font-size: 50px;
+  color : #B82025;
+  font-size: 48px;
+  font-weight: 600
 }
 
 .labkey-error-subheading {
-  font-size: 25px;
+  font-size: 24px;
   text-overflow: ellipsis;
   padding-bottom: 3rem;
+  width: 587px
 }
 
 .labkey-error-instruction {
   font-size: 18px;
   padding-bottom: 15px;
+  width: 560px;
 }
 
 .error-backButton {

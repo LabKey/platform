@@ -15,13 +15,42 @@ interface ErrorHandlerProps {
     context: AppContext;
 }
 
-export class ErrorHandler extends React.Component<ErrorHandlerProps> {
+interface ErrorHandlerState {
+    showDetails: boolean;
+}
+
+export class ErrorHandler extends React.Component<ErrorHandlerProps, ErrorHandlerState> {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            showDetails: false,
+        };
+    }
+
+    loadBack = (): void => {
+        window.history.back();
+    };
+
+    loadViewDetails = (): void => {
+        this.setState(() => ({
+            showDetails: true,
+        }));
+    };
+
     render() {
-        const { errorType } = this.props.context;
+        const { errorType, message } = this.props.context;
+        const { showDetails } = this.state;
 
         return (
             <>
-                <ErrorTopSection errorType={errorType} />
+                <ErrorTopSection
+                    errorType={errorType}
+                    loadBack={this.loadBack}
+                    loadViewDetails={this.loadViewDetails}
+                />
+                {/* TODO : ErrorPage, following section in next story*/}
+                {showDetails && <h3 className="labkey-error">{message}</h3>}
             </>
         );
     }

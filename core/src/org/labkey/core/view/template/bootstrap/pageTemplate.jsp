@@ -107,6 +107,7 @@
 %>
 <script type="text/javascript">LABKEY.loadScripts(); LABKEY.showNavTrail();</script>
 <!-- <%= h(request.getHeader("User-Agent")) %> -->
-<a href="<%=h(me.getPermaLink())%>" id="permalink" name="permalink" style="display: none;"></a>
+// TODO : ErrorPage, look into this
+<%--<a href="<%=h(me.getPermaLink())%>" id="permalink" name="permalink" style="display: none;"></a>--%>
 </body>
 </html>

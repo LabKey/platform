@@ -54,6 +54,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.webdav.DavException;
 import org.springframework.dao.DataAccessResourceFailureException;
 
 import javax.servlet.ServletException;
@@ -850,10 +851,11 @@ public class ExceptionUtil
                 log.error("Global.handleException", x);
             }
         }
-        else if (context != null)
+        else if (context != null && AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_ERROR_PAGE))
         {
             // 7629: Error page redesign -- development in-progress. This path shows the new error view.
             ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, false, startupFailure);
+            renderer.setErrorType(ErrorRenderer.ErrorType.execution);
 
             if (ex instanceof UnauthorizedException)
             {
@@ -871,12 +873,17 @@ public class ExceptionUtil
                 renderer.setErrorType(ErrorRenderer.ErrorType.permission);
             }
 
+            if (ex instanceof DavException)
+            {
+                renderer.setErrorType(ErrorRenderer.ErrorType.general);
+            }
+
             if (pageConfig == null)
             {
                 pageConfig = new PageConfig();
                 pageConfig.setTemplate(PageConfig.Template.Home);
             }
-            renderer.setErrorType(ErrorRenderer.ErrorType.execution);
+
             HttpView<?> errorView;
 
             try
