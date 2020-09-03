@@ -1540,7 +1540,7 @@ public class AdminController extends SpringActionController
         void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled);
     }
 
-    public enum MigrateFilesOption implements SimpleHasHtmlString
+    public enum MigrateFilesOption implements SafeToRenderEnum
     {
         leave {
             @Override
@@ -1818,7 +1818,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public enum FileRootProp implements SimpleHasHtmlString
+    public enum FileRootProp implements SafeToRenderEnum
     {
         disable,
         siteDefault,

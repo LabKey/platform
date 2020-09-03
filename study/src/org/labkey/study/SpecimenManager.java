@@ -73,7 +73,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.SimpleHasHtmlString;
+import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -2244,7 +2244,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         }
     }
 
-    public enum SpecimenTypeLevel implements SimpleHasHtmlString
+    public enum SpecimenTypeLevel implements SafeToRenderEnum
     {
         PrimaryType()
         {
@@ -2266,7 +2266,8 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             public String getLabel()
             {
                 return "Primary Type";
-            }},
+            }
+        },
         Derivative()
         {
             @Override
@@ -2282,11 +2283,13 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             {
                 return new String[] { summary.getPrimaryType(), summary.getDerivative() };
             }
+
             @Override
             public String getLabel()
             {
                 return "Derivative";
-            }},
+            }
+        },
         Additive()
         {
             @Override
@@ -2307,18 +2310,19 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             public String getLabel()
             {
                 return "Additive";
-            }};
+            }
+        };
 
         public abstract String[] getTitleHierarchy(SummaryByVisitType summary);
         public abstract List<SpecimenTypeBeanProperty> getGroupingColumns();
         public abstract String getLabel();
     }
 
-    private class SpecimenDetailQueryHelper
+    private static class SpecimenDetailQueryHelper
     {
-        private SQLFragment _viewSql;
-        private String _typeGroupingColumns;
-        private Map<String, SpecimenTypeBeanProperty> _aliasToTypePropertyMap;
+        private final SQLFragment _viewSql;
+        private final String _typeGroupingColumns;
+        private final Map<String, SpecimenTypeBeanProperty> _aliasToTypePropertyMap;
 
         private SpecimenDetailQueryHelper(SQLFragment viewSql, String typeGroupingColumns, Map<String, SpecimenTypeBeanProperty> aliasToTypePropertyMap)
         {
@@ -2380,10 +2384,9 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         }
 
         // turn our fieldkeys into columns:
-        Collection<ColumnInfo> cols = new ArrayList<>();
         Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(tinfo, columns);
         Set<FieldKey> unresolvedColumns = new HashSet<>();
-        cols.addAll(colMap.values());
+        Collection<ColumnInfo> cols = new ArrayList<>(colMap.values());
         cols = QueryService.get().ensureRequiredColumns(tinfo, cols, specimenDetailFilter, null, unresolvedColumns);
         if (!unresolvedColumns.isEmpty())
             throw new IllegalStateException("Unable to resolve column(s): " + unresolvedColumns.toString());

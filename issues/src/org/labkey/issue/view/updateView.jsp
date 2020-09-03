@@ -335,7 +335,7 @@
                         {
                             if(issue.getDuplicate() != null)
                             {%>
-                        <a href="<%=IssuesController.getDetailsURL(c, issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a><%
+                        <a href="<%=h(IssuesController.getDetailsURL(c, issue.getDuplicate(), false))%>"><%=issue.getDuplicate()%></a><%
                                 }
                             }%>
                     </td></tr><%

@@ -55,8 +55,8 @@
             {
 %>
                 <div>
-                    <a class="labkey-text-link" href='<%= new ActionURL(TransformResultsAction.class,getContainer())
-                        .addParameter("name",file.getName()).addParameter("uploadAttemptID", bean.getUploadAttemptID())%>'><%= h(file.getName())%></a>
+                    <a class="labkey-text-link" href='<%=h(new ActionURL(TransformResultsAction.class,getContainer())
+                        .addParameter("name",file.getName()).addParameter("uploadAttemptID", bean.getUploadAttemptID()))%>'><%= h(file.getName())%></a>
                 </div>
 <%
             }

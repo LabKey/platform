@@ -25,9 +25,8 @@ SOFTWARE.
 */
 
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.HasHtmlString;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JavaScriptFragment;
+import org.labkey.api.util.SafeToRender;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -92,7 +91,7 @@ import java.util.Map;
  * @author JSON.org
  * @version 2
  */
-public class JSONObject extends HashMap<String, Object> implements HasHtmlString
+public class JSONObject extends HashMap<String, Object> implements SafeToRender
 {
     // kevink: restore the Null class removed in r10087.  It is used by Jackson's JsonOrgModule for serialization of org.json
     /**
@@ -1188,22 +1187,6 @@ public class JSONObject extends HashMap<String, Object> implements HasHtmlString
     public JavaScriptFragment getJavaScriptFragment(int indentFactor)
     {
         return JavaScriptFragment.unsafe(toString(indentFactor));
-    }
-
-    @Override
-    public HtmlString getHtmlString()
-    {
-        return HtmlString.unsafe(toString());
-    }
-
-    /**
-     * Make a pretty-printed JSON text of this JSONObject
-     * @param indentFactor Number of spaces to add to each level of indentation
-     * @return HtmlString holding the JSON representation
-     */
-    public HtmlString getHtmlString(int indentFactor)
-    {
-        return HtmlString.unsafe(toString(indentFactor));
     }
 
     /**

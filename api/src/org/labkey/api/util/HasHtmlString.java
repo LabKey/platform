@@ -17,20 +17,15 @@ package org.labkey.api.util;
 
 import java.io.IOException;
 
-public interface HasHtmlString extends SafeToRender, DOM.Renderable
+/**
+ * Implements {@code HtmlString getHtmlString()}. Provides no guarantee about what {@code toString()} returns (e.g., it
+ * might or might not require HTML encoding); see {@link SafeToRender} for that.
+ */
+public interface HasHtmlString extends DOM.Renderable, SafeToRender
 {
-    /**
-     * Must be consistent with {@code toString()}! JSP rendering of objects will call {@code obj.getHtmlString().toString()}
-     * in dev mode but {@code obj.toString()} in production mode. Most implementations will either implement {@code toString()}
-     * as {@code return getHtmlString.toString()} or implement {@code getHtmlString()} as {@code HtmlString.unsafe(toString);}.
-     */
     HtmlString getHtmlString();
 
-    /**
-     * Must be consistent with {@code HtmlString}; see above. This method definition is a no-op (Object implements toString()),
-     * but included here as reminder of the consistency requirement. Also makes for easy inspection to verify consistency.
-     * @return A String that's consistent with {@code HtmlString}
-     */
+    // TODO: remove this
     String toString();
 
     @Override

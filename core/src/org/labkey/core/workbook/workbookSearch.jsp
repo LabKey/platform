@@ -33,8 +33,6 @@
     JspView<WorkbookSearchBean> me = (JspView) HttpView.currentView();
     String searchString = StringUtils.trimToNull(me.getModelBean().getSearchString());
     int rowId = me.getModelBean().getQueryView().getWebPartRowId();
-
-
 %>
 
 <script type="text/javascript">

@@ -30,7 +30,6 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.beans.MutablePropertyValues;
@@ -60,7 +59,7 @@ import java.util.stream.Collectors;
 /**
  * Represents a URL, typically within this instance of LabKey Server.
  */
-public class URLHelper implements Cloneable, Serializable, HasHtmlString
+public class URLHelper implements Cloneable, Serializable
 {
     private static final Logger LOG = LogManager.getLogger(URLHelper.class);
 
@@ -903,12 +902,6 @@ public class URLHelper implements Cloneable, Serializable, HasHtmlString
         {
             return AppProps.getInstance().getContextPath() + resourcePath;
         }
-    }
-
-    @Override
-    public HtmlString getHtmlString()
-    {
-        return HtmlString.of(toString());
     }
 
     public boolean isConfiguredExternalHost()

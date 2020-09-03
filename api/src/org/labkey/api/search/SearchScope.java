@@ -17,6 +17,7 @@ package org.labkey.api.search;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.util.SimpleHasHtmlString;
 
 /**
@@ -24,7 +25,7 @@ import org.labkey.api.util.SimpleHasHtmlString;
  * User: adam
  * Date: 2/18/12
  */
-public enum SearchScope implements SimpleHasHtmlString
+public enum SearchScope implements SafeToRenderEnum
 {
     All() {
         @Override
