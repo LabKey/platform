@@ -64,7 +64,6 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import static org.labkey.api.util.HtmlString.EMPTY_STRING;
 
@@ -241,7 +240,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return HtmlString.of(url == null ? null : url.toString());
     }
 
-    // Note: If you have a stream, consider using JSONArray.collector() instead
+    // Note: If you have a stream, use JSONArray.collector()
     public JSONArray toJsonArray(Collection<?> c)
     {
         return new JSONArray(c);
@@ -251,12 +250,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
     {
         return new JSONObject(c);
     }
-
-    public JSONObject toJsonObject(Stream<Object> c)
-    {
-        return new JSONObject(c);
-    }
-
 
     /**
      * Quotes a javascript string.
@@ -274,6 +267,16 @@ public abstract class JspBase extends JspContext implements HasViewContext
     final protected JavaScriptFragment q(HtmlString hs)
     {
         return null == hs ? JavaScriptFragment.NULL : JavaScriptFragment.unsafe(PageFlowUtil.jsString(hs.toString()));
+    }
+
+    /**
+     * Convenience method that returns a local URL as a properly escaped JavaScript identifier.
+     * @param url Some URLHelper
+     * @return A relative URL in a properly escaped single-quoted string literal JavaScriptFragment
+     */
+    final protected JavaScriptFragment q(@NotNull URLHelper url)
+    {
+        return q(url.toString());
     }
 
     // TODO: Very, very temporary; just for backward compatibility. Eliminate ASAP.
@@ -412,7 +415,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.urlProvider(inter);
     }
 
-    public HasHtmlString iconLink(String iconCls, String tooltip, URLHelper url)
+    public LinkBuilder iconLink(String iconCls, String tooltip, URLHelper url)
     {
         return new LinkBuilder().iconCls(iconCls).tooltip(tooltip).href(url);
     }

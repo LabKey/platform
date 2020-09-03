@@ -24,6 +24,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.SecurityManager.TermsOfUseProvider;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.SimpleHasHtmlString;
 import org.labkey.api.view.ActionURL;
@@ -169,7 +170,7 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
         }
     }
 
-    public enum TermsOfUseType implements SimpleHasHtmlString
+    public enum TermsOfUseType implements SafeToRenderEnum
     { NONE, PROJECT_LEVEL, SITE_WIDE }
 
     public static class TermsOfUse

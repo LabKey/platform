@@ -933,15 +933,10 @@ public class UserController extends SpringActionController
         @Override
         public @Nullable Pair<AttachmentParent, String> getAttachment(AttachmentForm form)
         {
-            boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
             User user = form.getUserId() == null ? null : UserManager.getUser(form.getUserId());
             if (null == user)
             {
                 throw new NotFoundException("Unable to find user");
-            }
-            else if (!isUserManager && user.getUserId() != getUser().getUserId())
-            {
-                throw new IllegalArgumentException("Unable to download user attachment");
             }
 
             return new Pair<>(new AvatarThumbnailProvider(user), form.getName());

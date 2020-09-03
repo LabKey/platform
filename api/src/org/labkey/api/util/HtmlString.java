@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.util.Objects;
 
-public final class HtmlString implements DOM.Renderable, Comparable<HtmlString>
+public final class HtmlString implements SafeToRender, DOM.Renderable, Comparable<HtmlString>
 {
     // Helpful constants for convenience (and efficiency)
     public static HtmlString EMPTY_STRING = HtmlString.of("");
