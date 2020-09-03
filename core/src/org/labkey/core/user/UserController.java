@@ -73,6 +73,7 @@ import org.labkey.api.security.AvatarThumbnailProvider;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.MemberType;
+import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -537,7 +538,7 @@ public class UserController extends SpringActionController
                 && (currentUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin deactivate/delete a site admin
     }
 
-    @RequiresPermission(UserManagementPermission.class)
+    @RequiresAllOf({UpdateUserPermission.class, DeleteUserPermission.class})
     public class UpdateUsersStateApiAction extends MutatingApiAction<UpdateUserStateForm>
     {
         private List<Integer> validUserIds = new ArrayList<>();
@@ -1964,9 +1965,9 @@ public class UserController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(UserForm form)
         {
-            boolean isUserManager = getUser().hasRootPermission(UpdateUserPermission.class);
+            boolean canUpdateUser = getUser().hasRootPermission(UpdateUserPermission.class);
 
-            if (!isUserManager)
+            if (!canUpdateUser)
             {
                 User user = getUser();
 
@@ -2985,7 +2986,7 @@ public class UserController extends SpringActionController
             );
 
             // @RequiresPermission(UserManagementPermission.class)
-            assertForUserManagementPermission(user,
+            assertForUserPermissions(user,
                 controller.new DeactivateUsersAction(),
                 controller.new ActivateUsersAction(),
                 controller.new DeleteUsersAction()

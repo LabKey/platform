@@ -2254,7 +2254,7 @@ public class SecurityApiActions
             );
 
             // @RequiresPermission(UserManagementPermission.class)
-            assertForUserManagementPermission(user,
+            assertForUserPermissions(user,
                 new DeleteUserAction(),
                 new AdminRotatePasswordAction(),
                 new ListProjectGroupsAction()

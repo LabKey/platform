@@ -496,9 +496,9 @@ public class AuthenticationManager
      */
     public static boolean canSetUserExpirationDate(User userManager, Container container)
     {
-        boolean isUserManager = userManager.hasRootPermission(UpdateUserPermission.class);
+        boolean canUpdate = userManager.hasRootPermission(UpdateUserPermission.class);
         boolean isAdmin = container.hasPermission(userManager, AdminPermission.class);
-        return (isUserManager || isAdmin) && AuthenticationManager.isAccountExpirationEnabled();
+        return (canUpdate || isAdmin) && AuthenticationManager.isAccountExpirationEnabled();
     }
 
     /**

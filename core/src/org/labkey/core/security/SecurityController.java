@@ -1574,7 +1574,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresPermission(UserManagementPermission.class)
+    @RequiresPermission(UpdateUserPermission.class)
     public class ShowResetEmailAction extends AbstractEmailAction
     {
         @Override
@@ -2058,7 +2058,7 @@ public class SecurityController extends SpringActionController
             );
 
             // @RequiresPermission(UserManagementPermission.class)
-            assertForUserManagementPermission(user,
+            assertForUserPermissions(user,
                 controller.new AddUsersAction(),
                 controller.new ShowResetEmailAction(),
                 controller.new AdminResetPasswordAction()
