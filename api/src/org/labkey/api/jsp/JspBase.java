@@ -31,7 +31,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Button.ButtonBuilder;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
-import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -176,32 +175,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
     /**
-     * Pass-through -- this eases the process of migrating our helpers from String to HtmlString, since existing
-     * code that uses text(String) will continue to compile and run when the parameter becomes an HtmlString.
-     * TODO: HtmlString - Eventually, remove this method and all usages.
-     * @param s An HtmlString
-     * @return The HtmlString
-     */
-    @Deprecated
-    public HtmlString text(HtmlString s)
-    {
-        return s;
-    }
-
-    /**
-     * Pass-through -- this eases the process of migrating our helpers from String to HasHtmlString, since existing
-     * code that uses text(String) will continue to compile and run when the parameter becomes a HasHtmlString.
-     * TODO: HtmlString - Eventually, remove this method and all usages.
-     * @param s Any object that implements HasHtmlString
-     * @return The parameter's HtmlString
-     */
-    @Deprecated
-    public HtmlString text(HasHtmlString s)
-    {
-        return s.getHtmlString();
-    }
-
-    /**
      * Html escape a string.
      * The name comes from Embedded Ruby.
      */
@@ -215,13 +188,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
      * The name comes from Embedded Ruby.
      */
     public HtmlString h(Object o)
-    {
-        return HtmlString.of(o == null ? null : o.toString());
-    }
-
-    // TODO: Remove this
-    @Deprecated
-    public HtmlString h(HtmlString o)
     {
         return HtmlString.of(o == null ? null : o.toString());
     }
