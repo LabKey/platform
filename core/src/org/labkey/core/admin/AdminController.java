@@ -8065,12 +8065,6 @@ public class AdminController extends SpringActionController
                 setTitle(type + " Modules");
             }
 
-            private Link.LinkBuilder getModuleEditorLink(ModuleContext moduleContext)
-            {
-                String linkText = AppProps.getInstance().isDevMode() ? "Edit module" : "Update module";
-                return (PageFlowUtil.link(linkText).href(getModuleEditorURL(moduleContext.getName())));
-            }
-
             @Override
             protected void renderView(Object model, PrintWriter out)
             {
@@ -8098,7 +8092,8 @@ public class AdminController extends SpringActionController
                                 TD(cl("labkey-column-header"),"Class"),
                                 TD(cl("labkey-column-header"),"Location"),
                                 TD(cl("labkey-column-header"),"Schemas"),
-                                null == externalModulesDir ? null : TD(cl("labkey-column-header"),""),    // update actions
+                                !AppProps.getInstance().isDevMode() ? null : TD(cl("labkey-column-header"),""),    // edit actions
+                                null == externalModulesDir ? null : TD(cl("labkey-column-header"),""),    // upload actions
                                 !hasAdminOpsPerm ? null : TD(cl("labkey-column-header"),"")     // delete actions
                             ),
                             _contexts.stream()
@@ -8144,10 +8139,9 @@ public class AdminController extends SpringActionController
                                         TD(SPAN(at(title,className), className.substring(className.lastIndexOf(".")+1))),
                                         TD(SPAN(at(title,fullPathToModule),shortPathToModule)),
                                         TD(schemas.stream().map(s -> createHtmlFragment(s, BR()))),
-
-                                        TD(getModuleEditorLink(moduleContext)),
-
-                                        !hasAdminOpsPerm ? null : TD(!deleteableModule ? NBSP :  PageFlowUtil.link("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : "")))).href(getDeleteURL(moduleContext.getName())))
+                                        TD(!AppProps.getInstance().isDevMode() ? NBSP : PageFlowUtil.link("Edit module").href(getModuleEditorURL(moduleContext.getName()))),
+                                        !hasAdminOpsPerm ? null : TD(!deleteableModule ? NBSP :  PageFlowUtil.link("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : "")))).href(getDeleteURL(moduleContext.getName()))),
+                                        null == externalModulesDir ? null : TD(!replaceableModule ? NBSP : PageFlowUtil.link("Upload Module").href(getUpdateURL(moduleContext.getName())))
                                     );
                                 })
                         )
