@@ -25,7 +25,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.SafeToRenderEnum;
-import org.labkey.api.util.SimpleHasHtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.CohortImpl;
 

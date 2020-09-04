@@ -19,7 +19,6 @@ package org.labkey.api.study;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.SafeToRenderEnum;
-import org.labkey.api.util.SimpleHasHtmlString;
 
 /**
  * List of ways that a study can group events based on their time.
