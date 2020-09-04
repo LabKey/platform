@@ -21,8 +21,8 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.api.util.HasHtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.Link.LinkBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -101,7 +101,7 @@
         hasHiddenData = !datasets.get(i).isShowByDefault();
     if (hasHiddenData)
     {
-        HasHtmlString viewLink = bean.showAll ? link("Show Default Datasets").href(basePage) :
+        LinkBuilder viewLink = bean.showAll ? link("Show Default Datasets").href(basePage) :
                 link("Show All Datasets").href(basePage + "showAll=1");
         out.print(viewLink);
     }
