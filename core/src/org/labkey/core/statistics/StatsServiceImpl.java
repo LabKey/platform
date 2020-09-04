@@ -51,6 +51,8 @@ public class StatsServiceImpl implements StatsService
                 return new ParameterCurveFit(data, type);
             case POLYNOMIAL:
                 return new PolynomialCurveFit(data);
+            case LINEAR:
+                return new LinearCurveFit(data);
             case NONE:
                 return new NoCurveFit(data);
         }
