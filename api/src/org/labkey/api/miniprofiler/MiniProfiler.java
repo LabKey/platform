@@ -29,7 +29,6 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SafeToRenderEnum;
-import org.labkey.api.util.SimpleHasHtmlString;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 
