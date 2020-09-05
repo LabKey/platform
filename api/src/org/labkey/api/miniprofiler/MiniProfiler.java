@@ -27,6 +27,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.view.ViewContext;
@@ -136,11 +137,11 @@ public class MiniProfiler
         SETTINGS_CACHE.remove(user);
     }
 
-    public static HtmlString renderInitScript(long currentId, Set<Long> ids, String version)
+    public static JavaScriptFragment renderInitScript(long currentId, Set<Long> ids, String version)
     {
         Settings settings = getSettings();
 
-        return HtmlString.unsafe(
+        return JavaScriptFragment.unsafe(
             "<script type='text/javascript'>\n" +
             "LABKEY.internal.MiniProfiler.init({\n" +
             "  currentId:" + currentId + ",\n" +
