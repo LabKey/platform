@@ -183,8 +183,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return HtmlString.of(str);
     }
 
-    public HtmlString h(int i){return null}
-
     /**
      * Html escape an object.toString().
      * The name comes from Embedded Ruby.
