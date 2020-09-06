@@ -185,7 +185,7 @@
     %><p>WARNING: One or more datasets in parent study are shadowed by datasets defined in this folder.<br><ul><%
     for (DatasetDefinition h : shadowed)
     {
-        %><li><%=h(h.getDatasetId())%>:&nbsp;<%=h(h.getName())%></li><%
+        %><li><%=h.getDatasetId()%>:&nbsp;<%=h(h.getName())%></li><%
     }
     %></ul></p><%
 }

@@ -73,7 +73,7 @@
                     {
                         name: <%=q(att.getName())%>,
                         iconUrl: <%=q(getViewContext().getContextPath() + att.getFileIcon())%>,
-                        downloadUrl: <%=q(downloadURL.toString())%>
+                        downloadUrl: <%=q(downloadURL)%>
                     }
                 <%
                 sep = ",";

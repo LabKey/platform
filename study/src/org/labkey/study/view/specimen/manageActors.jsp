@@ -130,7 +130,7 @@
                 <%= button("Save").submit(true) %>&nbsp;
                 <%= button("Done").submit(true).onClick("document.manageActors.nextPage.value=''; return true;") %>
                 <%= button("Cancel").href(new ActionURL(StudyController.ManageStudyAction.class, study.getContainer())) %>&nbsp;
-                <%= button("Change Order").submit(true).onClick("document.manageActors.nextPage.value=" + q(new ActionURL(SpecimenController.ManageActorOrderAction.class, study.getContainer()).getLocalURIString()) + "; return true;") %>
+                <%= button("Change Order").submit(true).onClick("document.manageActors.nextPage.value=" + q(new ActionURL(SpecimenController.ManageActorOrderAction.class, study.getContainer())) + "; return true;") %>
                 <input type="hidden" name="nextPage" value="<%=h(new ActionURL(SpecimenController.ManageActorsAction.class, study.getContainer()))%>">
             </td>
             <td>&nbsp;</td>

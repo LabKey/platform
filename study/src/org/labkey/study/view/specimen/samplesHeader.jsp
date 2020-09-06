@@ -46,7 +46,7 @@
     String subjectNounPlural = StudyService.get().getSubjectNounPlural(getContainer());
 %>
 <script>
-    var CREATE_REQUEST_BASE_LINK = <%=q(createRequestURL.toString())%>;
+    var CREATE_REQUEST_BASE_LINK = <%=q(createRequestURL)%>;
     <%
     if (bean.getSelectedRequest() != null)
     {

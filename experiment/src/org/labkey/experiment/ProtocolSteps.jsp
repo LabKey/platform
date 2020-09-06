@@ -171,8 +171,8 @@
                     </td>
                     <td width="200px"><%=h(mpi.getLSID())%></td>
                     <td width="80px"><%=h(criteria != null ? criteria.getTypeName() : null)%></td>
-                    <td width="20px"><%=h(mpi.getMinOccurs())%></td>
-                    <td width="20px"><%=h(mpi.getMaxOccurs())%></td>
+                    <td width="20px"><%=mpi.getMinOccurs()%></td>
+                    <td width="20px"><%=mpi.getMaxOccurs()%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpMaterialProtocolInputImpl)mpi).getProperties(); %>
                         <% if (!map.isEmpty()) out.print(new JSONObject(map).getJavaScriptFragment(2)); %>
@@ -192,8 +192,8 @@
                     </td>
                     <td width="200px"><%=h(dpi.getLSID())%></td>
                     <td width="80px"><%=h(criteria != null ? criteria.getTypeName() : null)%></td>
-                    <td width="20px"><%=h(dpi.getMinOccurs())%></td>
-                    <td width="20px"><%=h(dpi.getMaxOccurs())%></td>
+                    <td width="20px"><%=dpi.getMinOccurs()%></td>
+                    <td width="20px"><%=dpi.getMaxOccurs()%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpDataProtocolInputImpl)dpi).getProperties(); %>
                         <% if (!map.isEmpty()) out.print(new JSONObject(map).getJavaScriptFragment(2)); %>
@@ -239,8 +239,8 @@
                     </td>
                     <td width="200px"><%=h(dpo.getLSID())%></td>
                     <td width="80px"><%=h(criteria != null ? criteria.getTypeName() : null)%></td>
-                    <td width="20px"><%=h(dpo.getMinOccurs())%></td>
-                    <td width="20px"><%=h(dpo.getMaxOccurs())%></td>
+                    <td width="20px"><%=dpo.getMinOccurs()%></td>
+                    <td width="20px"><%=dpo.getMaxOccurs()%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpDataProtocolInputImpl)dpo).getProperties(); %>
                         <% if (!map.isEmpty()) out.print(new JSONObject(map).getJavaScriptFragment(2)); %>

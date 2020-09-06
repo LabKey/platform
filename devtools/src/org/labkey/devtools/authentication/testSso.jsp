@@ -26,7 +26,7 @@
     AuthenticationConfigurationForm form = me.getModelBean();
 %>
 <labkey:form action="<%=buildURL(TestSsoController.ValidateAction.class)%>" method="post" layout="horizontal">
-    <input type="hidden" name="configuration" value="<%=h(form.getConfiguration())%>">
+    <input type="hidden" name="configuration" value="<%=form.getConfiguration()%>">
     <labkey:input type="text" name="email" value="" size="50"
                   label="SSO Test Authentication"
                   contextContent="Type an email address below to \"authenticate\" as that user."
