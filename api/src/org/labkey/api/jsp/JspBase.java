@@ -183,6 +183,8 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return HtmlString.of(str);
     }
 
+    public HtmlString h(int i){return null}
+
     /**
      * Html escape an object.toString().
      * The name comes from Embedded Ruby.
@@ -240,9 +242,9 @@ public abstract class JspBase extends JspContext implements HasViewContext
      * @param url Some URLHelper
      * @return A relative URL in a properly escaped single-quoted string literal JavaScriptFragment
      */
-    final protected JavaScriptFragment q(@NotNull URLHelper url)
+    final protected JavaScriptFragment q(@Nullable URLHelper url)
     {
-        return q(url.toString());
+        return q(null != url ? url.toString() : null);
     }
 
     // TODO: Very, very temporary; just for backward compatibility. Eliminate ASAP.

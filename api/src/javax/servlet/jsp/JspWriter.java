@@ -477,15 +477,15 @@ public abstract class JspWriter extends java.io.Writer {
      * tomcat-jsp-api-8.5.51.jar and tomcat-jsp-api-8.5.51-sources.jar.
      */
 
-    public void print(SafeToRender str) throws IOException
-    {
-    }
-
-    public void print(Boolean b) throws IOException
-    {
-    }
-
-    public void print(Number n) throws IOException
-    {
-    }
+//    public void print(SafeToRender str) throws IOException
+//    {
+//    }
+//
+//    public void print(Boolean b) throws IOException
+//    {
+//    }
+//
+//    public void print(Number n) throws IOException
+//    {
+//    }
 }
