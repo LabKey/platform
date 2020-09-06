@@ -466,26 +466,26 @@ public abstract class JspWriter extends java.io.Writer {
      */
     protected boolean autoFlush;
 
-    /*
-        Uncomment the methods below to help flag usages of print(Object) that are unsafe. Uncomment these methods and
-        use IntelliJ to invoke find usages on print(Object) above to show attempts to render objects that are considered
-        unsafe. You must re-comment the lines below before building, otherwise JSPs will break at runtime.
-
-        Note that some modules may bind to the "real" JspWriter residing in tomcat-jsp-api-8.5.51.jar, in which case
-        some safe print() invocations will resolve to print(Object). If occurs, you can delete the JspWriter source and
-        class files from the Tomcat jars in your gradle cache. To fine those files, search <HOME>/.gradle/cache for
-        tomcat-jsp-api-8.5.51.jar and tomcat-jsp-api-8.5.51-sources.jar.
+    /**
+     * Uncomment the methods below to help flag usages of {@link #print(Object)} that are unsafe. Uncomment these methods
+     * and use IntelliJ to invoke find usages on print(Object) above to show attempts to render objects that are considered
+     * unsafe. You must re-comment the lines below before building, otherwise JSPs will break at runtime.
+     *
+     * Note that some modules may bind to the "real" JspWriter residing in tomcat-jsp-api-8.5.51.jar, in which case some
+     * safe print() invocations may resolve to print(Object). If this occurs, you can delete the JspWriter source and class
+     * files from the Tomcat jars in your gradle cache. To fine those files, search &lt;HOME>/.gradle/cache for
+     * tomcat-jsp-api-8.5.51.jar and tomcat-jsp-api-8.5.51-sources.jar.
      */
 
-//    public void print(SafeToRender str) throws IOException
-//    {
-//    }
-//
-//    public void print(Boolean b) throws IOException
-//    {
-//    }
-//
-//    public void print(Number n) throws IOException
-//    {
-//    }
+    public void print(SafeToRender str) throws IOException
+    {
+    }
+
+    public void print(Boolean b) throws IOException
+    {
+    }
+
+    public void print(Number n) throws IOException
+    {
+    }
 }
