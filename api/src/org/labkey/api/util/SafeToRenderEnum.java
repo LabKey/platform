@@ -7,7 +7,7 @@ package org.labkey.api.util;
 public interface SafeToRenderEnum extends SafeToRender
 {
     /**
-     * The only override of this should be Enum.toString(); any enum that overrides toString() should not implement SafeToRenderEnum.
+     * The only override of this should be {@code Enum.toString()}; enums that override {@code toString()} should not implement {@code SafeToRenderEnum}.
      */
     @Override
     String toString();

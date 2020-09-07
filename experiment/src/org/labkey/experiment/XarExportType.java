@@ -17,7 +17,6 @@
 package org.labkey.experiment;
 
 import org.labkey.api.util.SafeToRenderEnum;
-import org.labkey.api.util.SimpleHasHtmlString;
 
 /**
  * User: jeckels

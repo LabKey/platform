@@ -21,11 +21,15 @@ import java.io.IOException;
  * Implements {@code HtmlString getHtmlString()}. Provides no guarantee about what {@code toString()} returns (e.g., it
  * might or might not require HTML encoding); see {@link SafeToRender} for that.
  */
-public interface HasHtmlString extends DOM.Renderable, SafeToRender
+public interface HasHtmlString extends DOM.Renderable
 {
     HtmlString getHtmlString();
 
-    // TODO: remove this
+    /**
+     * HasHtmlString provides no guarantees about what this method returns, but it still can be convenient to inspect
+     * implementations; {@code Object} appearing in the implementation list might suggest a problem, for example, a
+     * builder that should be implementing {@code toString()} and {@code SafeToRender} for convenience.
+     */
     String toString();
 
     @Override

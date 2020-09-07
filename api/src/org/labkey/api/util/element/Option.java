@@ -19,10 +19,11 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SafeToRender;
 
 import javax.validation.constraints.NotNull;
 
-public class Option implements HasHtmlString
+public class Option implements HasHtmlString, SafeToRender
 {
     private final @NotNull HtmlString _label;
     private final @NotNull String _value;
@@ -93,7 +94,7 @@ public class Option implements HasHtmlString
         return getHtmlString().toString();
     }
 
-    public static class OptionBuilder implements HasHtmlString
+    public static class OptionBuilder implements HasHtmlString, SafeToRender
     {
         private @NotNull HtmlString _label;
         private @NotNull String _value;
@@ -150,7 +151,7 @@ public class Option implements HasHtmlString
         @Override
         public String toString()
         {
-            return build().toString();
+            return getHtmlString().toString();
         }
 
         @Override
