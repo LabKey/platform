@@ -23,7 +23,7 @@ List apache = [
         "commons-codec:commons-codec:${commonsCodecVersion}",
         "org.apache.commons:commons-collections4:${commonsCollections4Version}",
         "commons-dbcp:commons-dbcp:${commonsDbcpVersion}",
-        "commons-digester:commons-digester:${commonsDigesterVersion}",
+//        "commons-digester:commons-digester:${commonsDigesterVersion}",
         "commons-discovery:commons-discovery:${commonsDiscoveryVersion}",
         //"commons-fileupload:commons-fileupload:${commonsFileuploadVersion}",
         "commons-io:commons-io:${commonsIoVersion}",
