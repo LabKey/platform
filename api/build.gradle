@@ -31,7 +31,7 @@ List apache = [
         "org.tukaani:xz:${tukaaniXZVersion}",         // Transitive dependency of commons-compress -- Issue 38298: Errors when indexing .7z files in search
         "org.apache.commons:commons-lang3:${commonsLang3Version}",
         "org.apache.commons:commons-math3:${commonsMath3Version}",
-        "commons-net:commons-net:${commonsNetVersion}",
+//        "commons-net:commons-net:${commonsNetVersion}",
         "commons-pool:commons-pool:${commonsPoolVersion}",
         "commons-validator:commons-validator:${commonsValidatorVersion}",
         "org.apache.httpcomponents:httpclient:${httpclientVersion}",
