@@ -15,6 +15,7 @@
  */
 package org.labkey.core.statistics;
 
+import org.labkey.api.data.Parameter;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
@@ -148,6 +149,27 @@ public class ParameterCurveFit extends DefaultCurveFit implements CurveFit
 
         }
         throw new IllegalArgumentException("params is not an instance of SigmoidalParameters");
+    }
+
+    @Override
+    public double fitCurveY(double y)
+    {
+        try
+        {
+            Parameters params = getParameters();
+            if (params instanceof SigmoidalParameters)
+            {
+                SigmoidalParameters parameters = (SigmoidalParameters)params;
+                double exp = (parameters.getMax()-parameters.getMin())/(y- parameters.getMin());
+
+                return parameters.getInflection() - ((Math.pow(exp, 1d/parameters.getAsymmetry())- 1) / parameters.getSlope());
+            }
+            throw new IllegalArgumentException("params is not an instance of SigmoidalParameters");
+        }
+        catch (FitFailedException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     private SigmoidalParameters calculateFitParameters(double minValue, double maxValue)

@@ -75,8 +75,28 @@ public class LinearCurveFit extends DefaultCurveFit implements CurveFit
     {
         if (parameters instanceof LinearParameters)
         {
-            return x * ((LinearParameters) parameters).getSlope() + ((LinearParameters) parameters).getIntercept();
+            double xValue = hasXLogScale() ? Math.log10(x) : x;
+            return xValue * ((LinearParameters) parameters).getSlope() + ((LinearParameters) parameters).getIntercept();
         }
-        throw new IllegalArgumentException("curveParameters must be an instance of PolynomialParameters");
+        throw new IllegalArgumentException("curveParameters must be an instance of LinearParameters");
+    }
+
+    @Override
+    public double fitCurveY(double y)
+    {
+        try
+        {
+            Parameters parameters = getParameters();
+            if (parameters instanceof LinearParameters)
+            {
+                LinearParameters lp = (LinearParameters)parameters;
+                return (y - lp.getIntercept()) / lp.getSlope();
+            }
+            throw new IllegalArgumentException("curveParameters must be an instance of LinearParameters");
+        }
+        catch (FitFailedException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 }

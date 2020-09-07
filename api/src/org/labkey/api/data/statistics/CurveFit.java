@@ -66,11 +66,15 @@ public interface CurveFit
     /**
      * Returns the corresponding y value for the specified value on the x axis using
      * the passed in curve fit parameters
-     * @param x
-     * @return
      */
     double fitCurve(double x);
     double fitCurve(double x, Parameters parameters);
+
+    /**
+     * Returns the corresponding x value for the specified value on the y axis using
+     * the generated curve fit parameters.
+     */
+    double fitCurveY(double y);
 
     /**
      * Calculates the fit error : r squared (or coefficient of determination) of the fitted curve

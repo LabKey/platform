@@ -40,6 +40,12 @@ public class NoCurveFit extends DefaultCurveFit
     }
 
     @Override
+    public double fitCurveY(double y)
+    {
+        return 0;
+    }
+
+    @Override
     public double fitCurve(double x, Parameters parameters)
     {
         return 0;

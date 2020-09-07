@@ -131,4 +131,29 @@ public class PolynomialCurveFit extends DefaultCurveFit implements CurveFit
         }
         throw new IllegalArgumentException("curveParameters must be an instance of PolynomialParameters");
     }
+
+    @Override
+    public double fitCurveY(double y)
+    {
+        try
+        {
+            Parameters parameters = getParameters();
+            if (parameters instanceof PolynomialParameters)
+            {
+                double[] params = ((PolynomialParameters)parameters).getCoefficients();
+                double x = 0;
+
+                for (int i=0; i < params.length; i++)
+                {
+                    x += Math.pow((y / params[i]), 1d/i);
+                }
+                return x;
+            }
+            throw new IllegalArgumentException("curveParameters must be an instance of PolynomialParameters");
+        }
+        catch (FitFailedException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
 }
