@@ -401,8 +401,7 @@ public class DatasetQueryView extends StudyQueryView
                 if (canWrite)
                 {
                     // insert menu button contain Insert New and Bulk import, or button for either option
-                    ActionURL importURL = view.getTable().getImportDataURL(getContainer());
-                    ActionButton insertButton = createInsertMenuButton(null, importURL);
+                    ActionButton insertButton = createInsertMenuButton();
                     if (insertButton != null)
                     {
                         insertButton.setDisplayPermission(InsertPermission.class);
