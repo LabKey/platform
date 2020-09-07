@@ -92,7 +92,7 @@ List others = [
         //"org.ardverk:patricia-trie:${patriciaTrieVersion}",
         "org.quartz-scheduler:quartz:${quartzVersion}",
         "com.rometools:rome:${romeVersion}",
-        "org.xerial:sqlite-jdbc:${sqliteJdbcVersion}",
+//        "org.xerial:sqlite-jdbc:${sqliteJdbcVersion}",
         "net.coobird:thumbnailator:${thumbnailatorVersion}",
         "org.apache.xmlbeans:xmlbeans:${xmlbeansVersion}",
         "org.apache.tika:tika-core:${tikaVersion}",
