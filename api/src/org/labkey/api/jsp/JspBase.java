@@ -31,7 +31,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Button.ButtonBuilder;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
-import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -64,7 +63,6 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import static org.labkey.api.util.HtmlString.EMPTY_STRING;
 
@@ -177,32 +175,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
     /**
-     * Pass-through -- this eases the process of migrating our helpers from String to HtmlString, since existing
-     * code that uses text(String) will continue to compile and run when the parameter becomes an HtmlString.
-     * TODO: HtmlString - Eventually, remove this method and all usages.
-     * @param s An HtmlString
-     * @return The HtmlString
-     */
-    @Deprecated
-    public HtmlString text(HtmlString s)
-    {
-        return s;
-    }
-
-    /**
-     * Pass-through -- this eases the process of migrating our helpers from String to HasHtmlString, since existing
-     * code that uses text(String) will continue to compile and run when the parameter becomes a HasHtmlString.
-     * TODO: HtmlString - Eventually, remove this method and all usages.
-     * @param s Any object that implements HasHtmlString
-     * @return The parameter's HtmlString
-     */
-    @Deprecated
-    public HtmlString text(HasHtmlString s)
-    {
-        return s.getHtmlString();
-    }
-
-    /**
      * Html escape a string.
      * The name comes from Embedded Ruby.
      */
@@ -216,13 +188,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
      * The name comes from Embedded Ruby.
      */
     public HtmlString h(Object o)
-    {
-        return HtmlString.of(o == null ? null : o.toString());
-    }
-
-    // TODO: Remove this
-    @Deprecated
-    public HtmlString h(HtmlString o)
     {
         return HtmlString.of(o == null ? null : o.toString());
     }
@@ -241,7 +206,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return HtmlString.of(url == null ? null : url.toString());
     }
 
-    // Note: If you have a stream, consider using JSONArray.collector() instead
+    // Note: If you have a stream, use JSONArray.collector()
     public JSONArray toJsonArray(Collection<?> c)
     {
         return new JSONArray(c);
@@ -251,12 +216,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
     {
         return new JSONObject(c);
     }
-
-    public JSONObject toJsonObject(Stream<Object> c)
-    {
-        return new JSONObject(c);
-    }
-
 
     /**
      * Quotes a javascript string.
@@ -274,6 +233,16 @@ public abstract class JspBase extends JspContext implements HasViewContext
     final protected JavaScriptFragment q(HtmlString hs)
     {
         return null == hs ? JavaScriptFragment.NULL : JavaScriptFragment.unsafe(PageFlowUtil.jsString(hs.toString()));
+    }
+
+    /**
+     * Convenience method that returns a local URL as a properly escaped JavaScript identifier.
+     * @param url Some URLHelper
+     * @return A relative URL in a properly escaped single-quoted string literal JavaScriptFragment
+     */
+    final protected JavaScriptFragment q(@NotNull URLHelper url)
+    {
+        return q(url.toString());
     }
 
     // TODO: Very, very temporary; just for backward compatibility. Eliminate ASAP.
@@ -412,7 +381,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.urlProvider(inter);
     }
 
-    public HasHtmlString iconLink(String iconCls, String tooltip, URLHelper url)
+    public LinkBuilder iconLink(String iconCls, String tooltip, URLHelper url)
     {
         return new LinkBuilder().iconCls(iconCls).tooltip(tooltip).href(url);
     }

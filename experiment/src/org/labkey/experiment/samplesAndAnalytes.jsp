@@ -46,7 +46,7 @@
             else
                 url = new ActionURL(ExperimentController.ShowSampleTypeAction.class, sampleType.getContainer()).replaceParameter("rowId", sampleType.getRowId());
             %>
-    <a style="font-weight:bold" href="<%=url%>"><%=h(isStudySample ? sampleType.getContainer().getName() : sampleType.getName())%></a>
+    <a style="font-weight:bold" href="<%=h(url)%>"><%=h(isStudySample ? sampleType.getContainer().getName() : sampleType.getName())%></a>
                 <br><%=h(sampleType.getDescription() != null ? sampleType.getDescription() : sampleType.getContainer().getPath())%>
             <br>
     <%

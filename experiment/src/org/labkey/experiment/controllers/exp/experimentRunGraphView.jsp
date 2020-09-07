@@ -76,7 +76,7 @@
         }
 %>
 <p>Click on a node in the graph below for details. Run outputs have a bold outline.</p>
-<img alt="Run Graph" src="<%=imgSrc%>" usemap="#graphmap"/>
+<img alt="Run Graph" src="<%=h(imgSrc)%>" usemap="#graphmap"/>
 <%
         if (files.getMapFile().exists())
         {

@@ -49,8 +49,8 @@
         zoomGraphURL.replaceParameter("width", 800);
         zoomGraphURL.replaceParameter("height", 600);
 %>
-        <td><a href="<%=zoomGraphURL%>" target="_blank">
-            <img src="<%=graphAction%>" alt="Neutralization Graph">
+        <td><a href="<%=h(zoomGraphURL)%>" target="_blank">
+            <img src="<%=h(graphAction)%>" alt="Neutralization Graph">
         </a></td>
 <%
         if (++graphCount % bean.getGraphsPerRow() == 0)
