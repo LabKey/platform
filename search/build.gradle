@@ -10,9 +10,11 @@ dependencies {
     external ("org.apache.tika:tika-parsers:${tikaVersion}") {
         transitive = false
     }
-    // Additional parsing libraries (beyond POI, PDFBox, commons-compress, etc., which are already included in API) that we
+    // Additional parsing libraries (beyond POI, PDFBox, etc., which are already included in API) that we
     // care about. Adjust these dependencies and versions whenever we upgrade Tika. Or if we want to add or remove a parser.
     // See also tikaConfig.xml to exclude specific parsers or detectors.
+    external "org.apache.commons:commons-compress:${commonsCompressVersion}"
+    external "org.tukaani:xz:${tukaaniXZVersion}"         // Transitive dependency of commons-compress -- Issue 38298: Errors when indexing .7z files in search
     external "org.apache.pdfbox:jempbox:1.8.13"
     external "com.drewnoakes:metadata-extractor:2.8.1"
     external "org.apache.poi:poi-scratchpad:${poiVersion}"
