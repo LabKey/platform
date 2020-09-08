@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 // TODO: Need handling for checkbox, file, and radio types
-public class Input extends DisplayElement implements HasHtmlString
+public class Input extends DisplayElement implements HasHtmlString, SafeToRender
 {
     public enum Layout
     {

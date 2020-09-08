@@ -73,6 +73,7 @@ import org.labkey.api.security.AvatarThumbnailProvider;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.MemberType;
+import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -90,9 +91,12 @@ import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdateUserPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.Role;
@@ -273,7 +277,7 @@ public class UserController extends SpringActionController
 
         ButtonBar gridButtonBar = new ButtonBar();
 
-        populateUserGridButtonBar(gridButtonBar, isUserManager, isAnyAdmin);
+        populateUserGridButtonBar(gridButtonBar, isAnyAdmin);
         rgn.setButtonBar(gridButtonBar, DataRegion.MODE_GRID);
 
         ActionURL showUsersURL = new ActionURL(ShowUsersAction.class, c);
@@ -291,7 +295,7 @@ public class UserController extends SpringActionController
         editURL.addParameter("userId", NumberUtils.toInt(currentURL.getParameter("userId")));
         editURL.addReturnURL(currentURL);
 
-        if (isOwnRecord || (isUserManager && canManageDetailsUser))
+        if (isOwnRecord || (getUser().hasRootPermission(UpdateUserPermission.class) && canManageDetailsUser))
         {
             ActionButton edit = new ActionButton(editURL, "Edit");
             edit.setActionType(ActionButton.Action.LINK);
@@ -314,28 +318,42 @@ public class UserController extends SpringActionController
         rgn.setButtonBar(updateButtonBar, DataRegion.MODE_UPDATE);
     }
 
-    private void populateUserGridButtonBar(ButtonBar gridButtonBar, boolean isUserManager, boolean isProjectAdminOrBetter)
+    private void populateUserGridButtonBar(ButtonBar gridButtonBar, boolean isAnyAdmin)
     {
-        if (isUserManager && getContainer().isRoot())
+        User user = getUser();
+        boolean canAddUser = user.hasRootPermission(AddUserPermission.class);
+        boolean canDeleteUser = user.hasRootPermission(DeleteUserPermission.class);
+        boolean canUpdateUser = user.hasRootPermission(UpdateUserPermission.class);
+
+        if (getContainer().isRoot())
         {
-            ActionButton deactivate = new ActionButton(DeactivateUsersAction.class, "Deactivate");
-            deactivate.setRequiresSelection(true);
-            deactivate.setActionType(ActionButton.Action.POST);
-            gridButtonBar.add(deactivate);
+            if (canUpdateUser)
+            {
+                ActionButton deactivate = new ActionButton(DeactivateUsersAction.class, "Deactivate");
+                deactivate.setRequiresSelection(true);
+                deactivate.setActionType(ActionButton.Action.POST);
+                gridButtonBar.add(deactivate);
 
-            ActionButton activate = new ActionButton(ActivateUsersAction.class, "Reactivate");
-            activate.setRequiresSelection(true);
-            activate.setActionType(ActionButton.Action.POST);
-            gridButtonBar.add(activate);
+                ActionButton activate = new ActionButton(ActivateUsersAction.class, "Reactivate");
+                activate.setRequiresSelection(true);
+                activate.setActionType(ActionButton.Action.POST);
+                gridButtonBar.add(activate);
+            }
 
-            ActionButton delete = new ActionButton(DeleteUsersAction.class, "Delete");
-            delete.setRequiresSelection(true);
-            delete.setActionType(ActionButton.Action.POST);
-            gridButtonBar.add(delete);
+            if (canDeleteUser)
+            {
+                ActionButton delete = new ActionButton(DeleteUsersAction.class, "Delete");
+                delete.setRequiresSelection(true);
+                delete.setActionType(ActionButton.Action.POST);
+                gridButtonBar.add(delete);
+            }
 
-            ActionButton insert = new ActionButton(PageFlowUtil.urlProvider(SecurityUrls.class).getAddUsersURL(), "Add Users");
-            insert.setActionType(ActionButton.Action.LINK);
-            gridButtonBar.add(insert);
+            if (canAddUser)
+            {
+                ActionButton insert = new ActionButton(PageFlowUtil.urlProvider(SecurityUrls.class).getAddUsersURL(), "Add Users");
+                insert.setActionType(ActionButton.Action.LINK);
+                gridButtonBar.add(insert);
+            }
 
             Domain domain = null;
             if (null != PropertyService.get())
@@ -351,13 +369,16 @@ public class UserController extends SpringActionController
                 if (returnURL != null)
                     url.addReturnURL(returnURL);
 
-                ActionButton preferences = new ActionButton(url, "Change User Properties");
-                preferences.setActionType(ActionButton.Action.LINK);
-                gridButtonBar.add(preferences);
+                if (canUpdateUser)
+                {
+                    ActionButton preferences = new ActionButton(url, "Change User Properties");
+                    preferences.setActionType(ActionButton.Action.LINK);
+                    gridButtonBar.add(preferences);
+                }
             }
         }
 
-        if (isProjectAdminOrBetter)
+        if (isAnyAdmin)
         {
             if (AuditLogService.get().isViewable())
             {
@@ -490,7 +511,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresPermission(UserManagementPermission.class)
+    @RequiresPermission(UpdateUserPermission.class)
     public class DeactivateUsersAction extends BaseActivateUsersAction
     {
         public DeactivateUsersAction()
@@ -499,7 +520,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresPermission(UserManagementPermission.class)
+    @RequiresPermission(UpdateUserPermission.class)
     public class ActivateUsersAction extends BaseActivateUsersAction
     {
         public ActivateUsersAction()
@@ -517,7 +538,7 @@ public class UserController extends SpringActionController
                 && (currentUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin deactivate/delete a site admin
     }
 
-    @RequiresPermission(UserManagementPermission.class)
+    @RequiresAllOf({UpdateUserPermission.class, DeleteUserPermission.class})
     public class UpdateUsersStateApiAction extends MutatingApiAction<UpdateUserStateForm>
     {
         private List<Integer> validUserIds = new ArrayList<>();
@@ -591,7 +612,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresPermission(UserManagementPermission.class)
+    @RequiresPermission(DeleteUserPermission.class)
     public class DeleteUsersAction extends FormViewAction<UserIdForm>
     {
         @Override
@@ -742,7 +763,7 @@ public class UserController extends SpringActionController
                 protected void populateButtonBar(DataView view, ButtonBar bar)
                 {
                     super.populateButtonBar(view, bar);
-                    populateUserGridButtonBar(bar, isUserManager, isProjectAdminOrBetter);
+                    populateUserGridButtonBar(bar, isProjectAdminOrBetter);
                 }
             };
             queryView.setUseQueryViewActionExportURLs(true);
@@ -1705,8 +1726,8 @@ public class UserController extends SpringActionController
         @Override
         public ModelAndView getView(UserForm form, boolean reshow, BindException errors) throws Exception
         {
-            boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
-            if (!isUserManager)
+            boolean canUpdateUser = getUser().hasRootPermission(UpdateUserPermission.class);
+            if (!canUpdateUser)
             {
                 if (!AuthenticationManager.isSelfServiceEmailChangesEnabled())  // uh oh, shouldn't be here
                 {
@@ -1747,7 +1768,7 @@ public class UserController extends SpringActionController
                     try (var ignored = SpringActionController.ignoreSqlUpdates())
                     {
                         // update email in database
-                        UserManager.changeEmail(isUserManager, userId, _currentEmailFromDatabase, _requestedEmailFromDatabase, form.getVerificationToken(), getUser());
+                        UserManager.changeEmail(canUpdateUser, userId, _currentEmailFromDatabase, _requestedEmailFromDatabase, form.getVerificationToken(), getUser());
                     }
                     // post-verification email to old account
                     Container c = getContainer();
@@ -1765,7 +1786,7 @@ public class UserController extends SpringActionController
 
         void validateVerification(UserForm target, Errors errors)
         {
-            boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
+            boolean canUpdateUser = getUser().hasRootPermission(UpdateUserPermission.class);
 
             try
             {
@@ -1793,7 +1814,7 @@ public class UserController extends SpringActionController
                         Instant verificationTimeoutInstant = verifyEmail.getVerificationTimeout().toInstant();
                         if (Instant.now().isAfter(verificationTimeoutInstant))
                         {
-                            if (!isUserManager)  // don't bother auditing admin password link clicks
+                            if (!canUpdateUser)  // don't bother auditing admin password link clicks
                             {
                                 UserManager.auditEmailTimeout(loggedInUser.getUserId(), validUserEmail.getEmailAddress(), requestedEmailFromDatabase, verificationToken, getUser());
                             }
@@ -1812,7 +1833,7 @@ public class UserController extends SpringActionController
                 {
                     if ((verificationToken == null) || (verificationToken.length() != SecurityManager.tempPasswordLength))
                     {
-                        if (!isUserManager)  // don't bother auditing admin password link clicks
+                        if (!canUpdateUser)  // don't bother auditing admin password link clicks
                         {
                             UserManager.auditBadVerificationToken(loggedInUser.getUserId(), validUserEmail.getEmailAddress(), verifyEmail.getRequestedEmail(), verificationToken, loggedInUser);
                         }
@@ -1820,7 +1841,7 @@ public class UserController extends SpringActionController
                     }
                     else if(!(verificationToken.equals(verifyEmail.getVerification())))
                     {
-                        if (!isUserManager)  // don't bother auditing admin password link clicks
+                        if (!canUpdateUser)  // don't bother auditing admin password link clicks
                         {
                             UserManager.auditBadVerificationToken(loggedInUser.getUserId(), validUserEmail.getEmailAddress(), verifyEmail.getRequestedEmail(), verificationToken, loggedInUser);
                         }
@@ -1842,11 +1863,11 @@ public class UserController extends SpringActionController
         @Override
         public boolean handlePost(UserForm form, BindException errors) throws Exception
         {
-            boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
+            boolean canUpdateUser = getUser().hasRootPermission(UpdateUserPermission.class);
             User user;
             int userId;
 
-            if (!isUserManager)
+            if (!canUpdateUser)
             {
                 user = getUser();
                 userId = user.getUserId();
@@ -1857,7 +1878,7 @@ public class UserController extends SpringActionController
                 user = getModifiableUser(userId);
             }
 
-            if (!isUserManager)  // need to verify email before changing if not site or app admin
+            if (!canUpdateUser)  // need to verify email before changing if not site or app admin
             {
                 if(!AuthenticationManager.isSelfServiceEmailChangesEnabled())  // uh oh, shouldn't be here
                 {
@@ -1939,9 +1960,9 @@ public class UserController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(UserForm form)
         {
-            boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
+            boolean canUpdateUser = getUser().hasRootPermission(UpdateUserPermission.class);
 
-            if (!isUserManager)
+            if (!canUpdateUser)
             {
                 User user = getUser();
 
@@ -2960,7 +2981,7 @@ public class UserController extends SpringActionController
             );
 
             // @RequiresPermission(UserManagementPermission.class)
-            assertForUserManagementPermission(user,
+            assertForUserPermissions(user,
                 controller.new DeactivateUsersAction(),
                 controller.new ActivateUsersAction(),
                 controller.new DeleteUsersAction()

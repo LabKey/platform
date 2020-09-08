@@ -61,6 +61,7 @@ import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSetti
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdateUserPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.usageMetrics.UsageMetricsService;
@@ -495,9 +496,9 @@ public class AuthenticationManager
      */
     public static boolean canSetUserExpirationDate(User userManager, Container container)
     {
-        boolean isUserManager = userManager.hasRootPermission(UserManagementPermission.class);
+        boolean canUpdate = userManager.hasRootPermission(UpdateUserPermission.class);
         boolean isAdmin = container.hasPermission(userManager, AdminPermission.class);
-        return (isUserManager || isAdmin) && AuthenticationManager.isAccountExpirationEnabled();
+        return (canUpdate || isAdmin) && AuthenticationManager.isAccountExpirationEnabled();
     }
 
     /**

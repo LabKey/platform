@@ -43,7 +43,7 @@ import static org.labkey.api.util.DOM.createHtmlFragment;
  * Created by Nick Arnold on 2/27/14.
  * Testing of this class can be found in the Core module's TestController.ButtonAction
  */
-public class Button extends DisplayElement implements HasHtmlString
+public class Button extends DisplayElement implements HasHtmlString, SafeToRender
 {
     // Button constants
     private static final String CLS = "labkey-button";

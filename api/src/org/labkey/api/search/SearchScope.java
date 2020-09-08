@@ -18,7 +18,6 @@ package org.labkey.api.search;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.SafeToRenderEnum;
-import org.labkey.api.util.SimpleHasHtmlString;
 
 /**
  * Options for how widely or narrowly to search on the server, based on the number of containers to include.
