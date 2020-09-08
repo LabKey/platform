@@ -3301,7 +3301,13 @@ public class AdminController extends SpringActionController
                     }
 
                     if (labkeyThread)
-                        activeThreads.add(thread.getName());
+                    {
+                        String threadInfo = thread.getName();
+                        String uri = ViewServlet.getRequestURL(thread);
+                        if (null != uri)
+                            threadInfo += "; processing URL " + uri;
+                        activeThreads.add(threadInfo);
+                    }
                 }
             }
 
