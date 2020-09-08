@@ -19,9 +19,11 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
+import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.EnableRestrictedModules;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.TroubleShooterPermission;
+import org.labkey.api.security.permissions.UpdateUserPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 
 import java.util.Arrays;
@@ -30,14 +32,16 @@ import java.util.Collection;
 /**
  * A step down from site admins, app admins have broad access but don't get to control native resources on the server.
  */
-public class ApplicationAdminRole extends AbstractRootContainerRole
+public class ApplicationAdminRole extends AbstractRootContainerRole implements AdminRoleListener
 {
     static Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
         ApplicationAdminPermission.class,
         TroubleShooterPermission.class,
         EnableRestrictedModules.class,
         UserManagementPermission.class,
-        AddUserPermission.class
+        AddUserPermission.class,
+        DeleteUserPermission.class,
+        UpdateUserPermission.class
     );
 
     public ApplicationAdminRole()
@@ -50,5 +54,11 @@ public class ApplicationAdminRole extends AbstractRootContainerRole
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));
+    }
+
+    @Override
+    public void permissionRegistered(Class<? extends Permission> perm)
+    {
+        addPermission(perm);
     }
 }

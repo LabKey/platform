@@ -21,6 +21,7 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.AddUserPermission;
+import org.labkey.api.security.permissions.Permission;
 
 import java.util.Collections;
 
@@ -29,7 +30,7 @@ import java.util.Collections;
 * Date: Apr 28, 2009
 * Time: 10:13:55 AM
 */
-public class ProjectAdminRole extends AbstractRole
+public class ProjectAdminRole extends AbstractRole implements AdminRoleListener
 {
     public ProjectAdminRole()
     {
@@ -47,5 +48,11 @@ public class ProjectAdminRole extends AbstractRole
     public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
     {
         return resource instanceof Container && ((Container)resource).isProject();
+    }
+
+    @Override
+    public void permissionRegistered(Class<? extends Permission> perm)
+    {
+        addPermission(perm);
     }
 }

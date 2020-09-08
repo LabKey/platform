@@ -68,14 +68,15 @@ public class RoleManager
     private static final Map<String, Role> _nameToRoleMap = new ConcurrentHashMap<>();
     private static final Map<Class<? extends Role>, Role> _classToRoleMap = new ConcurrentHashMap<>();
     private static final List<Role> _roles = new CopyOnWriteArrayList<>();
+    private static final List<AdminRoleListener> _adminRolelisteners = new CopyOnWriteArrayList<>();
 
     //register all core roles
     static
     {
-        registerRole(siteAdminRole);
-        registerRole(new ApplicationAdminRole());
-        registerRole(new ProjectAdminRole());
-        registerRole(new FolderAdminRole());
+        registerAdminRole(siteAdminRole);
+        registerAdminRole(new ApplicationAdminRole());
+        registerAdminRole(new ProjectAdminRole());
+        registerAdminRole(new FolderAdminRole());
         registerRole(new EditorRole());
         registerRole(new AuthorRole());
         registerRole(new ReaderRole());
@@ -91,6 +92,11 @@ public class RoleManager
         registerRole(new SeeFilePathsRole(), false);
         registerRole(new CanUseSendMessageApi(), false);
         registerRole(new PlatformDeveloperRole(), false);
+    }
+
+    public static void addAdminRoleListener(AdminRoleListener listener)
+    {
+        _adminRolelisteners.add(listener);
     }
 
     public static Role getRole(String name)
@@ -143,6 +149,12 @@ public class RoleManager
         return _roles.stream().
                 filter(r -> r.isAssignable() && r.isApplicable(policy, ContainerManager.getRoot())).
                 collect(Collectors.toSet());
+    }
+
+    private static void registerAdminRole(Role role)
+    {
+        registerRole(role);
+        addAdminRoleListener((AdminRoleListener)role);
     }
 
     public static void registerRole(Role role)
@@ -228,10 +240,10 @@ public class RoleManager
 
     public static void addPermissionToAdminRoles(Class<? extends Permission> perm)
     {
-        siteAdminRole.addPermission(perm);
-        getRole(ApplicationAdminRole.class).addPermission(perm);
-        getRole(ProjectAdminRole.class).addPermission(perm);
-        getRole(FolderAdminRole.class).addPermission(perm);
+        for (AdminRoleListener listener : _adminRolelisteners)
+        {
+            listener.permissionRegistered(perm);
+        }
     }
 
     /**
