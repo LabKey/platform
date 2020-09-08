@@ -3,13 +3,15 @@ import { imageURL } from '@labkey/components';
 
 const ERROR_HEADING = 'Oops! An error has occurred.';
 
-const GENERAL_SUBHEADING = <>It seems like something went wrong. The requested page cannot be found.</>;
-const GENERAL_INSTRUCTION = (
+const NOTFOUND_SUBHEADING = <>It seems like something went wrong. The requested page cannot be found.</>;
+const NOTFOUND_INSTRUCTION = (
     <>
         <div className="labkey-error-instruction">
+            {/* TODO: ErrorPage - add href link*/}
             Please contact your admin or reference the <a href="#">LabKey support forum.</a>
         </div>
         <div className="labkey-error-instruction">
+            {/* TODO: ErrorPage - add href link*/}
             If you would like to file a <a href="#"> LabKey support ticket</a>, your unique reference code is:
         </div>
     </>
@@ -33,69 +35,56 @@ const EXECUTION_INSTRUCTION = (
 );
 
 export enum ErrorType {
-    general = 'general',
+    notFound = 'general',
     permission = 'permission',
     configuration = 'configuration',
     execution = 'execution',
 }
+
+const ERROR_TYPE_INFO = {
+    notFound: {
+        heading: NOTFOUND_SUBHEADING,
+        instruction: NOTFOUND_INSTRUCTION,
+        imagePath: 'notFound_error.svg',
+    },
+    permission: {
+        heading: PERMISSION_SUBHEADING,
+        instruction: PERMISSION_INSTRUCTION,
+        imagePath: 'permission_error.svg',
+    },
+    configuration: {
+        heading: CONFIGURATION_SUBHEADING,
+        instruction: CONFIGURATION_INSTRUCTION,
+        imagePath: 'configuration_error.svg',
+    },
+    execution: {
+        heading: EXECUTION_SUB_HEADING,
+        instruction: EXECUTION_INSTRUCTION,
+        imagePath: 'code_error.svg',
+    },
+};
 
 export const getErrorHeading = (): ReactNode => {
     return <div className="labkey-error-heading"> {ERROR_HEADING} </div>;
 };
 
 export const getImage = (errorType: ErrorType): ReactNode => {
-    let path = '';
-    switch (errorType) {
-        case ErrorType.general:
-            path = 'general_error.svg';
-            break;
-        case ErrorType.permission:
-            path = 'permission_error.svg';
-            break;
-        case ErrorType.configuration:
-            path = 'configuration_error.svg';
-            break;
-        case ErrorType.execution:
-            path = 'code_error.svg';
-            break;
+    if (ERROR_TYPE_INFO[errorType]) {
+        const path = ERROR_TYPE_INFO[errorType].imagePath;
+        return <img alt="LabKey Error" src={imageURL('_images', path)} />;
     }
-    return <img alt="LabKey Error" src={imageURL('_images', path)} />;
 };
 
 export const getSubHeading = (errorType: ErrorType): ReactNode => {
-    let subHeading;
-    switch (errorType) {
-        case ErrorType.general:
-            subHeading = GENERAL_SUBHEADING;
-            break;
-        case ErrorType.permission:
-            subHeading = PERMISSION_SUBHEADING;
-            break;
-        case ErrorType.configuration:
-            subHeading = CONFIGURATION_SUBHEADING;
-            break;
-        case ErrorType.execution:
-            subHeading = EXECUTION_SUB_HEADING;
-            break;
+    if (ERROR_TYPE_INFO[errorType]) {
+        const subHeading = ERROR_TYPE_INFO[errorType].heading;
+        return <div className="labkey-error-subheading">{subHeading}</div>;
     }
-    return <div className="labkey-error-subheading">{subHeading}</div>;
 };
 
 export const getInstruction = (errorType: ErrorType): ReactNode => {
-    let instruction;
-    switch (errorType) {
-        case ErrorType.general:
-            instruction = GENERAL_INSTRUCTION;
-            break;
-        case ErrorType.permission:
-            instruction = PERMISSION_INSTRUCTION;
-            break;
-        case ErrorType.configuration:
-            instruction = CONFIGURATION_INSTRUCTION;
-            break;
-        case ErrorType.execution:
-            instruction = EXECUTION_INSTRUCTION;
-            break;
+    if (ERROR_TYPE_INFO[errorType]) {
+        const instruction = ERROR_TYPE_INFO[errorType].instruction;
+        return <div className="labkey-error-instruction">{instruction}</div>;
     }
-    return <div className="labkey-error-instruction">{instruction}</div>;
 };

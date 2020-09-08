@@ -19,7 +19,7 @@ interface ErrorHandlerState {
     showDetails: boolean;
 }
 
-export class ErrorHandler extends React.Component<ErrorHandlerProps, ErrorHandlerState> {
+export class ErrorHandler extends React.PureComponent<ErrorHandlerProps, ErrorHandlerState> {
     constructor(props) {
         super(props);
 
@@ -28,11 +28,11 @@ export class ErrorHandler extends React.Component<ErrorHandlerProps, ErrorHandle
         };
     }
 
-    loadBack = (): void => {
+    onBackClick = (): void => {
         window.history.back();
     };
 
-    loadViewDetails = (): void => {
+    onViewDetailsClick = (): void => {
         this.setState(() => ({
             showDetails: true,
         }));
@@ -46,8 +46,8 @@ export class ErrorHandler extends React.Component<ErrorHandlerProps, ErrorHandle
             <>
                 <ErrorTopSection
                     errorType={errorType}
-                    loadBack={this.loadBack}
-                    loadViewDetails={this.loadViewDetails}
+                    onBackClick={this.onBackClick}
+                    onViewDetailsClick={this.onViewDetailsClick}
                 />
                 {/* TODO : ErrorPage, following section in next story*/}
                 {showDetails && <h3 className="labkey-error">{message}</h3>}

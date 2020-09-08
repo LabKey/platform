@@ -51,7 +51,7 @@ public class ErrorRenderer
 
     enum ErrorType
     {
-        general,
+        notFound,
         permission,
         configuration,
         execution

@@ -637,6 +637,7 @@ public class ExceptionUtil
         }
 
         int responseStatus = HttpServletResponse.SC_OK;
+        ErrorRenderer.ErrorType errorType = ErrorRenderer.ErrorType.execution;
 
         if (response.isCommitted())
         {
@@ -694,6 +695,7 @@ public class ExceptionUtil
         else if (ex instanceof ApiUsageException)
         {
             responseStatus = HttpServletResponse.SC_BAD_REQUEST;
+            errorType = ErrorRenderer.ErrorType.notFound;
             if (ex.getMessage() != null)
             {
                 message = ex.getMessage();
@@ -705,12 +707,14 @@ public class ExceptionUtil
         else if (ex instanceof BadRequestException)
         {
             responseStatus = ((BadRequestException) ex).getStatus();
+            errorType = ErrorRenderer.ErrorType.notFound;
             message = ex.getMessage();
             unhandledException = null;
         }
         else if (ex instanceof NotFoundException)
         {
             responseStatus = HttpServletResponse.SC_NOT_FOUND;
+            errorType = ErrorRenderer.ErrorType.notFound;
             if (ex.getMessage() != null)
             {
                 message = ex.getMessage();
@@ -752,6 +756,7 @@ public class ExceptionUtil
 
             // we know who you are, you're just forbidden from seeing it (unless bad CSRF, silly kids)
             responseStatus = isGuest || isCSRFViolation ? HttpServletResponse.SC_UNAUTHORIZED : HttpServletResponse.SC_FORBIDDEN;
+            errorType = ErrorRenderer.ErrorType.permission;
 
             message = ex.getMessage();
             responseStatusMessage = message;
@@ -777,6 +782,10 @@ public class ExceptionUtil
                     ex = ((BatchUpdateException)ex).getNextException();
                 unhandledException = ex;
             }
+        }
+        else if (ex instanceof ConfigurationException)
+        {
+            errorType = ErrorRenderer.ErrorType.configuration;
         }
 
         if (null == message && null != unhandledException)
@@ -851,11 +860,10 @@ public class ExceptionUtil
                 log.error("Global.handleException", x);
             }
         }
-        else if (context != null && AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_ERROR_PAGE))
+        else if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_ERROR_PAGE))
         {
             // 7629: Error page redesign -- development in-progress. This path shows the new error view.
             ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, false, startupFailure);
-            renderer.setErrorType(ErrorRenderer.ErrorType.execution);
 
             if (ex instanceof UnauthorizedException)
             {
@@ -869,13 +877,11 @@ public class ExceptionUtil
                 // Provide "Stop Impersonating" button if unauthorized while impersonating
                 if (user.isImpersonated())
                     renderer.setIncludeStopImpersonatingButton(true);
-
-                renderer.setErrorType(ErrorRenderer.ErrorType.permission);
             }
 
             if (ex instanceof DavException)
             {
-                renderer.setErrorType(ErrorRenderer.ErrorType.general);
+                errorType = ErrorRenderer.ErrorType.notFound;
             }
 
             if (pageConfig == null)
@@ -888,12 +894,21 @@ public class ExceptionUtil
 
             try
             {
-                errorView = pageConfig.getTemplate().getTemplate(context, new ErrorTemplate(renderer), pageConfig);
-
-                if (null == errorView)
+                if (context != null)
                 {
-                    log.error("Failed to create errorView in response to exception", ex);
-                    return null;
+                    renderer.setErrorType(errorType);
+                    errorView = pageConfig.getTemplate().getTemplate(context, new ErrorTemplate(renderer), pageConfig);
+
+                    if (null == errorView)
+                    {
+                        log.error("Failed to create errorView in response to exception", ex);
+                        return null;
+                    }
+                }
+                else
+                {
+                    // context can be null for configuration exceptions depending on how far server got through initialization
+                    errorView = PageConfig.Template.Body.getTemplate(new ViewContext(request, response, new ActionURL(ActionURL.getBaseServerURL())), new ErrorTemplate(renderer), pageConfig);
                 }
 
                 pageConfig.addClientDependencies(errorView.getClientDependencies());

@@ -6,33 +6,33 @@ import { ErrorType, getErrorHeading, getImage, getInstruction, getSubHeading } f
 
 interface ErrorTopSectionProps {
     errorType: ErrorType;
-    loadBack: () => void;
-    loadViewDetails: () => void;
+    onBackClick: () => void;
+    onViewDetailsClick: () => void;
 }
 
 export class ErrorTopSection extends React.PureComponent<ErrorTopSectionProps> {
     render(): ReactNode {
-        const { errorType, loadBack, loadViewDetails } = this.props;
+        const { errorType, onBackClick, onViewDetailsClick } = this.props;
         return (
             <>
-                <Row className="panel-body">
-                    <Col md={1} />
-                    <Col md={7}>
-                        <div className="labkey-error-top">
-                            {getErrorHeading()}
-                            {getSubHeading(errorType)}
-                            {getInstruction(errorType)}
-                            <Button className="btn-group error-backButton" bsStyle="info" onClick={loadBack}>
-                                Back
-                            </Button>
-                            <Button className="error-details-btn" onClick={loadViewDetails}>
-                                View Details
-                            </Button>
-                        </div>
-                    </Col>
-                    <Col md={3}>{getImage(errorType)}</Col>
-                    <Col md={1} />
-                </Row>
+                <div className="panel-body">
+                    <Row>
+                        <Col md={8}>
+                            <div className="labkey-error-top">
+                                {getErrorHeading()}
+                                {getSubHeading(errorType)}
+                                {getInstruction(errorType)}
+                                <Button className="btn-group error-backButton" bsStyle="info" onClick={onBackClick}>
+                                    Back
+                                </Button>
+                                <Button className="error-details-btn" onClick={onViewDetailsClick}>
+                                    View Details
+                                </Button>
+                            </div>
+                        </Col>
+                        <Col md={4}>{getImage(errorType)}</Col>
+                    </Row>
+                </div>
             </>
         );
     }

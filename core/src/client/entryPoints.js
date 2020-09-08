@@ -17,8 +17,7 @@ module.exports = {
     },{
         name: 'errorHandler',
         title: 'Error Handler',
-        permission: 'admin',
         path: './src/client/ErrorHandler',
-        generateLib: true
+        generateLib: true // used in errorView.jsp
     }]
 };
