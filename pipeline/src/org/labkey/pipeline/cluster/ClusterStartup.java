@@ -18,6 +18,7 @@ package org.labkey.pipeline.cluster;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,7 +39,6 @@ import org.labkey.pipeline.mule.test.DummyPipelineJob;
 import org.mule.umo.manager.UMOManager;
 import org.springframework.beans.factory.BeanFactory;
 
-import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;

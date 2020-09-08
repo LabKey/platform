@@ -20,6 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.imca_cat.pollingwatchservice.PathWatchService;
 import org.imca_cat.pollingwatchservice.PollingWatchService;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.ConcurrentHashSet;
@@ -30,7 +31,6 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.writer.PrintWriters;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
