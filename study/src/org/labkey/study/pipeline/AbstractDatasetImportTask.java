@@ -27,7 +27,6 @@ import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.SafeToRenderEnum;
-import org.labkey.api.util.SimpleHasHtmlString;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.StudyImportContext;

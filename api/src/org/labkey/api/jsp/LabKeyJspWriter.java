@@ -38,7 +38,7 @@ public class LabKeyJspWriter extends JspWriterWrapper
     private static final Multiset<String> CODE_POINT_COUNTING_SET = ConcurrentHashMultiset.create();
     private static final Multiset<String> FILE_COUNTING_SET = ConcurrentHashMultiset.create();
     private static final String EXPERIMENTAL_THROW_ON_WARNING = "labkeyJspWriterThrowOnWarning";
-    private static final Logger LOGSTRING = LogManager.getLogger(LabKeyJspWriter.class.getName()+".string");
+    private static final Logger LOGSTRING = LogManager.getLogger(LabKeyJspWriter.class.getName() + ".string");
 
     public static void registerExperimentalFeature()
     {
@@ -71,9 +71,6 @@ public class LabKeyJspWriter extends JspWriterWrapper
 
         if (0 == CODE_POINT_COUNTING_SET.add(elementWeCareAbout.toString(), 1))
         {
-            if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_THROW_ON_WARNING))
-                throw new IllegalStateException("A JSP is printing a string!");
-
             // Shorten the stack trace to the first org.labkey.api.view.JspView.renderView()
             StringBuilder shortStackTrace = new StringBuilder("\njava.lang.Throwable");
             int i = 1;
@@ -92,6 +89,9 @@ public class LabKeyJspWriter extends JspWriterWrapper
         }
 
         FILE_COUNTING_SET.add(elementWeCareAbout.getFileName(), 1);
+
+        if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_THROW_ON_WARNING))
+            throw new IllegalStateException("A JSP is printing a string!");
 
         super.print(s);
     }

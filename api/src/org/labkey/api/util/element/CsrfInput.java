@@ -3,12 +3,13 @@ package org.labkey.api.util.element;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.element.Input.InputBuilder;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.jsp.JspContext;
 
-public class CsrfInput implements HasHtmlString
+public class CsrfInput implements HasHtmlString, SafeToRender
 {
     private final String _expectedToken;
 
