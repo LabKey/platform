@@ -21,17 +21,17 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SafeToRender;
 import org.labkey.api.view.DisplayElement;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
 
 // TODO: Need handling for checkbox, file, and radio types
-public class Input extends DisplayElement implements HasHtmlString
+public class Input extends DisplayElement implements HasHtmlString, SafeToRender
 {
     public enum Layout
     {
@@ -647,7 +647,7 @@ public class Input extends DisplayElement implements HasHtmlString
     }
 
     @SuppressWarnings("unchecked")
-    public static class InputBuilder<T extends InputBuilder<T>> implements HasHtmlString// TODO: extends DisplayElementBuilder?
+    public static class InputBuilder<T extends InputBuilder<T>> implements HasHtmlString, SafeToRender// TODO: extends DisplayElementBuilder?
     {
         private String _autoComplete;
         private Boolean _autoFocus;

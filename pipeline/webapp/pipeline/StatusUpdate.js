@@ -76,12 +76,11 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
             return;
         }
 
-        var url = LABKEY.ActionURL.buildURL(_controller, _action, null, {returnUrl: returnURL });
-        if (document.location.search && document.location.search.length > 0)
-        {
-            // Strip off the leading ? on search
-            url = url + "&" + document.location.search.substring(1);
-        }
+        // Get the current parameters, then replace (or add) a returnUrl value, see issue 41283
+        var params = LABKEY.ActionURL.getParameters();
+        params.returnUrl = returnURL;
+
+        var url = LABKEY.ActionURL.buildURL(_controller, _action, null, params);
 
         LABKEY.Ajax.request({
             url: url,

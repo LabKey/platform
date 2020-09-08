@@ -24,7 +24,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.SimpleHasHtmlString;
+import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.CohortFilter.Type;
 import org.labkey.study.model.CohortImpl;
@@ -46,7 +46,7 @@ import java.util.Set;
  */
 public class CohortFilterFactory
 {
-    public enum Params implements SimpleHasHtmlString
+    public enum Params implements SafeToRenderEnum
     {
         cohortFilterType
         {

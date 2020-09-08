@@ -38,6 +38,12 @@ public interface ModuleEditorService
         return null;
     }
 
+    @Nullable
+    default ActionURL getModuleEditorURL(String module)
+    {
+        return null;
+    }
+
     /*
      * NOTE: the Module interface is designed for loading resources, not updating them, here are some helpers
      * return non-null File if this module has updatable resources, returns a message string if is not.

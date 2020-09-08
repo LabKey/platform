@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.pipeline.PipelineJobData" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -28,28 +29,28 @@
 <%@ page import="org.labkey.pipeline.status.StatusController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-private Object outputJob(String status, PipelineJob job,
-                         boolean isAllContainers, boolean canCancel)
+private HtmlString outputJob(String status, PipelineJob job,
+                             boolean isAllContainers, boolean canCancel)
 {
-    StringBuffer ret = new StringBuffer("<tr><td>");
+    StringBuilder ret = new StringBuilder("<tr><td>");
     URLHelper href = null;
     if (!status.equals("pending"))
         href = job.getStatusHref();
 
     if (href == null)
     {
-        ret.append(status);
+        ret.append(h(status));
     }
     else
     {
         ret.append("<a href=\"").append(h(href)).append("\">")
-                .append(status).append("</a>");
+            .append(h(status)).append("</a>");
     }
     ret.append("</td><td>");
-    ret.append(job.getUser().getName()).append("</td>\n<td>");
-    ret.append(job.getDescription()).append("</td>");
+    ret.append(h(job.getUser().getName())).append("</td>\n<td>");
+    ret.append(h(job.getDescription())).append("</td>");
     if (isAllContainers)
-        ret.append("<td>").append(job.getContainer().getPath()).append("</td>");
+        ret.append("<td>").append(h(job.getContainer().getPath())).append("</td>");
 
     if (status.equals("pending") && canCancel)
     {
@@ -57,7 +58,7 @@ private Object outputJob(String status, PipelineJob job,
         ret.append(button("cancel").href(buildURL(PipelineController.CancelJobAction.class, "jobId=" + job.getJobGUID() + (isAllContainers ? "&allcontainers=1" : ""))));
         ret.append("</td>");
     }
-    return ret;
+    return HtmlString.unsafe(ret.toString());
 }
 
 %>

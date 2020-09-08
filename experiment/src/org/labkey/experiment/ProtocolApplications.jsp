@@ -108,7 +108,7 @@
             </td>
             <td valign="top"><%=h(protocolApplication.getApplicationType().name())%></td>
             <td valign="top">
-                <a href="<%=ExperimentController.ExperimentUrlsImpl.get().getProtocolDetailsURL(protocolApplication.getProtocol())%>"><%=h(protocolApplication.getProtocol().getName())%></a>
+                <a href="<%=h(ExperimentController.ExperimentUrlsImpl.get().getProtocolDetailsURL(protocolApplication.getProtocol()))%>"><%=h(protocolApplication.getProtocol().getName())%></a>
             </td>
             <td valign="top"><%=formatDate(protocolApplication.getActivityDate())%></td>
             <td valign="top"><%=formatDate(protocolApplication.getStartTime())%></td>
@@ -117,7 +117,7 @@
             <td valign="top">
                 <%
                     if (!props.isEmpty())
-                        out.print(new JSONObject(props).getHtmlString(2));
+                        out.print(new JSONObject(props).getJavaScriptFragment(2));
                 %>
             </td>
         </tr>
@@ -139,7 +139,7 @@
                         <td width="200px"><%= h(protocolInput != null ? protocolInput.getName() : null)%></td>
                         <td>
                             <% Map<String, Object> map = ((ExpMaterialRunInputImpl)materialRunInput).getProperties(); %>
-                            <% if (!map.isEmpty()) out.print(new JSONObject(map).getHtmlString(2)); %>
+                            <% if (!map.isEmpty()) out.print(new JSONObject(map).getJavaScriptFragment(2)); %>
                         </td>
                     </tr>
                     <% } %>
@@ -159,7 +159,7 @@
                         <td width="200px"><%= h(protocolInput != null ? protocolInput.getName() : null)%></td>
                         <td>
                             <% Map<String, Object> map = ((ExpDataRunInputImpl)dataRunInput).getProperties(); %>
-                            <% if (!map.isEmpty()) out.print(new JSONObject(map).getHtmlString(2)); %>
+                            <% if (!map.isEmpty()) out.print(new JSONObject(map).getJavaScriptFragment(2)); %>
                         </td>
                     </tr>
                     <% } %>
@@ -179,7 +179,7 @@
                         <td width="200px"><%= h(protocolInput != null ? protocolInput.getName() : null)%></td>
                         <td>
                             <% Map<String, Object> map = ((ExpMaterialRunInputImpl)materialRunInput).getProperties(); %>
-                            <% if (!map.isEmpty()) out.print(new JSONObject(map).getHtmlString(2)); %>
+                            <% if (!map.isEmpty()) out.print(new JSONObject(map).getJavaScriptFragment(2)); %>
                         </td>
                     </tr>
                     <% } %>
@@ -199,7 +199,7 @@
                         <td width="200px"><%= h(protocolInput != null ? protocolInput.getName() : null)%></td>
                         <td>
                             <% Map<String, Object> map = ((ExpDataRunInputImpl)dataRunInput).getProperties(); %>
-                            <% if (!map.isEmpty()) out.print(new JSONObject(map).getHtmlString(2)); %>
+                            <% if (!map.isEmpty()) out.print(new JSONObject(map).getJavaScriptFragment(2)); %>
                         </td>
                     </tr>
                     <% } %>

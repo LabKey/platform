@@ -29,7 +29,7 @@ import org.labkey.api.settings.BannerProperties;
 import org.labkey.api.settings.FooterProperties;
 import org.labkey.api.settings.TemplateProperties;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.BadRequestException;
+import org.labkey.api.view.HttpStatusException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -287,9 +287,9 @@ public class PageTemplate extends JspView<PageConfig>
                             }
                         }
                     }
-                    catch (BadRequestException x)
+                    catch (HttpStatusException x)
                     {
-                        // re-throw BadRequestException to let it bubble up to the top level
+                        // re-throw HttpStatusException to let it bubble up to the top level
                         throw x;
                     }
                     catch (Exception x)

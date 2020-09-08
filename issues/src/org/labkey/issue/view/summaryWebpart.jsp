@@ -54,8 +54,8 @@
          <a href="<%=h(url)%>"><i>Unassigned</i></a>
       <% } %>
         </td>
-        <td align="right"><%=bug.get("open")%></td>
-        <td align="right"><%=bug.get("resolved")%></td>
+        <td align="right"><%=h(bug.get("open"))%></td>
+        <td align="right"><%=h(bug.get("resolved"))%></td>
     </tr>
 <% } %>
 </table>

@@ -16,10 +16,10 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.util.SimpleHasHtmlString;
+import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.util.URLHelper;
 
-public enum QueryParam implements SimpleHasHtmlString
+public enum QueryParam implements SafeToRenderEnum
 {
     schemaName,
     queryName,

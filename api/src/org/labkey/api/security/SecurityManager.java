@@ -58,6 +58,7 @@ import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
+import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -130,8 +131,7 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 /**
  * Responsible for user authentication, creating or modifying groups, and similar user/group operations.
- * Note should consider implementing a Tomcat REALM, but we've tried to avoid
- * being tomcat specific.
+ * Note should consider implementing a Tomcat REALM, but we've tried to avoid being tomcat specific.
  */
 
 public class SecurityManager
@@ -2785,7 +2785,7 @@ public class SecurityManager
                 {
                     message.append("  Click ");
                     message.append(HtmlString.unsafe("<a href=\""));
-                        message.append(createVerificationURL(context.getContainer(), email, newUserStatus.getVerification(), extraParameters));
+                    message.append(createVerificationURL(context.getContainer(), email, newUserStatus.getVerification(), extraParameters).toString());
                     message.append(HtmlString.unsafe("\" target=\"_blank\">here</a>"));
                     message.append(" to change the password from the random one that was assigned.");
                 }
@@ -2795,12 +2795,12 @@ public class SecurityManager
         }
         catch (ConfigurationException e)
         {
-            message.append("<br>");
-            message.append(PageFlowUtil.filter(email.getEmailAddress()));
-            message.append(" was added successfully, but could not be emailed due to a failure:<br><pre>");
+            message.append(HtmlString.unsafe("<br>"));
+            message.append(email.getEmailAddress());
+            message.append(HtmlString.unsafe(" was added successfully, but could not be emailed due to a failure:<br><pre>"));
             message.append(e.getMessage());
-            message.append("</pre>");
-            appendMailHelpText(message, messageContentsURL, currentUser.hasRootPermission(UserManagementPermission.class));
+            message.append(HtmlString.unsafe("</pre>"));
+            appendMailHelpText(message, messageContentsURL, currentUser.hasRootPermission(AddUserPermission.class));
 
             User newUser = UserManager.getUser(email);
 
@@ -2873,27 +2873,27 @@ public class SecurityManager
         }
     }
 
-    private static void appendMailHelpText(HtmlStringBuilder sb, ActionURL messageContentsURL, boolean isAdmin)
+    private static void appendMailHelpText(HtmlStringBuilder builder, ActionURL messageContentsURL, boolean isAdmin)
     {
         if (isAdmin)
         {
-            sb.append("You can attempt to resend this mail later by going to the Site Users link, clicking on the appropriate user from the list, and resetting their password.");
+            builder.append("You can attempt to resend this mail later by going to the Site Users link, clicking on the appropriate user from the list, and resetting their password.");
 
             if (messageContentsURL != null)
             {
-                sb.append(" Alternatively, you can copy the <a href=\"");
-                sb.append(messageContentsURL);
-                sb.append("\" target=\"_blank\">contents of the message</a> into an email client and send it to the user manually.");
+                builder.append(" Alternatively, you can copy the ");
+                builder.append(new LinkBuilder("contents of the message").href(messageContentsURL).target("_blank"));
+                builder.append(" into an email client and send it to the user manually.");
             }
 
-            sb.append("</p>");
-            sb.append("<p>For help on fixing your mail server settings, please consult the SMTP section of the ");
-            sb.append(new HelpTopic("cpasxml").getSimpleLinkHtml("LabKey documentation on modifying your configuration file"));
-            sb.append(".<br>");
+            builder.append(HtmlString.unsafe("</p>"));
+            builder.append(HtmlString.unsafe("<p>For help on fixing your mail server settings, please consult the SMTP section of the "));
+            builder.append(new HelpTopic("cpasxml").getSimpleLinkHtml("LabKey documentation on modifying your configuration file"));
+            builder.append(HtmlString.unsafe(".<br>"));
         }
         else
         {
-            sb.append("Please contact your site administrator.");
+            builder.append("Please contact your site administrator.");
         }
     }
 

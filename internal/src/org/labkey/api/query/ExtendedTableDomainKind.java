@@ -68,23 +68,34 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain gwtDomain, JSONObject arguments, Container container, User user, TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> gwtDomain, JSONObject arguments, Container container, User user, TemplateInfo templateInfo)
     {
         if (gwtDomain.getName() == null)
             throw new IllegalArgumentException("table name is required");
 
         String domainURI = generateDomainURI(getSchemaName(), gwtDomain.getName(), container, user);
-        Domain domain = PropertyService.get().getDomain(container, domainURI);
+        Domain existingDomain = PropertyService.get().getDomain(container, domainURI);
 
         // First check if this should be an update
-        if (null != domain)
+        if (null != existingDomain)
         {
+            // Reuse existing fields if they match in name and type. See issue 41282
+            for (GWTPropertyDescriptor newProp : gwtDomain.getFields())
+            {
+                DomainProperty existingProp = existingDomain.getPropertyByName(newProp.getName());
+                if (existingProp != null && existingProp.getRangeURI().equals(newProp.getRangeURI()))
+                {
+                    newProp.setPropertyId(existingProp.getPropertyId());
+                    newProp.setPropertyURI(existingProp.getPropertyURI());
+                }
+            }
+            
             updateDomain(container, user, gwtDomain, arguments);
         }
         else
         {
-            List<GWTPropertyDescriptor> properties = gwtDomain.getFields();
-            domain = PropertyService.get().createDomain(container, domainURI, gwtDomain.getName(), templateInfo);
+            List<? extends GWTPropertyDescriptor> properties = gwtDomain.getFields();
+            Domain newDomain = PropertyService.get().createDomain(container, domainURI, gwtDomain.getName(), templateInfo);
 
             Set<String> propertyUris = new HashSet<>();
             Map<DomainProperty, Object> defaultValues = new HashMap<>();
@@ -92,9 +103,9 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
             {
                 for (GWTPropertyDescriptor pd : properties)
                 {
-                    DomainUtil.addProperty(domain, pd, defaultValues, propertyUris, null);
+                    DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
                 }
-                domain.save(user);
+                newDomain.save(user);
             }
             catch (ChangePropertyDescriptorException e)
             {

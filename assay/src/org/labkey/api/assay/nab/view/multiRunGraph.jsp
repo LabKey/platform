@@ -38,6 +38,6 @@
     if (bean.getChartTitle() != null)
         chartURL.addParameter("chartTitle", bean.getChartTitle());
 %>
-<img src="<%= chartURL %>">
+<img src="<%=h(chartURL)%>">
 <br>
 <% me.include(bean.getQueryView(), out); %>

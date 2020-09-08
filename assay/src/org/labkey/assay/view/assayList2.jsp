@@ -44,7 +44,7 @@
 
         url.replaceParameter("rowId", protocol.getRowId());
         %>
-<b><a href="<%=url%>"><%=h(protocol.getName())%></a></b>
+<b><a href="<%=h(url)%>"><%=h(protocol.getName())%></a></b>
 <%      if (null != protocol.getDescription())
         {   %>
             <br><%=h(protocol.getDescription())%>

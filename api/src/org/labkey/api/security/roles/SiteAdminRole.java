@@ -36,7 +36,7 @@ import java.util.Collections;
  * User: Dave
  * Date: Apr 23, 2009
  */
-public class SiteAdminRole extends AbstractRootContainerRole
+public class SiteAdminRole extends AbstractRootContainerRole implements AdminRoleListener
 {
     private static final Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
         SiteAdminPermission.class,
@@ -58,5 +58,11 @@ public class SiteAdminRole extends AbstractRootContainerRole
             PERMISSIONS,
             AppProps.getInstance().isDevMode() ? Collections.singleton(EditModuleResourcesPermission.class) : Collections.emptyList()
         );
+    }
+
+    @Override
+    public void permissionRegistered(Class<? extends Permission> perm)
+    {
+        addPermission(perm);
     }
 }

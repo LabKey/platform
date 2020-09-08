@@ -18,9 +18,9 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.settings.AppProps"%>
-<%@ page import="org.labkey.api.util.HasHtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
+<%@ page import="org.labkey.api.util.SafeToRender" %>
 <%@ page import="org.labkey.api.util.SystemMaintenance" %>
 <%@ page import="org.labkey.api.util.SystemMaintenance.MaintenanceTask" %>
 <%@ page import="org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties" %>
@@ -88,7 +88,7 @@
                     {
                         if (!task.hideFromAdminPage())
                         {
-                            HasHtmlString description;
+                            SafeToRender description;
                             if (hasAdminOpsPerms)
                                 description = link(task.getDescription()).href("javascript:submitSystemMaintenance(" + q(task.getName()) + ")");
                             else

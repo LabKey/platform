@@ -264,7 +264,7 @@ function validate()
         }
     %>
                 </table>
-                <input type="hidden" name="wizard" value="<%=h(form.isWizard())%>">
+                <input type="hidden" name="wizard" value="<%=form.isWizard()%>">
                 <div id="UpdateFolderButtonDiv"></div>
     <%
         FrameFactoryClassic.endTitleFrame(out);
