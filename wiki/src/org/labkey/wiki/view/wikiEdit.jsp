@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
+<%@ page import="org.labkey.wiki.WikiController.AttachFilesAction" %>
 <%@ page import="org.labkey.wiki.model.WikiEditModel" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -201,7 +202,7 @@
                                 </td>
                             </tr>
                         </table>
-                        <labkey:form action="<%=buildURL(WikiController.AttachFilesAction.class)%>" method="POST" enctype="multipart/form-data" id="form-files">
+                        <labkey:form action="<%=urlFor(AttachFilesAction.class)%>" method="POST" enctype="multipart/form-data" id="form-files">
                             <table id="wiki-existing-attachments"></table>
                             <br>
                             <table id="wiki-new-attachments"></table>

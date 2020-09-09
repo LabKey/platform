@@ -18,9 +18,11 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.ShowGroupMembersAction"%>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteActorAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorOrderAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorsAction" %>
 <%@ page import="org.labkey.study.model.LocationImpl" %>
 <%@ page import="org.labkey.study.model.SpecimenRequestActor" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
@@ -47,7 +49,7 @@
     }
 %>
 <labkey:errors/>
-<labkey:form action="<%=buildURL(SpecimenController.ManageActorsAction.class)%>" name="manageActors" method="POST">
+<labkey:form action="<%=urlFor(ManageActorsAction.class)%>" name="manageActors" method="POST">
     <table class="lk-fields-table">
         <tr>
             <td>&nbsp;</td>
@@ -60,23 +62,23 @@
         {
             for (SpecimenRequestActor actor : actors)
             {
-                String updateMembersLink = null;
+                ActionURL updateMembersLink = null;
                 if (actor.isPerSite())
                 {
                     if (showMemberSitesId != actor.getRowId())
-                        updateMembersLink =  buildURL(SpecimenController.ManageActorsAction.class) + "showMemberSites=" + actor.getRowId();
+                        updateMembersLink = urlFor(ManageActorsAction.class).addParameter("showMemberSites", actor.getRowId());
                 }
                 else
-                    updateMembersLink = buildURL(ShowGroupMembersAction.class) + "id=" + actor.getRowId();
+                    updateMembersLink = urlFor(ShowGroupMembersAction.class).addParameter("id", actor.getRowId());
         %>
         <tr>
             <td align="center">&nbsp;</td>
             <td valign="top">
                 <input type="hidden" name="ids" value="<%= actor.getRowId() %>">
                 <input type="text" name="labels" size="40"
-                       value="<%= h(actor.getLabel()) %>">
+                       value="<%=h(actor.getLabel())%>">
             </td>
-            <td valign="top"><%= text(actor.isPerSite() ? "Multiple Per Study (Location Affiliated)" : "One Per Study") %></td>
+            <td valign="top"><%=h(actor.isPerSite() ? "Multiple Per Study (Location Affiliated)" : "One Per Study")%></td>
             <td>
                 <%
                     if (showMemberSitesId == actor.getRowId())
@@ -103,7 +105,7 @@
                         %><%= link("Update Members").href(updateMembersLink) %><%
                         if (!inUseActorIds.contains(actor.getRowId()))
                         {
-                            %><%=link("Delete").onClick("return LABKEY.Utils.confirmAndPost('Deleting this actor will delete all information about its membership. All member emails will need to be entered again if you recreate this actor.', '" + buildURL(SpecimenController.DeleteActorAction.class) + "id=" + actor.getRowId() + "')") %><%
+                            %><%=link("Delete").onClick("return LABKEY.Utils.confirmAndPost('Deleting this actor will delete all information about its membership. All member emails will need to be entered again if you recreate this actor.', '" + h(urlFor(DeleteActorAction.class).addParameter("id", actor.getRowId())) + "')") %><%
                         }
                     }
                 %>
@@ -129,9 +131,9 @@
             <td>
                 <%= button("Save").submit(true) %>&nbsp;
                 <%= button("Done").submit(true).onClick("document.manageActors.nextPage.value=''; return true;") %>
-                <%= button("Cancel").href(new ActionURL(StudyController.ManageStudyAction.class, study.getContainer())) %>&nbsp;
-                <%= button("Change Order").submit(true).onClick("document.manageActors.nextPage.value=" + q(new ActionURL(SpecimenController.ManageActorOrderAction.class, study.getContainer())) + "; return true;") %>
-                <input type="hidden" name="nextPage" value="<%=h(new ActionURL(SpecimenController.ManageActorsAction.class, study.getContainer()))%>">
+                <%= button("Cancel").href(new ActionURL(ManageStudyAction.class, study.getContainer())) %>&nbsp;
+                <%= button("Change Order").submit(true).onClick("document.manageActors.nextPage.value=" + q(urlFor(ManageActorOrderAction.class)) + "; return true;") %>
+                <input type="hidden" name="nextPage" value="<%=h(new ActionURL(ManageActorsAction.class, study.getContainer()))%>">
             </td>
             <td>&nbsp;</td>
         </tr>

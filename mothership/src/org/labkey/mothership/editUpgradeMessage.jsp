@@ -17,15 +17,16 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.mothership.MothershipController"%>
+<%@ page import="org.labkey.mothership.MothershipController.SaveUpgradeMessageAction"%>
+<%@ page import="org.labkey.mothership.MothershipController.UpgradeMessageForm" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<MothershipController.UpgradeMessageForm> me = (JspView<MothershipController.UpgradeMessageForm>) HttpView.currentView();
-    MothershipController.UpgradeMessageForm form = me.getModelBean();
+    JspView<UpgradeMessageForm> me = (JspView<UpgradeMessageForm>) HttpView.currentView();
+    UpgradeMessageForm form = me.getModelBean();
 %>
 
-<labkey:form action="saveUpgradeMessage.post" method="post">
+<labkey:form action="<%=urlFor(SaveUpgradeMessageAction.class)%>" method="post">
     <table>
         <tr>
             <td>

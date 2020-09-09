@@ -23,15 +23,18 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.filecontent.FileContentController" %>
+<%@ page import="org.labkey.filecontent.FileContentController.AddAttachmentDirectoryAction" %>
+<%@ page import="org.labkey.filecontent.FileContentController.BeginAction" %>
+<%@ page import="org.labkey.filecontent.FileContentController.DeleteAttachmentDirectoryAction" %>
+<%@ page import="org.labkey.filecontent.FileContentController.FileContentForm" %>
 <%@ page import="java.nio.file.Files" %>
 <%@ page import="java.nio.file.Path" %>
 <%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<FileContentController.FileContentForm> me = (JspView<FileContentController.FileContentForm>) HttpView.currentView();
-    FileContentController.FileContentForm form = me.getModelBean();
+    JspView<FileContentForm> me = (JspView<FileContentForm>) HttpView.currentView();
+    FileContentForm form = me.getModelBean();
     FileContentService service = FileContentService.get();
     Collection<AttachmentDirectory> attachmentDirs = service.getRegisteredDirectories(getContainer());
 
@@ -87,7 +90,7 @@ Each file set is an additional directory that stores files accessible to users o
         String label = attDir.getLabel();
         Path directoryPath = attDir.getFileSystemDirectoryPath();
 %>
-    <labkey:form action="deleteAttachmentDirectory.post" method="POST">
+    <labkey:form action="<%=urlFor(DeleteAttachmentDirectoryAction.class)%>" method="POST">
      <table>
         <tr>
             <td class="labkey-form-label">Name</td>
@@ -98,13 +101,13 @@ Each file set is an additional directory that stores files accessible to users o
             <td><%=h(directoryPath.toString())%> <%=h(Files.exists(directoryPath) ? "" : "Directory does not exist. An administrator must create it.")%></td>
         </tr>
         <tr>
-            <td colspan=2><%= button("Show Files").href(buildURL(FileContentController.BeginAction.class, "fileSetName=" + h(label))) %> <%= button("Remove").submit(true) %> (Files will not be deleted)</td>
+            <td colspan=2><%= button("Show Files").href(urlFor(BeginAction.class).addParameter("fileSetName", label)) %> <%= button("Remove").submit(true) %> (Files will not be deleted)</td>
         </tr>
     </table>
         </labkey:form>
 <%  } %>
 
-<labkey:form action="addAttachmentDirectory.post" method="POST">
+<labkey:form action="<%=urlFor(AddAttachmentDirectoryAction.class)%>" method="POST">
 <table>
     <tr>
         <td class="labkey-form-label">Name</td>

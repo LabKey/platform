@@ -16,11 +16,12 @@
  */
 %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.experiment.types.TypesController" %>
+<%@ page import="org.labkey.experiment.types.TypesController.ImportVocabularyAction" %>
+<%@ page import="org.labkey.experiment.types.TypesController.ImportVocabularyForm" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    TypesController.ImportVocabularyForm form = (TypesController.ImportVocabularyForm )HttpView.currentModel();
+    ImportVocabularyForm form = (ImportVocabularyForm)HttpView.currentModel();
 %>
 <h3>Upload Vocabulary</h3>
 
@@ -46,7 +47,7 @@ Specifically it should be a tab-delimited text file with no column headers, and 
 
 <p>&nbsp;</p>
 
-<labkey:form action="<%=buildURL(TypesController.ImportVocabularyAction.class)%>" method="POST" enctype="multipart/form-data">
+<labkey:form action="<%=urlFor(ImportVocabularyAction.class)%>" method="POST" enctype="multipart/form-data">
 <table>
 <tr><td class=labkey-form-label>Thesaurus URI<br><small>e.g http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl</small></td><td><input name="name" value="<%=h(form.getName())%>"></td></tr>
 <!--<tr><td class=labkey-form-label>Short prefix<br><small>e.g NCI_Thesaurus</small></td><td><input name="prefix" value=""></td></tr> -->

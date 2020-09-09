@@ -1,4 +1,3 @@
-<%@ page import="org.labkey.experiment.types.TypesController" %>
 <%
 /*
  * Copyright (c) 2009-2019 LabKey Corporation
@@ -16,6 +15,10 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.experiment.types.TypesController.CheckResolveAction" %>
+<%@ page import="org.labkey.experiment.types.TypesController.FindConceptsAction" %>
+<%@ page import="org.labkey.experiment.types.TypesController.ImportVocabularyAction" %>
+<%@ page import="org.labkey.experiment.types.TypesController.TypesAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <div>
 <p>This is the admin console for defining types, such as SampleTypes or Forms.
@@ -23,8 +26,8 @@ Note that creating a type is typically done in the context of another module.
 This page is for troubleshooting and testing purposes.
 </p>
 
-[&nbsp;<a href="<%=h(buildURL(TypesController.ImportVocabularyAction.class))%>">Import&nbsp;Concepts</a>&nbsp;]<br>
-[&nbsp;<a href="<%=h(buildURL(TypesController.FindConceptsAction.class))%>">Search&nbsp;Concepts</a>&nbsp;]<br>
-[&nbsp;<a href="<%=h(buildURL(TypesController.TypesAction.class))%>">View&nbsp;Types</a>&nbsp;]<br>
-[&nbsp;<a href="<%=h(buildURL(TypesController.CheckResolveAction.class))%>">Resolve LSIDs</a>&nbsp;]<br>
+[&nbsp;<a href="<%=h(urlFor(ImportVocabularyAction.class))%>">Import&nbsp;Concepts</a>&nbsp;]<br>
+[&nbsp;<a href="<%=h(urlFor(FindConceptsAction.class))%>">Search&nbsp;Concepts</a>&nbsp;]<br>
+[&nbsp;<a href="<%=h(urlFor(TypesAction.class))%>">View&nbsp;Types</a>&nbsp;]<br>
+[&nbsp;<a href="<%=h(urlFor(CheckResolveAction.class))%>">Resolve LSIDs</a>&nbsp;]<br>
 </div>

@@ -17,6 +17,8 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.experiment.types.TypesController"%>
+<%@ page import="org.labkey.experiment.types.TypesController.FindConceptsAction" %>
+<%@ page import="org.labkey.experiment.types.TypesController.SearchForm" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -26,7 +28,7 @@
 //
 // SEARCH FORM
 //
-TypesController.SearchForm form = (TypesController.SearchForm) HttpView.currentModel();
+SearchForm form = (SearchForm) HttpView.currentModel();
 Map<String, Object>[] concepts = form.concepts;
 
 String[] semanticTypes = TypesController.getSemanticTypes();
@@ -50,7 +52,7 @@ for (found in foundSemanticTypes)
 */
 %>
 <labkey:errors/>
-<labkey:form action="<%=buildURL(TypesController.FindConceptsAction.class)%>" method="GET">
+<labkey:form action="<%=urlFor(FindConceptsAction.class)%>" method="GET">
 <table >
 	<tr><td class="labkey-form-label">Search for</td><td><input name=query style="width:320;" value="<%=h(form.getQuery())%>"></td></tr>
 	<tr><td class="labkey-form-label">Prefix match</td><td><input type=checkbox name=prefixMatch<%=checked(form.isPrefixMatch())%>></td></tr>
