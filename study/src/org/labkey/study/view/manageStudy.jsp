@@ -327,6 +327,7 @@
             ActionURL specimenEventUrl = null;
             ActionURL vialUrl = null;
             ActionURL specimenUrl = null;
+            ActionURL specimenImportUrl = null;
 
             if (domainEvent != null)
             {
@@ -344,6 +345,11 @@
             {
                 specimenUrl = domainSpecimen.getDomainKind().urlEditDefinition(domainSpecimen, getViewContext());
                 specimenUrl.addReturnURL(getViewContext().getActionURL());
+            }
+
+            if (true) // perhaps need to
+            {
+
             }
 
 %>
@@ -389,9 +395,9 @@
                                 {
                 %>
                         <tr>
-                            <td class="lk-study-prop-label">External Specimen Repository</td>
-                            <td class="lk-study-prop-desc">Configure settings for a <%=h(transform.getName())%> repository.</td>
-                            <td><%=link("Configure " + transform.getName(), manageAction)%></td>
+                            <td class="lk-study-prop-label">Specimen Import</td>
+                            <td class="lk-study-prop-desc">Choose and configure a specimen import.</td>
+                            <td><%=link("Configure specimen import", manageAction)%></td>
                         </tr>
                 <%
                                 }

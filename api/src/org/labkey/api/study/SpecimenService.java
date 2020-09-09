@@ -80,7 +80,9 @@ public interface SpecimenService
 
     void registerSpecimenTransform(SpecimenTransform transform);
 
-    Collection<SpecimenTransform> getSpecimenTransforms(Container container);
+    Collection<SpecimenTransform> getSpecimenTransforms(Container container); // flag
+
+    // what is specimen transform configured for this container, and also set it, use the propertyManager
 
     @Nullable
     SpecimenTransform getSpecimenTransform(String name);
