@@ -26,6 +26,7 @@ import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.view.Stats;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,18 @@ public class StatsServiceImpl implements StatsService
     public MathStat getStats(double[] data)
     {
         return new Stats.DoubleStats(data);
+    }
+
+    @Override
+    public MathStat getStats(Collection<Double> data)
+    {
+        double[] da = new double[data.size()];
+        int i = 0;
+
+        for (Double d : data)
+            da[i++] = d.doubleValue();
+
+        return new Stats.DoubleStats(da);
     }
 
     @Override

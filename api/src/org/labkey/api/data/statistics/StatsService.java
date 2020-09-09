@@ -17,6 +17,9 @@ package org.labkey.api.data.statistics;
 
 import org.labkey.api.services.ServiceRegistry;
 
+import java.awt.geom.Arc2D;
+import java.util.Collection;
+
 /**
  * Created by klum on 1/14/14.
  */
@@ -107,6 +110,7 @@ public interface StatsService
      * @return
      */
     MathStat getStats(double[] data);
+    MathStat getStats(Collection<Double> data);
 
     /**
      * Returns an instance of a curve fit for the specified curve fit type and initialized with
