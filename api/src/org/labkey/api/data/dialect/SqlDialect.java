@@ -650,6 +650,13 @@ public abstract class SqlDialect
         return cast;
     }
 
+    public SQLFragment getNumericCast(SQLFragment expression)
+    {
+        SQLFragment cast = new SQLFragment(expression);
+        cast.setRawSQL("CAST(" + cast.getRawSQL() + " AS NUMERIC)");
+        return cast;
+    }
+
     public abstract String getRoundFunction(String valueToRound);
 
 
