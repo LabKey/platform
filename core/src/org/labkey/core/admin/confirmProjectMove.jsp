@@ -39,7 +39,7 @@ After the move is complete, you will need to reconfigure permissions settings fo
 <p>
 This action cannot be undone.
 </p>
-    <input type="hidden" name="addAlias" value="<%=h(f.isAddAlias())%>">
+    <input type="hidden" name="addAlias" value="<%=f.isAddAlias()%>">
     <input type="hidden" name="target" value="<%=h(f.getTarget())%>">
     <input type="hidden" name="confirmed" value="1">
     <%= button("Confirm Move").submit(true) %>

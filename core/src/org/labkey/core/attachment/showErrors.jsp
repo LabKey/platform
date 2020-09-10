@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.util.HtmlString"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.attachment.AttachmentServiceImpl" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     AttachmentServiceImpl.ErrorView me = (AttachmentServiceImpl.ErrorView) HttpView.currentView();
 %>
 <%=formatMissedErrors("form")%>
-<%=null != me.errorHtml ? me.errorHtml : ""%>
+<%=null != me.errorHtml ? me.errorHtml : HtmlString.EMPTY_STRING%>
 <br><br><%= button("Continue").href(me.returnURL) %>

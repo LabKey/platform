@@ -120,7 +120,7 @@
 </script>
 
     <h3>
-        <a href="<%=bean.getRunReportURL(getViewContext())%>"><%= h(bean.getDescriptor().getReportName()) %></a>
+        <a href="<%=h(bean.getRunReportURL(getViewContext()))%>"><%= h(bean.getDescriptor().getReportName()) %></a>
     </h3>
 
     <p>This page enables you to fine-tune permissions for this view.</p>

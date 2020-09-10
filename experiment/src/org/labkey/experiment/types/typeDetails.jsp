@@ -90,13 +90,13 @@
     </tr>
     <tr class="labkey-row">
         <td class="lk-form-label"><b>Provisioned</b></td>
-        <td><%=h(dd.isProvisioned())%></td>
+        <td><%=dd.isProvisioned()%></td>
     </tr>
     <tr class="labkey-row">
         <td class="lk-form-label"><b>Query Table</b></td>
         <td>
             <% if (table != null) { %>
-                <a href="<%=urlSchemaBrowser%>">
+                <a href="<%=h(urlSchemaBrowser)%>">
                 <%=h(table.getPublicSchemaName() + " " + table.getPublicName())%>
                 </a>
             <% } %>
@@ -138,8 +138,8 @@
     <tr class="<%=text(i % 2 == 0 ? "labkey-row" : "labkey-alternate-row")%>">
         <td><%=h(pd.getName())%></td>
         <td><%=h(pd.getPropertyType().getXmlName())%></td>
-        <td><%=h(pd.isRequired())%></td>
-        <td><%=h(mandatoryNames.contains(pd.getName()))%></td>
+        <td><%=pd.isRequired()%></td>
+        <td><%=mandatoryNames.contains(pd.getName())%></td>
         <td><%=h(pd.getPropertyURI())%></td>
     </tr>
     <%

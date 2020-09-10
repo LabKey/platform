@@ -26,7 +26,7 @@ import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.SimpleHasHtmlString;
+import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.util.element.Option.OptionBuilder;
 import org.labkey.api.util.element.Select;
 import org.labkey.api.view.ActionURL;
@@ -73,7 +73,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         hideEmptyColumns
     }
 
-    public enum Status implements SimpleHasHtmlString
+    public enum Status implements SafeToRenderEnum
     {
         ALL("All vials"),
         AVAILABLE("Available vials"),

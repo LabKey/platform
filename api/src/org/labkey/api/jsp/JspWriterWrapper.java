@@ -31,6 +31,11 @@ public class JspWriterWrapper extends JspWriter
         _jspWriter = jspWriter;
     }
 
+    public JspWriter getWrappedJspWriter()
+    {
+        return _jspWriter;
+    }
+
     @Override
     public void newLine() throws IOException
     {
