@@ -640,21 +640,9 @@ public class XarExporter
         {
             xProp.setLabel(domainProp.getLabel());
         }
-        if (prop.getOntologyURI() != null)
-        {
-            xProp.setOntologyURI(prop.getOntologyURI());
-        }
         if (prop.getRangeURI() != null)
         {
             xProp.setRangeURI(prop.getRangeURI());
-        }
-        if (prop.getSearchTerms() != null)
-        {
-            xProp.setSearchTerms(prop.getSearchTerms());
-        }
-        if (prop.getSemanticType() != null)
-        {
-            xProp.setSemanticType(prop.getSemanticType());
         }
         if (prop.getURL() != null)
         {
