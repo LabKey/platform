@@ -901,6 +901,26 @@ public class WrappedColumnInfo
         {
             throw new java.lang.UnsupportedOperationException();
         }
+
+        @Override
+        public void setPrincipalConceptCode(String code)
+        {
+            checkLocked();
+            delegate = new AbstractWrappedColumnInfo(delegate)
+            {
+                @Override
+                public String getPrincipalConceptCode()
+                {
+                    return code;
+                }
+            };
+        }
+
+        @Override
+        public String getPrincipalConceptCode()
+        {
+            return null;
+        }
     }
 
 

@@ -1579,7 +1579,7 @@ public class OntologyManager
                 "format, container, project, lookupcontainer, lookupschema, lookupquery, defaultvaluetype, hidden, " +
                 "mvenabled, importaliases, url, shownininsertview, showninupdateview, shownindetailsview, dimension, " +
                 "measure, scale, recommendedvariable, defaultscale, createdby, created, modifiedby, modified, facetingbehaviortype, " +
-                "phi, redactedText, excludefromshifting, mvindicatorstoragecolumnname)\n");
+                "phi, redactedText, excludefromshifting, mvindicatorstoragecolumnname, principalconceptcode)\n");
         sql.append("SELECT " +
                 "? as propertyuri, " +
                 "? as name, " +
@@ -1615,7 +1615,8 @@ public class OntologyManager
                 "? as phi, " +
                 "? as redactedText, " +
                 "? as excludefromshifting, " +
-                "? as mvindicatorstoragecolumnname\n");
+                "? as mvindicatorstoragecolumnname, " +
+                "? as principalconceptcode\n");
         sql.append("WHERE NOT EXISTS (SELECT propertyid FROM exp.propertydescriptor WHERE propertyuri=? AND container=?);\n");
 
         sql.add(pd.getPropertyURI());
@@ -1653,6 +1654,7 @@ public class OntologyManager
         sql.add(pd.getRedactedText());
         sql.add(pd.isExcludeFromShifting());
         sql.add(pd.getMvIndicatorStorageColumnName());
+        sql.add(pd.getPrincipalConceptCode());
         // WHERE
         sql.add(pd.getPropertyURI());
         sql.add(pd.getContainer());
@@ -1676,25 +1678,25 @@ public class OntologyManager
         // check the pd values that can't change
         if (!pd.getRangeURI().equals(pdIn.getRangeURI()))
             colDiffs.add("RangeURI");
-        if (!pd.getPropertyType().equals(pdIn.getPropertyType()))
+        if (!Objects.equals(pd.getPropertyType(), pdIn.getPropertyType()))
             colDiffs.add("PropertyType");
 
-        if (pdIn.getPropertyId() != 0 && !(pd.getPropertyId() == pdIn.getPropertyId()))
+        if (pdIn.getPropertyId() != 0 && pd.getPropertyId() != pdIn.getPropertyId())
             colDiffs.add("PropertyId");
 
-        if (Objects.equals(pdIn.getName(), pd.getName()))
+        if (!Objects.equals(pdIn.getName(), pd.getName()))
             colDiffs.add("Name");
 
-        if (Objects.equals(pdIn.getConceptURI(), pd.getConceptURI()))
+        if (!Objects.equals(pdIn.getConceptURI(), pd.getConceptURI()))
             colDiffs.add("ConceptURI");
 
-        if (Objects.equals(pdIn.getDescription(), pd.getDescription()))
+        if (!Objects.equals(pdIn.getDescription(), pd.getDescription()))
             colDiffs.add("Description");
 
-        if (Objects.equals(pdIn.getFormat(), pd.getFormat()))
+        if (!Objects.equals(pdIn.getFormat(), pd.getFormat()))
             colDiffs.add("Format");
 
-        if (Objects.equals(pdIn.getLabel(), pd.getLabel()))
+        if (!Objects.equals(pdIn.getLabel(), pd.getLabel()))
             colDiffs.add("Label");
 
         if (pdIn.isHidden() != pd.isHidden())
@@ -1703,14 +1705,17 @@ public class OntologyManager
         if (pdIn.isMvEnabled() != pd.isMvEnabled())
             colDiffs.add("IsMvEnabled");
 
-        if (Objects.equals(pdIn.getLookupContainer(), pd.getLookupContainer()))
+        if (!Objects.equals(pdIn.getLookupContainer(), pd.getLookupContainer()))
             colDiffs.add("LookupContainer");
 
-        if (Objects.equals(pdIn.getLookupSchema(), pd.getLookupSchema()))
+        if (!Objects.equals(pdIn.getLookupSchema(), pd.getLookupSchema()))
             colDiffs.add("LookupSchema");
 
-        if (Objects.equals(pdIn.getLookupQuery(), pd.getLookupQuery()))
+        if (!Objects.equals(pdIn.getLookupQuery(), pd.getLookupQuery()))
             colDiffs.add("LookupQuery");
+
+        if (!Objects.equals(pdIn.getPrincipalConceptCode(), pd.getPrincipalConceptCode()))
+            colDiffs.add("PrincipalConceptCode");
 
         return colDiffs;
     }
@@ -2296,14 +2301,14 @@ public class OntologyManager
 
     static final String parameters = "propertyuri,name,description,rangeuri,concepturi,label," +
             "format,container,project,lookupcontainer,lookupschema,lookupquery,defaultvaluetype,hidden," +
-            "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale,recommendedvariable";
+            "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale,principalconceptcode,recommendedvariable";
     static final String[] parametersArray = parameters.split(",");
     static final String insertSql;
     static final String updateSql;
 
     static
     {
-        insertSql = "INSERT INTO exp.propertydescriptor (" + parameters + ")\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        insertSql = "INSERT INTO exp.propertydescriptor (" + parameters + ")\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         StringBuilder sb = new StringBuilder("UPDATE exp.propertydescriptor SET");
         String comma = " ";
         for (String p : parametersArray)
@@ -2545,7 +2550,7 @@ public class OntologyManager
             assertNotNull(getTinfoPropertyDescriptor());
             assertNotNull(ExperimentService.get().getTinfoSampleType());
 
-            assertEquals(getTinfoPropertyDescriptor().getColumns("PropertyId,PropertyURI,RangeURI,Name,Description").size(), 5);
+            assertEquals(getTinfoPropertyDescriptor().getColumns("PropertyId,PropertyURI,RangeURI,Name,Description,PrincipalConceptCode").size(), 6);
             assertEquals(getTinfoObject().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId").size(), 4);
             assertEquals(getTinfoObjectPropertiesView().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId,Name,PropertyURI,RangeURI,TypeTag,StringValue,DateTimeValue,FloatValue").size(), 11);
             assertEquals(ExperimentService.get().getTinfoSampleType().getColumns("RowId,Name,LSID,MaterialLSIDPrefix,Description,Created,CreatedBy,Modified,ModifiedBy,Container").size(), 10);

@@ -714,6 +714,9 @@ public class XarExporter
         if (domainProp.getRangeURI().equals("http://www.w3.org/2001/XMLSchema#string"))
             xProp.setScale(domainProp.getScale());
 
+        if (null != domainProp.getPrincipalConceptCode())
+            xProp.setScale(domainProp.getScale());
+
         ConditionalFormat.convertToXML(domainProp.getConditionalFormats(), xProp);
 
         xProp.setMeasure(domainProp.isMeasure());
