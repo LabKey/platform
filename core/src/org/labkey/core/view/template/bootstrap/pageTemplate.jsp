@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
+<%@ page import="org.apache.logging.log4j.LogManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     PageTemplate me = (PageTemplate) HttpView.currentView();
@@ -108,6 +109,17 @@
 <script type="text/javascript">LABKEY.loadScripts(); LABKEY.showNavTrail();</script>
 <!-- <%= h(request.getHeader("User-Agent")) %> -->
 <%-- TODO : ErrorPage, look into this--%>
-<%--<a href="<%=h(me.getPermaLink())%>" id="permalink" name="permalink" style="display: none;"></a>--%>
+<%
+    try
+    {
+%>
+<a href="<%=h(me.getPermaLink())%>" id="permalink" name="permalink" style="display: none;"></a>
+<%
+    }
+    catch (Exception e)
+    {
+        LogManager.getLogger().info("This will be resolved in next error page story", e);
+    }
+%>
 </body>
 </html>

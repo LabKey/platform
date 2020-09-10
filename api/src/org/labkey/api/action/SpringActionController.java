@@ -540,7 +540,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             }
         }
             
-        ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false, getViewContext(), pageConfig);
+        ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false, pageConfig);
         if (null != errorURL)
             ExceptionUtil.doErrorRedirect(response, errorURL.toString());
     }

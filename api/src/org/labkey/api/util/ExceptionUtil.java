@@ -599,17 +599,17 @@ public class ExceptionUtil
 
     public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure)
     {
-        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, null, null);
+        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, null);
     }
 
     // This is called by SpringActionController (to display unhandled exceptions) and called directly by AuthFilter.doFilter() (to display startup errors and bypass normal request handling)
-    public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure, @Nullable ViewContext context, @Nullable PageConfig pageConfig)
+    public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure, @Nullable PageConfig pageConfig)
     {
-        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, context, pageConfig);
+        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, pageConfig);
     }
 
     static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure,
-        SearchService ss, Logger log, @Nullable ViewContext context, @Nullable PageConfig pageConfig)
+        SearchService ss, Logger log, @Nullable PageConfig pageConfig)
     {
         try
         {
@@ -862,75 +862,7 @@ public class ExceptionUtil
         }
         else if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_ERROR_PAGE))
         {
-            // 7629: Error page redesign -- development in-progress. This path shows the new error view.
-            ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, false, startupFailure);
-
-            if (ex instanceof UnauthorizedException)
-            {
-                if (ex instanceof ForbiddenProjectException)
-                {
-                    // Not allowed in the project... don't offer Home or Folder buttons
-                    renderer.setIncludeHomeButton(false);
-                    renderer.setIncludeFolderButton(false);
-                }
-
-                // Provide "Stop Impersonating" button if unauthorized while impersonating
-                if (user.isImpersonated())
-                    renderer.setIncludeStopImpersonatingButton(true);
-            }
-
-            if (ex instanceof DavException)
-            {
-                errorType = ErrorRenderer.ErrorType.notFound;
-            }
-
-            if (pageConfig == null)
-            {
-                pageConfig = new PageConfig();
-                pageConfig.setTemplate(PageConfig.Template.Home);
-            }
-
-            HttpView<?> errorView;
-
-            try
-            {
-                if (context != null)
-                {
-                    renderer.setErrorType(errorType);
-                    errorView = pageConfig.getTemplate().getTemplate(context, new ErrorTemplate(renderer), pageConfig);
-
-                    if (null == errorView)
-                    {
-                        log.error("Failed to create errorView in response to exception", ex);
-                        return null;
-                    }
-                }
-                else
-                {
-                    // context can be null for configuration exceptions depending on how far server got through initialization
-                    errorView = PageConfig.Template.Body.getTemplate(new ViewContext(request, response, new ActionURL(ActionURL.getBaseServerURL())), new ErrorTemplate(renderer), pageConfig);
-                }
-
-                pageConfig.addClientDependencies(errorView.getClientDependencies());
-                errorView.getView().render(errorView.getModel(), request, response);
-            }
-            catch (Exception e)
-            {
-                // try to render just the react app
-                try
-                {
-                    // TODO : ErrorPage, this app template doesn't work
-                    errorView = PageConfig.Template.App.getTemplate(context, new ErrorTemplate(renderer), pageConfig);
-                    pageConfig.addClientDependencies(errorView.getClientDependencies());
-                    errorView.getView().render(errorView.getModel(), request, response);
-
-                }
-                catch (Exception exc)
-                {
-                    log.error("Global.handleException", e);
-                }
-
-            }
+            renderErrorPage(ex, responseStatus, message, request, response, pageConfig, errorType, user, log, startupFailure);
         }
         else
         {
@@ -972,6 +904,86 @@ public class ExceptionUtil
         }
 
         return null;
+    }
+
+    private static void renderErrorPage(Throwable ex, int responseStatus, String message, HttpServletRequest request, HttpServletResponse response, PageConfig pageConfig, ErrorRenderer.ErrorType errorType, User user, Logger log, boolean startupFailure)
+    {
+        // 7629: Error page redesign -- development in-progress. This path shows the new error view.
+        ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, false, startupFailure);
+
+        if (ex instanceof UnauthorizedException)
+        {
+            if (ex instanceof ForbiddenProjectException)
+            {
+                // Not allowed in the project... don't offer Home or Folder buttons
+                renderer.setIncludeHomeButton(false);
+                renderer.setIncludeFolderButton(false);
+            }
+
+            // Provide "Stop Impersonating" button if unauthorized while impersonating
+            if (user.isImpersonated())
+                renderer.setIncludeStopImpersonatingButton(true);
+        }
+
+        if (ex instanceof DavException)
+        {
+            errorType = ErrorRenderer.ErrorType.notFound;
+        }
+
+        if (pageConfig == null)
+        {
+            pageConfig = new PageConfig();
+            pageConfig.setTemplate(PageConfig.Template.Home);
+        }
+
+        HttpView<?> errorView;
+        ViewContext context = null;
+
+        if (HttpView.hasCurrentView())
+        {
+            context = HttpView.currentContext();
+        }
+
+        try
+        {
+            if (HttpView.hasCurrentView())
+            {
+                renderer.setErrorType(errorType);
+                errorView = pageConfig.getTemplate().getTemplate(context, new ErrorTemplate(renderer), pageConfig);
+
+                if (null == errorView)
+                {
+                    log.error("Failed to create errorView in response to exception", ex);
+                    return;
+                }
+            }
+            else
+            {
+                // context can be null for configuration exceptions depending on how far server got through initialization
+                errorView = PageConfig.Template.Body.getTemplate(new ViewContext(request, response, new ActionURL(ActionURL.getBaseServerURL())), new ErrorTemplate(renderer), pageConfig);
+            }
+
+            pageConfig.addClientDependencies(errorView.getClientDependencies());
+            errorView.getView().render(errorView.getModel(), request, response);
+        }
+        catch (Exception e)
+        {
+            // try to render just the react app
+            try
+            {
+                // TODO : ErrorPage, this app template doesn't work
+                errorView = PageConfig.Template.App.getTemplate(context, new ErrorTemplate(renderer), pageConfig);
+                pageConfig.addClientDependencies(errorView.getClientDependencies());
+                errorView.getView().render(errorView.getModel(), request, response);
+
+            }
+            catch (Exception exc)
+            {
+                log.error("Global.handleException", e);
+                log.error("Failed to create App template", exc);
+            }
+
+        }
     }
 
 
@@ -1165,7 +1177,7 @@ public class ExceptionUtil
                 }
             };
             ExceptionUtil.decorateException(ex, ExceptionInfo.SkipMothershipLogging, "true", true);
-            ActionURL url = ExceptionUtil.handleException(req, res, ex, message, false, dummySearch, dummyLog, null, null);
+            ActionURL url = ExceptionUtil.handleException(req, res, ex, message, false, dummySearch, dummyLog, null);
             ExceptionResponse ret = new ExceptionResponse();
             ret.redirect = url;
             ret.response = res;
