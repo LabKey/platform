@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.admin.AdminUrls"%>
+<%@ page import="org.apache.commons.lang3.StringUtils"%>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
@@ -29,7 +29,7 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.core.admin.AdminController.DeleteFolderAction" %>
+<%@ page import="java.util.stream.Collectors" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -166,16 +166,12 @@
         }
     }
 
-    ActionURL deleteFolderURL = urlFor(DeleteFolderAction.class);
-
     if (showFinalConfirmation)
     {
         String containerType = containersToDelete.size() == 1 ? containersToDelete.get(0).getContainerNoun() : "";
         String name = containersToDelete.size() == 1 ? containersToDelete.get(0).getName() : "these " + containersToDelete.size() +" folders";
         boolean showSubfolder = containersToDelete.size() == 1 ? false : recurse;
         boolean usePlural = containersToDelete.size() == 1 ? recurse : true;
-        if (recurse)
-            deleteFolderURL.addParameter("recurse", "1");
 
         %>
         <%=h(containersToDelete.size() > 1 || recurse ? "They" : "It")%> may contain other objects that are not listed.
@@ -184,7 +180,7 @@
             <tr><td>Are you <u>sure</u> you want to permanently delete <%=h(containerType)%> <b><%=h(name)%></b><%=h(showSubfolder ? ", all its subfolders," : "")%> and all the objects <%=h(usePlural ? "they contain" : "it contains")%>?</td></tr>
             <tr><td>&nbsp;</td></tr>
         </table>
-        <labkey:form action='<%=deleteFolderURL%>' method="post">
+        <labkey:form action='<%=buildURL(AdminController.DeleteFolderAction.class) + (recurse ? "recurse=1" : "")%>' method="post">
             <% if (form.getReturnUrl() != null) { %>
                 <input type="hidden" name="returnUrl" value="<%=h(form.getReturnUrl())%>"/>
             <% } %>
@@ -203,16 +199,13 @@
     }
     else
     {
-        deleteFolderURL.addParameter("recurse", "1");
-        containersToDelete.stream()
-            .map(Container::getId)
-            .forEach(id->deleteFolderURL.addParameter("targets", id));
+        Set<String> ids = containersToDelete.stream().map(Container::getId).collect(Collectors.toSet());
+        String targetStr = "&targets=" + StringUtils.join(ids, "&targets=");
         %>
 
-        <%= button("Delete All Folders").disableOnClick(true).primary(true).href(deleteFolderURL) %>
+        <%= button("Delete All Folders").disableOnClick(true).primary(true).href(buildURL(AdminController.DeleteFolderAction.class) + "recurse=1" + targetStr) %>
         <%= button("Cancel").href(urlProvider(AdminUrls.class).getManageFoldersURL(getContainer())) %>
 
         <%
     }
-
 %>
