@@ -809,6 +809,13 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return "CONVERT(DATETIME, CONVERT(VARCHAR, (" + expression + "), 101))";
     }
 
+    public SQLFragment getNumericCast(SQLFragment expression)
+    {
+        SQLFragment cast = new SQLFragment(expression);
+        cast.setRawSQL("CAST(" + cast.getRawSQL() + " AS FLOAT)");
+        return cast;
+    }
+
     @Override
     public String getRoundFunction(String valueToRound)
     {
