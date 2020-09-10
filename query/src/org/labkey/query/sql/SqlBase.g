@@ -105,7 +105,6 @@ tokens
         return ret;
     }
 
-    //protected LinkedHashSet<QueryParseWarning> _warnings = new LinkedHashSet<>();
     protected ArrayList<QueryParseWarning> _warnings = new ArrayList<>();
 
     public boolean addWarning(String warning, Object symbol)
@@ -486,7 +485,7 @@ whereClause
 
 
 selectedPropertiesList
-    // weird trailing comma for backward compatibility, leave trailing comma in tree so we can create warning (see SqlParser)
+    // weird trailing comma for backward compatibility
 	: selectedProperty (COMMA! selectedProperty)* ((c=COMMA! {if (null!=c) addWarning("Trailing comma in select list", c);})?)
 	;
 
