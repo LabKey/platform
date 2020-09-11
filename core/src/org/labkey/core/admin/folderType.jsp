@@ -235,7 +235,7 @@ function validate()
     return false;
 }
 </script>
-<labkey:form name="folderModules" id="folderModules" method="POST" action="<%=buildURL(FolderTypeAction.class)%>" onsubmit="return validate();">
+<labkey:form name="folderModules" id="folderModules" method="POST" action="<%=urlFor(FolderTypeAction.class)%>" onsubmit="return validate();">
     <table width="100%">
         <tr>
             <td valign="top"><%
@@ -264,7 +264,7 @@ function validate()
         }
     %>
                 </table>
-                <input type="hidden" name="wizard" value="<%=h(form.isWizard())%>">
+                <input type="hidden" name="wizard" value="<%=form.isWizard()%>">
                 <div id="UpdateFolderButtonDiv"></div>
     <%
         FrameFactoryClassic.endTitleFrame(out);

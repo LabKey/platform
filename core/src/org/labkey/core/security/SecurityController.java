@@ -61,6 +61,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -73,6 +74,7 @@ import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.UpdateUserPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.FolderAdminRole;
@@ -98,7 +100,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.PopupUserView;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
@@ -1311,7 +1312,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresPermission(UserManagementPermission.class)
+    @RequiresPermission(AddUserPermission.class)
     public class AddUsersAction extends FormViewAction<AddUsersForm>
     {
         @Override
@@ -1548,7 +1549,7 @@ public class SecurityController extends SpringActionController
         protected SecurityMessage createMessage(EmailForm form)
         {
             // Site admins can see the email for everyone, but project admins can only see it for users they added
-            if (!getUser().hasRootPermission(UserManagementPermission.class))
+            if (!getUser().hasRootPermission(AddUserPermission.class))
             {
                 try
                 {
@@ -1573,7 +1574,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresPermission(UserManagementPermission.class)
+    @RequiresPermission(UpdateUserPermission.class)
     public class ShowResetEmailAction extends AbstractEmailAction
     {
         @Override
@@ -1587,7 +1588,7 @@ public class SecurityController extends SpringActionController
     /**
      * Invalidate existing password and send new password link
      */
-    @RequiresPermission(UserManagementPermission.class)
+    @RequiresPermission(UpdateUserPermission.class)
     public class AdminResetPasswordAction extends ConfirmAction<EmailForm>
     {
         @Override
@@ -2057,7 +2058,7 @@ public class SecurityController extends SpringActionController
             );
 
             // @RequiresPermission(UserManagementPermission.class)
-            assertForUserManagementPermission(user,
+            assertForUserPermissions(user,
                 controller.new AddUsersAction(),
                 controller.new ShowResetEmailAction(),
                 controller.new AdminResetPasswordAction()

@@ -23,7 +23,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.pipeline.PipelineController" %>
+<%@ page import="org.labkey.pipeline.PipelineController.StartFolderImportAction" %>
 <%@ page import="org.labkey.pipeline.PipelineController.StartFolderImportForm" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -59,7 +59,7 @@
 %>
 
 <labkey:errors/>
-<labkey:form id="<%=importFormId%>" action="<%=buildURL(PipelineController.StartFolderImportAction.class)%>" method="post">
+<labkey:form id="<%=importFormId%>" action="<%=urlFor(StartFolderImportAction.class)%>" method="post">
     <input type="hidden" name="fromZip" value=<%=bean.isFromZip()%>>
     <input type="hidden" name="asStudy" value=<%=bean.isAsStudy()%>>
     <input type="hidden" name="filePath" value=<%=q(bean.getFilePath())%>>

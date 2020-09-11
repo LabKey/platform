@@ -24,8 +24,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import org.labkey.api.util.HasHtmlString;
-import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JavaScriptFragment;
+import org.labkey.api.util.SafeToRender;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -88,7 +88,7 @@ import static org.json.JSONObject.NULL;
  * @author JSON.org
  * @version 2
  */
-public class JSONArray implements HasHtmlString
+public class JSONArray implements SafeToRender
 {
 
 
@@ -813,20 +813,14 @@ public class JSONArray implements HasHtmlString
     }
 
 
-    @Override
-    public HtmlString getHtmlString()
-    {
-        return HtmlString.unsafe(toString());
-    }
-
     /**
      * Make a pretty-printed JSON text of this JSONArray
      * @param indentFactor Number of spaces to add to each level of indentation
-     * @return HtmlString holding the JSON representation
+     * @return JavaScriptFragment holding the JSON representation
      */
-    public HtmlString getHtmlString(int indentFactor)
+    public JavaScriptFragment getJavaScriptFragment(int indentFactor)
     {
-        return HtmlString.unsafe(toString(indentFactor));
+        return JavaScriptFragment.unsafe(toString(indentFactor));
     }
 
     /**

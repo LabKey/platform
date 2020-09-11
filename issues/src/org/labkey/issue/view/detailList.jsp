@@ -65,7 +65,7 @@
 %>
 <div class="row">
     <div class="col-sm-3" style="margin-bottom: 5px">
-        <a class="btn btn-default" style="margin-bottom: 8px;" href="<%=context.cloneActionURL().replaceParameter("_print", "1")%>">Print</a>
+        <a class="btn btn-default" style="margin-bottom: 8px;" href="<%=h(context.cloneActionURL().replaceParameter("_print", "1"))%>">Print</a>
     </div>
     <div class="col-sm-4" style="margin-bottom: 5px">
         <labkey:form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" layout="inline">
@@ -75,7 +75,7 @@
     </div>
     <div class="col-sm-5" style="margin-bottom: 5px">
         <div class="btn-group input-group-pull-right" role="group" aria-label="Create New Issue group" style="display: block;">
-            <a class="btn btn-primary" style="margin-bottom: 8px;" href="<%=PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, IssuesController.InsertAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName()))%>">
+            <a class="btn btn-primary" style="margin-bottom: 8px;" href="<%=h(PageFlowUtil.getLastFilter(context, IssuesController.issueURL(c, IssuesController.InsertAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDef.getName())))%>">
                 <%=h("new " + names.singularName.toLowerCase())%>
             </a>
         </div>

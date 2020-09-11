@@ -436,7 +436,7 @@ public class MothershipSchema extends UserSchema
     }
 
     @Override
-    public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
+    public QueryView createView(ViewContext context, @NotNull QuerySettings settings, @Nullable BindException errors)
     {
         if (EXCEPTION_STACK_TRACE_TABLE_NAME.equals(settings.getQueryName()))
         {

@@ -168,7 +168,6 @@
       <column columnName="EntityId"/>
       <column columnName="Created">
         <formatString>DateTime</formatString>
-        <displayWidth>0</displayWidth>
         <description>Contains the time at which this run was created</description>
       </column>
       <column columnName="CreatedBy">
@@ -424,15 +423,12 @@
     <columns>
       <column columnName="PropertyId"/>
       <column columnName="PropertyURI"/>
-      <column columnName="OntologyURI"/>
       <column columnName="RangeURI"/>
       <column columnName="Name"/>
       <column columnName="StorageColumnName"/>
       <column columnName="Description"/>
       <column columnName="ConceptURI"/>
       <column columnName="Label"/>
-      <column columnName="SearchTerms"/>
-      <column columnName="SemanticType"/>
       <column columnName="Format"/>
       <column columnName="Container"/>
       <column columnName="Project"/>

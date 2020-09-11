@@ -32,7 +32,7 @@
 <script type="text/javascript">
 
 //store current container id on client
-var currentContainerId = <%=currentContainer==null ? "null" : q(currentContainer.getId())%>;
+var currentContainerId = <%=q(currentContainer == null ? null : currentContainer.getId())%>;
 var m = {};
 
 function getForm()

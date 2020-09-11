@@ -24,8 +24,10 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.ShowSearchAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.AutoReportListAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SamplesAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ShowAPICreateSampleRequestAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SpecimenHeaderBean" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -37,16 +39,16 @@
     }
 %>
 <%
-    JspView<SpecimenController.SpecimenHeaderBean> me = (JspView<SpecimenController.SpecimenHeaderBean>) HttpView.currentView();
-    SpecimenController.SpecimenHeaderBean bean = me.getModelBean();
-    ActionURL createRequestURL = new ActionURL(SpecimenController.ShowAPICreateSampleRequestAction.class, getContainer());
+    JspView<SpecimenHeaderBean> me = (JspView<SpecimenHeaderBean>) HttpView.currentView();
+    SpecimenHeaderBean bean = me.getModelBean();
+    ActionURL createRequestURL = new ActionURL(ShowAPICreateSampleRequestAction.class, getContainer());
     createRequestURL.addParameter("fromGroupedView", !bean.isShowingVials());
     createRequestURL.addParameter("returnUrl", getActionURL().toString());
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(getContainer());
     String subjectNounPlural = StudyService.get().getSubjectNounPlural(getContainer());
 %>
 <script>
-    var CREATE_REQUEST_BASE_LINK = <%=q(createRequestURL.toString())%>;
+    var CREATE_REQUEST_BASE_LINK = <%=q(createRequestURL)%>;
     <%
     if (bean.getSelectedRequest() != null)
     {
@@ -70,7 +72,7 @@
     }
 %>
 <%=link(vialLinkText, bean.getOtherViewURL())%>&nbsp;
-<%=link("Search").href(buildURL(ShowSearchAction.class, "showVials=" + (bean.isShowingVials() ? "true" : "false")))%>&nbsp;
+<%=link("Search").href(urlFor(ShowSearchAction.class).addParameter("showVials", bean.isShowingVials()))%>&nbsp;
 <%=link("Reports", AutoReportListAction.class) %>
 <%
     if (!bean.getFilteredPtidVisits().isEmpty())
@@ -106,7 +108,7 @@
             }
             filterString.append(".");
         }
-        ActionURL noFitlerUrl = getViewContext().cloneActionURL().setAction(SpecimenController.SamplesAction.class);
+        ActionURL noFitlerUrl = getViewContext().cloneActionURL().setAction(SamplesAction.class);
 %>
     <p>
         <table width="700px">

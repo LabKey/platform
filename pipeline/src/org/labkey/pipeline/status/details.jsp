@@ -126,7 +126,7 @@
             <td class="lk-form-label">Files:</td>
             <td id="files-list">
                 <% for (var file : status.files) { %>
-                <a href="<%=file.viewUrl%>"><%=h(file.name)%></a><br>
+                <a href="<%=h(file.viewUrl)%>"><%=h(file.name)%></a><br>
                 <% } %>
             </td>
         </tr>
@@ -191,7 +191,7 @@
             <td class="lk-form-label">Completed Runs:</td>
             <td id="runs-list">
                 <% for (var run : status.runs) { %>
-                <a href="<%=run.url%>" id="run-<%=run.rowId%>"><%=h(run.name)%></a><br>
+                <a href="<%=h(run.url)%>" id="run-<%=run.rowId%>"><%=h(run.name)%></a><br>
                 <% } %>
             </td>
         </tr>
@@ -236,10 +236,10 @@
             <% } else if (status.log.records != null) { %>
                 <% for (var record : status.log.records) { %>
                 <pre class="labkey-log-text <%=h(logTextClass(record))%>"
-                     data-multiline="<%=h(record.isMultiline())%>"
-                     data-stacktrace="<%=h(record.isStackTrace())%>"
+                     data-multiline="<%=record.isMultiline()%>"
+                     data-stacktrace="<%=record.isStackTrace()%>"
                      data-level="<%=h(record.getLevel())%>"
-                ><%=h(record.getLines())%></pre>
+                ><div><%=h(record.getLines())%></div></pre>
                 <% } %>
         </div>
             <% } %>
@@ -541,7 +541,9 @@
                         'data-multiline="' + record.multiline + '"' +
                         'data-stacktrace="' + record.stackTrace + '"' +
                         'data-level="' + LABKEY.Utils.encodeHtml(record.level) + '">' +
+                        '<div>' +
                         LABKEY.Utils.encodeHtml(record.lines) +
+                        '</div>' +
                         '</pre>';
 
                 nodes.push(createDomNode(html));

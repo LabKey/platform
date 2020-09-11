@@ -29,7 +29,7 @@ import org.labkey.api.view.ActionURL;
 */
 public interface SearchUrls extends UrlProvider
 {
-    public ActionURL getSearchURL(Container c, @Nullable String query);
-    public ActionURL getSearchURL(String query, String category);
-    public ActionURL getSearchURL(Container c, @Nullable String query, @NotNull String template);
+    ActionURL getSearchURL(Container c, @Nullable String query);
+    ActionURL getSearchURL(String query, String category);
+    ActionURL getSearchURL(Container c, @Nullable String query, @NotNull String template);
 }

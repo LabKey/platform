@@ -58,8 +58,11 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.SeeUserAndGroupDetailsRole;
 import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
@@ -122,17 +125,15 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             " Users granted the '" + SeeUserAndGroupDetailsRole.NAME + "' role see all standard and custom columns.");
 
         setImportURL(LINK_DISABLER);
-        if (schema.getUser().hasRootPermission(UserManagementPermission.class))
-        {
-            setDeleteURL(new DetailsURL(new ActionURL(UserController.DeleteUsersAction.class, schema.getContainer())));
-            setInsertURL(new DetailsURL(new ActionURL(SecurityController.AddUsersAction.class, schema.getContainer())));
-        }
-        else
-        {
-            setDeleteURL(LINK_DISABLER);
-            setInsertURL(LINK_DISABLER);
+        setInsertURL(schema.getContainer().hasPermission(schema.getUser(), AddUserPermission.class)
+                ? new DetailsURL(new ActionURL(SecurityController.AddUsersAction.class, schema.getContainer()))
+                : LINK_DISABLER);
+        setDeleteURL(schema.getContainer().hasPermission(schema.getUser(), DeleteUserPermission.class)
+                ? new DetailsURL(new ActionURL(UserController.DeleteUsersAction.class, schema.getContainer()))
+                : LINK_DISABLER);
+
+        if (!schema.getContainer().hasPermission(schema.getUser(), UpdatePermission.class))
             setUpdateURL(LINK_DISABLER);
-        }
 
         _canSeeDetails = SecurityManager.canSeeUserDetails(getContainer(), getUser()) || getUser().isSearchUser();
     }

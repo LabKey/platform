@@ -23,7 +23,10 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DatasetVisibilityAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DatasetVisibilityData" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DefineDatasetTypeAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageTypesAction" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.ArrayList" %>
@@ -41,20 +44,20 @@
     }
 %>
 <%
-    JspView<Map<Integer,StudyController.DatasetVisibilityData>> me = (JspView<Map<Integer,StudyController.DatasetVisibilityData>>) HttpView.currentView();
+    JspView<Map<Integer, DatasetVisibilityData>> me = (JspView<Map<Integer, DatasetVisibilityData>>) HttpView.currentView();
 
     Study study = getStudy();
     Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
 
     List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getUser());
-    Map<Integer,StudyController.DatasetVisibilityData> bean = me.getModelBean();
+    Map<Integer, DatasetVisibilityData> bean = me.getModelBean();
     ArrayList<Integer> emptyDatasets = new ArrayList<>();
 
     String storeId = "dataset-visibility-category-store";
     ObjectMapper jsonMapper = new ObjectMapper();
 
     List<Map<String, Object>> datasetInfo = new ArrayList<>();
-    for (Map.Entry<Integer, StudyController.DatasetVisibilityData> entry : bean.entrySet())
+    for (Map.Entry<Integer, DatasetVisibilityData> entry : bean.entrySet())
     {
         Map<String, Object> ds = new HashMap<>();
         Integer categoryId = entry.getValue().categoryId;
@@ -88,17 +91,17 @@
 <%
     if (bean.entrySet().size() == 0)
     {
-        ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, getContainer());
+        ActionURL createURL = urlFor(DefineDatasetTypeAction.class);
 %>
     No datasets have been created in this study.<br><br>
-    <%= button("Create New Dataset").href(createURL) %>&nbsp;<%= button("Cancel").href(StudyController.ManageTypesAction.class, getContainer()) %>
+    <%= button("Create New Dataset").href(createURL) %>&nbsp;<%= button("Cancel").href(urlFor(ManageTypesAction.class)) %>
 <%
     }
     else
     {
 %>
 
-<labkey:form action="<%=buildURL(StudyController.DatasetVisibilityAction.class)%>" method="POST">
+<labkey:form action="<%=urlFor(DatasetVisibilityAction.class)%>" method="POST">
 
 <p>Datasets can be hidden on the study overview screen.</p>
 <p>Hidden data can always be viewed, but is not shown by default.</p>
@@ -115,11 +118,11 @@
             </tr>
         </thead>
     <%
-        for (Map.Entry<Integer, StudyController.DatasetVisibilityData> entry : bean.entrySet())
+        for (Map.Entry<Integer, DatasetVisibilityData> entry : bean.entrySet())
         {
             int id = entry.getKey().intValue();
             String prefix = "dataset[" + id + "].";
-            StudyController.DatasetVisibilityData data = entry.getValue();
+            DatasetVisibilityData data = entry.getValue();
             if (data.empty)
                 emptyDatasets.add(id);
     %>
@@ -160,7 +163,7 @@
     </table>
     <p>
     <%= button("Save").submit(true) %>&nbsp;
-    <%= button("Cancel").href(StudyController.ManageTypesAction.class, getContainer()) %>&nbsp;
+    <%= button("Cancel").href(ManageTypesAction.class, getContainer()) %>&nbsp;
     <% if (sharedStudy == null) { %>
     <%= button("Manage Categories").href("javascript:void(0);").onClick("onManageCategories()") %>
     <% } %>

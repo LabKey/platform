@@ -98,7 +98,6 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -2859,6 +2858,15 @@ public class QueryController extends SpringActionController
                 throw new NotFoundException("The view named '" + form.getViewName() + "' does not exist for this user!");
             }
 
+            TableInfo t = view.getTable();
+            if (null == t)
+            {
+                List<QueryException> qpes = view.getParseErrors();
+                if (!qpes.isEmpty())
+                    throw qpes.get(0);
+                throw new NotFoundException(form.getQueryName());
+            }
+
             boolean isEditable = isQueryEditable(view.getTable());
             boolean metaDataOnly = form.getQuerySettings().getMaxRows() == 0;
             boolean arrayMultiValueColumns = getRequestedApiVersion() >= 16.2;
@@ -2889,6 +2897,7 @@ public class QueryController extends SpringActionController
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
                         form.isIncludeDisplayValues());
             }
+            response.setFormat(getResponseFormat());
             response.includeStyle(form.isIncludeStyle());
 
             // Issues 29515 and 32269 - force key and other non-requested columns to be sent back, but only if the client has
@@ -3112,6 +3121,7 @@ public class QueryController extends SpringActionController
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
                         form.isIncludeDisplayValues());
             }
+            response.setFormat(getResponseFormat());
             response.includeStyle(form.isIncludeStyle());
 
             return response;
@@ -3739,7 +3749,7 @@ public class QueryController extends SpringActionController
             List<Map<String, Object>> rowsToProcess = new ArrayList<>();
 
             // NOTE RowMapFactory is faster, but for update it's important to preserve missing v explicit NULL values
-            // Do we need to support some soft of UNDEFINED and NULL instance of MvFieldWrapper?
+            // Do we need to support some sort of UNDEFINED and NULL instance of MvFieldWrapper?
             RowMapFactory<Object> f = null;
             if (commandType == CommandType.insert || commandType == CommandType.insertWithKeys)
                 f = new RowMapFactory<>();
@@ -3776,6 +3786,11 @@ public class QueryController extends SpringActionController
                 {
                     AuditBehaviorType behaviorType = AuditBehaviorType.valueOf(auditBehavior);
                     configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
+                    String auditComment = json.getString("auditUserComment");
+                    if (!StringUtils.isEmpty(auditComment))
+                    {
+                        configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
+                    }
                 }
                 catch (IllegalArgumentException ignored)
                 {

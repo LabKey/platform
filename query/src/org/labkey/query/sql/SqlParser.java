@@ -214,6 +214,10 @@ public class SqlParser
                     else
                         _parseErrors.add(new QueryParseException("EOF expected", null, 0, 0));
                 }
+                else if (null != warnings)
+                {
+                    warnings.addAll(parser.getWarnings());
+                }
             }
             catch (Exception x)
             {
@@ -788,10 +792,7 @@ public class SqlParser
         {
             CommonTree child = (CommonTree)node.getChild(i);
             if (child.getType() == COMMA)
-            {
-                _parseWarnings.add(new QueryParseWarning("Trailing comma in select list", null, child.getLine(), child.getCharPositionInLine()));
                 continue;
-            }
             QNode q = convertParseTree(child);
             if (q != null)
                 l.add(q);
@@ -974,6 +975,15 @@ public class SqlParser
                     return makeTransformedAggregateQuery(query);
                 }
                 return query;
+            }
+            case RANGE:
+            {
+                // copy an annotations on the table specifications to the range node
+                QUnknownNode range = (QUnknownNode)qnode(node, children);
+                var annotations = ((SupportsAnnotations)node.getChild(0)).getAnnotations();
+                if (null != annotations)
+                    range.setAnnotations(QNode.convertAnnotations(annotations));
+                return range;
             }
             default:
                 break;
@@ -1903,16 +1913,22 @@ public class SqlParser
                     "(WithQuery (WITH (AS peeps1 (QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (RANGE R))))) (AS peeps (UNION (QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (RANGE peeps1)))) (QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (RANGE peeps))) (WHERE (= 1 0)))))) (QUERY (SELECT_FROM (SELECT ROW_STAR) (FROM (RANGE peeps)))))")
         );
 
-        private void good(String sql)
+        private void good(String sql) throws Exception
         {
             List<QueryParseException> errors = new ArrayList<>();
             QNode q = (new SqlParser()).parseQuery(sql,errors,null);
             if (errors.size() > 0)
-                fail(errors.get(0).getMessage() + "\n" + sql);
-            else
-                assertNotNull(q);
+                fail(errors.get(0), sql);
+            assertNotNull(q);
         }
 
+        private void fail(QueryParseException qpe, String sql)
+        {
+            Exception ex = qpe;
+            if (ex.getCause() instanceof Exception)
+                ex = (Exception)ex.getCause();
+            fail(ex.getMessage() + "\n" + sql);
+        }
 
         private void bad(String sql)
         {

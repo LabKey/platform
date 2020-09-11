@@ -18,14 +18,15 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.settings.AppProps"%>
-<%@ page import="org.labkey.api.util.HasHtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
+<%@ page import="org.labkey.api.util.SafeToRender" %>
 <%@ page import="org.labkey.api.util.SystemMaintenance" %>
 <%@ page import="org.labkey.api.util.SystemMaintenance.MaintenanceTask" %>
 <%@ page import="org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.admin.AdminController.AdminUrlsImpl" %>
+<%@ page import="org.labkey.core.admin.AdminController.SystemMaintenanceAction" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
@@ -88,7 +89,7 @@
                     {
                         if (!task.hideFromAdminPage())
                         {
-                            HasHtmlString description;
+                            SafeToRender description;
                             if (hasAdminOpsPerms)
                                 description = link(task.getDescription()).href("javascript:submitSystemMaintenance(" + q(task.getName()) + ")");
                             else
@@ -124,12 +125,12 @@
         <tr>
             <td style="padding-top: 10px;">
                 <%= hasAdminOpsPerms ? button("Save").submit(true).onClick("return validateForm();") : HtmlString.EMPTY_STRING %>
-                <%= button(!hasAdminOpsPerms ? "Done" : "Cancel").href(new AdminController.AdminUrlsImpl().getAdminConsoleURL()) %>
+                <%= button(!hasAdminOpsPerms ? "Done" : "Cancel").href(new AdminUrlsImpl().getAdminConsoleURL()) %>
             </td>
         </tr>
     </table>
 </labkey:form>
-<labkey:form name="systemMaintenance" action="<%=buildURL(AdminController.SystemMaintenanceAction.class)%>" method="post" target="systemMaintenance"><input type="hidden" name="taskName"/></labkey:form>
+<labkey:form name="systemMaintenance" action="<%=urlFor(SystemMaintenanceAction.class)%>" method="post" target="systemMaintenance"><input type="hidden" name="taskName"/></labkey:form>
 <script type="text/javascript">
 
     // global functions for script calls from this Form

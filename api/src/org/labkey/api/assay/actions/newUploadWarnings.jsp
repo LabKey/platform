@@ -37,7 +37,7 @@
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
     AssayRunUploadForm<? extends AssayProvider> bean = me.getModelBean();
 
-    ActionURL returnURL = new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", bean.getRowId())
+    ActionURL returnURL = urlFor(AssayRunsAction.class).addParameter("rowId", bean.getRowId())
             .addParameter("uploadAttemptID", bean.getUploadAttemptID());
 
     if (bean.getTransformResult().getWarnings() != null)
@@ -55,8 +55,8 @@
             {
 %>
                 <div>
-                    <a class="labkey-text-link" href='<%= new ActionURL(TransformResultsAction.class,getContainer())
-                        .addParameter("name",file.getName()).addParameter("uploadAttemptID", bean.getUploadAttemptID())%>'><%= h(file.getName())%></a>
+                    <a class="labkey-text-link" href='<%=h(new ActionURL(TransformResultsAction.class,getContainer())
+                        .addParameter("name",file.getName()).addParameter("uploadAttemptID", bean.getUploadAttemptID()))%>'><%= h(file.getName())%></a>
                 </div>
 <%
             }

@@ -990,7 +990,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 {
                     String ssName = byNameSS != null ? byNameSS.getName() : null;
                     Container lookupContainer = byNameSS != null ? byNameSS.getContainer() : container;
-                    ExpMaterial material = exp.findExpMaterial(lookupContainer, user, ssName, (String)o, cache, materialCache);
+                    ExpMaterial material = exp.findExpMaterial(lookupContainer, user, byNameSS, ssName, (String)o, cache, materialCache);
                     if (material != null)
                     {
                         materialInputs.putIfAbsent(material, pd.getName());

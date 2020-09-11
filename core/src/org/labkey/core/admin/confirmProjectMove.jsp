@@ -20,8 +20,8 @@
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.ManageFoldersForm" %>
+<%@ page import="org.labkey.core.admin.AdminController.MoveFolderAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -31,7 +31,7 @@
     ActionURL cancelURL = urlProvider(AdminUrls.class).getManageFoldersURL(c);
 %>
 
-<labkey:form action="<%=buildURL(AdminController.MoveFolderAction.class)%>" method="post">
+<labkey:form action="<%=urlFor(MoveFolderAction.class)%>" method="post">
 <p>
 You are moving folder '<%=h(c.getName())%>' from one project into another.
 After the move is complete, you will need to reconfigure permissions settings for this folder, any subfolders, and other secured resources.
@@ -39,7 +39,7 @@ After the move is complete, you will need to reconfigure permissions settings fo
 <p>
 This action cannot be undone.
 </p>
-    <input type="hidden" name="addAlias" value="<%=h(f.isAddAlias())%>">
+    <input type="hidden" name="addAlias" value="<%=f.isAddAlias()%>">
     <input type="hidden" name="target" value="<%=h(f.getTarget())%>">
     <input type="hidden" name="confirmed" value="1">
     <%= button("Confirm Move").submit(true) %>

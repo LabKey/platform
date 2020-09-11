@@ -244,6 +244,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.labkey.api.data.MultiValuedRenderContext.VALUE_DELIMITER_REGEX;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Configuration;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Diagnostics;
 import static org.labkey.api.util.DOM.A;
@@ -1539,7 +1540,7 @@ public class AdminController extends SpringActionController
         void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled);
     }
 
-    public enum MigrateFilesOption implements SimpleHasHtmlString
+    public enum MigrateFilesOption implements SafeToRenderEnum
     {
         leave {
             @Override
@@ -1817,7 +1818,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public enum FileRootProp implements SimpleHasHtmlString
+    public enum FileRootProp implements SafeToRenderEnum
     {
         disable,
         siteDefault,
@@ -3300,7 +3301,13 @@ public class AdminController extends SpringActionController
                     }
 
                     if (labkeyThread)
-                        activeThreads.add(thread.getName());
+                    {
+                        String threadInfo = thread.getName();
+                        String uri = ViewServlet.getRequestURL(thread);
+                        if (null != uri)
+                            threadInfo += "; processing URL " + uri;
+                        activeThreads.add(threadInfo);
+                    }
                 }
             }
 
@@ -5788,7 +5795,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-
+    /** Renders only the groups that are assigned roles in this container */
     private static class FolderGroupColumn extends DataColumn
     {
         private final Set<String> _assignmentSet;
@@ -5809,7 +5816,7 @@ public class AdminController extends SpringActionController
                 StringBuilder sb = new StringBuilder();
                 String delim = "";
 
-                for (String name : value.split(","))
+                for (String name : value.split(VALUE_DELIMITER_REGEX))
                 {
                     if (_assignmentSet.contains(name))
                     {
@@ -6181,7 +6188,6 @@ public class AdminController extends SpringActionController
         private boolean showAll;
         private boolean confirmed = false;
         private boolean addAlias = false;
-        private boolean recurse = false;
         private String templateSourceId;
         private String[] templateWriterTypes;
         private boolean templateIncludeSubfolders = false;
@@ -6295,16 +6301,6 @@ public class AdminController extends SpringActionController
         public void setAddAlias(boolean addAlias)
         {
             this.addAlias = addAlias;
-        }
-
-        public boolean getRecurse()
-        {
-            return recurse;
-        }
-
-        public void setRecurse(boolean recurse)
-        {
-            this.recurse = recurse;
         }
 
         public String getTarget()
@@ -7182,22 +7178,7 @@ public class AdminController extends SpringActionController
             // Must be site/app admin to delete a project
             for (Container c : targets)
             {
-                if (!form.getRecurse() && !c.getChildren().isEmpty())
-                {
-                    throw new IllegalStateException("This container has children: " + c.getPath());  // UI should prevent this case
-                }
-            }
-
-            for (Container c : targets)
-            {
-                if (form.getRecurse())
-                {
-                    ContainerManager.deleteAll(c, getUser());
-                }
-                else
-                {
-                    ContainerManager.delete(c, getUser());
-                }
+                ContainerManager.deleteAll(c, getUser());
             }
 
             _deleted.addAll(targets);
@@ -8091,7 +8072,8 @@ public class AdminController extends SpringActionController
                                 TD(cl("labkey-column-header"),"Class"),
                                 TD(cl("labkey-column-header"),"Location"),
                                 TD(cl("labkey-column-header"),"Schemas"),
-                                null == externalModulesDir ? null : TD(cl("labkey-column-header"),""),    // update actions
+                                !AppProps.getInstance().isDevMode() ? null : TD(cl("labkey-column-header"),""),    // edit actions
+                                null == externalModulesDir ? null : TD(cl("labkey-column-header"),""),    // upload actions
                                 !hasAdminOpsPerm ? null : TD(cl("labkey-column-header"),"")     // delete actions
                             ),
                             _contexts.stream()
@@ -8137,8 +8119,9 @@ public class AdminController extends SpringActionController
                                         TD(SPAN(at(title,className), className.substring(className.lastIndexOf(".")+1))),
                                         TD(SPAN(at(title,fullPathToModule),shortPathToModule)),
                                         TD(schemas.stream().map(s -> createHtmlFragment(s, BR()))),
-                                        null == externalModulesDir ? null : TD(!replaceableModule ? NBSP : PageFlowUtil.link("Update Module").href(getUpdateURL(moduleContext.getName()))),
-                                        !hasAdminOpsPerm ? null : TD(!deleteableModule ? NBSP :  PageFlowUtil.link("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : "")))).href(getDeleteURL(moduleContext.getName())))
+                                        TD(!AppProps.getInstance().isDevMode() ? NBSP : PageFlowUtil.link("Edit module").href(getModuleEditorURL(moduleContext.getName()))),
+                                        !hasAdminOpsPerm ? null : TD(!deleteableModule ? NBSP :  PageFlowUtil.link("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : "")))).href(getDeleteURL(moduleContext.getName()))),
+                                        null == externalModulesDir ? null : TD(!replaceableModule ? NBSP : PageFlowUtil.link("Upload Module").href(getUpdateURL(moduleContext.getName())))
                                     );
                                 })
                         )
@@ -8165,6 +8148,11 @@ public class AdminController extends SpringActionController
             url = new ActionURL(UpdateModuleAction.class, ContainerManager.getRoot());
             url.addParameter("name", name);
             return url;
+        }
+
+        private ActionURL getModuleEditorURL(String name)
+        {
+            return ModuleEditorService.get().getModuleEditorURL(name);
         }
 
         private ActionURL getCreateURL()

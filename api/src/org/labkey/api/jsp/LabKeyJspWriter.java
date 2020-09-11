@@ -23,9 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ExperimentalFeatureService;
-import org.labkey.api.util.HasHtmlString;
-import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.JavaScriptFragment;
+import org.labkey.api.util.SafeToRender;
 
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
@@ -40,7 +38,7 @@ public class LabKeyJspWriter extends JspWriterWrapper
     private static final Multiset<String> CODE_POINT_COUNTING_SET = ConcurrentHashMultiset.create();
     private static final Multiset<String> FILE_COUNTING_SET = ConcurrentHashMultiset.create();
     private static final String EXPERIMENTAL_THROW_ON_WARNING = "labkeyJspWriterThrowOnWarning";
-    private static final Logger LOGSTRING = LogManager.getLogger(LabKeyJspWriter.class.getName()+".string");
+    private static final Logger LOGSTRING = LogManager.getLogger(LabKeyJspWriter.class.getName() + ".string");
 
     public static void registerExperimentalFeature()
     {
@@ -73,9 +71,6 @@ public class LabKeyJspWriter extends JspWriterWrapper
 
         if (0 == CODE_POINT_COUNTING_SET.add(elementWeCareAbout.toString(), 1))
         {
-            if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_THROW_ON_WARNING))
-                throw new IllegalStateException("A JSP is printing a string!");
-
             // Shorten the stack trace to the first org.labkey.api.view.JspView.renderView()
             StringBuilder shortStackTrace = new StringBuilder("\njava.lang.Throwable");
             int i = 1;
@@ -95,27 +90,24 @@ public class LabKeyJspWriter extends JspWriterWrapper
 
         FILE_COUNTING_SET.add(elementWeCareAbout.getFileName(), 1);
 
+        if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_THROW_ON_WARNING))
+            throw new IllegalStateException("A JSP is printing a string!");
+
         super.print(s);
     }
 
     @Override
     public void print(Object obj) throws IOException
     {
-        if (!(obj instanceof HtmlString) && !(obj instanceof JavaScriptFragment))
+        // These are the only objects we consider safe-to-render
+        if (null == obj || obj instanceof SafeToRender || obj instanceof Number || obj instanceof Boolean)
         {
-            if (obj instanceof HasHtmlString)
-            {
-                obj = ((HasHtmlString) obj).getHtmlString();
-            }
-            // Allow Number and Boolean for convenience -- no encoding needed for those. Also allow null, which is rendered
-            // as "null" (useful when generating JavaScript).
-            else if (null != obj && !(obj instanceof Number) && !(obj instanceof Boolean))
-            {
-                throw new IllegalStateException("A JSP is attempting to render an object of class " + obj.getClass().getName() + "!");
-            }
+            super.print(obj);
         }
-
-        super.print(obj);
+        else
+        {
+            throw new IllegalStateException("A JSP is attempting to render an object of class " + obj.getClass().getName() + "!");
+        }
     }
 
     public static void logStatistics()

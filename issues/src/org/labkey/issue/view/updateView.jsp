@@ -22,6 +22,8 @@
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -29,6 +31,9 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
+<%@ page import="org.labkey.issue.IssuesController.DetailsAction" %>
+<%@ page import="org.labkey.issue.IssuesController.EmailPrefsAction" %>
+<%@ page import="org.labkey.issue.IssuesController.ListAction" %>
 <%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.issue.model.IssueListDef" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
@@ -43,8 +48,6 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.stream.Stream" %>
-<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -65,11 +68,12 @@
 
         if (!getUser().isGuest())
         {
-            sb.append(" or your user <a href=\"").append(h(buildURL(IssuesController.EmailPrefsAction.class)));
+            ActionURL url = urlFor(EmailPrefsAction.class);
             if (issueId != 0)
             {
-                sb.append("issueId=").append(issueId);
+                url.addParameter("issueId", issueId);
             }
+            sb.append(" or your user <a href=\"").append(h(url));
             sb.append("\">email preferences</a>. ");
         }
         if (emailPrefs != 0)
@@ -114,11 +118,11 @@
     }
     else if (issue.getIssueId() > 0)
     {
-        cancelURL = IssuesController.issueURL(c, IssuesController.DetailsAction.class).addParameter("issueId", issue.getIssueId());
+        cancelURL = IssuesController.issueURL(c, DetailsAction.class).addParameter("issueId", issue.getIssueId());
     }
     else
     {
-        cancelURL = IssuesController.issueURL(c, IssuesController.ListAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issue.getIssueDefName()).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+        cancelURL = IssuesController.issueURL(c, ListAction.class).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issue.getIssueDefName()).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
     }
 
     // create collections for additional custom columns and distribute them evenly in the form
@@ -282,7 +286,7 @@
             </td></tr>
         <tr>
             <%=bean.renderLabel(bean.getLabel("Status", false))%><td><%=h(issue.getStatus())%></td>
-            <td rowspan="<%=h(rowSpan)%>" valign="top">
+            <td rowspan="<%=rowSpan%>" valign="top">
                 <table class="lk-fields-table">
                     <tr><%=bean.renderLabel(bean.getLabel("Opened", false))%><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
                     <tr><%=bean.renderLabel(bean.getLabel("Changed", false))%><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
@@ -335,7 +339,7 @@
                         {
                             if(issue.getDuplicate() != null)
                             {%>
-                        <a href="<%=IssuesController.getDetailsURL(c, issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a><%
+                        <a href="<%=h(IssuesController.getDetailsURL(c, issue.getDuplicate(), false))%>"><%=issue.getDuplicate()%></a><%
                                 }
                             }%>
                     </td></tr><%
@@ -353,7 +357,7 @@
                     }%>
                 </table>
             </td>
-            <td valign="top" rowspan="<%=h(rowSpan)%>"><table class="lk-fields-table" style="width: 100%;">
+            <td valign="top" rowspan="<%=rowSpan%>"><table class="lk-fields-table" style="width: 100%;">
                 <tr><%=bean.renderLabel(bean.getLabel("Closed", false))%><td><%=h(bean.writeDate(issue.getClosed()))%><%=text(issue.getClosedBy() != null ? " by " : "")%><%=h(issue.getClosedByName(user))%></td></tr><%
             if (bean.isVisible("notifyList"))
             {%>
@@ -366,9 +370,9 @@
                         if (!user.isGuest())
                         {
                             if (bean.isInsert())
-                                builder.append(link("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class)));
+                                builder.append(link("email prefs", IssuesController.issueURL(c, EmailPrefsAction.class)));
                             else
-                                builder.append(link("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId())));
+                                builder.append(link("email prefs", IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issue.getIssueId())));
                         }
                     %>
                     <%=bean.renderLabel(builder.getHtmlString())%>

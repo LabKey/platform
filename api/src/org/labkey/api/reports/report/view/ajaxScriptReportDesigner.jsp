@@ -172,14 +172,14 @@
                 Map<String, Object> externalConfig = externalEditorSettings.getValue();
             %>
                 externalEditSettings = {};
-                externalEditSettings.url = <%=q(externalEditorSettings.getKey().getLocalURIString())%>;
+                externalEditSettings.url = <%=q(externalEditorSettings.getKey())%>;
                 externalEditSettings.name = <%=q((String) externalConfig.get("name"))%>;
                 externalEditSettings.finishUrl = <%=q(externalConfig.get("finishUrl") != null ? externalConfig.get("finishUrl").toString(): null)%>;
                 externalEditSettings.externalWindowTitle = <%=q(externalConfig.containsKey("externalWindowTitle") ? (String) externalConfig.get("externalWindowTitle"): "")%>;
                 externalEditSettings.redirectUrl = <%=q(externalConfig.containsKey("redirectUrl") ? externalConfig.get("redirectUrl").toString(): "")%>;
                 externalEditSettings.externalUrl = <%=q(externalConfig.containsKey("externalUrl") ? externalConfig.get("externalUrl").toString(): "")%>;
                 externalEditSettings.isEditing = <%=externalConfig.containsKey("editing") && (boolean) externalConfig.get("editing")%>;
-                externalEditSettings.isDocker = <%=externalConfig.get("isDocker")%>;
+                externalEditSettings.isDocker = <%=(Boolean)externalConfig.get("isDocker")%>;
             <% } %>
 
             var panel = Ext4.create('LABKEY.ext4.ScriptReportPanel', {
@@ -188,10 +188,10 @@
                 allowShareReport: <%=allowShareReport%>,
                 minHeight       : 500,
                 minWidth        : 500,
-                initialURL      : <%=q(initialViewURL.getLocalURIString())%>,
-                saveURL         : <%=q(saveURL.getLocalURIString())%>,
+                initialURL      : <%=q(initialViewURL)%>,
+                saveURL         : <%=q(saveURL)%>,
                 externalEditSettings: externalEditSettings,
-                baseURL         : <%=q(baseViewURL.getLocalURIString())%>,
+                baseURL         : <%=q(baseViewURL)%>,
                 preferSourceTab : <%=mode.preferSourceTab()%>,
                 sourceAndHelp   : <%=sourceAndHelp%>,
                 redirectUrl     : <%=q(bean.getRedirectUrl())%>,

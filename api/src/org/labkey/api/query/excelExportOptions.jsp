@@ -124,27 +124,27 @@
                 if (xlsxExportEl.is(':checked')) {
                     if (isSign) {
                         exportUrl = <%=q(model.getSignXlsxURL().getPath())%>;
-                        exportParams = <%=new JSONObject(model.getSignXlsxURL().getParameterMap()).getHtmlString(2)%>;
+                        exportParams = <%=new JSONObject(model.getSignXlsxURL().getParameterMap()).getJavaScriptFragment(2)%>;
                     }
                     else {
                         exportUrl = <%=q(model.getXlsxURL().getPath())%>;
-                        exportParams = <%=new JSONObject(model.getXlsxURL().getParameterMap()).getHtmlString(2)%>;
+                        exportParams = <%=new JSONObject(model.getXlsxURL().getParameterMap()).getJavaScriptFragment(2)%>;
                     }
                 }
                 else if (xlsExportEl.is(':checked')) {
                     if (isSign) {
                         exportUrl = <%=q(model.getSignXlsURL().getPath())%>;
-                        exportParams = <%=new JSONObject(model.getSignXlsURL().getParameterMap()).getHtmlString(2)%>;
+                        exportParams = <%=new JSONObject(model.getSignXlsURL().getParameterMap()).getJavaScriptFragment(2)%>;
                     }
                     else {
                         exportUrl = <%=q(model.getXlsURL().getPath())%>;
-                        exportParams = <%=new JSONObject(model.getXlsURL().getParameterMap()).getHtmlString(2)%>;
+                        exportParams = <%=new JSONObject(model.getXlsURL().getParameterMap()).getJavaScriptFragment(2)%>;
                     }
                 <% if (model.getIqyURL() != null) { %>
                 }
                 else if (iqyExportEl.is(':checked')) {
                     <%-- Excel Web Query doesn't work with POSTs, so always do it as a GET.  It also is not supported for all tables. --%>
-                    window.location = <%=q(model.getIqyURL().toString())%>;
+                    window.location = <%=q(model.getIqyURL())%>;
                     return false;
                 <% } %>
                 }

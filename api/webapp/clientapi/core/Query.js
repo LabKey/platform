@@ -44,6 +44,7 @@ LABKEY.Query = new function()
             rows : config.rows || config.rowDataArray,
             transacted : config.transacted,
             auditBehavior: config.auditBehavior,
+            auditUserComment: config.auditUserComment,
             extraContext : config.extraContext,
             provenance : config.provenance
         };
@@ -703,8 +704,9 @@ LABKEY.Query = new function()
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
         * @param {boolean} [config.transacted] Whether all of the updates should be done in a single transaction, so they all succeed or all fail. Defaults to true
-         * @param {string} [config.auditBehavior] Audit behavior for this particular action, used to override behavio
+         * @param {string} [config.auditBehavior] Audit behavior for this particular action, used to override behavior
          * set on the underlying table.
+         * @param {string} [config.auditUserComment] Can be used to provide a comment from the user that will be attached to certain detailed audit log records.
          * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
          * @returns {Mixed} In client-side scripts, this method will return a transaction id
          * for the async request that can be used to cancel the request

@@ -21,17 +21,20 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.api.util.HasHtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.Link.LinkBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.CohortFilter" %>
 <%@ page import="org.labkey.study.CohortFilterFactory" %>
-<%@ page import="org.labkey.study.controllers.BaseStudyController" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.BaseStudyController.SharedFormParameters" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DatasetAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DefaultDatasetReportAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction" %>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.OverviewAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.OverviewBean" %>
+<%@ page import="org.labkey.study.controllers.reports.ReportsController.BeginAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.CohortManager" %>
@@ -49,8 +52,8 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<StudyController.OverviewBean> me = (JspView<StudyController.OverviewBean>) HttpView.currentView();
-    StudyController.OverviewBean bean = me.getModelBean();
+    JspView<OverviewBean> me = (JspView<OverviewBean>) HttpView.currentView();
+    OverviewBean bean = me.getModelBean();
     StudyImpl study = bean.study;
     Container container = study.getContainer();
     User user = (User) request.getUserPrincipal();
@@ -83,15 +86,15 @@
     List<VisitImpl> visits = manager.getVisits(study, selectedCohort, user, Visit.Order.DISPLAY);
     List<DatasetDefinition> datasets = manager.getDatasetDefinitions(study, selectedCohort);
     boolean cantReadOneOrMoreDatasets = false;
-    String basePage = buildURL(StudyController.OverviewAction.class);
+    ActionURL baseURL = urlFor(OverviewAction.class);
 
     if (selectedCohort != null)
-        basePage += "cohortId=" + selectedCohort.getRowId() + "&";
+        baseURL.addParameter("cohortId", selectedCohort.getRowId());
     if (selectedQCStateSet != null)
-        basePage += "QCState=" + selectedQCStateSet.getFormValue() + "&";
+        baseURL.addParameter("QCState", selectedQCStateSet.getFormValue());
 
 %><%=bean.canManage ? link("Manage Study", ManageStudyAction.class) : HtmlString.EMPTY_STRING%>
-&nbsp;<%= link("Views", new ActionURL(ReportsController.BeginAction.class, container))%>&nbsp;
+&nbsp;<%= link("Views", new ActionURL(BeginAction.class, container))%>&nbsp;
 &nbsp;<%= link("Specimens", new ActionURL(SpecimenController.BeginAction.class, container))%>&nbsp;
 <%
     boolean hasHiddenData = false;
@@ -101,12 +104,12 @@
         hasHiddenData = !datasets.get(i).isShowByDefault();
     if (hasHiddenData)
     {
-        HasHtmlString viewLink = bean.showAll ? link("Show Default Datasets").href(basePage) :
-                link("Show All Datasets").href(basePage + "showAll=1");
+        LinkBuilder viewLink = bean.showAll ? link("Show Default Datasets").href(baseURL) :
+                link("Show All Datasets").href(baseURL.addParameter("showAll", "1"));
         out.print(viewLink);
     }
 %>
-<labkey:form action="<%=buildURL(StudyController.OverviewAction.class)%>" name="changeFilterForm" method="GET">
+<labkey:form action="<%=urlFor(OverviewAction.class)%>" name="changeFilterForm" method="GET">
     <input type="hidden" name="showAll" value="<%= text(bean.showAll ? "1" : "0") %>">
     <br><br>
     <%
@@ -134,7 +137,7 @@
         if (showQCStates)
         {
     %>
-    QC State: <select name="<%= h(BaseStudyController.SharedFormParameters.QCState.name()) %>"
+    QC State: <select name="<%= h(SharedFormParameters.QCState.name()) %>"
                       onchange="document.changeFilterForm.submit()">
     <%
         for (QCStateSet set : qcStateSetOptions)
@@ -280,7 +283,7 @@
 
             if (userCanRead)
             {
-                ActionURL defaultReportURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, container);
+                ActionURL defaultReportURL = new ActionURL(DefaultDatasetReportAction.class, container);
                 defaultReportURL.addParameter(DatasetDefinition.DATASETKEY, dataset.getDatasetId());
                 if (selectedCohort != null && bean.cohortFilter != null)
                     bean.cohortFilter.addURLParameters(study, defaultReportURL, "Dataset");
@@ -323,13 +326,13 @@
                 }
                 else if (userCanRead)
                 {
-                    ActionURL datasetLink = new ActionURL(StudyController.DatasetAction.class, container);
+                    ActionURL datasetLink = new ActionURL(DatasetAction.class, container);
                     datasetLink.addParameter(VisitImpl.VISITKEY, visit.getRowId());
                     datasetLink.addParameter(DatasetDefinition.DATASETKEY, dataset.getDatasetId());
                     if (selectedCohort != null)
                         bean.cohortFilter.addURLParameters(study, datasetLink, null);
                     if (bean.qcStates != null)
-                        datasetLink.addParameter(BaseStudyController.SharedFormParameters.QCState, bean.qcStates.getFormValue());
+                        datasetLink.addParameter(SharedFormParameters.QCState, bean.qcStates.getFormValue());
 
                     innerHtml = "<a href=\"" + datasetLink.getLocalURIString() + "\">" + innerHtml + "</a>";
                 }

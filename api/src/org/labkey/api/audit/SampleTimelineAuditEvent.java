@@ -12,6 +12,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     public static final String EVENT_TYPE = "SampleTimelineEvent";
 
     public static final String SAMPLE_TIMELINE_EVENT_TYPE = "SampleTimelineEventType";
+
     public enum SampleTimelineEventType
     {
         INSERT("Sample was registered.", "Registered"),
@@ -20,8 +21,8 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         MERGE("Sample was registered or updated.", "Registered"),
         UPDATE("Sample was updated.", "Updated");
 
-        private String _comment;
-        private String _actionLabel;
+        private final String _comment;
+        private final String _actionLabel;
 
         SampleTimelineEventType(String comment, String actionLabel)
         {

@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -53,7 +54,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class QuerySettings
@@ -178,7 +178,7 @@ public class QuerySettings
             }
             catch (IllegalArgumentException ex)
             {
-                throw new BadRequestException(String.format(parseError, QueryParam.showRows.name(), showRowsParam), SC_BAD_REQUEST, ex);
+                throw new BadRequestException(String.format(parseError, QueryParam.showRows.name(), showRowsParam), ex);
             }
         }
     }
@@ -233,8 +233,15 @@ public class QuerySettings
                 setViewName(viewName);
             }
             String ignoreFilter = _getParameter(param(QueryParam.ignoreFilter));
-            if (isNotBlank(ignoreFilter))
-                _ignoreUserFilter = (Boolean) ConvertUtils.convert(ignoreFilter, Boolean.class);
+            try
+            {
+                if (isNotBlank(ignoreFilter))
+                    _ignoreUserFilter = (Boolean) ConvertUtils.convert(ignoreFilter, Boolean.class);
+            }
+            catch (ConversionException e)
+            {
+                throw new BadRequestException(String.format(parseError, "ignoreFilter", ignoreFilter), e);
+            }
 
             String reportId = _getParameter(param(QueryParam.reportId));
             if (isNotBlank(reportId))
@@ -260,7 +267,7 @@ public class QuerySettings
                 }
                 catch (NumberFormatException nfe)
                 {
-                    throw new BadRequestException(String.format(parseError, "offset", offsetParam), SC_BAD_REQUEST, nfe);
+                    throw new BadRequestException(String.format(parseError, "offset", offsetParam), nfe);
                 }
             }
 
@@ -280,7 +287,7 @@ public class QuerySettings
                 }
                 catch (NumberFormatException nfe)
                 {
-                    throw new BadRequestException(String.format(parseError, "maxRows", maxRowsParam), SC_BAD_REQUEST, nfe);
+                    throw new BadRequestException(String.format(parseError, "maxRows", maxRowsParam), nfe);
                 }
             }
         }
@@ -290,7 +297,7 @@ public class QuerySettings
         {
             // fail fast
             if (null == ContainerFilter.getType(containerFilterNameParam))
-                throw new BadRequestException(String.format(parseError, "containerFilterName", containerFilterNameParam), SC_BAD_REQUEST);
+                throw new BadRequestException(String.format(parseError, "containerFilterName", containerFilterNameParam));
 
             setContainerFilterName(containerFilterNameParam);
         }
@@ -314,7 +321,7 @@ public class QuerySettings
             }
             catch (URISyntaxException | IllegalArgumentException use)
             {
-                throw new BadRequestException(String.format(parseError, "returnUrl", returnURL), SC_BAD_REQUEST, use);
+                throw new BadRequestException(String.format(parseError, "returnUrl", returnURL), use);
             }
         }
 
@@ -341,7 +348,14 @@ public class QuerySettings
         String allowHeaderLock = StringUtils.trimToNull(_getParameter(param(QueryParam.allowHeaderLock)));
         if (null != allowHeaderLock)
         {
-            setAllowHeaderLock((Boolean)ConvertUtils.convert(allowHeaderLock,Boolean.class));
+            try
+            {
+                setAllowHeaderLock((Boolean) ConvertUtils.convert(allowHeaderLock, Boolean.class));
+            }
+            catch (ConversionException e)
+            {
+                throw new BadRequestException(String.format(parseError, "allowHeaderLock", allowHeaderLock), e);
+            }
         }
     }
 

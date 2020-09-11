@@ -20,17 +20,19 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.VisitOrderAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.VisitReorderForm" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
-    JspView<StudyController.VisitReorderForm> me = (JspView<StudyController.VisitReorderForm>) HttpView.currentView();
+    JspView<VisitReorderForm> me = (JspView<VisitReorderForm>) HttpView.currentView();
 
     ActionURL returnURL = (me.getModelBean()).getReturnActionURL();
     if (null == returnURL)
-        returnURL = new ActionURL(StudyController.ManageVisitsAction.class, getContainer());
+        returnURL = urlFor(ManageVisitsAction.class);
 %>
 <script type="text/javascript">
 function saveList(listName, hiddenElName)
@@ -82,7 +84,7 @@ function orderModule(listName, hiddenElName, down)
     return false;
 }
 </script>
-<labkey:form method="post" name="reorder" action="<%=buildURL(StudyController.VisitOrderAction.class)%>" enctype="multipart/form-data">
+<labkey:form method="post" name="reorder" action="<%=urlFor(VisitOrderAction.class)%>" enctype="multipart/form-data">
     <table class="lk-fields-table">
         <tr>
             <th style="font-weight: bold;" colspan="2">Display Order<%= helpPopup("Display Order", "Display order determines the order in which visits appear in reports and views for all " +
@@ -179,7 +181,7 @@ function orderModule(listName, hiddenElName, down)
                 %>
                 </select>
                 <input type="hidden" name="chronologicalOrder" value="<%= h(orderedList) %>">
-                <input type="hidden" name="returnUrl" value="<%= returnURL %>">
+                <input type="hidden" name="returnUrl" value="<%=h(returnURL)%>">
             </td>
             <td align="center" valign="center">
                 <%= button("Move Up").href("#").onClick("return orderModule('chronologicalOrderItems', 'chronologicalOrder', 0)") %><br><br>

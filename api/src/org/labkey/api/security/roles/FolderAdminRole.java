@@ -34,7 +34,7 @@ import java.util.Collection;
 * Date: Apr 28, 2009
 * Time: 10:16:08 AM
 */
-public class FolderAdminRole extends AbstractRole
+public class FolderAdminRole extends AbstractRole implements AdminRoleListener
 {
     // Most permissions are assigned to all admin roles automatically, and shouldn't be added to this list
     static Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
@@ -59,5 +59,11 @@ public class FolderAdminRole extends AbstractRole
     public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
     {
         return resource instanceof Container && !((Container)resource).isRoot();
+    }
+
+    @Override
+    public void permissionRegistered(Class<? extends Permission> perm)
+    {
+        addPermission(perm);
     }
 }

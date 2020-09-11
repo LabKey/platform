@@ -18,15 +18,15 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ImportSpecimensBean"%>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SubmitSpecimenBatchImport" %>
 <%@ page import="org.labkey.study.pipeline.SpecimenArchive" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.zip.ZipException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpecimenController.ImportSpecimensBean> me =
-            (JspView<SpecimenController.ImportSpecimensBean>) HttpView.currentView();
-    SpecimenController.ImportSpecimensBean bean = me.getModelBean();
+    JspView<ImportSpecimensBean> me = (JspView<ImportSpecimensBean>) HttpView.currentView();
+    ImportSpecimensBean bean = me.getModelBean();
     boolean hasError = !bean.getErrors().isEmpty();
     int archiveCount = bean.getArchives().size();
     String replaceOrMerge = bean.isDefaultMerge() ? "merge" : "replace";
@@ -52,7 +52,7 @@
         %>
             <tr class="<%=getShadeRowClass(row++)%>">
                 <td><%= h(entry.getName()) %></td>
-                <td align="right"><%= entry.getSize() == 0 ? "0" : Math.max(1, entry.getSize() / 1000) %> kb</td>
+                <td align="right"><%= entry.getSize() == 0 ? 0L : Math.max(1, entry.getSize() / 1000) %> kb</td>
                 <td><%=formatDateTime(entry.getDate())%></td>
             </tr>
         <%
@@ -85,7 +85,7 @@
         else
         {
 %>
-    <labkey:form action="<%=buildURL(SpecimenController.SubmitSpecimenBatchImport.class)%>" method="POST">
+    <labkey:form action="<%=urlFor(SubmitSpecimenBatchImport.class)%>" method="POST">
         <input type="hidden" name="path" value="<%= h(bean.getPath()) %>">
         <%
             for (String file : bean.getFiles())

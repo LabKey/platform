@@ -31,7 +31,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Button.ButtonBuilder;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
-import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -64,7 +63,6 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import static org.labkey.api.util.HtmlString.EMPTY_STRING;
 
@@ -177,32 +175,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
     /**
-     * Pass-through -- this eases the process of migrating our helpers from String to HtmlString, since existing
-     * code that uses text(String) will continue to compile and run when the parameter becomes an HtmlString.
-     * TODO: HtmlString - Eventually, remove this method and all usages.
-     * @param s An HtmlString
-     * @return The HtmlString
-     */
-    @Deprecated
-    public HtmlString text(HtmlString s)
-    {
-        return s;
-    }
-
-    /**
-     * Pass-through -- this eases the process of migrating our helpers from String to HasHtmlString, since existing
-     * code that uses text(String) will continue to compile and run when the parameter becomes a HasHtmlString.
-     * TODO: HtmlString - Eventually, remove this method and all usages.
-     * @param s Any object that implements HasHtmlString
-     * @return The parameter's HtmlString
-     */
-    @Deprecated
-    public HtmlString text(HasHtmlString s)
-    {
-        return s.getHtmlString();
-    }
-
-    /**
      * Html escape a string.
      * The name comes from Embedded Ruby.
      */
@@ -216,13 +188,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
      * The name comes from Embedded Ruby.
      */
     public HtmlString h(Object o)
-    {
-        return HtmlString.of(o == null ? null : o.toString());
-    }
-
-    // TODO: Remove this
-    @Deprecated
-    public HtmlString h(HtmlString o)
     {
         return HtmlString.of(o == null ? null : o.toString());
     }
@@ -241,7 +206,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return HtmlString.of(url == null ? null : url.toString());
     }
 
-    // Note: If you have a stream, consider using JSONArray.collector() instead
+    // Note: If you have a stream, use JSONArray.collector()
     public JSONArray toJsonArray(Collection<?> c)
     {
         return new JSONArray(c);
@@ -251,12 +216,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
     {
         return new JSONObject(c);
     }
-
-    public JSONObject toJsonObject(Stream<Object> c)
-    {
-        return new JSONObject(c);
-    }
-
 
     /**
      * Quotes a javascript string.
@@ -276,10 +235,14 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return null == hs ? JavaScriptFragment.NULL : JavaScriptFragment.unsafe(PageFlowUtil.jsString(hs.toString()));
     }
 
-    // TODO: Very, very temporary; just for backward compatibility. Eliminate ASAP.
-    public HtmlString text(JavaScriptFragment f)
+    /**
+     * Convenience method that returns a local URL as a properly escaped JavaScript identifier.
+     * @param url Some URLHelper
+     * @return A relative URL in a properly escaped single-quoted string literal JavaScriptFragment
+     */
+    final protected JavaScriptFragment q(@Nullable URLHelper url)
     {
-        return HtmlString.unsafe(f.toString());
+        return q(null != url ? url.toString() : null);
     }
 
     protected HtmlString hq(String str)
@@ -412,7 +375,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.urlProvider(inter);
     }
 
-    public HasHtmlString iconLink(String iconCls, String tooltip, URLHelper url)
+    public LinkBuilder iconLink(String iconCls, String tooltip, URLHelper url)
     {
         return new LinkBuilder().iconCls(iconCls).tooltip(tooltip).href(url);
     }
@@ -524,6 +487,12 @@ public abstract class JspBase extends JspContext implements HasViewContext
     public HtmlString formatDateTime(Date date)
     {
         return HtmlString.of(null == date ? "" : DateUtil.formatDateTime(getContainer(), date));
+    }
+
+    // Format date & time using the specified date & time format and HTML filter the result
+    public HtmlString formatDateTime(Date date, String pattern)
+    {
+        return HtmlString.of(null == date ? "" : DateUtil.formatDateTime(date, pattern));
     }
 
     public String getMessage(ObjectError e)
@@ -731,18 +700,20 @@ public abstract class JspBase extends JspContext implements HasViewContext
         }
     }
 
+    @Deprecated // Use <labkey:form> instead; it takes care of CSRF and other details.
     protected HtmlString formAction(Class<? extends Controller> actionClass, Method method)
     {
-        return HtmlString.unsafe("action=\"" + buildURL(actionClass) + "\" method=\"" + method.getMethod() + "\"");
+        return HtmlString.unsafe("action=\"" + h(urlFor(actionClass)) + "\" method=\"" + method.getMethod() + "\"");
     }
 
-    // Provides a unique integer within the context of this request.  Handy for generating element ids, etc. See UniqueID for caveats and warnings.
+    // Provides a unique integer within the context of this request. Handy for generating element ids, etc. See UniqueID for caveats and warnings.
     protected int getRequestScopedUID()
     {
         return UniqueID.getRequestScopedUID(getViewContext().getRequest());
     }
 
     /** simple link to different action in same container w/no parameters */
+    @Deprecated // Eliminate usages and delete
     protected String buildURL(Class<? extends Controller> actionClass)
     {
         if (AppProps.getInstance().getUseContainerRelativeURL())
@@ -758,6 +729,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
     /** simple link to different action w/no parameters */
+    @Deprecated // Eliminate usages and delete
     protected String buildURL(Class<? extends Controller> actionClass, String query)
     {
         String result = buildURL(actionClass);

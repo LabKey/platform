@@ -83,10 +83,10 @@
 
     function refreshDiagram(s, record, type)
     {
-        var urlString = <%=q(groupDiagramURL.toString())%>;
+        var urlString = <%=q(groupDiagramURL)%>;
         if (this.hideUnconnectedCheckbox.getValue())
         {
-            urlString = <%=q(groupDiagramURL.addParameter("hideUnconnected", true).toString())%>;
+            urlString = <%=q(groupDiagramURL.addParameter("hideUnconnected", true))%>;
         }
 
         Ext4.Ajax.request({

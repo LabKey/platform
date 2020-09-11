@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -126,7 +125,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             case GET:
                 return handleGet();
         }
-        throw new BadRequestException("Method Not Allowed: " + getViewContext().getRequest().getMethod(), HttpServletResponse.SC_METHOD_NOT_ALLOWED, null);
+        throw new BadRequestException("Method Not Allowed: " + getViewContext().getRequest().getMethod(), null, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
     }
 
 
@@ -265,7 +264,6 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
                 return null;
 
             ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), e);
-            LogManager.getLogger(BaseApiAction.class).error("ApiAction exception: ", e);
 
             createResponseWriter().writeAndClose(e);
         }

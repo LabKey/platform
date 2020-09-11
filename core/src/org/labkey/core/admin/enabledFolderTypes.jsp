@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.api.module.FolderType"%>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -56,6 +57,6 @@
         %>
     </table>
     <br/>
-    <%= hasAdminPerm ? button("Save").submit(true) : "" %>
+    <%= hasAdminPerm ? button("Save").submit(true) : HtmlString.EMPTY_STRING %>
     <%= generateBackButton(!hasAdminPerm ? "Done" : "Cancel") %>
 </labkey:form>

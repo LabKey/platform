@@ -29,7 +29,7 @@
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
+<%@ page import="org.labkey.study.controllers.security.SecurityController.ApplyDatasetPermissionsAction" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
@@ -154,10 +154,10 @@ else
         padding: 5px 5px 0 5px !important;
     }
 </style>
-<labkey:form id="datasetSecurityForm" action="<%=buildURL(SecurityController.ApplyDatasetPermissionsAction.class)%>" method="POST">
+<labkey:form id="datasetSecurityForm" action="<%=urlFor(ApplyDatasetPermissionsAction.class)%>" method="POST">
 <%
     if (returnUrl != null)
-        out.print(input().type("hidden").name("returnUrl").value(returnUrl));
+        out.print(input().type("hidden").name("returnUrl").value(returnUrl.toString()));
 
     int row = 0;
     %><br/><table class="table table-striped table-bordered table-hover" id="datasetSecurityFormTable"><colgroup>

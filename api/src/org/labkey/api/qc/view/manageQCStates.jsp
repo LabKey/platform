@@ -40,7 +40,7 @@
     ActionURL baseDeleteStateURL = new ActionURL(bean.getDeleteAction(), container);
 %>
 <labkey:errors/><br>
-<labkey:form action="<%=buildURL(manageAction.getClass())%>" name="manageQCStates" method="POST">
+<labkey:form action="<%=urlFor(manageAction.getClass())%>" name="manageQCStates" method="POST">
 <input type="hidden" name="reshowPage" value="true">
 <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
     <labkey:panel title="<%=currentQCPanelTitle%>">
@@ -87,7 +87,7 @@
                         {
                     %>
                     <span style="color:black;padding-left: 30%;" class="fa fa-circle-o"></span>
-                    <span style="cursor:pointer; color:red;" class="fa fa-times" onclick="LABKEY.Utils.confirmAndPost(<%=q("Delete this QC state? No additional " + bean.getDataNoun() + " data will be deleted.")%>, <%=q(baseDeleteStateURL.clone().addParameter("id", state.getRowId()).getLocalURIString())%>)"></span>
+                    <span style="cursor:pointer; color:red;" class="fa fa-times" onclick="LABKEY.Utils.confirmAndPost(<%=q("Delete this QC state? No additional " + bean.getDataNoun() + " data will be deleted.")%>, <%=q(baseDeleteStateURL.clone().addParameter("id", state.getRowId()))%>)"></span>
                     <%
                         }
                     %>
@@ -100,7 +100,7 @@
         <span style="cursor:pointer;color:green" class="fa fa-plus-circle" onclick="addRow()"></span>&nbsp<span>Add State</span>
             &nbsp&nbsp&nbsp&nbsp
             <%= button("Delete Unused QC States")
-                    .onClick("return LABKEY.Utils.confirmAndPost('Delete all unused QC states? No additional "+ bean.getDataNoun() + " data will be deleted.', " + q(baseDeleteStateURL.clone().addParameter("all", "true").getLocalURIString()) + ")") %>
+                    .onClick("return LABKEY.Utils.confirmAndPost('Delete all unused QC states? No additional "+ bean.getDataNoun() + " data will be deleted.', " + q(baseDeleteStateURL.clone().addParameter("all", "true")) + ")") %>
     </labkey:panel>
 
     <%

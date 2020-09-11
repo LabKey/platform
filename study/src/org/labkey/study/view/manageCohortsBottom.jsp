@@ -19,8 +19,8 @@
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.CohortFilterFactory" %>
-<%@ page import="org.labkey.study.controllers.CohortController" %>
-<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
+<%@ page import="org.labkey.study.controllers.CohortController.ManageCohortsAction" %>
+<%@ page import="org.labkey.study.controllers.security.SecurityController.BeginAction" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.Participant" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
@@ -37,7 +37,7 @@
     StudyManager manager = StudyManager.getInstance();
 %>
 <labkey:errors/>
-<labkey:form action="<%=buildURL(CohortController.ManageCohortsAction.class)%>" name="manualAssignment" method="POST">
+<labkey:form action="<%=urlFor(ManageCohortsAction.class)%>" name="manualAssignment" method="POST">
 <%
     if (study.isManualCohortAssignment()) // Need to create a form for submitting the assignments
     {
@@ -64,7 +64,7 @@
     nullCohort.setLabel("<Unassigned>");
     cohorts.add(nullCohort);
 
-    ActionURL securityUrl = new ActionURL(SecurityController.BeginAction.class, study.getContainer());
+    ActionURL securityUrl = new ActionURL(BeginAction.class, study.getContainer());
     if (!study.isManualCohortAssignment())
     {
         if (study.getSecurityType() == SecurityType.ADVANCED_READ || study.getSecurityType() == SecurityType.ADVANCED_WRITE)

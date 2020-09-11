@@ -17,14 +17,15 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.wiki.WikiController" %>
+<%@ page import="org.labkey.wiki.WikiController.CopyBean" %>
+<%@ page import="org.labkey.wiki.WikiController.CopyWikiAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<WikiController.CopyBean> me = (JspView<WikiController.CopyBean>) HttpView.currentView();
-    WikiController.CopyBean bean = me.getModelBean();
+    JspView<CopyBean> me = (JspView<CopyBean>) HttpView.currentView();
+    CopyBean bean = me.getModelBean();
 %>
-<labkey:form name="copy" action="<%=buildURL(WikiController.CopyWikiAction.class)%>" method="POST">
+<labkey:form name="copy" action="<%=urlFor(CopyWikiAction.class)%>" method="POST">
 
 <input type="hidden" name="sourceContainer" value="<%=h(bean.sourceContainer)%>">
 <input type="hidden" name="destContainer" value="<%=h(bean.destContainer)%>">

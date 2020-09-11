@@ -19,6 +19,8 @@ import org.apache.jasper.runtime.HttpJspBase;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.HttpView;
 
+import javax.servlet.jsp.JspWriter;
+
 /**
  * User: adam
  * Date: Aug 10, 2010
@@ -46,5 +48,17 @@ public abstract class JspContext extends HttpJspBase
     public Object getModelBean()
     {
         return HttpView.currentModel();
+    }
+
+    /**
+     * Call this to allow unencoded String and Object output in development mode. Typically, this would be the first line
+     * of code in a JSP that generates non-HTML content:<br><br>
+     *     {@code out = getPermissiveJspWriter(out);}
+     * @param out Current JspWriter
+     * @return A JspWriter that doesn't log warnings or throw exceptions when rendering unencoded Strings and unsafe Objects
+     */
+    protected JspWriter getPermissiveJspWriter(JspWriter out)
+    {
+        return out instanceof LabKeyJspWriter ? ((LabKeyJspWriter) out).getWrappedJspWriter() : out;
     }
 }

@@ -16,38 +16,28 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.util.SkipMothershipLogging;
 
+import org.jetbrains.annotations.Nullable;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Indicates that the client made a bad HTTP request, resulting in a 400 HTTP response code and avoiding much
+ * Indicates that the client made a bad HTTP request, typically resulting in a 400 HTTP response code and avoiding much
  * of the standard exception logging code for server-side bugs.
  */
-public class BadRequestException extends RuntimeException implements SkipMothershipLogging
+public class BadRequestException extends HttpStatusException
 {
-    final int status;
-    boolean _useBasicAuthentication = false;
-
-    public BadRequestException(String message, Exception x)
+    public BadRequestException(String message)
     {
-        this(StringUtils.defaultIfEmpty(message, "BAD REQUEST"), HttpServletResponse.SC_BAD_REQUEST, x);
+        this(message, null);
     }
 
-    public BadRequestException(String message, int status)
+    public BadRequestException(String message, @Nullable Exception x)
     {
-        super(message);
-        this.status = status;
+        this(message, x, HttpServletResponse.SC_BAD_REQUEST);
     }
 
-    public BadRequestException(String message, int status, Exception x)
+    public BadRequestException(String message, @Nullable Exception x, int httpStatusCode)
     {
-        super(message, x);
-        this.status = status;
-    }
-
-    public int getStatus()
-    {
-        return status;
+        super(StringUtils.defaultIfEmpty(message, "BAD REQUEST"), x, httpStatusCode);
     }
 }
