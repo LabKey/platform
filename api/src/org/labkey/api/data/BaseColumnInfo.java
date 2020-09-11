@@ -393,6 +393,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setCrosstabColumnMember(col.getCrosstabColumnMember());
 
         setCalculated(col.isCalculated());
+
+        setPrincipalConceptCode(col.getPrincipalConceptCode());
     }
 
     /*
@@ -465,6 +467,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setCrosstabColumnMember(col.getCrosstabColumnMember());
 
         setCalculated(col.isCalculated());
+
+        setPrincipalConceptCode(col.getPrincipalConceptCode());
     }
 
 
