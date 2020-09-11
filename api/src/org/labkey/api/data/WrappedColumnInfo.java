@@ -730,7 +730,7 @@ public class WrappedColumnInfo
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
                 @Override
-                public JdbcType getJdbcType()
+                public @NotNull JdbcType getJdbcType()
                 {
                     return jdbcType;
                 }

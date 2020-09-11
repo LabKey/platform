@@ -1238,6 +1238,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                 LOG.error("Can't instantiate DisplayColumnFactory: " + displayColumnClassName, e);
             }
         }
+        if (xmlCol.isSetPrincipalConceptCode())
+            setPrincipalConceptCode(xmlCol.getPrincipalConceptCode());
     }
 
     @Override
