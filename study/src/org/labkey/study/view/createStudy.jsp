@@ -17,13 +17,14 @@
 %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.CreateStudyAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.StudyPropertiesForm" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    StudyController.StudyPropertiesForm form = (StudyController.StudyPropertiesForm) getModelBean();
+    StudyPropertiesForm form = (StudyPropertiesForm) getModelBean();
     if (!getViewContext().hasPermission(AdminPermission.class))
     {%>
         This folder does not contain a study. Please contact an administrator.
@@ -37,7 +38,7 @@
 </style>
 
 <labkey:errors/>
-<labkey:form action="<%=buildURL(StudyController.CreateStudyAction.class)%>" method="POST">
+<labkey:form action="<%=urlFor(CreateStudyAction.class)%>" method="POST">
         <labkey:panel title="Look and Feel Properties">
             <table class="lk-fields-table">
                 <tr>

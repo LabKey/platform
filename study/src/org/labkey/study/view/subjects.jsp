@@ -31,7 +31,8 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.StudySchema" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.Participant2Action" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ParticipantAction" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.ParticipantCategoryImpl" %>
 <%@ page import="org.labkey.study.model.ParticipantGroup" %>
@@ -44,8 +45,8 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.BitSet" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.List" %>
 <%@ page import="static org.labkey.api.util.HtmlString.EMPTY_STRING" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -73,11 +74,10 @@
     ColumnInfo columnCurrentCohortId = tableParticipants.getColumn("cohort");
 
 
-    ActionURL subjectUrl = new ActionURL(StudyController.ParticipantAction.class, container);
+    ActionURL subjectUrl = new ActionURL(ParticipantAction.class, container);
     if ("participant2".equals(getViewContext().getActionURL().getAction()))
-        subjectUrl = new ActionURL(StudyController.Participant2Action.class, container);
+        subjectUrl = new ActionURL(Participant2Action.class, container);
 
-    String urlTemplate   = subjectUrl.getEncodedLocalURIString();
     DbSchema dbschema    = StudySchema.getInstance().getSchema();
     final JspWriter _out = out;
 
@@ -98,7 +98,7 @@
     var $h = Ext4.util.Format.htmlEncode;
     var first = true;
 
-    const _urlTemplate = <%= q(urlTemplate) %>;
+    const _urlTemplate = <%= q(subjectUrl) %>;
     const _singularNoun = <%= q(singularNoun) %>;
     const _pluralNoun = <%= q(pluralNoun) %>;
     const _divId = <%= q(divId) %>;

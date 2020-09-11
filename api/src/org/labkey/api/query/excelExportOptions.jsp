@@ -144,7 +144,7 @@
                 }
                 else if (iqyExportEl.is(':checked')) {
                     <%-- Excel Web Query doesn't work with POSTs, so always do it as a GET.  It also is not supported for all tables. --%>
-                    window.location = <%=q(model.getIqyURL().toString())%>;
+                    window.location = <%=q(model.getIqyURL())%>;
                     return false;
                 <% } %>
                 }

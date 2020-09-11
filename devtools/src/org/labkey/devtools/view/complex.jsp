@@ -73,9 +73,9 @@
             <tr><td colspan=2><%=formatErrorsForPath("form.c")%></td></tr>
             <tr><td>c</td><td><input name="beans[<%=i%>].c" value="<%=h(form.getBeans().get(0).getC())%>"></td></tr>
             <%errorRow(out,"form.beans["+i+"].int");%>
-            <tr><td>int</td><td><input name="beans[<%=i%>].int" value="<%=h(form.getBeans().get(0).getInt())%>"></td></tr>
+            <tr><td>int</td><td><input name="beans[<%=i%>].int" value="<%=form.getBeans().get(0).getInt()%>"></td></tr>
             <%errorRow(out,"form.beans["+i+"].positive");%>
-            <tr><td>Positive Number</td><td><input name="beans[<%=i%>].positive" value="<%=h(form.getBeans().get(0).getPositive())%>"></td></tr>
+            <tr><td>Positive Number</td><td><input name="beans[<%=i%>].positive" value="<%=form.getBeans().get(0).getPositive()%>"></td></tr>
             <%errorRow(out,"form.beans["+i+"].required");%>
             <tr><td>Required String</td><td><input name="beans[<%=i%>].required" value="<%=h(form.getBeans().get(0).getRequired())%>"></td></tr>
             <tr><td>Text</td><td><textarea name="beans[<%=i%>].text" rows="12" cols="60"><%=h(form.getBeans().get(0).getText())%></textarea></td></tr>

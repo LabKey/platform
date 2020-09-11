@@ -23,7 +23,7 @@
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.core.security.SecurityController" %>
+<%@ page import="org.labkey.core.security.SecurityController.CreateApiKeyAction" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="static org.apache.commons.lang3.StringUtils.stripEnd" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -191,7 +191,7 @@ compliance requirements where interactions require specifying current role &amp;
 
     function createApiKey(type) {
         LABKEY.Ajax.request({
-            url: <%=q(buildURL(SecurityController.CreateApiKeyAction.class))%>,
+            url: <%=q(urlFor(CreateApiKeyAction.class))%>,
             method: 'POST',
             params: {type: type},
             success: function (ctx) {

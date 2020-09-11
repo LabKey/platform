@@ -15,20 +15,21 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.HtmlString"%>
+<%@ page import="org.json.JSONArray" %>
+<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
 <%@ page import="org.labkey.api.util.element.Select.SelectBuilder" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.wiki.WikiController" %>
+<%@ page import="org.labkey.wiki.WikiController.DeleteAction" %>
+<%@ page import="org.labkey.wiki.WikiController.ManageAction" %>
 <%@ page import="org.labkey.wiki.WikiController.ManageAction.ManageBean" %>
+<%@ page import="org.labkey.wiki.WikiController.NextAction" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="org.springframework.validation.Errors" %>
 <%@ page import="org.springframework.validation.FieldError" %>
-<%@ page import="org.json.JSONArray" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -85,7 +86,7 @@
                 swapWiki.text = selText;
                 swapWiki.value = selValue;
                 saveWikiList(listName, targetName);
-                document.manage.nextAction.value = <%=q(WikiController.NextAction.manage.name())%>;
+                document.manage.nextAction.value = <%=q(NextAction.manage.name())%>;
                 return false;
             }
         }
@@ -98,7 +99,7 @@
     }
 </script>
 
-<labkey:form method="post" name="manage" action="<%=buildURL(WikiController.ManageAction.class)%>" enctype="multipart/form-data" onsubmit="return checkWikiName(name.value)">
+<labkey:form method="post" name="manage" action="<%=urlFor(ManageAction.class)%>" enctype="multipart/form-data" onsubmit="return checkWikiName(name.value)">
 <input type="hidden" name="containerPath" value="<%=h(c.getPath())%>">
 
 <table>
@@ -130,7 +131,7 @@
                     .name("parent")
                     .id("id")
                     .addStyle("width:420px")
-                    .onChange("document.manage.nextAction.value = " + q(WikiController.NextAction.manage.name()) + "; submit();");
+                    .onChange("document.manage.nextAction.value = " + q(NextAction.manage.name()) + "; submit();");
                 parentBuilder.addOption(new OptionBuilder().value("-1").label("[none]").selected(wiki.getParent() == -1).build());
                 bean.possibleParents.forEach(pp->{
                     StringBuilder indent = new StringBuilder();
@@ -171,9 +172,9 @@
                             <%=siblingsBuilder%>
                         </td>
                         <td valign="top" >
-                            <%= button("Move Up").style("width:100px").submit(true).onClick("return orderModule('siblings', 0, 'siblingOrder', " + q(WikiController.NextAction.manage.name()) + ")") %>
+                            <%= button("Move Up").style("width:100px").submit(true).onClick("return orderModule('siblings', 0, 'siblingOrder', " + q(NextAction.manage.name()) + ")") %>
                             <br/>
-                            <%= button("Move Down").style("width:100px").submit(true).onClick("return orderModule('siblings', 1, 'siblingOrder', "  + q(WikiController.NextAction.manage.name()) + ")") %>
+                            <%= button("Move Down").style("width:100px").submit(true).onClick("return orderModule('siblings', 1, 'siblingOrder', "  + q(NextAction.manage.name()) + ")") %>
                         </td>
                     </tr>
                 </table>
@@ -218,9 +219,9 @@
 <input type="hidden" name="originalName" value="<%= h(wiki.getName()) %>">
 <input type="hidden" name="rowId" value="<%= wiki.getRowId() %>">
 <input type="hidden" name="nextAction" value="">
-<%= button("Save").submit(true).onClick("document.manage.nextAction.value = " + q(WikiController.NextAction.page.name()) + "; return true;").title("Save Changes") %>
-<%= button("Delete").href(new ActionURL(WikiController.DeleteAction.class, c).addParameter("name", wiki.getName())) %>
-<%= button("Edit Content").submit(true).onClick("document.manage.nextAction.value = " + q(WikiController.NextAction.edit.name()) + "; return true;").title("Edit Content and Attachments") %>
+<%= button("Save").submit(true).onClick("document.manage.nextAction.value = " + q(NextAction.page.name()) + "; return true;").title("Save Changes") %>
+<%= button("Delete").href(urlFor(DeleteAction.class).addParameter("name", wiki.getName())) %>
+<%= button("Edit Content").submit(true).onClick("document.manage.nextAction.value = " + q(NextAction.edit.name()) + "; return true;").title("Edit Content and Attachments") %>
 
 <script type="text/javascript">
     existingWikiPages = <%=new JSONArray(bean.pageNames)%>;

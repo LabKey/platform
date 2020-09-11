@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController"%>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementForm" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.BaseInsertView" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.CompleteUserAction" %>
 <%@ page import="org.labkey.announcements.model.ModeratorReview" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.data.Container" %>
@@ -47,8 +48,8 @@
     Container c = getContainer();
     User user = getUser();
 
-    String respondUrl = AnnouncementsController.getRespondURL(c).getEncodedLocalURIString();
-    ActionURL completeUserUrl = new ActionURL(AnnouncementsController.CompleteUserAction.class, getContainer());
+    ActionURL respondUrl = AnnouncementsController.getRespondURL(c);
+    ActionURL completeUserUrl = urlFor(CompleteUserAction.class);
 
 %><%=formatMissedErrors("form")%>
 

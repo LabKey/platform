@@ -17,17 +17,17 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SelectSpecimenProviderBean" %>
 <%@ page import="org.labkey.study.model.LocationImpl" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpecimenController.SelectSpecimenProviderBean> me = (JspView<SpecimenController.SelectSpecimenProviderBean>) HttpView.currentView();
-    SpecimenController.SelectSpecimenProviderBean bean = me.getModelBean();
+    JspView<SelectSpecimenProviderBean> me = (JspView<SelectSpecimenProviderBean>) HttpView.currentView();
+    SelectSpecimenProviderBean bean = me.getModelBean();
 %>
 <labkey:errors/>
 <p>Vials from the selected specimens can be shipped to you from multiple locations.  Please select your preferred location:</p>
-<labkey:form action="<%=bean.getFormTarget().getLocalURIString()%>" method="POST">
+<labkey:form action="<%=bean.getFormTarget()%>" method="POST">
 <%= h(bean.getSourceForm().getHiddenFormInputs(getViewContext())) %>
 <p>
     <select name="preferredLocation">

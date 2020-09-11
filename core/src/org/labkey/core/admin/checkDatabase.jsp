@@ -18,27 +18,29 @@
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.module.Module" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.admin.AdminController.DataCheckForm" %>
+<%@ page import="org.labkey.core.admin.AdminController.DoCheckAction" %>
+<%@ page import="org.labkey.core.admin.AdminController.GetSchemaXmlDocAction" %>
+<%@ page import="org.labkey.core.admin.AdminController.ValidateDomainsAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<AdminController.DataCheckForm> me = (JspView<AdminController.DataCheckForm>) HttpView.currentView();
-    AdminController.DataCheckForm bean = me.getModelBean();
+    JspView<DataCheckForm> me = (JspView<DataCheckForm>) HttpView.currentView();
+    DataCheckForm bean = me.getModelBean();
 %>
 
 <labkey:errors/>
 
-<labkey:form action="<%=buildURL(AdminController.GetSchemaXmlDocAction.class)%>" method="get">
+<labkey:form action="<%=urlFor(GetSchemaXmlDocAction.class)%>" method="get">
     <table>
         <tr><td>Check table consistency:&nbsp;</td>
-        <td> <%= button("Do Database Check").href(new ActionURL(AdminController.DoCheckAction.class, ContainerManager.getRoot())) %>&nbsp;</td></tr>
+        <td> <%= button("Do Database Check").href(DoCheckAction.class, ContainerManager.getRoot()) %>&nbsp;</td></tr>
         <tr><td>&nbsp;</td><td></td></tr>
         <tr><td>Validate domains match hard tables:&nbsp;<br/>
         (Runs in background as pipeline job)</td>
-        <td> <%= button("Validate").href(urlFor(AdminController.ValidateDomainsAction.class)).usePost() %>&nbsp;</td></tr>
+        <td> <%= button("Validate").href(urlFor(ValidateDomainsAction.class)).usePost() %>&nbsp;</td></tr>
         <tr><td>&nbsp;</td><td></td></tr>
         <tr><td>Get schema xml doc:&nbsp;</td>
             <td>
