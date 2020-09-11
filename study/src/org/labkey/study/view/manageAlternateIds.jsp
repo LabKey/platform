@@ -125,16 +125,16 @@
                         xtype: 'button',
                         text: 'Export',
                         handler: function() {
-                            LABKEY.Utils.postToAction(<%=q(new ActionURL(StudyController.ExportParticipantTransformsAction.class, getContainer()).toString())%>);
+                            LABKEY.Utils.postToAction(<%=q(new ActionURL(StudyController.ExportParticipantTransformsAction.class, getContainer()))%>);
                         }
                     },{
                         xtype: 'button',
                         text: 'Import',
-                        handler: function() {window.location = <%= q(new ActionURL(StudyController.ImportAlternateIdMappingAction.class, getContainer()).toString())%>;}
+                        handler: function() {window.location = <%= q(new ActionURL(StudyController.ImportAlternateIdMappingAction.class, getContainer()))%>;}
                     },{
                         xtype: 'button',
                         text: 'Change or Merge ' + <%= q(subjectNounColName) %>,
-                        handler: function() {window.location = <%= q(new ActionURL(StudyController.MergeParticipantsAction.class, getContainer()).toString())%>;}
+                        handler: function() {window.location = <%= q(new ActionURL(StudyController.MergeParticipantsAction.class, getContainer()))%>;}
                     }]
                 }]
             });

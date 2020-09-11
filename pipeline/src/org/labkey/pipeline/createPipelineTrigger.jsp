@@ -25,7 +25,8 @@
 <%@ page import="org.labkey.api.util.element.TextArea" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.pipeline.PipelineController" %>
+<%@ page import="org.labkey.pipeline.PipelineController.CreatePipelineTriggerAction" %>
+<%@ page import="org.labkey.pipeline.PipelineController.PipelineTriggerForm" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.function.Function" %>
@@ -40,8 +41,8 @@
     }
 %>
 <%
-    HttpView<PipelineController.PipelineTriggerForm> me = (HttpView<PipelineController.PipelineTriggerForm>) HttpView.currentView();
-    PipelineController.PipelineTriggerForm bean = me.getModelBean();
+    HttpView<PipelineTriggerForm> me = (HttpView<PipelineTriggerForm>) HttpView.currentView();
+    PipelineTriggerForm bean = me.getModelBean();
     String docLink = new HelpTopic("fileWatcher").getHelpTopicHref();
 
     Map<String, FileAnalysisTaskPipeline> triggerConfigTasks = PipelineJobService.get().getTaskPipelines(getContainer())
@@ -80,7 +81,7 @@
     else
     {
 %>
-<labkey:form layout="horizontal" id="pipelineForm" method="POST" action="<%=buildURL(PipelineController.CreatePipelineTriggerAction.class)%>">
+<labkey:form layout="horizontal" id="pipelineForm" method="POST" action="<%=urlFor(CreatePipelineTriggerAction.class)%>">
     <div class="row">
         <div class="col-sm-2">
             <div id="lk-trigger-nav" class="list-group">

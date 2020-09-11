@@ -54,7 +54,7 @@
 <table class="labkey-data-region-legacy labkey-show-borders">
     <tr class="labkey-row">
         <td class="lk-form-label"><b>Domain Id</b></td>
-        <td><%=h(dd.getDomainId())%></td>
+        <td><%=dd.getDomainId()%></td>
     </tr>
     <tr class="labkey-row">
         <td class="lk-form-label"><b>Type URI</b></td>
