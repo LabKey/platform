@@ -23,9 +23,12 @@
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.pipeline.PipelineController" %>
+<%@ page import="org.labkey.pipeline.PipelineController.CancelJobAction" %>
+<%@ page import="org.labkey.pipeline.PipelineController.StatusModel" %>
+<%@ page import="org.labkey.pipeline.PipelineController.StatusParams" %>
 <%@ page import="org.labkey.pipeline.status.StatusController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -55,7 +58,10 @@ private HtmlString outputJob(String status, PipelineJob job,
     if (status.equals("pending") && canCancel)
     {
         ret.append("<td>");
-        ret.append(button("cancel").href(buildURL(PipelineController.CancelJobAction.class, "jobId=" + job.getJobGUID() + (isAllContainers ? "&allcontainers=1" : ""))));
+        ActionURL cancelUrl = urlFor(CancelJobAction.class).addParameter("jobId", job.getJobGUID());
+        if (isAllContainers)
+            cancelUrl.addParameter("allcontainers", "1");
+        ret.append(button("cancel").href(cancelUrl));
         ret.append("</td>");
     }
     return HtmlString.unsafe(ret.toString());
@@ -63,9 +69,8 @@ private HtmlString outputJob(String status, PipelineJob job,
 
 %>
 <%
-    JspView<PipelineController.StatusModel> me =
-            (JspView<PipelineController.StatusModel>) HttpView.currentView();
-    PipelineController.StatusModel bean = me.getModelBean();
+    JspView<StatusModel> me = (JspView<StatusModel>) HttpView.currentView();
+    StatusModel bean = me.getModelBean();
     PipelineJobData jobData = bean.getJobData();
 
     Container c = getContainer();
@@ -73,7 +78,7 @@ private HtmlString outputJob(String status, PipelineJob job,
 
     boolean canCancel = c.hasPermission(user, DeletePermission.class);
 
-    boolean isAllContainers = request.getParameter(PipelineController.StatusParams.allcontainers.toString()) != null;
+    boolean isAllContainers = request.getParameter(StatusParams.allcontainers.toString()) != null;
 
     if (jobData.getRunningJobs().size() == 0 && jobData.getPendingJobs().size() == 0)
     { %>

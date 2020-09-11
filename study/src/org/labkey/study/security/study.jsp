@@ -25,7 +25,7 @@
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
+<%@ page import="org.labkey.study.controllers.security.SecurityController.SaveStudyPermissionsAction" %>
 <%@ page import="org.labkey.study.model.GroupSecurityType" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
@@ -39,7 +39,7 @@
     boolean includeEditOption = study.getSecurityType() == SecurityType.ADVANCED_WRITE;
 %>
 Any user with READ access to this folder may view some summary data.  However, access to detail data must be explicitly granted.
-    <labkey:form id="groupUpdateForm" action="<%=buildURL(SecurityController.SaveStudyPermissionsAction.class)%>" method="post">
+    <labkey:form id="groupUpdateForm" action="<%=urlFor(SaveStudyPermissionsAction.class)%>" method="post">
 <%
     if (returnUrl != null)
         out.print(input().type("hidden").name("returnUrl").value(returnUrl.toString()));

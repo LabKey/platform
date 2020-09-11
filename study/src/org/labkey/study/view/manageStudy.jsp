@@ -39,15 +39,34 @@
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.study.controllers.CohortController" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.CohortController.ManageCohortsAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ConfigureMasterPatientSettingsAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DeleteStudyAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DemoModeAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageAlternateIdsAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageExternalReloadAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageLocationTypesAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageLocationsAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageParticipantCategoriesAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageQCStatesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageStudyPropertiesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageTypesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
-<%@ page import="org.labkey.study.controllers.StudyDefinitionController" %>
-<%@ page import="org.labkey.study.controllers.StudyDesignController" %>
-<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.SnapshotSettingsAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.StudyScheduleAction" %>
+<%@ page import="org.labkey.study.controllers.StudyDefinitionController.EditStudyDefinitionAction" %>
+<%@ page import="org.labkey.study.controllers.StudyDesignController.ManageStudyProductsAction" %>
+<%@ page import="org.labkey.study.controllers.security.SecurityController.BeginAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ConfigureRequestabilityRulesAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorsAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageDefaultReqsAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageDisplaySettingsAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageNotificationsAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestInputsAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageSpecimenCommentsAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageSpecimenWebPartAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusesAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ShowManageRepositorySettingsAction" %>
 <%@ page import="org.labkey.study.model.ParticipantCategoryImpl" %>
 <%@ page import="org.labkey.study.model.ParticipantGroup" %>
 <%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
@@ -95,7 +114,7 @@
     Boolean sharedVisits = sharedStudy != null && sharedStudy.getShareVisitDefinitions();
 
     String visitLabel = StudyManager.getInstance().getVisitManager(study).getPluralLabel();
-    ActionURL manageCohortsURL = new ActionURL(CohortController.ManageCohortsAction.class, c);
+    ActionURL manageCohortsURL = urlFor(ManageCohortsAction.class);
     User user = getUser();
     int numProperties = study.getNumExtendedProperties(user);
     String propString = numProperties == 1 ? "property" : "properties";
@@ -126,7 +145,7 @@
         if (c.hasPermission(user, AdminPermission.class))
         {
 %>
-            <%= button("View Settings").href(StudyController.SnapshotSettingsAction.class, c) %>
+            <%= button("View Settings").href(urlFor(SnapshotSettingsAction.class)) %>
 <%
         }
 
@@ -163,9 +182,8 @@
                             Container p = c.getProject();
                             if (p.hasPermission(user, AdminPermission.class))
                             {
-                                ActionURL returnURL = getActionURL();
-                                ActionURL editDefinition = new ActionURL(StudyDefinitionController.EditStudyDefinitionAction.class, p);
-                                editDefinition.addReturnURL(returnURL);
+                                ActionURL editDefinition = new ActionURL(EditStudyDefinitionAction.class, p)
+                                    .addReturnURL(getActionURL());
                                 %><%=link("Edit Additional Properties", editDefinition).usePost()%><%
                             }
                             else
@@ -181,7 +199,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Reloading</td>
                         <td class="lk-study-prop-desc">Manage reloading from external repositories</td>
-                        <td><%= link("Manage External Reloading", StudyController.ManageExternalReloadAction.class) %></td>
+                        <td><%= link("Manage External Reloading", ManageExternalReloadAction.class) %></td>
                     </tr>
                     <%
                         }
@@ -208,17 +226,17 @@
                              and <%= getVisits(Visit.Order.DISPLAY).size() %> <%=h(visitLabel.toLowerCase())%>
                              <% } %>
                          </td>
-                        <td><%= link("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
+                        <td><%= link("Study Schedule", StudyScheduleAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Locations</td>
                         <td class="lk-study-prop-desc">This study references <%= getLocations().size() %> locations (labs/sites/repositories)</td>
-                        <td><%= link("Manage Locations", StudyController.ManageLocationsAction.class) %></td>
+                        <td><%= link("Manage Locations", ManageLocationsAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Location Types</td>
                         <td class="lk-study-prop-desc">Configure which location types are allowed to be requesting locations</td>
-                        <td><%= link("Manage Location Types", StudyController.ManageLocationTypesAction.class) %></td>
+                        <td><%= link("Manage Location Types", ManageLocationTypesAction.class) %></td>
                     </tr>
 
                     <tr>
@@ -229,18 +247,17 @@
                     <tr>
                         <td class="lk-study-prop-label"><%= h(subjectNounSingle) %> Groups</td>
                         <td class="lk-study-prop-desc">This study defines <%=groups.size()%> <%= h(subjectNounSingle.toLowerCase()) %> groups</td>
-                        <td><%= link("Manage " + subjectNounSingle + " Groups", new ActionURL(StudyController.ManageParticipantCategoriesAction.class, c)) %></td>
+                        <td><%= link("Manage " + subjectNounSingle + " Groups", ManageParticipantCategoriesAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Alternate <%= h(subjectNounSingle) %> IDs</td>
                         <td class="lk-study-prop-desc">Configure how alternate <%= h(subjectNounSingle.toLowerCase()) %> ids and aliases are generated</td>
-                        <td><%= link("Manage Alternate " + subjectNounSingle + " IDs and Aliases", new ActionURL(StudyController.ManageAlternateIdsAction.class, c)) %></td>
+                        <td><%= link("Manage Alternate " + subjectNounSingle + " IDs and Aliases", ManageAlternateIdsAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Security</td>
                         <td class="lk-study-prop-desc">Manage access to study datasets and samples</td>
-                        <% ActionURL securityUrl = new ActionURL(SecurityController.BeginAction.class, c);%>
-                        <td><%= link("Manage Security", securityUrl) %></td>
+                        <td><%= link("Manage Security", BeginAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Reports/Views</td>
@@ -250,20 +267,19 @@
                     <tr>
                         <td class="lk-study-prop-label">Quality Control States</td>
                         <td class="lk-study-prop-desc">Manage QC states for datasets in this study</td>
-                        <td><%=link("Manage Dataset QC States", new ActionURL(StudyController.ManageQCStatesAction.class, c)) %></td>
+                        <td><%=link("Manage Dataset QC States", ManageQCStatesAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Comments</td>
                         <td class="lk-study-prop-desc">Manage <%= h(subjectNounSingle.toLowerCase()) %> and  <%= h(subjectNounSingle.toLowerCase()) %>/visit comments</td>
-                        <td><%= link("Manage Comments",
-                                new ActionURL(SpecimenController.ManageSpecimenCommentsAction.class, c)) %></td>
+                        <td><%= link("Manage Comments", ManageSpecimenCommentsAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Study Products</td>
                         <td class="lk-study-prop-desc">This study defines <%= getStudyProducts(user, null).size() %> study products</td>
                         <%
-                            ActionURL manageStudyProductsURL = new ActionURL(StudyDesignController.ManageStudyProductsAction.class, getContainer());
-                            manageStudyProductsURL.addReturnURL(getActionURL());
+                            ActionURL manageStudyProductsURL = urlFor(ManageStudyProductsAction.class)
+                                .addReturnURL(getActionURL());
                         %>
                         <td><%= link("Manage Study Products", manageStudyProductsURL) %></td>
                     </tr>
@@ -271,8 +287,8 @@
                         <td class="lk-study-prop-label">Treatments</td>
                         <td class="lk-study-prop-desc">This study defines <%= getStudyTreatments(user).size() %> treatments</td>
                         <%
-                            ActionURL manageTreatmentsURL = urlProvider(StudyUrls.class).getManageTreatmentsURL(getContainer(), false);
-                            manageTreatmentsURL.addReturnURL(getActionURL());
+                            ActionURL manageTreatmentsURL = urlProvider(StudyUrls.class).getManageTreatmentsURL(getContainer(), false)
+                                .addReturnURL(getActionURL());
                         %>
                         <td><%= link("Manage Treatments", manageTreatmentsURL) %></td>
                     </tr>
@@ -281,16 +297,15 @@
                         <td class="lk-study-prop-desc">This study defines <%= getAssaySpecimenConfigs().size() %> assay configurations</td>
                         <%
                             boolean hasRhoModule = getContainer().getActiveModules().contains(ModuleLoader.getInstance().getModule("rho"));
-                            ActionURL assayScheduleURL = urlProvider(StudyUrls.class).getManageAssayScheduleURL(getContainer(), hasRhoModule);
-                            assayScheduleURL.addReturnURL(getActionURL());
+                            ActionURL assayScheduleURL = urlProvider(StudyUrls.class).getManageAssayScheduleURL(getContainer(), hasRhoModule)
+                                .addReturnURL(getActionURL());
                         %>
                         <td><%= link("Manage Assay Schedule", assayScheduleURL) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Demo Mode</td>
                         <td class="lk-study-prop-desc">Demo mode obscures <%=h(subjectNounSingle.toLowerCase())%> IDs on many pages</td>
-                        <td><%=link("Demo Mode",
-                                new ActionURL(StudyController.DemoModeAction.class, c)) %></td>
+                        <td><%=link("Demo Mode", DemoModeAction.class) %></td>
                     </tr>
                     <%
                         for (StudyManagementOption option : StudyService.get().getManagementOptions())
@@ -311,7 +326,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Master Patient Index</td>
                         <td class="lk-study-prop-desc">Configure the Master Patient Index settings for this folder</td>
-                        <td><%= link("Master Patient Index", new ActionURL(StudyController.ConfigureMasterPatientSettingsAction.class, getContainer())) %></td>
+                        <td><%= link("Master Patient Index", ConfigureMasterPatientSettingsAction.class) %></td>
                     </tr>
                 </table>
             </labkey:panel>
@@ -330,20 +345,20 @@
 
             if (domainEvent != null)
             {
-                specimenEventUrl = domainEvent.getDomainKind().urlEditDefinition(domainEvent, getViewContext());
-                specimenEventUrl.addReturnURL(getViewContext().getActionURL());
+                specimenEventUrl = domainEvent.getDomainKind().urlEditDefinition(domainEvent, getViewContext())
+                    .addReturnURL(getViewContext().getActionURL());
             }
 
             if (domainVial != null)
             {
-                vialUrl = domainVial.getDomainKind().urlEditDefinition(domainVial, getViewContext());
-                vialUrl.addReturnURL(getViewContext().getActionURL());
+                vialUrl = domainVial.getDomainKind().urlEditDefinition(domainVial, getViewContext())
+                    .addReturnURL(getViewContext().getActionURL());
             }
 
             if (domainSpecimen != null)
             {
-                specimenUrl = domainSpecimen.getDomainKind().urlEditDefinition(domainSpecimen, getViewContext());
-                specimenUrl.addReturnURL(getViewContext().getActionURL());
+                specimenUrl = domainSpecimen.getDomainKind().urlEditDefinition(domainSpecimen, getViewContext())
+                    .addReturnURL(getViewContext().getActionURL());
             }
 
 %>
@@ -352,7 +367,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Repository Type</td>
                         <td class="lk-study-prop-desc">This study uses the <%=text(study.getRepositorySettings().isSimple() ? "standard" : "advanced")%> specimen repository</td>
-                        <td><%=link("Change Repository Type", new ActionURL(SpecimenController.ShowManageRepositorySettingsAction.class, c))%></td>
+                        <td><%=link("Change Repository Type", ShowManageRepositorySettingsAction.class)%></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Specimen Fields</td>
@@ -372,19 +387,17 @@
                     <tr>
                         <td class="lk-study-prop-label">Display and Behavior</td>
                         <td class="lk-study-prop-desc">Manage warnings, comments, and workflow</td>
-                        <td><%= link("Manage Display and Behavior",
-                                new ActionURL(SpecimenController.ManageDisplaySettingsAction.class, c)) %></td>
+                        <td><%= link("Manage Display and Behavior", ManageDisplaySettingsAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Specimen Web Part</td>
                         <td class="lk-study-prop-desc">Configure the specimen groupings in the specimen web part</td>
-                        <td><%= link("Configure Specimen Groupings",
-                                new ActionURL(SpecimenController.ManageSpecimenWebPartAction.class, c)) %></td>
+                        <td><%= link("Configure Specimen Groupings", ManageSpecimenWebPartAction.class) %></td>
                     </tr>
                 <%
-                            for (SpecimenTransform transform : SpecimenService.get().getSpecimenTransforms(getContainer()))
+                            for (SpecimenTransform transform : SpecimenService.get().getSpecimenTransforms(c))
                             {
-                                ActionURL manageAction = transform.getManageAction(getContainer(), getUser());
+                                ActionURL manageAction = transform.getManageAction(c, getUser());
                                 if (manageAction != null)
                                 {
                 %>
@@ -421,39 +434,33 @@
                         <td class="lk-study-prop-label">Statuses</td>
                         <td class="lk-study-prop-desc">This study defines <%= study.getSampleRequestStatuses(getUser()).size() %> specimen request
                             statuses</td>
-                        <td><%= link("Manage Request Statuses",
-                                new ActionURL(SpecimenController.ManageStatusesAction.class, c)) %></td>
+                        <td><%= link("Manage Request Statuses", urlFor(ManageStatusesAction.class)) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Actors</td>
                         <td class="lk-study-prop-desc">This study defines <%= study.getSampleRequestActors().length %> specimen request
                             actors</td>
-                        <td><%= link("Manage Actors and Groups",
-                                new ActionURL(SpecimenController.ManageActorsAction.class, c)) %></td>
+                        <td><%= link("Manage Actors and Groups", urlFor(ManageActorsAction.class)) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Request Requirements</td>
                         <td class="lk-study-prop-desc">Manage default requirements for new requests</td>
-                        <td><%= link("Manage Default Requirements",
-                                new ActionURL(SpecimenController.ManageDefaultReqsAction.class, c)) %></td>
+                        <td><%= link("Manage Default Requirements", urlFor(ManageDefaultReqsAction.class)) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Request Form</td>
                         <td class="lk-study-prop-desc">Manage inputs required for a new specimen request </td>
-                        <td><%= link("Manage New Request Form",
-                                new ActionURL(SpecimenController.ManageRequestInputsAction.class, c)) %></td>
+                        <td><%= link("Manage New Request Form", urlFor(ManageRequestInputsAction.class)) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Notifications</td>
                         <td class="lk-study-prop-desc">Manage specimen request notifications</td>
-                        <td><%= link("Manage Notifications",
-                                new ActionURL(SpecimenController.ManageNotificationsAction.class, c)) %></td>
+                        <td><%= link("Manage Notifications", urlFor(ManageNotificationsAction.class)) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Requestability Rules</td>
                         <td class="lk-study-prop-desc">Manage the rules used to determine specimen availability for request</td>
-                        <td><%= link("Manage Requestability Rules",
-                                new ActionURL(SpecimenController.ConfigureRequestabilityRulesAction.class, c)) %></td>
+                        <td><%= link("Manage Requestability Rules", urlFor(ConfigureRequestabilityRulesAction.class)) %></td>
                     </tr>
                 </table>
             </labkey:panel>
@@ -472,7 +479,7 @@
     {
 %>
         <%= button("Reload Study").href(urlProvider(AdminUrls.class).getImportFolderURL(c).addParameter("origin", "Reload")) %>
-        <%= button("Delete Study").href(StudyController.DeleteStudyAction.class, c) %>
+        <%= button("Delete Study").href(urlFor(DeleteStudyAction.class)) %>
 <%
     }
 

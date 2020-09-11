@@ -93,7 +93,7 @@ If you want to let users change the list that's displayed or customize the view 
                     if(myPanel.getForm().isValid()){
 
                         myPanel.getForm().submit({
-                            url : <%=q((part.getCustomizePostURL(ctx)).getLocalURIString())%>,
+                            url : <%=q((part.getCustomizePostURL(ctx)))%>,
                             success : function(){},
                             failure : function(){}
                         });

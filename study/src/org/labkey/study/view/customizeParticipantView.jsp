@@ -19,12 +19,13 @@
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.CustomizeParticipantViewAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.CustomizeParticipantViewForm" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<StudyController.CustomizeParticipantViewForm> me = (JspView<StudyController.CustomizeParticipantViewForm>) HttpView.currentView();
-    StudyController.CustomizeParticipantViewForm bean = me.getModelBean();
+    JspView<CustomizeParticipantViewForm> me = (JspView<CustomizeParticipantViewForm>) HttpView.currentView();
+    CustomizeParticipantViewForm bean = me.getModelBean();
     boolean useCustomView = bean.isUseCustomView();
     String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
 %>
@@ -39,7 +40,7 @@
         return true;
     }
 </script>
-<labkey:form action="<%=buildURL(StudyController.CustomizeParticipantViewAction.class)%>" name="editorForm" method="POST">
+<labkey:form action="<%=urlFor(CustomizeParticipantViewAction.class)%>" name="editorForm" method="POST">
     <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl())%>">
     <input type="hidden" name="reshow" value="false">
     <input type="hidden" name="participantId" value="<%= h(bean.getParticipantId()) %>">

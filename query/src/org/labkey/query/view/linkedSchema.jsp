@@ -544,11 +544,11 @@
                 },{
                     <% if (bean.isInsert()) { %>
                     text: 'Delete',
-                    handler: function() { document.location = <%=q(bean.getDeleteURL().toString())%>; }
+                    handler: function() { document.location = <%=q(bean.getDeleteURL())%>; }
                 },{
                     <% } %>
                     text: 'Cancel',
-                    handler: function() { document.location = <%=q(bean.getReturnURL().toString())%>; }
+                    handler: function() { document.location = <%=q(bean.getReturnURL())%>; }
                 }]
             }]
         });
