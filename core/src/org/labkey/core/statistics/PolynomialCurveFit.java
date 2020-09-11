@@ -19,6 +19,7 @@ import Jama.Matrix;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
+import org.labkey.api.data.statistics.StatsService;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -67,6 +68,12 @@ public class PolynomialCurveFit extends DefaultCurveFit implements CurveFit
     public PolynomialCurveFit(DoublePoint[] data)
     {
         super(data);
+    }
+
+    @Override
+    public StatsService.CurveFitType getType()
+    {
+        return StatsService.CurveFitType.POLYNOMIAL;
     }
 
     /**

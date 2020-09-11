@@ -31,6 +31,8 @@ public interface CurveFit
         public Map<String, Object> toMap();
     }
 
+    StatsService.CurveFitType getType();
+
     /**
      * Sets the data that this curve fit will be applied to.
      * @param data

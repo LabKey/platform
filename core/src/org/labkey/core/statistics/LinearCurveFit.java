@@ -4,6 +4,7 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
+import org.labkey.api.data.statistics.StatsService;
 
 import java.util.Map;
 
@@ -40,6 +41,12 @@ public class LinearCurveFit extends DefaultCurveFit implements CurveFit
     public LinearCurveFit(DoublePoint[] data)
     {
         super(data);
+    }
+
+    @Override
+    public StatsService.CurveFitType getType()
+    {
+        return StatsService.CurveFitType.LINEAR;
     }
 
     @Override

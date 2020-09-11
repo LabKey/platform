@@ -106,6 +106,12 @@ public class ParameterCurveFit extends DefaultCurveFit implements CurveFit
     }
 
     @Override
+    public StatsService.CurveFitType getType()
+    {
+        return _fitType;
+    }
+
+    @Override
     protected Parameters computeParameters()
     {
         assert getData() != null;
