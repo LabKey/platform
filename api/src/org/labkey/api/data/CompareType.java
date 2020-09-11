@@ -2195,20 +2195,23 @@ public abstract class CompareType
         @Test
         public void testAsDate()
         {
+            long currentTimeMillis = System.currentTimeMillis();
+
             // Date value
-            Date dateNow = new Date();
+            Date dateNow = new Date(currentTimeMillis);
             assertEquals(dateNow.getTime(), asDate(dateNow).getTime());
 
             // Calendar value
             Calendar calendarNow = Calendar.getInstance();
+            calendarNow.setTimeInMillis(currentTimeMillis);
             assertEquals(calendarNow.getTime().getTime(), asDate(calendarNow).getTime());
 
             // Days ago
             String daysInFuture = "+5";
-            Date dateInFuture = new Date(DateUtil.addDuration(System.currentTimeMillis(), "5d"));
+            Date dateInFuture = new Date(DateUtil.addDuration(currentTimeMillis, "5d"));
 
             String daysInPast = "-17";
-            Date dateInPast = new Date(DateUtil.subtractDuration(System.currentTimeMillis(), "17d"));
+            Date dateInPast = new Date(DateUtil.subtractDuration(currentTimeMillis, "17d"));
 
             assertEquals(dateInFuture.getTime(), asDate(daysInFuture).getTime());
             assertEquals(dateInPast.getTime(), asDate(daysInPast).getTime());
