@@ -21,7 +21,8 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.CreateVisitAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
 <%@ page import="org.labkey.study.controllers.VisitForm" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -38,7 +39,7 @@
 
     ActionURL returnURL = form.getReturnActionURL();
     if (null == returnURL)
-        returnURL = new ActionURL(StudyController.ManageVisitsAction.class, getContainer());
+        returnURL = urlFor(ManageVisitsAction.class);
 %>
 <labkey:errors/>
 <p style="width: 750px;">
@@ -61,7 +62,7 @@ is uploaded along with the data. This form allows you to define a range of seque
     }
 %>
 </p>
-<labkey:form action="<%=buildURL(StudyController.CreateVisitAction.class)%>" method="POST">
+<labkey:form action="<%=urlFor(CreateVisitAction.class)%>" method="POST">
     <table class="lk-fields-table">
         <tr>
             <td class="labkey-form-label">Label&nbsp;<%=helpPopup("Label", "Descriptive label, e.g. 'Enrollment interview' or '2 Weeks'")%></td>

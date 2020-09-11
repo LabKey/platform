@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ImportVisitMapAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <labkey:errors/>
 You can import a visit map in XML format to quickly configure a study. The visit map XML must match the <%=helpLink("studySerializationFormats", "study serialization format")%> used by study import/export.<br><br>
-<labkey:form action="<%=buildURL(StudyController.ImportVisitMapAction.class)%>" method="post">
+<labkey:form action="<%=urlFor(ImportVisitMapAction.class)%>" method="post">
     Paste visit map content here:<br>
     <textarea name="content" cols="80" rows="30"></textarea><br>
-    <%= button("Import").submit(true) %>&nbsp;<%= button("Cancel").href(StudyController.ManageVisitsAction.class, getContainer()) %>
+    <%= button("Import").submit(true) %>&nbsp;<%= button("Cancel").href(urlFor(ManageVisitsAction.class)) %>
 </labkey:form>

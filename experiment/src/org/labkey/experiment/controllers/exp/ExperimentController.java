@@ -153,12 +153,12 @@ import org.labkey.api.util.DOM.LK;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
+import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TidyUtil;
 import org.labkey.api.util.URLHelper;
@@ -2382,7 +2382,7 @@ public class ExperimentController extends SpringActionController
             if (!base.endsWith("/")) base += "/";
 
             String baseTag = "<base href=\"" + PageFlowUtil.filter(base) + "\"/>";
-            HtmlString css = PageFlowUtil.getStylesheetIncludes(getContainer());
+            SafeToRender css = PageFlowUtil.getStylesheetIncludes(getContainer());
             String htmlFragment = StringUtils.trimToEmpty(form.getHtmlFragment());
             String html = "<html><head>" + baseTag + css + "</head><body>" + htmlFragment + "</body></html>";
 

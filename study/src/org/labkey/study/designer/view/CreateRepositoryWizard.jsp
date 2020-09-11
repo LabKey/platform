@@ -24,6 +24,10 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.designer.DesignerController" %>
+<%@ page import="org.labkey.study.controllers.designer.DesignerController.CancelWizardAction" %>
+<%@ page import="org.labkey.study.controllers.designer.DesignerController.CreateRepository" %>
+<%@ page import="org.labkey.study.controllers.designer.DesignerController.CreateRepositoryForm" %>
+<%@ page import="org.labkey.study.controllers.designer.DesignerController.WizardStep" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
@@ -32,11 +36,11 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    DesignerController.CreateRepositoryForm form = (DesignerController.CreateRepositoryForm) HttpView.currentModel();
+    CreateRepositoryForm form = (CreateRepositoryForm) HttpView.currentModel();
     Container container = getContainer();
     User user = getUser();
     String species = DesignerController.getStudyDefinition(form, user, container).getAnimalSpecies();
-    ActionURL cancelUrl = new ActionURL(DesignerController.CancelWizardAction.class, container).addParameter("studyId", String.valueOf(form.getStudyId()));
+    ActionURL cancelUrl = urlFor(CancelWizardAction.class).addParameter("studyId", String.valueOf(form.getStudyId()));
     if (null != form.getMessage())
     {%>
         <span class="labkey-error"><%=h(form.getMessage(), true)%></span><br><%
@@ -44,12 +48,12 @@
 Use this wizard to create a folder that will contain all of the assay results and information about each <%=h(species)%> (subject) within
 the vaccine study.
 
-<labkey:form name="createRepositoryForm" action="<%=buildURL(DesignerController.CreateRepository.class)%>" method="post">
+<labkey:form name="createRepositoryForm" action="<%=urlFor(CreateRepository.class)%>" method="post">
     <input type="hidden" name="studyId" value="<%=form.getStudyId()%>">
     <input type="hidden" name="studyName" value="<%=h(form.getStudyName())%>">
     <input type="hidden" name="wizardStepNumber" value="<%=form.getWizardStepNumber()%>">
 <%
-    if (form.getWizardStep() == DesignerController.WizardStep.PICK_FOLDER)
+    if (form.getWizardStep() == WizardStep.PICK_FOLDER)
     {
 %>
     <table>
@@ -90,14 +94,7 @@ the vaccine study.
                 <select name="parentFolderId">
             <%
                 Set<Container> writableContainers = ContainerManager.getContainerSet(ContainerManager.getContainerTree(), user, AdminPermission.class);
-                SortedSet<Container> sortedContainers = new TreeSet<>(new Comparator<Container>()
-                {
-                    @Override
-                    public int compare(Container o1, Container o2)
-                    {
-                        return o1.getPath().compareTo(o2.getPath());
-                    }
-                });
+                SortedSet<Container> sortedContainers = new TreeSet<>(Comparator.comparing(Container::getPath));
                 sortedContainers.addAll(writableContainers);
                 for (Container c : sortedContainers)
                 {
@@ -124,7 +121,7 @@ else
     <input type="hidden" name="parentFolderId" value="<%=h(form.getParentFolderId())%>">
 <%
 }
-if (form.getWizardStep() == DesignerController.WizardStep.SHOW_SAMPLES)
+if (form.getWizardStep() == WizardStep.SHOW_SAMPLES)
 {
 %>
 Each study needs specimen ids for the specimens included in the study. To upload the
@@ -156,7 +153,7 @@ Each study needs specimen ids for the specimens included in the study. To upload
 <input type="hidden" name="uploadSpecimens" value="true"> <br>
 <%
 }
-if (form.getWizardStep() == DesignerController.WizardStep.UPLOAD_SAMPLES)
+if (form.getWizardStep() == WizardStep.UPLOAD_SAMPLES)
 {
 %>
 Paste a tab-delimited dataset copied from the workbook downloaded in the previous set. Copy the area
@@ -171,14 +168,14 @@ Paste a tab-delimited dataset copied from the workbook downloaded in the previou
     <%= button("Next").submit(true) %>&nbsp;&nbsp;<%= button("Cancel").href(cancelUrl) %>
 <%
 }
-if (form.getWizardStep() != DesignerController.WizardStep.UPLOAD_SAMPLES &&
-        form.getWizardStep() != DesignerController.WizardStep.SHOW_SAMPLES)
+if (form.getWizardStep() != WizardStep.UPLOAD_SAMPLES &&
+        form.getWizardStep() != WizardStep.SHOW_SAMPLES)
 {
 %>
     <input type="hidden" name="specimenTSV" value="<%=h(form.getSpecimenTSV())%>">
 <%
 }
-if (form.getWizardStep() == DesignerController.WizardStep.SHOW_PARTICIPANTS)
+if (form.getWizardStep() == WizardStep.SHOW_PARTICIPANTS)
 {
     List<GWTCohort> groups = DesignerController.getStudyDefinition(form, user, container).getGroups();
     int nParticipants = 0;
@@ -216,7 +213,7 @@ if (form.getWizardStep() == DesignerController.WizardStep.SHOW_PARTICIPANTS)
     <%= button("Next").submit(true) %>&nbsp;&nbsp;<%= button("Cancel").href(cancelUrl) %>
 <%
 }
-if (form.getWizardStep() == DesignerController.WizardStep.UPLOAD_PARTICIPANTS)
+if (form.getWizardStep() == WizardStep.UPLOAD_PARTICIPANTS)
 {
 %>
     You can upload your own set of subject data by pasting spreadsheet data in the following text field. The first
@@ -233,7 +230,7 @@ if (form.getWizardStep() == DesignerController.WizardStep.UPLOAD_PARTICIPANTS)
     <%}%>
     <%= button("Next").submit(true) %>&nbsp;&nbsp;<%= button("Cancel").href(cancelUrl) %><%
 }
-if (form.getWizardStep() == DesignerController.WizardStep.CONFIRM)
+if (form.getWizardStep() == WizardStep.CONFIRM)
 {
     List<GWTCohort> groups = DesignerController.getStudyDefinition(form, user, container).getGroups();
     int nParticipants = 0;
@@ -243,13 +240,13 @@ if (form.getWizardStep() == DesignerController.WizardStep.CONFIRM)
 You are about to create a study folder with the following settings:
 <ul>
    <li><b>Folder Name: </b><%=h(form.getFolderName())%> </li>
-    <li><b>Start Date: </b><%=h(form.getBeginDate())%></li>
-    <li><b>Subjects: </b><%=h(DesignerController.getParticipants().size())%> <%
+    <li><b>Start Date: </b><%=h(formatDate(form.getBeginDate()))%></li>
+    <li><b>Subjects: </b><%=DesignerController.getParticipants().size()%> <%
         if (nParticipants != DesignerController.getParticipants().size()) { %>
             <span class="labkey-error">Warning: Study design called for <%=nParticipants%> subjects.</span>
         <%}
     %></li>
-    <li><b>Specimens: </b><%=h(DesignerController.getSpecimens().size())%> </li>
+    <li><b>Specimens: </b><%=DesignerController.getSpecimens().size()%> </li>
 </ul>
 <br>
 <%= generateBackButton() %>
@@ -257,8 +254,8 @@ You are about to create a study folder with the following settings:
 <%
 }
 
-if (form.getWizardStep() != DesignerController.WizardStep.UPLOAD_PARTICIPANTS &&
-        form.getWizardStep() != DesignerController.WizardStep.SHOW_PARTICIPANTS)
+if (form.getWizardStep() != WizardStep.UPLOAD_PARTICIPANTS &&
+        form.getWizardStep() != WizardStep.SHOW_PARTICIPANTS)
 {
 %>
     <input type="hidden" name="participantTSV" value="<%=h(form.getParticipantTSV())%>">

@@ -16,15 +16,13 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.labkey.api.action.SpringActionController"%>
-<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.roles.RoleManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.admin.AdminController.MoveFolderAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.MoveFolderTreeView" %>
 <%@ page import="org.springframework.validation.Errors" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
@@ -69,7 +67,7 @@
 <%
     }
 %>
-<labkey:form id="moveFolderForm" action="<%=buildURL(AdminController.MoveFolderAction.class)%>" method="POST">
+<labkey:form id="moveFolderForm" action="<%=urlFor(MoveFolderAction.class)%>" method="POST">
 <input type="hidden" id="targetFolder" name="target" value="">
 <table class="button-bar">
     <tr>

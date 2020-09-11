@@ -20,14 +20,15 @@
 <%@ page import="org.labkey.api.exp.api.ExpSampleType" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController.DeriveSamplesAction" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController.DeriveSamplesChooseTargetBean" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib"%>
 <%
-    JspView<ExperimentController.DeriveSamplesChooseTargetBean> me = (JspView<ExperimentController.DeriveSamplesChooseTargetBean>) HttpView.currentView();
-    ExperimentController.DeriveSamplesChooseTargetBean bean = me.getModelBean();
+    JspView<DeriveSamplesChooseTargetBean> me = (JspView<DeriveSamplesChooseTargetBean>) HttpView.currentView();
+    DeriveSamplesChooseTargetBean bean = me.getModelBean();
 
     Map<Integer, String> sampleTypeOptions = new LinkedHashMap<>();
     sampleTypeOptions.put(0, "Not a member of a sample type");
@@ -37,7 +38,7 @@
     }
 %>
 
-<labkey:form action="<%=buildURL(ExperimentController.DeriveSamplesAction.class)%>" method="get">
+<labkey:form action="<%=urlFor(DeriveSamplesAction.class)%>" method="get">
     <% if (bean.getDataRegionSelectionKey() != null) { %>
     <input type="hidden" name="<%= h(DataRegionSelection.DATA_REGION_SELECTION_KEY) %>" value="<%=h(bean.getDataRegionSelectionKey())%>"/>
     <% } %>
@@ -57,13 +58,13 @@
                 { %>
                     <tr class="<%=h(roleIndex % 2 == 0 ? "labkey-alternate-row" : "labkey-row")%>">
                         <td><input type="hidden" name="rowIds" value="<%= material.getRowId()%>" /><%= h(material.getName())%></td>
-                        <td><select name="inputRole<%= roleIndex %>" onchange="document.getElementById('customRole<%= roleIndex %>').disabled = this.value != '<%=h(ExperimentController.DeriveSamplesChooseTargetBean.CUSTOM_ROLE)%>';">
+                        <td><select name="inputRole<%= roleIndex %>" onchange="document.getElementById('customRole<%= roleIndex %>').disabled = this.value != '<%=h(DeriveSamplesChooseTargetBean.CUSTOM_ROLE)%>';">
                             <option value=""></option>
                             <% for (String inputRole : bean.getInputRoles())
                             { %>
                                 <option value="<%= h(inputRole)%>"><%= h(inputRole) %></option>
                             <% } %>
-                            <option value="<%=h(ExperimentController.DeriveSamplesChooseTargetBean.CUSTOM_ROLE)%>">Add a new role...</option>
+                            <option value="<%=h(DeriveSamplesChooseTargetBean.CUSTOM_ROLE)%>">Add a new role...</option>
                         </select> <input name="customRole<%= roleIndex %>" disabled="true" id="customRole<%= roleIndex %>"/></td>
                     </tr>
                 <%

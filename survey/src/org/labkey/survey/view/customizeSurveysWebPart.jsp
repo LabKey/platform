@@ -91,7 +91,7 @@ This webpart displays a list of survey instances created by the end user. Select
                         {
                             surveyDesignPanel.getForm().submit({
                                 submitEmptyText: false,
-                                url : <%=q(part.getCustomizePostURL(ctx).getLocalURIString())%>,
+                                url : <%=q(part.getCustomizePostURL(ctx))%>,
                                 success : function(){},
                                 failure : function(){}
                             });
