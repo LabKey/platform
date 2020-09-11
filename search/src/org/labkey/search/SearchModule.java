@@ -79,7 +79,7 @@ public class SearchModule extends DefaultModule
     @NotNull
     public Set<String> getSchemaNames()
     {
-        return PageFlowUtil.set("search", "umls");
+        return PageFlowUtil.set("search");
     }
 
 
