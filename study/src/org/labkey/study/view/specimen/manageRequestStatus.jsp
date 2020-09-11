@@ -19,19 +19,21 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.SpecimenManager"%>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestAction"%>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestBean" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestStatusAction" %>
 <%@ page import="org.labkey.study.model.SpecimenRequestStatus" %>
 <%@ page import="org.labkey.study.specimen.notifications.ActorNotificationRecipientSet" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<SpecimenController.ManageRequestBean> me = (JspView<SpecimenController.ManageRequestBean>) HttpView.currentView();
-    SpecimenController.ManageRequestBean bean = me.getModelBean();
+    JspView<ManageRequestBean> me = (JspView<ManageRequestBean>) HttpView.currentView();
+    ManageRequestBean bean = me.getModelBean();
     List<SpecimenRequestStatus> statuses = SpecimenManager.getInstance().getRequestStatuses(getContainer(), getUser());
 %>
 <labkey:errors />
-<labkey:form action="<%=buildURL(SpecimenController.ManageRequestStatusAction.class)%>" enctype="multipart/form-data" method="POST">
+<labkey:form action="<%=urlFor(ManageRequestStatusAction.class)%>" enctype="multipart/form-data" method="POST">
     <input type="hidden" name="id" value="<%= bean.getSpecimenRequest().getRowId()%>">
     <table  class="labkey-manage-display">
         <tr>
@@ -112,7 +114,7 @@
             <th>&nbsp;</th>
             <td>
                 <%= button("Save Changes and Send Notifications").submit(true) %>&nbsp;
-                <%= button("Cancel").href(buildURL(SpecimenController.ManageRequestAction.class, "id=" + bean.getSpecimenRequest().getRowId())) %>
+                <%= button("Cancel").href(urlFor(ManageRequestAction.class).addParameter("id", bean.getSpecimenRequest().getRowId())) %>
             </td>
         </tr>
     </table>

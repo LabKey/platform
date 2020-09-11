@@ -56,9 +56,9 @@
         <tr><td colspan=2><%=formatErrorsForPath("form.c")%></td></tr>
         <tr><td>c</td><td><input name="c" value="<%=h(form.getC())%>"></td></tr>
         <%errorRow(out,"form.int");%>
-        <tr><td>int</td><td><input name="int" value="<%=h(form.getInt())%>"></td></tr>
+        <tr><td>int</td><td><input name="int" value="<%=form.getInt()%>"></td></tr>
         <%errorRow(out,"form.positive");%>
-        <tr><td>Positive Number</td><td><input name="positive" value="<%=h(form.getPositive())%>"></td></tr>
+        <tr><td>Positive Number</td><td><input name="positive" value="<%=form.getPositive()%>"></td></tr>
         <%errorRow(out,"form.required");%>
         <tr><td>Required String</td><td><input name="required" value="<%=h(form.getRequired())%>"></td></tr>
         <tr><td>Text</td><td><textarea name="text" rows="12" cols="60"><%=h(form.getText())%></textarea></td></tr>

@@ -16,7 +16,9 @@
  */
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController"%>
-<%@ page import="org.labkey.announcements.AnnouncementsController.BaseInsertView.InsertBean"%>
+<%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementForm"%>
+<%@ page import="org.labkey.announcements.AnnouncementsController.BaseInsertView.InsertBean" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.CompleteUserAction" %>
 <%@ page import="org.labkey.announcements.model.ModeratorReview" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.data.Container" %>
@@ -44,10 +46,10 @@
     Container c = getContainer();
     User user = getUser();
     DiscussionService.Settings settings = bean.settings;
-    AnnouncementsController.AnnouncementForm form = bean.form;
+    AnnouncementForm form = bean.form;
     URLHelper cancelURL = bean.cancelURL;
-    String insertUrl = AnnouncementsController.getInsertURL(c).getEncodedLocalURIString();
-    String completeUserUrl = new ActionURL(AnnouncementsController.CompleteUserAction.class, c).getLocalURIString();
+    ActionURL insertUrl = AnnouncementsController.getInsertURL(c);
+    ActionURL completeUserUrl = urlFor(CompleteUserAction.class);
 %>
 <%=formatMissedErrors("form")%>
 

@@ -222,7 +222,7 @@
                     if (queryForm) {
                         if (validate()) {
                             queryForm.getForm().submit({
-                                url : <%=q(part.getCustomizePostURL(ctx).getLocalURIString())%>,
+                                url : <%=q(part.getCustomizePostURL(ctx))%>,
                                 success : function(){},
                                 failure : function(){}
                             });

@@ -132,7 +132,6 @@ import java.util.Date;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -1541,73 +1540,25 @@ public class PageFlowUtil
     }
 
 
-    public static HtmlString getAppIncludes(ViewContext context, @Nullable  LinkedHashSet<ClientDependency> resources)
+    public static SafeToRender getAppIncludes(ViewContext context, @Nullable  LinkedHashSet<ClientDependency> resources)
     {
         return _getStandardIncludes(context, null, resources, false, false);
     }
 
 
-    public static HtmlString getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
+    public static SafeToRender getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
     {
         return _getStandardIncludes(context, null, resources, true, includePostParameters);
     }
 
-    public static HtmlString getStandardIncludes(ViewContext context, PageConfig config)
+    public static SafeToRender getStandardIncludes(ViewContext context, PageConfig config)
     {
         return _getStandardIncludes(context, config, config.getClientDependencies(), true, config.shouldIncludePostParameters());
     }
 
 
-    private static HtmlString _getStandardIncludes(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources,
+    private static SafeToRender _getStandardIncludes(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> extraResources,
             boolean includeDefaultResources, boolean includePostParameters)
-
-    {
-        if (resources == null)
-            resources = new LinkedHashSet<>();
-
-        // Add mini-profiler as dependency if enabled
-        long currentId = -1;
-        if (MiniProfiler.isEnabled(context))
-        {
-            RequestInfo req = MemTracker.getInstance().current();
-            if (req != null)
-            {
-                currentId = req.getId();
-                resources.add(ClientDependency.fromPath("miniprofiler"));
-            }
-        }
-
-        HtmlStringBuilder builder = HtmlStringBuilder.of(getIncludes(context, config, resources, includeDefaultResources, includePostParameters));
-
-        if (currentId != -1)
-        {
-            LinkedHashSet<Long> ids = new LinkedHashSet<>();
-            ids.add(currentId);
-            ids.addAll(MemTracker.get().getUnviewed(context.getUser()));
-
-            builder.append(MiniProfiler.renderInitScript(currentId, ids, getServerSessionHash()));
-        }
-
-        return builder.getHtmlString();
-    }
-
-    public static HtmlString getFaviconIncludes(Container c)
-    {
-        ResourceURL faviconURL = TemplateResourceHandler.FAVICON.getURL(c);
-
-        HtmlStringBuilder builder = HtmlStringBuilder.of()
-            .append(HtmlString.unsafe("<link rel=\"shortcut icon\" href=\""))
-            .append(faviconURL.toString())
-            .append(HtmlString.unsafe("\">\n"))
-            .append(HtmlString.unsafe("<link rel=\"icon\" href=\""))
-            .append(faviconURL.toString())
-            .append(HtmlString.unsafe("\">\n"));
-
-        return builder.getHtmlString();
-    }
-
-    private static HtmlString getIncludes(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> extraResources,
-              boolean includeDefaultResources, boolean includePostParameters)
     {
         Container c = context.getContainer();
 
@@ -1633,29 +1584,68 @@ public class PageFlowUtil
             resources.add(ClientDependency.fromPath("internal"));
         }
 
+        // Add mini-profiler as dependency if enabled
+        long miniProfilerId = -1;
+        if (MiniProfiler.isEnabled(context))
+        {
+            RequestInfo req = MemTracker.getInstance().current();
+            if (req != null)
+            {
+                miniProfilerId = req.getId();
+                resources.add(ClientDependency.fromPath("miniprofiler"));
+            }
+        }
+
         if (extraResources != null)
             resources.addAll(extraResources);
 
         resources.removeIf(Objects::isNull);
 
-        return HtmlStringBuilder.of(getFaviconIncludes(c))
+        // Use a SafeToRenderBuilder since standard includes are a mix of HTML and JavaScript
+        SafeToRenderBuilder builder = SafeToRenderBuilder.of()
+            .append(getFaviconIncludes(c))
             .append(getLabkeyJS(context, config, resources, includePostParameters))
             .append(getStylesheetIncludes(c, resources, includeDefaultResources))
             .append(getManifestIncludes(c, resources))
-            .append(getJavaScriptIncludes(c, resources))
-            .getHtmlString();
+            .append(getJavaScriptIncludes(c, resources));
+
+        if (miniProfilerId != -1)
+        {
+            LinkedHashSet<Long> ids = new LinkedHashSet<>();
+            ids.add(miniProfilerId);
+            ids.addAll(MemTracker.get().getUnviewed(context.getUser()));
+
+            builder.append(MiniProfiler.renderInitScript(miniProfilerId, ids, getServerSessionHash()));
+        }
+
+        return builder;
+    }
+
+    public static HtmlString getFaviconIncludes(Container c)
+    {
+        ResourceURL faviconURL = TemplateResourceHandler.FAVICON.getURL(c);
+
+        HtmlStringBuilder builder = HtmlStringBuilder.of()
+            .append(HtmlString.unsafe("<link rel=\"shortcut icon\" href=\""))
+            .append(faviconURL.toString())
+            .append(HtmlString.unsafe("\">\n"))
+            .append(HtmlString.unsafe("<link rel=\"icon\" href=\""))
+            .append(faviconURL.toString())
+            .append(HtmlString.unsafe("\">\n"));
+
+        return builder.getHtmlString();
     }
 
     // Outputs <link> elements for standard stylesheets (but not Ext stylesheets). Note hrefs are relative, so callers may
     // need to output a <base> element prior to calling.
-    public static HtmlString getStylesheetIncludes(Container c)
+    public static SafeToRender getStylesheetIncludes(Container c)
     {
         return getStylesheetIncludes(c, null, true);
     }
 
     // Outputs <link> elements for standard stylesheets, Ext stylesheets, and client dependency stylesheets, as required.
     // Note that hrefs are relative, so callers may need to output a <base> element prior to calling.
-    private static HtmlString getStylesheetIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources, boolean includeDefaultResources)
+    private static SafeToRender getStylesheetIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources, boolean includeDefaultResources)
     {
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
         StringBuilder sb = new StringBuilder();
@@ -1692,12 +1682,13 @@ public class PageFlowUtil
             }
         }
 
-        HtmlStringBuilder builder = HtmlStringBuilder.of(HtmlString.unsafe(sb.toString()));
+        SafeToRenderBuilder builder = SafeToRenderBuilder.of();
+        builder.append(HtmlString.unsafe(sb.toString()));
 
         if (resources != null)
             writeCss(c, builder, resources, preIncludedCss);
 
-        return builder.getHtmlString();
+        return builder;
     }
 
     @NotNull
@@ -1739,10 +1730,9 @@ public class PageFlowUtil
         return extCSS;
     }
 
-    private static void writeCss(Container c, HtmlStringBuilder builder, LinkedHashSet<ClientDependency> resources, Set<String> preIncludedCss)
+    private static void writeCss(Container c, SafeToRenderBuilder builder, LinkedHashSet<ClientDependency> resources, Set<String> preIncludedCss)
     {
-        // TODO: Use HtmlStringBuilder throughout rendering
-        StringBuilder sb = new StringBuilder();
+        HtmlStringBuilder html = HtmlStringBuilder.of();
         Set<String> cssFiles = new HashSet<>();
         if (resources != null)
         {
@@ -1750,35 +1740,35 @@ public class PageFlowUtil
             {
                 for (String script : r.getCssPaths(c))
                 {
-                    sb.append("<link href=\"");
-                    if (ClientDependency.isExternalDependency(script))
+                    html.append(HtmlString.unsafe("<link href=\""));
+                    if (!ClientDependency.isExternalDependency(script))
                     {
-                        sb.append(filter(script));
+                        html.append(AppProps.getInstance().getContextPath());
+                        html.append("/");
                     }
-                    else
-                    {
-                        sb.append(AppProps.getInstance().getContextPath());
-                        sb.append("/");
-                        sb.append(filter(script));
-                    }
-                    sb.append("\" type=\"text/css\" rel=\"stylesheet\">");
+                    html.append(script);
+                    html.append(HtmlString.unsafe("\" type=\"text/css\" rel=\"stylesheet\">"));
 
                     cssFiles.add(script);
                 }
             }
         }
 
+        builder.append(html);
+
         //cache list of CSS files to prevent double-loading
         if (cssFiles.size() > 0)
         {
-            sb.append("<script type=\"text/javascript\">\nLABKEY.requestedCssFiles(");
+            SafeToRenderBuilder scriptBuilder = SafeToRenderBuilder.of();
+            scriptBuilder.append(HtmlString.unsafe("<script type=\"text/javascript\">\n"));
+            scriptBuilder.append(JavaScriptFragment.unsafe("LABKEY.requestedCssFiles("));
             String comma = "";
 
             if (null != preIncludedCss)
             {
                 for (String path : preIncludedCss)
                 {
-                    sb.append(comma).append(jsString(path));
+                    scriptBuilder.append(JavaScriptFragment.unsafe(comma + jsString(path)));
                     comma = ",";
                 }
             }
@@ -1787,14 +1777,15 @@ public class PageFlowUtil
             {
                 if (!ClientDependency.isExternalDependency(s))
                 {
-                    sb.append(comma).append(jsString(s));
+                    scriptBuilder.append(JavaScriptFragment.unsafe(comma + jsString(s)));
                     comma = ",";
                 }
             }
-            sb.append(");\n</script>\n");
-        }
+            scriptBuilder.append(JavaScriptFragment.unsafe(");\n"));
+            scriptBuilder.append(HtmlString.unsafe("</script>\n"));
 
-        builder.append(HtmlString.unsafe(sb.toString()));
+            builder.append(scriptBuilder);
+        }
     }
 
     // Manifest files are included as links in the HTML head. These files are used to identify resources for progressive
@@ -1813,16 +1804,12 @@ public class PageFlowUtil
                     if (!manifestFiles.contains(manifest))
                     {
                         sb.append("<link href=\"");
-                        if (ClientDependency.isExternalDependency(manifest))
-                        {
-                            sb.append(filter(manifest));
-                        }
-                        else
+                        if (!ClientDependency.isExternalDependency(manifest))
                         {
                             sb.append(AppProps.getInstance().getContextPath());
                             sb.append("/");
-                            sb.append(filter(manifest));
                         }
+                        sb.append(filter(manifest));
                         sb.append("\" rel=\"manifest\">");
 
                         manifestFiles.add(manifest);
@@ -1889,9 +1876,9 @@ public class PageFlowUtil
     }
 
 
-    public static HtmlString getLabkeyJS(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
+    public static SafeToRender getLabkeyJS(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
     {
-        HtmlStringBuilder builder = HtmlStringBuilder.of()
+        SafeToRenderBuilder builder = SafeToRenderBuilder.of()
             .append(getScriptTag("/labkey.js"));
 
         // Include client-side error reporting scripts only if necessary and as early as possible.
@@ -1905,11 +1892,10 @@ public class PageFlowUtil
 
         return builder
             .append(HtmlString.unsafe("<script type=\"text/javascript\">\n"))
-            .append(HtmlString.unsafe("LABKEY.init("))
-            .append(HtmlString.unsafe(jsInitObject(context, config, resources, includePostParameters).toString()))
-            .append(HtmlString.unsafe(");\n"))
-            .append(HtmlString.unsafe("</script>\n"))
-            .getHtmlString();
+            .append(JavaScriptFragment.unsafe("LABKEY.init("))
+            .append(jsInitObject(context, config, resources, includePostParameters))
+            .append(JavaScriptFragment.unsafe(");\n"))
+            .append(HtmlString.unsafe("</script>\n"));
     }
 
     private static HtmlString getScriptTag(String path)
@@ -1921,7 +1907,7 @@ public class PageFlowUtil
             .getHtmlString();
     }
 
-    private static HtmlString getJavaScriptIncludes(Container c, LinkedHashSet<ClientDependency> resources)
+    private static SafeToRender getJavaScriptIncludes(Container c, LinkedHashSet<ClientDependency> resources)
     {
         /*
            scripts: the scripts that should be explicitly included
@@ -1932,33 +1918,31 @@ public class PageFlowUtil
 
         getJavaScriptFiles(c, resources, includes, implicitIncludes);
 
-        StringBuilder sb = new StringBuilder();
+        SafeToRenderBuilder builder = SafeToRenderBuilder.of();
 
-        sb.append("<script type=\"text/javascript\">\nLABKEY.loadedScripts(");
+        builder.append(HtmlString.unsafe("<script type=\"text/javascript\">\n"));
+        builder.append(JavaScriptFragment.unsafe("LABKEY.loadedScripts("));
         String comma = "";
         for (String s : implicitIncludes)
         {
             if (!ClientDependency.isExternalDependency(s))
             {
-                sb.append(comma).append(jsString(s));
+                builder.append(JavaScriptFragment.unsafe(comma + jsString(s)));
                 comma = ",";
             }
         }
-        sb.append(");\n");
-        sb.append("</script>\n");
+        builder.append(JavaScriptFragment.unsafe(");\n"));
+        builder.append(HtmlString.unsafe("</script>\n"));
 
         for (String s : includes)
         {
-            sb.append("<script src=\"");
-            if (ClientDependency.isExternalDependency(s))
-                sb.append(s);
-            else
-                sb.append(filter(staticResourceUrl("/" + s)));
-            sb.append("\" type=\"text/javascript\"></script>\n");
+            HtmlStringBuilder scriptReference = HtmlStringBuilder.of(HtmlString.unsafe("<script src=\""))
+                .append(ClientDependency.isExternalDependency(s) ? s : staticResourceUrl("/" + s))
+                .append(HtmlString.unsafe("\" type=\"text/javascript\"></script>\n"));
+            builder.append(scriptReference);
         }
 
-        // TODO: Use DOM or HtmlString above
-        return HtmlString.unsafe(sb.toString());
+        return builder.getSafeToRender();
     }
 
     /** use this version if you don't care which errors are html parsing errors and which are safety warnings */

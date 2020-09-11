@@ -240,15 +240,9 @@ public abstract class JspBase extends JspContext implements HasViewContext
      * @param url Some URLHelper
      * @return A relative URL in a properly escaped single-quoted string literal JavaScriptFragment
      */
-    final protected JavaScriptFragment q(@NotNull URLHelper url)
+    final protected JavaScriptFragment q(@Nullable URLHelper url)
     {
-        return q(url.toString());
-    }
-
-    // TODO: Very, very temporary; just for backward compatibility. Eliminate ASAP.
-    public HtmlString text(JavaScriptFragment f)
-    {
-        return HtmlString.unsafe(f.toString());
+        return q(null != url ? url.toString() : null);
     }
 
     protected HtmlString hq(String str)
@@ -706,18 +700,20 @@ public abstract class JspBase extends JspContext implements HasViewContext
         }
     }
 
+    @Deprecated // Use <labkey:form> instead; it takes care of CSRF and other details.
     protected HtmlString formAction(Class<? extends Controller> actionClass, Method method)
     {
-        return HtmlString.unsafe("action=\"" + buildURL(actionClass) + "\" method=\"" + method.getMethod() + "\"");
+        return HtmlString.unsafe("action=\"" + h(urlFor(actionClass)) + "\" method=\"" + method.getMethod() + "\"");
     }
 
-    // Provides a unique integer within the context of this request.  Handy for generating element ids, etc. See UniqueID for caveats and warnings.
+    // Provides a unique integer within the context of this request. Handy for generating element ids, etc. See UniqueID for caveats and warnings.
     protected int getRequestScopedUID()
     {
         return UniqueID.getRequestScopedUID(getViewContext().getRequest());
     }
 
     /** simple link to different action in same container w/no parameters */
+    @Deprecated // Eliminate usages and delete
     protected String buildURL(Class<? extends Controller> actionClass)
     {
         if (AppProps.getInstance().getUseContainerRelativeURL())
@@ -733,6 +729,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
     /** simple link to different action w/no parameters */
+    @Deprecated // Eliminate usages and delete
     protected String buildURL(Class<? extends Controller> actionClass, String query)
     {
         String result = buildURL(actionClass);

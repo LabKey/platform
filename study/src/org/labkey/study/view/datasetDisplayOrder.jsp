@@ -16,7 +16,8 @@
  */
 %>
 <%@ page import="org.labkey.api.study.Dataset"%>
-<%@ page import="org.labkey.study.controllers.StudyController"%>
+<%@ page import="org.labkey.study.controllers.StudyController.DatasetDisplayOrderAction"%>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageTypesAction" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
@@ -79,7 +80,7 @@ function orderModule(down)
     return false;
 }
 </script>
-<labkey:form method="post" name="reorder" action="<%=buildURL(StudyController.DatasetDisplayOrderAction.class)%>" enctype="multipart/form-data">
+<labkey:form method="post" name="reorder" action="<%=urlFor(DatasetDisplayOrderAction.class)%>" enctype="multipart/form-data">
     <input type="hidden" name="resetOrder" value="false">
     <table>
         <tr>
@@ -122,6 +123,6 @@ function orderModule(down)
     </table>
     <input type="hidden" name="order" value="">
     <%= button("Save").submit(true) %>
-    <%= button("Cancel").href(StudyController.ManageTypesAction.class, getContainer()) %>
+    <%= button("Cancel").href(urlFor(ManageTypesAction.class)) %>
     <%= button("Reset Order").href("#").onClick("if (confirm('Resetting will order the datasets by category, and then by their ID numbers within each category.  This cannot be undone.  Continue?')) return submitReset(); else return false;") %>
 </labkey:form>

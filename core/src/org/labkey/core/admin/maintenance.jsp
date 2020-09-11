@@ -33,13 +33,13 @@
 <script type="text/javascript">
 (function() {
     // grab the returnUrl if present, otherwise set to loginURL
-    var nextURL = LABKEY.ActionURL.getParameter('returnUrl') || <%=q(bean.loginURL == null ? null : bean.loginURL.toString())%>;
+    var nextURL = LABKEY.ActionURL.getParameter('returnUrl') || <%=q(bean.loginURL == null ? null : bean.loginURL)%>;
     if (nextURL) {
         var delay = 500;
         // if we have a URL, check for startup complete and redirect
         function checkStartupComplete() {
             LABKEY.Ajax.request({
-                url: <%=q(new ActionURL(AdminController.StartupStatusAction.class, getContainer()).toString())%>,
+                url: <%=q(new ActionURL(AdminController.StartupStatusAction.class, getContainer()))%>,
                 success: function (response) {
                     var json = JSON.parse(response.responseText);
                     if (json && json.startupComplete && !json.adminOnly) {
