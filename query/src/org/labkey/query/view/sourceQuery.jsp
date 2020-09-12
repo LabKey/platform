@@ -97,7 +97,7 @@
         var query = {
             schema    : LABKEY.ActionURL.getParameter('schemaName'),
             query     : LABKEY.ActionURL.getParameter('query.queryName'),
-            executeUrl: <%= q(null==exeUrl ? null : exeUrl.toString()) %>,
+            executeUrl: <%= q(exeUrl) %>,
             canEdit   : <%= canEdit %>,
             canDelete : <%= canDelete %>,
             canEditSql   : <%= canEdit && queryDef.isSqlEditable() %>,

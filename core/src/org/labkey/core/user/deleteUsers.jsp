@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.user.DeleteUsersBean" %>
-<%@ page import="org.labkey.core.user.UserController" %>
+<%@ page import="org.labkey.core.user.UserController.DeactivateUsersAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -30,7 +30,7 @@
     ActionURL urlPost = getViewContext().cloneActionURL();
     urlPost.deleteParameters();
 
-    ActionURL deactivateUsersUrl = new ActionURL(UserController.DeactivateUsersAction.class, getContainer());
+    ActionURL deactivateUsersUrl = urlFor(DeactivateUsersAction.class);
 %>
 <p>Are sure you want to <span style="font-weight:bold;color: #FF0000">permanently delete</span>
 the following <%=h(bean.getUsers().size() > 1 ? "users" : "user")%>?
@@ -43,7 +43,7 @@ This action cannot be undone.</p>
         }
     %>
     </ul>
-<labkey:form action="<%=urlPost.getEncodedLocalURIString()%>" method="post" name="deleteUsersForm">
+<labkey:form action="<%=urlPost%>" method="post" name="deleteUsersForm">
     <%
         for (User user : bean.getUsers())
         {

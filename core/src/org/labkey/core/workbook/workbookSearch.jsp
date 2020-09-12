@@ -153,9 +153,9 @@
                 }
             }]
 
-        }).render('workbookSearch_<%=h(rowId)%>');
+        }).render('workbookSearch_<%=rowId%>');
     });
 </script>
 
-<div id="workbookSearch_<%=h(rowId)%>"></div>
+<div id="workbookSearch_<%=rowId%>"></div>
 <br>

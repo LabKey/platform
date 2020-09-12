@@ -30,7 +30,9 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.admin.AdminController.CustomEmailForm" %>
+<%@ page import="org.labkey.core.admin.AdminController.CustomizeEmailAction" %>
+<%@ page import="org.labkey.core.admin.AdminController.DeleteCustomEmailAction" %>
 <%@ page import="java.util.Formatter" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
@@ -44,8 +46,8 @@
     }
 %>
 <%
-    JspView<AdminController.CustomEmailForm> me = (JspView<AdminController.CustomEmailForm>) HttpView.currentView();
-    AdminController.CustomEmailForm bean = me.getModelBean();
+    JspView<CustomEmailForm> me = (JspView<CustomEmailForm>) HttpView.currentView();
+    CustomEmailForm bean = me.getModelBean();
     Container c = getContainer();
 
     List<EmailTemplate> emailTemplates = EmailTemplateService.get().getEditableEmailTemplates(c);
@@ -56,7 +58,7 @@
 %>
 <%=text(errorHTML)%>
 
-<labkey:form action="<%=buildURL(AdminController.CustomizeEmailAction.class)%>" method="post">
+<labkey:form action="<%=urlFor(CustomizeEmailAction.class)%>" method="post">
     <% if (bean.getReturnUrl() != null) { %>
         <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>" />
     <% } %>
@@ -81,8 +83,8 @@
             <td></td><td>
             <%= button("Save").submit(true) %>
             <%= button("Cancel").href(bean.getReturnURLHelper(urlProvider(AdminUrls.class).getAdminConsoleURL())) %>
-            <%= button("Reset to Default Template").submit(true).onClick("this.form.action=" + q(buildURL(AdminController.DeleteCustomEmailAction.class)) + ";").id("siteResetButton").style("display: none;")%>
-            <%= button("Delete " + getContainer().getContainerNoun() + "-Level Template").submit(true).onClick("this.form.action=" + q(buildURL(AdminController.DeleteCustomEmailAction.class)) + ";").id("folderResetButton").style("display: none;")%>
+            <%= button("Reset to Default Template").submit(true).onClick("this.form.action=" + q(urlFor(DeleteCustomEmailAction.class)) + ";").id("siteResetButton").style("display: none;")%>
+            <%= button("Delete " + getContainer().getContainerNoun() + "-Level Template").submit(true).onClick("this.form.action=" + q(urlFor(DeleteCustomEmailAction.class)) + ";").id("folderResetButton").style("display: none;")%>
         </tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td colspan="2"><hr></td></tr>

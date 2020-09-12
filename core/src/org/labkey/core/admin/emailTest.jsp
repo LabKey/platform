@@ -16,17 +16,19 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.core.admin.AdminController.EmailTestForm" %>
+<%@ page import="org.labkey.core.admin.AdminController.EmailTestAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<AdminController.EmailTestForm> me = (JspView<AdminController.EmailTestForm>) HttpView.currentView();
-    AdminController.EmailTestForm form = me.getModelBean();
+    JspView<EmailTestForm> me = (JspView<EmailTestForm>) HttpView.currentView();
+    EmailTestForm form = me.getModelBean();
 %>
 
 <p>Use the form below to test your server's email configuration. This will attempt to send an email
@@ -39,7 +41,7 @@ message to the address specified in the 'To' text box containing the content spe
 </div>
 <% }%>
 
-<labkey:form action="<%=new ActionURL(AdminController.EmailTestAction.class, getContainer()).getLocalURIString()%>" method="POST">
+<labkey:form action="<%=urlFor(EmailTestAction.class)%>" method="POST">
     <table class="lk-fields-table">
         <tr>
             <td class="labkey-form-label"><label for="emailTo">To</label></td>

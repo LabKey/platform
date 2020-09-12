@@ -17,9 +17,10 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusOrderAction"%>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusesAction"%>
 <%@ page import="org.labkey.study.model.SpecimenRequestStatus"%>
-<%@ page import="org.labkey.study.model.StudyImpl"%>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -80,7 +81,7 @@ function orderModule(down)
 }
 </script>
 
-<labkey:form action="<%=buildURL(SpecimenController.ManageStatusOrderAction.class)%>" name="reorder" method="POST">
+<labkey:form action="<%=urlFor(ManageStatusOrderAction.class)%>" name="reorder" method="POST">
     <table>
         <tr>
             <td style="padding-right: 20px;">
@@ -108,5 +109,5 @@ function orderModule(down)
     </table>
     <br/>
     <input type="hidden" name="order" value="">
-    <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(SpecimenController.ManageStatusesAction.class, getContainer()) %>
+    <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(urlFor(ManageStatusesAction.class)) %>
 </labkey:form>

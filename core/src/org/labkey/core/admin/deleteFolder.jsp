@@ -15,8 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils"%>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.admin.AdminUrls"%>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
@@ -24,12 +23,11 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.admin.AdminController.DeleteFolderAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.ManageFoldersForm" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="java.util.stream.Collectors" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -96,7 +94,8 @@
 
             return;
         }
-            // Simplify the confirmation message in this case
+
+        // Simplify the confirmation message in this case
         boolean singleEmptyContainer = !c.hasChildren() && ModuleLoader.getInstance().getModuleSummaries(c).isEmpty();
         if (!singleEmptyContainer)
         {
@@ -152,7 +151,7 @@
             <tr><td>&nbsp;</td></tr>
         </table>
 
-        <labkey:form action='<%=h(buildURL(AdminController.DeleteFolderAction.class))%>' method="post">
+        <labkey:form action='<%=urlFor(DeleteFolderAction.class)%>' method="post">
             <% if (form.getReturnUrl() != null) { %>
                 <input type="hidden" name="returnUrl" value="<%=h(form.getReturnUrl())%>"/>
             <% } %>
