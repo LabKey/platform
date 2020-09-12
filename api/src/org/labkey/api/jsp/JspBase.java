@@ -27,7 +27,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Button.ButtonBuilder;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
@@ -710,30 +709,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
     protected int getRequestScopedUID()
     {
         return UniqueID.getRequestScopedUID(getViewContext().getRequest());
-    }
-
-    /** simple link to different action in same container w/no parameters */
-    @Deprecated // Eliminate usages and delete
-    protected String buildURL(Class<? extends Controller> actionClass)
-    {
-        if (AppProps.getInstance().getUseContainerRelativeURL())
-        {
-            return new ActionURL(actionClass, getContainer()).toContainerRelativeURL();
-        }
-        ActionURL v = getActionURL();
-        ActionURL u = new ActionURL(actionClass, getContainer());
-        String full = u.getLocalURIString();
-        if (v.isCanonical() && v.getController().equals(u.getController()))
-            return full.substring(full.lastIndexOf('/')+1);
-        return full;
-    }
-
-    /** simple link to different action w/no parameters */
-    @Deprecated // Eliminate usages and delete
-    protected String buildURL(Class<? extends Controller> actionClass, String query)
-    {
-        String result = buildURL(actionClass);
-        return result + (result.endsWith("?") ? "" : "?") + query;
     }
 
     // JSPs must override addClientDependencies(ClientDependencies) to add their own dependencies.
