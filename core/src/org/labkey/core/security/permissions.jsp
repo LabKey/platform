@@ -121,7 +121,7 @@ Ext4.onReady(function(){
         autoResize: {
             skipHeight: false
         },
-        doneURL: <%= doneURL==null ? JavaScriptFragment.NULL : q(doneURL.getLocalURIString()) %>
+        doneURL: <%= doneURL==null ? JavaScriptFragment.NULL : q(doneURL) %>
     <% if (!c.isRoot()) { %>
         ,treeConfig: {
            requiredPermission: <%=q(RoleManager.getPermission(AdminPermission.class).getUniqueName())%>,

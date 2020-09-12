@@ -308,11 +308,11 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Log memory usage frequency, in minutes (for debugging, set to 0 to disable)</td>
-    <td><input type="text" name="memoryUsageDumpInterval" id="memoryUsageDumpInterval" size="4" value="<%= h(appProps.getMemoryUsageDumpInterval()) %>"></td>
+    <td><input type="text" name="memoryUsageDumpInterval" id="memoryUsageDumpInterval" size="4" value="<%=appProps.getMemoryUsageDumpInterval()%>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Maximum file size, in bytes, to allow in database BLOBs</td>
-    <td><input type="text" name="maxBLOBSize" id="maxBLOBSize" size="10" value="<%= h(appProps.getMaxBLOBSize()) %>"></td>
+    <td><input type="text" name="maxBLOBSize" id="maxBLOBSize" size="10" value="<%=appProps.getMaxBLOBSize()%>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Require ExtJS v3.4.1 be loaded on each page</td>

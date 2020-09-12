@@ -74,6 +74,7 @@ import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.UpdateUserPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.FolderAdminRole;
@@ -1548,7 +1549,7 @@ public class SecurityController extends SpringActionController
         protected SecurityMessage createMessage(EmailForm form)
         {
             // Site admins can see the email for everyone, but project admins can only see it for users they added
-            if (!getUser().hasRootPermission(UserManagementPermission.class))
+            if (!getUser().hasRootPermission(AddUserPermission.class))
             {
                 try
                 {
@@ -1573,7 +1574,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresPermission(UserManagementPermission.class)
+    @RequiresPermission(UpdateUserPermission.class)
     public class ShowResetEmailAction extends AbstractEmailAction
     {
         @Override
@@ -1587,7 +1588,7 @@ public class SecurityController extends SpringActionController
     /**
      * Invalidate existing password and send new password link
      */
-    @RequiresPermission(UserManagementPermission.class)
+    @RequiresPermission(UpdateUserPermission.class)
     public class AdminResetPasswordAction extends ConfirmAction<EmailForm>
     {
         @Override
@@ -2057,7 +2058,7 @@ public class SecurityController extends SpringActionController
             );
 
             // @RequiresPermission(UserManagementPermission.class)
-            assertForUserManagementPermission(user,
+            assertForUserPermissions(user,
                 controller.new AddUsersAction(),
                 controller.new ShowResetEmailAction(),
                 controller.new AdminResetPasswordAction()

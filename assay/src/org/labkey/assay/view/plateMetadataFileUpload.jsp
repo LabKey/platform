@@ -40,7 +40,7 @@ LABKEY.Utils.onReady(function () {
     var plateMetadataExampleEl = document.getElementById('plateMetadataExample');
 
     if (plateTemplateEl) {
-        var plateUrl = new URL(<%=q(plateUrl.toString())%>, LABKEY.ActionURL.getBaseURL());
+        var plateUrl = new URL(<%=q(plateUrl)%>, LABKEY.ActionURL.getBaseURL());
         plateTemplateEl.addEventListener('change', function () {
             var templateLsid = plateTemplateEl.value;
             if (templateLsid)

@@ -129,8 +129,8 @@
                 var exportRegionName = <%=q(exportRegionName)%>;
                 var selectedParam = exportRegionName + '.showRows=SELECTED';
                 var url = isSign ?
-                        <%=q(model.getSignTsvURL().toString())%> :
-                        <%=q(model.getTsvURL().toString())%>;
+                        <%=q(model.getSignTsvURL())%> :
+                        <%=q(model.getTsvURL())%>;
                 if (exportSelectedEl.is(':checked')) {
                     if (url.indexOf(exportRegionName + '.showRows=ALL') == -1) {
                         url = url+'&'+selectedParam;

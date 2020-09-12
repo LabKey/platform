@@ -25,18 +25,6 @@ import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jfree.chart.ChartColor;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartUtilities;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.XYItemRenderer;
-import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.data.time.Day;
-import org.jfree.data.time.TimeSeries;
-import org.jfree.data.time.TimeSeriesCollection;
-import org.jfree.data.xy.XYDataset;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -68,8 +56,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DetailsView;
-import org.labkey.api.view.GridView;
-import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -84,20 +70,15 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -198,166 +179,6 @@ public class MothershipController extends SpringActionController
         {
             root.addChild("Installations");
         }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class ShowRegistrationInstallationGraphAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            Calendar start = new GregorianCalendar();
-            start.add(Calendar.DATE, -2);
-            Calendar cal = new GregorianCalendar();
-            cal.set(2006, 6, 1, 0, 0);
-
-            TimeSeries runningTotal = new TimeSeries("Total installations");
-            TimeSeries registrations = new TimeSeries("Registered users");
-
-            while (cal.compareTo(start) < 0)
-            {
-                registrations.add(new Day(cal.getTime()), UserManager.getUserCount(cal.getTime()));
-
-                int totalExternalCount = 0;
-                for (ServerInstallation installation : MothershipManager.get().getServerInstallationsActiveBefore(cal))
-                {
-                    if (!installation.getServerIP().startsWith("140.107"))
-                    {
-                        totalExternalCount++;
-                    }
-                }
-                runningTotal.add(new Day(cal.getTime()), totalExternalCount);
-
-                cal.add(Calendar.DATE, 7);
-            }
-            TimeSeriesCollection dataset = new TimeSeriesCollection();
-            dataset.addSeries(runningTotal);
-            dataset.addSeries(registrations);
-            JFreeChart chart = createChart(dataset, "Total Users and Total Installations", "Count");
-            XYPlot plot = chart.getXYPlot();
-
-            XYItemRenderer renderer = plot.getRenderer();
-            renderer.setSeriesPaint(0, ChartColor.RED);
-            renderer.setSeriesPaint(1, ChartColor.BLUE);
-
-            getViewContext().getResponse().setContentType("image/png");
-            ChartUtilities.writeChartAsPNG(getViewContext().getResponse().getOutputStream(), chart, 800, 400);
-            return null;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class ShowActiveInstallationGraphAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            Calendar start = new GregorianCalendar();
-            start.add(Calendar.DATE, -2);
-            Calendar cal = new GregorianCalendar();
-            cal.set(2006, 6, 1, 0, 0);
-
-            TimeSeries externalPings = new TimeSeries("External active");
-            TimeSeries repeatPings = new TimeSeries("External that also pinged the previous week");
-            Set<String> repeatServerGUIDs = new HashSet<>();
-
-            while (cal.compareTo(start) < 0)
-            {
-                Collection<ServerInstallation> installations = MothershipManager.get().getServerInstallationsActiveOn(cal);
-                int externalCount = 0;
-                int repeatCount = 0;
-                for (ServerInstallation installation : installations)
-                {
-                    if (!installation.getServerIP().startsWith("140.107"))
-                    {
-                        externalCount++;
-                    }
-
-                    if (repeatServerGUIDs.contains(installation.getServerInstallationGUID()))
-                    {
-                        repeatCount++;
-                    }
-                }
-                externalPings.add(new Day(cal.getTime()), externalCount);
-                repeatPings.add(new Day(cal.getTime()), repeatCount);
-
-                repeatServerGUIDs.clear();
-                for (ServerInstallation installation : installations)
-                {
-                    if (!installation.getServerIP().startsWith("140.107"))
-                    {
-                        repeatServerGUIDs.add(installation.getServerInstallationGUID());
-                    }
-                }
-
-                cal.add(Calendar.DATE, 7);
-            }
-            TimeSeriesCollection dataset = new TimeSeriesCollection();
-            dataset.addSeries(externalPings);
-            dataset.addSeries(repeatPings);
-            JFreeChart chart = createChart(dataset, "Active External Installations", "Count");
-
-            XYPlot plot = chart.getXYPlot();
-
-            XYItemRenderer renderer = plot.getRenderer();
-            renderer.setSeriesPaint(0, ChartColor.RED);
-            renderer.setSeriesPaint(1, ChartColor.BLUE);
-
-            getViewContext().getResponse().setContentType("image/png");
-            ChartUtilities.writeChartAsPNG(getViewContext().getResponse().getOutputStream(), chart, 800, 400);
-            return null;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-        }
-    }
-
-    private JFreeChart createChart(final XYDataset dataset, String title, String label)
-    {
-        // create the chart...
-        final JFreeChart chart = ChartFactory.createTimeSeriesChart(
-                title,      // chart title
-                "Date",                      // x axis label
-                label,                      // y axis label
-                dataset,                  // data
-                true,                     // include legend
-                true,                     // tooltips
-                false                     // urls
-        );
-
-        // NOW DO SOME OPTIONAL CUSTOMISATION OF THE CHART...
-        chart.setBackgroundPaint(Color.white);
-
-//        final StandardLegend legend = (StandardLegend) chart.getLegend();
-        //      legend.setDisplaySeriesShapes(true);
-
-        // get a reference to the plot for further customisation...
-        final XYPlot plot = chart.getXYPlot();
-        plot.setBackgroundPaint(Color.lightGray);
-        //    plot.setAxisOffset(new Spacer(Spacer.ABSOLUTE, 5.0, 5.0, 5.0, 5.0));
-        plot.setDomainGridlinePaint(Color.white);
-        plot.setRangeGridlinePaint(Color.white);
-        plot.getRangeAxis().setLowerBound(0.0);
-
-        final XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
-        renderer.setLinesVisible(true);
-        renderer.setShapesVisible(false);
-        renderer.setStroke(new BasicStroke(2.0f));
-        plot.setRenderer(renderer);
-
-        // change the auto tick unit selection to integer units only...
-        final NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
-        rangeAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
-        // OPTIONAL CUSTOMISATION COMPLETED.
-
-        return chart;
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -893,69 +714,6 @@ public class MothershipController extends SpringActionController
     private void setSuccessHeader()
     {
         getViewContext().getResponse().setHeader(MothershipReport.MOTHERSHIP_STATUS_HEADER_NAME, MothershipReport.MOTHERSHIP_STATUS_SUCCESS);
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class ReportsAction extends SimpleViewAction
-    {
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            root.addChild("Mothership Reports");
-        }
-
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            HtmlView graphView = new HtmlView("Installations", "<img src=\"mothership-showActiveInstallationGraph.view\" height=\"400\" width=\"800\" /><br/><br/><img src=\"mothership-showRegistrationInstallationGraph.view\" height=\"400\" width=\"800\" />");
-            return new VBox(new LinkBar(), new UnbuggedExceptionsGridView(), new UnassignedExceptionsGridView(), graphView);
-        }
-    }
-
-    private class ResultSetGridView extends GridView
-    {
-        public ResultSetGridView(String title, String sql) throws SQLException
-        {
-            super(new DataRegion(), (BindException) null);
-            setTitle(title);
-            ResultSet rs = new SqlSelector(MothershipManager.get().getSchema(), new SQLFragment(sql)).getResultSet();
-            List<ColumnInfo> colInfos = DataRegion.colInfosFromMetaData(rs.getMetaData());
-            setResults(new ResultsImpl(rs, colInfos));
-            getDataRegion().setSettings(new QuerySettings(getViewContext(), title.replace("\"","")));
-            getDataRegion().setColumns(colInfos);
-            getDataRegion().setSortable(false);
-            getDataRegion().setShowFilters(false);
-            getDataRegion().setShowPagination(false);
-        }
-    }
-
-    private class UnbuggedExceptionsGridView extends ResultSetGridView
-    {
-        public UnbuggedExceptionsGridView() throws SQLException
-        {
-            super("\"Unbugged\" Exceptions by Owner",
-                    "SELECT core.usersdata.displayname as Owner, count(*) as ExceptionCount \n" +
-                            "FROM mothership.exceptionstacktrace, core.principals, core.usersdata\n" +
-                            "WHERE assignedto IS NOT NULL AND bugnumber IS NULL\n" +
-                            "and core.principals.userid = assignedto\n" +
-                            "and core.principals.userid = core.usersdata.userid\n" +
-                            "group by core.usersdata.displayname order by ExceptionCount DESC");
-            getDataRegion().getDisplayColumn("Owner").setURL("mothership-showExceptions.view?ExceptionSummary.BugNumber~isblank=&ExceptionSummary.AssignedTo/DisplayName~eq=${Owner}");
-            getDataRegion().getDisplayColumn("Owner").setWidth("200");
-            getDataRegion().getDisplayColumn("ExceptionCount").setCaption("Exception Count");
-        }
-    }
-
-    private class UnassignedExceptionsGridView extends ResultSetGridView
-    {
-        public UnassignedExceptionsGridView() throws SQLException
-        {
-            super("Unassigned Exceptions",
-                    "SELECT COUNT(ExceptionStackTraceId) AS TotalCount\n" +
-                            "FROM Mothership.ExceptionStackTrace AS Trace\n" +
-                            "WHERE Trace.AssignedTo IS NULL AND Trace.BugNumber IS NULL");
-            getDataRegion().getDisplayColumn("TotalCount").setURL("mothership-showExceptions.view?ExceptionSummary.AssignedTo/DisplayName~isblank&ExceptionSummary.BugNumber~isblank");
-        }
     }
 
     private String getUpgradeMessage(@NotNull SoftwareRelease release)
