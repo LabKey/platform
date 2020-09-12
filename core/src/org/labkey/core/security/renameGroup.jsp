@@ -66,14 +66,14 @@
                     handler: function() {
                         renameForm.getForm().submit({
                             success: function() {
-                                window.location = <%=q(manageURL.getLocalURIString())%>;
+                                window.location = <%=q(manageURL)%>;
                             }
                         });
                     }
                 },{
                     text: 'Cancel',
                     handler: function() {
-                        window.location = <%=q(manageURL.getLocalURIString())%>;
+                        window.location = <%=q(manageURL)%>;
                     }
                 }]
             }]

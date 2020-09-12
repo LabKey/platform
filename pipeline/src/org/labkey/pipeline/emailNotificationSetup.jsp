@@ -22,7 +22,8 @@
 <%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.pipeline.PipelineController" %>
+<%@ page import="org.labkey.pipeline.PipelineController.ResetEmailNotificationAction" %>
+<%@ page import="org.labkey.pipeline.PipelineController.UpdateEmailNotificationAction" %>
 <%@ page import="org.labkey.pipeline.api.PipelineEmailPreferences" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -107,7 +108,7 @@
     }(jQuery)
 </script>
 
-<labkey:form action="<%=buildURL(PipelineController.UpdateEmailNotificationAction.class)%>" method="post">
+<labkey:form action="<%=urlFor(UpdateEmailNotificationAction.class)%>" method="post">
     <input type="hidden" name="<%=ActionURL.Param.returnUrl%>" value="<%= h(getViewContext().getActionURL())%>" />
     <table>
         <tr><td colspan=2>Check the appropriate box(es) to configure notification emails to be sent
@@ -215,5 +216,5 @@
         </tr>
     </table>
     <%= button("Update").submit(true) %>
-    <%= button("Reset to Default").submit(true).onClick("this.form.action=" + q(buildURL(PipelineController.ResetEmailNotificationAction.class)) + ";") %></td>
+    <%= button("Reset to Default").submit(true).onClick("this.form.action=" + q(urlFor(ResetEmailNotificationAction.class)) + ";") %></td>
 </labkey:form>

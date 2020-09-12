@@ -316,7 +316,7 @@
         if (confirm('Are you sure you want to clear <%=clearMessage%>?'))
         {
             _form.setClean();
-            LABKEY.Utils.postToAction(<%=q(new AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c).toString())%>);
+            LABKEY.Utils.postToAction(<%=q(new AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c))%>);
             return true;
         }
         else

@@ -31,7 +31,6 @@
     <%= link("View All Installations", new ActionURL(MothershipController.ShowInstallationsAction.class, c)) %>
     <%= link("Configure Mothership", new ActionURL(MothershipController.EditUpgradeMessageAction.class, c)) %>
     <%= link("List of Releases", new ActionURL(MothershipController.ShowReleasesAction.class, c)) %>
-    <%= link("Reports", new ActionURL(MothershipController.ReportsAction.class, c)) %>
     <% if (getUser() != null && !getUser().isGuest()) {
             ActionURL myExceptions = new ActionURL(MothershipController.ShowExceptionsAction.class, c);
             myExceptions.addFilter("ExceptionSummary", FieldKey.fromParts("BugNumber"), CompareType.ISBLANK, null);

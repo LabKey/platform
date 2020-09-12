@@ -38,7 +38,7 @@
     function startJob()
     {
         Ext4.Ajax.request({
-            url: <%=q(startReportURL.getLocalURIString())%>,
+            url: <%=q(startReportURL)%>,
             method: 'POST',
             success: function(resp) {
                 var outputs = Ext4.dom.Query.select('table[@class=labkey-output]');

@@ -54,7 +54,7 @@
     <%= PageFlowUtil.getStandardIncludes(getViewContext(), model) %>
     <% } %>
     <% if (null != model.getRssUrl()) { %>
-    <link href="<%=text(model.getRssUrl().getEncodedLocalURIString())%>" type="application/rss+xml" title="<%=h(model.getRssTitle())%>" rel="alternate"/>
+    <link href="<%=h(model.getRssUrl())%>" type="application/rss+xml" title="<%=h(model.getRssTitle())%>" rel="alternate"/>
     <% } %>
     <% if (model.getAllowTrackingScript())
        {

@@ -317,7 +317,7 @@
                         onError(req.statusText, req.responseText);
                 }
             };
-            req.open("POST", <%=q(new ActionURL(QueryController.SaveApiTestAction.class, getContainer()).toString())%>, true);
+            req.open("POST", <%=q(new ActionURL(QueryController.SaveApiTestAction.class, getContainer()))%>, true);
             req.setRequestHeader("content-type", "application/x-www-form-urlencoded");
             req.send(pairs.join('&'));
         }
