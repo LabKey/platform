@@ -46,6 +46,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -659,30 +660,30 @@ public class StatementUtils
         // BASE TABLE INSERT()
         //
 
-        List<SQLFragment> cols = new ArrayList<>();
-        List<SQLFragment> values = new ArrayList<>();
+        Map<String, SQLFragment> cols = new HashMap<>();
+        Map<String, SQLFragment> values = new HashMap<>();
 
         if (_updateBuiltInColumns && Operation.update != _operation)
         {
             col = table.getColumn("Owner");
             if (null != col && null != user)
             {
-                cols.add(new SQLFragment(col.getSelectName()));
-                values.add(new SQLFragment().append(user.getUserId()));
+                cols.put(col.getName(), new SQLFragment(col.getSelectName()));
+                values.put(col.getName(), new SQLFragment().append(user.getUserId()));
                 done.add("Owner");
             }
             col = table.getColumn("CreatedBy");
             if (null != col && null != user)
             {
-                cols.add(new SQLFragment(col.getSelectName()));
-                values.add(new SQLFragment().append(user.getUserId()));
+                cols.put(col.getName(), new SQLFragment(col.getSelectName()));
+                values.put(col.getName(), new SQLFragment().append(user.getUserId()));
                 done.add("CreatedBy");
             }
             col = table.getColumn("Created");
             if (null != col)
             {
-                cols.add(new SQLFragment(col.getSelectName()));
-                values.add(new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
+                cols.put(col.getName(), new SQLFragment(col.getSelectName()));
+                values.put(col.getName(), new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
                 done.add("Created");
             }
         }
@@ -690,16 +691,16 @@ public class StatementUtils
         ColumnInfo colModifiedBy = table.getColumn("ModifiedBy");
         if (_updateBuiltInColumns && null != colModifiedBy && null != user)
         {
-            cols.add(new SQLFragment(colModifiedBy.getSelectName()));
-            values.add(new SQLFragment().append(user.getUserId()));
+            cols.put(colModifiedBy.getName(), new SQLFragment(colModifiedBy.getSelectName()));
+            values.put(colModifiedBy.getName(), new SQLFragment().append(user.getUserId()));
             done.add("ModifiedBy");
         }
 
         ColumnInfo colModified = table.getColumn("Modified");
         if (_updateBuiltInColumns && null != colModified)
         {
-            cols.add(new SQLFragment(colModified.getSelectName()));
-            values.add(new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
+            cols.put(colModified.getName(), new SQLFragment(colModified.getSelectName()));
+            values.put(colModified.getName(), new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
             done.add("Modified");
         }
         ColumnInfo colVersion = table.getVersionColumn();
@@ -708,8 +709,8 @@ public class StatementUtils
             SQLFragment expr = colVersion.getVersionUpdateExpression();
             if (null != expr)
             {
-                cols.add(new SQLFragment(colVersion.getSelectName()));
-                values.add(expr);
+                cols.put(colVersion.getName(), new SQLFragment(colVersion.getSelectName()));
+                values.put(colVersion.getName(), expr);
                 done.add(colVersion.getName());
             }
         }
@@ -757,8 +758,8 @@ public class StatementUtils
                 ParameterHolder ph = createParameter(column);
                 appendParameterOrVariable(valueSQL, ph);
             }
-            cols.add(new SQLFragment(column.getSelectName()));
-            values.add(valueSQL);
+            cols.put(column.getName(), new SQLFragment(column.getSelectName()));
+            values.put(column.getName(), valueSQL);
         }
 
         SQLFragment sqlfSelectIds = null;
@@ -785,7 +786,7 @@ public class StatementUtils
             {
                 sqlfInsertInto.append(" (");
                 comma = "";
-                for (SQLFragment colSQL : cols)
+                for (SQLFragment colSQL : cols.values())
                 {
                     sqlfInsertInto.append(comma);
                     comma = ", ";
@@ -795,7 +796,7 @@ public class StatementUtils
 
                 sqlfInsertInto.append("\nSELECT ");
                 comma = "";
-                for (SQLFragment valueSQL : values)
+                for (SQLFragment valueSQL : values.values())
                 {
                     sqlfInsertInto.append(comma);
                     comma = ", ";
@@ -833,16 +834,16 @@ public class StatementUtils
             sqlfUpdate.append("UPDATE ").append(table.getSelectName()).append("\nSET ");
             comma = "";
             int updateCount = 0;
-            for (int i = 0; i < cols.size(); i++)
+            for (Map.Entry<String, SQLFragment> colEntry : cols.entrySet())
             {
-                FieldKey fk = new FieldKey(null, cols.get(i).getSQL());
-                if (keys.containsKey(fk) || null != _dontUpdateColumnNames && _dontUpdateColumnNames.contains(fk.getName()))
+                FieldKey fk = new FieldKey(null, colEntry.getValue().getSQL());
+                if (keys.containsKey(fk) || null != _dontUpdateColumnNames && _dontUpdateColumnNames.contains(colEntry.getKey()))
                     continue;
                 sqlfUpdate.append(comma);
                 comma = ", ";
-                sqlfUpdate.append(cols.get(i));
+                sqlfUpdate.append(colEntry.getValue());
                 sqlfUpdate.append(" = ");
-                sqlfUpdate.append(values.get(i));
+                sqlfUpdate.append(values.get(colEntry.getKey()));
                 updateCount++;
             }
             sqlfUpdate.append(sqlfWherePK);
