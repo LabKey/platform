@@ -100,7 +100,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.0.2",
-    "@labkey/components": "0.92.0-fb-gridFixes2010.1",
+    "@labkey/components": "0.92.1-fb-gridFixes2010.0",
     "@labkey/eslint-config-react": "0.0.8",
     "react-toggle-button": "2.2.0"
   },
