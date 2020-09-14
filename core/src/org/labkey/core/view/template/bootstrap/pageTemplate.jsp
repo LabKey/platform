@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
+<%@ page import="org.apache.logging.log4j.LogManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     PageTemplate me = (PageTemplate) HttpView.currentView();
@@ -54,7 +55,7 @@
     <%= PageFlowUtil.getStandardIncludes(getViewContext(), model) %>
     <% } %>
     <% if (null != model.getRssUrl()) { %>
-    <link href="<%=text(model.getRssUrl().getEncodedLocalURIString())%>" type="application/rss+xml" title="<%=h(model.getRssTitle())%>" rel="alternate"/>
+    <link href="<%=h(model.getRssUrl())%>" type="application/rss+xml" title="<%=h(model.getRssTitle())%>" rel="alternate"/>
     <% } %>
     <% if (model.getAllowTrackingScript())
        {
@@ -107,6 +108,18 @@
 %>
 <script type="text/javascript">LABKEY.loadScripts(); LABKEY.showNavTrail();</script>
 <!-- <%= h(request.getHeader("User-Agent")) %> -->
+<%-- TODO : ErrorPage, look into this--%>
+<%
+    try
+    {
+%>
 <a href="<%=h(me.getPermaLink())%>" id="permalink" name="permalink" style="display: none;"></a>
+<%
+    }
+    catch (Exception e)
+    {
+        LogManager.getLogger().info("This will be resolved in next error page story", e);
+    }
+%>
 </body>
 </html>

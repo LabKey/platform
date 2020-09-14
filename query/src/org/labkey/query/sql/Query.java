@@ -1725,7 +1725,13 @@ public class Query
 
         // 40830, this query caused a problem because it has no simple field references (only an expression) and so
         // getSuggestedColumns() is not called on the inner SELECT and therefore resolveFields() was not called before getKeyColumns()
-        new SqlTest("SELECT Name || '-' || Label FROM (SELECT Name, Label FROM core.Modules) M")
+        new SqlTest("SELECT Name || '-' || Label FROM (SELECT Name, Label FROM core.Modules) M"),
+
+        // Allowed, but wrong syntax, trailing comma in select list and terminal semicolon
+        new SqlTest("SELECT 1 AS ONE", 1, 1),
+        new SqlTest("SELECT 1 AS ONE,", 1, 1),
+        new SqlTest("SELECT 1 AS ONE;", 1, 1),
+        new SqlTest("SELECT 1 AS ONE,;", 1, 1)
     };
 
 
@@ -1792,8 +1798,11 @@ public class Query
         // UNDONE: should work since R.seven and seven are the same
         new FailTest("SELECT R.seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6)"),
 
-        new FailTest("SELECT A.Name FROM core.Modules A FULL JOIN core.Modules B ON B.Name=C.Name FULL JOIN core.Modules C ON A.Name=C.Name") // Missing from-clause entry
-	};
+        new FailTest("SELECT A.Name FROM core.Modules A FULL JOIN core.Modules B ON B.Name=C.Name FULL JOIN core.Modules C ON A.Name=C.Name"), // Missing from-clause entry
+
+        // trailing semicolon in subselect
+        new FailTest("SELECT Parent FROM (SELECT Parent FROM core.containers;) AS X")
+    };
 
     private static final InvolvedColumnsTest[] involvedColumnsTests = new InvolvedColumnsTest[]
     {
@@ -2337,10 +2346,17 @@ public class Query
             }
             catch (QueryParseException x)
             {
-                fail(x.getMessage() + "\n" + sql);
+                fail(x, sql);
             }
         }
 
+        private void fail(QueryParseException qpe, String sql)
+        {
+            Exception ex = qpe;
+            if (ex.getCause() instanceof Exception)
+                ex = (Exception)ex.getCause();
+            fail(ex.getMessage() + "\n" + sql);
+        }
 
         private void mockSelect(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap,
                                   boolean strictColumnList, List<String> expectedColumns)

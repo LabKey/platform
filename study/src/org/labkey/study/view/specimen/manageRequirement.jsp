@@ -16,10 +16,15 @@
  */
 %>
 <%@ page import="org.labkey.api.study.Location"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.template.ClientDependencies"%>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteRequirementAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestStatusAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequirementAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequirementBean" %>
 <%@ page import="org.labkey.study.model.SpecimenRequestRequirement" %>
 <%@ page import="org.labkey.study.specimen.notifications.ActorNotificationRecipientSet" %>
 <%@ page import="java.util.List" %>
@@ -34,19 +39,20 @@
     }
 %>
 <%
-    JspView<SpecimenController.ManageRequirementBean> me = (JspView<SpecimenController.ManageRequirementBean>) HttpView.currentView();
-    SpecimenController.ManageRequirementBean bean = me.getModelBean();
+    JspView<ManageRequirementBean> me = (JspView<ManageRequirementBean>) HttpView.currentView();
+    ManageRequirementBean bean = me.getModelBean();
     SpecimenRequestRequirement requirement = bean.getRequirement();
     Location location = requirement.getLocation();
     String locationLabel = location != null ? location.getDisplayName() : "N/A";
 
-    String deleteURL = buildURL(SpecimenController.DeleteRequirementAction.class, "id=" + requirement.getRequestId() +
-            "&requirementId=" + requirement.getRowId());
+    ActionURL deleteURL = urlFor(DeleteRequirementAction.class)
+        .addParameter("id", requirement.getRequestId())
+        .addParameter("requirementId", requirement.getRowId());
 %>
 <labkey:errors />
 <table class="labkey-manage-display">
     <tr>
-        <td align="left"><%= link("View Request").href(buildURL(SpecimenController.ManageRequestAction.class) + "id=" + requirement.getRequestId())%></td>
+        <td align="left"><%= link("View Request").href(urlFor(ManageRequestAction.class).addParameter("id", requirement.getRequestId()))%></td>
     </tr>
 <%
     if (bean.isRequestManager() && bean.isFinalState())
@@ -58,7 +64,7 @@
     <tr>
         <td class="labkey-form-label">
             This request is in a final state; no changes are allowed.<br>
-            To make changes, you must <a href="<%=text(buildURL(SpecimenController.ManageRequestStatusAction.class) + "id=" + requirement.getRequestId()) %>">
+            To make changes, you must <a href="<%=h(urlFor(ManageRequestStatusAction.class).addParameter("id", requirement.getRequestId()))%>">
             change the request's status</a> to a non-final state.
         </td>
     </tr>
@@ -114,7 +120,7 @@
     %>
     <tr>
         <td>
-            <labkey:form action="<%=buildURL(SpecimenController.ManageRequirementAction.class)%>" enctype="multipart/form-data" method="post">
+            <labkey:form action="<%=urlFor(ManageRequirementAction.class)%>" enctype="multipart/form-data" method="post">
                 <input type="hidden" name="id" value="<%= requirement.getRequestId() %>">
                 <input type="hidden" name="requirementId" value="<%= requirement.getRowId() %>">
                 <table>
@@ -174,8 +180,8 @@
                         <th>&nbsp;</th>
                         <td>
                             <%= button("Save Changes and Send Notifications").submit(true) %>&nbsp;
-                            <%= button("Delete Requirement").submit(true).onClick("this.form.action='" + deleteURL + "'") %>&nbsp;
-                            <%= button("Cancel").href(buildURL(SpecimenController.ManageRequestAction.class, "id=" + requirement.getRequestId())) %>
+                            <%= button("Delete Requirement").submit(true).onClick("this.form.action='" + h(deleteURL) + "'") %>&nbsp;
+                            <%= button("Cancel").href(urlFor(ManageRequestAction.class).addParameter("id", requirement.getRequestId())) %>
                         </td>
                     </tr>
                 </table>

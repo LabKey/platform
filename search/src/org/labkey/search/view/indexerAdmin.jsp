@@ -22,14 +22,15 @@
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.search.SearchController" %>
+<%@ page import="org.labkey.search.SearchController.AdminAction" %>
+<%@ page import="org.labkey.search.SearchController.AdminForm" %>
 <%@ page import="org.labkey.search.model.SearchPropertyManager" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-JspView<SearchController.AdminForm> me = (JspView<SearchController.AdminForm>) HttpView.currentView();
-SearchController.AdminForm form = me.getModelBean();
+JspView<AdminForm> me = (JspView<AdminForm>) HttpView.currentView();
+AdminForm form = me.getModelBean();
 SearchService ss = SearchService.get();
 boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %><labkey:errors /><%
@@ -44,7 +45,7 @@ if (null == ss)
 }
 else
 {
-    %><p><labkey:form method="POST" action="<%=buildURL(SearchController.AdminAction.class)%>">
+    %><p><labkey:form method="POST" action="<%=urlFor(AdminAction.class)%>">
         <table>
             <%=getTroubleshooterWarning(hasAdminOpsPerms, HtmlString.unsafe("<br>"))%>
             <tr>
@@ -78,7 +79,7 @@ else
 </table>
 </p>
 
-    <p><labkey:form method="POST" action="<%=buildURL(SearchController.AdminAction.class)%>">
+    <p><labkey:form method="POST" action="<%=urlFor(AdminAction.class)%>">
         <table><%
 
     if (ss.isRunning())
@@ -109,7 +110,7 @@ else
     if (hasAdminOpsPerms)
     {
     %>
-    <p><labkey:form method="POST" action="<%=buildURL(SearchController.AdminAction.class)%>">
+    <p><labkey:form method="POST" action="<%=urlFor(AdminAction.class)%>">
         <table>
             <tr><td>Deleting the search index isn't usually necessary; it causes re-indexing of all data.</td></tr>
             <tr><td><input type="hidden" name="delete" value="1"></td></tr>
@@ -119,7 +120,7 @@ else
     <%
     }
     %>
-    <p><labkey:form method="POST" action="<%=buildURL(SearchController.AdminAction.class)%>">
+    <p><labkey:form method="POST" action="<%=urlFor(AdminAction.class)%>">
         <table>
             <tr><td width="800">You can change the search indexing directory type below, but this is generally not recommended. Contact
                 LabKey for assistance if full-text indexing or searching seems to have difficulty with the default setting.<br><br></td></tr>
@@ -143,10 +144,10 @@ else
             %>
         </table>
     </labkey:form></p>
-    <p><labkey:form method="POST" action="<%=buildURL(SearchController.AdminAction.class)%>">
+    <p><labkey:form method="POST" action="<%=urlFor(AdminAction.class)%>">
         <table>
             <tr><td width="800">You can change the maximum file size limit below, but this is generally not recommended and will result in additional system memory usage. We further limit <b>xlsx</b> files at 1/5 the normal max, as they are compressed at rest.<br><br></td></tr>
-            <tr><td>Indexed file size limit: <input type="number" name="fileLimitMB" value="<%=h(SearchPropertyManager.getFileSizeLimitMB())%>" /> MB</td></tr><%
+            <tr><td>Indexed file size limit: <input type="number" name="fileLimitMB" value="<%=SearchPropertyManager.getFileSizeLimitMB()%>" /> MB</td></tr><%
             if (hasAdminOpsPerms)
             {
         %>

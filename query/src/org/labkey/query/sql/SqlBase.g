@@ -49,6 +49,7 @@ tokens
 {
 	package org.labkey.query.sql.antlr;
     import org.labkey.query.sql.SupportsAnnotations;
+    import org.labkey.api.query.QueryParseWarning;
 }
 
 
@@ -102,6 +103,30 @@ tokens
         HashMap<String,Object> ret = _annotations;
         _annotations = null;
         return ret;
+    }
+
+    protected ArrayList<QueryParseWarning> _warnings = new ArrayList<>();
+
+    public boolean addWarning(String warning, Object symbol)
+    {
+        if (symbol instanceof CommonToken)
+           _warnings.add(new QueryParseWarning(warning, null, ((CommonToken)symbol).getLine(), ((CommonToken)symbol).getCharPositionInLine()));
+       else
+           _warnings.add(new QueryParseWarning(warning, null, -1, -1));
+        return true;
+    }
+
+    public List<QueryParseWarning> getWarnings()
+    {
+        return new ArrayList<>(_warnings);
+    }
+
+    @Override
+    public void reset()
+    {
+        super.reset();
+        _annotations = null;
+        _warnings.clear();
     }
 }
 
@@ -217,7 +242,11 @@ WITH : 'with';
 
 // public entry point
 parseSelect
-	: parameters? commonTableExpressions? selectStatement SEMI? EOF
+	: parseSelectStatementWithoutSemicolon^ ((s=SEMI! {if (null!=s) addWarning("Unexpected semicolon at end of statement", s);})?) EOF!
+	;
+
+parseSelectStatementWithoutSemicolon
+	: parameters? commonTableExpressions? selectStatement
 	    -> ^(STATEMENT parameters? commonTableExpressions? selectStatement?)
 	;
 
@@ -456,8 +485,8 @@ whereClause
 
 
 selectedPropertiesList
-    // weird trailing comma for backward compatibility, leave trailing comma in tree so we can create warnung (see SqlParser)
-	: selectedProperty (COMMA! selectedProperty)* (COMMA)?
+    // weird trailing comma for backward compatibility
+	: selectedProperty (COMMA! selectedProperty)* ((c=COMMA! {if (null!=c) addWarning("Trailing comma in select list", c);})?)
 	;
 
 

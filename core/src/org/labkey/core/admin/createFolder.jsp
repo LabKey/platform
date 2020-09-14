@@ -317,7 +317,7 @@
                     text: 'Cancel',
                     cls: 'labkey-button',
                     handler: function(btn) {
-                        window.location = <%= q(form.getReturnURLHelper(new ActionURL(ProjectController.StartAction.class, ContainerManager.getHomeContainer())).toString()) %>;
+                        window.location = <%= q(form.getReturnURLHelper(new ActionURL(ProjectController.StartAction.class, ContainerManager.getHomeContainer()))) %>;
                     }
                 },{
                     text: 'Next',

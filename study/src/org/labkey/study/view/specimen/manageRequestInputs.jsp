@@ -19,13 +19,14 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.SpecimenManager"%>
-<%@ page import="org.labkey.study.controllers.StudyController"%>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction"%>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.HandleUpdateRequestInputsAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestInputsBean" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpecimenController.ManageRequestInputsBean> me = (JspView<SpecimenController.ManageRequestInputsBean>) HttpView.currentView();
-    SpecimenController.ManageRequestInputsBean bean = me.getModelBean();
+    JspView<ManageRequestInputsBean> me = (JspView<ManageRequestInputsBean>) HttpView.currentView();
+    ManageRequestInputsBean bean = me.getModelBean();
     String contextPath = bean.getContextPath();
 
     String tdButtons = "<a href=\"#\" onClick=\"return moveRow(this, true);\"><i class=\"fa fa-arrow-up\"></i></a>\n" +
@@ -167,7 +168,7 @@
         return true;
     }
 </script>
-<labkey:form action="<%=buildURL(SpecimenController.HandleUpdateRequestInputsAction.class)%>" method="POST" onsubmit="return verifyForm()">
+<labkey:form action="<%=urlFor(HandleUpdateRequestInputsAction.class)%>" method="POST" onsubmit="return verifyForm()">
     <table id="inputTable" class="lk-fields-table">
         <tr>
             <th valign="bottom">&nbsp;</th>
@@ -198,5 +199,5 @@
     </table>
     <%= button("Add New Input").submit(true).onClick("return addRow();") %>
     <%= button("Save").submit(true) %>
-    <%= button("Cancel").href(new ActionURL(StudyController.ManageStudyAction.class, bean.getContainer())) %>
+    <%= button("Cancel").href(new ActionURL(ManageStudyAction.class, bean.getContainer())) %>
 </labkey:form>

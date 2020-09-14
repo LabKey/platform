@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.admin.AdminController.FolderAliasesAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -40,7 +40,7 @@
     </tr>
     <tr>
         <td>
-        <labkey:form action="<%=buildURL(AdminController.FolderAliasesAction.class)%>" method="post">
+        <labkey:form action="<%=urlFor(FolderAliasesAction.class)%>" method="post">
             <textarea rows="4" cols="40" name="aliases"><%
                 StringBuilder sb = new StringBuilder();
                 String separator = "";

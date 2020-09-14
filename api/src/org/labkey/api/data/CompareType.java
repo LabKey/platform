@@ -1465,13 +1465,26 @@ public abstract class CompareType
                 return ((Calendar) v).getTime();
             String s = v.toString();
 
+            // Support Long notation for dates
+            if (s.endsWith("L") || s.endsWith("l"))
+            {
+                String couldBeLong = s.substring(0, s.length() - 1);
+
+                // Only if rest of the value is numeric is it considered a valid Long
+                if (NumberUtils.isDigits(couldBeLong))
+                    return new Date(Long.parseLong(couldBeLong));
+            }
+
             if (!s.startsWith("-") && !s.startsWith("+"))
                 return new Date(DateUtil.parseDateTime(s));
 
             boolean add = s.startsWith("+");
             s = s.substring(1);
+
+            // Default to number representing number of "days"
             if (NumberUtils.isDigits(s))
                 s = s + "d";
+
             if (add)
                 return new Date(DateUtil.addDuration(System.currentTimeMillis(), s));
             else
@@ -1480,7 +1493,6 @@ public abstract class CompareType
         catch (NumberFormatException nfe)
         {
             throw new ConversionException(nfe);
-            //throw nfe;
         }
     }
 
@@ -2180,6 +2192,55 @@ public abstract class CompareType
 
     public static class TestCase
     {
+        @Test
+        public void testAsDate()
+        {
+            // Date value
+            Date dateNow = new Date();
+            assertEquals(dateNow.getTime(), asDate(dateNow).getTime());
+
+            // Calendar value
+            Calendar calendarNow = Calendar.getInstance();
+            assertEquals(calendarNow.getTime().getTime(), asDate(calendarNow).getTime());
+
+            // Days ago
+            String daysInFuture = "+5";
+            Date dateInFuture = new Date(DateUtil.addDuration(System.currentTimeMillis(), "5d"));
+
+            String daysInPast = "-17";
+            Date dateInPast = new Date(DateUtil.subtractDuration(System.currentTimeMillis(), "17d"));
+
+            assertEquals(dateInFuture.getTime(), asDate(daysInFuture).getTime());
+            assertEquals(dateInPast.getTime(), asDate(daysInPast).getTime());
+
+            // Formatted date string
+            String formattedDateStr = DateUtil.formatDate(ContainerManager.getRoot(), dateNow);
+
+            // Formatting causes rounding of date (e.g. loss of context like minutes, seconds, etc)
+            // Rehydrate a time from the Date parsed from the format.
+            long dateFromFormat = DateUtil.parseDateTime(ContainerManager.getRoot(), formattedDateStr);
+
+            assertEquals(dateFromFormat, asDate(formattedDateStr).getTime());
+
+            // Long value
+            String longNow = dateNow.getTime() + "L";
+            assertEquals(dateNow.getTime(), asDate(longNow).getTime());
+
+            // Number throws exception
+            Integer invalidNumber = 123;
+            boolean threwExpectedException = false;
+            try
+            {
+                asDate(invalidNumber);
+            }
+            catch (ConversionException e)
+            {
+                threwExpectedException = true;
+            }
+
+            assertTrue("Expected numeric value to throw ConversionException", threwExpectedException);
+        }
+
         @Test
         public void testMeFilterValue()
         {
