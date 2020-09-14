@@ -154,7 +154,7 @@
     }
 %>
 
-<labkey:form method="POST" id="copyForm" layout="horizontal" action="<%=postURL.getLocalURIString()%>">
+<labkey:form method="POST" id="copyForm" layout="horizontal" action="<%=postURL%>">
     <%
         if (unambiguous)
         {

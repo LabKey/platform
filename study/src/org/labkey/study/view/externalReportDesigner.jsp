@@ -18,19 +18,19 @@
 <%@ page import="org.labkey.api.study.Dataset"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController"%>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController.ExternalReportAction" %>
+<%@ page import="org.labkey.study.controllers.reports.ReportsController.ExternalReportAction"%>
+<%@ page import="org.labkey.study.controllers.reports.ReportsController.ExternalReportBean" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.reports.ExternalReport" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ReportsController.ExternalReportBean> me = (JspView<ReportsController.ExternalReportBean>) HttpView.currentView();
-    ReportsController.ExternalReportBean bean = me.getModelBean();
+    JspView<ExternalReportBean> me = (JspView<ExternalReportBean>) HttpView.currentView();
+    ExternalReportBean bean = me.getModelBean();
     ExternalReport report = bean.getExtReport();
 %>
-<labkey:form action="<%=buildURL(ExternalReportAction.class)%>" method="POST" name="reportDesigner">
+<labkey:form action="<%=urlFor(ExternalReportAction.class)%>" method="POST" name="reportDesigner">
     Design external report. You can invoke any command line to generate the report. You can use the following
     substitution strings in your command line to identify the source data file and the output file to be generated.
     <ul>

@@ -395,7 +395,7 @@
     {
         Ext.Msg.hide();
         LABKEY.setDirty(false);
-        document.location = <%=q(new ActionURL(StudyController.ManageStudyAction.class, c).toString())%>;
+        document.location = <%=q(new ActionURL(StudyController.ManageStudyAction.class, c))%>;
     }
 
     function saveFailed(response, options)
@@ -619,7 +619,7 @@
             }, {
                 text: 'Cancel',
                 listeners: {
-                    click: function() { document.location = <%=q(new ActionURL(StudyController.ManageStudyAction.class, c).toString())%>; }
+                    click: function() { document.location = <%=q(new ActionURL(StudyController.ManageStudyAction.class, c))%>; }
                 }
             }]
         });

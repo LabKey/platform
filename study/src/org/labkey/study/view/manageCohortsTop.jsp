@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
-<%@ page import="org.labkey.study.controllers.CohortController" %>
+<%@ page import="org.labkey.study.controllers.CohortController.ManageCohortsAction" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.Collections" %>
@@ -36,7 +36,7 @@
 %>
 <labkey:errors/>
 
-<labkey:form action="<%=buildURL(CohortController.ManageCohortsAction.class)%>" name="manageCohorts" method="POST">
+<labkey:form action="<%=urlFor(ManageCohortsAction.class)%>" name="manageCohorts" method="POST">
     <input type="hidden" name="reshow" value="true">
     <input type="hidden" name="clearParticipants" value="false">
     <input type="hidden" name="updateParticipants" value="false">

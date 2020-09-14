@@ -143,8 +143,8 @@ public interface DiscussionService
         {
             CreationDate(0, "-Created"), LatestResponseDate(1, "-ResponseCreated");
 
-            private int _index;
-            private String _sortString;
+            private final int _index;
+            private final String _sortString;
 
             SortOrder(int index, String sortString)
             {

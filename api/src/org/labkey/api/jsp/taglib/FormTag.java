@@ -66,14 +66,7 @@ public class FormTag extends BodyTagSupport
         return action;
     }
 
-    // Our JSP tag classes expect unencoded parameters (they encode everything at render time), but this method accepts
-    // an encoded action for backward compatibility purposes. TODO: Migrate these cases and remove this method.
-    @Deprecated
-    public void setAction(HtmlString action)
-    {
-        this.action = action;
-    }
-
+    @Deprecated // TODO: Eliminate all usages and remove
     public void setAction(String s)
     {
         if (AppProps.getInstance().getUseContainerRelativeURL() &&

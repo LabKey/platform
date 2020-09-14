@@ -385,6 +385,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         ActionURL url = context.getActionURL();
         long startTime = System.currentTimeMillis();
         Controller controller = null;
+        PageConfig pageConfig = null;
 
         try
         {
@@ -426,7 +427,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 }
             }
 
-            PageConfig pageConfig = defaultPageConfig();
+            pageConfig = defaultPageConfig();
 
             if (controller instanceof HasViewContext)
                 ((HasViewContext)controller).setViewContext(context);
@@ -506,7 +507,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
         catch (Throwable x)
         {
-            handleException(x);
+            handleException(x, pageConfig);
             throwable = x;
         }
         finally
@@ -522,7 +523,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
 
-    protected void handleException(Throwable x)
+    protected void handleException(Throwable x, PageConfig pageConfig)
     {
         HttpServletRequest request = getViewContext().getRequest();
         HttpServletResponse response = getViewContext().getResponse();
@@ -539,7 +540,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             }
         }
             
-        ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false);
+        ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false, pageConfig);
         if (null != errorURL)
             ExceptionUtil.doErrorRedirect(response, errorURL.toString());
     }

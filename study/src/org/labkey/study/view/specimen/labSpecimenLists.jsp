@@ -15,20 +15,24 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
-<%@ page import="org.labkey.study.model.LocationImpl"%>
-<%@ page import="org.labkey.study.model.Vial"%>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DownloadSpecimenListAction"%>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.EmailLabSpecimenListsAction"%>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.LabSpecimenListsBean" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestAction" %>
+<%@ page import="org.labkey.study.model.LocationImpl" %>
+<%@ page import="org.labkey.study.model.Vial" %>
 <%@ page import="org.labkey.study.specimen.notifications.ActorNotificationRecipientSet" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpecimenController.LabSpecimenListsBean> me = (JspView<SpecimenController.LabSpecimenListsBean>) HttpView.currentView();
-    SpecimenController.LabSpecimenListsBean bean = me.getModelBean();
-    boolean originating = bean.getType() == SpecimenController.LabSpecimenListsBean.Type.ORIGINATING;
+    JspView<LabSpecimenListsBean> me = (JspView<LabSpecimenListsBean>) HttpView.currentView();
+    LabSpecimenListsBean bean = me.getModelBean();
+    boolean originating = bean.getType() == LabSpecimenListsBean.Type.ORIGINATING;
 %>
-<labkey:form action="<%=buildURL(SpecimenController.EmailLabSpecimenListsAction.class)%>" method="POST" enctype="multipart/form-data">
+<labkey:form action="<%=urlFor(EmailLabSpecimenListsAction.class)%>" method="POST" enctype="multipart/form-data">
 <input type="hidden" name="id" value="<%= bean.getSpecimenRequest().getRowId() %>">
 <input type="hidden" name="listType" value="<%= h(bean.getType().toString()) %>">
 
@@ -57,21 +61,21 @@
         int rowCount = 0;
         for (LocationImpl location : bean.getLabs())
         {
-            String downloadURLPrefix =  buildURL(SpecimenController.DownloadSpecimenListAction.class) + "id=" + bean.getSpecimenRequest().getRowId() +
-                    "&destSiteId=" + bean.getSpecimenRequest().getDestinationSiteId() +
-                    "&listType=" + bean.getType().toString() +
-                    "&sourceSiteId=" + location.getRowId() +
-                    "&export=";
+            ActionURL downloadURL = urlFor(DownloadSpecimenListAction.class)
+                .addParameter("id", bean.getSpecimenRequest().getRowId())
+                .addParameter("destSiteId", bean.getSpecimenRequest().getDestinationSiteId())
+                .addParameter("listType", bean.getType().toString())
+                .addParameter("sourceSiteId", location.getRowId());
     %>
     <tr class="<%=getShadeRowClass(rowCount++) %>" valign="top">
         <td><%= h(location.getDisplayName()) %></td>
         <td>
             <table>
                 <tr>
-                    <td><%=link("Export to Excel").href(downloadURLPrefix + "xls") %></td>
+                    <td><%=link("Export to Excel").href(downloadURL.replaceParameter("export", "xls"))%></td>
                 </tr>
                 <tr>
-                    <td><%=link("Export to text file").href(downloadURLPrefix + "tsv") %></td>
+                    <td><%=link("Export to text file").href(downloadURL.replaceParameter("export", "tsv")) %></td>
                 </tr>
             </table>
             <br>
@@ -188,7 +192,7 @@
     </tr>
     <tr>
         <th>&nbsp;</th>
-        <td><%= button("Send Email").submit(true) %> <%= button("Cancel").href(buildURL(SpecimenController.ManageRequestAction.class) + "id=" + bean.getSpecimenRequest().getRowId()) %></td>
+        <td><%= button("Send Email").submit(true) %> <%= button("Cancel").href(urlFor(ManageRequestAction.class).addParameter("id", bean.getSpecimenRequest().getRowId()))%></td>
     </tr>
 </table>
 </labkey:form>
