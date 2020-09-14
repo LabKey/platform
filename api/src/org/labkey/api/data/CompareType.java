@@ -2210,8 +2210,11 @@ public abstract class CompareType
             String daysInPast = "-17";
             Date dateInPast = new Date(DateUtil.subtractDuration(System.currentTimeMillis(), "17d"));
 
-            assertEquals(dateInFuture.getTime(), asDate(daysInFuture).getTime());
-            assertEquals(dateInPast.getTime(), asDate(daysInPast).getTime());
+            // These assertions are checking that the day offsets are respected. Since asDate() calls
+            // System.currentTimeMillis() itself they are set up to check that the dates are equivalent
+            // to their respective "days offset date" +/- one second due to the delta in time between calls.
+            assertTrue(Math.abs(dateInFuture.getTime() - asDate(daysInFuture).getTime()) < 1000);
+            assertTrue(Math.abs(dateInPast.getTime() - asDate(daysInPast).getTime()) < 1000);
 
             // Formatted date string
             String formattedDateStr = DateUtil.formatDate(ContainerManager.getRoot(), dateNow);
