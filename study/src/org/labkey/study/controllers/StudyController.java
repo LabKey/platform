@@ -28,7 +28,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -154,6 +153,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -181,7 +181,6 @@ import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.MasterPatientIndexMaintenanceTask;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.StudyFolderType;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
@@ -6212,6 +6211,57 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    public static class EnabledSpecimenImportForm
+    {
+        private String _activeTransform;
+
+        public String getActiveTransform()
+        {
+            return _activeTransform;
+        }
+
+        public void setActiveTransform(String activeTransform)
+        {
+            _activeTransform = activeTransform;
+        }
+
+        // would using this be good form?
+//        public enum ActiveTransformEnum implements SafeToRenderEnum
+//        {FreezerPro, QueryBased, SampleMinded}
+    }
+
+    @RequiresPermission(AdminPermission.class) // TODO: What permission?
+    public class ChooseImporterAction extends FormViewAction<EnabledSpecimenImportForm>
+    {
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            root.addChild("Specimen Import Mechanism");
+        }
+
+        @Override
+        public void validateCommand(EnabledSpecimenImportForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(EnabledSpecimenImportForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/study/view/chooseImporter.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(EnabledSpecimenImportForm form, BindException errors) throws Exception
+        {
+            return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(EnabledSpecimenImportForm configForm)
+        {
+            return new ActionURL(ManageStudyAction.class, getContainer());
+        }
+    }
 
     public static class ImportVisitMapForm
     {
