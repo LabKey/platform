@@ -341,9 +341,13 @@ public class NameGenerator
             }
 
             // If a name is already provided, just use it as is
-            String curName = (String)rowMap.get("name");
-            if (StringUtils.isNotBlank(curName))
-                return curName;
+            Object currNameObj = rowMap.get("Name");
+            if (currNameObj != null)
+            {
+                String currName = currNameObj.toString();
+                if (StringUtils.isNotBlank(currName))
+                    return currName;
+            }
 
             // Add extra context variables
             Map<String, Object> ctx = additionalContext(rowMap, parentDatas, parentSamples, sampleCounts);
