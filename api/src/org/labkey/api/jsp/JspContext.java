@@ -57,7 +57,7 @@ public abstract class JspContext extends HttpJspBase
      * @param out Current JspWriter
      * @return A JspWriter that doesn't log warnings or throw exceptions when rendering unencoded Strings and unsafe Objects
      */
-    protected JspWriter getPermissiveJspWriter(JspWriter out)
+    protected JspWriter getUnsafeJspWriter(JspWriter out)
     {
         return out instanceof LabKeyJspWriter ? ((LabKeyJspWriter) out).getWrappedJspWriter() : out;
     }
