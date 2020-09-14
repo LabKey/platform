@@ -14,5 +14,10 @@ module.exports = {
         title: '@labkey/components',
         permission: 'admin',
         path: './src/client/LabKeyUIComponentsPage'
+    },{
+        name: 'errorHandler',
+        title: 'Error Handler',
+        path: './src/client/ErrorHandler',
+        generateLib: true // used in errorView.jsp
     }]
 };
