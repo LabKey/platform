@@ -33,8 +33,9 @@ export class ErrorHandler extends React.PureComponent<ErrorHandlerProps, ErrorHa
     };
 
     onViewDetailsClick = (): void => {
+        const { showDetails } = this.state;
         this.setState(() => ({
-            showDetails: true,
+            showDetails: !showDetails,
         }));
     };
 
@@ -50,7 +51,12 @@ export class ErrorHandler extends React.PureComponent<ErrorHandlerProps, ErrorHa
                     onViewDetailsClick={this.onViewDetailsClick}
                 />
                 {/* TODO : ErrorPage, following section in next story*/}
-                {showDetails && <h3 className="labkey-error">{message}</h3>}
+                {showDetails &&
+                <div>
+                    <div className="error-details-container">
+                        <h3 className="labkey-error">{message}</h3>
+                    </div>
+                </div>}
             </>
         );
     }

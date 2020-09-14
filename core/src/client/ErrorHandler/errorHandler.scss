@@ -33,3 +33,26 @@
 .error-details-btn {
 
 }
+
+.error-details-container {
+  position: relative;
+  background: #F3F3F4;
+  padding: 15px;
+  border: 1px solid transparent;
+  margin-top: 5px;
+}
+
+.error-details-container:before, .error-details-container:after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 199px;
+  border: 31px solid transparent;
+  border-bottom-color: #F3F3F4;
+}
+
+.error-details-container:after {
+  left: 200px;
+  border: 30px solid transparent;
+  border-bottom-color: #F3F3F4;
+}
