@@ -47,6 +47,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MothershipReport;
@@ -60,6 +61,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewServlet;
@@ -1358,6 +1360,70 @@ public class MothershipController extends SpringActionController
         public URLHelper getSuccessURL(BulkUpdateForm form)
         {
             return form.getReturnActionURL(new ActionURL(BeginAction.class, getContainer()));
+        }
+    }
+
+    @RequiresNoPermission
+    public class ThrowConfigurationExceptionAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object form, BindException errors)
+        {
+            throw new ConfigurationException("Test Configuration exception");
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+
+        }
+    }
+
+    @RequiresNoPermission
+    public class ThrowNotFoundExceptionAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object form, BindException errors)
+        {
+            throw new NotFoundException("Test NotFound exception");
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+
+        }
+    }
+
+    @RequiresNoPermission
+    public class ThrowPermissionExceptionAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object form, BindException errors)
+        {
+            throw new UnauthorizedException("Test Permission exception");
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+
+        }
+    }
+
+    @RequiresNoPermission
+    public class ThrowExecutionExceptionAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object form, BindException errors)
+        {
+            throw new NullPointerException("Test Execution exception");
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+
         }
     }
 
