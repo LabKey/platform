@@ -440,7 +440,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         Map<String, String> renamedColumns = getRenamedColumns();
         if (loader != null && renamedColumns != null)
         {
-            ColumnDescriptor[]  columnDescriptors = loader.getColumns();
+            ColumnDescriptor[]  columnDescriptors = loader.getColumns(renamedColumns);
             for (ColumnDescriptor columnDescriptor : columnDescriptors)
             {
                 if (renamedColumns.containsKey(columnDescriptor.getColumnName()))
