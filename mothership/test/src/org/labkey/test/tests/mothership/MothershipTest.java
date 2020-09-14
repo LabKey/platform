@@ -15,7 +15,6 @@
  */
 package org.labkey.test.tests.mothership;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -28,10 +27,8 @@ import org.labkey.test.Locators;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyB;
-import org.labkey.test.components.BodyWebPart;
 import org.labkey.test.pages.issues.InsertPage;
 import org.labkey.test.pages.mothership.EditUpgradeMessagePage;
-import org.labkey.test.pages.mothership.ReportsPage;
 import org.labkey.test.pages.mothership.ShowExceptionsPage;
 import org.labkey.test.pages.mothership.ShowExceptionsPage.ExceptionSummaryDataRegion;
 import org.labkey.test.pages.mothership.StackTraceDetailsPage;
@@ -39,7 +36,6 @@ import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.IssuesHelper;
 import org.labkey.test.util.Maps;
 import org.labkey.test.util.PermissionsHelper.MemberType;
-import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.TextSearcher;
 import org.labkey.test.util.mothership.MothershipHelper;
 
@@ -248,21 +244,6 @@ public class MothershipTest extends BaseWebDriverTest
     {
         List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(ExceptionActions.npeother, ExceptionActions.npe);
         assertNotEquals("Should not group exceptions from different actions", exceptionIds.get(0), exceptionIds.get(1));
-    }
-
-    @Test
-    public void testReports()
-    {
-        final ReportsPage reportsPage = ReportsPage.beginAt(this);
-        final List<BodyWebPart> bodyWebParts = new PortalHelper(getDriver()).getBodyWebParts();
-
-        List<String> expected = Arrays.asList("\"Unbugged\" Exceptions by Owner", "Unassigned Exceptions", "Installations");
-        List<String> actual = new ArrayList<>();
-        bodyWebParts.stream().forEachOrdered(wp -> actual.add(wp.getTitle()));
-
-        // Very basic check.
-        assertEquals("Wrong mothership reports", expected, actual);
-        // TODO: Verify report contents
     }
 
     @Test
