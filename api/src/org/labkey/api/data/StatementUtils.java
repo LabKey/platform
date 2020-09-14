@@ -660,30 +660,30 @@ public class StatementUtils
         // BASE TABLE INSERT()
         //
 
-        Map<String, SQLFragment> cols = new HashMap<>();
-        Map<String, SQLFragment> values = new HashMap<>();
+        List<ColumnInfo> cols = new ArrayList<>();
+        List<SQLFragment> values = new ArrayList<>();
 
         if (_updateBuiltInColumns && Operation.update != _operation)
         {
             col = table.getColumn("Owner");
             if (null != col && null != user)
             {
-                cols.put(col.getName(), new SQLFragment(col.getSelectName()));
-                values.put(col.getName(), new SQLFragment().append(user.getUserId()));
+                cols.add(col);
+                values.add(new SQLFragment().append(user.getUserId()));
                 done.add("Owner");
             }
             col = table.getColumn("CreatedBy");
             if (null != col && null != user)
             {
-                cols.put(col.getName(), new SQLFragment(col.getSelectName()));
-                values.put(col.getName(), new SQLFragment().append(user.getUserId()));
+                cols.add(col);
+                values.add(new SQLFragment().append(user.getUserId()));
                 done.add("CreatedBy");
             }
             col = table.getColumn("Created");
             if (null != col)
             {
-                cols.put(col.getName(), new SQLFragment(col.getSelectName()));
-                values.put(col.getName(), new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
+                cols.add(col);
+                values.add(new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
                 done.add("Created");
             }
         }
@@ -691,16 +691,16 @@ public class StatementUtils
         ColumnInfo colModifiedBy = table.getColumn("ModifiedBy");
         if (_updateBuiltInColumns && null != colModifiedBy && null != user)
         {
-            cols.put(colModifiedBy.getName(), new SQLFragment(colModifiedBy.getSelectName()));
-            values.put(colModifiedBy.getName(), new SQLFragment().append(user.getUserId()));
+            cols.add(colModifiedBy);
+            values.add(new SQLFragment().append(user.getUserId()));
             done.add("ModifiedBy");
         }
 
         ColumnInfo colModified = table.getColumn("Modified");
         if (_updateBuiltInColumns && null != colModified)
         {
-            cols.put(colModified.getName(), new SQLFragment(colModified.getSelectName()));
-            values.put(colModified.getName(), new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
+            cols.add(colModified);
+            values.add(new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
             done.add("Modified");
         }
         ColumnInfo colVersion = table.getVersionColumn();
@@ -709,8 +709,8 @@ public class StatementUtils
             SQLFragment expr = colVersion.getVersionUpdateExpression();
             if (null != expr)
             {
-                cols.put(colVersion.getName(), new SQLFragment(colVersion.getSelectName()));
-                values.put(colVersion.getName(), expr);
+                cols.add(colVersion);
+                values.add(expr);
                 done.add(colVersion.getName());
             }
         }
@@ -758,8 +758,8 @@ public class StatementUtils
                 ParameterHolder ph = createParameter(column);
                 appendParameterOrVariable(valueSQL, ph);
             }
-            cols.put(column.getName(), new SQLFragment(column.getSelectName()));
-            values.put(column.getName(), valueSQL);
+            cols.add(column);
+            values.add(valueSQL);
         }
 
         SQLFragment sqlfSelectIds = null;
@@ -786,17 +786,17 @@ public class StatementUtils
             {
                 sqlfInsertInto.append(" (");
                 comma = "";
-                for (SQLFragment colSQL : cols.values())
+                for (ColumnInfo colInfo : cols)
                 {
                     sqlfInsertInto.append(comma);
                     comma = ", ";
-                    sqlfInsertInto.append(colSQL);
+                    sqlfInsertInto.append(new SQLFragment(colInfo.getSelectName()));
                 }
                 sqlfInsertInto.append(")");
 
                 sqlfInsertInto.append("\nSELECT ");
                 comma = "";
-                for (SQLFragment valueSQL : values.values())
+                for (SQLFragment valueSQL : values)
                 {
                     sqlfInsertInto.append(comma);
                     comma = ", ";
@@ -834,16 +834,17 @@ public class StatementUtils
             sqlfUpdate.append("UPDATE ").append(table.getSelectName()).append("\nSET ");
             comma = "";
             int updateCount = 0;
-            for (Map.Entry<String, SQLFragment> colEntry : cols.entrySet())
+            for (int i = 0; i < cols.size(); i++)
             {
-                FieldKey fk = new FieldKey(null, colEntry.getValue().getSQL());
-                if (keys.containsKey(fk) || null != _dontUpdateColumnNames && _dontUpdateColumnNames.contains(colEntry.getKey()))
+                SQLFragment colSql = new SQLFragment(cols.get(i).getSelectName());
+                FieldKey fk = new FieldKey(null, colSql.getSQL());
+                if (keys.containsKey(fk) || null != _dontUpdateColumnNames && _dontUpdateColumnNames.contains(cols.get(i).getName()))
                     continue;
                 sqlfUpdate.append(comma);
                 comma = ", ";
-                sqlfUpdate.append(colEntry.getValue());
+                sqlfUpdate.append(colSql);
                 sqlfUpdate.append(" = ");
-                sqlfUpdate.append(values.get(colEntry.getKey()));
+                sqlfUpdate.append(values.get(i));
                 updateCount++;
             }
             sqlfUpdate.append(sqlfWherePK);
