@@ -24,7 +24,6 @@ import {
     setDomainFields
 } from '@labkey/components'
 
-import "@labkey/components/dist/components.css"
 import "./assayDataImport.scss";
 
 import {AssayRunForm} from "./AssayRunForm";

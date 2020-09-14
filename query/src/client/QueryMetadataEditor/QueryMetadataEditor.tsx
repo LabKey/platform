@@ -31,7 +31,6 @@ import {ActionURL, getServerContext} from "@labkey/api";
 import {AliasFieldModal} from "./components/AliaseFieldModal";
 import {fetchQueryMetadata, resetQueryMetadata, saveQueryMetadata} from "./actions";
 
-import "@labkey/components/dist/components.css"
 import "./queryMetadataEditor.scss";
 
 interface IAppState {

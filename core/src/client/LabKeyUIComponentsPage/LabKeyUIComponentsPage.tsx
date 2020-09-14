@@ -49,9 +49,9 @@ import { LineagePage } from "./LineagePage";
 import { UserProfilePage } from "./UserProfilePage";
 import { PermissionAssignmentsPage } from "./PermissionAssignmentsPage";
 import { SiteUsersGridPanelPage } from "./SiteUsersGridPanelPage";
-
-import "@labkey/components/dist/components.css"
 import { GridPanelPage } from './GridPanelPage';
+
+import "./LabKeyUIComponentsPage.scss"
 
 const COMPONENT_NAMES = List<string>([
     {value: 'Alert'},
