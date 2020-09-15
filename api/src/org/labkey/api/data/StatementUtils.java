@@ -836,13 +836,12 @@ public class StatementUtils
             int updateCount = 0;
             for (int i = 0; i < cols.size(); i++)
             {
-                SQLFragment colSql = new SQLFragment(cols.get(i).getSelectName());
-                FieldKey fk = new FieldKey(null, colSql.getSQL());
+                FieldKey fk = cols.get(i).getFieldKey();
                 if (keys.containsKey(fk) || null != _dontUpdateColumnNames && _dontUpdateColumnNames.contains(cols.get(i).getName()))
                     continue;
                 sqlfUpdate.append(comma);
                 comma = ", ";
-                sqlfUpdate.append(colSql);
+                sqlfUpdate.append(new SQLFragment(cols.get(i).getSelectName()));
                 sqlfUpdate.append(" = ");
                 sqlfUpdate.append(values.get(i));
                 updateCount++;
