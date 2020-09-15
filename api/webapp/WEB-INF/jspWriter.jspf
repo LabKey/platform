@@ -1,0 +1,6 @@
+<%
+    // This JSP fragment is injected into every JSP at JSP -> Java translation time (see <jsp-config> element in web.xml).
+
+    // Use our special JspWriter in dev mode to flag unsafe output from JSPs.
+    out = getLabKeyJspWriter(out);
+%>
