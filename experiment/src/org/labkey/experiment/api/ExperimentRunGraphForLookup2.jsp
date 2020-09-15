@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="static org.labkey.api.util.HtmlString.unsafe" %>
+<%@ page extends="org.labkey.api.jsp.JspContext" %>
 -- CTE comments are used as a marker to split up this file
 -- we could have multiple files, or multiple multi-line string constants, but it's easier to develop this way.
 
