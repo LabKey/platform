@@ -17,6 +17,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.collections4.IteratorUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
@@ -40,6 +41,7 @@ public class ErrorRenderer
     private final boolean _isStartupFailure;
     private final ErrorRendererProperties _errorRendererProps;
     private final String _title;
+    private final String _errorCode;
 
     // TODO: ErrorPage use these in React app
     private boolean _includeHomeButton = true;
@@ -48,6 +50,11 @@ public class ErrorRenderer
     private boolean _includeStopImpersonatingButton = false;
 
     private ErrorType _errorType;
+
+    public String getStackTrace()
+    {
+        return ExceptionUtils.getStackTrace(getException());
+    }
 
     enum ErrorType
     {
@@ -97,12 +104,13 @@ public class ErrorRenderer
         _includeStopImpersonatingButton = includeStopImpersonatingButton;
     }
 
-    ErrorRenderer(int status, String heading, Throwable x, boolean isStartupFailure)
+    ErrorRenderer(int status, String errorCode, String heading, Throwable x, boolean isStartupFailure)
     {
         _status = status;
         _exception = x;
         _isStartupFailure = isStartupFailure;
         _errorRendererProps = (x instanceof ErrorRendererProperties ? (ErrorRendererProperties)x : null);
+        _errorCode = errorCode;
 
         if (null == _errorRendererProps)
         {
@@ -300,5 +308,10 @@ public class ErrorRenderer
     public void setErrorType(ErrorType errorType)
     {
         _errorType = errorType;
+    }
+
+    public String getErrorCode()
+    {
+        return _errorCode;
     }
 }

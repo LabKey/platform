@@ -24,9 +24,25 @@
 
 <div id="<%=h(appId)%>"></div>
 
+<%
+    StringBuilder stackTrace = new StringBuilder();
+    stackTrace.append(model.getException().getMessage());
+    for (StackTraceElement stackTraceElement : model.getException().getStackTrace())
+    {
+        stackTrace.append("\n");
+        stackTrace.append(stackTraceElement.toString());
+    }
+
+
+%>
+
 <script type="application/javascript">
     LABKEY.App.loadApp('errorHandler', <%=q(appId)%>, {
-        message: "<%=unsafe(model.getHeading())%>",
-        errorType: "<%=unsafe(model.getErrorType())%>"
+        errorDetails : {
+            message: "<%=unsafe(model.getHeading())%>",
+            errorType: "<%=unsafe(model.getErrorType())%>",
+            stackTrace: "<%=q(stackTrace.toString())%>",
+            errorCode: "<%=unsafe(model.getErrorCode())%>"
+        }
     });
 </script>

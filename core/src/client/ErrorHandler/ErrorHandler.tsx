@@ -1,14 +1,14 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
+import { Button, Col, Row } from 'react-bootstrap';
 
 import '@labkey/components/dist/components.css';
 import './errorHandler.scss';
-import { ErrorTopSection } from '../components/ErrorTopSection';
 
-import { ErrorType } from './ErrorType';
+import { getErrorHeading, getImage, getInstruction, getSubHeading, getViewDetails } from './ErrorType';
+import { IErrorDetailsModel } from './model';
 
 export interface AppContext {
-    message: string;
-    errorType: ErrorType;
+    errorDetails: IErrorDetailsModel;
 }
 
 interface ErrorHandlerProps {
@@ -39,24 +39,52 @@ export class ErrorHandler extends React.PureComponent<ErrorHandlerProps, ErrorHa
         }));
     };
 
+    renderErrorTopSection = (): ReactNode => {
+        const { errorDetails } = this.props.context;
+        return (
+            <>
+                <div className="panel-body">
+                    <Row>
+                        <Col md={8}>
+                            <div className="labkey-error-top">
+                                {getErrorHeading()}
+                                {getSubHeading(errorDetails)}
+                                {getInstruction(errorDetails)}
+                                <Button
+                                    className="btn-group error-backButton"
+                                    bsStyle="info"
+                                    onClick={this.onBackClick}
+                                >
+                                    Back
+                                </Button>
+                                <Button className="error-details-btn" onClick={this.onViewDetailsClick}>
+                                    View Details
+                                </Button>
+                            </div>
+                        </Col>
+                        <Col md={4}>{getImage(errorDetails)}</Col>
+                    </Row>
+                </div>
+            </>
+        );
+    };
+
+    renderErrorDetailsSection = (): ReactNode => {
+        const { errorDetails } = this.props.context;
+        return (
+            <>
+                <div className="error-details-container">{getViewDetails(errorDetails)}</div>
+            </>
+        );
+    };
+
     render() {
-        const { errorType, message } = this.props.context;
         const { showDetails } = this.state;
 
         return (
             <>
-                <ErrorTopSection
-                    errorType={errorType}
-                    onBackClick={this.onBackClick}
-                    onViewDetailsClick={this.onViewDetailsClick}
-                />
-                {/* TODO : ErrorPage, following section in next story*/}
-                {showDetails &&
-                <div>
-                    <div className="error-details-container">
-                        <h3 className="labkey-error">{message}</h3>
-                    </div>
-                </div>}
+                {this.renderErrorTopSection()}
+                {showDetails && this.renderErrorDetailsSection()}
             </>
         );
     }

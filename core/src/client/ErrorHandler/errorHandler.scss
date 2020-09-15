@@ -21,6 +21,27 @@
   width: 560px;
 }
 
+.labkey-error-details {
+  font-size: 18px;
+  letter-spacing: 0;
+  line-height: 21px;
+  padding-bottom: 2px;
+}
+
+.labkey-error-subdetails {
+  padding-left: 5rem;
+}
+
+.labkey-error-details-question {
+  font-weight: bold;
+}
+
+.labkey-error-stacktrace {
+  font-size: 14px;
+  padding-bottom: 15px;
+  width: 560px;
+}
+
 .error-backButton {
   margin: 0.5rem 5rem 0.5rem 0.5rem;
   background-color: #538AC5;
@@ -37,22 +58,23 @@
 .error-details-container {
   position: relative;
   background: #F3F3F4;
-  padding: 15px;
   border: 1px solid transparent;
-  margin-top: 5px;
+  margin-top: 5rem;
+  padding-top: 5rem;
+  padding-bottom: 5rem;
 }
 
 .error-details-container:before, .error-details-container:after {
   content: '';
   position: absolute;
   bottom: 100%;
-  left: 199px;
-  border: 31px solid transparent;
+  left: 17rem;
+  border: 4rem solid transparent;
   border-bottom-color: #F3F3F4;
 }
 
 .error-details-container:after {
-  left: 200px;
-  border: 30px solid transparent;
+  left: 18rem;
+  border: 3rem solid transparent;
   border-bottom-color: #F3F3F4;
 }

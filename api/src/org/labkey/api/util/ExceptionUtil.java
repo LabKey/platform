@@ -201,9 +201,10 @@ public class ExceptionUtil
     public static ErrorRenderer getErrorRenderer(int responseStatus, String message, Throwable ex,
                              @Nullable HttpServletRequest request, boolean isPart, boolean isStartupFailure)
     {
+        String errorCode = null;
         if (!isStartupFailure && responseStatus == HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
         {
-            String errorCode = logExceptionToMothership(request, ex);
+            errorCode = logExceptionToMothership(request, ex);
             if (null != errorCode)
             {
                 message = StringUtils.trimToEmpty(message);
@@ -219,9 +220,9 @@ public class ExceptionUtil
         }
 
         if (isPart)
-            return new WebPartErrorRenderer(responseStatus, message, ex, isStartupFailure);
+            return new WebPartErrorRenderer(responseStatus, errorCode, message, ex, isStartupFailure);
         else
-            return new ErrorRenderer(responseStatus, message, ex, isStartupFailure);
+            return new ErrorRenderer(responseStatus, errorCode, message, ex, isStartupFailure);
     }
 
     private static ExceptionReportingLevel getExceptionReportingLevel()
