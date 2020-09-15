@@ -424,6 +424,16 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 ConditionalFormat.convertToXML(metadataColumnJSON.getConditionalFormats(), xmlColumn);
             }
 
+            // Set the concept code
+            if (shouldStoreValue(metadataColumnJSON.getPrincipalConceptCode(), rawColumnInfo.getPrincipalConceptCode()))
+            {
+                xmlColumn.setPrincipalConceptCode(rawColumnInfo.getPrincipalConceptCode());
+            }
+            else if (xmlColumn.isSetPrincipalConceptCode())
+            {
+                xmlColumn.unsetPrincipalConceptCode();
+            }
+
             if (xmlColumn.getWrappedColumnName() == null)
             {
                 NodeList childNodes = xmlColumn.getDomNode().getChildNodes();
@@ -434,16 +444,6 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                     // Remove columns that no longer have any metadata set on them
                     removeColumn(xmlTable, xmlColumn);
                 }
-            }
-
-            // Set the concept code
-            if (shouldStoreValue(metadataColumnJSON.getPrincipalConceptCode(), rawColumnInfo.getPrincipalConceptCode()))
-            {
-                xmlColumn.setPrincipalConceptCode(rawColumnInfo.getPrincipalConceptCode());
-            }
-            else if (xmlColumn.isSetPrincipalConceptCode())
-            {
-                xmlColumn.unsetPrincipalConceptCode();
             }
         }
 
