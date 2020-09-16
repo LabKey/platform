@@ -16,8 +16,9 @@
 package org.labkey.pipeline.api;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
@@ -57,7 +58,7 @@ import java.util.Map;
  */
 public class ScriptTaskImpl extends CommandTaskImpl
 {
-    public static final Logger LOG = Logger.getLogger(ScriptTaskImpl.class);
+    public static final Logger LOG = LogManager.getLogger(ScriptTaskImpl.class);
 
     private ScriptEngine _engine;
 

@@ -16,11 +16,11 @@
 
 package org.labkey.api.view.menu;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.Container;
 
 import java.util.Collections;
 import java.util.List;

@@ -49,6 +49,7 @@ tokens
 {
 	package org.labkey.query.sql.antlr;
     import org.labkey.query.sql.SupportsAnnotations;
+    import org.labkey.api.query.QueryParseWarning;
 }
 
 
@@ -56,8 +57,8 @@ tokens
 {
 	package org.labkey.query.sql.antlr;
 
-    import org.apache.log4j.Category;
-    import org.labkey.query.sql.SqlParser;
+    import org.apache.logging.log4j.Logger;
+    import org.apache.logging.log4j.LogManager;
 }
 
 
@@ -103,12 +104,36 @@ tokens
         _annotations = null;
         return ret;
     }
+
+    protected ArrayList<QueryParseWarning> _warnings = new ArrayList<>();
+
+    public boolean addWarning(String warning, Object symbol)
+    {
+        if (symbol instanceof CommonToken)
+           _warnings.add(new QueryParseWarning(warning, null, ((CommonToken)symbol).getLine(), ((CommonToken)symbol).getCharPositionInLine()));
+       else
+           _warnings.add(new QueryParseWarning(warning, null, -1, -1));
+        return true;
+    }
+
+    public List<QueryParseWarning> getWarnings()
+    {
+        return new ArrayList<>(_warnings);
+    }
+
+    @Override
+    public void reset()
+    {
+        super.reset();
+        _annotations = null;
+        _warnings.clear();
+    }
 }
 
 
 @lexer::members
 {
-    Category _log = Category.getInstance(SqlParser.class);
+    Logger _log = LogManager.getLogger(org.labkey.query.sql.SqlParser.class);
     
     protected void setPossibleID(boolean possibleID)
     {
@@ -217,7 +242,11 @@ WITH : 'with';
 
 // public entry point
 parseSelect
-	: parameters? commonTableExpressions? selectStatement EOF
+	: parseSelectStatementWithoutSemicolon^ ((s=SEMI! {if (null!=s) addWarning("Unexpected semicolon at end of statement", s);})?) EOF!
+	;
+
+parseSelectStatementWithoutSemicolon
+	: parameters? commonTableExpressions? selectStatement
 	    -> ^(STATEMENT parameters? commonTableExpressions? selectStatement?)
 	;
 
@@ -370,7 +399,7 @@ joinExpression
 
 
 fromRange
-	: (tableSpecification { weakKeywords(); } (AS? identifier)?) -> ^(RANGE tableSpecification identifier?)
+	: (tableSpecificationWithAnnotation { weakKeywords(); } (AS? identifier)?) -> ^(RANGE tableSpecificationWithAnnotation identifier?)
 	| OPEN
 	    ( (subQuery) => subQuery CLOSE (AS? identifier)? -> ^(RANGE subQuery identifier?)
 	    | joinExpression CLOSE -> joinExpression
@@ -378,7 +407,26 @@ fromRange
 	;
 
 
-// Usually a simple dotted identifer 'path' such as "core.users".
+tableSpecificationWithAnnotation
+    :  table=tableSpecification (tableAnnotations!)? { ((SupportsAnnotations)table.getTree()).setAnnotations(getAnnotations()); }
+    ;
+
+
+// multiple patterns for playing around with ContainerFilter annotation
+// TODO pick one
+tableAnnotations
+    // Issues[ContainerFilter='CurrentAndSubfolders'] R
+    : (LBRACKET annotations RBRACKET)!
+
+    // Issues(CurrentAndSubfolders) R
+    // | (OPEN! value=IDENT CLOSE! {addAnnotation("ContainerFilter",value);})!
+
+    // Issues @ContainerFilter='CurrentAndSubfolders' R
+    // | at_annotations!
+    ;
+
+
+// Usually a simple dotted identifer 'path' such as "core.users"
 // however we support an 'escape' syntax as well such as "Folder.{moduleProperty('ehr','sharedFolder')}.specieslookup"
 tableSpecification
     :  ( { weakKeywords(); } tableSpecificationPart DOT^ )* identifier
@@ -397,7 +445,7 @@ onClause
 
 
 groupByClause
-	: GROUP^ 'by'! expression annotations ( COMMA! expression annotations)*
+	: GROUP^ 'by'! expression ( COMMA! expression )*
 	;
 
 
@@ -407,7 +455,7 @@ pivotClause
     
 
 orderByClause
-	: ORDER^ 'by'! orderElement annotations ( COMMA! orderElement annotations)*
+	: ORDER^ 'by'! orderElement ( COMMA! orderElement )*
 	;
 
 
@@ -437,13 +485,13 @@ whereClause
 
 
 selectedPropertiesList
-    // weird trailing comma for backward compatibility, leave trailing comma in tree so we can create warnung (see SqlParser)
-	: selectedProperty (COMMA! selectedProperty)* (COMMA)?
+    // weird trailing comma for backward compatibility
+	: selectedProperty (COMMA! selectedProperty)* ((c=COMMA! {if (null!=c) addWarning("Trailing comma in select list", c);})?)
 	;
 
 
 selectedProperty
-	: e=aliasedSelectExpression^ (annotations!)? { ((SupportsAnnotations)e.getTree()).setAnnotations(getAnnotations()); }
+	: e=aliasedSelectExpression^ (at_annotations!)? { ((SupportsAnnotations)e.getTree()).setAnnotations(getAnnotations()); }
 	| starAtom
 	;
 
@@ -468,20 +516,28 @@ constantAlias
     ;
 
 
+// example: @title('MyColumn') @hidden
+// alternate: @title='My Column'
+at_annotations
+    : (at_annotation!)*
+    ;
+
+
+at_annotation
+    :   (label=ANNOTATION_LABEL ( (OPEN! value=constant CLOSE!) | (EQ! value=constant) )? {addAnnotation(label.getText(),null==value?null:value.getTree());})!
+    ;
+
+
+// JDBC like
+// example: ContainerFilter=CurrentAndSubfolders; Key=RowId;
 annotations
-    : (annotation!)*
+    : (annotation!) (SEMI! annotation!)* (SEMI!)?
     ;
 
 
 annotation
-    :   (label=ANNOTATION_LABEL (EQ! value=constant)? {addAnnotation(label.getText(),null==value?null:value.getTree());})!
+    :   (label=IDENT (EQ! value=constant)? {addAnnotation(label.getText(),null==value?null:value.getTree());})!
     ;
-
-
-annotation_label
-    :   ANNOTATION_LABEL
-    ;
-
 
 // expressions
 // Note that most of these expressions follow the pattern
@@ -812,6 +868,9 @@ BIT_OR: '|';
 BIT_XOR: '^';
 BIT_AND: '&';
 
+LBRACKET: '[';
+RBRACKET: ']';
+SEMI: ';';
 
 ANNOTATION_LABEL
     : '@' ID_START_LETTER ( ID_LETTER )*

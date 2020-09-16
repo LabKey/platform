@@ -52,12 +52,12 @@
         else
             url = new ActionURL(StudyController.BeginAction.class, study.getContainer());
         %>
-        <span class="labkey-study-title"><a href="<%=url%>"><%=h(study.getLabel())%></a></span>
+        <span class="labkey-study-title"><a href="<%=h(url)%>"><%=h(study.getLabel())%></a></span>
     <%if(null != study.getInvestigator()) { %>
         <span class='labkey-study-investigator'><%=h(study.getInvestigator())%></span>
     <%}%>
         </div>
-            <%=text(study.getDescriptionHtml())%>
+            <%=study.getDescriptionHtml()%>
 <%
     }
 %>

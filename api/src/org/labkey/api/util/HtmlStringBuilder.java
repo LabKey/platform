@@ -15,13 +15,18 @@
  */
 package org.labkey.api.util;
 
-public class HtmlStringBuilder implements HasHtmlString
+public class HtmlStringBuilder implements HasHtmlString, SafeToRender
 {
     private final StringBuilder _sb = new StringBuilder();
 
     // Use of() factory methods
     private HtmlStringBuilder()
     {
+    }
+
+    public static HtmlStringBuilder of()
+    {
+        return new HtmlStringBuilder();
     }
 
     public static HtmlStringBuilder of(String s)
@@ -62,14 +67,20 @@ public class HtmlStringBuilder implements HasHtmlString
         return _sb.length();
     }
 
+    private static String h(String s)
+    {
+        return PageFlowUtil.filter(s);
+    }
+
     @Override
     public HtmlString getHtmlString()
     {
         return HtmlString.unsafe(_sb.toString());
     }
 
-    private static String h(String s)
+    @Override
+    public String toString()
     {
-        return PageFlowUtil.filter(s);
+        return getHtmlString().toString();
     }
 }

@@ -19,9 +19,9 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.list.ListDefinition;
 
-import java.util.List;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * User: Nick

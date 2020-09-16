@@ -15,18 +15,19 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.model.VisitImpl"%>
+<%@ page import="org.labkey.api.study.Visit"%>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.VisitVisibilityAction" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getUser());
 %>
-<labkey:form action="<%=h(buildURL(StudyController.VisitVisibilityAction.class))%>" method="POST">
+<labkey:form action="<%=urlFor(VisitVisibilityAction.class)%>" method="POST">
     <table class="lk-fields-table">
         <tr>
             <th align="left" style="font-weight: bold;">ID</th>
@@ -97,5 +98,5 @@
     %>
     </table>
     <br/>
-    <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(StudyController.ManageVisitsAction.class, getContainer()) %>
+    <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(ManageVisitsAction.class, getContainer()) %>
 </labkey:form>

@@ -15,7 +15,8 @@
  */
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -43,7 +44,7 @@ import java.util.stream.Collectors;
  */
 public class TableChange
 {
-    private static final Logger LOG = Logger.getLogger(TableChange.class);
+    private static final Logger LOG = LogManager.getLogger(TableChange.class);
 
     private final ChangeType _type;
     private final String _schemaName;

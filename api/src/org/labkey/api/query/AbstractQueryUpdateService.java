@@ -60,12 +60,10 @@ import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -98,6 +96,7 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
+import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment;
 
 public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
@@ -446,8 +445,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (!isBulkLoad())
         {
             AuditBehaviorType auditBehavior = configParameters != null ? (AuditBehaviorType) configParameters.get(AuditBehavior) : null;
-
-            getQueryTable().addAuditEvent(user, container, auditBehavior, auditAction, parameters);
+            String userComment = configParameters == null ? null : (String) configParameters.get(AuditUserComment);
+            getQueryTable().addAuditEvent(user, container, auditBehavior, userComment, auditAction, parameters);
         }
     }
 

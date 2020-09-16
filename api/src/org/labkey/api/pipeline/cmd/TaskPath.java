@@ -17,8 +17,8 @@ package org.labkey.api.pipeline.cmd;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.util.FileType;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.util.FileType;
 
 /**
  * <code>TaskPath</code> is an abstract specifier of how an input/output file

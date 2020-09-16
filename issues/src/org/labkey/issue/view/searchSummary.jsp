@@ -48,7 +48,7 @@
         boolean hasTextComment = false;
         for (Issue.Comment comment : issue.getComments())
         {
-            String s = comment.getComment();
+            String s = comment.getHtmlComment().toString();
             String pattern1 = "<div class=\"labkey-wiki\">";
             String pattern2 = "</div>";
             String regexString = Pattern.quote(pattern1) + "(?s)(.*?)" + Pattern.quote(pattern2);

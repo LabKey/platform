@@ -118,7 +118,7 @@ public class VisTestSchema extends UserSchema
                         sql.append("CAST(NULL AS ").append(d.getSqlTypeName(t)).append(t.isText() ? "(100)" : "").append(")");
                     else
                         sql.append(toSqlLiteral(t, v));
-                    sql.append(" AS ").append(c.getSelectName());
+                    sql.append(" AS \"").append(c.getName().toLowerCase()).append("\"");
                 }
             }
             sql.append("\n");
@@ -412,7 +412,7 @@ public class VisTestSchema extends UserSchema
         }
 
         @Override
-        public void appendAggregates(StringBuilder sql, Map columnAliases, Map intervals, String queryAlias, IVisualizationSourceQuery joinQuery)
+        public void appendAggregates(StringBuilder sql, Map columnAliases, Map intervals, String queryAlias, IVisualizationSourceQuery joinQuery, boolean forSelect)
         {
 
         }

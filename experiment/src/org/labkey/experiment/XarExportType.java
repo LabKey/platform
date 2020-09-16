@@ -16,13 +16,13 @@
 
 package org.labkey.experiment;
 
-import org.labkey.api.util.EnumHasHtmlString;
+import org.labkey.api.util.SafeToRenderEnum;
 
 /**
  * User: jeckels
  * Date: Sep 12, 2006
  */
-public enum XarExportType implements EnumHasHtmlString<XarExportType>
+public enum XarExportType implements SafeToRenderEnum
 {
     BROWSER_DOWNLOAD("Download to web browser"),
     PIPELINE_FILE("Write to exportedXars directory in pipeline");

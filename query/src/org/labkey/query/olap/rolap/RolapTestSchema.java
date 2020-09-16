@@ -100,7 +100,7 @@ public class RolapTestSchema extends UserSchema
                         sql.append("CAST(NULL AS " + d.getSqlTypeName(t) + (t.isText() ? "(100)" : "") + ")");
                     else
                         sql.append(RolapCubeDef.toSqlLiteral(t,v));
-                    sql.append(" AS " + c.getSelectName());
+                    sql.append(" AS \"" + c.getName() + "\"");
                 }
             }
             sql.append("\n");

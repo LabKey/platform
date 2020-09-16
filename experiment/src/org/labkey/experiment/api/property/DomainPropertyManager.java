@@ -100,11 +100,6 @@ public class DomainPropertyManager
         return getExpSchema().getTable("PropertyDescriptor");
     }
 
-    static public TableInfo getTinfoValidatorReference()
-    {
-        return getExpSchema().getTable("ValidatorReference");
-    }
-
     public TableInfo getTinfoConditionalFormat()
     {
         return getExpSchema().getTable("ConditionalFormat");
@@ -168,9 +163,8 @@ public class DomainPropertyManager
          * There are a LOT more property descriptors than property validators, let's just sweep them all up, if we have a container
          * CONSIDER: Should PropertyValidators just be cached as part of the PropertyDescriptor?
          */
-        String sql = "SELECT VR.PropertyId, PV.* " +
-                "FROM " + getTinfoValidatorReference() + " VR " +
-                "LEFT OUTER JOIN " + getTinfoValidator() + " PV ON (VR.ValidatorId = PV.RowId) " +
+        String sql = "SELECT PV.* " +
+                "FROM " + getTinfoValidator() + " PV " +
                 "WHERE PV.Container=?\n";
 
         final MultiValuedMap<Integer, PropertyValidator> validators = new ArrayListValuedHashMap<>();
@@ -205,33 +199,17 @@ public class DomainPropertyManager
      * Remove a domain property reference to a validator and delete the validator if there are
      * no more references to it.
      */
-    void removePropertyValidator(User user, DomainProperty property, IPropertyValidator validator)
+    void removePropertyValidator(DomainProperty property, IPropertyValidator validator)
     {
         if (property.getPropertyId() != 0)
         {
-            _removeValidatorReference(property.getPropertyId(), validator.getRowId());
+            SQLFragment deleteValidator = new SQLFragment(
+                    "DELETE FROM " + getTinfoValidator() +
+                        " WHERE Container = ? AND PropertyId = ? AND RowId = ?",
+                    property.getContainer(), property.getPropertyId(), validator.getRowId());
+            new SqlExecutor(getExpSchema()).execute(deleteValidator);
 
-            String sql = "DELETE FROM " + getTinfoValidator() +
-                        " WHERE RowId = ?" +
-                        " AND NOT EXISTS (SELECT * FROM " + getTinfoValidatorReference() + " VR " +
-                            " WHERE  VR.ValidatorId = ?)";
-            new SqlExecutor(getExpSchema()).execute(sql, validator.getRowId(), validator.getRowId());
             VALIDATOR_CACHE.remove(property.getContainer().getId());
-        }
-    }
-
-
-    private void _removePropertyValidator(int propertyId, int validatorId)
-    {
-        if (propertyId != 0)
-        {
-            _removeValidatorReference(propertyId, validatorId);
-
-            String sql = "DELETE FROM " + getTinfoValidator() +
-                        " WHERE RowId = ?" +
-                        " AND NOT EXISTS (SELECT * FROM " + getTinfoValidatorReference() + " VR " +
-                            " WHERE  VR.ValidatorId = ?)";
-            new SqlExecutor(getExpSchema()).execute(sql, validatorId, validatorId);
         }
     }
 
@@ -242,7 +220,8 @@ public class DomainPropertyManager
         {
             try
             {
-                addValidatorReference(property, validator.save(user, property.getContainer()));
+                validator.setPropertyId(property.getPropertyId());
+                validator.save(user, property.getContainer());
                 VALIDATOR_CACHE.remove(validator.getContainer().getId());
             }
             catch (ValidationException e)
@@ -253,47 +232,14 @@ public class DomainPropertyManager
     }
 
 
-    private void addValidatorReference(DomainProperty property, IPropertyValidator validator)
-    {
-        if (property.getPropertyId() != 0 && validator.getRowId() != 0)
-        {
-            String sql = "SELECT ValidatorId FROM " + getTinfoValidatorReference() + " WHERE ValidatorId=? AND PropertyId=?";
-            Integer id = new SqlSelector(getExpSchema(), sql, validator.getRowId(), property.getPropertyId()).getObject(Integer.class);
-            if (id == null)
-            {
-                SQLFragment insertSQL = new SQLFragment();
-                insertSQL.append("INSERT INTO ");
-                insertSQL.append(getTinfoValidatorReference());
-                insertSQL.append(" (ValidatorId,PropertyId) VALUES(?,?)");
-                insertSQL.add(validator.getRowId());
-                insertSQL.add(property.getPropertyId());
-
-                new SqlExecutor(getExpSchema()).execute(insertSQL);
-            }
-        }
-        else
-            throw new IllegalArgumentException("DomainProperty or IPropertyValidator row ID's cannot be null");
-    }
-
-
-    private void _removeValidatorReference(int propertyId, int validatorId)
-    {
-        if (propertyId != 0 && validatorId != 0)
-        {
-            String sql = "DELETE FROM " + getTinfoValidatorReference() + " WHERE ValidatorId=? AND PropertyId=?";
-            new SqlExecutor(getExpSchema()).execute(sql, validatorId, propertyId);
-        }
-        else
-            throw new IllegalArgumentException("DomainProperty or IPropertyValidator row ID's cannot be null");
-    }
-
-
     public void removeValidatorsForPropertyDescriptor(@NotNull Container c, int descriptorId)
     {
-        for (PropertyValidator pv : getValidators(c, descriptorId))
-        {
-            _removePropertyValidator(descriptorId, pv.getRowId());
-        }
+        // find validators associated with this PD, and not associated with others PDs
+        SQLFragment deleteValidators = new SQLFragment(
+                "DELETE FROM exp.PropertyValidator WHERE Container = ? AND PropertyId = ?",
+                c, descriptorId);
+        new SqlExecutor(getExpSchema()).execute(deleteValidators);
+
         VALIDATOR_CACHE.remove(c.getId());
     }
 
@@ -301,9 +247,6 @@ public class DomainPropertyManager
     public void deleteAllValidatorsAndFormats(Container c)
     {
         SqlExecutor executor = new SqlExecutor(getExpSchema());
-        SQLFragment validatorReferenceSQL = new SQLFragment("DELETE FROM " + getTinfoValidatorReference() +
-                " WHERE ValidatorId IN (SELECT RowId FROM " + getTinfoValidator() + " WHERE Container = ?)", c.getId());
-        executor.execute(validatorReferenceSQL);
 
         SQLFragment validatorSQL = new SQLFragment("DELETE FROM " + getTinfoValidator() + " WHERE Container = ?", c.getId());
         executor.execute(validatorSQL);

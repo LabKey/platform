@@ -17,7 +17,9 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -51,6 +53,8 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.webdav.DavException;
 import org.springframework.dao.DataAccessResourceFailureException;
 
 import javax.servlet.ServletException;
@@ -93,7 +97,7 @@ public class ExceptionUtil
     public static final String REQUEST_EXCEPTION_ATTRIBUTE = ExceptionUtil.class.getName() + "$exception";
 
     private static final JobRunner JOB_RUNNER = new JobRunner("Mothership Reporting", 1);
-    private static final Logger LOG = Logger.getLogger(ExceptionUtil.class);
+    private static final Logger LOG = LogManager.getLogger(ExceptionUtil.class);
     // Allow 10 report submissions to mothership per minute
     private static final RateLimiter _reportingRateLimiter = new RateLimiter("exception reporting", 10, TimeUnit.MINUTES);
 
@@ -593,14 +597,19 @@ public class ExceptionUtil
         return false;
     }
 
-    // This is called by SpringActionController (to display unhandled exceptions) and called directly by AuthFilter.doFilter() (to display startup errors and bypass normal request handling)
     public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure)
     {
-        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG);
+        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, null);
+    }
+
+    // This is called by SpringActionController (to display unhandled exceptions) and called directly by AuthFilter.doFilter() (to display startup errors and bypass normal request handling)
+    public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure, @Nullable PageConfig pageConfig)
+    {
+        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, pageConfig);
     }
 
     static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure,
-        SearchService ss, Logger log)
+        SearchService ss, Logger log, @Nullable PageConfig pageConfig)
     {
         try
         {
@@ -628,6 +637,7 @@ public class ExceptionUtil
         }
 
         int responseStatus = HttpServletResponse.SC_OK;
+        ErrorRenderer.ErrorType errorType = ErrorRenderer.ErrorType.execution;
 
         if (response.isCommitted())
         {
@@ -685,6 +695,7 @@ public class ExceptionUtil
         else if (ex instanceof ApiUsageException)
         {
             responseStatus = HttpServletResponse.SC_BAD_REQUEST;
+            errorType = ErrorRenderer.ErrorType.notFound;
             if (ex.getMessage() != null)
             {
                 message = ex.getMessage();
@@ -696,12 +707,14 @@ public class ExceptionUtil
         else if (ex instanceof BadRequestException)
         {
             responseStatus = ((BadRequestException) ex).getStatus();
+            errorType = ErrorRenderer.ErrorType.notFound;
             message = ex.getMessage();
             unhandledException = null;
         }
         else if (ex instanceof NotFoundException)
         {
             responseStatus = HttpServletResponse.SC_NOT_FOUND;
+            errorType = ErrorRenderer.ErrorType.notFound;
             if (ex.getMessage() != null)
             {
                 message = ex.getMessage();
@@ -743,6 +756,7 @@ public class ExceptionUtil
 
             // we know who you are, you're just forbidden from seeing it (unless bad CSRF, silly kids)
             responseStatus = isGuest || isCSRFViolation ? HttpServletResponse.SC_UNAUTHORIZED : HttpServletResponse.SC_FORBIDDEN;
+            errorType = ErrorRenderer.ErrorType.permission;
 
             message = ex.getMessage();
             responseStatusMessage = message;
@@ -768,6 +782,10 @@ public class ExceptionUtil
                     ex = ((BatchUpdateException)ex).getNextException();
                 unhandledException = ex;
             }
+        }
+        else if (ex instanceof ConfigurationException)
+        {
+            errorType = ErrorRenderer.ErrorType.configuration;
         }
 
         if (null == message && null != unhandledException)
@@ -842,8 +860,13 @@ public class ExceptionUtil
                 log.error("Global.handleException", x);
             }
         }
+        else if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_ERROR_PAGE))
+        {
+            renderErrorPage(ex, responseStatus, message, request, response, pageConfig, errorType, user, log, startupFailure);
+        }
         else
         {
+            // 7629: Error page redesign -- development in-progress. This path shows the old error view.
             ErrorView errorView = ExceptionUtil.getErrorView(responseStatus, message, unhandledException, request, startupFailure);
 
             if (ex instanceof UnauthorizedException)
@@ -881,6 +904,86 @@ public class ExceptionUtil
         }
 
         return null;
+    }
+
+    private static void renderErrorPage(Throwable ex, int responseStatus, String message, HttpServletRequest request, HttpServletResponse response, PageConfig pageConfig, ErrorRenderer.ErrorType errorType, User user, Logger log, boolean startupFailure)
+    {
+        // 7629: Error page redesign -- development in-progress. This path shows the new error view.
+        ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, false, startupFailure);
+
+        if (ex instanceof UnauthorizedException)
+        {
+            if (ex instanceof ForbiddenProjectException)
+            {
+                // Not allowed in the project... don't offer Home or Folder buttons
+                renderer.setIncludeHomeButton(false);
+                renderer.setIncludeFolderButton(false);
+            }
+
+            // Provide "Stop Impersonating" button if unauthorized while impersonating
+            if (user.isImpersonated())
+                renderer.setIncludeStopImpersonatingButton(true);
+        }
+
+        if (ex instanceof DavException)
+        {
+            errorType = ErrorRenderer.ErrorType.notFound;
+        }
+
+        if (pageConfig == null)
+        {
+            pageConfig = new PageConfig();
+            pageConfig.setTemplate(PageConfig.Template.Home);
+        }
+
+        HttpView<?> errorView;
+        ViewContext context = null;
+
+        if (HttpView.hasCurrentView())
+        {
+            context = HttpView.currentContext();
+        }
+
+        try
+        {
+            if (HttpView.hasCurrentView())
+            {
+                renderer.setErrorType(errorType);
+                errorView = pageConfig.getTemplate().getTemplate(context, new ErrorTemplate(renderer), pageConfig);
+
+                if (null == errorView)
+                {
+                    log.error("Failed to create errorView in response to exception", ex);
+                    return;
+                }
+            }
+            else
+            {
+                // context can be null for configuration exceptions depending on how far server got through initialization
+                errorView = PageConfig.Template.Body.getTemplate(new ViewContext(request, response, new ActionURL(ActionURL.getBaseServerURL())), new ErrorTemplate(renderer), pageConfig);
+            }
+
+            pageConfig.addClientDependencies(errorView.getClientDependencies());
+            errorView.getView().render(errorView.getModel(), request, response);
+        }
+        catch (Exception e)
+        {
+            // try to render just the react app
+            try
+            {
+                // TODO : ErrorPage, this app template doesn't work
+                errorView = PageConfig.Template.App.getTemplate(context, new ErrorTemplate(renderer), pageConfig);
+                pageConfig.addClientDependencies(errorView.getClientDependencies());
+                errorView.getView().render(errorView.getModel(), request, response);
+
+            }
+            catch (Exception exc)
+            {
+                log.error("Global.handleException", e);
+                log.error("Failed to create App template", exc);
+            }
+
+        }
     }
 
 
@@ -1023,7 +1126,7 @@ public class ExceptionUtil
                 return null;
             };
             SearchService dummySearch = (SearchService) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{SearchService.class}, h);
-            Logger dummyLog = new Logger("mock logger")
+            Logger dummyLog = new org.apache.logging.log4j.core.Logger((LoggerContext) LogManager.getContext(), "mock logger", LogManager.getLogger("mock logger").getMessageFactory())
             {
                 @Override
                 public void debug(Object message)
@@ -1038,9 +1141,9 @@ public class ExceptionUtil
                 {
                 }
                 @Override
-                public void error(Object message, Throwable t)
+                public void error(String message, Throwable t)
                 {
-                    res.addHeader("Logger.error", null!=message?String.valueOf(message):null!=t?t.getMessage():"");
+                    res.addHeader("Logger.error", null!=message? message :null!=t?t.getMessage():"");
                 }
                 @Override
                 public void fatal(Object message)
@@ -1066,9 +1169,15 @@ public class ExceptionUtil
                 {
                     return user;
                 }
+
+                @Override
+                public String getMethod()
+                {
+                    return "GET";
+                }
             };
             ExceptionUtil.decorateException(ex, ExceptionInfo.SkipMothershipLogging, "true", true);
-            ActionURL url = ExceptionUtil.handleException(req, res, ex, message, false, dummySearch, dummyLog);
+            ActionURL url = ExceptionUtil.handleException(req, res, ex, message, false, dummySearch, dummyLog, null);
             ExceptionResponse ret = new ExceptionResponse();
             ret.redirect = url;
             ret.response = res;

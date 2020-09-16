@@ -15,7 +15,7 @@
  */
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.MinorConfigurationException;
@@ -71,7 +71,7 @@ public interface UserSchemaCustomizer
                 Class c = Class.forName(className);
                 if (!(UserSchemaCustomizer.class.isAssignableFrom(c)))
                 {
-                    Logger.getLogger(UserSchemaCustomizer.class).warn("Class '" + c.getName() + "' is not an implementation of " + UserSchemaCustomizer.class.getName());
+                    LogManager.getLogger(UserSchemaCustomizer.class).warn("Class '" + c.getName() + "' is not an implementation of " + UserSchemaCustomizer.class.getName());
                 }
                 else
                 {
@@ -83,7 +83,7 @@ public interface UserSchemaCustomizer
             }
             catch (ClassNotFoundException | InstantiationException | IllegalAccessException e)
             {
-                Logger.getLogger(UserSchemaCustomizer.class).warn(e.toString());
+                LogManager.getLogger(UserSchemaCustomizer.class).warn(e.toString());
             }
 
             return null;

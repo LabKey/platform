@@ -15,20 +15,18 @@
  */
 package org.labkey.api.ldk.table;
 
-import org.apache.log4j.Logger;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.DatasetTable;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.WeakHashMap;
 
 /**
  * User: bimber
@@ -37,7 +35,7 @@ import java.util.WeakHashMap;
  */
 abstract public class AbstractTableCustomizer implements TableCustomizer
 {
-    protected static final Logger _log = Logger.getLogger(AbstractTableCustomizer.class);
+    protected static final Logger _log = LogManager.getLogger(AbstractTableCustomizer.class);
 
     /**
      * Rely on DefaultSchema's caching of schema creation, and just track the minimum number of DefaultSchemas to

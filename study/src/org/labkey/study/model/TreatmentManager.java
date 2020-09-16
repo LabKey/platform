@@ -48,7 +48,6 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.math.BigDecimal;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;

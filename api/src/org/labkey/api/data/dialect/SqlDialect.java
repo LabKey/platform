@@ -17,7 +17,8 @@
 package org.labkey.api.data.dialect;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -75,7 +76,7 @@ public abstract class SqlDialect
     public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
     public static final String CUSTOM_UNIQUE_ERROR_MESSAGE = "Constraint violation: cannot insert duplicate value for column";
 
-    protected static final Logger LOG = Logger.getLogger(SqlDialect.class);
+    protected static final Logger LOG = LogManager.getLogger(SqlDialect.class);
     protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
     protected static final int MAX_VARCHAR_SIZE = 4000;  //Any length over this will be set to nvarchar(max)/text
 
@@ -624,8 +625,37 @@ public abstract class SqlDialect
     /** @param part the java.util.Calendar field for the unit of time, such as Calendar.DATE or Calendar.MINUTE */
     public abstract String getDatePart(int part, String value);
 
+    public SQLFragment getDatePart(int part, SQLFragment value)
+    {
+        SQLFragment datePartExpr = new SQLFragment(value);
+        datePartExpr.setRawSQL(getDatePart(part, datePartExpr.getRawSQL()));
+        return datePartExpr;
+    }
+
     /** @param expression The expression with datetime value for which a date value is desired */
     public abstract String getDateTimeToDateCast(String expression);
+
+    /** @param expression The expression with datetime value for which a date value is desired */
+    public SQLFragment getDateTimeToDateCast(SQLFragment expression)
+    {
+        SQLFragment cast = new SQLFragment(expression);
+        cast.setRawSQL(getDateTimeToDateCast(cast.getRawSQL()));
+        return cast;
+    }
+
+    public SQLFragment getVarcharCast(SQLFragment expression)
+    {
+        SQLFragment cast = new SQLFragment(expression);
+        cast.setRawSQL( "CAST(" + cast.getRawSQL() + " AS " + getSqlCastTypeName(JdbcType.VARCHAR) + ")");
+        return cast;
+    }
+
+    public SQLFragment getNumericCast(SQLFragment expression)
+    {
+        SQLFragment cast = new SQLFragment(expression);
+        cast.setRawSQL("CAST(" + cast.getRawSQL() + " AS NUMERIC)");
+        return cast;
+    }
 
     public abstract String getRoundFunction(String valueToRound);
 

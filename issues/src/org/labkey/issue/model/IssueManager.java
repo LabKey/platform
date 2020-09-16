@@ -17,7 +17,8 @@ package org.labkey.issue.model;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
@@ -73,6 +74,7 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -124,7 +126,7 @@ import static org.labkey.api.security.UserManager.USER_DISPLAY_NAME_COMPARATOR;
  */
 public class IssueManager
 {
-    private static final Logger _log = Logger.getLogger(IssueManager.class);
+    private static final Logger _log = LogManager.getLogger(IssueManager.class);
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("issue", "Issues");
     // UNDONE: Keywords, Summary, etc.
 
@@ -381,12 +383,12 @@ public class IssueManager
         for (Issue.Comment comment : comments)
         {
             // NOTE: form has already validated comment text, but let's be extra paranoid.
-            if (!ViewServlet.validChars(comment.getComment()))
+            if (!ViewServlet.validChars(comment.getHtmlComment().toString()))
                 throw new ConversionException("comment has invalid characters");
 
             Map<String, Object> m = new HashMap<>();
             m.put("issueId", issue.getIssueId());
-            m.put("comment", comment.getComment());
+            m.put("comment", comment.getHtmlComment().toString());
             m.put("entityId", comment.getEntityId());
             Table.insert(user, _issuesSchema.getTableInfoComments(), m);
         }
@@ -1451,15 +1453,14 @@ public class IssueManager
             {
                 try (Writer out = new OutputStreamWriter(bos, StringUtilsLabKey.DEFAULT_CHARSET))
                 {
-
                     out.write("<html><head><title>");
                     out.write(PageFlowUtil.filter(title));
                     out.write("</title></head><body>");
                     out.write(PageFlowUtil.filter(title));
                     out.write("\n");
                     for (Issue.Comment c : _comments)
-                        if (null != c.getComment())
-                            out.write(c.getComment());
+                        if (!HtmlString.isBlank(c.getHtmlComment()))
+                            out.write(c.getHtmlComment().toString());
                 }
                 return new FileStream.ByteArrayFileStream(bos.toByteArray());
             }
@@ -1537,7 +1538,7 @@ public class IssueManager
                 issue.open(c, user);
                 issue.setAssignedTo(user.getUserId());
                 issue.setTitle("This is a junit test bug");
-                issue.addComment(user, "new issue");
+                issue.addComment(user, HtmlString.unsafe("new issue"));
                 issue.setPriority("3");
                 issue.setIssueDefName(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
 
@@ -1556,7 +1557,7 @@ public class IssueManager
                 assertEquals(user.getUserId(), issue.getAssignedTo().intValue());
                 assertEquals(Issue.statusOPEN, issue.getStatus());
                 assertEquals(1, issue.getComments().size());
-				String comment = (issue.getComments().iterator().next()).getComment();
+				String comment = (issue.getComments().iterator().next()).getHtmlComment().toString();
                 assertTrue("new issue".equals(comment));
             }
 
@@ -1565,7 +1566,7 @@ public class IssueManager
             //
             {
                 Issue issue = IssueManager.getIssue(c, user, issueId);
-                issue.addComment(user, "what was I thinking");
+                issue.addComment(user, HtmlString.unsafe("what was I thinking"));
                 factory.toMap(issue, issue.getProperties());
                 IssueManager.saveIssue(user, c, issue);
             }
@@ -1575,8 +1576,8 @@ public class IssueManager
                 Issue issue = IssueManager.getIssue(c, user, issueId);
                 assertEquals(2, issue.getComments().size());
                 Iterator it = issue.getComments().iterator();
-                assertEquals("new issue", ((Issue.Comment) it.next()).getComment());
-                assertEquals("what was I thinking", ((Issue.Comment) it.next()).getComment());
+                assertEquals("new issue", ((Issue.Comment) it.next()).getHtmlComment().toString());
+                assertEquals("what was I thinking", ((Issue.Comment) it.next()).getHtmlComment().toString());
             }
 
             //
@@ -1584,7 +1585,7 @@ public class IssueManager
             //
             {
                 Issue issue = IssueManager.getIssue(c, user, issueId);
-                issue.addComment(user, "invalid character <\u0010>");
+                issue.addComment(user, HtmlString.unsafe("invalid character <\u0010>"));
                 try
                 {
                     IssueManager.saveIssue(user, c, issue);
@@ -1604,7 +1605,7 @@ public class IssueManager
                 assertNotNull("issue not found", issue);
                 issue.resolve(user);
                 issue.setResolution("fixed");
-                issue.addComment(user, "fixed it");
+                issue.addComment(user, HtmlString.unsafe("fixed it"));
                 factory.toMap(issue, issue.getProperties());
                 IssueManager.saveIssue(user, c, issue);
             }
@@ -1623,7 +1624,7 @@ public class IssueManager
                 Issue issue = IssueManager.getIssue(c, user, issueId);
                 assertNotNull("issue not found", issue);
                 issue.close(user);
-                issue.addComment(user, "closed");
+                issue.addComment(user, HtmlString.unsafe("closed"));
                 factory.toMap(issue, issue.getProperties());
                 IssueManager.saveIssue(user, c, issue);
             }

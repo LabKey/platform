@@ -16,12 +16,14 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
@@ -183,7 +185,9 @@ public abstract class ContainerFilter
         SQLFragment sql;
         if (columnInfo != null)
         {
-            sql = new SQLFragment(columnInfo.getSelectName());
+            // NOTE: we really should know the tableAlias here, but we don't, so caller has to guarantee that the columninfo is unambigious
+            SQLFragment value = columnInfo.getValueSql(ExprColumn.STR_TABLE_ALIAS);
+            sql = new SQLFragment(value.getSQL().replace(ExprColumn.STR_TABLE_ALIAS+".", ""), value.getParams());
         }
         else
         {
@@ -1299,7 +1303,7 @@ public abstract class ContainerFilter
     }
 
 
-    static final Logger _log = Logger.getLogger(ContainerFilter.class);
+    static final Logger _log = LogManager.getLogger(ContainerFilter.class);
 
     // helper so that ContainerFilter logging can be traced using one logger class
     public static void logSetContainerFilter(ContainerFilter cf, String... parts)

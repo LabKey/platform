@@ -16,8 +16,11 @@
 package org.labkey.api.jsp;
 
 import org.apache.jasper.runtime.HttpJspBase;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.HttpView;
+
+import javax.servlet.jsp.JspWriter;
 
 /**
  * User: adam
@@ -46,5 +49,27 @@ public abstract class JspContext extends HttpJspBase
     public Object getModelBean()
     {
         return HttpView.currentModel();
+    }
+
+    /**
+     * This soon will be called by every JSP to get our standard JspWriter. In production mode, this is a pass-through;
+     * in dev mode, it wraps the standard JspWriter with LabKeyJspWriter, an implementation that protects against unsafe
+     * output.
+     */
+    protected JspWriter getLabKeyJspWriter(JspWriter out)
+    {
+        return AppProps.getInstance().isDevMode() ? new LabKeyJspWriter(out) : out;
+    }
+
+    /**
+     * Call this to allow String and unsafe Object output in development mode, undoing the call above. Typically, this
+     * would be the first line of code in a JSP that generates non-HTML content:<br><br>
+     *     {@code out = getPermissiveJspWriter(out);}
+     * @param out Current JspWriter
+     * @return A JspWriter that doesn't log warnings or throw exceptions when rendering Strings and unsafe Objects
+     */
+    protected JspWriter getUnsafeJspWriter(JspWriter out)
+    {
+        return out instanceof LabKeyJspWriter ? ((LabKeyJspWriter) out).getWrappedJspWriter() : out;
     }
 }

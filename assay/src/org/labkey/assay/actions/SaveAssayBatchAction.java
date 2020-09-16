@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.SimpleApiJsonForm;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.api.AssayJSONConverter;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -28,7 +29,6 @@ import org.labkey.api.exp.api.ExperimentSaveHandler;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.assay.AssayProvider;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;

@@ -16,7 +16,7 @@
 package org.labkey.study.query;
 
 import org.apache.commons.beanutils.converters.LongConverter;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -43,9 +43,9 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.EditableSpecimenImporter;
-import org.labkey.study.model.Vial;
 import org.labkey.study.model.SpecimenEvent;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.Vial;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -78,7 +78,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         if (null != configParameters)
         {
             Object o = configParameters.get(ConfigParameters.Logger);
-            if (o instanceof org.apache.log4j.Logger)
+            if (o instanceof Logger)
                 _logger = (Logger)o;
         }
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);

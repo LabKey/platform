@@ -7,7 +7,6 @@ import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.api.AssayJSONConverter;
-import org.labkey.api.exp.api.DefaultExperimentSaveHandler;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;

@@ -16,8 +16,8 @@
 
 package org.labkey.study.writer;
 
-import java.io.OutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
 /*
 * User: adam

@@ -15,7 +15,8 @@
  */
 package org.labkey.api.view;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
@@ -30,7 +31,7 @@ import java.io.Writer;
  */
 public class UpdateView extends DataView
 {
-    private static Logger _log = Logger.getLogger(UpdateView.class);
+    private static Logger _log = LogManager.getLogger(UpdateView.class);
 
     public UpdateView(DataRegion dataRegion, TableViewForm form, BindException errors)
     {

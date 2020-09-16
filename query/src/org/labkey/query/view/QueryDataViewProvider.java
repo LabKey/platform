@@ -27,7 +27,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.QueryManager;
 
-import java.sql.SQLException;
 import java.util.Map;
 
 /**

@@ -17,10 +17,12 @@ package org.labkey.api.action;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.module.AllowedOutsideImpersonationProject;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.ContextualRoles;
 import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresLogin;
@@ -32,11 +34,13 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.HttpUtil;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.ForbiddenProjectException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
@@ -44,15 +48,20 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.springframework.web.servlet.mvc.Controller;
 
+import javax.servlet.http.HttpServletResponse;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
+import static org.labkey.api.util.HttpUtil.Method;
 
 /**
  * Created by adam on 3/25/2016.
  */
 public abstract class PermissionCheckableAction implements Controller, PermissionCheckable, HasViewContext
 {
+    private static final HttpUtil.Method[] arrayGetPost = new HttpUtil.Method[] {Method.GET, Method.POST};
     private ViewContext _context = null;
     UnauthorizedException.Type _unauthorizedType = UnauthorizedException.Type.redirectToLogin;
 
@@ -115,29 +124,28 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
 
     protected boolean isGet()
     {
-        return "GET".equals(getViewContext().getRequest().getMethod());
+        return getViewContext().getMethod() == Method.GET;
     }
 
     protected boolean isPost()
     {
-        return "POST".equals(getViewContext().getRequest().getMethod());
+        return getViewContext().getMethod() == Method.POST;
     }
 
     protected boolean isPut()
     {
-        return "PUT".equals(getViewContext().getRequest().getMethod());
+        return getViewContext().getMethod() == Method.PUT;
     }
 
     protected boolean isDelete()
     {
-        return "DELETE".equals(getViewContext().getRequest().getMethod());
+        return getViewContext().getMethod() == Method.DELETE;
     }
 
     protected boolean isPatch()
     {
-        return "PATCH".equals(getViewContext().getRequest().getMethod());
+        return getViewContext().getMethod() == Method.PATCH;
     }
-
 
     private void _checkActionPermissions(Set<Role> contextualRoles) throws UnauthorizedException
     {
@@ -145,11 +153,20 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
 
         Container c = context.getContainer();
         User user = context.getUser();
+        Class<? extends Controller> actionClass = getClass();
 
-        if (c.isForbiddenProject(user))
+        if (!actionClass.isAnnotationPresent(AllowedOutsideImpersonationProject.class) && c.isForbiddenProject(user))
             throw new ForbiddenProjectException();
 
-        Class<? extends Controller> actionClass = getClass();
+        Method method = context.getMethod();
+        HttpUtil.Method[] methodsAllowed = arrayGetPost;
+        MethodsAllowed methodsAllowedAnnotation = actionClass.getAnnotation(MethodsAllowed.class);
+        if (null != methodsAllowedAnnotation)
+            methodsAllowed = methodsAllowedAnnotation.value();
+        if (Arrays.stream(methodsAllowed).noneMatch(s -> s.equals(method)))
+        {
+            throw new BadRequestException("Method Not Allowed: " + method, null, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+        }
 
         boolean requiresSiteAdmin = actionClass.isAnnotationPresent(RequiresSiteAdmin.class);
         if (requiresSiteAdmin && !user.hasSiteAdminPermission())

@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.util.Objects;
 
-public final class HtmlString implements DOM.Renderable, Comparable<HtmlString>
+public final class HtmlString implements SafeToRender, DOM.Renderable, Comparable<HtmlString>
 {
     // Helpful constants for convenience (and efficiency)
     public static HtmlString EMPTY_STRING = HtmlString.of("");
@@ -85,6 +85,18 @@ public final class HtmlString implements DOM.Renderable, Comparable<HtmlString>
         return null==html ? "" : html.toString();
     }
 
+    public static HtmlString join(Iterable<HtmlString> htmlStrings, HtmlString delimiter)
+    {
+        HtmlString sep = HtmlString.EMPTY_STRING;
+        HtmlStringBuilder builder = HtmlStringBuilder.of();
+        for (HtmlString hs : htmlStrings)
+        {
+            builder.append(sep);
+            builder.append(hs);
+            sep = delimiter;
+        }
+        return builder.getHtmlString();
+    }
 
     // Callers use factory methods of() and unsafe() instead
     private HtmlString(String s)
@@ -130,5 +142,10 @@ public final class HtmlString implements DOM.Renderable, Comparable<HtmlString>
     public int compareTo(@NotNull HtmlString o)
     {
         return this._s.compareTo(o._s);
+    }
+
+    public int length()
+    {
+        return _s.length();
     }
 }

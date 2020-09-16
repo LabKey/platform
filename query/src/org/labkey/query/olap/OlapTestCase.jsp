@@ -1,12 +1,14 @@
 <%@ page import="org.json.JSONObject" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.view.ViewServlet" %>
 <%@ page import="org.junit.Test" %>
-<%@ page import="static org.junit.Assert.*" %>
-<%@ page import="org.labkey.api.util.TestContext" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.JunitUtil" %>
+<%@ page import="org.labkey.api.util.TestContext" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="static org.junit.Assert.*" %>
+<%@ page import="org.labkey.api.view.ViewServlet" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="org.apache.logging.log4j.LogManager" %>
+<%@ page import="org.labkey.query.controllers.OlapController" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 
 <%!
@@ -28,7 +30,6 @@ boolean canExecuteMdx(String configId) throws Exception
     config.put("query", "SELECT [Measures].[RowCount] ON COLUMNS, [Fact.ptid].[ptid].Members ON ROWS FROM [Facts]");
     config.put("configId", configId);
     config.put("schemaName", "OlapTest");
-
     JSONObject result = executeJsonApi(new ActionURL("olap","executeMdx", JunitUtil.getTestContainer()), TestContext.get().getUser(), config.toString());
     if (null != result.get("success") && Boolean.FALSE == result.getBoolean("success"))
         return false;

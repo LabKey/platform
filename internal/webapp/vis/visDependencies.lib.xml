@@ -5,8 +5,6 @@
         <script path="/vis/lib/patches.js"/>
         <script path="/vis/lib/d3-3.5.17.js" mode="dev"/>
         <script path="/vis/lib/d3-3.5.17.min.js" mode="production"/>
-        <script path="/vis/lib/raphael-2.1.0.js" mode="dev"/>
-        <script path="/vis/lib/raphael-min-2.1.0.js" mode="production"/>
         <script path="/vis/lib/hexbin.js" mode="dev"/>
         <script path="/vis/lib/sqbin.js" mode="dev"/>
         <script path="/vis/lib/hexbin.min.js" mode="production"/>

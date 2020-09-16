@@ -18,7 +18,7 @@ import {Panel} from "react-bootstrap";
 import { ActionURL, Security, Utils, getServerContext, PermissionTypes } from '@labkey/api';
 import { Alert, LoadingSpinner, DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol, BeforeUnload } from '@labkey/components';
 
-import "@labkey/components/dist/components.css"
+import "./AssayDesigner.scss"
 
 type State = {
     protocolId: number,

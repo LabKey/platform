@@ -15,7 +15,6 @@
  */
 package org.labkey.query.reports.view;
 
-import org.apache.commons.io.IOUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.reports.model.NotificationInfo;

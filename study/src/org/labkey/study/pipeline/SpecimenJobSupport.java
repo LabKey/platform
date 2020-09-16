@@ -19,7 +19,6 @@ package org.labkey.study.pipeline;
 import org.labkey.api.admin.ImportException;
 
 import java.io.File;
-import java.sql.SQLException;
 
 /*
 * User: adam

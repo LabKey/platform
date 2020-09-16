@@ -1,19 +1,13 @@
 import React, { PureComponent } from 'react';
 import { Col, Modal, Button } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-    faPencilAlt,
-    faInfoCircle,
-    faTimesCircle,
-    faGripVertical,
-    faCircle
-} from '@fortawesome/free-solid-svg-icons';
+import { faPencilAlt, faInfoCircle, faTimesCircle, faGripVertical, faCircle } from '@fortawesome/free-solid-svg-icons';
 
 import DynamicConfigurationModal from './DynamicConfigurationModal';
 import DatabaseConfigurationModal from './DatabaseConfigurationModal';
-import { AuthConfig, AuthConfigProvider } from "./models";
+import { AuthConfig, AuthConfigProvider } from './models';
 
-interface Props{
+interface Props {
     authConfig: AuthConfig;
     index?: string;
     modalType?: AuthConfigProvider;
@@ -54,7 +48,7 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
             draggable,
             toggleModalOpen,
             updateAuthRowsAfterSave,
-            onDelete
+            onDelete,
         } = this.props;
         const isDatabaseAuth = authConfig.provider == 'Database';
 
@@ -72,7 +66,13 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
 
         const deleteIcon =
             canEdit && !isDatabaseAuth ? (
-                <div className="clickable deleteIcon" onClick={() => this.setState({deleteModalOpen: true})}>
+                <div
+                    className="clickable deleteIcon"
+                    onClick={() => {
+                        this.setState({ deleteModalOpen: true });
+                        toggleModalOpen(true);
+                    }}
+                >
                     <FontAwesomeIcon icon={faTimesCircle} />
                 </div>
             ) : null;
@@ -81,65 +81,82 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
             <div
                 className="clickable editOrViewIcon"
                 onClick={() => {
-                    this.onToggleModal("editModalOpen", this.state.editModalOpen);
+                    this.onToggleModal('editModalOpen', this.state.editModalOpen);
                     toggleModalOpen(true);
                 }}>
                 <FontAwesomeIcon size="1x" icon={faPencilAlt} />
             </div>
         ) : (
-            <div className="clickable" onClick={() => this.onToggleModal("editModalOpen", this.state.editModalOpen)}>
+            <div className="clickable" onClick={() => this.onToggleModal('editModalOpen', this.state.editModalOpen)}>
                 <FontAwesomeIcon size="1x" icon={faInfoCircle} />
             </div>
         );
 
         let modal;
         if (isDatabaseAuth) {
-            modal =
+            modal = (
                 <DatabaseConfigurationModal
                     closeModal={() => {
-                        this.onToggleModal("editModalOpen", this.state.editModalOpen);
+                        this.onToggleModal('editModalOpen', this.state.editModalOpen);
                         toggleModalOpen(false);
                     }}
                     canEdit={canEdit}
                 />
+            );
         } else {
-
-            modal =
+            modal = (
                 <DynamicConfigurationModal
                     authConfig={authConfig}
                     configType={configType}
                     modalType={modalType}
                     canEdit={canEdit}
                     closeModal={() => {
-                        this.onToggleModal("editModalOpen", this.state.editModalOpen);
+                        this.onToggleModal('editModalOpen', this.state.editModalOpen);
                         if (canEdit) {
                             toggleModalOpen(false);
                         }
                     }}
                     updateAuthRowsAfterSave={updateAuthRowsAfterSave}
                 />
+            );
         }
 
-        const deleteModal =
-            <Modal show={true} onHide={() => this.onToggleModal("deleteModalOpen", this.state.deleteModalOpen)}>
+        const deleteModal = (
+            <Modal
+                show={true}
+                onHide={() => {
+                    this.onToggleModal('deleteModalOpen', this.state.deleteModalOpen);
+                    toggleModalOpen(false);
+                }}
+            >
                 <Modal.Header closeButton>
-                    <Modal.Title>
-                        Warning
-                    </Modal.Title>
+                    <Modal.Title>Permanently delete {authConfig.provider} configuration?</Modal.Title>
                 </Modal.Header>
-                <div className={"auth-row__delete-modal"}>
-                    <div>
-                        {`Are you sure you want to delete authentication configuration ${authConfig.description}?`}
+                <div className="auth-row__delete-modal">
+                    <div className="auth-row__delete-modal__textBox modal-body">
+                        <p>
+                            Deleting this authentication configuration will remove all settings associated with it. To
+                            enable it again, the authentication configuration will need to be re-configured.
+                        </p>
+                        <p>Deletion cannot be undone.</p>
                     </div>
+                    <div className="auth-row__delete-modal-bottom">
+                        <Button
+                            className="labkey-button auth-row__delete-modal__cancel"
+                            onClick={() => {
+                                this.onToggleModal('deleteModalOpen', this.state.deleteModalOpen);
+                                toggleModalOpen(false);
+                            }}>
+                            Cancel
+                        </Button>
 
-                    <Button
-                        className="labkey-button primary auth-row__confirm-delete"
-                        onClick={onDelete}
-                    >
-                        Yes
-                    </Button>
+                        <Button className="labkey-button primary auth-row__confirm-delete" onClick={onDelete}>
+                            Yes, delete
+                        </Button>
+                    </div>
                 </div>
-            </Modal>;
+            </Modal>
+        );
 
         return (
             <div className="row-container">
@@ -178,7 +195,6 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
 
                             {this.state.editModalOpen && modal}
                             {this.state.deleteModalOpen && deleteModal}
-
                         </div>
                     </div>
                 </div>
@@ -191,10 +207,7 @@ class LightupHandle extends PureComponent {
     render() {
         return (
             <div>
-                <FontAwesomeIcon
-                    size="lg"
-                    icon={faGripVertical}
-                />
+                <FontAwesomeIcon size="lg" icon={faGripVertical} />
             </div>
         );
     }

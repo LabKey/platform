@@ -17,7 +17,11 @@
 package org.labkey.api.exp.query;
 
 import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 
 import java.util.List;
 

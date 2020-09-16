@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRepositorySettingsAction" %>
 <%@ page import="org.labkey.study.specimen.settings.RepositorySettings" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
@@ -37,7 +37,7 @@
    if (study != null && !study.hasSourceStudy() && !study.isSnapshotStudy())
    {
 %>
-<labkey:form action="<%=h(buildURL(SpecimenController.ManageRepositorySettingsAction.class))%>" method="POST">
+<labkey:form action="<%=urlFor(ManageRepositorySettingsAction.class)%>" method="POST">
     <table width="100%">
         <tr><td class="labkey-announcement-title" align="left"><span>Repository Type</span></td></tr>
         <tr><td class="labkey-title-area-line"></td></tr>
@@ -98,7 +98,7 @@
     </div>
     <br/>
     <div>
-        <%= button("Submit").submit(true) %>&nbsp;<%= button("Back").href(buildURL(SpecimenController.ManageRepositorySettingsAction.class)).onClick("window.history.back();return false;") %>
+        <%= button("Submit").submit(true) %>&nbsp;<%= button("Back").href(urlFor(ManageRepositorySettingsAction.class)).onClick("window.history.back();return false;") %>
     </div>
 </labkey:form>
 <%
@@ -107,7 +107,7 @@
    {
 %>
 <p>Specimen repository and request settings are not available for ancillary or published studies.</p>
-<%= button("Back").href(buildURL(SpecimenController.ManageRepositorySettingsAction.class)).onClick("window.history.back();return false;") %>
+<%= button("Back").href(urlFor(ManageRepositorySettingsAction.class)).onClick("window.history.back();return false;") %>
 <%
    }
 %>

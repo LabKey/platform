@@ -17,7 +17,8 @@ package org.labkey.issue.query;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -75,7 +76,7 @@ import java.util.Set;
  */
 public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
 {
-    private static final Logger LOG = Logger.getLogger(IssuesListDefTable.class);
+    private static final Logger LOG = LogManager.getLogger(IssuesListDefTable.class);
 
     private final static Set<String> _AUTOPOPULATED_COLUMN_NAMES;
     static

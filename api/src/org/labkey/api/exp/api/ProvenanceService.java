@@ -150,8 +150,14 @@ public interface ProvenanceService
 
     /**
      * Extract the provenance map information from the data rows
+     *
+     * @param context
+     * @param params a ProveanceRecordingParams object
+     * @param rows the input rows
+     * @param responseRows the inserted or updated rows
+     * @return
      */
-    List<Pair<String, String>> createProvenanceMapFromRows(ViewContext context, ProvenanceRecordingParams params, JSONArray rows);
+    List<Pair<String, String>> createProvenanceMapFromRows(ViewContext context, ProvenanceRecordingParams params, JSONArray rows, List<Map<String, Object>> responseRows);
 
     /**
      * Returns the rows of dataset involved in provenance

@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-var Logger = org.apache.log4j.Logger;
+var LogManager = org.apache.logging.log4j.LogManager;
 
-var logger = Logger.getLogger(org.labkey.api.script.ScriptService.Console);
+var logger = LogManager.getLogger(org.labkey.api.script.ScriptService.Console);
 
 function formatPart(o)
 {

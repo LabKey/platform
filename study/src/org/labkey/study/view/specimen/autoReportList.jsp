@@ -49,7 +49,7 @@
     List<CohortImpl> cohorts = null;
     if (showCohorts)
         cohorts = StudyManager.getInstance().getCohorts(container, user);
-    String optionLabelStyle = "text-align: left; padding: 5px 5px 0 5px;";
+    HtmlString optionLabelStyle = HtmlString.unsafe("text-align: left; padding: 5px 5px 0 5px;");
     Map<String, CustomView> views = bean.getCustomViews(getViewContext());
 
     List<ParticipantCategoryImpl> categories = ParticipantGroupManager.getInstance().getParticipantCategories(container, user);

@@ -17,16 +17,20 @@ package org.labkey.study.specimen.report;
 
 import jxl.Workbook;
 import jxl.WorkbookSettings;
+import jxl.write.Label;
+import jxl.write.Number;
+import jxl.write.WritableCell;
+import jxl.write.WritableCellFormat;
+import jxl.write.WritableFont;
+import jxl.write.WritableSheet;
+import jxl.write.WritableWorkbook;
+import jxl.write.WriteException;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.study.model.VisitImpl;
 
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletOutputStream;
-
-import jxl.write.*;
-import jxl.write.Number;
-
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2020 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package org.labkey.search;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.audit.AuditLogService;
@@ -42,7 +43,6 @@ import org.labkey.search.model.AbstractSearchService;
 import org.labkey.search.model.DavCrawler;
 import org.labkey.search.model.DocumentConversionServiceImpl;
 import org.labkey.search.model.LuceneSearchServiceImpl;
-import org.labkey.search.umls.UmlsController;
 import org.labkey.search.view.SearchWebPartFactory;
 
 import javax.servlet.ServletContext;
@@ -54,7 +54,7 @@ import java.util.Set;
 public class SearchModule extends DefaultModule
 {
     // package logger for use with logger-manage.view
-    static final Logger _logPackage = Logger.getLogger(SearchModule.class.getPackage().getName());
+    static final Logger _logPackage = LogManager.getLogger(SearchModule.class.getPackage().getName());
 
     @Override
     public String getName()
@@ -65,7 +65,7 @@ public class SearchModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 20.001;
+        return 20.002;
     }
 
     @Override
@@ -79,7 +79,7 @@ public class SearchModule extends DefaultModule
     @NotNull
     public Set<String> getSchemaNames()
     {
-        return PageFlowUtil.set("search", "umls");
+        return PageFlowUtil.set("search");
     }
 
 
@@ -104,7 +104,6 @@ public class SearchModule extends DefaultModule
     protected void init()
     {
         addController("search", SearchController.class);
-        addController("umls", UmlsController.class);
         LuceneSearchServiceImpl ss = new LuceneSearchServiceImpl();
         SearchService.setInstance(ss);
         ss.addResourceResolver("dav", new AbstractSearchService.ResourceResolver()
@@ -132,11 +131,10 @@ public class SearchModule extends DefaultModule
 
         if (null != ss)
         {
-            ss.addSearchCategory(UmlsController.umlsCategory);
             AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "full-text search", new ActionURL(SearchController.AdminAction.class, null));
 
             CacheManager.addListener(() -> {
-                Logger.getLogger(SearchService.class).info("Purging SearchService queues");
+                LogManager.getLogger(SearchService.class).info("Purging SearchService queues");
                 ss.purgeQueues();
             });
         }

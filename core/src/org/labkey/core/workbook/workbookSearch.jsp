@@ -33,8 +33,6 @@
     JspView<WorkbookSearchBean> me = (JspView) HttpView.currentView();
     String searchString = StringUtils.trimToNull(me.getModelBean().getSearchString());
     int rowId = me.getModelBean().getQueryView().getWebPartRowId();
-
-
 %>
 
 <script type="text/javascript">
@@ -155,9 +153,9 @@
                 }
             }]
 
-        }).render('workbookSearch_<%=h(rowId)%>');
+        }).render('workbookSearch_<%=rowId%>');
     });
 </script>
 
-<div id="workbookSearch_<%=h(rowId)%>"></div>
+<div id="workbookSearch_<%=rowId%>"></div>
 <br>

@@ -208,6 +208,18 @@ public class QueryForeignKey extends AbstractForeignKey
         {
             if (null == lookupSchemaName && null == targetSchema)
                 targetSchema = (UserSchema)sourceSchema;
+
+            /* see 41054 move the core.containers special case handling here from PdLookupForeignKey */
+            boolean isLabKeyScope = null != sourceSchema && (null == sourceSchema.getDbSchema() || sourceSchema.getDbSchema().getScope().isLabKeyScope());
+            if (isLabKeyScope)
+            {
+                if ("core".equalsIgnoreCase(lookupSchemaName) && "containers".equalsIgnoreCase(lookupTableName) && effectiveContainer.equals(sourceSchema.getContainer()))
+                {
+                    if (null == containerFilter)
+                        containerFilter = new ContainerFilter.AllFolders(user);
+                }
+            }
+
             return new QueryForeignKey(this);
         }
     }

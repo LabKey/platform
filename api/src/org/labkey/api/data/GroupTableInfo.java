@@ -19,7 +19,11 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.QueryService;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Allows group-by queries over source TableInfos, with optional aggregates

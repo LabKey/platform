@@ -25,7 +25,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.admin.AdminController.MapNetworkDriveAction" %>
 <%@ page import="org.labkey.core.admin.FileListAction" %>
 <%@ page import="org.labkey.core.admin.FileSettingsForm" %>
 <%@ page import="org.labkey.core.admin.FilesSiteSettingsAction" %>
@@ -43,7 +43,7 @@
 %>
 
 <labkey:errors/>
-<labkey:form action="<%=h(buildURL(FilesSiteSettingsAction.class))%>" method="post">
+<labkey:form action="<%=urlFor(FilesSiteSettingsAction.class)%>" method="post">
     <input type="hidden" name="upgrade" value="<%=bean.isUpgrade()%>">
     <table width="80%">
         <tr><td colspan="2"><h4>Site-Level File Root</h4></td></tr>
@@ -124,7 +124,7 @@
     {
 %>
 <br><h4>Map Network Drive (Windows Only)</h4>
-<%=link("Configure", AdminController.MapNetworkDriveAction.class)%>
+<%=link("Configure", MapNetworkDriveAction.class)%>
 <%
     }
 %>

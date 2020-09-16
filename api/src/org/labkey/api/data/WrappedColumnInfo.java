@@ -112,6 +112,13 @@ public class WrappedColumnInfo
             }
 
             @Override
+            public String getSelectName()
+            {
+                assert getParentTable() instanceof SchemaTableInfo : "Use getValueSql()";
+                return sourceColumnInfo.getSelectName();
+            }
+
+            @Override
             public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
             {
                 sourceColumnInfo.declareJoins(parentAlias, map);

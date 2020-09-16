@@ -258,21 +258,33 @@ public class ExpLineage
      */
     public Set<ExpData> findNearestParentDatas(ExpRunItem seed)
     {
+        return findNearestParents(ExpData.class, seed);
+    }
+
+    public Set<ExpMaterial> findNearestParentMaterials(ExpRunItem seed)
+    {
+        return findNearestParents(ExpMaterial.class, seed);
+    }
+
+    public <T extends ExpRunItem> Set<T> findNearestParents(Class<T> parentClazz, ExpRunItem seed)
+    {
         if (!_seeds.contains(seed))
             throw new UnsupportedOperationException();
 
         Map<String, Identifiable> nodes = processNodes();
         Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
-        return findNearestParentDatas(seed, nodes, edges);
+        return findNearestParents(parentClazz, seed, nodes, edges);
     }
 
-    private Set<ExpData> findNearestParentDatas(ExpRunItem seed, Map<String, Identifiable> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges)
+    private <T extends ExpRunItem> Set<T> findNearestParents(Class<T> parentClazz, ExpRunItem seed, Map<String, Identifiable> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges)
     {
         if (edges.size() == 0)
             return Collections.emptySet();
 
+        assert parentClazz == ExpMaterial.class || parentClazz == ExpData.class;
+
         // walk from start through edges looking for all sample children, stopping at first datas found
-        Set<ExpData> datas = new HashSet<>();
+        Set<T> parents = new HashSet<>();
         Queue<Identifiable> stack = new LinkedList<>();
         Set<Identifiable> seen = new HashSet<>();
         stack.add(seed);
@@ -296,9 +308,9 @@ public class ExpLineage
                         seen.add(parent);
                     }
                 }
-                else if (parent instanceof ExpData)
+                else if (parent instanceof ExpData || parent instanceof ExpMaterial)
                 {
-                    datas.add((ExpData)parent);
+                    parents.add((T) parent);
                 }
                 else // ExpMaterial or generic Identifiable
                 {
@@ -311,7 +323,7 @@ public class ExpLineage
             }
         }
 
-        return datas;
+        return parents;
     }
 
     public JSONObject toJSON(User user, boolean requestedWithSingleSeed, ExperimentJSONConverter.Settings settings)

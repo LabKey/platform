@@ -15,17 +15,15 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.assay.AssayProvider" %>
 <%@ page import="org.labkey.api.assay.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.api.assay.actions.AssayRunsAction" %>
 <%@ page import="org.labkey.api.study.actions.TransformResultsAction" %>
-<%@ page import="org.labkey.api.assay.AssayProvider" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.io.File" %>
-<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -39,7 +37,7 @@
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
     AssayRunUploadForm<? extends AssayProvider> bean = me.getModelBean();
 
-    ActionURL returnURL = new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", bean.getRowId())
+    ActionURL returnURL = urlFor(AssayRunsAction.class).addParameter("rowId", bean.getRowId())
             .addParameter("uploadAttemptID", bean.getUploadAttemptID());
 
     if (bean.getTransformResult().getWarnings() != null)
@@ -57,8 +55,8 @@
             {
 %>
                 <div>
-                    <a class="labkey-text-link" href='<%= new ActionURL(TransformResultsAction.class,getContainer())
-                        .addParameter("name",file.getName()).addParameter("uploadAttemptID", bean.getUploadAttemptID())%>'><%= h(file.getName())%></a>
+                    <a class="labkey-text-link" href='<%=h(new ActionURL(TransformResultsAction.class,getContainer())
+                        .addParameter("name",file.getName()).addParameter("uploadAttemptID", bean.getUploadAttemptID()))%>'><%= h(file.getName())%></a>
                 </div>
 <%
             }
@@ -113,9 +111,9 @@
             $('.labkey-button', form).addClass('labkey-disabled-button');
 
             <%-- populate name field --%>
-            $('input[name=name]').val(<%= PageFlowUtil.jsString(bean.getName()) %>);
+            $('input[name=name]').val(<%= q(bean.getName()) %>);
             <% if (bean.getComments() != null) { %>
-            $('input[name=comments]').val(<%= PageFlowUtil.jsString(bean.getComments()) %>);
+            $('input[name=comments]').val(<%= q(bean.getComments()) %>);
             <% } %>
 
             hideAllCollectors();

@@ -44,7 +44,7 @@
             %>
                             <tr>
                                 <td>
-                                    <p><a href="<%=urlProvider(PipelineUrls.class).urlCreatePipelineTrigger(getContainer(), fatp.getId().getName(), getActionURL())%>">Create a trigger to <%=h(fatp.getDescription())%></a></p>
+                                    <p><a href="<%=h(urlProvider(PipelineUrls.class).urlCreatePipelineTrigger(getContainer(), fatp.getId().getName(), getActionURL()))%>">Create a trigger to <%=h(fatp.getDescription())%></a></p>
                                 </td>
                             </tr>
             <%

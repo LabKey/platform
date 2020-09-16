@@ -442,7 +442,7 @@ Ext4.define('LABKEY.ext4.panel.FolderManagement', {
                                     else if (ps.data.id == pd.data.id) {
 
                                         var _t   = 'Move Folder';
-                                        var _msg = 'You are moving folder \'' + _s.data.text + '\'. Are you sure you would like to move this folder?';
+                                        var _msg = 'You are moving folder \'' + Ext4.htmlEncode(_s.data.text) + '\'. Are you sure you would like to move this folder?';
 
                                         Ext4.Msg.confirm(_t, _msg, function(btn){
                                             me.confirmation = true;
@@ -455,7 +455,7 @@ Ext4.define('LABKEY.ext4.panel.FolderManagement', {
                                         });
                                     }
                                     else {
-                                        Ext4.Msg.confirm('Change Project', 'You are moving folder \'' + _s.data.text + '\' from one project to another. ' +
+                                        Ext4.Msg.confirm('Change Project', 'You are moving folder \'' + Ext4.htmlEncode(_s.data.text) + '\' from one project to another. ' +
                                                 'After the move is complete, you will need to reconfigure permissions settings for this folder, any subfolders, and other secured resources. ' +
                                                 '<br/><b>This action cannot be undone.</b>',
                                                 function(btn){
@@ -596,6 +596,7 @@ Ext4.define('LABKEY.ext4.panel.FolderManagement', {
             }
         }
 
+        ret.msg = Ext4.htmlEncode(ret.msg);
         return ret;
     },
 

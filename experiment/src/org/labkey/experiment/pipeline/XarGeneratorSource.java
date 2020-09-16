@@ -15,12 +15,10 @@
  */
 package org.labkey.experiment.pipeline;
 
+import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
 import org.labkey.api.exp.AbstractFileXarSource;
 import org.labkey.api.pipeline.PipelineJob;
-import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
-import org.apache.xmlbeans.XmlException;
 
-import java.io.IOException;
 import java.io.File;
 
 /*

@@ -16,7 +16,8 @@
 package org.labkey.api.exp.api;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -82,7 +83,7 @@ import java.util.stream.Collectors;
  */
 public class StorageProvisioner
 {
-    private static final Logger log = Logger.getLogger(StorageProvisioner.class);
+    private static final Logger log = LogManager.getLogger(StorageProvisioner.class);
     private static final CPUTimer create = new CPUTimer("StorageProvisioner.create");
 
     private static String _create(DbScope scope, DomainKind<?> kind, Domain domain)
@@ -96,7 +97,7 @@ public class StorageProvisioner
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(domain.getTypeId());
             if (null == dd)
             {
-                Logger.getLogger(StorageProvisioner.class).warn("Can't find domain descriptor: " + domain.getTypeId() + " " + domain.getTypeURI());
+                LogManager.getLogger(StorageProvisioner.class).warn("Can't find domain descriptor: " + domain.getTypeId() + " " + domain.getTypeURI());
                 transaction.commit();
                 return null;
             }
@@ -751,19 +752,19 @@ public class StorageProvisioner
         }
 
         @Override
-        public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
+        public ParameterMapStatement insertStatement(Connection conn, User user) throws SQLException
         {
             return _inner.insertStatement(conn, user);
         }
 
         @Override
-        public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns)
+        public ParameterMapStatement updateStatement(Connection conn, User user, Set<String> columns)
         {
             return _inner.updateStatement(conn, user, columns);
         }
 
         @Override
-        public Parameter.ParameterMap deleteStatement(Connection conn) throws SQLException
+        public ParameterMapStatement deleteStatement(Connection conn) throws SQLException
         {
             return _inner.deleteStatement(conn);
         }
@@ -1033,7 +1034,7 @@ public class StorageProvisioner
 
             if (null == c)
             {
-                Logger.getLogger(StorageProvisioner.class).info("Column not found in storage table: " + tableName + "." + s.getName());
+                LogManager.getLogger(StorageProvisioner.class).info("Column not found in storage table: " + tableName + "." + s.getName());
                 continue;
             }
 

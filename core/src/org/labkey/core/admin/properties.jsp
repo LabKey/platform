@@ -16,10 +16,10 @@
  */
 %>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveTreeMap" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Map<String, String>> me = (JspView<Map<String, String>>) HttpView.currentView();

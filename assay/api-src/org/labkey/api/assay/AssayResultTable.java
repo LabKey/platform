@@ -29,6 +29,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.StatementUtils;
@@ -44,7 +45,7 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -86,12 +87,6 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     private final Domain _resultsDomain;
 
     private static final String RUN_ID_ALIAS = "Run";
-
-    @Deprecated
-    public AssayResultTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
-    {
-        this(schema, null, includeCopiedToStudyColumns);
-    }
 
     public AssayResultTable(AssayProtocolSchema schema, ContainerFilter cf, boolean includeCopiedToStudyColumns)
     {
@@ -153,10 +148,10 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                     FieldKey pkFieldKey = new FieldKey(null, AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
                     PropertyColumn.copyAttributes(_userSchema.getUser(), col, pd, schema.getContainer(), _userSchema.getSchemaPath(), getPublicName(), pkFieldKey);
 
-                    ExpSampleSet ss = DefaultAssayRunCreator.getLookupSampleSet(domainProperty, getContainer(), getUserSchema().getUser());
-                    if (ss != null || DefaultAssayRunCreator.isLookupToMaterials(domainProperty))
+                    ExpSampleType st = DefaultAssayRunCreator.getLookupSampleType(domainProperty, getContainer(), getUserSchema().getUser());
+                    if (st != null || DefaultAssayRunCreator.isLookupToMaterials(domainProperty))
                     {
-                        col.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getMaterialIdForeignKey(ss, domainProperty, cf));
+                        col.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getMaterialIdForeignKey(st, domainProperty, cf));
                     }
                 }
                 addColumn(col);
@@ -557,19 +552,19 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     }
 
     @Override
-    public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
+    public ParameterMapStatement insertStatement(Connection conn, User user) throws SQLException
     {
         return StatementUtils.insertStatement(conn, this, getContainer(), user, false, true);
     }
 
     @Override
-    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns)
+    public ParameterMapStatement updateStatement(Connection conn, User user, Set<String> columns)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Parameter.ParameterMap deleteStatement(Connection conn)
+    public ParameterMapStatement deleteStatement(Connection conn)
     {
         throw new UnsupportedOperationException();
     }

@@ -15,20 +15,16 @@
  */
 package org.labkey.study.query;
 
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.controllers.specimen.SpecimenUtils;
 
-import java.io.Writer;
 import java.io.IOException;
-import java.util.Set;/*
- * User: brittp
- * Date: Dec 18, 2008
- * Time: 11:22:25 AM
- */
+import java.io.Writer;
+import java.util.Set;
 
 public class SpecimenRequestDisplayColumn extends SimpleDisplayColumn
 {

@@ -15,15 +15,13 @@
  */
 package org.labkey.pipeline.api;
 
-import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.assay.DefaultDataTransformer;
-import org.labkey.pipeline.analysis.CommandTaskImpl;
-
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.assay.DefaultDataTransformer;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
@@ -41,6 +39,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
+import org.labkey.pipeline.analysis.CommandTaskImpl;
 import org.labkey.pipeline.xml.DoubleInputType;
 import org.labkey.pipeline.xml.FileInputOutputType;
 import org.labkey.pipeline.xml.FileInputType;

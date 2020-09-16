@@ -43,7 +43,9 @@ export class AliasFieldModal extends PureComponent<AliasFieldModalProps, AliasFi
                     lockType: undefined,
                     wrappedColumnName: selectedFieldName,
                     propertyId: undefined,
-                    label: 'Wrapped' + selectedFieldName
+                    label: 'Wrapped' + selectedFieldName,
+                    lockExistingField: false,
+                    rangeURI: selectedField.rangeURI,
                 });
             const newDomainField =  DomainField.create(domainFieldChange.toJS());
             onAdd(newDomainField);

@@ -19,7 +19,7 @@ package org.labkey.study;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.collections4.comparators.ComparableComparator;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
@@ -51,9 +51,9 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.query.CustomView;
@@ -69,11 +69,11 @@ import org.labkey.api.study.StudyCachable;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -2042,9 +2042,9 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         DbSchema expSchema = ExperimentService.get().getSchema();
         TableInfo tinfoMaterial = expSchema.getTable("Material");
 
-        ExpSampleSet sampleSet = SampleSetService.get().getSampleSet(c, SpecimenService.SAMPLE_TYPE_NAME);
+        ExpSampleType sampleType = SampleTypeService.get().getSampleType(c, SpecimenService.SAMPLE_TYPE_NAME);
 
-        if (sampleSet != null)
+        if (sampleType != null)
         {
             // Check if any of the samples are referenced in an experiment run
             SQLFragment sql = new SQLFragment("SELECT m.RowId FROM ");
@@ -2052,18 +2052,18 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             sql.append(" INNER JOIN ");
             sql.append(ExperimentService.get().getTinfoMaterialInput(), "mi");
             sql.append(" ON m.RowId = mi.MaterialId AND m.CpasType = ?");
-            sql.add(sampleSet.getLSID());
+            sql.add(sampleType.getLSID());
 
             if (new SqlSelector(ExperimentService.get().getSchema(), sql).exists())
             {
                 // If so, do the slow version of the delete that tears down runs
-                sampleSet.delete(user);
+                sampleType.delete(user);
             }
             else
             {
                 // If not, do the quick version that just kills the samples themselves in the exp.Material table
                 SimpleFilter materialFilter = new SimpleFilter(containerFilter);
-                materialFilter.addCondition(FieldKey.fromParts("CpasType"), sampleSet.getLSID());
+                materialFilter.addCondition(FieldKey.fromParts("CpasType"), sampleType.getLSID());
                 Table.delete(tinfoMaterial, materialFilter);
             }
         }
@@ -2244,7 +2244,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         }
     }
 
-    public enum SpecimenTypeLevel implements EnumHasHtmlString<SpecimenTypeLevel>
+    public enum SpecimenTypeLevel implements SafeToRenderEnum
     {
         PrimaryType()
         {
@@ -2266,7 +2266,8 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             public String getLabel()
             {
                 return "Primary Type";
-            }},
+            }
+        },
         Derivative()
         {
             @Override
@@ -2282,11 +2283,13 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             {
                 return new String[] { summary.getPrimaryType(), summary.getDerivative() };
             }
+
             @Override
             public String getLabel()
             {
                 return "Derivative";
-            }},
+            }
+        },
         Additive()
         {
             @Override
@@ -2307,18 +2310,19 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             public String getLabel()
             {
                 return "Additive";
-            }};
+            }
+        };
 
         public abstract String[] getTitleHierarchy(SummaryByVisitType summary);
         public abstract List<SpecimenTypeBeanProperty> getGroupingColumns();
         public abstract String getLabel();
     }
 
-    private class SpecimenDetailQueryHelper
+    private static class SpecimenDetailQueryHelper
     {
-        private SQLFragment _viewSql;
-        private String _typeGroupingColumns;
-        private Map<String, SpecimenTypeBeanProperty> _aliasToTypePropertyMap;
+        private final SQLFragment _viewSql;
+        private final String _typeGroupingColumns;
+        private final Map<String, SpecimenTypeBeanProperty> _aliasToTypePropertyMap;
 
         private SpecimenDetailQueryHelper(SQLFragment viewSql, String typeGroupingColumns, Map<String, SpecimenTypeBeanProperty> aliasToTypePropertyMap)
         {
@@ -2380,10 +2384,9 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         }
 
         // turn our fieldkeys into columns:
-        Collection<ColumnInfo> cols = new ArrayList<>();
         Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(tinfo, columns);
         Set<FieldKey> unresolvedColumns = new HashSet<>();
-        cols.addAll(colMap.values());
+        Collection<ColumnInfo> cols = new ArrayList<>(colMap.values());
         cols = QueryService.get().ensureRequiredColumns(tinfo, cols, specimenDetailFilter, null, unresolvedColumns);
         if (!unresolvedColumns.isEmpty())
             throw new IllegalStateException("Unable to resolve column(s): " + unresolvedColumns.toString());
@@ -2727,7 +2730,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                 }
                 catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
                 {
-                    Logger.getLogger(SpecimenManager.class).error(e);
+                    LogManager.getLogger(SpecimenManager.class).error(e);
                 }
             }
             ret.add(summary);

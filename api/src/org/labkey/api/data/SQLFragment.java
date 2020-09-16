@@ -151,6 +151,13 @@ public class SQLFragment implements Appendable, CharSequence
         return null != sb ? sb.toString() : null != sql ? sql : "";
     }
 
+    /* useful for wrapping existing SQL, for instance adding a cast
+     * Obviously parameter number and order must remain unchanged
+     */
+    public void setRawSQL(String sql)
+    {
+        sb = new StringBuilder(sql);
+    }
 
     private String replaceCteTokens(String self, String select, List<Pair<String,CTE>> ctes)
     {

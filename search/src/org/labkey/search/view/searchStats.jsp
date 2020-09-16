@@ -44,7 +44,7 @@ else
         for (Map.Entry<String, Double> e : m.entrySet())
         {
             HtmlString label = HtmlString.unsafe(h(ColumnInfo.labelFromName(e.getKey())).toString().replaceAll(" ", "&nbsp;"));
-            String v = Formats.f2.format(e.getValue());
+            HtmlString v = HtmlString.of(Formats.f2.format(e.getValue()));
             %>
         <tr><td valign="top"><%=label%></td><td align="right">&nbsp;&nbsp;<%=v%></td><td width="100%" align="right">&nbsp;</td></tr><%
         }

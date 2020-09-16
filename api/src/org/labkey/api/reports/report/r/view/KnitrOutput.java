@@ -27,10 +27,8 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
-import java.util.regex.Pattern;
 
 /**
  * User: dax

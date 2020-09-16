@@ -15,20 +15,19 @@
  */
 package org.labkey.study.specimen.report.request;
 
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.view.ActionURL;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.SpecimenManager.RequestSummaryByVisitType;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.model.VisitImpl;
+import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.view.ActionURL;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.sql.SQLException;
 
 /**
  * User: brittp

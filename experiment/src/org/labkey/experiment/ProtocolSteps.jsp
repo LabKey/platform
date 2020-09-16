@@ -16,14 +16,13 @@
  */
 %>
 <%@ page import="org.json.JSONObject"%>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.exp.ProtocolParameter" %>
 <%@ page import="org.labkey.api.exp.api.ExpDataClass" %>
 <%@ page import="org.labkey.api.exp.api.ExpDataProtocolInput" %>
 <%@ page import="org.labkey.api.exp.api.ExpMaterialProtocolInput" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocolInputCriteria" %>
-<%@ page import="org.labkey.api.exp.api.ExpSampleSet" %>
+<%@ page import="org.labkey.api.exp.api.ExpSampleType" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -32,7 +31,7 @@
 <%@ page import="org.labkey.experiment.api.ExpMaterialProtocolInputImpl" %>
 <%@ page import="org.labkey.experiment.api.ExpProtocolActionImpl" %>
 <%@ page import="org.labkey.experiment.api.ExpProtocolImpl" %>
-<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController.ProtocolPredecessorsAction" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
@@ -42,9 +41,7 @@
 <%
     JspView<ExpProtocolImpl> me = (JspView<ExpProtocolImpl>) HttpView.currentView();
     final ExpProtocolImpl protocol = me.getModelBean();
-    final Container c = getContainer();
-
-    final ActionURL ppURL = new ActionURL(ExperimentController.ProtocolPredecessorsAction.class, c);
+    final ActionURL ppURL = urlFor(ProtocolPredecessorsAction.class);
     ppURL.addParameter("ParentLSID", protocol.getLSID());
 
     ExperimentUrls urls = urlProvider(ExperimentUrls.class);
@@ -125,7 +122,7 @@
             <%=h(predecessorNames)%>
         </td>
         <td valign="top">
-            <% if (!props.isEmpty()) out.print(h(new JSONObject(props).toString(2))); %>
+            <% if (!props.isEmpty()) out.print(new JSONObject(props).getJavaScriptFragment(2)); %>
         </td>
         <% } %>
     </tr>
@@ -160,22 +157,22 @@
             <b>Inputs</b><br>
             <table class="labkey-data-region-legacy labkey-show-borders" width="100%">
                 <% for (ExpMaterialProtocolInput mpi : materialProtocolInputs) { %>
-                <% ExpSampleSet ss = mpi.getType(); %>
+                <% ExpSampleType st = mpi.getType(); %>
                 <% ExpProtocolInputCriteria criteria = mpi.getCriteria(); %>
                 <tr class="labkey-row">
                     <td width="100px"><%=h(mpi.getName())%></td>
                     <td width="80px">
-                        <% if (ss != null) { %>
-                        <a href="<%=h(ss.detailsURL())%>"><%=h(ss.getName())%></a>
+                        <% if (st != null) { %>
+                        <a href="<%=h(st.detailsURL())%>"><%=h(st.getName())%></a>
                         <% } %>
                     </td>
                     <td width="200px"><%=h(mpi.getLSID())%></td>
                     <td width="80px"><%=h(criteria != null ? criteria.getTypeName() : null)%></td>
-                    <td width="20px"><%=h(mpi.getMinOccurs())%></td>
-                    <td width="20px"><%=h(mpi.getMaxOccurs())%></td>
+                    <td width="20px"><%=mpi.getMinOccurs()%></td>
+                    <td width="20px"><%=mpi.getMaxOccurs()%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpMaterialProtocolInputImpl)mpi).getProperties(); %>
-                        <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
+                        <% if (!map.isEmpty()) out.print(new JSONObject(map).getJavaScriptFragment(2)); %>
                     </td>
                 </tr>
                 <% } %>
@@ -192,11 +189,11 @@
                     </td>
                     <td width="200px"><%=h(dpi.getLSID())%></td>
                     <td width="80px"><%=h(criteria != null ? criteria.getTypeName() : null)%></td>
-                    <td width="20px"><%=h(dpi.getMinOccurs())%></td>
-                    <td width="20px"><%=h(dpi.getMaxOccurs())%></td>
+                    <td width="20px"><%=dpi.getMinOccurs()%></td>
+                    <td width="20px"><%=dpi.getMaxOccurs()%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpDataProtocolInputImpl)dpi).getProperties(); %>
-                        <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
+                        <% if (!map.isEmpty()) out.print(new JSONObject(map).getJavaScriptFragment(2)); %>
                     </td>
                 </tr>
                 <% } %>
@@ -208,21 +205,21 @@
             <table class="labkey-data-region-legacy labkey-show-borders" width="100%">
                 <% for (ExpMaterialProtocolInput mpo : materialProtocolOutputs) { %>
                 <% ExpProtocolInputCriteria criteria = mpo.getCriteria(); %>
-                <% ExpSampleSet ss = mpo.getType(); %>
+                <% ExpSampleType st = mpo.getType(); %>
                 <tr class="labkey-row">
                     <td width="100px"><%=h(mpo.getName())%></td>
                     <td width="80px">
-                        <% if (ss != null) { %>
-                        <a href="<%=h(ss.detailsURL())%>"><%=h(ss.getName())%></a>
+                        <% if (st != null) { %>
+                        <a href="<%=h(st.detailsURL())%>"><%=h(st.getName())%></a>
                         <% } %>
                     </td>
                     <td width="200px"><%=h(mpo.getLSID())%></td>
                     <td width="80px"><%=h(criteria != null ? criteria.getTypeName() : null)%></td>
-                    <td width="20px"><%=h(mpo.getMinOccurs())%></td>
+                    <td width="20px"><%=mpo.getMinOccurs()%></td>
                     <td width="20px"><%=h(mpo.getMaxOccurs())%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpMaterialProtocolInputImpl)mpo).getProperties(); %>
-                        <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
+                        <% if (!map.isEmpty()) out.print(new JSONObject(map).getJavaScriptFragment(2)); %>
                     </td>
                 </tr>
                 <% } %>
@@ -239,11 +236,11 @@
                     </td>
                     <td width="200px"><%=h(dpo.getLSID())%></td>
                     <td width="80px"><%=h(criteria != null ? criteria.getTypeName() : null)%></td>
-                    <td width="20px"><%=h(dpo.getMinOccurs())%></td>
-                    <td width="20px"><%=h(dpo.getMaxOccurs())%></td>
+                    <td width="20px"><%=dpo.getMinOccurs()%></td>
+                    <td width="20px"><%=dpo.getMaxOccurs()%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpDataProtocolInputImpl)dpo).getProperties(); %>
-                        <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
+                        <% if (!map.isEmpty()) out.print(new JSONObject(map).getJavaScriptFragment(2)); %>
                     </td>
                 </tr>
                 <% } %>

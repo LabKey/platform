@@ -46,6 +46,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.files.FileSystemWatcherImpl;
 import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.jsp.LabKeyJspFactory;
+import org.labkey.api.jsp.LabKeyJspWriter;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.FolderTypeManager;
@@ -132,6 +133,7 @@ public class ApiModule extends CodeOnlyModule
     {
         SystemMaintenance.addTask(new ApiKeyMaintenanceTask());
         AuthenticationManager.registerMetricsProvider();
+        LabKeyJspWriter.registerExperimentalFeature();
     }
 
     @Override

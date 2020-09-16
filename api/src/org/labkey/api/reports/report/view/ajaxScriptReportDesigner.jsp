@@ -32,6 +32,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.roles.ProjectAdminRole" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
@@ -42,12 +43,11 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.LinkedList" %>
 <%@ page import="static java.lang.Boolean.TRUE" %>
+<%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.ListIterator" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -172,14 +172,14 @@
                 Map<String, Object> externalConfig = externalEditorSettings.getValue();
             %>
                 externalEditSettings = {};
-                externalEditSettings.url = <%=q(externalEditorSettings.getKey().getLocalURIString())%>;
+                externalEditSettings.url = <%=q(externalEditorSettings.getKey())%>;
                 externalEditSettings.name = <%=q((String) externalConfig.get("name"))%>;
                 externalEditSettings.finishUrl = <%=q(externalConfig.get("finishUrl") != null ? externalConfig.get("finishUrl").toString(): null)%>;
                 externalEditSettings.externalWindowTitle = <%=q(externalConfig.containsKey("externalWindowTitle") ? (String) externalConfig.get("externalWindowTitle"): "")%>;
                 externalEditSettings.redirectUrl = <%=q(externalConfig.containsKey("redirectUrl") ? externalConfig.get("redirectUrl").toString(): "")%>;
                 externalEditSettings.externalUrl = <%=q(externalConfig.containsKey("externalUrl") ? externalConfig.get("externalUrl").toString(): "")%>;
                 externalEditSettings.isEditing = <%=externalConfig.containsKey("editing") && (boolean) externalConfig.get("editing")%>;
-                externalEditSettings.isDocker = <%=externalConfig.get("isDocker")%>;
+                externalEditSettings.isDocker = <%=(Boolean)externalConfig.get("isDocker")%>;
             <% } %>
 
             var panel = Ext4.create('LABKEY.ext4.ScriptReportPanel', {
@@ -188,10 +188,10 @@
                 allowShareReport: <%=allowShareReport%>,
                 minHeight       : 500,
                 minWidth        : 500,
-                initialURL      : <%=q(initialViewURL.getLocalURIString())%>,
-                saveURL         : <%=q(saveURL.getLocalURIString())%>,
+                initialURL      : <%=q(initialViewURL)%>,
+                saveURL         : <%=q(saveURL)%>,
                 externalEditSettings: externalEditSettings,
-                baseURL         : <%=q(baseViewURL.getLocalURIString())%>,
+                baseURL         : <%=q(baseViewURL)%>,
                 preferSourceTab : <%=mode.preferSourceTab()%>,
                 sourceAndHelp   : <%=sourceAndHelp%>,
                 redirectUrl     : <%=q(bean.getRedirectUrl())%>,

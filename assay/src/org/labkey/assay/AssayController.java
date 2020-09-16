@@ -115,6 +115,8 @@ import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -509,8 +511,10 @@ public class AssayController extends SpringActionController
                 }
             };
             ActionURL copyHereURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(form.getContainer(), _protocol, true, null);
-            HtmlView fileTree = new HtmlView("<table><tr><td><b>Select destination folder:</b></td></tr>" +
-                    tree.render().toString() + "</table>");
+            HtmlView fileTree = new HtmlView(HtmlStringBuilder.of()
+                    .append(HtmlString.unsafe("<table><tr><td><b>Select destination folder:</b></td></tr>"))
+                    .append(tree.getHtmlString())
+                    .append(HtmlString.unsafe("</table>")).getHtmlString());
             HtmlView bbar = new HtmlView(
                     PageFlowUtil.button("Cancel").href(new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())) + " " +
                     (form.getContainer().hasPermission(getUser(), InsertPermission.class) ? PageFlowUtil.button("Copy to Current Folder").href(copyHereURL) : ""));

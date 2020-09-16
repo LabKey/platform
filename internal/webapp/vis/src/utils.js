@@ -335,7 +335,7 @@ LABKEY.vis.naturalSortFn = function(aso, bso) {
 };
 
 LABKEY.vis.getValue = function(obj) {
-    if (typeof obj == 'object')
+    if (obj && typeof obj == 'object')
         return obj.hasOwnProperty('displayValue') ? obj.displayValue : obj.value;
 
     return obj;

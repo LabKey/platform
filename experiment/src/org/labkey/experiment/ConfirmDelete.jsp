@@ -74,10 +74,10 @@ else
             count++;
             %>
             <li>
-                <a href="<%= entry.getValue() %>"><%= h(entry.getKey().getResourceName()) %></a>
+                <a href="<%=h(entry.getValue())%>"><%= h(entry.getKey().getResourceName()) %></a>
                 <% if (!entry.getKey().getResourceContainer().equals(currentContainer))
                 { %>
-                    (in <a href="<%= entry.getKey().getResourceContainer().getStartURL(getUser()) %>"><%= h(entry.getKey().getResourceContainer().getPath()) %></a>)
+                    (in <a href="<%=h(entry.getKey().getResourceContainer().getStartURL(getUser()))%>"><%= h(entry.getKey().getResourceContainer().getPath()) %></a>)
                 <% } %>
             </li>
         <% } %>
@@ -102,7 +102,7 @@ else
             <a href="<%= h(entry.getValue()) %>"><%= h(entry.getKey().getResourceName()) %></a>
             <% if (!entry.getKey().getResourceContainer().equals(currentContainer))
             { %>
-                (in <a href="<%= entry.getKey().getResourceContainer().getStartURL(getUser()) %>"><%= h(entry.getKey().getResourceContainer().getPath()) %></a>)
+                (in <a href="<%=h(entry.getKey().getResourceContainer().getStartURL(getUser()))%>"><%= h(entry.getKey().getResourceContainer().getPath()) %></a>)
             <% } %>
         </li>
     <% } %>
@@ -126,10 +126,10 @@ else
             %>
             <li>
                 <% ActionURL url = urlProvider(ExperimentUrls.class).getShowRunGraphURL(run); %>
-                <a href="<%= url %>"><%= h(run.getName()) %></a>
+                <a href="<%=h(url)%>"><%= h(run.getName()) %></a>
                 <% if (!runContainer.equals(currentContainer))
                 { %>
-                    (in <a href="<%= runContainer.getStartURL(getUser()) %>"><%= h(runContainer.getPath()) %></a>)
+                    (in <a href="<%=h(runContainer.getStartURL(getUser()))%>"><%= h(runContainer.getPath()) %></a>)
                 <% } %>
             </li>
         <% } %>
@@ -154,17 +154,17 @@ else
             %>
             <li>
                 <% ActionURL url = urlProvider(ExperimentUrls.class).getShowRunGraphURL(run); %>
-                <a href="<%= url %>"><%= h(run.getName()) %></a>
+                <a href="<%=h(url)%>"><%= h(run.getName()) %></a>
                 <% if (!runContainer.equals(currentContainer))
                 { %>
-                    (in <a href="<%= runContainer.getStartURL(getUser()) %>"><%= h(runContainer.getPath()) %></a>)
+                    (in <a href="<%=h(runContainer.getStartURL(getUser()))%>"><%= h(runContainer.getPath()) %></a>)
                 <% } %>
             </li>
         <% } %>
         </ul>
     <% } %>
 
-    <labkey:form action="<%= h(getViewContext().cloneActionURL().deleteParameters()) %>" method="post">
+    <labkey:form action="<%=getViewContext().cloneActionURL().deleteParameters()%>" method="post">
         <%
             if (getViewContext().getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME) != null)
             {

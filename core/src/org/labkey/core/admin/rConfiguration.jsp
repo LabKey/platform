@@ -1,19 +1,19 @@
 <%
-    /*
-     * Copyright (c) 2018-2019 LabKey Corporation
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     *     http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     */
+/*
+ * Copyright (c) 2018-2019 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 %>
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.labkey.api.data.Container" %>
@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.reports.LabkeyScriptEngineManager" %>
 <%@ page import="org.labkey.api.reports.RemoteRNotEnabledException" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -115,22 +116,14 @@
             </label>
         </div>
         <div class="col-md-5 form-inline">
-            <labkey:select name="reportEngine">
-                <option disabled <%= selected(!isFolderScoped || (currentReportEngine == null))%> value="">
-                    Select a configuration...
-                </option>
-            <%
-                for (ExternalScriptEngineDefinition def : engineDefinitions)
-                {
+            <%=select()
+                .name("reportEngine")
+                .addOption(new OptionBuilder("Select a configuration...", "").disabled(true).selected(!isFolderScoped || (currentReportEngine == null)))
+                .addOptions(
+                    engineDefinitions.stream()
+                        .map(def->new OptionBuilder(def.getName(), def.getRowId()).selected(def.getName().equals(currentReportEngine)))
+                )
             %>
-                    <option <%= selected(def.getName().equals(currentReportEngine)) %> value="<%=h(def.getRowId())%>">
-                        <%=h(def.getName())%>
-                    </option>
-            <%
-                }
-            %>
-            </labkey:select>
-
         </div>
     </div>
     <div class="row engine-row">
@@ -144,21 +137,14 @@
             </label>
         </div>
         <div class="col-md-5 form-inline">
-            <labkey:select name="pipelineEngine">
-                <option disabled <%= selected(!isFolderScoped || (currentPipelineEngine == null)) %> value="">
-                    Select a configuration...
-                </option>
-                <%
-                    for (ExternalScriptEngineDefinition def : engineDefinitions)
-                    {
-                %>
-                <option <%= selected(def.getName().equals(currentPipelineEngine)) %> value="<%=h(def.getRowId())%>">
-                    <%=h(def.getName())%>
-                </option>
-                <%
-                    }
-                %>
-            </labkey:select>
+            <%=select()
+                .name("pipelineEngine")
+                .addOption(new OptionBuilder("Select a configuration...", "").disabled(true).selected(!isFolderScoped || (currentPipelineEngine == null)))
+                .addOptions(
+                    engineDefinitions.stream()
+                        .map(def->new OptionBuilder(def.getName(), def.getRowId()).selected(def.getName().equals(currentPipelineEngine)))
+                )
+            %>
         </div>
     </div>
     <div class="row" id="rButtonGroup" style="margin-left: 0">

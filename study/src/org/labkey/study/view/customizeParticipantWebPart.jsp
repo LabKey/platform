@@ -19,13 +19,16 @@
 <%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.view.SubjectDetailsWebPartFactory" %>
-<%@ page import="java.util.EnumSet" %>
+<%@ page import="org.labkey.study.view.SubjectDetailsWebPartFactory.DataType" %>
+<%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -39,7 +42,7 @@
 
     String selectedData = bean.getPropertyMap().get(SubjectDetailsWebPartFactory.DATA_TYPE_KEY);
     if (selectedData == null)
-        selectedData = SubjectDetailsWebPartFactory.DataType.ALL.name();
+        selectedData = DataType.ALL.name();
     
     boolean includePrivateData = Boolean.parseBoolean(bean.getPropertyMap().get(SubjectDetailsWebPartFactory.QC_STATE_INCLUDE_PRIVATE_DATA_KEY));
     String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
@@ -50,7 +53,7 @@
 <table>
     <tr>
         <td>
-            <%= StudyService.get().getSubjectColumnName(getContainer()) %>:
+            <%=h(StudyService.get().getSubjectColumnName(getContainer()))%>:
         </td>
         <td>
             <labkey:autoCompleteText name="<%= SubjectDetailsWebPartFactory.PARTICIPANT_ID_KEY %>"
@@ -61,17 +64,12 @@
     <tr>
         <td>Data type to display:</td>
         <td>
-            <select name="<%=SubjectDetailsWebPartFactory.DATA_TYPE_KEY%>">
-                <%
-                    for (SubjectDetailsWebPartFactory.DataType type : EnumSet.allOf(SubjectDetailsWebPartFactory.DataType.class))
-                    {
-                        %>
-                <option value="<%=type.name()%>"<%=selected(selectedData.equals(type.name()))%>><%=type.toString()%></option>
-                        <%
-                    }
-                %>
-
-            </select>
+            <%=select().name(SubjectDetailsWebPartFactory.DATA_TYPE_KEY)
+                .addOptions(Arrays.stream(DataType.values())
+                    .map(dt->new OptionBuilder(dt.getDescription(), dt.name())))
+                .selected(selectedData)
+                .className(null)
+            %>
         </td>
     </tr>
     <%
@@ -81,10 +79,11 @@
     <tr>
         <td>QC state to display:</td>
         <td>
-            <select name="<%=SubjectDetailsWebPartFactory.QC_STATE_INCLUDE_PRIVATE_DATA_KEY%>">
-                <option value="false">Public data</option>
-                <option value="true"<%=selected(includePrivateData)%>>All data</option>
-            </select>
+            <%=select().name(SubjectDetailsWebPartFactory.QC_STATE_INCLUDE_PRIVATE_DATA_KEY)
+                .addOptions(Map.of(false, "Public data", true, "All Data"))
+                .selected(includePrivateData)
+                .className(null)
+            %>
         </td>
     </tr>
     <%

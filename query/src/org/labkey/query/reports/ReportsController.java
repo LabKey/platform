@@ -19,7 +19,8 @@ package org.labkey.query.reports;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -60,8 +61,6 @@ import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
-import org.labkey.api.module.Module;
-import org.labkey.api.moduleeditor.api.ModuleEditorService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -86,7 +85,6 @@ import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.ChartReport;
-import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportJob;
@@ -188,8 +186,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.labkey.api.util.DOM.*;
-import static org.labkey.api.util.HtmlString.NBSP;
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.cl;
 
 /**
  * User: Karl Lum
@@ -197,7 +195,7 @@ import static org.labkey.api.util.HtmlString.NBSP;
  */
 public class ReportsController extends SpringActionController
 {
-    private static final Logger _log = Logger.getLogger(ReportsController.class);
+    private static final Logger _log = LogManager.getLogger(ReportsController.class);
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ReportsController.class);
     private static final MimeMap _mimeMap = new MimeMap();
 
@@ -879,37 +877,31 @@ public class ReportsController extends SpringActionController
                     resultsView.addView(report.renderReport(getViewContext()));
             }
 
-            // TODO: assert?
-            if (null != resultsView)
-            {
-                Map<String, Object> resultProperties = new HashMap<>();
+            Map<String, Object> resultProperties = new HashMap<>();
 
-                LinkedHashSet<ClientDependency> dependencies = resultsView.getClientDependencies();
-                LinkedHashSet<String> cssScripts = new LinkedHashSet<>();
-                addScriptDependencies(bean, dependencies, cssScripts);
+            LinkedHashSet<ClientDependency> dependencies = resultsView.getClientDependencies();
+            LinkedHashSet<String> cssScripts = new LinkedHashSet<>();
+            addScriptDependencies(bean, dependencies, cssScripts);
 
-                LinkedHashSet<String> includes = new LinkedHashSet<>();
-                LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
-                PageFlowUtil.getJavaScriptFiles(getContainer(), dependencies, includes, implicitIncludes);
+            LinkedHashSet<String> includes = new LinkedHashSet<>();
+            LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
+            PageFlowUtil.getJavaScriptFiles(getContainer(), dependencies, includes, implicitIncludes);
 
-                MockHttpServletResponse mr = new MockHttpServletResponse();
-                mr.setCharacterEncoding(StringUtilsLabKey.DEFAULT_CHARSET.displayName());
-                resultsView.render(getViewContext().getRequest(), mr);
+            MockHttpServletResponse mr = new MockHttpServletResponse();
+            mr.setCharacterEncoding(StringUtilsLabKey.DEFAULT_CHARSET.displayName());
+            resultsView.render(getViewContext().getRequest(), mr);
 
-                if (mr.getStatus() != HttpServletResponse.SC_OK){
-                    resultsView.render(getViewContext().getRequest(), getViewContext().getResponse());
-                    return null;
-                }
-
-                resultProperties.put("html", mr.getContentAsString());
-                resultProperties.put("requiredJsScripts", includes);
-                resultProperties.put("requiredCssScripts", cssScripts);
-                resultProperties.put("implicitJsIncludes", implicitIncludes);
-                resultProperties.put("moduleContext", PageFlowUtil.getModuleClientContext(getViewContext(), dependencies));
-                return new ApiSimpleResponse(resultProperties);
+            if (mr.getStatus() != HttpServletResponse.SC_OK){
+                resultsView.render(getViewContext().getRequest(), getViewContext().getResponse());
+                return null;
             }
 
-            return null;
+            resultProperties.put("html", mr.getContentAsString());
+            resultProperties.put("requiredJsScripts", includes);
+            resultProperties.put("requiredCssScripts", cssScripts);
+            resultProperties.put("implicitJsIncludes", implicitIncludes);
+            resultProperties.put("moduleContext", PageFlowUtil.getModuleClientContext(getViewContext(), dependencies));
+            return new ApiSimpleResponse(resultProperties);
         }
 
         private void addScriptDependencies(ScriptReportBean bean, LinkedHashSet<ClientDependency> clientDependencies, LinkedHashSet<String> cssScripts)

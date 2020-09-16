@@ -100,6 +100,7 @@ public class IssuesQueryView extends QueryView
 
                 ActionURL customEmailTemplateUrl = PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), IssueUpdateEmailTemplate.class, getViewContext().getActionURL());
                 ActionButton customEmailTemplateButton = new ActionButton(customEmailTemplateUrl, "Customize Email Template", ActionButton.Action.LINK);
+                customEmailTemplateButton.setDisplayPermission(AdminPermission.class);
                 bar.add(customEmailTemplateButton);
             }
 

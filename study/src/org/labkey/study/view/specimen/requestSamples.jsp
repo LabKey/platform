@@ -17,13 +17,15 @@
 %>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.study.SpecimenService"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
 <%@ page import="org.labkey.api.view.template.ClientDependencies"%>
 <%@ page import="org.labkey.study.SpecimenManager"%>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.CreateSampleRequestForm"%>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.HandleCreateSampleRequestAction"%>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.NewRequestBean" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ViewRequestsAction" %>
 <%@ page import="org.labkey.study.model.LocationImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.Vial" %>
@@ -41,8 +43,8 @@
     }
 %>
 <%
-    JspView<SpecimenController.NewRequestBean> me = (JspView<SpecimenController.NewRequestBean>) HttpView.currentView();
-    SpecimenController.NewRequestBean bean = me.getModelBean();
+    JspView<NewRequestBean> me = (JspView<NewRequestBean>) HttpView.currentView();
+    NewRequestBean bean = me.getModelBean();
     ViewContext context = getViewContext();
     Container c = getContainer();
     List<LocationImpl> locations = StudyManager.getInstance().getValidRequestingLocations(c);
@@ -80,7 +82,7 @@ DefaultValues['input<%= i %>'] = {};
             Map<Integer, String> defaults = input.getDefaultSiteValues(c);
             for (Map.Entry<Integer,String> entry : defaults.entrySet())
             {
-    %>DefaultValues['input<%= i %>']['<%= entry.getKey() %>'] = <%= PageFlowUtil.jsString(entry.getValue()) %>;
+    %>DefaultValues['input<%= i %>']['<%= entry.getKey() %>'] = <%= q(entry.getValue()) %>;
     <%
             }
         }
@@ -105,7 +107,7 @@ function setDefaults()
     return true;
 }
 </script>
-<labkey:form name="CreateSampleRequest" action="<%=h(buildURL(SpecimenController.HandleCreateSampleRequestAction.class))%>" method="POST">
+<labkey:form name="CreateSampleRequest" action="<%=urlFor(HandleCreateSampleRequestAction.class)%>" method="POST">
     <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
     <%
         if (vials != null)
@@ -193,14 +195,14 @@ function setDefaults()
         %>
         <tr>
             <td>
-                <input type="hidden" name="<%= h(SpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name()) %>" value="false">
-                <input type="hidden" name="<%= h(SpecimenController.CreateSampleRequestForm.PARAMS.extendedRequestUrl.name()) %>" value="false">
+                <input type="hidden" name="<%= h(CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name()) %>" value="false">
+                <input type="hidden" name="<%= h(CreateSampleRequestForm.PARAMS.extendedRequestUrl.name()) %>" value="false">
                 <%
                     boolean hasReturnURL = bean.getReturnUrl() != null && !bean.getReturnUrl().isEmpty();
                     if (hasExtendedRequestView)
                     {
                         %>
-                        <%= button("Save & Continue").submit(true).onClick("document.CreateSampleRequest." + SpecimenController.CreateSampleRequestForm.PARAMS.extendedRequestUrl.name() + ".value='true'; return true;") %>
+                        <%= button("Save & Continue").submit(true).onClick("document.CreateSampleRequest." + CreateSampleRequestForm.PARAMS.extendedRequestUrl.name() + ".value='true'; return true;") %>
                         <%
                     }
                     else
@@ -213,11 +215,11 @@ function setDefaults()
                         }
                      %>
                      <%= button((shoppingCart ? "Create" : "Submit") + " and View Details").submit(true)
-                             .onClick("document.CreateSampleRequest." + SpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name() + ".value='true'; return true;") %>
+                             .onClick("document.CreateSampleRequest." + CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name() + ".value='true'; return true;") %>
                 <%
                     }
                 %>
-                <%= text(hasReturnURL ? button("Cancel").href(bean.getReturnUrl()).toString() : button("Cancel").href(SpecimenController.ViewRequestsAction.class, getContainer()).toString()) %>
+                <%= text(hasReturnURL ? button("Cancel").href(bean.getReturnUrl()).toString() : button("Cancel").href(ViewRequestsAction.class, getContainer()).toString()) %>
             </td>
         </tr>
 

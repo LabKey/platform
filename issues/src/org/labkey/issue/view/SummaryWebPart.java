@@ -26,7 +26,6 @@ import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 
-import java.sql.SQLException;
 import java.util.Map;
 
 /**

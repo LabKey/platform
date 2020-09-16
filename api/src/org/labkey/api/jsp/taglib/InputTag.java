@@ -222,7 +222,7 @@ public class InputTag extends SimpleTagBase
         this.value = null != hasHtmlString ? hasHtmlString.getHtmlString() : null;
     }
 
-    @Deprecated // TODO: Just call the String version without h(), like all the other tag attributes
+    // Most callers should call setValue(String) instead of this method
     public void setValue(HtmlString htmlString)
     {
         this.value = htmlString;
@@ -349,7 +349,6 @@ public class InputTag extends SimpleTagBase
             input.layout(Input.Layout.get(form.getLayout()));
         }
 
-        // TODO: HtmlString
-        getOut().print(input.toString());
+        getOut().print(input);
     }
 }

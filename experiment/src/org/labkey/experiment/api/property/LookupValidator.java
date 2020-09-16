@@ -17,11 +17,11 @@ package org.labkey.experiment.api.property;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -201,11 +201,11 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
                 else
                 {
                     ColumnInfo lookupTargetCol = keyCols.get(0);
-                    // Hack for sample sets - see also revision 37612
+                    // Hack for sample types - see also revision 37612
                     if (lookupTargetCol.getJdbcType() != jdbcType && jdbcType.isText() && _tableInfo instanceof ExpMaterialTableImpl)
                     {
                         ColumnInfo nameCol = _tableInfo.getColumn(ExpMaterialTableImpl.Column.Name.toString());
-                        assert nameCol != null : "Could not find Name column in SampleSet table";
+                        assert nameCol != null : "Could not find Name column in SampleType table";
                         if (nameCol != null)
                         {
                             lookupTargetCol = nameCol;

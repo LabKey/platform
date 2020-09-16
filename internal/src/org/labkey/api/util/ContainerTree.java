@@ -16,7 +16,8 @@
 package org.labkey.api.util;
 
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -33,7 +34,7 @@ import java.util.Collection;
  */
 public class ContainerTree
 {
-    private static Logger _log = Logger.getLogger(ContainerTree.class);
+    private static Logger _log = LogManager.getLogger(ContainerTree.class);
 
     private Container _root;
     private User _user;
@@ -85,17 +86,11 @@ public class ContainerTree
         _initialLevel = initialLevel;
     }
 
-    public void render(StringBuilder html)
-    {
-        renderChildren(html, ContainerManager.getContainerTree(_root), _root, _initialLevel);
-    }
-
-
-    public StringBuilder render()
+    public HtmlString getHtmlString()
     {
         StringBuilder html = new StringBuilder();
-        render(html);
-        return html;
+        renderChildren(html, ContainerManager.getContainerTree(_root), _root, _initialLevel);
+        return HtmlString.unsafe(html.toString());
     }
 
     public String getPurpose()
@@ -104,7 +99,7 @@ public class ContainerTree
     }
 
 
-    protected boolean renderChildren(StringBuilder html, MultiValuedMap<Container, Container> mm, Container parent, int level)
+    private boolean renderChildren(StringBuilder html, MultiValuedMap<Container, Container> mm, Container parent, int level)
     {
         // Hide hidden folders, unless you're an administrator
         if (!parent.shouldDisplay(_user) || !parent.isInFolderNav())

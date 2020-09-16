@@ -27,15 +27,15 @@
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
-<%@ page import="org.labkey.study.controllers.DatasetController" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.DatasetController.BulkDatasetDeleteAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DatasetDetailsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DatasetDisplayOrderAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DatasetVisibilityAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DefineDatasetTypeAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageTypesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageUndefinedTypesAction" %>
-<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.StudyScheduleAction" %>
+<%@ page import="org.labkey.study.controllers.security.SecurityController.BeginAction" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
@@ -61,7 +61,7 @@
 <table class="lk-fields-table">
     <tr>
         <td style="padding-right: 4px;">The study schedule defines the data expected for each timepoint.</td>
-        <td><%= link("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
+        <td><%= link("Study Schedule", StudyScheduleAction.class) %></td>
     </tr>
 <%
 
@@ -102,17 +102,17 @@
     </tr>
     <tr>
         <td>Datasets may be deleted by an administrator.</td>
-        <td><%= link("Delete Multiple Datasets", DatasetController.BulkDatasetDeleteAction.class)%></td>
+        <td><%= link("Delete Multiple Datasets", BulkDatasetDeleteAction.class)%></td>
     </tr>
     <tr>
         <td>Security can be configured on a per-dataset basis.</td>
-        <td><%= link("Manage Dataset Security", SecurityController.BeginAction.class)%></td>
+        <td><%= link("Manage Dataset Security", BeginAction.class)%></td>
     </tr>
 
     <tr>
         <td>New datasets can be added to this study at any time.</td>
         <%
-            ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, c);
+            ActionURL createURL = new ActionURL(DefineDatasetTypeAction.class, c);
         %>
         <td><%= link("Create New Dataset", createURL)%></td>
     </tr>
@@ -126,7 +126,7 @@
     String name = c.isProject() ? "project" : "folder";
     ActionURL url = c.isProject() ? urls.getProjectSettingsURL(c) : urls.getFolderSettingsURL(c);
 %>
-<labkey:form id="manageTypesForm" action="<%=h(buildURL(ManageTypesAction.class))%>" method="POST">
+<labkey:form id="manageTypesForm" action="<%=urlFor(ManageTypesAction.class)%>" method="POST">
     <table class="lk-fields-table">
         <tr><td>Default date-time format:</td><td><%=h(StringUtils.trimToEmpty(dateTimeFormat))%></td></tr>
         <tr><td>Default number format:</td><td><%=h(StringUtils.trimToEmpty(numberFormat))%></td></tr>
@@ -160,7 +160,7 @@
     ActionURL details = new ActionURL(DatasetDetailsAction.class, c);
     for (Dataset def : datasets)
     {
-        details.replaceParameter("id",String.valueOf(def.getDatasetId()));
+        details.replaceParameter("id", def.getDatasetId());
         ViewCategory viewCategory = def.getViewCategory();
         Cohort cohort = def.getCohort();
         boolean isShared = def.isShared();
@@ -185,7 +185,7 @@
     %><p>WARNING: One or more datasets in parent study are shadowed by datasets defined in this folder.<br><ul><%
     for (DatasetDefinition h : shadowed)
     {
-        %><li><%=h(h.getDatasetId())%>:&nbsp;<%=h(h.getName())%></li><%
+        %><li><%=h.getDatasetId()%>:&nbsp;<%=h(h.getName())%></li><%
     }
     %></ul></p><%
 }

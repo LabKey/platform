@@ -16,7 +16,8 @@
 
 package org.labkey.api.module;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -66,7 +67,7 @@ import java.util.Set;
  */
 public abstract class SpringModule extends DefaultModule
 {                              
-    private static final Logger _log = Logger.getLogger(SpringModule.class);
+    private static final Logger _log = LogManager.getLogger(SpringModule.class);
 
     /**
      * The name of the init parameter on the <code>ServletContext</code> specifying

@@ -17,8 +17,8 @@ package org.labkey.experiment.xar;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
-import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
@@ -33,10 +33,9 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
-import org.labkey.folder.xml.FolderDocument;
+import org.labkey.folder.xml.FolderDocument.Folder;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -48,7 +47,7 @@ import java.util.Collections;
 public class FolderXarImporterFactory extends AbstractFolderImportFactory
 {
     @Override
-    public FolderImporter create()
+    public FolderImporter<Folder> create()
     {
         return new FolderXarImporter();
     }
@@ -59,7 +58,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
         return 70;
     }
 
-    public class FolderXarImporter implements  FolderImporter<FolderDocument.Folder>
+    public static class FolderXarImporter implements FolderImporter<Folder>
     {
         @Override
         public String getDataType()
@@ -74,7 +73,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
         }
 
         @Override
-        public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        public void process(PipelineJob job, ImportContext<Folder> ctx, VirtualFile root) throws Exception
         {
             if (!isValidForImportArchive(ctx))
             {
@@ -155,26 +154,27 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
 
         @NotNull
         @Override
-        public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root)
+        public Collection<PipelineJobWarning> postProcess(ImportContext<Folder> ctx, VirtualFile root)
         {
             return Collections.emptyList();
         }
 
         @Override
-        public boolean isValidForImportArchive(ImportContext<FolderDocument.Folder> ctx) throws ImportException
+        public boolean isValidForImportArchive(ImportContext<Folder> ctx) throws ImportException
         {
             return ctx.getDir(FolderXarWriterFactory.XAR_DIRECTORY) != null;
         }
     }
 
-    private class FolderExportXarSourceWrapper
+    private static class FolderExportXarSourceWrapper
     {
-        private final  VirtualFile _xarDir;
-        private final ImportContext _importContext;
+        private final VirtualFile _xarDir;
+        private final ImportContext<Folder> _importContext;
+
         private File _xarFile;
         private CompressedXarSource _xarSource;
 
-        public FolderExportXarSourceWrapper(VirtualFile xarDir, ImportContext ctx)
+        public FolderExportXarSourceWrapper(VirtualFile xarDir, ImportContext<Folder> ctx)
         {
              _xarDir = xarDir;
             _importContext = ctx;
@@ -221,7 +221,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
         }
     }
 
-    private class FolderExportXarReader extends XarReader
+    private static class FolderExportXarReader extends XarReader
     {
         public FolderExportXarReader(XarSource source, PipelineJob job)
         {

@@ -388,6 +388,10 @@ LABKEY.Utils = new function()
             if (pageonly)
                 path = location.pathname.substring(0, location.pathname.lastIndexOf('/'));
             document.cookie = name + "=" + value + expires + "; path=" + path;
+
+            if (name === "email" && window.location.href.toLowerCase().startsWith("https")) {
+                document.cookie = name + "=" + value + "; secure";
+            }
         },
 
         /**

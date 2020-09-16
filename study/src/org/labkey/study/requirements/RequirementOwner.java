@@ -17,7 +17,6 @@
 package org.labkey.study.requirements;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
 
 /**
  * User: brittp

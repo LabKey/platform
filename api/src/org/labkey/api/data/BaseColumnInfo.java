@@ -21,7 +21,8 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -40,7 +41,6 @@ import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -61,6 +61,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -73,7 +74,7 @@ import java.util.Set;
  */
 public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements MutableColumnInfo
 {
-    private static final Logger LOG = Logger.getLogger(ColumnInfo.class);
+    private static final Logger LOG = LogManager.getLogger(ColumnInfo.class);
     private static final Set<String> NON_EDITABLE_COL_NAMES = new CaseInsensitiveHashSet("created", "createdBy", "modified", "modifiedBy", "_ts", "entityId", "container");
 
     private FieldKey _fieldKey;
@@ -99,9 +100,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     protected String _selectName = null;
     protected ColumnInfo _displayField;
     private List<FieldKey> _sortFieldKeys = null;
-    private Map<FieldKey, ColumnInfo> _cachedSortColumns = new HashMap<>();
-    private List<ConditionalFormat> _conditionalFormats = new ArrayList<>();
-    private List<? extends IPropertyValidator> _validators = Collections.emptyList();
+    private List<ConditionalFormat> _conditionalFormats = List.of();
+    private List<? extends IPropertyValidator> _validators = List.of();
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
     private boolean _shouldLog = true;
     private boolean _lockName = false;
@@ -127,13 +127,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         _fieldKey = key;
         _parentTable = parentTable;
         _columnLogging = new ColumnLogging(key, parentTable);
-    }
-
-    @Deprecated // Pass in a type!
-    public BaseColumnInfo(FieldKey key)
-    {
-        this(key, (TableInfo)null);
-        _name = null;
     }
 
     public BaseColumnInfo(FieldKey key, JdbcType t)
@@ -535,12 +528,22 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     @Override
     public String getMetaDataName()
     {
-        return _metaDataName;      // Actual name returned by metadata; use to query meta data or to select columns enclosed in quotes
+        return _metaDataName;
     }
-
 
     @Override
     public String getSelectName()
+    {
+        assert getParentTable() instanceof SchemaTableInfo : "Use getValueSql()";
+        if (null == _selectName)
+        {
+            if (!(getParentTable() instanceof SchemaTableInfo))
+                throw new UnsupportedOperationException("Use getValueSql()");
+        }
+        return generateSelectName();
+    }
+
+    private String generateSelectName()
     {
         if (null == _selectName)
         {
@@ -549,14 +552,14 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             else
                 _selectName = getSqlDialect().getColumnSelectName(getMetaDataName());
         }
-
         return _selectName;
     }
 
     @Override
     public SQLFragment getValueSql(String tableAliasName)
     {
-        return new SQLFragment(tableAliasName + "." + getSelectName());
+        // call generateSelectName() to avoid asserts in getSelectName()
+        return new SQLFragment(tableAliasName + "." + generateSelectName());
     }
 
     @Override
@@ -1152,7 +1155,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         if (xmlCol.isSetExcludeFromShifting())
             _isExcludeFromShifting = xmlCol.getExcludeFromShifting();
         if (xmlCol.isSetImportAliases())
-            _importAliases.addAll(Arrays.asList(xmlCol.getImportAliases().getImportAliasArray()));
+        {
+            LinkedHashSet<String> set = new LinkedHashSet<>(getImportAliasSet());
+            set.addAll(Arrays.asList(xmlCol.getImportAliases().getImportAliasArray()));
+            setImportAliasesSet(set);
+        }
         if (xmlCol.isSetConditionalFormats())
         {
             setConditionalFormats(ConditionalFormat.convertFromXML(xmlCol.getConditionalFormats()));
@@ -1815,7 +1822,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public void setSortFieldKeys(List<FieldKey> sortFieldKeys)
     {
         checkLocked();
-        _sortFieldKeys = sortFieldKeys;
+        _sortFieldKeys = copyFixedList(sortFieldKeys);
     }
 
     @Override
@@ -2054,8 +2061,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public void setConditionalFormats(@NotNull List<ConditionalFormat> formats)
     {
         checkLocked();
-        _conditionalFormats.clear();
-        _conditionalFormats.addAll(formats);
+        _conditionalFormats = copyFixedList(formats);
     }
 
     @Override
@@ -2069,7 +2075,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public void setValidators(List<? extends IPropertyValidator> validators)
     {
         checkLocked();
-        _validators = validators;
+        _validators = copyFixedList(validators);
     }
 
     // TODO: fix up OORIndicator

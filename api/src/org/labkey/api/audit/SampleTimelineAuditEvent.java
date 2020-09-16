@@ -12,6 +12,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     public static final String EVENT_TYPE = "SampleTimelineEvent";
 
     public static final String SAMPLE_TIMELINE_EVENT_TYPE = "SampleTimelineEventType";
+
     public enum SampleTimelineEventType
     {
         INSERT("Sample was registered.", "Registered"),
@@ -20,8 +21,8 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         MERGE("Sample was registered or updated.", "Registered"),
         UPDATE("Sample was updated.", "Updated");
 
-        private String _comment;
-        private String _actionLabel;
+        private final String _comment;
+        private final String _actionLabel;
 
         SampleTimelineEventType(String comment, String actionLabel)
         {
@@ -74,6 +75,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     private int _sampleTypeId;
     private boolean _isLineageUpdate;
     private String _metadata;
+    private String _inventoryUpdateType;
 
     public SampleTimelineAuditEvent()
     {
@@ -155,6 +157,16 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         _metadata = metadata;
     }
 
+    public String getInventoryUpdateType()
+    {
+        return _inventoryUpdateType;
+    }
+
+    public void setInventoryUpdateType(String inventoryUpdateType)
+    {
+        _inventoryUpdateType = inventoryUpdateType;
+    }
+
     @Override
     public Map<String, Object> getAuditLogMessageElements()
     {
@@ -165,6 +177,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         elements.put("sampleType", getSampleType());
         elements.put("sampleTypeId", getSampleTypeId());
         elements.put("isLineageUpdate", getIsLineageUpdate());
+        elements.put("inventoryUpdateType", getInventoryUpdateType());
         elements.putAll(super.getAuditLogMessageElements());
         return elements;
     }

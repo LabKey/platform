@@ -145,7 +145,7 @@
 <% } %>
 </ul>
 
-<labkey:form action="<%= h(getViewContext().cloneActionURL().deleteParameters()) %>" method="post">
+<labkey:form action="<%=getViewContext().cloneActionURL().deleteParameters()%>" method="post">
 
 <% if (!allRuns.isEmpty()) { %>
 

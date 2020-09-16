@@ -16,7 +16,7 @@
 package org.labkey.api.action;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.query.BatchValidationException;
@@ -27,6 +27,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ExpectedException;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.HttpStatusException;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
@@ -102,6 +103,12 @@ public abstract class ApiResponseWriter implements AutoCloseable
             {
                 return new ApiJsonWriter(response, contentTypeOverride, objectMapper, true); // TODO: FOR DEBUGGING. Before final commit, decide if pretty or compact should be default.
             }
+
+            @Override
+            public boolean isJson()
+            {
+                return true;
+            }
         },
         XML
         {
@@ -111,6 +118,12 @@ public abstract class ApiResponseWriter implements AutoCloseable
                 // TODO: Use Jackson for object -> XML serialization
                 return new ApiXmlWriter(response, contentTypeOverride);
             }
+
+            @Override
+            public boolean isJson()
+            {
+                return false;
+            }
         },
         JSON_COMPACT
         {
@@ -119,9 +132,17 @@ public abstract class ApiResponseWriter implements AutoCloseable
             {
                 return new ApiJsonWriter(response, contentTypeOverride, objectMapper, false);
             }
+
+            @Override
+            public boolean isJson()
+            {
+                return true;
+            }
         };
 
         public abstract ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride, ObjectMapper objectMapper) throws IOException;
+
+        public abstract boolean isJson();
     }
 
     private final HttpServletResponse _response;
@@ -183,7 +204,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
                 if (!(e instanceof ExpectedException))
                 {
                     ExceptionUtil.logExceptionToMothership(null, e);
-                    Logger.getLogger(ApiResponseWriter.class).warn("ApiResponseWriter exception: ", e);
+                    LogManager.getLogger(ApiResponseWriter.class).warn("ApiResponseWriter exception: ", e);
                 }
                 //at this point, we can't guarantee a legitimate
                 //JSON response, and we need to write the exception
@@ -255,8 +276,8 @@ public abstract class ApiResponseWriter implements AutoCloseable
             write((ValidationException) e);
             return;
         }
-        if (e instanceof NotFoundException)
-            status = HttpServletResponse.SC_NOT_FOUND;
+        if (e instanceof HttpStatusException)
+            status = ((HttpStatusException)e).getStatus();
         else
             status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 

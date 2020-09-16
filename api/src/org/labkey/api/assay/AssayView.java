@@ -15,6 +15,7 @@
  */
 package org.labkey.api.assay;
 
+import org.labkey.api.assay.actions.AssayHeaderView;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.TableInfo;
@@ -23,7 +24,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.assay.actions.AssayHeaderView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;

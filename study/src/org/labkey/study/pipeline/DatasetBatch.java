@@ -27,7 +27,6 @@ import org.labkey.api.writer.VirtualFile;
 
 import java.io.File;
 import java.io.Serializable;
-import java.sql.SQLException;
 
 /**
  * User: Matthew

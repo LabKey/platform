@@ -54,8 +54,10 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
@@ -63,6 +65,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.UpdateUserPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
@@ -1296,7 +1299,7 @@ public class SecurityApiActions
             if (!container.isRoot() && !container.isProject())
                 throw new IllegalArgumentException("You may not create groups at the folder level. Call this API at the project or root level.");
 
-            if (_group == null && getContainer().isRoot() && !getUser().hasRootPermission(UserManagementPermission.class) )
+            if (_group == null && getContainer().isRoot() && !getUser().hasRootPermission(UpdateUserPermission.class) )
             {
                 throw new UnauthorizedException("You do not have permission to create site-wide groups.");
             }
@@ -1307,7 +1310,7 @@ public class SecurityApiActions
                 writeToAuditLog(_group, this.getViewContext());
             }
 
-            if (_group.getContainer() == null && !getUser().hasRootPermission(UserManagementPermission.class))
+            if (_group.getContainer() == null && !getUser().hasRootPermission(UpdateUserPermission.class))
             {
                 throw new UnauthorizedException("You do not have permission to modify site-wide groups.");
             }
@@ -1764,7 +1767,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermission(UserManagementPermission.class)
+    @RequiresPermission(DeleteUserPermission.class)
     public static class DeleteUserAction extends MutatingApiAction<IdForm>
     {
         @Override
@@ -2070,7 +2073,7 @@ public class SecurityApiActions
             Container c = getContainer();
             if (!c.isRoot() && !c.getProject().hasPermission(getUser(), AdminPermission.class))
                 throw new UnauthorizedException("You must be an administrator at the project level to add new users.");
-            else if (c.isRoot() && !getUser().hasRootPermission(UserManagementPermission.class))
+            else if (!c.hasPermission(getUser(), AddUserPermission.class))
                 throw new UnauthorizedException("You do not have permissions to create new users.");
 
             String[] rawEmails = form.getEmail() == null ? null : form.getEmail().split(";");
@@ -2084,13 +2087,17 @@ public class SecurityApiActions
 
             for (ValidEmail email : validEmails)
             {
-                String msg = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), form.getOptionalMessage());
+                HtmlString msg = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), form.getOptionalMessage());
                 User user = UserManager.getUser(email);
                 if (null == user)
-                    throw new IllegalArgumentException(null != msg ? msg : "Error creating new user account.");
+                {
+                    // NOTE IAE should not accept formatted HTML
+                    // throw new IllegalArgumentException(null != msg ? msg : "Error creating new user account.");
+                    throw new IllegalArgumentException("Error creating new user account.");
+                }
 
-                boolean isNew = msg != null;
-                HtmlString htmlMsg = msg == null ? HtmlString.of(email + " was already a registered system user.") : HtmlString.unsafe(msg);
+                boolean isNew = !HtmlString.isBlank(msg);
+                HtmlString htmlMsg = HtmlString.isBlank(msg) ? HtmlString.of(email + " was already a registered system user.") : msg;
 
                 // Allow tests to create users that immediately register as having "logged in"
                 if (getUser().hasSiteAdminPermission() && form.isSkipFirstLogin())
@@ -2124,7 +2131,7 @@ public class SecurityApiActions
     /**
      * Invalidate existing password and send new password link
      */
-    @RequiresPermission(UserManagementPermission.class)
+    @RequiresPermission(UpdateUserPermission.class)
     public static class AdminRotatePasswordAction extends MutatingApiAction<SecurityController.EmailForm>
     {
         @Override
@@ -2247,7 +2254,7 @@ public class SecurityApiActions
             );
 
             // @RequiresPermission(UserManagementPermission.class)
-            assertForUserManagementPermission(user,
+            assertForUserPermissions(user,
                 new DeleteUserAction(),
                 new AdminRotatePasswordAction(),
                 new ListProjectGroupsAction()

@@ -25,7 +25,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.PageFlowUtil;

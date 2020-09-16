@@ -27,10 +27,8 @@ import org.labkey.test.Locators;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyB;
-import org.labkey.test.components.BodyWebPart;
 import org.labkey.test.pages.issues.InsertPage;
 import org.labkey.test.pages.mothership.EditUpgradeMessagePage;
-import org.labkey.test.pages.mothership.ReportsPage;
 import org.labkey.test.pages.mothership.ShowExceptionsPage;
 import org.labkey.test.pages.mothership.ShowExceptionsPage.ExceptionSummaryDataRegion;
 import org.labkey.test.pages.mothership.StackTraceDetailsPage;
@@ -38,7 +36,6 @@ import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.IssuesHelper;
 import org.labkey.test.util.Maps;
 import org.labkey.test.util.PermissionsHelper.MemberType;
-import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.TextSearcher;
 import org.labkey.test.util.mothership.MothershipHelper;
 
@@ -160,13 +157,14 @@ public class MothershipTest extends BaseWebDriverTest
     @Test
     public void testAssignException()
     {
+        final String assigneeDisplayName = _userHelper.getDisplayNameForEmail(ASSIGNEE);
         Integer stackTraceId = ensureUnassignedException();
 
         ShowExceptionsPage showExceptionsPage = ShowExceptionsPage.beginAt(this);
         ExceptionSummaryDataRegion exceptionSummary = showExceptionsPage.exceptionSummary();
         exceptionSummary.uncheckAll();
         exceptionSummary.checkCheckboxByPrimaryKey(stackTraceId);
-        exceptionSummary.assignSelectedTo(_userHelper.getDisplayNameForEmail(ASSIGNEE));
+        exceptionSummary.assignSelectedTo(assigneeDisplayName);
 
         impersonate(ASSIGNEE);
         {
@@ -175,7 +173,7 @@ public class MothershipTest extends BaseWebDriverTest
             assertEquals("Should be only one issue assigned to user", 1, exceptionSummary.getDataRowCount());
             StackTraceDetailsPage detailsPage = exceptionSummary.clickStackTrace(stackTraceId);
             assertElementPresent(Locator.linkWithText("#" + stackTraceId));
-            assertEquals(_userHelper.getDisplayNameForEmail(ASSIGNEE), detailsPage.assignedTo().getFirstSelectedOption().getText());
+            assertEquals(assigneeDisplayName, detailsPage.assignedTo().getFirstSelectedOption().getText());
         }
         stopImpersonating();
     }
@@ -246,21 +244,6 @@ public class MothershipTest extends BaseWebDriverTest
     {
         List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(ExceptionActions.npeother, ExceptionActions.npe);
         assertNotEquals("Should not group exceptions from different actions", exceptionIds.get(0), exceptionIds.get(1));
-    }
-
-    @Test
-    public void testReports()
-    {
-        final ReportsPage reportsPage = ReportsPage.beginAt(this);
-        final List<BodyWebPart> bodyWebParts = new PortalHelper(getDriver()).getBodyWebParts();
-
-        List<String> expected = Arrays.asList("\"Unbugged\" Exceptions by Owner", "Unassigned Exceptions", "Installations");
-        List<String> actual = new ArrayList<>();
-        bodyWebParts.stream().forEachOrdered(wp -> actual.add(wp.getTitle()));
-
-        // Very basic check.
-        assertEquals("Wrong mothership reports", expected, actual);
-        // TODO: Verify report contents
     }
 
     @Test

@@ -15,7 +15,8 @@
  */
 package org.labkey.api.exp;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
@@ -61,9 +62,6 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     private String _name;
     private String _storageColumnName;
     private int _propertyId;
-    private String _ontologyURI;
-    private String _searchTerms;
-    private String _semanticType;
     private Container _container;
     private Container _project;
     private String _lookupContainer;
@@ -72,7 +70,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     private boolean _mvEnabled;
     private String _mvIndicatorStorageColumnName;        // only valid if mvEnabled
 
-    private static final Logger LOG = Logger.getLogger(PropertyDescriptor.class);
+    private static final Logger LOG = LogManager.getLogger(PropertyDescriptor.class);
 
     @Override
     public void checkLocked()
@@ -237,16 +235,6 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
 
     }
 
-    public String getOntologyURI()
-    {
-        return _ontologyURI;
-    }
-
-    public void setOntologyURI(String ontologyURI)
-    {
-        _ontologyURI = ontologyURI;
-    }
-
     public void setRangeURI(String dataTypeURI)
     {
         _rangeURI = dataTypeURI;
@@ -269,26 +257,6 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     public void setConceptURI(String conceptURI)
     {
         _conceptURI = conceptURI;
-    }
-
-    public String getSearchTerms()
-    {
-        return _searchTerms;
-    }
-
-    public void setSearchTerms(String searchTerms)
-    {
-        _searchTerms = searchTerms;
-    }
-
-    public String getSemanticType()
-    {
-        return _semanticType;
-    }
-
-    public void setSemanticType(String semanticType)
-    {
-        _semanticType = semanticType;
     }
 
     public DefaultValueType getDefaultValueTypeEnum()
@@ -401,7 +369,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     /** Need the string version of this method because it's called by reflection and must match by name */
     public void setImportAliases(String importAliases)
     {
-        _importAliases = ColumnRenderPropertiesImpl.convertToSet(importAliases);
+        super.setImportAliasesSet(ColumnRenderPropertiesImpl.convertToSet(importAliases));
     }
 
     @Override
@@ -458,9 +426,6 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
             PropertyDescriptor toPD = (PropertyDescriptor)to;
             toPD._container = _container; // ?
             toPD._project = _project; // ?
-            toPD._ontologyURI = _ontologyURI;
-            toPD._searchTerms = _searchTerms;
-            toPD._semanticType = _semanticType;
             toPD._lookupContainer = _lookupContainer;
             toPD._lookupSchema = _lookupSchema;
             toPD._lookupQuery = _lookupQuery;

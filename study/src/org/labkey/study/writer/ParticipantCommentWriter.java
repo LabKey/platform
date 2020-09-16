@@ -16,9 +16,9 @@
 
 package org.labkey.study.writer;
 
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.StudyDocument;
-import org.labkey.api.writer.VirtualFile;
 
 /**
  * User: klum

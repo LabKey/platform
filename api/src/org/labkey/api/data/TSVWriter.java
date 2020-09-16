@@ -193,7 +193,7 @@ public abstract class TSVWriter extends TextWriter
         return escaped;
     }
 
-    private boolean shouldQuote(String value)
+    protected boolean shouldQuote(String value)
     {
         if (_escapedCharsString == null)
         {

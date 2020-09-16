@@ -16,7 +16,8 @@
 
 package org.labkey.bigiron.mysql;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -35,7 +36,7 @@ import java.util.Collections;
 */
 public class MySqlDialectFactory implements SqlDialectFactory
 {
-    private static final Logger _log = Logger.getLogger(MySqlDialectFactory.class);
+    private static final Logger _log = LogManager.getLogger(MySqlDialectFactory.class);
 
     private String getProductName()
     {

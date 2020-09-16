@@ -16,7 +16,8 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.miniprofiler.MiniProfiler;
@@ -24,7 +25,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ResultSetUtil;
 
-import javax.sql.rowset.CachedRowSet;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -38,13 +38,16 @@ import java.util.Map;
 */
 public class ResultSetImpl extends LoggingResultSetWrapper implements TableResultSet
 {
-    private static final Logger _log = Logger.getLogger(ResultSetImpl.class);
+    private static final Logger _log = LogManager.getLogger(ResultSetImpl.class);
 
     private final @Nullable DbScope _scope;
     private final @Nullable Connection _connection;
     private int _maxRows;
+    private boolean _countComplete;
 
     private boolean _isComplete = true;
+
+    protected int _size;
 
     // for resource tracking
     private StackTraceElement[] _debugCreated = null;
@@ -92,23 +95,53 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
         _isComplete = isComplete;
     }
 
+    // A result set must be completely iterated before the size can be determined. This function sets that flag when
+    // the result set is done iterating. This should be called as the return from the next() function of any classes
+    // extending this class.
+    protected boolean hasNext(boolean hasNext)
+    {
+        _countComplete = !hasNext;
+        return hasNext;
+    }
+
+    @Override
+    public int countAll() throws SQLException
+    {
+        while(next());
+        return _size;
+    }
+
     @Override
     public int getSize()
     {
-        return -1;
+        if (!_countComplete)
+        {
+            throw new IllegalStateException("ResultSet must first be completely iterated before getting size");
+        }
+        return _size;
     }
 
     @Override
     public boolean next() throws SQLException
     {
         boolean success = super.next();
-        if (!success || Table.ALL_ROWS == _maxRows)
-            return success;
-        if (getRow() == _maxRows + 1)
+        if (success)
         {
-            _isComplete = false;
+            if (Table.ALL_ROWS != _maxRows)
+            {
+                if (getRow() == _maxRows + 1)
+                {
+                    _isComplete = false;
+                }
+                success = getRow() <= _maxRows;
+            }
+
+            // Keep track of all of the rows that we've iterated
+            if (_isComplete)
+                _size = Math.max(_size, getRow());
         }
-        return getRow() <= _maxRows;
+
+        return hasNext(success);
     }
 
 
@@ -139,15 +172,6 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
             _wasClosed = true;
         }
     }
-
-
-    public int size()
-    {
-        if (resultset instanceof CachedRowSet)
-            return ((CachedRowSet) resultset).size();
-        return -1;
-    }
-
 
     @Override
     public @NotNull Iterator<Map<String, Object>> iterator()

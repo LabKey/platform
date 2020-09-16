@@ -25,7 +25,8 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlValidationError;
@@ -200,7 +201,7 @@ import static org.labkey.api.util.DOM.cl;
 
 public class QueryController extends SpringActionController
 {
-    private static final Logger LOG = Logger.getLogger(QueryController.class);
+    private static final Logger LOG = LogManager.getLogger(QueryController.class);
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryController.class,
             ValidateQueryAction.class,
@@ -957,7 +958,7 @@ public class QueryController extends SpringActionController
                     //
                 }
                 errors.reject("ERROR_MSG", e.toString());
-                Logger.getLogger(QueryController.class).error("Error", e);
+                LogManager.getLogger(QueryController.class).error("Error", e);
             }
 
             Renderable moduleWarning = null;
@@ -1276,7 +1277,14 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
-            QueryView queryView = form.getQueryView();
+            QueryView queryView = null;
+
+            if (!errors.hasErrors())
+                queryView = form.getQueryView();
+
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors, true);
+
             if (isPrint())
             {
                 queryView.setPrintView(true);
@@ -2850,6 +2858,15 @@ public class QueryController extends SpringActionController
                 throw new NotFoundException("The view named '" + form.getViewName() + "' does not exist for this user!");
             }
 
+            TableInfo t = view.getTable();
+            if (null == t)
+            {
+                List<QueryException> qpes = view.getParseErrors();
+                if (!qpes.isEmpty())
+                    throw qpes.get(0);
+                throw new NotFoundException(form.getQueryName());
+            }
+
             boolean isEditable = isQueryEditable(view.getTable());
             boolean metaDataOnly = form.getQuerySettings().getMaxRows() == 0;
             boolean arrayMultiValueColumns = getRequestedApiVersion() >= 16.2;
@@ -2880,6 +2897,7 @@ public class QueryController extends SpringActionController
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
                         form.isIncludeDisplayValues());
             }
+            response.setFormat(getResponseFormat());
             response.includeStyle(form.isIncludeStyle());
 
             // Issues 29515 and 32269 - force key and other non-requested columns to be sent back, but only if the client has
@@ -3103,6 +3121,7 @@ public class QueryController extends SpringActionController
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
                         form.isIncludeDisplayValues());
             }
+            response.setFormat(getResponseFormat());
             response.includeStyle(form.isIncludeStyle());
 
             return response;
@@ -3365,7 +3384,7 @@ public class QueryController extends SpringActionController
                         Aggregate.Type type = r.getAggregate().getType();
                         props.put("label", type.getFullLabel());
                         props.put("description", type.getDescription());
-                        props.put("value", r.getFormattedValue(displayColumn, getContainer()));
+                        props.put("value", r.getFormattedValue(displayColumn, getContainer()).first);
                         aggregateResults.put(type.getName(), props);
                     }
 
@@ -3688,7 +3707,7 @@ public class QueryController extends SpringActionController
         public static final String PROP_COMMAND = "command";
         private static final String PROP_ROWS = "rows";
 
-        protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws IOException, BatchValidationException, SQLException, InvalidKeyException
+        protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws Exception
         {
             JSONObject response = new JSONObject();
             Container container = getContainer();
@@ -3730,7 +3749,7 @@ public class QueryController extends SpringActionController
             List<Map<String, Object>> rowsToProcess = new ArrayList<>();
 
             // NOTE RowMapFactory is faster, but for update it's important to preserve missing v explicit NULL values
-            // Do we need to support some soft of UNDEFINED and NULL instance of MvFieldWrapper?
+            // Do we need to support some sort of UNDEFINED and NULL instance of MvFieldWrapper?
             RowMapFactory<Object> f = null;
             if (commandType == CommandType.insert || commandType == CommandType.insertWithKeys)
                 f = new RowMapFactory<>();
@@ -3767,6 +3786,11 @@ public class QueryController extends SpringActionController
                 {
                     AuditBehaviorType behaviorType = AuditBehaviorType.valueOf(auditBehavior);
                     configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
+                    String auditComment = json.getString("auditUserComment");
+                    if (!StringUtils.isEmpty(auditComment))
+                    {
+                        configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
+                    }
                 }
                 catch (IllegalArgumentException ignored)
                 {
@@ -3796,6 +3820,39 @@ public class QueryController extends SpringActionController
                 if (commandType != CommandType.importRows)
                     response.put("rows", responseRows);
 
+                // if there is any provenance information, save it here
+                ProvenanceService svc = ProvenanceService.get();
+                if (json.has("provenance"))
+                {
+                    JSONObject provenanceJSON = json.getJSONObject("provenance");
+                    ProvenanceRecordingParams params = svc.createRecordingParams(getViewContext(), provenanceJSON, ProvenanceService.ADD_RECORDING);
+                    RecordedAction action = svc.createRecordedAction(getViewContext(), params);
+                    if (action != null && params.getRecordingId() != null)
+                    {
+                        // check for any row level provenance information
+                        if (json.has("rows"))
+                        {
+                            Object rowObject = json.get("rows");
+                            if (rowObject instanceof JSONArray)
+                            {
+                                JSONArray jsonRows = (JSONArray)rowObject;
+                                // we need to match any provenance object inputs to the object outputs from the response rows, this typically would
+                                // be the row lsid but it configurable in the provenance recording params
+                                //
+                                List<Pair<String, String>> provenanceMap = svc.createProvenanceMapFromRows(getViewContext(), params, jsonRows, responseRows);
+                                if (!provenanceMap.isEmpty())
+                                {
+                                    action.getProvenanceMap().addAll(provenanceMap);
+                                }
+                                svc.addRecordingStep(getViewContext().getRequest(), params.getRecordingId(), action);
+                            }
+                            else
+                            {
+                                errors.reject(SpringActionController.ERROR_MSG, "Unable to process provenance information, the rows object was not an array");
+                            }
+                        }
+                    }
+                }
                 transaction.commit();
             }
             catch (OptimisticConflictException e)
@@ -3875,26 +3932,6 @@ public class QueryController extends SpringActionController
             if (response == null || errors.hasErrors())
                 return null;
 
-            // if there is any provenance information, save it here
-            ProvenanceService svc = ProvenanceService.get();
-            if (apiSaveRowsForm.getJsonObject().has("provenance"))
-            {
-                JSONObject provenanceJSON = apiSaveRowsForm.getJsonObject().getJSONObject("provenance");
-                ProvenanceRecordingParams params = svc.createRecordingParams(getViewContext(), provenanceJSON, ProvenanceService.ADD_RECORDING);
-                RecordedAction action = svc.createRecordedAction(getViewContext(), params);
-                if (action != null && params.getRecordingId() != null)
-                {
-                    // check for any row level provenance information
-                    if (apiSaveRowsForm.getJsonObject().has("rows"))
-                    {
-                        JSONArray rows = apiSaveRowsForm.getJsonObject().getJSONArray("rows");
-                        List<Pair<String, String>> provenanceMap = svc.createProvenanceMapFromRows(getViewContext(), params, rows);
-
-                        action.getProvenanceMap().addAll(provenanceMap);
-                        svc.addRecordingStep(getViewContext().getRequest(), params.getRecordingId(), action);
-                    }
-                }
-            }
             return new ApiSimpleResponse(response);
         }
     }
@@ -5258,7 +5295,7 @@ public class QueryController extends SpringActionController
                 }
                 catch (Exception e)
                 {
-                    Logger.getLogger(QueryController.class).error("Error", e);
+                    LogManager.getLogger(QueryController.class).error("Error", e);
                     errors.reject(ERROR_MSG, "An exception occurred: " + e);
                     return false;
                 }
@@ -6032,7 +6069,7 @@ public class QueryController extends SpringActionController
                 if (null != x.getCause() && x != x.getCause())
                     x = x.getCause();
                 html.add("<br>" + PageFlowUtil.filter(x.toString()));
-                Logger.getLogger(QueryController.class).debug(expr,x);
+                LogManager.getLogger(QueryController.class).debug(expr,x);
             }
             if (null != e)
             {

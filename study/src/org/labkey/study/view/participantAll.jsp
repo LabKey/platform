@@ -48,7 +48,6 @@
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.labkey.api.util.ResultSetUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -393,7 +392,7 @@
     <td class="labkey-participant-view-header" colspan="<%=keyCount%>">
         <%=formatDate(date)%>
         <%=(study.getTimepointType().isVisitBased() && date != null ? HtmlString.unsafe("<br/>Visit: ") : HtmlString.EMPTY_STRING)%>
-        <%=(study.getTimepointType().isVisitBased() ? seqNum : HtmlString.EMPTY_STRING)%>
+        <%=(study.getTimepointType().isVisitBased() ? h(seqNum) : HtmlString.EMPTY_STRING)%>
     </td>
     <%
             }
@@ -722,7 +721,7 @@
                             if (ptidLegacyReportIds.contains(reportId))
                             {
 %>
-                                <a class="labkey-text-link" href="<%=h(new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), ReportService.get().getReportIdentifier(reportId, user, getContainer()).toString()))%>">Remove Chart</a>
+                                <%=link("Remove Chart").href(new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), ReportService.get().getReportIdentifier(reportId, user, getContainer()).toString())).usePost()%>
                                 <%
                             }
                             else
@@ -745,15 +744,15 @@
 %>
             <tr style="<%=text(expanded ? "" : "display:none")%>">
                 <td colspan="<%=totalSeqKeyCount+1%>">
-                    <a class="labkey-text-link labkey-ptid-add" onclick="LABKEY.ParticipantViewUnhideSelect(this)" dataset-id="<%=h(datasetId)%>">Add Chart</a>
+                    <a class="labkey-text-link labkey-ptid-add" onclick="LABKEY.ParticipantViewUnhideSelect(this)" dataset-id="<%=datasetId%>">Add Chart</a>
 
-                    <select id="addChartSelect-<%=h(datasetId)%>" style="display: none" onchange="document.getElementById('addButton-<%=h(datasetId)%>').style.display = 'inline-block';">
+                    <select id="addChartSelect-<%=datasetId%>" style="display: none" onchange="document.getElementById('addButton-<%=datasetId%>').style.display = 'inline-block';">
                         <option>Select a chart...</option>
                         <% for (Map.Entry<String, String> reportEntry : reportIdWithNames.entrySet()) { %>
                         <option value="<%=h(reportEntry.getKey())%>"><%=h(reportEntry.getValue())%></option>
                         <% } %>
                     </select>
-                    <button id="addButton-<%=h(datasetId)%>" onclick="LABKEY.ParticipantViewShowSelectedChart(this)" dataset-id="<%=h(datasetId)%>" style="display: none">Submit</button>
+                    <button id="addButton-<%=datasetId%>" onclick="LABKEY.ParticipantViewShowSelectedChart(this)" dataset-id="<%=datasetId%>" style="display: none">Submit</button>
                 </td>
             </tr>
     <%

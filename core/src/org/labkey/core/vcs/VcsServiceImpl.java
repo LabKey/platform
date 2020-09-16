@@ -1,6 +1,7 @@
 package org.labkey.core.vcs;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.vcs.Vcs;
 import org.labkey.api.vcs.VcsService;
@@ -10,7 +11,7 @@ import java.io.IOException;
 
 public class VcsServiceImpl implements VcsService
 {
-    private static final Logger LOG = Logger.getLogger(VcsServiceImpl.class);
+    private static final Logger LOG = LogManager.getLogger(VcsServiceImpl.class);
 
     @Override
     public @Nullable Vcs getVcs(File directory)

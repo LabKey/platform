@@ -23,7 +23,6 @@ import org.labkey.api.gwt.client.LockedPropertyType;
 import org.labkey.api.gwt.client.PHIType;
 import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.gwt.client.util.BooleanProperty;
-import org.labkey.api.gwt.client.util.IPropertyWrapper;
 import org.labkey.api.gwt.client.util.IntegerProperty;
 import org.labkey.api.gwt.client.util.StringProperty;
 import org.labkey.api.gwt.client.util.StringUtils;
@@ -43,14 +42,11 @@ public class GWTPropertyDescriptor implements IsSerializable
     private IntegerProperty propertyId = new IntegerProperty(0);
     private StringProperty propertyURI = new StringProperty();
     private StringProperty container = new StringProperty();
-    private StringProperty ontologyURI = new StringProperty();
     private StringProperty name = new StringProperty();
     private StringProperty description = new StringProperty();
     private StringProperty rangeURI = new StringProperty("http://www.w3.org/2001/XMLSchema#string");
     private StringProperty conceptURI = new StringProperty();
     private StringProperty label = new StringProperty();
-    private StringProperty searchTerms = new StringProperty();
-    private StringProperty semanticType = new StringProperty();
     private StringProperty format = new StringProperty();
     private BooleanProperty required = new BooleanProperty(false);
     private BooleanProperty hidden = new BooleanProperty(false);
@@ -103,14 +99,11 @@ public class GWTPropertyDescriptor implements IsSerializable
         setPropertyId(s.getPropertyId());
         setPropertyURI(s.getPropertyURI());
         setContainer(s.getContainer());
-        setOntologyURI(s.getOntologyURI());
         setName(s.getName());
         setDescription(s.getDescription());
         setRangeURI(s.getRangeURI());
         setConceptURI(s.getConceptURI());
         setLabel(s.getLabel());
-        setSearchTerms(s.getSearchTerms());
-        setSemanticType(s.getSemanticType());
         setFormat(s.getFormat());
         setRequired(s.isRequired());
         setHidden(s.isHidden());
@@ -237,16 +230,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.description.set(description);
     }
 
-    public String getOntologyURI()
-    {
-        return ontologyURI.getString();
-    }
-
-    public void setOntologyURI(String ontologyURI)
-    {
-        this.ontologyURI.set(ontologyURI);
-    }
-
     public String getRangeURI()
     {
         return rangeURI.getString();
@@ -278,16 +261,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.conceptURI.set(conceptURI);
     }
 
-    public String getSearchTerms()
-    {
-        return searchTerms.getString();
-    }
-
-    public void setSearchTerms(String searchTerms)
-    {
-        this.searchTerms.set(searchTerms);
-    }
-
     public String getLabel()
     {
         return label.getString();
@@ -296,16 +269,6 @@ public class GWTPropertyDescriptor implements IsSerializable
     public void setLabel(String label)
     {
         this.label.set(label);
-    }
-
-    public String getSemanticType()
-    {
-        return semanticType.getString();
-    }
-
-    public void setSemanticType(String semanticType)
-    {
-        this.semanticType.set(semanticType);
     }
 
     public String getFormat()
@@ -587,11 +550,8 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (getLookupQuery() != null ? !getLookupQuery().equals(that.getLookupQuery()) : that.getLookupQuery() != null) return false;
         if (getLookupSchema() != null ? !getLookupSchema().equals(that.getLookupSchema()) : that.getLookupSchema() != null) return false;
         if (getName() != null ? !getName().equals(that.getName()) : that.getName() != null) return false;
-        if (getOntologyURI() != null ? !getOntologyURI().equals(that.getOntologyURI()) : that.getOntologyURI() != null) return false;
         if (getPropertyURI() != null ? !getPropertyURI().equals(that.getPropertyURI()) : that.getPropertyURI() != null) return false;
         if (getRangeURI() != null ? !getRangeURI().equals(that.getRangeURI()) : that.getRangeURI() != null) return false;
-        if (getSearchTerms() != null ? !getSearchTerms().equals(that.getSearchTerms()) : that.getSearchTerms() != null) return false;
-        if (getSemanticType() != null ? !getSemanticType().equals(that.getSemanticType()) : that.getSemanticType() != null) return false;
         if (getDefaultValueType() != null ? !getDefaultValueType().equals(that.getDefaultValueType()) : that.getDefaultValueType() != null) return false;
         if (getDefaultValue() != null ? !getDefaultValue().equals(that.getDefaultValue()) : that.getDefaultValue() != null) return false;
         if (getDefaultDisplayValue() != null ? !getDefaultDisplayValue().equals(that.getDefaultDisplayValue()) : that.getDefaultDisplayValue() != null) return false;
@@ -624,15 +584,12 @@ public class GWTPropertyDescriptor implements IsSerializable
         int result;
         result = (propertyId.getInteger() != null ? propertyId.getInteger().hashCode() : 0);
         result = 31 * result + (propertyURI.getString() != null ? propertyURI.getString().hashCode() : 0);
-        result = 31 * result + (ontologyURI.getString() != null ? ontologyURI.getString().hashCode() : 0);
         result = 31 * result + (name.getString() != null ? name.getString().hashCode() : 0);
         result = 31 * result + (description.getString() != null ? description.getString().hashCode() : 0);
         result = 31 * result + (container.getString() != null ? container.getString().hashCode() : 0);
         result = 31 * result + (rangeURI.getString() != null ? rangeURI.getString().hashCode() : 0);
         result = 31 * result + (conceptURI.getString() != null ? conceptURI.getString().hashCode() : 0);
         result = 31 * result + (label.getString() != null ? label.getString().hashCode() : 0);
-        result = 31 * result + (searchTerms.getString() != null ? searchTerms.getString().hashCode() : 0);
-        result = 31 * result + (semanticType.getString() != null ? semanticType.getString().hashCode() : 0);
         result = 31 * result + (format.getString() != null ? format.getString().hashCode() : 0);
         result = 31 * result + (required.getBoolean() != null ? required.getBoolean().hashCode() : 0);
         result = 31 * result + (hidden.getBoolean() != null ? hidden.getBoolean().hashCode() : 0);

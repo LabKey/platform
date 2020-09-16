@@ -16,10 +16,9 @@
 package org.labkey.api.query.snapshot;
 
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AbstractMethodInfo;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.DbSchema;
 
 /**
  * User: Matthew

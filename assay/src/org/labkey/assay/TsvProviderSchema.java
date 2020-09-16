@@ -2,7 +2,6 @@ package org.labkey.assay;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProviderSchema;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;

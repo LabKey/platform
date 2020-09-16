@@ -15,8 +15,6 @@
  */
 package org.labkey.pipeline.mule;
 
-import java.sql.SQLException;
-
 /**
  * <code>StatusRequestHandler</code>
  *

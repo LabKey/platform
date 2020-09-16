@@ -14,4 +14,15 @@ public class FixedHtmlField extends SettingsField
 
         return of;
     }
+
+    public static FixedHtmlField of(@NotNull String caption, @NotNull HtmlString html, String description)
+    {
+        FixedHtmlField of = new FixedHtmlField();
+        of.put("type", FieldType.fixedHtml);
+        of.put("caption", caption);
+        of.put("html", html);
+        of.put("description", description);
+
+        return of;
+    }
 }

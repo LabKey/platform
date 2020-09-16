@@ -18,9 +18,12 @@
 <%@ page import="org.labkey.api.data.ColumnInfo"%>
 <%@ page import="org.labkey.api.query.FieldKey"%>
 <%@ page import="org.labkey.api.study.StudyService"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.template.ClientDependencies"%>
+<%@ page import="org.labkey.api.util.HtmlString"%>
+<%@ page import="org.labkey.api.util.element.Option"%>
+<%@ page import="org.labkey.api.util.element.Select.SelectBuilder"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
@@ -38,7 +41,7 @@
     JspView<ReportsController.CrosstabDesignBean> me = (JspView<ReportsController.CrosstabDesignBean>) HttpView.currentView();
     ReportsController.CrosstabDesignBean bean = me.getModelBean();
 
-    List stats = Arrays.asList(bean.getStats());
+    List<String> stats = Arrays.asList(bean.getStats());
 %>
 
 <labkey:form action="" method="post">
@@ -98,34 +101,23 @@
 </labkey:form>
 
 <%!
-    public String fieldDropDown(String name, String id, Map<String, ColumnInfo> cols, String selected,
-                                boolean isStatField, boolean allowBlank, String changeHandler)
+    public HtmlString fieldDropDown(String name, String id, Map<String, ColumnInfo> cols, String selected,
+                                    boolean isStatField, boolean allowBlank, String changeHandler)
     {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<select name=\"").append(name).append("\" id=\"").append(id).append("\"");
-        if (changeHandler != null)
-            sb.append(" onChange=\"").append(changeHandler).append("\"");
-        sb.append(">\n");
+        SelectBuilder builder = new SelectBuilder().name(name).id(id).className(null);
+        if (null != changeHandler)
+            builder.onChange(changeHandler);
         if (allowBlank)
-            sb.append("<option></option>");
-
+            builder.addOption("", "");
         if (cols.containsKey("SequenceNum"))
-        {
-            sb.append("<option value=\"SequenceNum\"");
-            if ("SequenceNum".equalsIgnoreCase(selected))
-                sb.append(" selected");
-            sb.append(">Visit Id</option>");
-        }
+            builder.addOption(new Option.OptionBuilder("Visit Id", "SequenceNum")
+                    .selected("SequenceNum".equalsIgnoreCase(selected)));
 
         String subjectNoun = StudyService.get().getSubjectColumnName(getContainer());
         if (cols.containsKey(subjectNoun))
-        {
-            sb.append("<option value=\"").append(subjectNoun).append("\"");
-            if (null != selected && selected.equalsIgnoreCase(subjectNoun))
-                sb.append(" selected");
-            sb.append(">").append(StudyService.get().getSubjectColumnName(getContainer())).append("</option>");
-        }
-        FieldKey ptid = new FieldKey(null,StudyService.get().getSubjectColumnName(getContainer()));
+            builder.addOption(subjectNoun, subjectNoun).selected(null != selected && selected.equalsIgnoreCase(subjectNoun));
+
+        FieldKey ptid = new FieldKey(null, subjectNoun);
         FieldKey seqNum = new FieldKey(null, "SequenceNum");
 
         for (ColumnInfo col : cols.values())
@@ -136,18 +128,10 @@
             if (ptid.equals(col.getFieldKey()) || seqNum.equals(col.getFieldKey().encode()))
                 continue;
 
-            if (null != selected && selected.equalsIgnoreCase(col.getFieldKey().encode()))
-                sb.append("<option selected value=\"");
-            else
-                sb.append("<option value=\"");
-
-            sb.append(h(col.getFieldKey().encode()));
-            sb.append("\">");
-            sb.append(h(col.getLabel()));
-            sb.append("</option>\n");
+            builder.addOption(col.getLabel(), col.getFieldKey().encode())
+                    .selected(null != selected && selected.equalsIgnoreCase(col.getFieldKey().encode()));
         }
-        sb.append("</select>");
-        return sb.toString();
+        return builder.getHtmlString();
     }
 
     boolean isValidStatColumn(ColumnInfo col)
@@ -156,10 +140,7 @@
         if (Number.class.isAssignableFrom(cls) || cls.isPrimitive())
             return true;
 
-        if (String.class.isAssignableFrom(cls))
-            return true;
-
-        return false;
+        return String.class.isAssignableFrom(cls);
     }
 %>
 
@@ -171,7 +152,7 @@
     {
         Class cls = col.getJavaClass();
         if (Number.class.isAssignableFrom(cls) || cls.isPrimitive()) { %>
-            columnTypeMap['<%=col.getFieldKey().encode()%>'] = 'numeric';
+            columnTypeMap[<%=q(col.getFieldKey().encode())%>] = 'numeric';
 <%      }
     } %>
 
@@ -200,17 +181,16 @@
             var el = Ext4.get(id);
             if (el) {
 
+                var span = el.next('//span');
                 el.dom.disabled = !enabled;
                 if (!enabled)
                 {
                     el.dom.checked = false;
-                    var span = el.next('//span');
                     if (span)
                         span.addCls('labkey-disabled');
                 }
                 else
                 {
-                    var span = el.next('//span');
                     if (span)
                         span.removeCls('labkey-disabled');
                 }

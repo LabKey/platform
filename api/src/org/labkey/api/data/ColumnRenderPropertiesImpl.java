@@ -15,6 +15,9 @@
  */
 package org.labkey.api.data;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Sort.SortDirection;
@@ -25,7 +28,11 @@ import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -75,7 +82,8 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     protected String _urlTargetWindow;
     protected String _urlCls;
     protected String _onClick;
-    protected Set<String> _importAliases = new LinkedHashSet<>();
+    // methods use Set<>, but I'm using a List<> here because it is simpler and more thread safe and explicitly preserves order
+    protected List<String> _importAliases = List.of();
     protected DefaultValueType _defaultValueType = null;
     protected FacetingBehaviorType _facetingBehaviorType = FacetingBehaviorType.AUTOMATIC;
     protected PHI _phi = PHI.NotPHI;
@@ -89,6 +97,19 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     {
         checkLocked();
         return true;
+    }
+
+    /*
+     * ColumnRenderProperties live in caches so its Collection type members need to be immutable.
+     */
+    protected static <T> List<T> copyFixedList(Collection<T> src)
+    {
+        if (null == src)
+            return null;
+        if (src.isEmpty())
+            return List.of();
+        // unmodifiable arraylist does not need to be synchronized
+        return List.copyOf(src);
     }
 
     @Override
@@ -119,7 +140,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         to._recommendedVariable = _recommendedVariable;
         to._defaultScale = _defaultScale;
         to._url = _url;
-        to._importAliases = new LinkedHashSet<>(_importAliases);
+        to._importAliases = copyFixedList(_importAliases);
         to._facetingBehaviorType = _facetingBehaviorType;
         to._crosstabColumnMember = _crosstabColumnMember;
         to._phi = _phi;
@@ -547,15 +568,28 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     @NotNull
     public Set<String> getImportAliasSet()
     {
-        return _importAliases;
+        if (_importAliases.isEmpty())
+            return Set.of();
+        return Collections.unmodifiableSet(new LinkedHashSet<>(_importAliases));
+    }
+
+    @NotNull
+    @JsonGetter("_importAliases")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @SuppressWarnings("unused")
+    public Set<String> getImportAliasSet_for_jackson_do_not_use()
+    {
+        // Jackson does not like immutable sets
+        return new HashSet<>(_importAliases);
     }
 
     @Override
+    @JsonSetter("_importAliases")
     public void setImportAliasesSet(Set<String> importAliases)
     {
         assert _checkLocked();
         assert importAliases != null;
-        _importAliases = importAliases;
+        _importAliases = copyFixedList(importAliases);
     }
 
     public static String convertToString(Set<String> set)

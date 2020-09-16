@@ -26,7 +26,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**

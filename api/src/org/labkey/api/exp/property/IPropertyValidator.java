@@ -31,6 +31,7 @@ import java.util.Map;
 */
 public interface IPropertyValidator
 {
+    int getPropertyId();
     int getRowId();
     String getName();
     String getTypeURI();
@@ -43,6 +44,7 @@ public interface IPropertyValidator
     
     ValidatorKind getType();
 
+    void setPropertyId(int propertyId);
     void setName(String name);
     void setDescription(String description);
     void setExpressionValue(String expression);

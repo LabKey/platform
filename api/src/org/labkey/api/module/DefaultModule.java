@@ -17,7 +17,8 @@ package org.labkey.api.module;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -26,7 +27,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -37,7 +37,6 @@ import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.UpgradeCode;
-import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.ModuleXml.ModuleXmlCacheHandler;
 import org.labkey.api.query.OlapSchemaInfo;
@@ -100,7 +99,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public static final String CORE_MODULE_NAME = "Core";
 
     private static final String DEPENDENCIES_FILE_PATH = "credits/dependencies.txt";
-    private static final Logger _log = Logger.getLogger(DefaultModule.class);
+    private static final Logger _log = LogManager.getLogger(DefaultModule.class);
     private static final Set<Pair<Class<? extends DefaultModule>, String>> INSTANTIATED_MODULES = new HashSet<>();
     static final ModuleResourceCache<ModuleXml> MODULE_XML_CACHE = ModuleResourceCaches.create("module.xml files", new ModuleXmlCacheHandler(), ResourceRootProvider.getStandard(new Path()));
 
@@ -841,38 +840,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _vcsTag = vcsTag;
     }
 
-    /** @deprecated Use getVcsRevision() instead. */
-    @Deprecated
-    public final String getSvnRevision()
-    {
-        return _vcsRevision;
-    }
-
-    /** @deprecated Use setVcsRevision() instead. Available only for initializing from module.properties and config/module.xml file. */
-    @Deprecated
-    @SuppressWarnings({"UnusedDeclaration"})
-    public final void setSvnRevision(String svnRevision)
-    {
-        checkLocked();
-        _vcsRevision = svnRevision;
-    }
-
-    /** @deprecated  Use getVcsUrl() instead. */
-    @Deprecated
-    public final String getSvnUrl()
-    {
-        return _vcsUrl;
-    }
-
-    /** @deprecated Use setVcsUrl() instead. Available only for initializing from module.properties and config/module.xml file. */
-    @Deprecated
-    @SuppressWarnings({"UnusedDeclaration"})
-    public final void setSvnUrl(String svnUrl)
-    {
-        checkLocked();
-        _vcsUrl = svnUrl;
-    }
-
     public final String getBuildUser()
     {
         return _buildUser;
@@ -1570,6 +1537,38 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         _log.warn("Module \"" + getName() + "\" still specifies the \"labkeyVersion\" property; this module needs to be recompiled.");
         _releaseVersion = labkeyVersion;
+    }
+
+    /** @deprecated Use getVcsRevision() instead. */
+    @Deprecated
+    public final String getSvnRevision()
+    {
+        return _vcsRevision;
+    }
+
+    /** @deprecated Use setVcsRevision() instead. Available only for initializing from module.properties and config/module.xml file. */
+    @Deprecated
+    @SuppressWarnings({"UnusedDeclaration"})
+    public final void setSvnRevision(String svnRevision)
+    {
+        checkLocked();
+        _vcsRevision = svnRevision;
+    }
+
+    /** @deprecated  Use getVcsUrl() instead. */
+    @Deprecated
+    public final String getSvnUrl()
+    {
+        return _vcsUrl;
+    }
+
+    /** @deprecated Use setVcsUrl() instead. Available only for initializing from module.properties and config/module.xml file. */
+    @Deprecated
+    @SuppressWarnings({"UnusedDeclaration"})
+    public final void setSvnUrl(String svnUrl)
+    {
+        checkLocked();
+        _vcsUrl = svnUrl;
     }
 
     public void copyPropertiesFrom(DefaultModule from)

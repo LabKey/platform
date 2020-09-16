@@ -16,7 +16,8 @@
 package org.labkey.pipeline.api;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.pipeline.WorkDirFactory;
 import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
@@ -46,7 +47,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class WorkDirectoryRemote extends AbstractWorkDirectory
 {
-    private static Logger _systemLog = Logger.getLogger(WorkDirectoryRemote.class);
+    private static Logger _systemLog = LogManager.getLogger(WorkDirectoryRemote.class);
 
     private static final int FILE_LOCKS_DEFAULT = 5;
 

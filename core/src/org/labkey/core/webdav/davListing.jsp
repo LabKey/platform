@@ -102,7 +102,7 @@
                 actions: [
                     'folderTreeToggle', 'parentFolder', 'refresh',
                     'createDirectory', 'download', 'deletePath', 'renamePath', 'movePath', 'upload',
-                    '->', htmlViewAction, <%= getUser().isGuest() ? "loginAction" : "logoutAction" %>
+                    '->', htmlViewAction, <%=unsafe(getUser().isGuest() ? "loginAction" : "logoutAction")%>
                 ],
                 useServerActions: false
             }],

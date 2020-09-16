@@ -19,7 +19,11 @@ package org.labkey.api.view;
 import com.google.gwt.core.client.EntryPoint;
 import org.labkey.api.compliance.ComplianceService;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Wrapper around a GWT (Google Web Toolkit) module that knows how to render into the overall HTML of the page.
@@ -32,8 +36,8 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
 
     public static class GWTViewBean
     {
-        private String _moduleName;
-        private Map<String, String> _properties;
+        private final String _moduleName;
+        private final Map<String, String> _properties;
 
         public GWTViewBean(String moduleName, Map<String, String> properties)
         {
@@ -84,21 +88,6 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
             name = name.substring(0, index) + name.substring(index + ".client.".length() - 1);
         }
         return name;
-    }
-
-    public GWTView(Class<? extends EntryPoint> moduleClass)
-    {
-        this(convertClassToModuleName(moduleClass));
-    }
-
-    public GWTView(Class<? extends EntryPoint> moduleClass, String loading)
-    {
-        this(convertClassToModuleName(moduleClass), Collections.singletonMap("loading",loading));
-    }
-
-    public GWTView(String moduleName)
-    {
-        this(moduleName, Collections.emptyMap());
     }
 
     public GWTView(Class<? extends EntryPoint> moduleClass, Map<String, String> properties)

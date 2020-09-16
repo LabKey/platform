@@ -49,9 +49,9 @@ import { LineagePage } from "./LineagePage";
 import { UserProfilePage } from "./UserProfilePage";
 import { PermissionAssignmentsPage } from "./PermissionAssignmentsPage";
 import { SiteUsersGridPanelPage } from "./SiteUsersGridPanelPage";
-
-import "@labkey/components/dist/components.css"
 import { GridPanelPage } from './GridPanelPage';
+
+import "./LabKeyUIComponentsPage.scss"
 
 const COMPONENT_NAMES = List<string>([
     {value: 'Alert'},
@@ -417,7 +417,7 @@ export class App extends React.Component<any, State> {
                 {selected === 'SearchResultCard' &&
                     this.renderPanel('SearchResultCard',
                         <SearchResultCard
-                            title={'Search Result Title'}
+                            cardData={{title: 'Search Result Title'}}
                             summary={'Test search result summary text for the components page.'}
                             url={'#searchresultcard'}
                             iconUrl={'/labkey/_images/construct.svg'}

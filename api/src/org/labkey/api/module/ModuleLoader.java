@@ -19,9 +19,8 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Appender;
-import org.apache.log4j.Logger;
-import org.apache.log4j.RollingFileAppender;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.Constants;
@@ -114,7 +113,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -140,7 +138,7 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
  */
 public class ModuleLoader implements Filter, MemTrackerListener
 {
-    private static final Logger _log = Logger.getLogger(ModuleLoader.class);
+    private static final Logger _log = LogManager.getLogger(ModuleLoader.class);
     private static final Map<String, Throwable> _moduleFailures = new HashMap<>();
     private static final Map<String, Module> _controllerNameToModule = new HashMap<>();
     private static final Map<String, SchemaDetails> _schemaNameToSchemaDetails = new CaseInsensitiveHashMap<>();
@@ -196,16 +194,14 @@ public class ModuleLoader implements Filter, MemTrackerListener
     /** Stash these warnings as a member variable so they can be registered after the WarningService has been initialized */
     private final List<HtmlString> _duplicateModuleErrors = new ArrayList<>();
 
-
     // these four collections are protected by _modulesLock
     // all names start with _modules to make it easier to search for usages
     private final Object _modulesLock = new Object();
-    private Map<String, ModuleContext> _moduleContextMap = new HashMap<>();
-    private Map<String, Module> _moduleMap = new CaseInsensitiveHashMap<>();
-    private Map<Class<? extends Module>, Module> _moduleClassMap = new HashMap<>();
+    private final Map<String, ModuleContext> _moduleContextMap = new HashMap<>();
+    private final Map<String, Module> _moduleMap = new CaseInsensitiveHashMap<>();
+    private final Map<Class<? extends Module>, Module> _moduleClassMap = new HashMap<>();
+
     private List<Module> _modules;
-
-
     private MultiValuedMap<String, ConfigProperty> _configPropertyMap = new HashSetValuedHashMap<>();
 
     public ModuleLoader()
@@ -274,9 +270,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
 
         // CONSIDER: could optimize more by not
-
-
-        rollErrorLogFile(_log);
 
         setJavaVersion();
 
@@ -445,6 +438,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         _webappDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(servletCtx.getRealPath("")));
 
         // load startup configuration information from properties, side-effect may set newinstall=true
+        // Wiki: https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using
         loadStartupProps();
 
         List<Map.Entry<File,File>> explodedModuleDirs = new ArrayList<>();
@@ -790,39 +784,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
     }
 
-    /** We want to roll the file every time the server starts, which isn't directly supported by Log4J so we do it manually */
-    private void rollErrorLogFile(Logger logger)
-    {
-        while (logger != null && !logger.getAllAppenders().hasMoreElements())
-        {
-            logger = (Logger)logger.getParent();
-        }
-
-        if (logger == null)
-        {
-            return;
-        }
-
-        for (Enumeration e2 = logger.getAllAppenders(); e2.hasMoreElements();)
-        {
-            final Appender appender = (Appender)e2.nextElement();
-            if (appender instanceof RollingFileAppender && "ERRORS".equals(appender.getName()))
-            {
-                RollingFileAppender rfa = (RollingFileAppender)appender;
-                String fileName = rfa.getFile();
-                if (fileName == null)
-                {
-                    throw new IllegalStateException("Error rolling labkey-errors.log file, likely a file permissions problem in CATALINA_HOME/logs");
-                }
-                File f = new File(fileName);
-                if (f.exists() && f.length() > 0)
-                {
-                    rfa.rollOver();
-                }
-            }
-        }
-    }
-
     private List<Module> loadModules(List<Map.Entry<File,File>> explodedModuleDirs)
     {
         ApplicationContext parentContext = ServiceRegistry.get().getApplicationContext();
@@ -898,7 +859,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         // filter by startup properties if specified
         LinkedList<String> includeList = new LinkedList<>();
-        ArrayList<String> exclude = new ArrayList<>();
+        LinkedList<String> excludeList = new LinkedList<>();
         for (ConfigProperty prop : getConfigProperties("ModuleLoader"))
         {
             if (prop.getName().equals("include"))
@@ -908,9 +869,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
                     .forEach(includeList::add);
             if (prop.getName().equals("exclude"))
                 Arrays.stream(StringUtils.split(prop.getValue(), ","))
-                        .map(StringUtils::trimToNull)
-                        .filter(Objects::nonNull)
-                        .forEach(exclude::add);
+                    .map(StringUtils::trimToNull)
+                    .filter(Objects::nonNull)
+                    .forEach(excludeList::add);
         }
 
         CaseInsensitiveTreeMap<Module> includedModules = moduleNameToModule;
@@ -927,7 +888,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             }
         }
 
-        for (String e : exclude)
+        for (String e : excludeList)
             includedModules.remove(e);
 
         return new ArrayList<>(includedModules.values());
@@ -1182,8 +1143,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
             if (!existing.isEmpty())
             {
-//                throw new ConfigurationException("You must delete the following JDBC drivers from " + lib.getAbsolutePath() + ": " + existing);
-                String message = "You must delete the following JDBC drivers from " + lib.getAbsolutePath() + ": " + existing;
+                String path = FileUtil.getAbsoluteCaseSensitiveFile(lib).getAbsolutePath();
+//                throw new ConfigurationException("You must delete the following JDBC drivers from " + path + ": " + existing);
+                String message = "You must delete the following JDBC drivers from " + path + ": " + existing;
                 _log.warn(message);
                 WarningService.get().register(new WarningProvider()
                 {
@@ -1526,6 +1488,16 @@ public class ModuleLoader implements Filter, MemTrackerListener
         {
             runDropScripts();
             runCreateScripts();
+        }
+    }
+
+    // Runs the drop and create scripts in a single module
+    public void recreateViews(Module module)
+    {
+        synchronized (UPGRADE_LOCK)
+        {
+            runScripts(module, SchemaUpdateType.Before);
+            runScripts(module, SchemaUpdateType.After);
         }
     }
 
@@ -2318,6 +2290,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
 
+    /**
+     * Loads startup/bootstrap properties from configuration files.
+     * Wiki: https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using
+     */
     private void loadStartupProps()
     {
         File propsDir = new File(_webappDir.getParent(), "startup");

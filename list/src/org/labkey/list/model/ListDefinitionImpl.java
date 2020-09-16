@@ -16,7 +16,8 @@
 
 package org.labkey.list.model;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -55,7 +56,6 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.list.controllers.ListController;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -67,7 +67,7 @@ import static org.labkey.api.util.GUID.makeGUID;
 
 public class ListDefinitionImpl implements ListDefinition
 {
-    private static final Logger LOG = Logger.getLogger(ListDefinitionImpl.class);
+    private static final Logger LOG = LogManager.getLogger(ListDefinitionImpl.class);
 
     static public ListDefinitionImpl of(ListDef def)
     {

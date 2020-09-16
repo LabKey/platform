@@ -24,16 +24,19 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserPrincipal" %>
 <%@ page import="org.labkey.api.security.UserUrls" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
-<%@ page import="org.labkey.core.security.GroupView" %>
+<%@ page import="org.labkey.core.security.GroupView.GroupBean" %>
 <%@ page import="org.labkey.core.security.SecurityApiActions" %>
-<%@ page import="org.labkey.core.security.SecurityController" %>
+<%@ page import="org.labkey.core.security.SecurityController.CompleteMemberAction" %>
 <%@ page import="org.labkey.core.security.SecurityController.GroupAction" %>
+<%@ page import="org.labkey.core.security.SecurityController.GroupExportAction" %>
+<%@ page import="org.labkey.core.security.SecurityController.StandardDeleteGroupAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -45,10 +48,10 @@
     }
 %>
 <%
-    GroupView.GroupBean bean = ((JspView<GroupView.GroupBean>)HttpView.currentView()).getModelBean();
+    GroupBean bean = ((JspView<GroupBean>)HttpView.currentView()).getModelBean();
     Container c = getContainer();
 
-    ActionURL completionUrl = new ActionURL(SecurityController.CompleteMemberAction.class, c);
+    ActionURL completionUrl = urlFor(CompleteMemberAction.class);
     completionUrl.addParameter("groupId", bean.group.getUserId());
     URLHelper returnURL = getActionURL().clone().deleteParameter("returnUrl");
 %>
@@ -153,15 +156,15 @@
 
 </script>
 
-<labkey:form id="groupMembersForm" action="<%=h(buildURL(GroupAction.class))%>" method="POST" layout="horizontal">
+<labkey:form id="groupMembersForm" action="<%=urlFor(GroupAction.class)%>" method="POST" layout="horizontal">
 <%
 if (bean.messages.size() > 0)
 {
     %><b>System membership status for new group members:</b><br>
     <div id="messages"><%
-    for (String message : bean.messages)
+    for (HtmlString message : bean.messages)
     {
-        %><%= text(message) %><br><%
+        %><%= message %><br><%
     }
     %></div><br><%
 }
@@ -171,7 +174,7 @@ if (!bean.group.isDevelopers())
 {
 %>
     <br/>
-    <%if (!bean.group.isSystemGroup()){%><%= button("Rename Group").href(buildURL(SecurityApiActions.RenameGroupAction.class, "id=" + bean.group.getUserId())) %><%}%>
+    <%if (!bean.group.isSystemGroup()){%><%= button("Rename Group").href(urlFor(SecurityApiActions.RenameGroupAction.class).addParameter("id", bean.group.getUserId())) %><%}%>
     <%= button("View Permissions").href(urlProvider(SecurityUrls.class).getGroupPermissionURL(c, bean.group.getUserId())) %>
 <%
 }
@@ -266,7 +269,7 @@ else
         <%
     }
     ActionURL urlGroup = getViewContext().cloneActionURL();
-    urlGroup.setAction(SecurityController.GroupExportAction.class);
+    urlGroup.setAction(GroupExportAction.class);
     urlGroup.replaceParameter("group", bean.groupName);
 
     ActionURL urlGroupActive = urlGroup.clone();
@@ -315,7 +318,7 @@ if (!bean.isSystemGroup)
     if (bean.members.size() == 0)
     {
         %>
-        <labkey:form action="<%=h(buildURL(SecurityController.StandardDeleteGroupAction.class))%>" method="POST">
+        <labkey:form action="<%=urlFor(StandardDeleteGroupAction.class)%>" method="POST">
         <%= button("Delete Empty Group").submit(true).onClick("return confirm('Permanently delete group " + bean.groupName + "?')") %>
         <input type="hidden" name="group" value="<%= h(bean.groupName) %>">
         </labkey:form>

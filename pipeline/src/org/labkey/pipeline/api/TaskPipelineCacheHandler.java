@@ -15,7 +15,8 @@
  */
 package org.labkey.pipeline.api;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCacheHandler;
@@ -41,7 +42,7 @@ import java.util.stream.Stream;
  */
 /* package */ class TaskPipelineCacheHandler implements ModuleResourceCacheHandler<Map<TaskId, TaskPipeline>>
 {
-    private static final Logger LOG = Logger.getLogger(TaskPipelineCacheHandler.class);
+    private static final Logger LOG = LogManager.getLogger(TaskPipelineCacheHandler.class);
     private static final String PIPELINE_CONFIG_EXTENSION = ".pipeline.xml";
 
     @Override

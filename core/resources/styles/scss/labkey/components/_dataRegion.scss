@@ -66,18 +66,24 @@
     vertical-align: top;
     position: relative;
 
-    &.dropdown:hover,
-    > .dropdown-toggle:hover {
-      cursor: pointer;
+    div {
+      &.dropdown:hover,
+      > .dropdown-toggle:hover {
+        cursor: pointer;
+      }
+
+      // 31304: click target should fill the entire cell
+      > div.dropdown-toggle {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
     }
 
-    // 31304: click target should fill the entire cell
-    > div.dropdown-toggle {
-      position:absolute;
-      top:0;
-      bottom:0;
-      left:0;
-      right:0;
+    &.labkey-pivot {
+      width: auto;
     }
   }
 

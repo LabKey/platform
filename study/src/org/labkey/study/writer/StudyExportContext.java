@@ -22,8 +22,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.Dataset;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantMapper;
-import org.labkey.study.model.Vial;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.Vial;
 import org.labkey.study.xml.StudyDocument;
 
 import java.util.ArrayList;

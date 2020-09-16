@@ -16,7 +16,12 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.TableInfo;
 
 public class UserIdForeignKey extends LookupForeignKey
 {

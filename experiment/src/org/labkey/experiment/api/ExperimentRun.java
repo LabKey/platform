@@ -16,11 +16,9 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -136,5 +134,11 @@ public class ExperimentRun extends IdentifiableEntity
         result = 31 * result + getRowId();
         result = 31 * result + (protocolLSID != null ? protocolLSID.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public @Nullable ExpRunImpl getExpObject()
+    {
+        return new ExpRunImpl(this);
     }
 }

@@ -15,9 +15,12 @@
  */
 package org.labkey.api.action;
 
+import org.labkey.api.security.MethodsAllowed;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
+
+import static org.labkey.api.util.HttpUtil.Method.POST;
 
 /**
  * Base class for all API actions that change the server's state in some way. This class enforces
@@ -26,11 +29,14 @@ import javax.servlet.http.HttpServletResponse;
  * User: Dave
  * Date: May 25, 2009
  */
+@MethodsAllowed(POST)
 public abstract class MutatingApiAction<FORM> extends BaseApiAction<FORM>
 {
     @Override
     protected final ModelAndView handleGet() throws Exception
     {
+        // leave this assert because subclasses may change the MethodsAllowed annotation
+        assert false : "Should not get here";
         int status = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
         String message = "You must use the POST method when calling this action.";
         createResponseWriter().writeAndCloseError(status, message);

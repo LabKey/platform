@@ -29,7 +29,6 @@
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -271,12 +270,12 @@
                         remoteIgnoreCase: false,
                         paths: [
                             {
-                                localURI: <%=PageFlowUtil.jsString(ScriptEngineReport.getDefaultTempRoot().toURI().toString())%>,
+                                localURI: <%=q(ScriptEngineReport.getDefaultTempRoot().toURI().toString())%>,
                                 remoteURI: ''
                             }
                             <% if (null != FileContentService.get()) { %>
                             ,{
-                                localURI: <%=PageFlowUtil.jsString(FileContentService.get().getSiteDefaultRoot().toURI().toString())%>,
+                                localURI: <%=q(FileContentService.get().getSiteDefaultRoot().toURI().toString())%>,
                                 remoteURI: ''
                             }
                             <% } %>

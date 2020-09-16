@@ -45,6 +45,7 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -115,9 +116,15 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices();
 
     /** Log an audit event to capture a data change made to this table */
-    default void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, QueryService.AuditAction auditAction, List<Map<String, Object>>[] parameters)
+    default void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, List<Map<String, Object>>[] parameters)
     {
-        QueryService.get().addAuditEvent(user, container, this, auditBehavior, auditAction, parameters);
+        QueryService.get().addAuditEvent(user, container, this, auditBehavior, userComment, auditAction, parameters);
+    }
+
+    @SuppressWarnings("unchecked")
+    default void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, Map<String, Object> parameters)
+    {
+        QueryService.get().addAuditEvent(user, container, this, auditBehavior, userComment, auditAction, Collections.singletonList(parameters));
     }
 
     enum IndexType

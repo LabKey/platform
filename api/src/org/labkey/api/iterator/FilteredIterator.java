@@ -17,8 +17,8 @@ package org.labkey.api.iterator;
 
 import org.labkey.api.util.Filter;
 
-import java.util.NoSuchElementException;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * Wrapper over some other Iterator that filters out certain objects.

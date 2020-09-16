@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.util.HtmlString"%>
 <%@ page import="org.labkey.study.controllers.StudyController.BulkImportDataTypesAction"%>
 <%@ page import="org.labkey.study.model.DatasetDefinition"%>
-<%@ page import="java.util.ArrayList"%>
+<%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
@@ -55,7 +56,7 @@
 %>
     <tr>
         <td><%= def.getDatasetId() %></td>
-        <td><%= def.getLabel() != null ? def.getLabel() : "" %></td>
+        <td><%= def.getLabel() != null ? h(def.getLabel()) : HtmlString.EMPTY_STRING %></td>
     </tr>
 <%
     }

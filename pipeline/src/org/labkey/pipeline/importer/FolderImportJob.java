@@ -17,7 +17,8 @@ package org.labkey.pipeline.importer;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
@@ -44,7 +45,7 @@ import java.io.File;
  */
 public class FolderImportJob extends PipelineJob implements FolderJobSupport
 {
-    private static final Logger LOG = Logger.getLogger(FolderImportJob.class);
+    private static final Logger LOG = LogManager.getLogger(FolderImportJob.class);
 
     private final FolderImportContext _ctx;
     private final VirtualFile _root;

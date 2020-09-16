@@ -881,19 +881,14 @@ boxPlot.render();
     };
 
     LABKEY.vis.Plot = function(config){
-        if(config.hasOwnProperty('rendererType') && config.rendererType == 'd3') {
-            this.yLogGutter = config.requireYLogGutter ? true : false;
-            this.xLogGutter = config.requireXLogGutter ? true : false;
-            this.isMainPlot = config.isMainPlot ? true : false;
-            this.isShowYAxisGutter = config.isShowYAxis ? true : false;
-            this.isShowXAxisGutter = config.isShowXAxis ? true : false;
-            this.minXPositiveValue = config.minXPositiveValue;
-            this.minYPositiveValue = config.minYPositiveValue;
-
-            this.renderer = new LABKEY.vis.internal.D3Renderer(this);
-        } else {
-            this.renderer = new LABKEY.vis.internal.RaphaelRenderer(this);
-        }
+        this.yLogGutter = config.requireYLogGutter ? true : false;
+        this.xLogGutter = config.requireXLogGutter ? true : false;
+        this.isMainPlot = config.isMainPlot ? true : false;
+        this.isShowYAxisGutter = config.isShowYAxis ? true : false;
+        this.isShowXAxisGutter = config.isShowXAxis ? true : false;
+        this.minXPositiveValue = config.minXPositiveValue;
+        this.minYPositiveValue = config.minYPositiveValue;
+        this.renderer = new LABKEY.vis.internal.D3Renderer(this);
 
         var error = function(msg){
             if (this.throwErrors){

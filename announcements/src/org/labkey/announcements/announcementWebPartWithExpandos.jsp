@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementWebPart" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementWebPart.MessagesBean" %>
+<%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.data.Container" %>
@@ -25,8 +26,6 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.api.security.UserManager" %>
-<%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -166,7 +165,7 @@ TD.message-short .message-less, TD.message-short .message-more
     });
 </script>
 <!--ANNOUNCEMENTS-->
-<table style="table-layout: fixed; width: 100%;" id="<%=tableId%>">
+<table style="table-layout: fixed; width: 100%;" id="<%=h(tableId)%>">
     <tr>
         <td colspan="3">
             <div style="text-align: left"><%
@@ -192,13 +191,13 @@ for (AnnouncementModel a : bean.announcementModels)
     <tr>
         <td width="40%" align="left"><%
         if (a.getResponseCount() > 0)
-            out.print(" (" + a.getResponseCount() + (a.getResponseCount() == 1 ? "&nbsp;response)" : "&nbsp;responses)"));
+            out.print(unsafe(" (" + a.getResponseCount() + (a.getResponseCount() == 1 ? "&nbsp;response)" : "&nbsp;responses)")));
         %></td>
         <td width="20%" align="center" class="message-creator"><%=text(AnnouncementManager.getUserDetailsLink(c, user, a.getCreatedBy(), bean.includeGroups, false))%></td>
         <td width="40%" align="right" nowrap><%=formatDateTime(a.getCreated())%></td>
     </tr>
     <tr><td colspan=3 class="labkey-title-area-line"></td></tr>
-    <tr><td colspan=3 class="message labkey-force-word-break <%=bean.isPrint?"message-expanded":"message-collapsed"%>">
+    <tr><td colspan=3 class="message labkey-force-word-break <%=h(bean.isPrint?"message-expanded":"message-collapsed")%>">
         <div class="message-container">
             <div class="message-text"><%=a.translateBody()%></div><%
             if (!bean.isPrint)

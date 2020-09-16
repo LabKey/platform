@@ -17,21 +17,22 @@ import java.util.Set;
 
 public abstract class AuditHandler
 {
-    protected abstract AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, int rowCount, @Nullable Map<String, Object> row);
+    protected abstract AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row);
 
-    protected abstract DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable Map<String, Object> row, Map<String, Object> updatedRow);
+    protected abstract DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow);
 
     /**
      * Allow for adding fields that may be present in the updated row but not represented in the original row
+     * @param originalRow the original data
      * @param modifiedRow the data from the updated row that has changed
      * @param updatedRow the row that has been updated, which may include fields that have not changed
      */
-    protected void addDetailedModifiedFields(Map<String, Object> modifiedRow, Map<String, Object> updatedRow)
+    protected void addDetailedModifiedFields(Map<String, Object> originalRow, Map<String, Object> modifiedRow, Map<String, Object> updatedRow)
     {
         // do nothing extra by default
     }
 
-    public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, QueryService.AuditAction action, List<Map<String, Object>>... params)
+    public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action, List<Map<String, Object>>... params)
     {
         if (table.supportsAuditTracking())
         {
@@ -50,7 +51,7 @@ public abstract class AuditHandler
 
                     case SUMMARY:
                     case DETAILED:
-                        AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, 0, null);
+                        AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, userComment, 0, null);
                         AuditLogService.get().addEvent(user, event);
                         return;
                 }
@@ -66,10 +67,9 @@ public abstract class AuditHandler
                     assert (params.length > 0);
 
                     List<Map<String, Object>> rows = params[0];
-                    AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, rows.size(), rows.get(0));
+                    AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, userComment, rows.size(), rows.get(0));
 
                     AuditLogService.get().addEvent(user, event);
-                    break;
                 }
                 case DETAILED:
                 {
@@ -82,7 +82,7 @@ public abstract class AuditHandler
                     {
                         Map<String, Object> row = rows.get(i);
                         Map<String, Object> updatedRow = updatedRows.isEmpty() ? Collections.emptyMap() : updatedRows.get(i);
-                        DetailedAuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, action, row, updatedRow);
+                        DetailedAuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, action, userComment, row, updatedRow);
 
                         switch (action)
                         {
@@ -130,7 +130,7 @@ public abstract class AuditHandler
                                     }
                                 }
                                 // allow for adding fields that may be present in the updated row but not represented in the original row
-                                addDetailedModifiedFields(modifiedRow, updatedRow);
+                                addDetailedModifiedFields(row, modifiedRow, updatedRow);
 
                                 String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(c, originalRow);
                                 if (oldRecord != null)

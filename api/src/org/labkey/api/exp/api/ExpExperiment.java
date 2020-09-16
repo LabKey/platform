@@ -17,7 +17,6 @@
 package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.User;
 
 import java.util.List;

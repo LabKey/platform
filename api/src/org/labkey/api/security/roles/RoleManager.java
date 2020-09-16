@@ -16,7 +16,7 @@
 package org.labkey.api.security.roles;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.labkey.api.data.ContainerManager;
@@ -68,14 +68,15 @@ public class RoleManager
     private static final Map<String, Role> _nameToRoleMap = new ConcurrentHashMap<>();
     private static final Map<Class<? extends Role>, Role> _classToRoleMap = new ConcurrentHashMap<>();
     private static final List<Role> _roles = new CopyOnWriteArrayList<>();
+    private static final List<AdminRoleListener> _adminRolelisteners = new CopyOnWriteArrayList<>();
 
     //register all core roles
     static
     {
-        registerRole(siteAdminRole);
-        registerRole(new ApplicationAdminRole());
-        registerRole(new ProjectAdminRole());
-        registerRole(new FolderAdminRole());
+        registerAdminRole(siteAdminRole);
+        registerAdminRole(new ApplicationAdminRole());
+        registerAdminRole(new ProjectAdminRole());
+        registerAdminRole(new FolderAdminRole());
         registerRole(new EditorRole());
         registerRole(new AuthorRole());
         registerRole(new ReaderRole());
@@ -93,11 +94,16 @@ public class RoleManager
         registerRole(new PlatformDeveloperRole(), false);
     }
 
+    public static void addAdminRoleListener(AdminRoleListener listener)
+    {
+        _adminRolelisteners.add(listener);
+    }
+
     public static Role getRole(String name)
     {
         Role role = _nameToRoleMap.get(name);
         if (null == role)
-            Logger.getLogger(RoleManager.class).warn("Could not resolve the role " + name + "! The role may no longer exist, or may not yet be registered.");
+            LogManager.getLogger(RoleManager.class).warn("Could not resolve the role " + name + "! The role may no longer exist, or may not yet be registered.");
         return role;
     }
 
@@ -105,7 +111,7 @@ public class RoleManager
     {
         Role role = _classToRoleMap.get(clazz);
         if (null == role)
-            Logger.getLogger(RoleManager.class).warn("Could not resolve the role " + clazz.getName() + "! Did you forget to register the role with RoleManager.register()?");
+            LogManager.getLogger(RoleManager.class).warn("Could not resolve the role " + clazz.getName() + "! Did you forget to register the role with RoleManager.register()?");
         return role;
     }
 
@@ -119,7 +125,7 @@ public class RoleManager
     {
         Permission perm = (Permission) _classToRoleMap.get(clazz);
         if (null == perm)
-            Logger.getLogger(RoleManager.class).warn("Could not resolve the permission " + clazz.getName() + "! If this is not part of a role, you must register it separately with RoleManager.register().");
+            LogManager.getLogger(RoleManager.class).warn("Could not resolve the permission " + clazz.getName() + "! If this is not part of a role, you must register it separately with RoleManager.register().");
         return perm;
     }
 
@@ -127,7 +133,7 @@ public class RoleManager
     {
         Permission perm = (Permission) _nameToRoleMap.get(uniqueName);
         if (null == perm)
-            Logger.getLogger(RoleManager.class).warn("Could not resolve the permission " + uniqueName + "! The permission may no longer exist, or may not yet be registered.");
+            LogManager.getLogger(RoleManager.class).warn("Could not resolve the permission " + uniqueName + "! The permission may no longer exist, or may not yet be registered.");
         return perm;
     }
 
@@ -143,6 +149,12 @@ public class RoleManager
         return _roles.stream().
                 filter(r -> r.isAssignable() && r.isApplicable(policy, ContainerManager.getRoot())).
                 collect(Collectors.toSet());
+    }
+
+    private static void registerAdminRole(Role role)
+    {
+        registerRole(role);
+        addAdminRoleListener((AdminRoleListener)role);
     }
 
     public static void registerRole(Role role)
@@ -170,7 +182,7 @@ public class RoleManager
             }
             catch (InstantiationException | IllegalAccessException e)
             {
-                Logger.getLogger(RoleManager.class).error("Exception while instantiating permission " + permClass, e);
+                LogManager.getLogger(RoleManager.class).error("Exception while instantiating permission " + permClass, e);
             }
         }
 
@@ -228,10 +240,10 @@ public class RoleManager
 
     public static void addPermissionToAdminRoles(Class<? extends Permission> perm)
     {
-        siteAdminRole.addPermission(perm);
-        getRole(ApplicationAdminRole.class).addPermission(perm);
-        getRole(ProjectAdminRole.class).addPermission(perm);
-        getRole(FolderAdminRole.class).addPermission(perm);
+        for (AdminRoleListener listener : _adminRolelisteners)
+        {
+            listener.permissionRegistered(perm);
+        }
     }
 
     /**

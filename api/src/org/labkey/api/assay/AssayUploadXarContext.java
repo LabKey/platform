@@ -16,7 +16,6 @@
 
 package org.labkey.api.assay;
 
-import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.exp.XarContext;
 
 /**

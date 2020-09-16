@@ -17,14 +17,20 @@ package org.labkey.api.util;
 
 import java.io.IOException;
 
+/**
+ * Implements {@code HtmlString getHtmlString()}. Provides no guarantee about what {@code toString()} returns (e.g., it
+ * might or might not require HTML encoding); see {@link SafeToRender} for that.
+ */
 public interface HasHtmlString extends DOM.Renderable
 {
-    /**
-     * Must be consistent with {@code toString()}! JSP rendering of objects will call {@code obj.getHtmlString().toString()}
-     * in dev mode but {@code obj.toString()} in production mode. Most implementations will either implement {@code toString()}
-     * as {@code return getHtmlString.toString()} or implement {@code getHtmlString()} as {@code HtmlString.unsafe(toString);}.
-     */
     HtmlString getHtmlString();
+
+    /**
+     * HasHtmlString provides no guarantees about what this method returns, but it still can be convenient to inspect
+     * implementations; {@code Object} appearing in the implementation list might suggest a problem, for example, a
+     * builder that should be implementing {@code toString()} and {@code SafeToRender} for convenience.
+     */
+    String toString();
 
     @Override
     default Appendable appendTo(Appendable builder)

@@ -15,7 +15,8 @@
  */
 package org.labkey.study.controllers;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
@@ -24,6 +25,7 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -47,6 +49,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import static org.labkey.api.util.HttpUtil.Method.DELETE;
+import static org.labkey.api.util.HttpUtil.Method.POST;
+
 /**
  * Created by matthew on 5/28/15.
  *
@@ -54,7 +59,7 @@ import java.util.List;
  */
 public class SharedStudyController extends BaseStudyController
 {
-    private static final Logger _log = Logger.getLogger(SharedStudyController.class);
+    private static final Logger _log = LogManager.getLogger(SharedStudyController.class);
 
     private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(SharedStudyController.class);
 
@@ -137,6 +142,7 @@ public class SharedStudyController extends BaseStudyController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
+    @MethodsAllowed({POST, DELETE})
     public class SharedStudyContainerFilterAction extends MutatingApiAction<SharedStudyContainerFilterForm>
     {
         private Study _study = null;

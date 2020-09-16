@@ -142,10 +142,10 @@ public class PipelineQueryView extends QueryView
 
         if (_buttonOption == PipelineService.PipelineButtonOption.Standard)
         {
-            ActionURL retryURL = new ActionURL(StatusController.RunActionAction.class, getContainer());
+            ActionURL retryURL = new ActionURL(StatusController.RetryStatusAction.class, getContainer());
             retryURL.addParameter(ActionURL.Param.returnUrl, _returnURL.toString());
-            retryURL.addParameter("action", PipelineProvider.CAPTION_RETRY_BUTTON);
-            ActionButton retryStatus = new ActionButton(retryURL, PipelineProvider.CAPTION_RETRY_BUTTON);
+
+            ActionButton retryStatus = new ActionButton(retryURL, "Retry");
             retryStatus.setRequiresSelection(true);
             retryStatus.setActionType(ActionButton.Action.POST);
             retryStatus.setDisplayPermission(UpdatePermission.class);

@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -116,10 +115,17 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     @Override
     public ModelAndView handleRequest() throws Exception
     {
-        if (isPost() || isPut() || isDelete() || isPatch())
-            return handlePost();
-        else
-            return handleGet();
+        switch (getViewContext().getMethod())
+        {
+            case POST:
+            case PUT:
+            case DELETE:
+            case PATCH:
+                return handlePost();
+            case GET:
+                return handleGet();
+        }
+        throw new BadRequestException("Method Not Allowed: " + getViewContext().getRequest().getMethod(), null, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
     }
 
 
@@ -162,8 +168,11 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
                 _respFormat = ApiResponseWriter.Format.JSON_COMPACT;
             }
 
-            //validate the form
-            validate(form, errors);
+            if (form != null)
+            {
+                // validate the form, if a binding error didn't prevent it from being created. See issue 40888
+                validate(form, errors);
+            }
 
             //if we had binding or validation errors,
             //return them without calling execute.
@@ -255,7 +264,6 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
                 return null;
 
             ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), e);
-            Logger.getLogger(BaseApiAction.class).error("ApiAction exception: ", e);
 
             createResponseWriter().writeAndClose(e);
         }

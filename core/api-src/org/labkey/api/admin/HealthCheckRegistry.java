@@ -15,7 +15,8 @@
  */
 package org.labkey.api.admin;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -32,7 +33,7 @@ import java.util.Set;
  */
 public class HealthCheckRegistry
 {
-    private static final Logger LOG = Logger.getLogger(HealthCheckRegistry.class);
+    private static final Logger LOG = LogManager.getLogger(HealthCheckRegistry.class);
 
     public static final String DEFAULT_CATEGORY = "default";
     public static final String TRIAL_INSTANCES_CATEGORY = "trial";

@@ -17,6 +17,7 @@
 package org.labkey.api.study;
 
 import org.labkey.api.data.Filter;
+
 import java.io.Closeable;
 import java.util.Map;
 

@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.assay.nab.RenderAssayBean" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="java.util.Map" %>
 <%@ page import="java.util.Iterator" %>
-<%@ page import="org.labkey.api.assay.nab.RenderAssayBean" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<RenderAssayBean> me = (JspView<RenderAssayBean>) HttpView.currentView();
@@ -51,8 +52,8 @@
                 {
                     Pair<String, Object> property = index < entries.length ? entries[index] : null;
             %>
-                <td style="text-align:left; font-weight: bold;"><%= property != null ? h(property.getKey()) : "&nbsp;"  %></td>
-                <td><%= property != null ? h(property.getValue()) : "&nbsp;"  %></td>
+                <td style="text-align:left; font-weight: bold;"><%= property != null ? h(property.getKey()) : HtmlString.NBSP %></td>
+                <td><%= property != null ? h(property.getValue()) : HtmlString.NBSP %></td>
             <%
                 }
             }

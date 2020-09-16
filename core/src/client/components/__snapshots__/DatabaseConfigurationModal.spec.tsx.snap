@@ -172,6 +172,7 @@ exports[`<DatabaseConfigurationModal/> Editable 1`] = `
         <a
           className="modal__help-link"
           href={null}
+          rel="noopener noreferrer"
           target="_blank"
         >
           More about authentication
@@ -336,6 +337,7 @@ exports[`<DatabaseConfigurationModal/> View-only 1`] = `
         <a
           className="modal__help-link"
           href={null}
+          rel="noopener noreferrer"
           target="_blank"
         >
           More about authentication

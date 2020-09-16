@@ -22,9 +22,9 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Project;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.SecurityManager.TermsOfUseProvider;
-import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.RedirectException;
@@ -169,7 +169,8 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
         }
     }
 
-    public enum TermsOfUseType implements EnumHasHtmlString<TermsOfUseType> { NONE, PROJECT_LEVEL, SITE_WIDE }
+    public enum TermsOfUseType implements SafeToRenderEnum
+    { NONE, PROJECT_LEVEL, SITE_WIDE }
 
     public static class TermsOfUse
     {

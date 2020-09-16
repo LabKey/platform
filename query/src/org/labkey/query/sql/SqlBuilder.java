@@ -16,10 +16,11 @@
 
 package org.labkey.query.sql;
 
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.dialect.SqlDialect;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
 
 public class SqlBuilder extends Builder
 {

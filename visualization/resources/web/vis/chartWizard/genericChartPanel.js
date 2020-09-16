@@ -43,7 +43,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         var params = LABKEY.ActionURL.getParameters();
         this.editMode = params.edit == "true" || !this.savedReportInfo;
-        this.useRaphael = params.useRaphael != null ? params.useRaphael : false;
         this.parameters = LABKEY.Filter.getQueryParamsFromUrl(params['filterUrl'], this.dataRegionName);
 
         // Issue 19163
@@ -719,6 +718,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     getQueryConfig : function(serialize)
     {
         var dataRegion = LABKEY.DataRegions[this.panelDataRegionName];
+        var sortKey = 'lsid'; // needed to keep expected ordering for legend data
+
+        // Issue 38105: For plots with study visit labels on the x-axis, sort by visit display order and then sequenceNum
+        var visitTableName = LABKEY.vis.GenericChartHelper.getStudySubjectInfo().tableName + 'Visit';
+        if (this.measures.x && this.measures.x.fieldKey === visitTableName + '/Visit') {
+            var displayOrderColName = visitTableName + '/Visit/DisplayOrder';
+            var seqNumColName = visitTableName + '/SequenceNum';
+            sortKey = displayOrderColName + ', ' + seqNumColName;
+        }
 
         var config = {
             schemaName  : this.schemaName,
@@ -729,7 +737,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             parameters  : this.parameters,
             requiredVersion : 13.2,
             maxRows: -1,
-            sort: 'lsid', // needed to keep expected ordering for legend data
+            sort: sortKey,
             method: 'POST'
         };
 
@@ -1571,12 +1579,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         );
                     }, this);
                 }
-            }
-
-            if (!this.supportedBrowser || this.useRaphael) {
-                Ext4.each(plotConfigArr, function(plotConfig) {
-                    plotConfig.rendererType = 'raphael';
-                }, this);
             }
         }
 

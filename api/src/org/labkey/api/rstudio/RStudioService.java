@@ -37,7 +37,7 @@ import java.util.Map;
 public interface RStudioService
 {
     String R_DOCKER_SANDBOX = "rDockerSandbox";
-    String R_DOCKER_ENGINE ="R Docker Scripting Engine";
+    String R_DOCKER_ENGINE = "R Docker Scripting Engine";
     String NO_RSTUDIO = "RStudio module is not present.";
 
     static RStudioService get()
@@ -95,5 +95,4 @@ public interface RStudioService
     {
         return null;
     }
-
 }

@@ -16,9 +16,9 @@
 
 package org.labkey.api.security;
 
-import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
 /**
  * Specify comma-separated names for an action. Once this annotation is added to an action, it replaces the

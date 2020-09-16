@@ -15,8 +15,8 @@
  */
 package org.labkey.api.exp.form;
 
-import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.assay.actions.ProtocolIdForm;
+import org.labkey.api.data.DataRegionSelection;
 
 import java.util.Set;
 

@@ -16,13 +16,13 @@
 
 package org.labkey.study.pipeline;
 
-import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.AbstractTaskFactory;
+import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.FileType;
 
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 
 public abstract class AbstractSpecimenTaskFactory<FactoryType extends AbstractSpecimenTaskFactory<FactoryType>> extends AbstractTaskFactory<AbstractTaskFactorySettings, FactoryType>
 {

@@ -16,9 +16,9 @@
 package org.labkey.search.view;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ViewContext;
 
 /**
@@ -73,14 +73,13 @@ public class DefaultSearchResultTemplate implements SearchResultTemplate
     }
 
     @Override
-    public String getExtraHtml(ViewContext ctx)
+    public HtmlString getExtraHtml(ViewContext ctx)
     {
         return null;
     }
 
-    @Nullable
     @Override
-    public String getHiddenInputsHtml(ViewContext ctx)
+    public HtmlString getHiddenInputsHtml(ViewContext ctx)
     {
         return null;
     }
@@ -90,5 +89,4 @@ public class DefaultSearchResultTemplate implements SearchResultTemplate
     {
         return q;
     }
-
 }

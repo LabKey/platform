@@ -30,9 +30,7 @@ import org.labkey.api.view.template.ClientDependency;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Supplier;
 
 /**

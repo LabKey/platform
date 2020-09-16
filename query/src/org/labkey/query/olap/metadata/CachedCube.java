@@ -38,7 +38,6 @@ import org.olap4j.metadata.NamedSet;
 import org.olap4j.metadata.Property;
 import org.olap4j.metadata.Schema;
 
-import java.sql.SQLException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;

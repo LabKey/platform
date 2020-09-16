@@ -15,9 +15,9 @@
  */
 package org.labkey.api.pipeline.trigger;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.labkey.api.data.Entity;
-import org.springframework.util.StringUtils;
 
 import java.util.Date;
 import java.util.HashMap;

@@ -17,8 +17,6 @@ package org.labkey.api.laboratory;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
-import org.labkey.api.laboratory.DataProvider;
-import org.labkey.api.laboratory.LaboratoryService;
 import org.labkey.api.security.User;
 
 /**

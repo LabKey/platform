@@ -16,7 +16,10 @@
 package org.labkey.api.util;
 
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.NullConfiguration;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -50,8 +53,8 @@ public class ContextListener implements ServletContextListener
             System.setProperty(LOG_HOME_PROPERTY_NAME, System.getProperty("catalina.base") + "/logs");
     }
 
-    // NOTE: this line of code with Logger.getLogger() has to happen after System.setProperty(LOG_HOME_PROPERTY_NAME)
-    private static final Logger _log = Logger.getLogger(ContextListener.class);
+    // NOTE: this line of code with LogManager.getLogger() has to happen after System.setProperty(LOG_HOME_PROPERTY_NAME)
+    private static final Logger _log = LogManager.getLogger(ContextListener.class);
     private static final List<ShutdownListener> _shutdownListeners = new CopyOnWriteArrayList<>();
     private static final List<StartupListener> _startupListeners = new CopyOnWriteArrayList<>();
     private static final ContextLoaderListener _springContextListener = new ContextLoaderListener();
@@ -74,8 +77,8 @@ public class ContextListener implements ServletContextListener
         ViewServlet.setShuttingDown(1000);
         getSpringContextListener().contextDestroyed(servletContextEvent);
         CacheManager.shutdown();   // Don't use a listener... we want this shutdown late
-        org.apache.log4j.LogManager.shutdown();
-        org.apache.log4j.LogManager.resetConfiguration();
+        LogManager.shutdown();
+        LoggerContext.getContext(true).setConfiguration(new NullConfiguration());
         org.apache.commons.beanutils.PropertyUtils.clearDescriptors();
         org.apache.commons.beanutils.ConvertUtils.deregister();
         java.beans.Introspector.flushCaches();

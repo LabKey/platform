@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.api.data.RenderContext" %>
 <%@ page import="org.labkey.api.study.actions.ParticipantVisitResolverChooser.RenderSubSelectors" %>
 <%@ page import="org.labkey.api.study.assay.ThawListResolverType" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -40,7 +40,7 @@
     boolean listType = ThawListResolverType.LIST_NAMESPACE_SUFFIX.equalsIgnoreCase((String)ctx.getForm().get(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME));
     boolean textType = !listType;
 
-    String containerPath = (String)ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_CONTAINER_INPUT_NAME);
+    String containerPath = ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_CONTAINER_INPUT_NAME);
     Container container = containerPath == null ? null : ContainerManager.getForPath(containerPath);
 
     String textTypeId = "RadioBtn-" + ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME + "-" + ThawListResolverType.TEXT_NAMESPACE_SUFFIX;
@@ -80,7 +80,7 @@
             name: '<%= text(ThawListResolverType.THAW_LIST_LIST_CONTAINER_INPUT_NAME) %>',
             id : 'thawListContainer',
             fieldLabel: 'Folder',
-            value: <%= text(container == null ? "null" : PageFlowUtil.jsString(container.getPath())) %>,
+            value: <%=(container == null ? JavaScriptFragment.NULL : q(container.getPath())) %>,
             width: 500,
             typeAhead: true,
             forceSelection: true
@@ -92,22 +92,22 @@
             typeAhead : true,
             typeAheadDelay : 250,
             forceSelection : true,
-            initialValue : <%=PageFlowUtil.jsString((String)ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME))%>,
+            initialValue : <%=q(ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME))%>,
             fieldLabel : 'Schema',
             name: '<%= text(ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME) %>',
             validateOnBlur: false,
             width: 500
         }));
 
-        var queryCombo = ('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
-            defaultSchema : <%=PageFlowUtil.jsString((String)ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME))%>,
+        var queryCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
+            defaultSchema : <%=q(ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME))%>,
             id : 'thawListQueryName',
             includeUserQueries: true,
             typeAhead : true,
             typeAheadDelay : 250,
             fieldLabel : 'Query',
             name: '<%= text(ThawListResolverType.THAW_LIST_LIST_QUERY_NAME_INPUT_NAME) %>',
-            initialValue : <%=PageFlowUtil.jsString((String)ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_QUERY_NAME_INPUT_NAME))%>,
+            initialValue : <%=q(ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_QUERY_NAME_INPUT_NAME))%>,
             width: 500
         }));
 

@@ -16,7 +16,8 @@
 package org.labkey.issue.actions;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
@@ -42,6 +43,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
@@ -62,7 +64,6 @@ import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
-import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -79,7 +80,7 @@ import static org.labkey.api.action.SpringActionController.getActionName;
  */
 public class ChangeSummary
 {
-    private static final Logger _log = Logger.getLogger(ChangeSummary.class);
+    private static final Logger _log = LogManager.getLogger(ChangeSummary.class);
 
     private final Issue.Comment _comment;
     private final String _textChanges;
@@ -91,7 +92,7 @@ public class ChangeSummary
     private final Class<? extends Controller> _action;
     private final Map<String, Object> _issueProperties;
 
-    private static Set<String> _standardFields = new CaseInsensitiveHashSet();
+    private static final Set<String> _standardFields = new CaseInsensitiveHashSet();
 
     static
     {
@@ -238,11 +239,11 @@ public class ChangeSummary
         formattedComment.append(sbHTMLChanges);
         //render issues as plain text with links
         WikiRenderingService renderingService = WikiRenderingService.get();
-        String html = renderingService.getFormattedHtml(WikiRendererType.TEXT_WITH_LINKS, comment);
+        HtmlString html = renderingService.getFormattedHtml(WikiRendererType.TEXT_WITH_LINKS, comment);
         formattedComment.append(html);
         formattedComment.append("</div>");
 
-        return new ChangeSummary(issueListDef, issue, previous, issue.addComment(user, formattedComment.toString()),
+        return new ChangeSummary(issueListDef, issue, previous, issue.addComment(user, HtmlString.unsafe(formattedComment.toString())),
                 sbTextChanges.toString(), summary, action, issueProperties);
     }
 
@@ -312,7 +313,7 @@ public class ChangeSummary
                 sb.append(String.format("<tr><td>Related</td><td>%s</td><td>&raquo;</td><td>%s</td></tr>", StringUtils.join(prevRelated, ", "), StringUtils.join(newRelated, ", ")));
                 sb.append("</table></div>");
 
-                relatedIssue.addComment(user, sb.toString());
+                relatedIssue.addComment(user, HtmlString.unsafe(sb.toString()));
             }
 
             relatedIssue.setRelatedIssues(newRelated);

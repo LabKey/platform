@@ -73,6 +73,9 @@ public abstract class SaveConfigurationAction<F extends SaveConfigurationForm, A
 
     public static <F extends SaveConfigurationForm> void saveForm(F form, @Nullable User user)
     {
+        // This method might throw. Invoke proactively so BeanObjectFactory doesn't translate exception into an assert.
+        String ignore = form.getEncryptedProperties();
+
         if (null == form.getRowId())
         {
             Table.insert(user, CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form);

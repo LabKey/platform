@@ -15,8 +15,6 @@
  */
 package org.labkey.api.mbean;
 
-import org.apache.log4j.spi.LoggingEvent;
-
 import java.util.Date;
 
 /**

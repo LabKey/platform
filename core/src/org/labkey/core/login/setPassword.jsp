@@ -17,6 +17,8 @@
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.collections.NamedObject" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -24,9 +26,9 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.login.DbLoginManager" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
-<%@ page import="org.labkey.core.portal.ProjectController" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.core.login.LoginController.SetPasswordBean" %>
+<%@ page import="org.labkey.core.portal.ProjectController.HomeAction" %>
+<%@ page import="org.labkey.core.portal.ProjectController.StartAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -36,7 +38,7 @@
     }
 %>
 <%
-    LoginController.SetPasswordBean bean = ((JspView<LoginController.SetPasswordBean>)HttpView.currentView()).getModelBean();
+    SetPasswordBean bean = ((JspView<SetPasswordBean>)HttpView.currentView()).getModelBean();
     String errors = formatMissedErrorsStr("form");
 %>
 <style>
@@ -44,7 +46,7 @@
         width: 100px;
     }
 </style>
-<labkey:form method="POST" id="setPasswordForm" action="<%=h(buildURL(bean.action))%>" layout="horizontal" className="auth-form">
+<labkey:form method="POST" id="setPasswordForm" action="<%=urlFor(bean.action)%>" layout="horizontal" className="auth-form">
     <% if (bean.title != null) { %>
         <div class="auth-header"><%=h(bean.title)%></div>
     <% } %>
@@ -113,13 +115,13 @@
 
         <div class="auth-item">
             <%= button(bean.buttonText).submit(true).name("set") %>
-            <%=unsafe(bean.cancellable ? button("Cancel").href(bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(ProjectController.HomeAction.class, getContainer())).toString() : "")%>
+            <%=unsafe(bean.cancellable ? button("Cancel").href(bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(HomeAction.class, getContainer())).toString() : "")%>
         </div>
     <% }
        else
        {
            Container c = getContainer().isRoot() ? ContainerManager.getHomeContainer() : getContainer();
-           URLHelper homeURL = bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(ProjectController.StartAction.class, c);
+           URLHelper homeURL = bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(StartAction.class, c);
     %>
             <div class="auth-item">
                 <%= unsafe(button("Home").href(homeURL).toString()) %>

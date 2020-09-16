@@ -17,8 +17,8 @@
 package org.labkey.query.reports.view;
 
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.Portal;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.Portal;
 
 import java.io.PrintWriter;
 

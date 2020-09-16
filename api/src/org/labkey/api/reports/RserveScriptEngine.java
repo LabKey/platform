@@ -16,7 +16,8 @@
 package org.labkey.api.reports;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.util.FileUtil;
@@ -38,7 +39,7 @@ import java.util.Map;
 
 public class RserveScriptEngine extends RScriptEngine
 {
-    private static final Logger LOG = Logger.getLogger(RserveScriptEngine.class);
+    private static final Logger LOG = LogManager.getLogger(RserveScriptEngine.class);
 
     private String localHostIP = "127.0.0.1";
     private String localHostName = "localhost";

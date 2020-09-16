@@ -61,7 +61,7 @@ public class ExpMaterialProtocolInputTableImpl extends ExpProtocolInputTableImpl
             case Input:
                 return createInputColumn(alias);
             case SampleSet:
-                return createSampleSetColumn(alias);
+                return createSampleTypeColumn(alias);
             case MinOccurs:
                 return createMinOccursColumn(alias);
             case MaxOccurs:

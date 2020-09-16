@@ -62,7 +62,9 @@ List caching = [
 ]
 
 List logging = [
-        "log4j:log4j:${log4jVersion}"
+        "org.apache.logging.log4j:log4j-core:${log4j2Version}",
+        "org.apache.logging.log4j:log4j-api:${log4j2Version}",
+        "org.apache.logging.log4j:log4j-1.2-api:${log4j2Version}"
 ]
 
 List r = [
@@ -84,7 +86,6 @@ List others = [
         "flyingsaucer:core-renderer:${flyingsaucerVersion}",
         "com.google.guava:guava:${guavaVersion}",
         "net.sf.jtidy:jtidy:${jtidyVersion}",
-        "net.sourceforge.jexcelapi:jxl:${jxlVersion}",
         "com.google.code.kaptcha:kaptcha:${kaptchaVersion}",
         "org.objenesis:objenesis:${objenesisVersion}",
         "com.opencsv:opencsv:${opencsvVersion}",
@@ -117,6 +118,15 @@ configurations {
         canBeResolved = true
     }
 
+    // this configuration and its artifact are declared because the default outgoing variant for the api
+    // module (runtimeElements) does not include all the class files since the classes compiled from
+    // the XSDs are produced in a separate classes directory.  The name is chosen to be the same as
+    // the apiJarFile configuration that comes from the API Gradle plugin.  We need this jar file for
+    // the testAutomation dependency declaration at least.
+    apiJarFile {
+        canBeConsumed = true
+        canBeResolved = true
+    }
 }
 
 // declared separately to include the gwtsrc directory
@@ -161,6 +171,10 @@ dependencies {
         // dependency here in favor of the explicit dependency with a different version.
         exclude group: "org.apache.xmlbeans", module: "xmlbeans"
     }
+    external("net.sourceforge.jexcelapi:jxl:${jxlVersion}") {
+        // exclude this because it brings older version of log4j
+        exclude group: "log4j", module:"log4j"
+    }
     external apache,caching,charting,gwt,jackson,javax,logging,others,r,spring
 
     // These are required for running unit tests through the server junit controller
@@ -170,3 +184,6 @@ dependencies {
     jspImplementation apache, jackson, spring
 }
 
+artifacts {
+    apiJarFile(jar)
+}
