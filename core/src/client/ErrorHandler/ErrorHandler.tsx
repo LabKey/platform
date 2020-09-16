@@ -1,10 +1,9 @@
 import React from 'react';
 
-import '@labkey/components/dist/components.css';
-import './errorHandler.scss';
 import { ErrorTopSection } from '../components/ErrorTopSection';
-
 import { ErrorType } from './ErrorType';
+
+import './errorHandler.scss';
 
 export interface AppContext {
     message: string;
