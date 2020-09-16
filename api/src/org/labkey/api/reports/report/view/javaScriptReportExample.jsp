@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page extends="org.labkey.api.jsp.JspContext" %>
 var jsDiv;
 
 // When a JavaScript report is viewed, LabKey calls the render() function, passing a query config
