@@ -45,7 +45,7 @@ List jackson = [
 ]
 
 List charting = [
-        "org.jfree:jfreechart:${jfreechartVersion}",
+        "org.jfree:jfreechart:${jfreechartVersion}"
 ]
 
 List caching = [
