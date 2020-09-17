@@ -227,8 +227,8 @@
         <jsp-property-group>
             <display-name>LabKey</display-name>
             <url-pattern>*.jsp</url-pattern>
-            <!-- We'll uncomment the line below once we update the gradle plugin to copy jspWriter.jspf to each jspTempDir -->
-            <!--include-prelude>/WEB-INF/jspWriter.jspf</include-prelude-->
+            <!-- This fragment is injected into every JSP at Java translation time to replace the standard JspWriter -->
+            <include-prelude>/WEB-INF/jspWriter.jspf</include-prelude>
         </jsp-property-group>
     </jsp-config>
 
