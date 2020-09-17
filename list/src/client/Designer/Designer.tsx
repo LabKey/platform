@@ -25,7 +25,7 @@ import {
     BeforeUnload
 } from "@labkey/components";
 
-import "@labkey/components/dist/components.css"
+import './Designer.scss';
 
 type State = {
     hasDesignListPermission?: boolean,

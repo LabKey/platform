@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page extends="org.labkey.api.jsp.JspContext" %>
 <div id="searchDiv">
     
 </div>

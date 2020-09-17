@@ -28,7 +28,7 @@ import {
     SampleTypeModel
 } from "@labkey/components"
 
-import "@labkey/components/dist/components.css"
+import "./SampleTypeDesigner.scss"
 
 interface State {
     sampleType?: DomainDetails

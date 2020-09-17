@@ -26,7 +26,7 @@ import {
 } from "@labkey/components";
 import { ActionURL, Domain, getServerContext } from "@labkey/api";
 
-import "@labkey/components/dist/components.css"
+import "./DatasetDesigner.scss"
 
 interface State {
     model: DatasetModel,
