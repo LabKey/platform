@@ -1,6 +1,9 @@
 import React, { ReactNode } from 'react';
 
-import { imageURL } from '@labkey/components';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheckCircle } from '@fortawesome/free-solid-svg-icons';
+
+import { helpLinkNode, imageURL } from '@labkey/components';
 
 import { IErrorDetailsModel } from './model';
 
@@ -15,8 +18,9 @@ const DETAILS_SUB_INSTRUCTION = (
         </div>
         <br />
         <div className="labkey-error-details">
-            <a href="#">LabKey support documentation </a> is another immediate resource that is available to all users.
-            A search through the documentation or previous forum questions may also help troubleshoot your issue.
+            {helpLinkNode('default', 'LabKey support documentation')} is another immediate resource that is available to
+            all users. A search through the documentation or previous forum questions may also help troubleshoot your
+            issue.
         </div>
     </>
 );
@@ -25,12 +29,22 @@ const NOTFOUND_SUBHEADING = <>It seems like something went wrong. The requested 
 const NOTFOUND_INSTRUCTION = (
     <>
         <div className="labkey-error-instruction">
-            {/* TODO: ErrorPage - add href link*/}
-            Please contact your admin or reference the <a href="#">LabKey support forum.</a>
+            Please contact your admin or reference the{' '}
+            <a href="https://www.labkey.org/project/home/Support/begin.view?" rel="noopener noreferrer" target="_blank">
+                LabKey support forum.
+            </a>
         </div>
         <div className="labkey-error-instruction">
-            {/* TODO: ErrorPage - add href link*/}
-            If you would like to file a <a href="#"> LabKey support ticket</a>, your unique reference code is:
+            If you would like to file a{' '}
+            <a
+                href="https://www.labkey.org/Support%20Tickets/wiki-edit.view?"
+                rel="noopener noreferrer"
+                target="_blank"
+            >
+                {' '}
+                LabKey support ticket
+            </a>
+            , your unique reference code is:
         </div>
     </>
 );
@@ -47,20 +61,21 @@ const NOTFOUND_DETAILS = (
         <div className="labkey-error-details labkey-error-subdetails">
             <div>
                 <li>
-                    <b>Incorrect URL: </b>the wrong web address has been typed.
+                    <b>Incorrect URL: </b>the wrong web address has been typed. {helpLinkNode('url', 'Read More >')}
                 </li>
             </div>
-            <div>Double check and make sure that your URL has been correctly input.</div>
-
+            <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Double check and make
+            sure that your URL has been correctly input.
             <br />
             <br />
-
             <div>
                 <li>
-                    <b>Permissions: </b>your account does not have the permissions to view this page.
+                    <b>Permissions: </b>your account does not have the permissions to view this page.{' '}
+                    {helpLinkNode('permissionLevels', 'Read More >')}
                 </li>
             </div>
-            <div>Contact your administrator to request for access.</div>
+            <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Contact your
+            administrator to request for access.
         </div>
         <br />
         <br />
@@ -77,11 +92,11 @@ const PERMISSION_DETAILS = (
 
         <div className="labkey-error-details">
             A permission error occurs when the account you've logged into does not have the set permissions to access
-            this page.
-            <a href="#"> Read More</a>
+            this page. {helpLinkNode('permissionLevels', 'Read More >')}
         </div>
         <div className="labkey-error-details labkey-error-subdetails">
-            Try contacting your administrator to request access to this page.
+            <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Try contacting your
+            administrator to request access to this page.
         </div>
         <br />
         <br />
@@ -108,10 +123,11 @@ const CONFIGURATION_DETAILS = (
             <div>
                 <li>
                     <b>Server Configuration Errors (Tomcat Errors): </b>issues related to your machine, software
-                    version, or running dependencies.{' '}
+                    version, or running dependencies. {helpLinkNode('troubleshootingAdmin', 'Read More >')}
                 </li>
             </div>
-            <div>Try restarting your current instance of LabKey.</div>
+            <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Try restarting your
+            current instance of LabKey.
         </div>
         <br />
         <br />

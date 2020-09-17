@@ -4,6 +4,8 @@ import { Button, Col, Row } from 'react-bootstrap';
 import '@labkey/components/dist/components.css';
 import './errorHandler.scss';
 
+import { ActionURL, LabKey } from '@labkey/api';
+
 import { getErrorHeading, getImage, getInstruction, getSubHeading, getViewDetails } from './ErrorType';
 import { IErrorDetailsModel } from './model';
 
@@ -29,7 +31,19 @@ export class ErrorHandler extends React.PureComponent<ErrorHandlerProps, ErrorHa
     }
 
     onBackClick = (): void => {
-        window.history.back();
+        // Back button - takes you back to the previous page if available
+        // and to the ‘home’ folder if not possible to go back to the previous page
+        const currentLocation = window.location.href;
+        if (window.history.length !== 1) {
+            // browsers like chrome stores their homepage as first item
+            window.history.back();
+        }
+
+        const newLocation = window.location.href;
+
+        if (currentLocation === newLocation) {
+            window.location.href = ActionURL.getBaseURL(false);
+        }
     };
 
     onViewDetailsClick = (): void => {
