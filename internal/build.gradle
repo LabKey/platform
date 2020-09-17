@@ -22,7 +22,6 @@ dependencies {
     external("junit:junit:${junitVersion}")
     external("org.springframework:spring-webmvc:${springVersion}")
     external("com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}")
-    external("javax.servlet:servlet-api:${servletApiVersion}")
     external("org.quartz-scheduler:quartz:${quartzVersion}")
     external("org.springframework:spring-beans:${springVersion}")
     BuildUtils.addLabKeyDependency(project: project, config: "api", depProjectPath: BuildUtils.getRemoteApiProjectPath(project.gradle), depVersion: BuildUtils.getLabKeyClientApiVersion(project))

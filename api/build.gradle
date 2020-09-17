@@ -46,7 +46,6 @@ List jackson = [
 
 List charting = [
         "org.jfree:jfreechart:${jfreechartVersion}",
-        "org.jfree:jcommon:${jcommonVersion}"
 ]
 
 List caching = [
@@ -74,7 +73,6 @@ List test = [
 List others = [
         "gov.nist.math:jama:${jamaVersion}",
         "org.jetbrains:annotations:${annotationsVersion}",
-        "xml-apis:xml-apis:${xmlApisVersion}",
         "org.apache.xmlgraphics:batik-codec:${batikVersion}",
         "org.apache.xmlgraphics:batik-transcoder:${batikVersion}",
         "org.apache.xmlgraphics:fop:${fopVersion}",
