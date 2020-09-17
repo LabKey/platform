@@ -6,11 +6,9 @@ apply plugin: 'org.labkey.javaModule'
 apply plugin: 'org.labkey.xmlBeans'
 
 List spring = [
-//        "org.springframework:spring-aop:${springVersion}",
         "org.springframework:spring-beans:${springVersion}",
         "org.springframework:spring-context:${springVersion}",
         "org.springframework:spring-core:${springVersion}",
-//        "org.springframework:spring-expression:${springVersion}",
         "org.springframework:spring-jdbc:${springVersion}",
         "org.springframework:spring-test:${springVersion}",
         "org.springframework:spring-tx:${springVersion}",
@@ -23,15 +21,8 @@ List apache = [
         "commons-codec:commons-codec:${commonsCodecVersion}",
         "org.apache.commons:commons-collections4:${commonsCollections4Version}",
         "commons-dbcp:commons-dbcp:${commonsDbcpVersion}",
-//        "commons-digester:commons-digester:${commonsDigesterVersion}",
-//        "commons-discovery:commons-discovery:${commonsDiscoveryVersion}",
-        //"commons-fileupload:commons-fileupload:${commonsFileuploadVersion}",
         "commons-io:commons-io:${commonsIoVersion}",
-//        "org.apache.commons:commons-compress:${commonsCompressVersion}",
-//        "org.tukaani:xz:${tukaaniXZVersion}",         // Transitive dependency of commons-compress -- Issue 38298: Errors when indexing .7z files in search
         "org.apache.commons:commons-lang3:${commonsLang3Version}",
-//        "org.apache.commons:commons-math3:${commonsMath3Version}",
-//        "commons-net:commons-net:${commonsNetVersion}",
         "commons-pool:commons-pool:${commonsPoolVersion}",
         "commons-validator:commons-validator:${commonsValidatorVersion}",
         "org.apache.httpcomponents:httpclient:${httpclientVersion}",
@@ -90,12 +81,7 @@ List others = [
         "flyingsaucer:core-renderer:${flyingsaucerVersion}",
         "com.google.guava:guava:${guavaVersion}",
         "net.sf.jtidy:jtidy:${jtidyVersion}",
-        //"org.objenesis:objenesis:${objenesisVersion}",
-//        "com.opencsv:opencsv:${opencsvVersion}",
-        //"org.ardverk:patricia-trie:${patriciaTrieVersion}",
         "org.quartz-scheduler:quartz:${quartzVersion}",
-//        "com.rometools:rome:${romeVersion}",
-//        "org.xerial:sqlite-jdbc:${sqliteJdbcVersion}",
         "net.coobird:thumbnailator:${thumbnailatorVersion}",
         "org.apache.xmlbeans:xmlbeans:${xmlbeansVersion}",
         "org.apache.tika:tika-core:${tikaVersion}",
@@ -108,7 +94,6 @@ List others = [
 
 List javax = [
         "javax.validation:validation-api:${validationApiVersion}",
-//        "javax.xml:jaxrpc-api:${jaxrpcVersion}",
 ]
 
 List runtime = [
