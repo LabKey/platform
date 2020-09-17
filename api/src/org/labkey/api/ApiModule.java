@@ -45,7 +45,6 @@ import org.labkey.api.dataiterator.StatementDataIterator;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.files.FileSystemWatcherImpl;
 import org.labkey.api.iterator.MarkableIterator;
-import org.labkey.api.jsp.LabKeyJspFactory;
 import org.labkey.api.jsp.LabKeyJspWriter;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.CodeOnlyModule;
@@ -80,7 +79,6 @@ import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.ValidEmail;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
@@ -112,13 +110,6 @@ public class ApiModule extends CodeOnlyModule
         AttachmentService.get().registerAttachmentType(AuthenticationLogoType.get());
         AttachmentService.get().registerAttachmentType(AvatarType.get());
         AttachmentService.get().registerAttachmentType(SecureDocumentType.get());
-
-        if (AppProps.getInstance().isDevMode())
-        {
-            // Avoid doing this on pipeline remote servers to avoid the need for a dependency on the JSP API JAR.
-            // See issue 39242
-            LabKeyJspFactory.register();
-        }
     }
 
     @NotNull
