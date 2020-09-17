@@ -8,7 +8,6 @@ import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
 import { reorder, isEquivalent, addOrUpdateAnAuthConfig } from './utils';
 import { Actions, AuthConfig, AuthConfigProvider, GlobalSettingsOptions } from '../components/models';
 
-import '@labkey/components/dist/components.css';
 import './authenticationConfiguration.scss';
 
 interface State {

@@ -154,23 +154,28 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     @Override
     public final ColumnDescriptor[] getColumns() throws IOException
     {
-        ensureInitialized();
+       return getColumns(Collections.emptyMap());
+    }
+
+    public final ColumnDescriptor[] getColumns(@NotNull Map<String, String> renamedColumns) throws IOException
+    {
+        ensureInitialized(renamedColumns);
 
         return _columns;
     }
 
-    protected void ensureInitialized() throws IOException
+    protected void ensureInitialized(@NotNull Map<String, String> renamedColumns) throws IOException
     {
         if (!_initialized)
         {
-            initialize();
+            initialize(renamedColumns);
             _initialized = true;
         }
     }
 
-    protected void initialize() throws IOException
+    protected void initialize(@NotNull Map<String, String> renamedColumns) throws IOException
     {
-        initializeColumns();
+        initializeColumns(renamedColumns);
     }
 
     public void setColumns(ColumnDescriptor[] columns)
@@ -192,9 +197,14 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
     protected void initializeColumns() throws IOException
     {
+        initializeColumns(Collections.emptyMap());
+    }
+
+    protected void initializeColumns(@NotNull Map<String, String> renamedColumns) throws IOException
+    {
         //Take our best guess since some columns won't map
         if (null == _columns)
-            inferColumnInfo();
+            inferColumnInfo(renamedColumns);
     }
 
     public void setHasColumnHeaders(boolean hasColumnHeaders)
@@ -255,9 +265,10 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
      * use properties of a bean instead.
      *
      * @throws java.io.IOException
+     * @param renamedColumns map from the name used during the data load and the original column name (e.g., SampleId -> Name)
      */
     @SuppressWarnings({"ConstantConditions"})
-    private void inferColumnInfo() throws IOException
+    private void inferColumnInfo(@NotNull Map<String, String> renamedColumns) throws IOException
     {
         int numLines = _scanAheadLineCount + Math.max(_skipLines, 0);
         String[][] lineFields = getFirstNLines(numLines);
@@ -300,6 +311,10 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                         {
                             //preferentially use this class if it matches
                             classesToTest.add(0, _columnInfoMap.get(name).getJavaClass());
+                        }
+                        else if (renamedColumns.containsKey(name))
+                        {
+                            classesToTest.add(0, _columnInfoMap.get(renamedColumns.get(name)).getJavaClass());
                         }
                     }
                 }

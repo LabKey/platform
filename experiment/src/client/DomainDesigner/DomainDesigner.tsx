@@ -28,7 +28,7 @@ import {
     BeforeUnload
 } from "@labkey/components"
 
-import "@labkey/components/dist/components.css"
+import "./DomainDesigner.scss"
 
 interface IAppState {
     domain: DomainDesign

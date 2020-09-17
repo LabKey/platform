@@ -53,12 +53,6 @@ public abstract class BaseMothershipPage<EC extends BaseMothershipPage.ElementCa
         return new ShowReleasesPage(getDriver());
     }
 
-    public ReportsPage clickReports()
-    {
-        clickAndWait(elementCache().reportsLink);
-        return new ReportsPage(getDriver());
-    }
-
     public ShowExceptionsPage clickMyExceptions()
     {
         clickAndWait(elementCache().myExceptionsLink);

@@ -289,7 +289,7 @@ public class TabLoader extends DataLoader
 
     public Map<String, String> getComments() throws IOException
     {
-        ensureInitialized();
+        ensureInitialized(Collections.emptyMap());
 
         return Collections.unmodifiableMap(_comments);
     }
@@ -516,7 +516,7 @@ public class TabLoader extends DataLoader
         TabLoaderIterator iter;
         try
         {
-            ensureInitialized();
+            ensureInitialized(Collections.emptyMap());
             iter = new TabLoaderIterator();
         }
         catch (IOException e)
@@ -570,10 +570,10 @@ public class TabLoader extends DataLoader
     }
 
     @Override
-    protected void initialize() throws IOException
+    protected void initialize(@NotNull Map<String, String> renamedColumns) throws IOException
     {
         readComments();
-        super.initialize();
+        super.initialize(renamedColumns);
     }
 
     private void readComments() throws IOException
