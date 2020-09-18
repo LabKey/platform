@@ -28,6 +28,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -178,7 +179,16 @@ public class DataRegionSelection
     {
         Set<Integer> result = new LinkedHashSet<>();
         for (String s : ids)
-            result.add(Integer.parseInt(s));
+        {
+            try
+            {
+                result.add(Integer.parseInt(s));
+            }
+            catch (NumberFormatException nfe)
+            {
+                throw new BadRequestException("Unable to convert " + s + " to an int", nfe);
+            }
+        }
 
         return result;
     }
