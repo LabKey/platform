@@ -104,7 +104,7 @@ public enum JavaVersion
 
     public static String getRecommendedJavaVersion()
     {
-        return "AdoptOpenJDK 15 with HotSpot JVM";
+        return "AdoptOpenJDK 15 64-bit (x64) with HotSpot JVM";
     }
 
     public static class TestCase extends Assert
