@@ -261,6 +261,9 @@ public class ObjectProperty extends OntologyManager.PropertyRow
             case INTEGER:
                 return floatValue == null ? null : floatValue.intValue();
 
+            case BIGINT:
+                return floatValue == null ? null : floatValue.longValue();
+
             case BOOLEAN:
                 return floatValue == null ? null : floatValue.intValue() != 0 ? Boolean.TRUE : Boolean.FALSE;
 
@@ -276,7 +279,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
                     return getStringValue();
         }
 
-        throw new IllegalStateException("Unknown data type: " + rangeURI);
+        throw new IllegalStateException("Unknown data type '" + rangeURI + "' for property '" + propertyURI + "' on object '" + objectURI + "'");
     }
 
     public PropertyType getPropertyType()
