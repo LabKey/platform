@@ -211,7 +211,8 @@ public enum PropertyType
                 {
                     throw new UnsupportedOperationException();
                 }
-            },    /** Stored as a path to a file on the server's file system */
+            },
+    /** Stored as a path to a file on the server's file system */
     FILE_LINK("http://cpas.fhcrc.org/exp/xml#fileLink", "FileLink", 's', JdbcType.VARCHAR, 400, "file", CellType.STRING, File.class)
             {
                 @Override
