@@ -3,6 +3,7 @@
 <%@ page import="org.labkey.api.util.ErrorTemplate" %>
 <%@ page import="org.labkey.api.util.ErrorRenderer" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -10,9 +11,8 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("clientapi"); // added this for App Template
-//        dependencies.add("http://localhost:3001/errorHandler.js");
-        dependencies.add("core/gen/errorHandler");
+        dependencies.add("core/css/core.css");
+        dependencies.add("clientapi");
     }
 %>
 <%
@@ -32,17 +32,23 @@
         stackTrace.append("\n");
         stackTrace.append(stackTraceElement.toString());
     }
-
-
 %>
 
 <script type="application/javascript">
-    LABKEY.App.loadApp('errorHandler', <%=q(appId)%>, {
-        errorDetails : {
-            message: "<%=unsafe(model.getHeading())%>",
-            errorType: "<%=unsafe(model.getErrorType())%>",
-            stackTrace: "<%=q(stackTrace.toString())%>",
-            errorCode: "<%=unsafe(model.getErrorCode())%>"
-        }
+    // pulling in theme based css for the not found pages to still respect the site's theme
+    LABKEY.requiresCss("<%=PageFlowUtil.filter("/core/css/" + PageFlowUtil.resolveThemeName(getContainer()) + ".css")%>");
+
+    LABKEY.requiresScript('http://localhost:3001/errorHandler.js', function() {
+
+        LABKEY.App.__app__.isDOMContentLoaded = true;
+
+        LABKEY.App.loadApp('errorHandler', <%=q(appId)%>, {
+            errorDetails : {
+                message: "<%=unsafe(model.getHeading())%>",
+                errorType: "<%=unsafe(model.getErrorType())%>",
+                stackTrace: "<%=q(stackTrace.toString())%>",
+                errorCode: "<%=unsafe(model.getErrorCode())%>"
+            }
+        });
     });
 </script>

@@ -1,9 +1,11 @@
 import React, { ReactNode } from 'react';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheckCircle } from '@fortawesome/free-solid-svg-icons';
+import { faCheckCircle, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
 
 import { helpLinkNode, imageURL } from '@labkey/components';
+
+import { getServerContext } from '@labkey/api';
 
 import { IErrorDetailsModel } from './model';
 
@@ -95,15 +97,26 @@ const PERMISSION_DETAILS = (
             this page. {helpLinkNode('permissionLevels', 'Read More >')}
         </div>
         <div className="labkey-error-details labkey-error-subdetails">
-            <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Try contacting your
+            <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Try contacting your server
             administrator to request access to this page.
         </div>
         <br />
         <br />
         <div className="labkey-error-details labkey-error-subdetails">
-            <li>You are currently logged in as: </li>
-            <li>This server's admin: </li>
+            <li>
+                {' '}
+                {getServerContext().user.isSignedIn
+                    ? 'You are currently logged in as: ' + getServerContext().user.displayName
+                    : 'You are not logged in.'}{' '}
+            </li>
         </div>
+        <br />
+        {getServerContext().impersonatingUser !== undefined && (
+            <div className="labkey-error-details labkey-error-subdetails">
+                <FontAwesomeIcon icon={faExclamationCircle} className="permission-warning-icon" /> You are currently
+                impersonating as: {getServerContext().impersonatingUser.displayName}
+            </div>
+        )}
     </>
 );
 
