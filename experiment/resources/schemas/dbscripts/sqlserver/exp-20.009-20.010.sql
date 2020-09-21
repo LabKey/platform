@@ -1,2 +1,2 @@
-ALTER TABLE exp.PropertyDescriptor ADD COLUMN PrincipalConceptCode NVARCHAR(50) NULL;
+ALTER TABLE exp.PropertyDescriptor ADD PrincipalConceptCode NVARCHAR(50) NULL;
 GO

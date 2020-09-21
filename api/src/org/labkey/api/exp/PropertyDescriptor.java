@@ -70,9 +70,6 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     private boolean _mvEnabled;
     private String _mvIndicatorStorageColumnName;        // only valid if mvEnabled
 
-    // OntologyService related fields
-    private String _principalConceptCode;
-
     private static final Logger LOG = LogManager.getLogger(PropertyDescriptor.class);
 
     @Override

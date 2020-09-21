@@ -915,12 +915,6 @@ public class WrappedColumnInfo
                 }
             };
         }
-
-        @Override
-        public String getPrincipalConceptCode()
-        {
-            return null;
-        }
     }
 
 

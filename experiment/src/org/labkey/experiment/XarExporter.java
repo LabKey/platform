@@ -715,7 +715,7 @@ public class XarExporter
             xProp.setScale(domainProp.getScale());
 
         if (null != domainProp.getPrincipalConceptCode())
-            xProp.setScale(domainProp.getScale());
+            xProp.setPrincipalConceptCode(domainProp.getPrincipalConceptCode());
 
         ConditionalFormat.convertToXML(domainProp.getConditionalFormats(), xProp);
 

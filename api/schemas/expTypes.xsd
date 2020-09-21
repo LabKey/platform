@@ -520,7 +520,7 @@
 					</xs:documentation>
 				</xs:annotation>
 			</xs:element>
-			<xs:element name="PrincipleConceptCode" type="string" minOccurs="0" maxOccurs="1">
+			<xs:element name="PrincipalConceptCode" type="string" minOccurs="0" maxOccurs="1">
 				<xs:annotation>
 					<xs:documentation>
 						Ontology concept code associated with this property descriptor.
