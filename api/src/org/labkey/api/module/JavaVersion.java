@@ -31,9 +31,9 @@ import java.util.stream.Collectors;
 public enum JavaVersion
 {
     JAVA_UNSUPPORTED(-1, true, false),
-    JAVA_13(13, false, true),
+    JAVA_13(13, true, true),
     JAVA_14(14, false, true),
-    JAVA_15(15, false, false),
+    JAVA_15(15, false, true),
     JAVA_FUTURE(Integer.MAX_VALUE, false, false);
 
     private final int _version;
@@ -104,7 +104,7 @@ public enum JavaVersion
 
     public static String getRecommendedJavaVersion()
     {
-        return "AdoptOpenJDK 14 with HotSpot JVM";
+        return "AdoptOpenJDK 15 64-bit (x64) with HotSpot JVM";
     }
 
     public static class TestCase extends Assert
