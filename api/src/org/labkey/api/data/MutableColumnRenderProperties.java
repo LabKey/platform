@@ -79,4 +79,6 @@ public interface MutableColumnRenderProperties extends ColumnRenderProperties
     void setExcludeFromShifting(boolean isExcludeFromShifting);
 
     void setScale(int scale);
+
+    void setPrincipalConceptCode(String code);
 }
