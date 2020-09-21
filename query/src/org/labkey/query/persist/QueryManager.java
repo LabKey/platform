@@ -40,6 +40,8 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.ontology.Concept;
+import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewChangeListener;
@@ -666,6 +668,22 @@ public class QueryManager
                 queryDef.validateQuery(schema, errors, warnings);
             }
         }
+
+        OntologyService os = OntologyService.get();
+        if (null != os)
+        {
+            for (var col : table.getColumns())
+            {
+                String code = col.getPrincipalConceptCode();
+                if (null != code)
+                {
+                    Concept concept = os.resolveCode(code);
+                    if (null == concept)
+                        warnings.add(new QueryParseException("Concept not found: " + code, null, 0, 0));
+                }
+            }
+        }
+
         return errors.isEmpty();
     }
 

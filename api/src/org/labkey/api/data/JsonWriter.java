@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -272,6 +273,9 @@ public class JsonWriter
 
         if (dc instanceof IMultiValuedDisplayColumn)
             props.put("multiValue", true);
+
+        if (null != cinfo && StringUtils.isNotBlank(cinfo.getPrincipalConceptCode()))
+            props.put("principalConceptCode", cinfo.getPrincipalConceptCode());
 
         return props;
     }

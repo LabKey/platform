@@ -536,16 +536,17 @@ public class XarReader extends AbstractXarImporter
                     IdentifiableEntity.diff(oldProp.getLabel(), newProp.getLabel(), key + " label", diffs);
                     IdentifiableEntity.diff(oldProp.getName(), newProp.getName(), key + " name", diffs);
                     IdentifiableEntity.diff(oldProp.isHidden(), newProp.isHidden(), key + " hidden", diffs);
-                    IdentifiableEntity.diff(oldProp.isShownInDetailsView(), newProp.isShownInDetailsView(), key + " hidden", diffs);
-                    IdentifiableEntity.diff(oldProp.isShownInInsertView(), newProp.isShownInInsertView(), key + " hidden", diffs);
-                    IdentifiableEntity.diff(oldProp.isShownInUpdateView(), newProp.isShownInUpdateView(), key + " hidden", diffs);
+                    IdentifiableEntity.diff(oldProp.isShownInDetailsView(), newProp.isShownInDetailsView(), key + " shown in details view", diffs);
+                    IdentifiableEntity.diff(oldProp.isShownInInsertView(), newProp.isShownInInsertView(), key + " shown in insert view", diffs);
+                    IdentifiableEntity.diff(oldProp.isShownInUpdateView(), newProp.isShownInUpdateView(), key + " shown in update view", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyURI(), newProp.getPropertyURI(), key + " property URI", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyDescriptor().getRangeURI(), newProp.getPropertyDescriptor().getRangeURI(), key + " range URI", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyDescriptor().getConceptURI(), newProp.getPropertyDescriptor().getConceptURI(), key + " concept URI", diffs);
-                    IdentifiableEntity.diff(oldProp.isMvEnabled(), newProp.isMvEnabled(), key + " qc enabled", diffs);
+                    IdentifiableEntity.diff(oldProp.isMvEnabled(), newProp.isMvEnabled(), key + " missing value enabled", diffs);
                     IdentifiableEntity.diff(oldProp.getURL(), newProp.getURL(), key + " url", diffs);
-                    IdentifiableEntity.diff(oldProp.getImportAliasSet(), newProp.getImportAliasSet(), key + " url", diffs);
+                    IdentifiableEntity.diff(oldProp.getImportAliasSet(), newProp.getImportAliasSet(), key + " import aliases", diffs);
                     IdentifiableEntity.diff(oldProp.getDefaultValueTypeEnum(), newProp.getDefaultValueTypeEnum(), key + " default value type", diffs);
+                    IdentifiableEntity.diff(oldProp.getPrincipalConceptCode(), newProp.getPrincipalConceptCode(), key + " principal concept code", diffs);
                     IdentifiableEntity.diff(existingDefaultValues.get(oldProp), newDefaultValues.get(newProp), key + " default value", diffs);
                 }
             }
