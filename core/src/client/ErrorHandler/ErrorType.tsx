@@ -28,7 +28,7 @@ const DETAILS_SUB_INSTRUCTION = (
 );
 
 const NOTFOUND_SUBHEADING = <>It seems like something went wrong. The requested page cannot be found.</>;
-const NOTFOUND_INSTRUCTION = (
+const NOTFOUND_INSTRUCTION = (errorCode?: string) => (
     <>
         <div className="labkey-error-instruction">
             Please contact your admin or reference the{' '}
@@ -46,7 +46,7 @@ const NOTFOUND_INSTRUCTION = (
                 {' '}
                 LabKey support ticket
             </a>
-            , your unique reference code is:
+            , your unique reference code is: {errorCode}
         </div>
     </>
 );
@@ -97,8 +97,8 @@ const PERMISSION_DETAILS = (
             this page. {helpLinkNode('permissionLevels', 'Read More >')}
         </div>
         <div className="labkey-error-details labkey-error-subdetails">
-            <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Try contacting your server
-            administrator to request access to this page.
+            <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Try contacting your
+            server administrator to request access to this page.
         </div>
         <br />
         <br />
@@ -162,7 +162,7 @@ const EXECUTION_INSTRUCTION = (errorCode?: string) => (
 const EXECUTION_DETAILS = (stackTrace?: string) => <div className="labkey-error-stacktrace">{stackTrace}</div>;
 
 export enum ErrorType {
-    notFound = 'general',
+    notFound = 'notFound',
     permission = 'permission',
     configuration = 'configuration',
     execution = 'execution',
@@ -171,19 +171,19 @@ export enum ErrorType {
 const ERROR_TYPE_INFO = {
     notFound: {
         heading: NOTFOUND_SUBHEADING,
-        instruction: NOTFOUND_INSTRUCTION,
+        instruction: (errorCode?: string) => NOTFOUND_INSTRUCTION(errorCode),
         imagePath: 'notFound_error.svg',
         details: NOTFOUND_DETAILS,
     },
     permission: {
         heading: PERMISSION_SUBHEADING,
-        instruction: PERMISSION_INSTRUCTION,
+        instruction: () => PERMISSION_INSTRUCTION,
         imagePath: 'permission_error.svg',
         details: PERMISSION_DETAILS,
     },
     configuration: {
         heading: CONFIGURATION_SUBHEADING,
-        instruction: CONFIGURATION_INSTRUCTION,
+        instruction: () => CONFIGURATION_INSTRUCTION,
         imagePath: 'configuration_error.svg',
         details: CONFIGURATION_DETAILS,
     },
@@ -220,7 +220,7 @@ export const getInstruction = (errorDetails: IErrorDetailsModel): ReactNode => {
         if (errorDetails.errorCode) {
             instruction = ERROR_TYPE_INFO[errorType].instruction(errorDetails.errorCode);
         } else {
-            instruction = ERROR_TYPE_INFO[errorType].instruction;
+            instruction = ERROR_TYPE_INFO[errorType].instruction();
         }
         return <div className="labkey-error-instruction">{instruction}</div>;
     }

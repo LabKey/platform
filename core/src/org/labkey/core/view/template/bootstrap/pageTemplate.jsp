@@ -108,17 +108,13 @@
 %>
 <script type="text/javascript">LABKEY.loadScripts(); LABKEY.showNavTrail();</script>
 <!-- <%= h(request.getHeader("User-Agent")) %> -->
-<%-- TODO : ErrorPage, look into this--%>
 <%
-    try
+    // container is null for notfound pages
+    if (null != me.getViewContext().getContainer())
     {
 %>
-<a href="<%=h(me.getPermaLink())%>" id="permalink" name="permalink" style="display: none;"></a>
+        <a href="<%=h(me.getPermaLink())%>" id="permalink" name="permalink" style="display: none;"></a>
 <%
-    }
-    catch (Exception e)
-    {
-        LogManager.getLogger().info("This will be resolved in next error page story", e);
     }
 %>
 </body>
