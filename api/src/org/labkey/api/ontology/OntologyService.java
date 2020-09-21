@@ -16,6 +16,8 @@ public interface OntologyService
         throw new NotImplementedException("todo");
     }
 
+    Concept resolveCode(String code);
+
     static OntologyService get()
     {
         return ServiceRegistry.get().getService(OntologyService.class);
