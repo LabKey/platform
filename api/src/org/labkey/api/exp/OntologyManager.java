@@ -2583,6 +2583,9 @@ public class OntologyManager
             String intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
             insertProperties(c, parentObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 5));
 
+            String longProp = new Lsid("Junit", "OntologyManager", "longProp").toString();
+            insertProperties(c, parentObjectLsid, new ObjectProperty(childObjectLsid, c, longProp, 6L));
+
             Calendar cal = Calendar.getInstance();
             cal.set(Calendar.MILLISECOND, 0);
             String dateProp = new Lsid("Junit", "OntologyManager", "dateProp").toString();
@@ -2590,9 +2593,10 @@ public class OntologyManager
 
             Map m = getProperties(c, oChild.getObjectURI());
             assertNotNull(m);
-            assertEquals(m.size(), 3);
+            assertEquals(m.size(), 4);
             assertEquals(m.get(strProp), "The String");
             assertEquals(m.get(intProp), 5);
+            assertEquals(m.get(longProp), 6L);
             assertEquals(m.get(dateProp), cal.getTime());
 
 
@@ -2928,6 +2932,7 @@ public class OntologyManager
             assertEquals(0L, getObjectCount(c));
             String ownerObjectLsid = new Lsid("Junit", "OntologyManager", "parent").toString();
             String childObjectLsid = new Lsid("Junit", "OntologyManager", "child").toString();
+            String child2ObjectLsid = new Lsid("Junit", "OntologyManager", "child2").toString();
 
             ensureObject(c, childObjectLsid, ownerObjectLsid);
             OntologyObject oParent = getOntologyObject(c, ownerObjectLsid);
@@ -2938,6 +2943,7 @@ public class OntologyManager
             String domURIa = new Lsid("Junit", "DD", "Domain1").toString();
             String strPropURI = new Lsid("Junit", "PD", "Domain1.stringProp").toString();
             String intPropURI = new Lsid("Junit", "PD", "Domain1.intProp").toString();
+            String longPropURI = new Lsid("Junit", "PD", "Domain1.longProp").toString();
 
             DomainDescriptor dd = ensureDomainDescriptor(domURIa, "Domain1", c);
             assertNotNull(dd);
@@ -2952,23 +2958,71 @@ public class OntologyManager
             assertNotNull(pdStr);
 
             PropertyDescriptor pdInt = ensurePropertyDescriptor(intPropURI, PropertyType.INTEGER, "Domain1.intProp", c);
+            PropertyDescriptor pdLong = ensurePropertyDescriptor(longPropURI, PropertyType.BIGINT, "Domain1.longProp", c);
 
             ensurePropertyDomain(pdStr, dd);
             ensurePropertyDomain(pdInt, dd);
+            ensurePropertyDomain(pdLong, dd);
 
             List<PropertyDescriptor> pds = getPropertiesForType(domURIa, c);
-            assertEquals(2, pds.size());
+            assertEquals(3, pds.size());
             Map<String, PropertyDescriptor> mPds = new HashMap<>();
             for (PropertyDescriptor pd1 : pds)
                 mPds.put(pd1.getPropertyURI(), pd1);
 
             assertTrue(mPds.containsKey(strPropURI));
             assertTrue(mPds.containsKey(intPropURI));
+            assertTrue(mPds.containsKey(longPropURI));
 
             ObjectProperty strProp = new ObjectProperty(childObjectLsid, c, strPropURI, "String value");
             ObjectProperty intProp = new ObjectProperty(childObjectLsid, c, intPropURI, 42);
+            ObjectProperty longProp = new ObjectProperty(childObjectLsid, c, longPropURI, 52L);
             insertProperties(c, ownerObjectLsid, strProp);
             insertProperties(c, ownerObjectLsid, intProp);
+            insertProperties(c, ownerObjectLsid, longProp);
+
+            Map m = getProperties(c, oChild.getObjectURI());
+            assertNotNull(m);
+            assertEquals(m.size(), 3);
+            assertEquals(m.get(strPropURI), "String value");
+            assertEquals(m.get(intPropURI), 42);
+            assertEquals(m.get(longPropURI), 52L);
+
+
+            // test insertTabDelimited
+            List<Map<String, Object>> rows = List.of(
+                    Map.of("lsid", child2ObjectLsid,
+                            strPropURI, "Second value",
+                            intPropURI, 62,
+                            longPropURI, 72L)
+            );
+            ImportHelper helper = new ImportHelper()
+            {
+                @Override
+                public String beforeImportObject(Map<String, Object> map) throws SQLException
+                {
+                    return (String)map.get("lsid");
+                }
+
+                @Override
+                public void afterBatchInsert(int currentRow) throws SQLException { }
+
+                @Override
+                public void updateStatistics(int currentRow) throws SQLException { }
+            };
+            try (Transaction tx = getExpSchema().getScope().ensureTransaction())
+            {
+                insertTabDelimited(c, TestContext.get().getUser(), oParent.getObjectId(), helper, pds, rows, false);
+                tx.commit();
+            }
+
+            m = getProperties(c, child2ObjectLsid);
+            assertNotNull(m);
+            assertEquals(m.size(), 3);
+            assertEquals(m.get(strPropURI), "Second value");
+            assertEquals(m.get(intPropURI), 62);
+            assertEquals(m.get(longPropURI), 72L);
+
 
             deleteType(domURIa, c);
             assertEquals(0L, getObjectCount(c));
@@ -3059,6 +3113,7 @@ public class OntologyManager
                 case DATE_TIME:
                     this.dateTimeValue = (java.util.Date) p.first;
                     break;
+                case BIGINT:
                 case INTEGER:
                 case DOUBLE:
                 case DECIMAL:
