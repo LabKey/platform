@@ -72,6 +72,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private BooleanProperty isPreventReordering = new BooleanProperty();
     private BooleanProperty isDisableEditing = new BooleanProperty();
     private IntegerProperty scale = new IntegerProperty(4000);
+    private StringProperty principalConceptCode = new StringProperty();
     private StringProperty redactedText = new StringProperty();
     private BooleanProperty isPrimaryKey = new BooleanProperty(false);
     private StringProperty lockType = new StringProperty(LockedPropertyType.NotLocked.name());
@@ -486,6 +487,10 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.scale.set(value);
     }
 
+    public String getPrincipalConceptCode() { return this.principalConceptCode.getString(); }
+
+    public void setPrincipalConceptCode(String code) { this.principalConceptCode.set(code); }
+
     public String getRedactedText()
     {
         return redactedText.getString();
@@ -573,7 +578,8 @@ public class GWTPropertyDescriptor implements IsSerializable
         {
             return false;
         }
-        if(!getScale().equals(that.getScale())) return false;
+        if (!getScale().equals(that.getScale())) return false;
+        if (!StringUtils.equals(getPrincipalConceptCode(),that.getPrincipalConceptCode())) return false;
         if (getRedactedText() != null ? !getRedactedText().equals(that.getRedactedText()) : that.getRedactedText() != null) return false;
 
         return true;
@@ -613,6 +619,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + (phi.getString() != null ? phi.hashCode() : 0);
         result = 31 * result + (isExcludeFromShifting.getBoolean() != null ? isExcludeFromShifting.getBoolean().hashCode() : 0);
         result = 31 * result + (scale.getInteger() != null ? scale.getInteger().hashCode() : 0);
+        result = 31 * result + (principalConceptCode.getString() != null ? principalConceptCode.getString().hashCode() : 0);
         result = 31 * result + (redactedText.getString() != null ? redactedText.getString().hashCode() : 0);
 
         for (GWTPropertyValidator gwtPropertyValidator : getPropertyValidators())

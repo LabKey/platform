@@ -170,4 +170,6 @@ public interface ColumnRenderProperties extends ImportAliasable
     boolean isExcludeFromShifting();
 
     int getScale();
+
+    String getPrincipalConceptCode();
 }

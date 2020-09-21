@@ -92,6 +92,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     protected FieldKey _crosstabColumnDimension;
     protected CrosstabMember _crosstabColumnMember;
 
+    // OntologyService related annotations
+    protected String _principalConceptCode = null;
+
+
     abstract public void checkLocked();
     private boolean _checkLocked()
     {
@@ -152,6 +156,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         to._rangeURI = _rangeURI;
         to._propertyType = _propertyType;
         to._defaultValueType = _defaultValueType;
+        to._principalConceptCode = _principalConceptCode;
     }
 
     @Override
@@ -824,5 +829,18 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     {
         assert _checkLocked();
         _scale = scale;
+    }
+
+    @Override
+    public String getPrincipalConceptCode()
+    {
+        return _principalConceptCode;
+    }
+
+    @Override
+    public void setPrincipalConceptCode(String code)
+    {
+        assert _checkLocked();
+        _principalConceptCode = code;
     }
 }
