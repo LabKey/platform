@@ -1,10 +1,12 @@
 import React, { ReactNode } from 'react';
 import { Button, Col, Row } from 'react-bootstrap';
 
-import { ErrorTopSection } from '../components/ErrorTopSection';
-import { ErrorType } from './ErrorType';
+import { getErrorHeading, getImage, getInstruction, getSubHeading, getViewDetails } from './ErrorType';
 
 import './errorHandler.scss';
+import { IErrorDetailsModel } from './model';
+
+import { ActionURL } from '@labkey/api';
 
 export interface AppContext {
     errorDetails: IErrorDetailsModel;
