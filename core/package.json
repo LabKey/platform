@@ -92,7 +92,7 @@
     "@labkey/api": "1.0.2",
     "@labkey/components": "0.93.0",
     "@labkey/eslint-config-react": "0.0.8",
-    "@labkey/themes": "0.0.0-fb-labkey-themes.0",
+    "@labkey/themes": "0.0.0-fb-labkey-themes.1",
     "react-toggle-button": "2.2.0"
   },
   "devDependencies": {
