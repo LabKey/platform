@@ -6,7 +6,7 @@ import {
     LineageURLResolvers,
 } from '@labkey/components';
 
-import '@labkey/components/dist/components.css';
+import './RunGraph.scss';
 
 initQueryGridState();
 

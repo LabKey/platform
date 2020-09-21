@@ -77,6 +77,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
+import org.labkey.api.study.security.StudySecurityEscalationAuditProvider;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SystemMaintenance;
@@ -271,7 +272,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         StudySerializationRegistry.setInstance(StudySerializationRegistryImpl.get());
 
         ExperimentService.get().addExperimentListener(new ExperimentListenerImpl());
-        
+
         DataViewService.get().registerProvider(DatasetViewProvider.TYPE, new DatasetViewProvider());
         DataViewService.get().registerProvider(ReportViewProvider.TYPE, new ReportViewProvider());
 
@@ -355,6 +356,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         AuditLogService.get().registerAuditType(new DatasetAuditProvider());
         AuditLogService.get().registerAuditType(new StudyAuditProvider());
         AuditLogService.get().registerAuditType(new SpecimenCommentAuditProvider());
+        AuditLogService.get().registerAuditType(new StudySecurityEscalationAuditProvider());
 
         ReportService.get().registerReport(new StudyController.StudyChartReport());
         ReportService.get().registerReport(new StudyQueryReport());

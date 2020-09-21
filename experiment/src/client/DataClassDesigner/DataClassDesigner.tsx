@@ -17,7 +17,7 @@ import React from 'react'
 import { ActionURL, getServerContext } from "@labkey/api";
 import { Alert, BeforeUnload, DataClassDesigner, DataClassModel, fetchDataClass, LoadingSpinner } from "@labkey/components";
 
-import "@labkey/components/dist/components.css"
+import "./DataClassDesigner.scss"
 
 type State = {
     model?: DataClassModel,

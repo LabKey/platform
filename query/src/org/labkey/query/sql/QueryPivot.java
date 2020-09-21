@@ -32,6 +32,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.ColumnType;
+import org.springframework.dao.DataAccessException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -391,7 +392,7 @@ public class QueryPivot extends QueryRelation
             parseError(x.getMessage(), null);
             return null;
         }
-        catch (SQLException x)
+        catch (SQLException|DataAccessException x)
         {
             parseError("Could not compute pivot column list", null);
             return null;

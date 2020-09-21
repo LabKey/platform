@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ApiJsonWriter;
@@ -718,9 +719,10 @@ public class JSONDataLoader extends DataLoader
     /**
      * NOTE: We don't call super.initializeColumns() which uses inferColumnInfo() from the first N lines.
      * @throws IOException
+     * @param renamedColumns map between column names used in the loader and the original column names
      */
     @Override
-    protected void initializeColumns() throws IOException
+    protected void initializeColumns(@Nullable Map<String, String> renamedColumns) throws IOException
     {
         // Find 'metaData' and create ColumnDescriptors
         parseMetadata();
@@ -751,7 +753,7 @@ public class JSONDataLoader extends DataLoader
     {
         try
         {
-            ensureInitialized();
+            ensureInitialized(Collections.emptyMap());
             return new Iter();
         }
         catch (IOException e)
