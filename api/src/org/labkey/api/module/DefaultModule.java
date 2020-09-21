@@ -1212,16 +1212,16 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return NULL_FILE==_resourceDirectory ? null : _resourceDirectory;
     }
 
-    // The source directory is valid if all of the following conditions are true:
-    //
-    // - devmode = true
-    // - The module's source path is a directory that exists on the web server
-    // - The module has an enlistment ID set
-    // - The module's enlistment ID matches EITHER the enlistment ID in the web server's source root OR the enlistment ID in
-    //   the module's sourcePath
-    //
-    public boolean isValidSourceDirectory()
+    protected File computeResourceDirectory()
     {
+        // We load resources from the module's source directory if all of the following conditions are true:
+        //
+        // - devmode = true
+        // - The module's source path is a directory that exists on the web server
+        // - The module has an enlistment ID set
+        // - The module's enlistment ID matches EITHER the enlistment ID in the web server's source root OR the enlistment ID in
+        //   the module's sourcePath
+        //
         if (AppProps.getInstance().isDevMode())
         {
             String sourcePath = getSourcePath();
@@ -1232,6 +1232,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
                 if (sourceDir.isDirectory())
                 {
+                    _sourcePathMatched = true;
                     String moduleEnlistmentId = getEnlistmentId();
 
                     if (StringUtils.isNotBlank(moduleEnlistmentId))
@@ -1247,22 +1248,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                         }
 
                         if (useSource)
-                            return true;
+                        {
+                            _sourceEnlistmentIdMatched = true;
+                            return getResourceDirectory(sourceDir);
+                        }
                     }
                 }
             }
-        }
-        return false;
-    }
-
-    protected File computeResourceDirectory()
-    {
-        if (isValidSourceDirectory())
-        {
-            File sourceDir = new File(getSourcePath());
-            _sourcePathMatched = true;
-            _sourceEnlistmentIdMatched = true;
-            return getResourceDirectory(sourceDir);
         }
 
         File exploded = getExplodedPath();
