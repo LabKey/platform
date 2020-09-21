@@ -8112,7 +8112,8 @@ public class AdminController extends SpringActionController
                                             shortPathToModule = rel.toString();
                                     }
                                     boolean modIsValid = (module instanceof DefaultModule) && ((DefaultModule) module).isValidSourceDirectory();
-                                    boolean showModuleEditor = ModuleLoader.getInstance().hasModule("ModuleEditor") && modIsValid;
+                                    ActionURL moduleEditorUrl = getModuleEditorURL(moduleContext.getName());
+                                    boolean showModuleEditor = ModuleLoader.getInstance().hasModule("ModuleEditor") && (null != moduleEditorUrl) && modIsValid;
 
                                     return TR(cl(rowCount.getAndIncrement()%2==0 ? "labkey-alternate-row" : "labkey-row").at(style,"vertical-align:top;"),
                                         TD(moduleContext.getName()),
@@ -8121,7 +8122,7 @@ public class AdminController extends SpringActionController
                                         TD(SPAN(at(title,className), className.substring(className.lastIndexOf(".")+1))),
                                         TD(SPAN(at(title,fullPathToModule),shortPathToModule)),
                                         TD(schemas.stream().map(s -> createHtmlFragment(s, BR()))),
-                                        !AppProps.getInstance().isDevMode() ? null : TD(!showModuleEditor ? NBSP : PageFlowUtil.link("Edit module").href(getModuleEditorURL(moduleContext.getName()))),
+                                        !AppProps.getInstance().isDevMode() ? null : TD(!showModuleEditor ? NBSP : PageFlowUtil.link("Edit module").href(moduleEditorUrl)),
                                         null == externalModulesDir ? null : TD(!replaceableModule ? NBSP : PageFlowUtil.link("Upload Module").href(getUpdateURL(moduleContext.getName()))),
                                         !hasAdminOpsPerm ? null : TD(!deleteableModule ? NBSP :  PageFlowUtil.link("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : "")))).href(getDeleteURL(moduleContext.getName())))
                                     );
