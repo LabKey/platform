@@ -1,15 +1,11 @@
 import React, { ReactNode } from 'react';
-
 import { Button } from 'react-bootstrap';
-
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
-
 import { helpLinkNode, imageURL } from '@labkey/components';
-
 import { ActionURL, Ajax, getServerContext } from '@labkey/api';
 
-import { IErrorDetailsModel } from './model';
+import { ErrorDetails, ErrorType } from './model';
 
 const ERROR_HEADING = 'Oops! An error has occurred.';
 
@@ -102,9 +98,9 @@ const NOTFOUND_DETAILS = (errorMessage?: string) => (
     </>
 );
 
-const PERMISSION_SUBHEADING = () => <>You do not have the permissions required to access this page.</>;
-const PERMISSION_INSTRUCTION = <>Please contact this server's admin to gain access.</>;
-const PERMISSION_DETAILS = (errorMessage?: string) => (
+const PERMISSION_SUBHEADING = () => 'You do not have the permissions required to access this page.';
+const PERMISSION_INSTRUCTION = () => 'Please contact this server\'s admin to gain access.';
+const PERMISSION_DETAILS = () => (
     <>
         <div className="labkey-error-details labkey-error-details-question">What is a permission error?</div>
 
@@ -177,7 +173,7 @@ const CONFIGURATION_SUBHEADING = (errorMessage?: string) => (
         The requested page cannot be found.
     </>
 );
-const CONFIGURATION_INSTRUCTION = <>Please check your server configurations.</>;
+const CONFIGURATION_INSTRUCTION = () => 'Please check your server configurations.';
 const CONFIGURATION_DETAILS = (errorMessage?: string) => (
     <>
         <div className="labkey-error-details labkey-error-details-question">What went wrong?</div>
@@ -226,85 +222,74 @@ const EXECUTION_INSTRUCTION = (errorCode?: string) => (
 );
 const EXECUTION_DETAILS = (stackTrace?: string) => <div className="labkey-error-stacktrace">{stackTrace}</div>;
 
-export enum ErrorType {
-    notFound = 'notFound',
-    permission = 'permission',
-    configuration = 'configuration',
-    execution = 'execution',
+type ErrorTypeInfo = {
+    details: (errorMessage?: string) => ReactNode;
+    heading: (errorMessage?: string) => ReactNode;
+    imagePath: string;
+    instruction: (errorCode?: string) => ReactNode;
 }
 
-const ERROR_TYPE_INFO = {
-    notFound: {
-        heading: (errorMessage?: string) => NOTFOUND_SUBHEADING(errorMessage),
-        instruction: (errorCode?: string) => NOTFOUND_INSTRUCTION(errorCode),
-        imagePath: 'notFound_error.svg',
-        details: NOTFOUND_DETAILS,
-    },
-    permission: {
-        heading: () => PERMISSION_SUBHEADING(),
-        instruction: () => PERMISSION_INSTRUCTION,
-        imagePath: 'permission_error.svg',
-        details: PERMISSION_DETAILS,
-    },
+const ERROR_TYPE_INFO: { [key in ErrorType]: ErrorTypeInfo } = {
     configuration: {
-        heading: (errorMessage?: string) => NOTFOUND_SUBHEADING(errorMessage),
-        instruction: () => CONFIGURATION_INSTRUCTION,
+        details: CONFIGURATION_DETAILS,
+        heading: CONFIGURATION_SUBHEADING,
         imagePath: 'configuration_error.svg',
-        details: (errorMessage?: string) => CONFIGURATION_DETAILS(errorMessage),
+        instruction: CONFIGURATION_INSTRUCTION,
     },
     execution: {
-        heading: (errorMessage?: string) => NOTFOUND_SUBHEADING(errorMessage),
-        instruction: (errorCode?: string) => EXECUTION_INSTRUCTION(errorCode),
+        details: EXECUTION_DETAILS,
+        heading: EXECUTION_SUB_HEADING,
         imagePath: 'code_error.svg',
-        details: (stackTrace?: string) => EXECUTION_DETAILS(stackTrace),
+        instruction: EXECUTION_INSTRUCTION,
+    },
+    notFound: {
+        details: NOTFOUND_DETAILS,
+        heading: NOTFOUND_SUBHEADING,
+        imagePath: 'notFound_error.svg',
+        instruction: NOTFOUND_INSTRUCTION,
+    },
+    permission: {
+        details: PERMISSION_DETAILS,
+        heading: PERMISSION_SUBHEADING,
+        imagePath: 'permission_error.svg',
+        instruction: PERMISSION_INSTRUCTION,
     },
 };
 
-export const getErrorHeading = (): ReactNode => {
-    return <div className="labkey-error-heading"> {ERROR_HEADING} </div>;
+export const getErrorHeading = () => <div className="labkey-error-heading">{ERROR_HEADING}</div>;
+
+export const getImage = (errorDetails: ErrorDetails): ReactNode => {
+    const info = ERROR_TYPE_INFO[errorDetails.errorType];
+    if (!info) return null;
+
+    return <img alt="LabKey Error" src={imageURL('_images', info.imagePath)} />;
 };
 
-export const getImage = (errorDetails: IErrorDetailsModel): ReactNode => {
-    if (ERROR_TYPE_INFO[errorDetails.errorType]) {
-        const path = ERROR_TYPE_INFO[errorDetails.errorType].imagePath;
-        return <img alt="LabKey Error" src={imageURL('_images', path)} />;
-    }
+export const getSubHeading = (errorDetails: ErrorDetails): ReactNode => {
+    const info = ERROR_TYPE_INFO[errorDetails.errorType];
+    if (!info) return null;
+
+    return <div className="labkey-error-subheading">{info.heading(errorDetails.message)}</div>;
 };
 
-export const getSubHeading = (errorDetails: IErrorDetailsModel): ReactNode => {
-    if (ERROR_TYPE_INFO[errorDetails.errorType]) {
-        let subHeading;
-        if (errorDetails.message) {
-            subHeading = ERROR_TYPE_INFO[errorDetails.errorType].heading(errorDetails.message);
-        } else {
-            subHeading = ERROR_TYPE_INFO[errorDetails.errorType].heading();
-        }
-        return <div className="labkey-error-subheading">{subHeading}</div>;
-    }
+export const getInstruction = (errorDetails: ErrorDetails): ReactNode => {
+    const info = ERROR_TYPE_INFO[errorDetails.errorType];
+    if (!info) return null;
+
+    return <div className="labkey-error-instruction">{info.instruction(errorDetails.errorCode)}</div>;
 };
 
-export const getInstruction = (errorDetails: IErrorDetailsModel): ReactNode => {
-    if (ERROR_TYPE_INFO[errorDetails.errorType]) {
-        const errorType = errorDetails.errorType;
-        let instruction;
-        if (errorDetails.errorCode) {
-            instruction = ERROR_TYPE_INFO[errorType].instruction(errorDetails.errorCode);
-        } else {
-            instruction = ERROR_TYPE_INFO[errorType].instruction();
-        }
-        return <div className="labkey-error-instruction">{instruction}</div>;
-    }
-};
+export const getViewDetails = (errorDetails: ErrorDetails): ReactNode => {
+    const { errorType, message, stackTrace } = errorDetails;
+    const info = ERROR_TYPE_INFO[errorType];
+    if (!info) return null;
 
-export const getViewDetails = (errorDetails: IErrorDetailsModel): ReactNode => {
-    if (ERROR_TYPE_INFO[errorDetails.errorType]) {
-        const errorType = errorDetails.errorType;
-        let details;
-        if (errorDetails.stackTrace && errorType == ErrorType.execution) {
-            details = ERROR_TYPE_INFO[errorType].details(errorDetails.stackTrace);
-        } else {
-            details = ERROR_TYPE_INFO[errorType].details(errorDetails.message);
-        }
-        return <div>{details}</div>;
+    let details;
+    if (stackTrace && errorType === ErrorType.execution) {
+        details = info.details(stackTrace);
+    } else {
+        details = info.details(message);
     }
+
+    return <div>{details}</div>;
 };

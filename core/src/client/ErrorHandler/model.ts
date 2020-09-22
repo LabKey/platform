@@ -1,19 +1,13 @@
-import { ErrorType } from './ErrorType';
-
-export interface IErrorDetailsModel {
-    message?: string;
-    errorCode?: string;
-    stackTrace?: string;
-    errorType: ErrorType;
+export enum ErrorType {
+    notFound = 'notFound',
+    permission = 'permission',
+    configuration = 'configuration',
+    execution = 'execution',
 }
 
-export class ErrorDetailsModel implements IErrorDetailsModel {
-    message?: string;
+export interface ErrorDetails {
     errorCode?: string;
-    stackTrace?: string;
     errorType: ErrorType;
-
-    constructor(errorDetailsModel: IErrorDetailsModel) {
-        Object.assign(this, errorDetailsModel);
-    }
+    message?: string;
+    stackTrace?: string;
 }
