@@ -351,7 +351,7 @@
             }
 %>
                 <%= button("Cancel Request")
-                        .onClick("return LABKEY.Utils.confirmAndPost('" + ManageRequestBean.CANCELLATION_WARNING + "', '" + h(urlFor(DeleteRequestAction.class).addParameter("id", bean.getSpecimenRequest().getRowId()) + "')")) %>
+                        .onClick("return LABKEY.Utils.confirmAndPost('" + ManageRequestBean.CANCELLATION_WARNING + "', '" + h(urlFor(DeleteRequestAction.class).addParameter("id", bean.getSpecimenRequest().getRowId())) + "')") %>
 <%
             if (bean.getReturnUrl() != null)
             {
