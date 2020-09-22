@@ -1369,7 +1369,7 @@ public class MothershipController extends SpringActionController
         @Override
         public ModelAndView getView(Object form, BindException errors)
         {
-            throw new ConfigurationException("Test Configuration exception");
+            throw new ConfigurationException("This is a test message for configuration exception.");
         }
 
         @Override
@@ -1385,7 +1385,7 @@ public class MothershipController extends SpringActionController
         @Override
         public ModelAndView getView(Object form, BindException errors)
         {
-            throw new NotFoundException("Test NotFound exception");
+            throw new NotFoundException("This is a test message for not found exception.");
         }
 
         @Override
@@ -1417,7 +1417,7 @@ public class MothershipController extends SpringActionController
         @Override
         public ModelAndView getView(Object form, BindException errors)
         {
-            throw new NullPointerException("Test Execution exception");
+            throw new NullPointerException("This is a test message for execution exception");
         }
 
         @Override

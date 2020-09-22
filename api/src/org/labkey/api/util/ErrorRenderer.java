@@ -43,12 +43,6 @@ public class ErrorRenderer
     private final String _title;
     private final String _errorCode;
 
-    // TODO: ErrorPage use these in React app
-    private boolean _includeHomeButton = true;
-    private boolean _includeBackButton = true;
-    private boolean _includeFolderButton = true;
-    private boolean _includeStopImpersonatingButton = false;
-
     private ErrorType _errorType;
 
     public String getStackTrace()
@@ -56,52 +50,12 @@ public class ErrorRenderer
         return ExceptionUtils.getStackTrace(getException());
     }
 
-    enum ErrorType
+    public enum ErrorType
     {
         notFound,
         permission,
         configuration,
         execution
-    }
-
-    public boolean isIncludeHomeButton()
-    {
-        return _includeHomeButton;
-    }
-
-    public void setIncludeHomeButton(boolean includeHomeButton)
-    {
-        _includeHomeButton = includeHomeButton;
-    }
-
-    public boolean isIncludeBackButton()
-    {
-        return _includeBackButton;
-    }
-
-    public void setIncludeBackButton(boolean includeBackButton)
-    {
-        _includeBackButton = includeBackButton;
-    }
-
-    public boolean isIncludeFolderButton()
-    {
-        return _includeFolderButton;
-    }
-
-    public void setIncludeFolderButton(boolean includeFolderButton)
-    {
-        _includeFolderButton = includeFolderButton;
-    }
-
-    public boolean isIncludeStopImpersonatingButton()
-    {
-        return _includeStopImpersonatingButton;
-    }
-
-    public void setIncludeStopImpersonatingButton(boolean includeStopImpersonatingButton)
-    {
-        _includeStopImpersonatingButton = includeStopImpersonatingButton;
     }
 
     ErrorRenderer(int status, String errorCode, String heading, Throwable x, boolean isStartupFailure)

@@ -389,8 +389,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsole.addExperimentalFeatureFlag(RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE, "Resolve lookups by Value",
                 "This feature will attempt to resolve lookups by value through the UI insert/update form. This can be useful when the " +
                         "lookup list is long (> 10000) and the UI stops rendering a dropdown.", false);
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_ERROR_PAGE, "New Error Page",
-                "This is the new error page.", false);
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)

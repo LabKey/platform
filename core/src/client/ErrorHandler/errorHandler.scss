@@ -46,16 +46,18 @@
 }
 
 .error-backButton {
+  display: inline-block;
+  text-align: center;
   margin: 0.5rem 5rem 0.5rem 0.5rem;
   background-color: #538AC5;
   font-size: 14px;
-  width: 10%;
   padding-left: 15px;
   padding-right: 15px;
 }
 
 .error-details-btn {
-
+  display: inline-block;
+  text-align: center;
 }
 
 .error-details-container {
@@ -71,13 +73,13 @@
   content: '';
   position: absolute;
   bottom: 100%;
-  left: 17rem;
+  left: 14rem;
   border: 4rem solid transparent;
   border-bottom-color: #F3F3F4;
 }
 
 .error-details-container:after {
-  left: 18rem;
+  left: 15rem;
   border: 3rem solid transparent;
   border-bottom-color: #F3F3F4;
 }

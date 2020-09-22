@@ -1,11 +1,13 @@
 import React, { ReactNode } from 'react';
 
+import { Button } from 'react-bootstrap';
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
 
 import { helpLinkNode, imageURL } from '@labkey/components';
 
-import { getServerContext } from '@labkey/api';
+import { ActionURL, Ajax, getServerContext } from '@labkey/api';
 
 import { IErrorDetailsModel } from './model';
 
@@ -27,7 +29,17 @@ const DETAILS_SUB_INSTRUCTION = (
     </>
 );
 
-const NOTFOUND_SUBHEADING = <>It seems like something went wrong. The requested page cannot be found.</>;
+const NOTFOUND_SUBHEADING = (errorMessage?: string) => (
+    <>
+        {' '}
+        {errorMessage !== undefined
+            ? errorMessage.endsWith('.')
+                ? errorMessage
+                : errorMessage + '.'
+            : 'It seems like something went wrong.'}{' '}
+        The requested page cannot be found.
+    </>
+);
 const NOTFOUND_INSTRUCTION = (errorCode?: string) => (
     <>
         <div className="labkey-error-instruction">
@@ -36,27 +48,31 @@ const NOTFOUND_INSTRUCTION = (errorCode?: string) => (
                 LabKey support forum.
             </a>
         </div>
-        <div className="labkey-error-instruction">
-            If you would like to file a{' '}
-            <a
-                href="https://www.labkey.org/Support%20Tickets/wiki-edit.view?"
-                rel="noopener noreferrer"
-                target="_blank"
-            >
-                {' '}
-                LabKey support ticket
-            </a>
-            , your unique reference code is: {errorCode}
-        </div>
+        {errorCode !== undefined && (
+            <div className="labkey-error-instruction">
+                If you would like to file a{' '}
+                <a
+                    href="https://www.labkey.org/Support%20Tickets/wiki-edit.view?"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                >
+                    {' '}
+                    LabKey support ticket
+                </a>
+                , your unique reference code is: {errorCode}
+            </div>
+        )}
     </>
 );
-const NOTFOUND_DETAILS = (
+const NOTFOUND_DETAILS = (errorMessage?: string) => (
     <>
         <div className="labkey-error-details labkey-error-details-question">What went wrong?</div>
 
         <div className="labkey-error-details">
-            Unfortunately, we are unable to specifically identify what went wrong. However, here are the most common
-            errors:
+            {errorMessage !== undefined
+                ? 'Here are the most common errors:'
+                : 'Unfortunately, we are unable to specifically identify what went wrong. However, here are the most common\n' +
+                  '            errors:'}
         </div>
         <br />
         <br />
@@ -86,9 +102,9 @@ const NOTFOUND_DETAILS = (
     </>
 );
 
-const PERMISSION_SUBHEADING = <>You do not have the permissions required to access this page.</>;
+const PERMISSION_SUBHEADING = () => <>You do not have the permissions required to access this page.</>;
 const PERMISSION_INSTRUCTION = <>Please contact this server's admin to gain access.</>;
-const PERMISSION_DETAILS = (
+const PERMISSION_DETAILS = (errorMessage?: string) => (
     <>
         <div className="labkey-error-details labkey-error-details-question">What is a permission error?</div>
 
@@ -112,23 +128,65 @@ const PERMISSION_DETAILS = (
         </div>
         <br />
         {getServerContext().impersonatingUser !== undefined && (
-            <div className="labkey-error-details labkey-error-subdetails">
-                <FontAwesomeIcon icon={faExclamationCircle} className="permission-warning-icon" /> You are currently
-                impersonating as: {getServerContext().impersonatingUser.displayName}
-            </div>
+            <>
+                <div className="labkey-error-details labkey-error-subdetails">
+                    <FontAwesomeIcon icon={faExclamationCircle} className="permission-warning-icon" /> You are currently
+                    impersonating as: {getServerContext().impersonatingUser.displayName}
+                    <br />
+                    <br />
+                    <Button
+                        className="btn-group error-backButton"
+                        bsStyle="info"
+                        onClick={() => {
+                            const returnUrl =
+                                ActionURL.getParameter('returnUrl') !== undefined
+                                    ? ActionURL.getParameter('returnUrl')
+                                    : ActionURL.getBaseURL(false);
+                            Ajax.request({
+                                url: ActionURL.buildURL(
+                                    'login',
+                                    'StopImpersonating',
+                                    getServerContext().container.path
+                                ),
+                                method: 'post',
+                                jsonData: {
+                                    returnUrl,
+                                },
+                                callback: () => {
+                                    window.location.href = returnUrl;
+                                },
+                            });
+                        }}
+                    >
+                        Stop Impersonating
+                    </Button>
+                </div>
+            </>
         )}
     </>
 );
 
-const CONFIGURATION_SUBHEADING = <>It seems like something went wrong. The requested page cannot be found.</>;
+const CONFIGURATION_SUBHEADING = (errorMessage?: string) => (
+    <>
+        {' '}
+        {errorMessage !== undefined
+            ? errorMessage.endsWith('.')
+                ? errorMessage
+                : errorMessage + '.'
+            : 'It seems like something went wrong.'}{' '}
+        The requested page cannot be found.
+    </>
+);
 const CONFIGURATION_INSTRUCTION = <>Please check your server configurations.</>;
-const CONFIGURATION_DETAILS = (
+const CONFIGURATION_DETAILS = (errorMessage?: string) => (
     <>
         <div className="labkey-error-details labkey-error-details-question">What went wrong?</div>
 
         <div className="labkey-error-details">
-            Unfortunately, we are unable to specifically identify what went wrong. It seems that there might be some
-            issues with your server configuration.
+            {errorMessage !== undefined
+                ? errorMessage
+                : 'Unfortunately, we are unable to specifically identify what went wrong.'}{' '}
+            It seems that there might be some issues with your server configuration.
         </div>
         <br />
         <br />
@@ -149,7 +207,14 @@ const CONFIGURATION_DETAILS = (
     </>
 );
 
-const EXECUTION_SUB_HEADING = <>It seems like there is an issue with this installation of LabKey server.</>;
+const EXECUTION_SUB_HEADING = (errorMessage?: string) => (
+    <>
+        {' '}
+        {errorMessage !== undefined
+            ? errorMessage
+            : 'It seems like there is an issue with this installation of LabKey server.'}
+    </>
+);
 const EXECUTION_INSTRUCTION = (errorCode?: string) => (
     <>
         <div className="labkey-error-instruction">
@@ -170,25 +235,25 @@ export enum ErrorType {
 
 const ERROR_TYPE_INFO = {
     notFound: {
-        heading: NOTFOUND_SUBHEADING,
+        heading: (errorMessage?: string) => NOTFOUND_SUBHEADING(errorMessage),
         instruction: (errorCode?: string) => NOTFOUND_INSTRUCTION(errorCode),
         imagePath: 'notFound_error.svg',
         details: NOTFOUND_DETAILS,
     },
     permission: {
-        heading: PERMISSION_SUBHEADING,
+        heading: () => PERMISSION_SUBHEADING(),
         instruction: () => PERMISSION_INSTRUCTION,
         imagePath: 'permission_error.svg',
         details: PERMISSION_DETAILS,
     },
     configuration: {
-        heading: CONFIGURATION_SUBHEADING,
+        heading: (errorMessage?: string) => NOTFOUND_SUBHEADING(errorMessage),
         instruction: () => CONFIGURATION_INSTRUCTION,
         imagePath: 'configuration_error.svg',
-        details: CONFIGURATION_DETAILS,
+        details: (errorMessage?: string) => CONFIGURATION_DETAILS(errorMessage),
     },
     execution: {
-        heading: EXECUTION_SUB_HEADING,
+        heading: (errorMessage?: string) => NOTFOUND_SUBHEADING(errorMessage),
         instruction: (errorCode?: string) => EXECUTION_INSTRUCTION(errorCode),
         imagePath: 'code_error.svg',
         details: (stackTrace?: string) => EXECUTION_DETAILS(stackTrace),
@@ -208,7 +273,12 @@ export const getImage = (errorDetails: IErrorDetailsModel): ReactNode => {
 
 export const getSubHeading = (errorDetails: IErrorDetailsModel): ReactNode => {
     if (ERROR_TYPE_INFO[errorDetails.errorType]) {
-        const subHeading = ERROR_TYPE_INFO[errorDetails.errorType].heading;
+        let subHeading;
+        if (errorDetails.message) {
+            subHeading = ERROR_TYPE_INFO[errorDetails.errorType].heading(errorDetails.message);
+        } else {
+            subHeading = ERROR_TYPE_INFO[errorDetails.errorType].heading();
+        }
         return <div className="labkey-error-subheading">{subHeading}</div>;
     }
 };
@@ -233,7 +303,7 @@ export const getViewDetails = (errorDetails: IErrorDetailsModel): ReactNode => {
         if (errorDetails.stackTrace && errorType == ErrorType.execution) {
             details = ERROR_TYPE_INFO[errorType].details(errorDetails.stackTrace);
         } else {
-            details = ERROR_TYPE_INFO[errorType].details;
+            details = ERROR_TYPE_INFO[errorType].details(errorDetails.message);
         }
         return <div>{details}</div>;
     }

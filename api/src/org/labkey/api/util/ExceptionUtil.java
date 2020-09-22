@@ -44,7 +44,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
-import org.labkey.api.view.ForbiddenProjectException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
@@ -173,23 +172,6 @@ public class ExceptionUtil
                 "</td></tr></table>");
     }
 
-
-    public static ErrorView getErrorView(int responseStatus, String message, Throwable ex,
-                                        HttpServletRequest request, boolean startupFailure)
-    {
-        ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, false, startupFailure);
-        return new ErrorView(renderer, startupFailure);
-    }
-
-
-    public static ErrorView getErrorView(int responseStatus, String message, Throwable ex,
-                                        HttpServletRequest request, boolean startupFailure, boolean popup)
-    {
-        ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, false, startupFailure);
-        return new ErrorView(renderer, startupFailure, popup);
-    }
-
-
     public static WebPartView getErrorWebPartView(int responseStatus, String message, Throwable ex,
                                                   HttpServletRequest request)
     {
@@ -205,18 +187,6 @@ public class ExceptionUtil
         if (!isStartupFailure && responseStatus == HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
         {
             errorCode = logExceptionToMothership(request, ex);
-            if (null != errorCode)
-            {
-                message = StringUtils.trimToEmpty(message);
-                if (message.length() > 0)
-                {
-                    if (message.endsWith("."))
-                        message += " ";
-                    else
-                        message += ". ";
-                }
-                message += "If contacting support regarding this error, please refer to error code: " + errorCode;
-            }
         }
 
         if (isPart)
@@ -792,7 +762,7 @@ public class ExceptionUtil
         if (null == message && null != unhandledException)
         {
             responseStatus = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-            message = responseStatus + ": Unexpected server error";
+            message = ex.getMessage();
         }
 
         //don't log unauthorized (basic-auth challenge), forbiddens, or simple not found (404s)
@@ -861,47 +831,9 @@ public class ExceptionUtil
                 log.error("Global.handleException", x);
             }
         }
-        else if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_ERROR_PAGE))
-        {
-            renderErrorPage(ex, responseStatus, message, request, response, pageConfig, errorType, user, log, startupFailure);
-        }
         else
         {
-            // 7629: Error page redesign -- development in-progress. This path shows the old error view.
-            ErrorView errorView = ExceptionUtil.getErrorView(responseStatus, message, unhandledException, request, startupFailure);
-
-            if (ex instanceof UnauthorizedException)
-            {
-                if (ex instanceof ForbiddenProjectException)
-                {
-                    // Not allowed in the project... don't offer Home or Folder buttons
-                    errorView.setIncludeHomeButton(false);
-                    errorView.setIncludeFolderButton(false);
-                }
-
-                // Provide "Stop Impersonating" button if unauthorized while impersonating
-                if (user.isImpersonated())
-                    errorView.setIncludeStopImpersonatingButton(true);
-            }
-
-            try
-            {
-                response.setContentType("text/html");
-                if (null == responseStatusMessage)
-                    response.setStatus(responseStatus);
-                else
-                    response.setStatus(responseStatus, responseStatusMessage);
-                for (Map.Entry<String, String> entry : headers.entrySet())
-                    response.addHeader(entry.getKey(), entry.getValue());
-                errorView.render(request, response);
-            }
-            catch (IllegalStateException ignored)
-            {
-            }
-            catch (Exception x)
-            {
-                log.error("Global.handleException", x);
-            }
+            renderErrorPage(ex, responseStatus, message, request, response, pageConfig, errorType, user, log, startupFailure);
         }
 
         return null;
@@ -914,16 +846,7 @@ public class ExceptionUtil
 
         if (ex instanceof UnauthorizedException)
         {
-            if (ex instanceof ForbiddenProjectException)
-            {
-                // Not allowed in the project... don't offer Home or Folder buttons
-                renderer.setIncludeHomeButton(false);
-                renderer.setIncludeFolderButton(false);
-            }
-
-            // Provide "Stop Impersonating" button if unauthorized while impersonating
-            if (user.isImpersonated())
-                renderer.setIncludeStopImpersonatingButton(true);
+           errorType = ErrorRenderer.ErrorType.permission;
         }
 
         if (ex instanceof DavException)
@@ -944,13 +867,20 @@ public class ExceptionUtil
         {
             context = HttpView.currentContext();
         }
+        else
+        {
+            // context is null in cases of garbage urls, this helps in rendering error page in App template
+            context = new ViewContext();
+            context.setRequest(request);
+            context.setResponse(response);
+        }
 
         try
         {
+            renderer.setErrorType(errorType);
             if (HttpView.hasCurrentView())
             {
-                renderer.setErrorType(errorType);
-                errorView = pageConfig.getTemplate().getTemplate(context, new ErrorTemplate(renderer), pageConfig);
+                errorView = pageConfig.getTemplate().getTemplate(context, new ErrorView(renderer), pageConfig);
 
                 if (null == errorView)
                 {
@@ -961,7 +891,7 @@ public class ExceptionUtil
             else
             {
                 // context can be null for configuration exceptions depending on how far server got through initialization
-                errorView = PageConfig.Template.Body.getTemplate(new ViewContext(request, response, new ActionURL(ActionURL.getBaseServerURL())), new ErrorTemplate(renderer), pageConfig);
+                errorView = PageConfig.Template.Body.getTemplate(new ViewContext(request, response, new ActionURL(ActionURL.getBaseServerURL())), new ErrorView(renderer), pageConfig);
             }
 
             pageConfig.addClientDependencies(errorView.getClientDependencies());
@@ -973,7 +903,7 @@ public class ExceptionUtil
             try
             {
                 // TODO : ErrorPage, this app template doesn't work
-                errorView = PageConfig.Template.App.getTemplate(context, new ErrorTemplate(renderer), pageConfig);
+                errorView = PageConfig.Template.App.getTemplate(context, new ErrorView(renderer), pageConfig);
                 pageConfig.addClientDependencies(errorView.getClientDependencies());
                 errorView.getView().render(errorView.getModel(), request, response);
 

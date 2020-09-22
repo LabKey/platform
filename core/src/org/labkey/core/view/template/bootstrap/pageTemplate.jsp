@@ -98,7 +98,11 @@
 </footer>
 <% } %>
 <%
-    String anchor = model.getAnchor(url);
+    String anchor = null;
+    if (null != url)
+    {
+        anchor = model.getAnchor(url);
+    }
     if (null != anchor)
     {
 %>

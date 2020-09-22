@@ -150,6 +150,9 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.DOM.LK;
+import org.labkey.api.util.ErrorRenderer;
+import org.labkey.api.util.ErrorView;
+import org.labkey.api.util.ErrorView;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -2235,7 +2238,9 @@ public class ExperimentController extends SpringActionController
             catch (JSONException | ClassCastException e)
             {
                 // We can get a ClassCastException if we expect an array and get a simple String, for example
-                HttpView errorView = ExceptionUtil.getErrorView(HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to Excel - invalid input", e, getViewContext().getRequest(), false);
+                ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to Excel - invalid inpu", e, getViewContext().getRequest(), false, false);
+                renderer.setErrorType(ErrorRenderer.ErrorType.notFound);
+                HttpView<?> errorView = getPageConfig().getTemplate().getTemplate(getViewContext(), new ErrorView(renderer), getPageConfig());
                 errorView.render(getViewContext().getRequest(), getViewContext().getResponse());
             }
         }
@@ -2305,8 +2310,14 @@ public class ExperimentController extends SpringActionController
             }
             catch (JSONException e)
             {
-                HttpView errorView = ExceptionUtil.getErrorView(HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to table - invalid input", e, getViewContext().getRequest(), false);
-                errorView.render(getViewContext().getRequest(), getViewContext().getResponse());
+                ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to table - invalid input", e, getViewContext().getRequest(), false, false);
+                renderer.setErrorType(ErrorRenderer.ErrorType.notFound);
+                HttpView<?> errorView = getPageConfig().getTemplate().getTemplate(getViewContext(), new ErrorView(renderer), getPageConfig());
+                if (null != errorView)
+                {
+                    getPageConfig().addClientDependencies(errorView.getClientDependencies());
+                    errorView.render(getViewContext().getRequest(), getViewContext().getResponse());
+                }
             }
         }
     }
