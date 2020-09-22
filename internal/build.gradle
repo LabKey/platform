@@ -5,17 +5,36 @@ apply plugin: 'java-library'
 apply plugin: 'org.labkey.javaModule'
 
 dependencies {
-   BuildUtils.addLabKeyDependency(project: project, config: "api", depProjectPath: BuildUtils.getApiProjectPath(project.gradle), depProjectConfig: "runtimeElements")
-   if (project.configurations.findByName("dedupe") != null)
+    external("commons-io:commons-io:${commonsIoVersion}")
+
+    external("org.hamcrest:hamcrest-core:${hamcrestCoreVersion}")
+    external("org.springframework:spring-context:${springVersion}")
+    external("com.fasterxml.jackson.core:jackson-annotations:${jacksonAnnotationsVersion}")
+    external("com.rometools:rome:${romeVersion}")
+    external("commons-beanutils:commons-beanutils:${commonsBeanutilsVersion}")
+    external("org.apache.commons:commons-collections4:${commonsCollections4Version}")
+    external("com.google.guava:guava:${guavaVersion}")
+    external("org.apache.logging.log4j:log4j-api:${log4j2Version}")
+    external("org.apache.xmlbeans:xmlbeans:${xmlbeansVersion}")
+    external("commons-net:commons-net:${commonsNetVersion}")
+    external("com.google.gwt:gwt-servlet:${gwtServletVersion}")
+    external("org.apache.commons:commons-lang3:${commonsLang3Version}")
+    external("junit:junit:${junitVersion}")
+    external("org.springframework:spring-webmvc:${springVersion}")
+    external("com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}")
+    external("org.quartz-scheduler:quartz:${quartzVersion}")
+    external("org.springframework:spring-beans:${springVersion}")
+    BuildUtils.addLabKeyDependency(project: project, config: "api", depProjectPath: BuildUtils.getRemoteApiProjectPath(project.gradle), depVersion: BuildUtils.getLabKeyClientApiVersion(project))
+    BuildUtils.addLabKeyDependency(project: project, config: "api", depProjectPath: BuildUtils.getApiProjectPath(project.gradle), depProjectConfig: "runtimeElements")
+    if (project.configurations.findByName("dedupe") != null)
       BuildUtils.addLabKeyDependency(project: project, config: "dedupe", depProjectPath: BuildUtils.getApiProjectPath(project.gradle), depProjectConfig: "external")
-   implementation "org.apache.tomcat:tomcat-jsp-api:${apacheTomcatVersion}"
-   implementation "org.apache.tomcat:tomcat-jasper:${apacheTomcatVersion}"
-   api  "org.labkey.api:labkey-client-api:${labkeyClientApiVersion}"
-   external  'com.sun.script.js:jsr223-js-engine:Aug2008'
-   external  'org.mozilla:rhino:1.7R3'
+    api "org.apache.tomcat:tomcat-jsp-api:${apacheTomcatVersion}"
+    implementation "org.apache.tomcat:tomcat-jasper:${apacheTomcatVersion}"
+    api  "org.labkey.api:labkey-client-api:${labkeyClientApiVersion}"
+    external  'com.sun.script.js:jsr223-js-engine:Aug2008'
+    external  'org.mozilla:rhino:1.7R3'
 }
 
-// TODO move resources files into resources directory to avoid this overlap
 sourceSets {
    main {
       resources {
