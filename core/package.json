@@ -21,7 +21,7 @@
       "command": "rimraf resources/web/core/gen && rimraf resources/web/core/css && rimraf resources/web/clientapi"
     },
     "copy-distributions": {
-      "command": "node build.js"
+      "command": "node copy-distributions.js"
     },
     "build:jest-test": {
       "command": "jest",
