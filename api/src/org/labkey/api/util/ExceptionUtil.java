@@ -902,7 +902,6 @@ public class ExceptionUtil
             // try to render just the react app
             try
             {
-                // TODO : ErrorPage, this app template doesn't work
                 errorView = PageConfig.Template.App.getTemplate(context, new ErrorView(renderer), pageConfig);
                 pageConfig.addClientDependencies(errorView.getClientDependencies());
                 errorView.getView().render(errorView.getModel(), request, response);
