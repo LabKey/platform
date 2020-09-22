@@ -566,9 +566,10 @@ public class ExceptionUtil
             {
                 return true;
             }
-            if (ex.getClass().equals(IllegalStateException.class) &&
+            if (ex.getClass().equals(IllegalStateException.class) && ex.getMessage() != null &&
                     ("Cannot create a session after the response has been committed".equals(ex.getMessage()) ||
-                        "Cannot call sendError() after the response has been committed".equals(ex.getMessage())))
+                        "Cannot call sendError() after the response has been committed".equals(ex.getMessage()) ||
+                            ex.getMessage().contains("Session already invalidated")))
 
             {
                 return true;
