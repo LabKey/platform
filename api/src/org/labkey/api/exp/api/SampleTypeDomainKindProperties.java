@@ -5,8 +5,10 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Small class with only the properties and fields (de)serialized to the DomainKindProperties (avoids hassle of pasting @JsonIgnores all over three classes.
@@ -28,8 +30,11 @@ public class SampleTypeDomainKindProperties implements Cloneable
             this.rowId = st.getRowId();
             this.lsid = st.getLSID();
             this.description = st.getDescription();
-            this.idCols = new ArrayList<>();
-            st.getIdCols().forEach(col -> this.idCols.add(col.getPropertyId()));
+            this.idCols = Collections.emptyList();
+            if (st.hasIdColumns())
+            {
+                this.idCols = st.getIdCols().stream().map(col -> col.getPropertyId()).collect(Collectors.toList());
+            }
 
             try
             {
