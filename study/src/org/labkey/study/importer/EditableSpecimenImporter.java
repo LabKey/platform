@@ -44,10 +44,9 @@ import java.util.Set;
  */
 public class EditableSpecimenImporter extends SpecimenImporter
 {
-    private static final String VISIT = "visit_value";
-    private static final String DRAW_TIMESTAMP = "draw_timestamp";
     private static final String GUID_COLNAME = "GlobalUniqueId";
-    private boolean _insert = false;
+
+    private final boolean _insert;
 
     public EditableSpecimenImporter(Container container, User user, boolean insert)
     {
@@ -71,8 +70,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
     {
         if (merge)
         {
-            int noGuidRowCount = markEventsObsolete(rows);
-            _generateGlobalUniqueIds = noGuidRowCount;            // Generate this many new ids (needed if not present)
+            _generateGlobalUniqueIds = markEventsObsolete(rows);            // Generate this many new ids (needed if not present)
         }
 
         List<Map<String, Object>> specimenRows = new ArrayList<>();
@@ -199,7 +197,6 @@ public class EditableSpecimenImporter extends SpecimenImporter
                         _specialColumnNameMap.put(toName, fromName);
                 }
             }
-
         }
 
         return _specialColumnNameMap.get(name.toLowerCase());
@@ -227,11 +224,11 @@ public class EditableSpecimenImporter extends SpecimenImporter
 
         SQLFragment sqlPrefix = new SQLFragment();
         sqlPrefix.append("UPDATE ").append(tableInfoSpecimenEvent.getSelectName())
-                .append(" SET Obsolete = ").append(tableInfoSpecimenEvent.getSqlDialect().getBooleanTRUE())
-                .append(" WHERE VialId IN ")
-                .append("(SELECT RowId FROM ").append(tableInfoVial.getSelectName())
-                .append(" WHERE Obsolete = ").append(tableInfoSpecimenEvent.getSqlDialect().getBooleanFALSE())
-                .append(" AND " + GUID_COLNAME).append(" ");
+            .append(" SET Obsolete = ").append(tableInfoSpecimenEvent.getSqlDialect().getBooleanTRUE())
+            .append(" WHERE VialId IN ")
+            .append("(SELECT RowId FROM ").append(tableInfoVial.getSelectName())
+            .append(" WHERE Obsolete = ").append(tableInfoSpecimenEvent.getSqlDialect().getBooleanFALSE())
+            .append(" AND " + GUID_COLNAME).append(" ");
 
         int noGuidRowCount = 0;
         int guidRowCount = 0;
