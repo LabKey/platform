@@ -99,7 +99,7 @@ const NOTFOUND_DETAILS = (errorMessage?: string) => (
 );
 
 const PERMISSION_SUBHEADING = () => 'You do not have the permissions required to access this page.';
-const PERMISSION_INSTRUCTION = () => 'Please contact this server\'s admin to gain access.';
+const PERMISSION_INSTRUCTION = () => "Please contact this server's admin to gain access.";
 const PERMISSION_DETAILS = () => (
     <>
         <div className="labkey-error-details labkey-error-details-question">What is a permission error?</div>
@@ -118,8 +118,10 @@ const PERMISSION_DETAILS = () => (
             <li>
                 {' '}
                 {getServerContext().user.isSignedIn
-                    ? 'You are currently logged in as: ' + getServerContext().user.displayName
-                    : 'You are not logged in.'}{' '}
+                    ? 'You are currently logged in as: ' + getServerContext().impersonatingUser !== undefined
+                        ? getServerContext().impersonatingUser.displayName
+                        : getServerContext().user.displayName
+                    : 'You are not logged in.'}
             </li>
         </div>
         <br />
@@ -127,7 +129,7 @@ const PERMISSION_DETAILS = () => (
             <>
                 <div className="labkey-error-details labkey-error-subdetails">
                     <FontAwesomeIcon icon={faExclamationCircle} className="permission-warning-icon" /> You are currently
-                    impersonating as: {getServerContext().impersonatingUser.displayName}
+                    impersonating as: {getServerContext().user.displayName}
                     <br />
                     <br />
                     <Button
@@ -227,7 +229,7 @@ type ErrorTypeInfo = {
     heading: (errorMessage?: string) => ReactNode;
     imagePath: string;
     instruction: (errorCode?: string) => ReactNode;
-}
+};
 
 const ERROR_TYPE_INFO: { [key in ErrorType]: ErrorTypeInfo } = {
     configuration: {
