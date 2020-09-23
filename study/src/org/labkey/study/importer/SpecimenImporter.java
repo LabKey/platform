@@ -445,6 +445,7 @@ public class SpecimenImporter
     public static class SpecimenColumn extends ImportableColumn
     {
         private final TargetTable _targetTable;
+
         private String _fkTable;
         private String _joinType;
         private String _fkColumn;
@@ -2698,10 +2699,7 @@ public class SpecimenImporter
             cols.add(STORAGE_DATE);
             cols.add(LAB_RECEIPT_DATE);
 
-            for (SpecimenColumn col : getSpecimenEventCols(info.getAvailableColumns()))
-            {
-                cols.add(col);
-            }
+            cols.addAll(getSpecimenEventCols(info.getAvailableColumns()));
 
             // Insert or update the vials from in the temp table.
             try (TableResultSet rs = new SqlSelector(info.getSchema(), insertSelectSql).getResultSet())
@@ -3636,38 +3634,6 @@ public class SpecimenImporter
         return value;
     }
 
-
-    private Parameter.TypedValue getValueParameter(ImportableColumn col, Map tsvRow) throws SQLException
-    {
-        Object value = getValue(col, tsvRow);
-
-        if (value == null)
-        {
-            // Currently used by labs.tsv clinic, sal, repository, and enpoint columns
-            value = col.getDefaultValue();
-
-            if (value == null)
-                return Parameter.nullParameter(col.getJdbcType());
-        }
-
-        Parameter.TypedValue typed = new Parameter.TypedValue(value, col.getJdbcType());
-
-        if (col.getMaxSize() >= 0)
-        {
-            Object valueToBind = Parameter.getValueToBind(typed, col.getJdbcType());
-            if (valueToBind != null)
-            {
-                if (valueToBind.toString().length() > col.getMaxSize())
-                {
-                    throw new SQLException("Value \"" + valueToBind.toString() + "\" is too long for column " +
-                            col.getDbColumnName() + ".  The maximum allowable length is " + col.getMaxSize() + ".");
-                }
-            }
-        }
-
-        return typed;
-    }
-
     private static final boolean DEBUG = false;
     private static final boolean VERBOSE_DEBUG = false;
 
@@ -3811,9 +3777,9 @@ public class SpecimenImporter
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
-        TempTableInfo _simpleTable;
-
         private static final String TABLE = "SpecimenImporterTest";
+
+        private TempTableInfo _simpleTable;
 
         @Before
         public void createTable()
@@ -3832,7 +3798,6 @@ public class SpecimenImporter
             _simpleTable.track();
         }
 
-
         @After
         public void dropTable()
         {
@@ -3840,12 +3805,10 @@ public class SpecimenImporter
                 _simpleTable.delete();
         }
 
-
         private TableResultSet selectValues()
         {
             return new SqlSelector(_simpleTable.getSchema(), "SELECT Container,id,s,i,entityid FROM " + _simpleTable + " ORDER BY id").getResultSet();
         }
-
 
         private Map<String, Object> row(String s, Integer i)
         {
@@ -3855,23 +3818,23 @@ public class SpecimenImporter
             return map;
         }
 
-
         @Test
         public void mergeTest() throws Exception
         {
             Container c = JunitUtil.getTestContainer();
 
             Collection<ImportableColumn> cols = Arrays.asList(
-                    new ImportableColumn("s", "s", "VARCHAR(32)", true),
-                    new ImportableColumn("i", "i", "INTEGER", false)
+                new ImportableColumn("s", "s", "VARCHAR(32)", true),
+                new ImportableColumn("i", "i", "INTEGER", false)
             );
 
             ListofMapsDataIterator values = new ListofMapsDataIterator(
-                    new LinkedHashSet<>(Arrays.asList("s","i")),
-                    Arrays.asList(
-                        row("Bob", 100),
-                        row("Sally", 200),
-                        row(null, 300))
+                new LinkedHashSet<>(Arrays.asList("s","i")),
+                Arrays.asList(
+                    row("Bob", 100),
+                    row("Sally", 200),
+                    row(null, 300)
+                )
             );
 
 
@@ -3986,10 +3949,10 @@ public class SpecimenImporter
             );
 
             values = new ListofMapsDataIterator(
-                    new LinkedHashSet<>(Arrays.asList("s","i")),
-                    Arrays.asList(
-                            row("John", 405)
-                    )
+                new LinkedHashSet<>(Arrays.asList("s","i")),
+                Arrays.asList(
+                    row("John", 405)
+                )
             );
 
             pair = importer.mergeTable(_simpleTable.getSchema(), _simpleTable.getSelectName(), _simpleTable, colsAlternate, values, idCol, true);
@@ -4011,7 +3974,6 @@ public class SpecimenImporter
                 assertEquals(jimmyGUID, row3.get("entityid"));
             }
         }
-
 
         @Test
         public void tempTableConsistencyTest()
