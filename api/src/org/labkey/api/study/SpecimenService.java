@@ -104,6 +104,10 @@ public interface SpecimenService
 
     Domain getSpecimenEventDomain(Container container, User user);
 
+    /**
+     * Returns a map of database column name -> preferred tsv column name (one per column). Does not include import aliases.
+     * @return A map of db column name -> preferred tsv column name
+     */
     Map<String, String> getSpecimenImporterTsvColumnMap();
 
     SpecimenRequestCustomizer getRequestCustomizer();
