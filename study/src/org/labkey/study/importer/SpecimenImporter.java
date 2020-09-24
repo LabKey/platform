@@ -770,7 +770,6 @@ public class SpecimenImporter
             }
         };
 
-
         // Gets the field value from a particular object in the list (used for event -> vial rollups)
         public abstract Object getRollupResult(List<SpecimenEvent> objs, String colName, JdbcType fromType, JdbcType toType);
 
@@ -973,102 +972,102 @@ public class SpecimenImporter
     private static final SpecimenColumn GLOBAL_UNIQUE_ID, LAB_ID, SHIP_DATE, STORAGE_DATE, LAB_RECEIPT_DATE, DRAW_TIMESTAMP;
     private static final SpecimenColumn VISIT_VALUE;
 
-    public static final List<SpecimenColumn> BASE_SPECIMEN_COLUMNS = Arrays.asList(
-            new SpecimenColumn(EVENT_ID_COL, "ExternalId", "BIGINT NOT NULL", TargetTable.SPECIMEN_EVENTS, true),
-            new SpecimenColumn("record_source", "RecordSource", "VARCHAR(20)", TargetTable.SPECIMEN_EVENTS),
-            GLOBAL_UNIQUE_ID = new SpecimenColumn(GLOBAL_UNIQUE_ID_TSV_COL, "GlobalUniqueId", "VARCHAR(50)", true, TargetTable.VIALS, true),
-            LAB_ID = new SpecimenColumn(LAB_ID_TSV_COL, "LabId", "INT", TargetTable.SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER") {
-                @Override
-                public boolean isUnique() { return true; }
-            },
-            new SpecimenColumn("originating_location", "OriginatingLocationId", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER"),
-            new SpecimenColumn("unique_specimen_id", "UniqueSpecimenId", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("ptid", "Ptid", "VARCHAR(32)", true, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("parent_specimen_id", "ParentSpecimenId", "INT", TargetTable.SPECIMEN_EVENTS),
-            DRAW_TIMESTAMP = new SpecimenColumn("draw_timestamp", "DrawTimestamp", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("sal_receipt_date", "SalReceiptDate", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn(SPEC_NUMBER_TSV_COL, "SpecimenNumber", "VARCHAR(50)", true, TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("class_id", "ClassId", "VARCHAR(20)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-            VISIT_VALUE = new SpecimenColumn(VISIT_COL, "VisitValue", NUMERIC_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("protocol_number", "ProtocolNumber", "VARCHAR(20)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("visit_description", "VisitDescription", "VARCHAR(10)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("other_specimen_id", "OtherSpecimenId", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("volume", "Volume", "FLOAT", TargetTable.VIALS_AND_SPECIMEN_EVENTS, "MAX"),
-            new SpecimenColumn("volume_units", "VolumeUnits", "VARCHAR(20)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("stored", "Stored", "INT", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("storage_flag", "storageFlag", "INT", TargetTable.SPECIMEN_EVENTS),
-            STORAGE_DATE = new SpecimenColumn("storage_date", "StorageDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS, true),
-            new SpecimenColumn("ship_flag", "ShipFlag", "INT", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("ship_batch_number", "ShipBatchNumber", "INT", TargetTable.SPECIMEN_EVENTS),
-            SHIP_DATE = new SpecimenColumn("ship_date", "ShipDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS, true),
-            new SpecimenColumn("imported_batch_number", "ImportedBatchNumber", "INT", TargetTable.SPECIMEN_EVENTS),
-            LAB_RECEIPT_DATE = new SpecimenColumn("lab_receipt_date", "LabReceiptDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS, true),
-            new SpecimenColumn("expected_time_value", "ExpectedTimeValue", "FLOAT", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("expected_time_unit", "ExpectedTimeUnit", "VARCHAR(15)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("group_protocol", "GroupProtocol", "INT", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("sub_additive_derivative", "SubAdditiveDerivative", "VARCHAR(50)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("comments", "Comments", "VARCHAR(500)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("primary_specimen_type_id", "PrimaryTypeId", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "SpecimenPrimaryType", "ExternalId", "LEFT OUTER"),
-            new SpecimenColumn("derivative_type_id", "DerivativeTypeId", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "SpecimenDerivative", "ExternalId", "LEFT OUTER"),
-            new SpecimenColumn("derivative_type_id_2", "DerivativeTypeId2", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "SpecimenDerivative", "ExternalId", "LEFT OUTER"),
-            new SpecimenColumn("additive_type_id", "AdditiveTypeId", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "SpecimenAdditive", "ExternalId", "LEFT OUTER"),
-            new SpecimenColumn("specimen_condition", "SpecimenCondition", "VARCHAR(30)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("sample_number", "SampleNumber", "INT", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("x_sample_origin", "XSampleOrigin", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("external_location", "ExternalLocation", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("update_timestamp", "UpdateTimestamp", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("requestable", "Requestable", BOOLEAN_TYPE, TargetTable.VIALS),
-            new SpecimenColumn("shipped_from_lab", "ShippedFromLab", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("shipped_to_lab", "ShippedtoLab", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("frozen_time", "FrozenTime", DURATION_TYPE, TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("primary_volume", "PrimaryVolume", "FLOAT", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("primary_volume_units", "PrimaryVolumeUnits", "VARCHAR(20)", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("processed_by_initials", "ProcessedByInitials", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("processing_date", "ProcessingDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("processing_time", "ProcessingTime", DURATION_TYPE, TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("quality_comments", "QualityComments", "VARCHAR(500)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("total_cell_count", "TotalCellCount", "FLOAT", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("tube_type", "TubeType", "VARCHAR(64)", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn("input_hash", "InputHash", BINARY_TYPE, TargetTable.SPECIMEN_EVENTS)   // Not pulled from file... maybe this should be a ComputedColumn
+    public static final List<SpecimenColumn> BASE_SPECIMEN_COLUMNS = List.of(
+        new SpecimenColumn(EVENT_ID_COL, "ExternalId", "BIGINT NOT NULL", TargetTable.SPECIMEN_EVENTS, true),
+        new SpecimenColumn("record_source", "RecordSource", "VARCHAR(20)", TargetTable.SPECIMEN_EVENTS),
+        GLOBAL_UNIQUE_ID = new SpecimenColumn(GLOBAL_UNIQUE_ID_TSV_COL, "GlobalUniqueId", "VARCHAR(50)", true, TargetTable.VIALS, true),
+        LAB_ID = new SpecimenColumn(LAB_ID_TSV_COL, "LabId", "INT", TargetTable.SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER") {
+            @Override
+            public boolean isUnique() { return true; }
+        },
+        new SpecimenColumn("originating_location", "OriginatingLocationId", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER"),
+        new SpecimenColumn("unique_specimen_id", "UniqueSpecimenId", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("ptid", "Ptid", "VARCHAR(32)", true, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
+        new SpecimenColumn("parent_specimen_id", "ParentSpecimenId", "INT", TargetTable.SPECIMEN_EVENTS),
+        DRAW_TIMESTAMP = new SpecimenColumn("draw_timestamp", "DrawTimestamp", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
+        new SpecimenColumn("sal_receipt_date", "SalReceiptDate", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
+        new SpecimenColumn(SPEC_NUMBER_TSV_COL, "SpecimenNumber", "VARCHAR(50)", true, TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("class_id", "ClassId", "VARCHAR(20)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
+        VISIT_VALUE = new SpecimenColumn(VISIT_COL, "VisitValue", NUMERIC_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
+        new SpecimenColumn("protocol_number", "ProtocolNumber", "VARCHAR(20)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
+        new SpecimenColumn("visit_description", "VisitDescription", "VARCHAR(10)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
+        new SpecimenColumn("other_specimen_id", "OtherSpecimenId", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("volume", "Volume", "FLOAT", TargetTable.VIALS_AND_SPECIMEN_EVENTS, "MAX"),
+        new SpecimenColumn("volume_units", "VolumeUnits", "VARCHAR(20)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
+        new SpecimenColumn("stored", "Stored", "INT", TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("storage_flag", "storageFlag", "INT", TargetTable.SPECIMEN_EVENTS),
+        STORAGE_DATE = new SpecimenColumn("storage_date", "StorageDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS, true),
+        new SpecimenColumn("ship_flag", "ShipFlag", "INT", TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("ship_batch_number", "ShipBatchNumber", "INT", TargetTable.SPECIMEN_EVENTS),
+        SHIP_DATE = new SpecimenColumn("ship_date", "ShipDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS, true),
+        new SpecimenColumn("imported_batch_number", "ImportedBatchNumber", "INT", TargetTable.SPECIMEN_EVENTS),
+        LAB_RECEIPT_DATE = new SpecimenColumn("lab_receipt_date", "LabReceiptDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS, true),
+        new SpecimenColumn("expected_time_value", "ExpectedTimeValue", "FLOAT", TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("expected_time_unit", "ExpectedTimeUnit", "VARCHAR(15)", TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("group_protocol", "GroupProtocol", "INT", TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("sub_additive_derivative", "SubAdditiveDerivative", "VARCHAR(50)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
+        new SpecimenColumn("comments", "Comments", "VARCHAR(500)", TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("primary_specimen_type_id", "PrimaryTypeId", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "SpecimenPrimaryType", "ExternalId", "LEFT OUTER"),
+        new SpecimenColumn("derivative_type_id", "DerivativeTypeId", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "SpecimenDerivative", "ExternalId", "LEFT OUTER"),
+        new SpecimenColumn("derivative_type_id_2", "DerivativeTypeId2", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "SpecimenDerivative", "ExternalId", "LEFT OUTER"),
+        new SpecimenColumn("additive_type_id", "AdditiveTypeId", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "SpecimenAdditive", "ExternalId", "LEFT OUTER"),
+        new SpecimenColumn("specimen_condition", "SpecimenCondition", "VARCHAR(30)", TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("sample_number", "SampleNumber", "INT", TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("x_sample_origin", "XSampleOrigin", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("external_location", "ExternalLocation", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("update_timestamp", "UpdateTimestamp", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("requestable", "Requestable", BOOLEAN_TYPE, TargetTable.VIALS),
+        new SpecimenColumn("shipped_from_lab", "ShippedFromLab", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("shipped_to_lab", "ShippedtoLab", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("frozen_time", "FrozenTime", DURATION_TYPE, TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("primary_volume", "PrimaryVolume", "FLOAT", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
+        new SpecimenColumn("primary_volume_units", "PrimaryVolumeUnits", "VARCHAR(20)", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
+        new SpecimenColumn("processed_by_initials", "ProcessedByInitials", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("processing_date", "ProcessingDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("processing_time", "ProcessingTime", DURATION_TYPE, TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("quality_comments", "QualityComments", "VARCHAR(500)", TargetTable.SPECIMEN_EVENTS),
+        new SpecimenColumn("total_cell_count", "TotalCellCount", "FLOAT", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
+        new SpecimenColumn("tube_type", "TubeType", "VARCHAR(64)", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
+        new SpecimenColumn("input_hash", "InputHash", BINARY_TYPE, TargetTable.SPECIMEN_EVENTS)   // Not pulled from file... maybe this should be a ComputedColumn
     );
 
-    public static final Collection<ImportableColumn> ADDITIVE_COLUMNS = Arrays.asList(
-            new ImportableColumn("additive_id", "ExternalId", "INT NOT NULL", true),
-            new ImportableColumn("ldms_additive_code", "LdmsAdditiveCode", "VARCHAR(30)"),
-            new ImportableColumn("labware_additive_code", "LabwareAdditiveCode", "VARCHAR(20)"),
-            new ImportableColumn("additive", "Additive", "VARCHAR(100)")
+    public static final Collection<ImportableColumn> ADDITIVE_COLUMNS = List.of(
+        new ImportableColumn("additive_id", "ExternalId", "INT NOT NULL", true),
+        new ImportableColumn("ldms_additive_code", "LdmsAdditiveCode", "VARCHAR(30)"),
+        new ImportableColumn("labware_additive_code", "LabwareAdditiveCode", "VARCHAR(20)"),
+        new ImportableColumn("additive", "Additive", "VARCHAR(100)")
     );
 
     public static final Collection<ImportableColumn> DERIVATIVE_COLUMNS = Arrays.asList(
-            new ImportableColumn("derivative_id", "ExternalId", "INT NOT NULL", true),
-            new ImportableColumn("ldms_derivative_code", "LdmsDerivativeCode", "VARCHAR(30)"),
-            new ImportableColumn("labware_derivative_code", "LabwareDerivativeCode", "VARCHAR(20)"),
-            new ImportableColumn("derivative", "Derivative", "VARCHAR(100)")
+        new ImportableColumn("derivative_id", "ExternalId", "INT NOT NULL", true),
+        new ImportableColumn("ldms_derivative_code", "LdmsDerivativeCode", "VARCHAR(30)"),
+        new ImportableColumn("labware_derivative_code", "LabwareDerivativeCode", "VARCHAR(20)"),
+        new ImportableColumn("derivative", "Derivative", "VARCHAR(100)")
     );
 
-    public static final Collection<ImportableColumn> SITE_COLUMNS = Arrays.asList(
-            new ImportableColumn("lab_id", "ExternalId", "INT NOT NULL", true),
-            new ImportableColumn("ldms_lab_code", "LdmsLabCode", "INT"),
-            new ImportableColumn("labware_lab_code", "LabwareLabCode", "VARCHAR(20)", false, true),
-            new ImportableColumn("lab_name", "Label", "VARCHAR(200)", false, true),
-            new ImportableColumn("lab_upload_code", "LabUploadCode", "VARCHAR(10)"),
-            new ImportableColumn("is_sal", "Sal", BOOLEAN_TYPE, Boolean.FALSE),
-            new ImportableColumn("is_repository", "Repository", BOOLEAN_TYPE, Boolean.FALSE),
-            new ImportableColumn("is_clinic", "Clinic", BOOLEAN_TYPE, Boolean.FALSE),
-            new ImportableColumn("is_endpoint", "Endpoint", BOOLEAN_TYPE, Boolean.FALSE),
-            new ImportableColumn("street_address", "StreetAddress", "VARCHAR(200)", false, true),
-            new ImportableColumn("city", "City", "VARCHAR(200)", false, true),
-            new ImportableColumn("governing_district", "GoverningDistrict", "VARCHAR(200)", false, true),
-            new ImportableColumn("country", "Country", "VARCHAR(200)", false, true),
-            new ImportableColumn("postal_area", "PostalArea", "VARCHAR(50)", false, true),
-            new ImportableColumn("description", "Description", "VARCHAR(500)", false, true)
+    public static final Collection<ImportableColumn> SITE_COLUMNS = List.of(
+        new ImportableColumn("lab_id", "ExternalId", "INT NOT NULL", true),
+        new ImportableColumn("ldms_lab_code", "LdmsLabCode", "INT"),
+        new ImportableColumn("labware_lab_code", "LabwareLabCode", "VARCHAR(20)", false, true),
+        new ImportableColumn("lab_name", "Label", "VARCHAR(200)", false, true),
+        new ImportableColumn("lab_upload_code", "LabUploadCode", "VARCHAR(10)"),
+        new ImportableColumn("is_sal", "Sal", BOOLEAN_TYPE, Boolean.FALSE),
+        new ImportableColumn("is_repository", "Repository", BOOLEAN_TYPE, Boolean.FALSE),
+        new ImportableColumn("is_clinic", "Clinic", BOOLEAN_TYPE, Boolean.FALSE),
+        new ImportableColumn("is_endpoint", "Endpoint", BOOLEAN_TYPE, Boolean.FALSE),
+        new ImportableColumn("street_address", "StreetAddress", "VARCHAR(200)", false, true),
+        new ImportableColumn("city", "City", "VARCHAR(200)", false, true),
+        new ImportableColumn("governing_district", "GoverningDistrict", "VARCHAR(200)", false, true),
+        new ImportableColumn("country", "Country", "VARCHAR(200)", false, true),
+        new ImportableColumn("postal_area", "PostalArea", "VARCHAR(50)", false, true),
+        new ImportableColumn("description", "Description", "VARCHAR(500)", false, true)
     );
 
-    public static final Collection<ImportableColumn> PRIMARYTYPE_COLUMNS = Arrays.asList(
-            new ImportableColumn("primary_type_id", "ExternalId", "INT NOT NULL", true),
-            new ImportableColumn("primary_type_ldms_code", "PrimaryTypeLdmsCode", "VARCHAR(5)"),
-            new ImportableColumn("primary_type_labware_code", "PrimaryTypeLabwareCode", "VARCHAR(5)"),
-            new ImportableColumn("primary_type", "PrimaryType", "VARCHAR(100)")
+    public static final Collection<ImportableColumn> PRIMARYTYPE_COLUMNS = List.of(
+        new ImportableColumn("primary_type_id", "ExternalId", "INT NOT NULL", true),
+        new ImportableColumn("primary_type_ldms_code", "PrimaryTypeLdmsCode", "VARCHAR(5)"),
+        new ImportableColumn("primary_type_labware_code", "PrimaryTypeLabwareCode", "VARCHAR(5)"),
+        new ImportableColumn("primary_type", "PrimaryType", "VARCHAR(100)")
     );
 
     private static final SpecimenColumn DRAW_DATE = new SpecimenColumn("", "DrawDate", "DATE", TargetTable.SPECIMENS);
@@ -1491,7 +1490,6 @@ public class SpecimenImporter
         }
     }
 
-
     private SpecimenLoadInfo populateTempSpecimensTable(SpecimenImportFile file, boolean merge) throws IOException, ValidationException
     {
         TempTablesHolder tempTablesHolder = createTempTable();
@@ -1504,14 +1502,16 @@ public class SpecimenImporter
 
         if (tempTablesHolder.getSelectInsertTempTableInfo().isTracking())      // If no specimens we will not have created this table
             tempTablesHolder.getSelectInsertTempTableInfo().delete();
+
         return new SpecimenLoadInfo(_user, _container, DbSchema.getTemp(), columns, rowCount, tempTablesHolder.getTempTableInfo());
     }
 
     private void checkForUndefinedVisits(SpecimenLoadInfo info, StudyImpl study) throws ValidationException
     {
-        SQLFragment sql = new SQLFragment();
-        sql.append("SELECT DISTINCT VisitValue FROM ")
-            .append(info.getTempTableName()).append(" tt ")
+        SQLFragment sql = new SQLFragment()
+            .append("SELECT DISTINCT VisitValue FROM ")
+            .append(info.getTempTableName())
+            .append(" tt ")
             .append("\nLEFT JOIN study.Visit v")
             .append("\nON tt.VisitValue >= v.SequenceNumMin AND tt.VisitValue <=v.SequenceNumMax AND v.Container = ?")
             .append("\nWHERE tt.VisitValue IS NOT NULL AND v.RowId IS NULL");
@@ -1539,10 +1539,13 @@ public class SpecimenImporter
             info("Deleting old data from SpecimenEvent, Vial and Specimen tables...");
             if (getTableInfoSpecimen().getSchema().getSqlDialect().isPostgreSQL())
             {
-                SQLFragment sql = new SQLFragment("TRUNCATE ");
-                sql.append(getTableInfoSpecimenEvent().getSelectName()).append(", ")
-                        .append(getTableInfoVial().getSelectName()).append(", ")
-                        .append(getTableInfoSpecimen().getSelectName());
+                SQLFragment sql = new SQLFragment("TRUNCATE ")
+                    .append(getTableInfoSpecimenEvent().getSelectName())
+                    .append(", ")
+                    .append(getTableInfoVial().getSelectName())
+                    .append(", ")
+                    .append(getTableInfoSpecimen().getSelectName());
+
                 executeSQL(getTableInfoSpecimen().getSchema(), sql);
             }
             else
@@ -1625,8 +1628,10 @@ public class SpecimenImporter
 
     private void clearConflictingVialColumns(Vial vial, Set<String> conflicts)
     {
-        SQLFragment sql = new SQLFragment();
-        sql.append("UPDATE ").append(getTableInfoVial().getSelectName()).append(" SET\n  ");
+        SQLFragment sql = new SQLFragment()
+            .append("UPDATE ")
+            .append(getTableInfoVial().getSelectName())
+            .append(" SET\n  ");
 
         boolean hasConflict = false;
         String sep = "";
@@ -1637,8 +1642,9 @@ public class SpecimenImporter
                 if (conflicts.contains(col.getDbColumnName()))
                 {
                     hasConflict = true;
-                    sql.append(sep);
-                    sql.append(col.getDbColumnName()).append(" = NULL");
+                    sql
+                        .append(sep)
+                        .append(col.getDbColumnName()).append(" = NULL");
                     sep = ",\n  ";
                 }
             }
@@ -1647,32 +1653,38 @@ public class SpecimenImporter
         if (!hasConflict)
             return;
 
-        sql.append("\nWHERE GlobalUniqueId = ?");
-        sql.add(vial.getGlobalUniqueId());
+        sql
+            .append("\nWHERE GlobalUniqueId = ?")
+            .add(vial.getGlobalUniqueId());
 
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
     }
 
-
     private void updateCommentSpecimenHashes()
     {
-        SQLFragment sql = new SQLFragment();
         TableInfo commentTable = StudySchema.getInstance().getTableInfoSpecimenComment();
         String commentTableSelectName = commentTable.getSelectName();
         TableInfo vialTable = getTableInfoVial();
         String vialTableSelectName = vialTable.getSelectName();
 
-        sql.append("UPDATE ").append(commentTableSelectName).append(" SET SpecimenHash = (\n")
-                .append("SELECT SpecimenHash FROM ").append(vialTableSelectName).append(" WHERE ")
-                .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName)).append(" = ")
-                .append(commentTable.getColumn("GlobalUniqueId").getValueSql(commentTableSelectName))
-                .append(")\nWHERE ").append(commentTable.getColumn("Container").getValueSql(commentTableSelectName)).append(" = ?");
-        sql.add(_container.getId());
+        SQLFragment sql = new SQLFragment()
+            .append("UPDATE ")
+            .append(commentTableSelectName)
+            .append(" SET SpecimenHash = (\n")
+            .append("SELECT SpecimenHash FROM ")
+            .append(vialTableSelectName).append(" WHERE ")
+            .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName))
+            .append(" = ")
+            .append(commentTable.getColumn("GlobalUniqueId").getValueSql(commentTableSelectName))
+            .append(")\nWHERE ")
+            .append(commentTable.getColumn("Container").getValueSql(commentTableSelectName))
+            .append(" = ?")
+            .add(_container.getId());
+
         info("Updating hash codes for existing comments...");
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
         info("Complete.");
     }
-
 
     private void prepareQCComments()
     {
@@ -1689,24 +1701,31 @@ public class SpecimenImporter
 
         // find the global unique ID for those vials with conflicts:
         TableInfo specimenEventTable = getTableInfoSpecimenEvent();
-        SQLFragment conflictedGUIDs = new SQLFragment("SELECT GlobalUniqueId FROM ");
-        conflictedGUIDs.append(getTableInfoVial(), "vial");
-        conflictedGUIDs.append(" WHERE RowId IN (\n");
-        conflictedGUIDs.append("SELECT VialId FROM\n");
-        conflictedGUIDs.append("(SELECT DISTINCT\n").append(columnList).append("\nFROM ").append(specimenEventTable.getSelectName());
-        conflictedGUIDs.append("\nWHERE Obsolete = ").append(specimenEventTable.getSqlDialect().getBooleanFALSE());
-        conflictedGUIDs.append("\nGROUP BY\n").append(columnList).append(") ");
-        conflictedGUIDs.append("AS DupCheckView\nGROUP BY VialId HAVING Count(VialId) > 1");
-        conflictedGUIDs.append("\n)");
+        SQLFragment conflictedGUIDs = new SQLFragment("SELECT GlobalUniqueId FROM ")
+            .append(getTableInfoVial(), "vial")
+            .append(" WHERE RowId IN (\n")
+            .append("SELECT VialId FROM\n")
+            .append("(SELECT DISTINCT\n")
+            .append(columnList).append("\nFROM ")
+            .append(specimenEventTable.getSelectName())
+            .append("\nWHERE Obsolete = ")
+            .append(specimenEventTable.getSqlDialect().getBooleanFALSE())
+            .append("\nGROUP BY\n")
+            .append(columnList)
+            .append(") ")
+            .append("AS DupCheckView\nGROUP BY VialId HAVING Count(VialId) > 1")
+            .append("\n)");
 
         // Delete comments that were holding QC state (and nothing more) for vials that do not currently have any conflicts
-        SQLFragment deleteClearedVials = new SQLFragment("DELETE FROM study.SpecimenComment WHERE Container = ? ");
-        deleteClearedVials.add(_container.getId());
-        deleteClearedVials.append("AND Comment IS NULL AND QualityControlFlag = ? ");
-        deleteClearedVials.add(Boolean.TRUE);
-        deleteClearedVials.append("AND QualityControlFlagForced = ? ");
-        deleteClearedVials.add(Boolean.FALSE);
-        deleteClearedVials.append("AND GlobalUniqueId NOT IN (").append(conflictedGUIDs).append(");");
+        SQLFragment deleteClearedVials = new SQLFragment("DELETE FROM study.SpecimenComment WHERE Container = ? ")
+            .add(_container.getId())
+            .append("AND Comment IS NULL AND QualityControlFlag = ? ")
+            .add(Boolean.TRUE)
+            .append("AND QualityControlFlagForced = ? ")
+            .add(Boolean.FALSE)
+            .append("AND GlobalUniqueId NOT IN (")
+            .append(conflictedGUIDs)
+            .append(");");
         info("Clearing QC flags for vials that no longer have history conflicts...");
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(deleteClearedVials);
         info("Complete.");
@@ -1714,20 +1733,20 @@ public class SpecimenImporter
 
         // Insert placeholder comments for newly discovered QC problems; SpecimenHash will be updated within updateCalculatedSpecimenData, so this
         // doesn't have to be set here.
-        SQLFragment insertPlaceholderQCComments = new SQLFragment("INSERT INTO study.SpecimenComment ");
-        insertPlaceholderQCComments.append("(GlobalUniqueId, Container, QualityControlFlag, QualityControlFlagForced, Created, CreatedBy, Modified, ModifiedBy) ");
-        insertPlaceholderQCComments.append("SELECT GlobalUniqueId, ?, ?, ?, ?, ?, ?, ? ");
-        insertPlaceholderQCComments.add(_container.getId());
-        insertPlaceholderQCComments.add(Boolean.TRUE);
-        insertPlaceholderQCComments.add(Boolean.FALSE);
-        insertPlaceholderQCComments.add(new Date());
-        insertPlaceholderQCComments.add(_user.getUserId());
-        insertPlaceholderQCComments.add(new Date());
-        insertPlaceholderQCComments.add(_user.getUserId());
-        insertPlaceholderQCComments.append(" FROM (\n").append(conflictedGUIDs).append(") ConflictedVials\n");
-        insertPlaceholderQCComments.append("WHERE GlobalUniqueId NOT IN ");
-        insertPlaceholderQCComments.append("(SELECT GlobalUniqueId FROM study.SpecimenComment WHERE Container = ?);");
-        insertPlaceholderQCComments.add(_container.getId());
+        SQLFragment insertPlaceholderQCComments = new SQLFragment("INSERT INTO study.SpecimenComment ")
+            .append("(GlobalUniqueId, Container, QualityControlFlag, QualityControlFlagForced, Created, CreatedBy, Modified, ModifiedBy) ")
+            .append("SELECT GlobalUniqueId, ?, ?, ?, ?, ?, ?, ? ")
+            .add(_container.getId())
+            .add(Boolean.TRUE)
+            .add(Boolean.FALSE)
+            .add(new Date())
+            .add(_user.getUserId())
+            .add(new Date())
+            .add(_user.getUserId())
+            .append(" FROM (\n").append(conflictedGUIDs).append(") ConflictedVials\n")
+            .append("WHERE GlobalUniqueId NOT IN ")
+            .append("(SELECT GlobalUniqueId FROM study.SpecimenComment WHERE Container = ?);")
+            .add(_container.getId());
         info("Setting QC flags for vials that have new history conflicts...");
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(insertPlaceholderQCComments);
         info("Complete.");
@@ -1738,16 +1757,20 @@ public class SpecimenImporter
         // Mark those global unique IDs that are in requests but are no longer found in the vial table:
         TableInfo vialTable = getTableInfoVial();
         String vialTableSelectName = vialTable.getSelectName();
-        SQLFragment orphanMarkerSql = new SQLFragment();
-        orphanMarkerSql.append("UPDATE study.SampleRequestSpecimen SET Orphaned = ? WHERE RowId IN (\n")
-                .append("\tSELECT study.SampleRequestSpecimen.RowId FROM study.SampleRequestSpecimen\n")
-                .append("\tLEFT OUTER JOIN ").append(vialTableSelectName).append(" ON\n\t\t")
-                .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName))
-                .append(" = study.SampleRequestSpecimen.SpecimenGlobalUniqueId\n")
-                .append("\tWHERE ").append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName)).append(" IS NULL AND\n")
-                .append("\t\tstudy.SampleRequestSpecimen.Container = ?);");
-        orphanMarkerSql.add(Boolean.TRUE);
-        orphanMarkerSql.add(_container.getId());
+        SQLFragment orphanMarkerSql = new SQLFragment()
+            .append("UPDATE study.SampleRequestSpecimen SET Orphaned = ? WHERE RowId IN (\n")
+            .add(Boolean.TRUE)
+            .append("\tSELECT study.SampleRequestSpecimen.RowId FROM study.SampleRequestSpecimen\n")
+            .append("\tLEFT OUTER JOIN ")
+            .append(vialTableSelectName)
+            .append(" ON\n\t\t")
+            .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName))
+            .append(" = study.SampleRequestSpecimen.SpecimenGlobalUniqueId\n")
+            .append("\tWHERE ")
+            .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName))
+            .append(" IS NULL AND\n")
+            .append("\t\tstudy.SampleRequestSpecimen.Container = ?);")
+            .add(_container.getId());
         info("Marking requested vials that have been orphaned...");
 
         SqlExecutor executor = new SqlExecutor(StudySchema.getInstance().getSchema());
@@ -1755,18 +1778,22 @@ public class SpecimenImporter
         info("Complete.");
 
         // un-mark those global unique IDs that were previously marked as orphaned but are now found in the vial table:
-        SQLFragment deorphanMarkerSql = new SQLFragment();
-        deorphanMarkerSql.append("UPDATE study.SampleRequestSpecimen SET Orphaned = ? WHERE RowId IN (\n")
-                .append("\tSELECT study.SampleRequestSpecimen.RowId FROM study.SampleRequestSpecimen\n")
-                .append("\tLEFT OUTER JOIN ").append(vialTableSelectName).append(" ON\n\t\t")
-                .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName))
-                .append(" = study.SampleRequestSpecimen.SpecimenGlobalUniqueId\n")
-                .append("\tWHERE ").append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName)).append(" IS NOT NULL AND\n")
-                .append("\t\tstudy.SampleRequestSpecimen.Orphaned = ? AND\n")
-                .append("\t\tstudy.SampleRequestSpecimen.Container = ?);");
-        deorphanMarkerSql.add(Boolean.FALSE);
-        deorphanMarkerSql.add(Boolean.TRUE);
-        deorphanMarkerSql.add(_container.getId());
+        SQLFragment deorphanMarkerSql = new SQLFragment()
+            .append("UPDATE study.SampleRequestSpecimen SET Orphaned = ? WHERE RowId IN (\n")
+            .add(Boolean.FALSE)
+            .append("\tSELECT study.SampleRequestSpecimen.RowId FROM study.SampleRequestSpecimen\n")
+            .append("\tLEFT OUTER JOIN ")
+            .append(vialTableSelectName)
+            .append(" ON\n\t\t")
+            .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName))
+            .append(" = study.SampleRequestSpecimen.SpecimenGlobalUniqueId\n")
+            .append("\tWHERE ")
+            .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName))
+            .append(" IS NOT NULL AND\n")
+            .append("\t\tstudy.SampleRequestSpecimen.Orphaned = ? AND\n")
+            .add(Boolean.TRUE)
+            .append("\t\tstudy.SampleRequestSpecimen.Container = ?);")
+            .add(_container.getId());
         info("Marking requested vials that have been de-orphaned...");
         executor.execute(deorphanMarkerSql);
         info("Complete.");
@@ -1872,15 +1899,15 @@ public class SpecimenImporter
         // Populate a GlobalUniqueId -> SpecimenEvent map containing all quality control vial comments in this container
         final Map<String, SpecimenComment> qcCommentMap = new HashMap<>();
 
-        SQLFragment selectCommentsSql = new SQLFragment();
-        selectCommentsSql.append("SELECT c.* FROM ");
-        selectCommentsSql.append(commentTable, "c");
-        selectCommentsSql.append(" INNER JOIN ");
-        selectCommentsSql.append(getTableInfoVial(), "v");
-        selectCommentsSql.append(" ON c.GlobalUniqueId = v.GlobalUniqueId WHERE Container = ? AND (QualityControlFlag = ? OR QualityControlFlagForced = ?)");
-        selectCommentsSql.add(getContainer());
-        selectCommentsSql.add(true);
-        selectCommentsSql.add(true);
+        SQLFragment selectCommentsSql = new SQLFragment()
+            .append("SELECT c.* FROM ")
+            .append(commentTable, "c")
+            .append(" INNER JOIN ")
+            .append(getTableInfoVial(), "v")
+            .append(" ON c.GlobalUniqueId = v.GlobalUniqueId WHERE Container = ? AND (QualityControlFlag = ? OR QualityControlFlagForced = ?)")
+            .add(getContainer())
+            .add(true)
+            .add(true);
 
         new SqlSelector(StudySchema.getInstance().getSchema(), selectCommentsSql).forEach(comment -> qcCommentMap.put(comment.getGlobalUniqueId(), comment), SpecimenComment.class);
 
@@ -2153,7 +2180,6 @@ public class SpecimenImporter
 
         return fileNameMap;
     }
-
 
     // TODO: Pass in merge (or import strategy)?
     private SpecimenImportFile getSpecimenImportFile(Container c, VirtualFile dir, String fileName, SpecimenTableType type)
@@ -2488,18 +2514,26 @@ public class SpecimenImporter
     {
         String participantSequenceNumExpr = VisitManager.getParticipantSequenceNumExpr(info._schema, "PTID", "VisitValue");
 
-        SQLFragment insertSelectSql = new SQLFragment();
-        insertSelectSql.append("SELECT ");
-        insertSelectSql.append(participantSequenceNumExpr).append(" AS ParticipantSequenceNum");
-        insertSelectSql.append(", SpecimenHash, ");
-        insertSelectSql.append(DRAW_DATE.getDbColumnName()).append(", ");
-        insertSelectSql.append(DRAW_TIME.getDbColumnName()).append(", ");
-        insertSelectSql.append(getSpecimenColsSql(info.getAvailableColumns(), seenVisitValue)).append(" FROM (\n");
-        insertSelectSql.append(getVialListFromTempTableSql(info, true, seenVisitValue)).append(") VialList\n");
-        insertSelectSql.append("GROUP BY ").append("SpecimenHash, ");
-        insertSelectSql.append(getSpecimenColsSql(info.getAvailableColumns(), seenVisitValue));
-        insertSelectSql.append(", ").append(DRAW_DATE.getDbColumnName());
-        insertSelectSql.append(", ").append(DRAW_TIME.getDbColumnName());
+        SQLFragment insertSelectSql = new SQLFragment()
+            .append("SELECT ")
+            .append(participantSequenceNumExpr)
+            .append(" AS ParticipantSequenceNum")
+            .append(", SpecimenHash, ")
+            .append(DRAW_DATE.getDbColumnName())
+            .append(", ")
+            .append(DRAW_TIME.getDbColumnName())
+            .append(", ")
+            .append(getSpecimenColsSql(info.getAvailableColumns(), seenVisitValue))
+            .append(" FROM (\n")
+            .append(getVialListFromTempTableSql(info, true, seenVisitValue))
+            .append(") VialList\n")
+            .append("GROUP BY ")
+            .append("SpecimenHash, ")
+            .append(getSpecimenColsSql(info.getAvailableColumns(), seenVisitValue))
+            .append(", ")
+            .append(DRAW_DATE.getDbColumnName())
+            .append(", ")
+            .append(DRAW_TIME.getDbColumnName());
 
         TableInfo specimenTable = getTableInfoSpecimen();
         String specimenTableSelectName = specimenTable.getSelectName();
@@ -2529,12 +2563,18 @@ public class SpecimenImporter
         else
         {
             // Insert all specimens from in the temp table.
-            SQLFragment insertSql = new SQLFragment();
-            insertSql.append("INSERT INTO ").append(specimenTableSelectName).append("\n(").append("ParticipantSequenceNum, SpecimenHash, ");
-            insertSql.append(DRAW_DATE.getDbColumnName()).append(", ");
-            insertSql.append(DRAW_TIME.getDbColumnName()).append(", ");
-            insertSql.append(getSpecimenColsSql(info.getAvailableColumns(), seenVisitValue)).append(")\n");
-            insertSql.append(insertSelectSql);
+            SQLFragment insertSql = new SQLFragment()
+                .append("INSERT INTO ")
+                .append(specimenTableSelectName)
+                .append("\n(")
+                .append("ParticipantSequenceNum, SpecimenHash, ")
+                .append(DRAW_DATE.getDbColumnName())
+                .append(", ")
+                .append(DRAW_TIME.getDbColumnName())
+                .append(", ")
+                .append(getSpecimenColsSql(info.getAvailableColumns(), seenVisitValue))
+                .append(")\n")
+                .append(insertSelectSql);
 
             if (DEBUG)
                 logSQLFragment(insertSql);
@@ -2548,14 +2588,18 @@ public class SpecimenImporter
     private SQLFragment getVialListFromTempTableSql(SpecimenLoadInfo info, boolean forSpecimenTable, boolean seenVisitValue)
     {
         String prefix = "";
-        SQLFragment vialListSql = new SQLFragment();
-        vialListSql.append("SELECT ");
+        SQLFragment vialListSql = new SQLFragment()
+            .append("SELECT ");
         if (!forSpecimenTable)
         {
-            vialListSql.append(info.getTempTableName()).append(".LSID AS LSID");
+            vialListSql
+                .append(info.getTempTableName())
+                .append(".LSID AS LSID");
             prefix = ",\n    ";
         }
-        vialListSql.append(prefix).append("SpecimenHash");
+        vialListSql
+            .append(prefix)
+            .append("SpecimenHash");
         prefix = ",\n    ";
         for (SpecimenColumn col : info.getAvailableColumns())
         {
@@ -2568,7 +2612,10 @@ public class SpecimenImporter
         }
         if (!seenVisitValue)
         {
-            vialListSql.append(prefix).append("0.0 AS ").append(VISIT_VALUE.getDbColumnName());
+            vialListSql
+                .append(prefix)
+                .append("0.0 AS ")
+                .append(VISIT_VALUE.getDbColumnName());
         }
 
         // DrawDate and DrawTime are a little different;
@@ -2578,13 +2625,16 @@ public class SpecimenImporter
         vialListSql.append(prefix);
         appendConflictResolvingSQL(info.getSchema().getSqlDialect(), vialListSql, DRAW_TIMESTAMP, info.getTempTableName(), DRAW_TIME);
 
-        vialListSql.append("\nFROM ").append(info.getTempTableName());
-        vialListSql.append("\nGROUP BY\n");
+        vialListSql
+            .append("\nFROM ")
+            .append(info.getTempTableName())
+            .append("\nGROUP BY\n");
         if (!forSpecimenTable)
             vialListSql.append(info.getTempTableName()).append(".LSID,\n    ");
         vialListSql.append(info.getTempTableName()).append(".SpecimenHash");
         if (!forSpecimenTable)
             vialListSql.append(",\n    ").append(info.getTempTableName()).append(".GlobalUniqueId");
+
         return vialListSql;
     }
 
@@ -2596,30 +2646,35 @@ public class SpecimenImporter
         String vialTableSelectName = vialTable.getSelectName();
 
         String prefix = ",\n    ";
-        SQLFragment insertSelectSql = new SQLFragment();
-        insertSelectSql.append("SELECT exp.Material.RowId");
-        insertSelectSql.append(prefix).append(specimenTable.getColumn("RowId").getValueSql(specimenTableSelectName)).append(" AS SpecimenId");
-        insertSelectSql.append(prefix).append(specimenTable.getColumn("SpecimenHash").getValueSql(specimenTableSelectName));
-        insertSelectSql.append(prefix).append("? AS Available");
-        // Set a default value of true for the 'Available' column:
-        insertSelectSql.add(Boolean.TRUE);
+        SQLFragment insertSelectSql = new SQLFragment()
+            .append("SELECT exp.Material.RowId")
+            .append(prefix)
+            .append(specimenTable.getColumn("RowId").getValueSql(specimenTableSelectName))
+            .append(" AS SpecimenId")
+            .append(prefix)
+            .append(specimenTable.getColumn("SpecimenHash").getValueSql(specimenTableSelectName))
+            .append(prefix)
+            // Set a default value of true for the 'Available' column:
+            .append("? AS Available")
+            .add(Boolean.TRUE);
 
         for (SpecimenColumn col : getVialCols(info.getAvailableColumns()))
             insertSelectSql.append(prefix).append("VialList.").append(col.getLegalDbColumnName(_dialect));
 
-        insertSelectSql.append(" FROM (").append(getVialListFromTempTableSql(info, false, seenVisitValue)).append(") VialList");
-
-        // join to material:
-        insertSelectSql.append("\n    JOIN exp.Material ON (");
-        insertSelectSql.append("VialList.LSID = exp.Material.LSID");
-        insertSelectSql.append(" AND exp.Material.Container = ?)");
-        insertSelectSql.add(info.getContainer().getId());
-
-        // join to specimen:
-        insertSelectSql.append("\n    JOIN ").append(specimenTableSelectName).append(" ON ");
-        insertSelectSql.append(specimenTable.getColumn("SpecimenHash").getValueSql(specimenTableSelectName)).
-                append(" = VialList.SpecimenHash");
-
+        insertSelectSql
+            .append(" FROM (").append(getVialListFromTempTableSql(info, false, seenVisitValue))
+            .append(") VialList")
+            // join to material:
+            .append("\n    JOIN exp.Material ON (")
+            .append("VialList.LSID = exp.Material.LSID")
+            .append(" AND exp.Material.Container = ?)")
+            .add(info.getContainer().getId())
+            // join to specimen:
+            .append("\n    JOIN ")
+            .append(specimenTableSelectName)
+            .append(" ON ")
+            .append(specimenTable.getColumn("SpecimenHash").getValueSql(specimenTableSelectName))
+            .append(" = VialList.SpecimenHash");
 
         if (merge)
         {
@@ -2649,10 +2704,13 @@ public class SpecimenImporter
         else
         {
             // Insert all vials from in the temp table.
-            SQLFragment insertSql = new SQLFragment();
-            insertSql.append("INSERT INTO ").append(vialTableSelectName).append("\n(RowId, SpecimenId, SpecimenHash, Available, ");
-            insertSql.append(getVialColsSql(info.getAvailableColumns())).append(")\n");
-            insertSql.append(insertSelectSql);
+            SQLFragment insertSql = new SQLFragment()
+                .append("INSERT INTO ")
+                .append(vialTableSelectName)
+                .append("\n(RowId, SpecimenId, SpecimenHash, Available, ")
+                .append(getVialColsSql(info.getAvailableColumns()))
+                .append(")\n")
+                .append(insertSelectSql);
 
             if (DEBUG)
                 logSQLFragment(insertSql);
@@ -2678,13 +2736,19 @@ public class SpecimenImporter
         TableInfo vialTable = getTableInfoVial();
         String vialTableSelectName = vialTable.getSelectName();
 
-        SQLFragment insertSelectSql = new SQLFragment();
-        insertSelectSql.append("SELECT ").append(vialTable.getColumn("RowId").getValueSql(vialTableSelectName)).append(" AS VialId, \n");
-        insertSelectSql.append(getSpecimenEventTempTableColumns(info));
-        insertSelectSql.append(" FROM ");
-        insertSelectSql.append(info.getTempTableName()).append("\nJOIN ").append(vialTableSelectName).append(" ON ");
-        insertSelectSql.append(info.getTempTableName()).append(".GlobalUniqueId = ")
-                .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName));
+        SQLFragment insertSelectSql = new SQLFragment()
+            .append("SELECT ")
+            .append(vialTable.getColumn("RowId").getValueSql(vialTableSelectName))
+            .append(" AS VialId, \n")
+            .append(getSpecimenEventTempTableColumns(info))
+            .append(" FROM ")
+            .append(info.getTempTableName())
+            .append("\nJOIN ")
+            .append(vialTableSelectName)
+            .append(" ON ")
+            .append(info.getTempTableName())
+            .append(".GlobalUniqueId = ")
+            .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName));
 
         if (merge)
         {
@@ -2717,10 +2781,14 @@ public class SpecimenImporter
         else
         {
             // Insert all events from the temp table
-            SQLFragment insertSql = new SQLFragment();
-            insertSql.append("INSERT INTO ").append(specimenEventTableSelectName).append("\n");
-            insertSql.append("(VialId, ").append(getSpecimenEventColsSql(info.getAvailableColumns())).append(")\n");
-            insertSql.append(insertSelectSql);
+            SQLFragment insertSql = new SQLFragment()
+                .append("INSERT INTO ")
+                .append(specimenEventTableSelectName)
+                .append("\n")
+                .append("(VialId, ")
+                .append(getSpecimenEventColsSql(info.getAvailableColumns()))
+                .append(")\n")
+                .append(insertSelectSql);
 
             if (DEBUG)
                 logSQLFragment(insertSql);
@@ -2812,7 +2880,6 @@ public class SpecimenImporter
                 throw new IllegalArgumentException("tablename: " + tableName);
         }
 
-
         // get the iter 'early' so we can look at the columns
 
         DataIteratorContext dix = new DataIteratorContext();
@@ -2881,7 +2948,6 @@ public class SpecimenImporter
         return new Pair<>(availableColumns, rowCount);
     }
 
-
     private void replaceTable(DbSchema schema, SpecimenImportFile file, TableInfo target, boolean addEntityId, boolean hasContainerColumn)
         throws IOException, ValidationException
     {
@@ -2893,7 +2959,6 @@ public class SpecimenImporter
 
         replaceTable(schema, file, file.getTableType().getTableName(), target, false, hasContainerColumn, null, null, entityIdCol);
     }
-
 
     /**
      * Deletes the target table and inserts new rows.
@@ -3199,7 +3264,6 @@ public class SpecimenImporter
         return loader;
     }
 
-
     private Pair<List<SpecimenColumn>, Integer> populateTempTable(TempTablesHolder tempTablesHolder, SpecimenImportFile file, boolean merge)
             throws IOException, ValidationException
     {
@@ -3242,7 +3306,7 @@ public class SpecimenImporter
                 _participantIdCol = sc;
         }
 
-        Study study = StudyManager.getInstance().getStudy(_container);
+        final Study study = StudyManager.getInstance().getStudy(_container);
         final SequenceNumImportHelper h = new SequenceNumImportHelper(study, null);
         final ParticipantIdImportHelper piih = new ParticipantIdImportHelper(study, _user, null);
         final SpecimenColumn visitCol = _visitCol;
@@ -3396,10 +3460,12 @@ public class SpecimenImporter
         if (study.getTimepointType() != TimepointType.VISIT)
         {
             info("Updating visit values to match draw timestamps (date-based studies only)...");
-            SQLFragment visitValueSql = new SQLFragment();
-            visitValueSql.append("UPDATE ").append(tempTable).append(" SET VisitValue = (");
-            visitValueSql.append(StudyManager.sequenceNumFromDateSQL("DrawTimestamp"));
-            visitValueSql.append(");");
+            SQLFragment visitValueSql = new SQLFragment()
+                .append("UPDATE ")
+                .append(tempTable)
+                .append(" SET VisitValue = (")
+                .append(StudyManager.sequenceNumFromDateSQL("DrawTimestamp"))
+                .append(");");
             if (DEBUG)
                 info(visitValueSql.toDebugString());
             executeSQL(schema, visitValueSql);
@@ -3425,25 +3491,31 @@ public class SpecimenImporter
             }
             hashCols.append("\n");
 
-            SQLFragment existingEvents = new SQLFragment("SELECT GlobalUniqueId");
-            existingEvents.append(hashCols);
-            existingEvents.append("FROM ").append(getTableInfoVial(), "Vial").append("\n");
-            existingEvents.append("JOIN ").append(getTableInfoSpecimen(), "Specimen").append("\n");
-            existingEvents.append("ON Vial.SpecimenId = Specimen.RowId\n");
-            existingEvents.append("WHERE Vial.GlobalUniqueId IN (SELECT GlobalUniqueId FROM ").append(tempTable).append(")\n");
+            SQLFragment existingEvents = new SQLFragment("SELECT GlobalUniqueId")
+                .append(hashCols)
+                .append("FROM ")
+                .append(getTableInfoVial(), "Vial")
+                .append("\n")
+                .append("JOIN ").append(getTableInfoSpecimen(), "Specimen")
+                .append("\n")
+                .append("ON Vial.SpecimenId = Specimen.RowId\n")
+                .append("WHERE Vial.GlobalUniqueId IN (SELECT GlobalUniqueId FROM ")
+                .append(tempTable)
+                .append(")\n");
 
-            SQLFragment tempTableEvents = new SQLFragment("SELECT GlobalUniqueId");
-            tempTableEvents.append(hashCols);
-            tempTableEvents.append("FROM ").append(tempTable);
+            SQLFragment tempTableEvents = new SQLFragment("SELECT GlobalUniqueId")
+                .append(hashCols)
+                .append("FROM ")
+                .append(tempTable);
 
             // "UNION ALL" the temp and the existing tables and group by columns used in the specimen hash
-            SQLFragment allEventsByHashCols = new SQLFragment("SELECT COUNT(*) AS Group_Count, * FROM (\n");
-            allEventsByHashCols.append("(\n").append(existingEvents).append("\n)\n");
-            allEventsByHashCols.append("UNION ALL /* SpecimenImporter.checkForConflictingSpecimens() */\n");
-            allEventsByHashCols.append("(\n").append(tempTableEvents).append("\n)\n");
-            allEventsByHashCols.append(") U\n");
-            allEventsByHashCols.append("GROUP BY GlobalUniqueId");
-            allEventsByHashCols.append(hashCols);
+            SQLFragment allEventsByHashCols = new SQLFragment("SELECT COUNT(*) AS Group_Count, * FROM (\n")
+                .append("(\n").append(existingEvents).append("\n)\n")
+                .append("UNION ALL /* SpecimenImporter.checkForConflictingSpecimens() */\n")
+                .append("(\n").append(tempTableEvents).append("\n)\n")
+                .append(") U\n")
+                .append("GROUP BY GlobalUniqueId")
+                .append(hashCols);
 
             Map<String, List<Map<String, Object>>> rowsByGUID = new HashMap<>();
             Set<String> duplicateGUIDs = new TreeSet<>();
@@ -3571,9 +3643,12 @@ public class SpecimenImporter
         SQLFragment updateHashSql = new SQLFragment("SELECT (");
         makeUpdateSpecimenHashSql(schema, _container, loadedColumns, "InnerTable.", updateHashSql);
         updateHashSql.append(") AS SpecimenHash, ")
-                .append("InnerTable.GlobalUniqueId");
-        updateHashSql.append("\n\tINTO ").append(selectInsertTempTableName)
-                .append("\n\tFROM (").append(conflictResolvingSubselect).append(") InnerTable");
+            .append("InnerTable.GlobalUniqueId")
+            .append("\n\tINTO ")
+            .append(selectInsertTempTableName)
+            .append("\n\tFROM (")
+            .append(conflictResolvingSubselect)
+            .append(") InnerTable");
 
         info("Calculating specimen hash values into second temp table...");
         if (DEBUG)
@@ -3582,10 +3657,13 @@ public class SpecimenImporter
         info("Done calculating specimen hash values.");
         tempTablesHolder.getSelectInsertTempTableInfo().track();   // We've now created the second temp table
 
-        SQLFragment setSpecimenHashSql = new SQLFragment("UPDATE ");
-        setSpecimenHashSql.append(tempTableName).append(" SET SpecimenHash = InnerTable.SpecimenHash\nFROM ")
-                .append(selectInsertTempTableName).append(" InnerTable\nWHERE ")
-                .append(tempTableName).append(".GlobalUniqueId = InnerTable.GlobalUniqueId");
+        SQLFragment setSpecimenHashSql = new SQLFragment("UPDATE ")
+            .append(tempTableName)
+            .append(" SET SpecimenHash = InnerTable.SpecimenHash\nFROM ")
+            .append(selectInsertTempTableName)
+            .append(" InnerTable\nWHERE ")
+            .append(tempTableName)
+            .append(".GlobalUniqueId = InnerTable.GlobalUniqueId");
 
         info("Updating specimen hash values in temp table...");
         if (DEBUG)
@@ -3594,7 +3672,6 @@ public class SpecimenImporter
         info("Update complete.");
         info("Temp table populated.");
     }
-
 
     public static void makeUpdateSpecimenHashSql(DbSchema schema, Container container, List<SpecimenColumn> loadedColumns, String innerTable, SQLFragment updateHashSql)
     {
@@ -3665,7 +3742,6 @@ public class SpecimenImporter
 
     private TempTablesHolder createTempTable()
     {
-
         info("Creating temp table to hold archive data...");
         SqlDialect dialect = DbSchema.getTemp().getSqlDialect();
 
@@ -3823,20 +3899,18 @@ public class SpecimenImporter
         {
             Container c = JunitUtil.getTestContainer();
 
-            Collection<ImportableColumn> cols = Arrays.asList(
+            Collection<ImportableColumn> cols = List.of(
                 new ImportableColumn("s", "s", "VARCHAR(32)", true),
                 new ImportableColumn("i", "i", "INTEGER", false)
             );
 
             ListofMapsDataIterator values = new ListofMapsDataIterator(
-                new LinkedHashSet<>(Arrays.asList("s","i")),
-                Arrays.asList(
+                new LinkedHashSet<>(List.of("s","i")),
+                List.of(
                     row("Bob", 100),
                     row("Sally", 200),
-                    row(null, 300)
-                )
+                    row(null, 300))
             );
-
 
             SpecimenImporter importer = new SpecimenImporter(c, null);      // TODO: don't have user here
             final Integer[] counter = new Integer[] { 0 };
@@ -3891,12 +3965,12 @@ public class SpecimenImporter
 
             // Add one new row, update one existing row.
             values = new ListofMapsDataIterator(
-                    new LinkedHashSet<>(Arrays.asList("s","i")),
-                    Arrays.asList(
-                            row("Bob", 105),
-                            row(null, 305),
-                            row("Jimmy", 405)
-                    )
+                new LinkedHashSet<>(List.of("s","i")),
+                List.of(
+                    row("Bob", 105),
+                    row(null, 305),
+                    row("Jimmy", 405)
+                )
             );
 
 
@@ -3940,17 +4014,16 @@ public class SpecimenImporter
                 // assertNotNull(jimmyGUID);
             }
 
-
             // let's really mix things up and try updating using a column that's not marked as the PK
 
-            Collection<ImportableColumn> colsAlternate = Arrays.asList(
-                    new ImportableColumn("s", "s", "VARCHAR(32)", false),
-                    new ImportableColumn("i", "i", "INTEGER", true)
+            Collection<ImportableColumn> colsAlternate = List.of(
+                new ImportableColumn("s", "s", "VARCHAR(32)", false),
+                new ImportableColumn("i", "i", "INTEGER", true)
             );
 
             values = new ListofMapsDataIterator(
-                new LinkedHashSet<>(Arrays.asList("s","i")),
-                Arrays.asList(
+                new LinkedHashSet<>(List.of("s","i")),
+                List.of(
                     row("John", 405)
                 )
             );
@@ -4048,12 +4121,10 @@ public class SpecimenImporter
         }
     }
 
-
     private int executeSQL(DbSchema schema, CharSequence sql, Object... params)
     {
         return executeSQL(schema, new SQLFragment(sql, params));
     }
-
 
     private int executeSQL(DbSchema schema, SQLFragment sql)
     {

@@ -541,8 +541,8 @@ public class UserController extends SpringActionController
     @RequiresAllOf({UpdateUserPermission.class, DeleteUserPermission.class})
     public class UpdateUsersStateApiAction extends MutatingApiAction<UpdateUserStateForm>
     {
-        private List<Integer> validUserIds = new ArrayList<>();
-        private List<Integer> invalidUserIds = new ArrayList<>();
+        private final List<Integer> validUserIds = new ArrayList<>();
+        private final List<Integer> invalidUserIds = new ArrayList<>();
 
         @Override
         public void validateForm(UpdateUserStateForm form, Errors errors)
