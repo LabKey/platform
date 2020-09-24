@@ -6,10 +6,10 @@
 const fs = require('fs-extra');
 
 /**
- * Experimental build configuration to use @labkey/api distribution in lieu of default clientapi/core files.
+ * Copy @labkey/api distribution to module resources.
  */
 function copyAPIFiles() {
-    log('Copying files from npm package ... ');
+    log('Copying @labkey/api distribution from npm package ... ');
     const apiDistDir = __dirname + '/node_modules/@labkey/api/dist/';
     const targetDir = __dirname + '/resources/web/clientapi/';
 
@@ -24,8 +24,22 @@ function copyAPIFiles() {
     log('Done.\n');
 }
 
+/**
+ * Copy @labkey/themes distribution to module resources.
+ */
+function copyThemeFiles() {
+    log('Copying @labkey/themes distribution from npm package ... ');
+    const apiDistDir = __dirname + '/node_modules/@labkey/themes/dist/';
+    const targetDir = __dirname + '/resources/web/core/css/';
+
+    fs.copy(apiDistDir, targetDir);
+
+    log('Done.\n');
+}
+
 function log(msg) {
     process.stdout.write(msg);
 }
 
 copyAPIFiles();
+copyThemeFiles();
