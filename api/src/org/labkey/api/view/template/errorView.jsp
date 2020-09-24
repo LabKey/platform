@@ -26,11 +26,14 @@
 
 <%
     StringBuilder stackTrace = new StringBuilder();
-    stackTrace.append(model.getException().getMessage());
-    for (StackTraceElement stackTraceElement : model.getException().getStackTrace())
+    if (null != model.getException())
     {
-        stackTrace.append("\n");
-        stackTrace.append(stackTraceElement.toString());
+        stackTrace.append(model.getException().getMessage());
+        for (StackTraceElement stackTraceElement : model.getException().getStackTrace())
+        {
+            stackTrace.append("\n");
+            stackTrace.append(stackTraceElement.toString());
+        }
     }
 %>
 
