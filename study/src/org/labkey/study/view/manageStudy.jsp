@@ -54,7 +54,7 @@
 <%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.SnapshotSettingsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.StudyScheduleAction" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ChooseImporterAction" %>
+<%--<%@ page import="org.labkey.study.controllers.StudyController.ChooseImporterAction" %>--%>
 <%@ page import="org.labkey.study.controllers.StudyDefinitionController.EditStudyDefinitionAction" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController.ManageStudyProductsAction" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController.BeginAction" %>
@@ -409,9 +409,12 @@
                                 {
                 %>
                         <tr>
-                            <td class="lk-study-prop-label">Specimen Import</td>
-                            <td class="lk-study-prop-desc">Choose and configure a specimen import.</td>
-                            <td><%=link("Configure specimen import", ChooseImporterAction.class)%></td>
+<%--                            <td class="lk-study-prop-label">Specimen Import</td>--%>
+<%--                            <td class="lk-study-prop-desc">Choose and configure a specimen import.</td>--%>
+<%--                            <td><%=link("Configure specimen import", ChooseImporterAction.class)%></td>--%>
+                                <td class="lk-study-prop-label">External Specimen Repository</td>
+                                <td class="lk-study-prop-desc">Configure settings for a <%=h(transform.getName())%> repository.</td>
+                                <td><%=link("Configure " + transform.getName(), manageAction)%></td>
                         </tr>
                 <%
                                 }

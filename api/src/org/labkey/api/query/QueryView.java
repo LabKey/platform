@@ -2310,7 +2310,7 @@ public class QueryView extends WebPartView<Object>
 
     public TSVGridWriter getTsvWriter() throws IOException
     {
-        return getTsvWriter(getColumnHeaderType());
+        return getTsvWriter(getColumnHeaderType()); // Flag
     }
 
     protected TSVGridWriter getTsvWriter(ColumnHeaderType headerType) throws IOException
@@ -2709,7 +2709,7 @@ public class QueryView extends WebPartView<Object>
         {
             tsv.setDelimiterCharacter(delim);
             tsv.setQuoteCharacter(quote);
-            tsv.write(response);
+            tsv.write(response); // Mark
             return tsv.getDataRowCount();
         }
     }
