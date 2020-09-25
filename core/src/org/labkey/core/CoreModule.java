@@ -17,11 +17,8 @@ package org.labkey.core;
 
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.Appender;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.appender.RollingFileAppender;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AdminConsoleService;
@@ -47,6 +44,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.external.tools.ExternalToolsViewService;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.jsp.LabKeyJspWriter;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.FolderType;
@@ -486,7 +484,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<>(Arrays.asList(
+        return List.of(
             new AlwaysAvailableWebPartFactory("Contacts")
             {
                 @Override
@@ -664,7 +662,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     return false;
                 }
             }
-        ));
+        );
     }
 
     @Override
@@ -698,6 +696,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (moduleContext.getInstalledVersion() < 18.30)
         {
             new CoreUpgradeCode().purgeDeveloperRole();
+        }
+
+        // Force LabKeyJspWriter to throw exceptions for unsafe operations, dev mode only.
+        // We'll remove this after 20.11, along with the experimental feature.
+        if (moduleContext.getInstalledVersion() < 20.002)
+        {
+            LabKeyJspWriter.turnOnExperimentalFeature(moduleContext.getUpgradeUser());
         }
     }
 

@@ -67,7 +67,12 @@ public interface ExpSampleType extends ExpObject
     /** @return true if using 'Name' as the Id column.  getIdCol1(), getIdCol2() and getIdCol3() will all be null. */
     boolean hasNameAsIdCol();
 
-    /** @return property that determines the first part of the sample type's sample's keys.  Will be null if using 'Name' as the Id column. */
+    /**
+     *  Get the property that determines the first part of the sample type's sample's keys.
+     *  When 'Name' is being used as the id column, null will be returned.
+     *  <b>WARNING:</b> If no idCol1 has been explicitly set, the first domain property is picked as the idCol.
+     *  Callers should check {@link #hasIdColumns()} and {@link #hasNameAsIdCol()} before calling this method.
+     */
     @Nullable
     @Deprecated
     DomainProperty getIdCol1();
@@ -157,7 +162,13 @@ public interface ExpSampleType extends ExpObject
 
     void setMaterialLSIDPrefix(String s);
 
-    /** @return all of the ID columns. Should be a list of 0-3 elements */
+    /**
+     * Return all of the ID columns.
+     * When using 'Name' as the ID column, the returned list will be empty.
+     * <b>WARNING:</b> When no ID columns have been explicitly set, the first domain property will be returned.
+     * Callers should check {@link #hasIdColumns()} and {@link #hasNameAsIdCol()} before calling this method.
+     * @return a list of 0-3 elements.
+     */
     @NotNull
     List<DomainProperty> getIdCols();
 
