@@ -125,6 +125,7 @@ public class ApiModule extends CodeOnlyModule
         SystemMaintenance.addTask(new ApiKeyMaintenanceTask());
         AuthenticationManager.registerMetricsProvider();
         LabKeyJspWriter.registerExperimentalFeature();
+        ApiKeyManager.get().handleStartupProperties();
     }
 
     @Override
