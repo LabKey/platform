@@ -39,7 +39,7 @@
 
 <script type="application/javascript">
     // pulling in theme based css for the not found pages to still respect the site's theme
-    LABKEY.requiresCss("<%=PageFlowUtil.filter("/core/css/" + PageFlowUtil.resolveThemeName(getContainer()) + ".css")%>");
+    LABKEY.requiresCss("<%=PageFlowUtil.filter("/core/css/" + unsafe(PageFlowUtil.resolveThemeName(getContainer())) + ".css")%>");
 
     LABKEY.requiresScript('core/gen/errorHandler.js', function() {
     // LABKEY.requiresScript('http://localhost:3001/errorHandler.js', function() {
