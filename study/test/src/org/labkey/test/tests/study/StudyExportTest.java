@@ -20,6 +20,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.Timeout;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
+import org.labkey.test.SortDirection;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
@@ -101,6 +102,7 @@ public class StudyExportTest extends StudyManualTest
         clickButton("Import Study");
         clickButton("Use Pipeline");
         _fileBrowserHelper.selectFileBrowserItem("export/");
+        _fileBrowserHelper.sortFileBrowserColumn("Last Modified", SortDirection.DESC);
         // select the first exported zip archive file by row
         Locator.XPathLocator gridRow = Locator.tag("tr").withClass("x4-grid-data-row").withAttributeContaining("data-recordid", "My Study_");
         waitForElement(gridRow);

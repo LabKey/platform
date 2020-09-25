@@ -52,7 +52,7 @@ public class QueryParseException extends QueryException
 
     public boolean isWarning()
     {
-        return Level.ERROR.intLevel() > _level.intLevel();
+        return Level.WARN.equals(_level);
     }
 
 
