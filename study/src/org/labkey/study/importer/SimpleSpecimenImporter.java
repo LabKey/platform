@@ -338,10 +338,18 @@ public class SimpleSpecimenImporter extends SpecimenImporter
                 int id = --minId;
                 existingKeyMap.put((String)map.get(dbLabelCol), id);
 
-                SQLFragment sql = new SQLFragment();
-                sql.append("UPDATE ").append(table);
-                sql.append(" SET ").append(dbIdCol).append(" = ?").add(id);
-                sql.append(" WHERE ").append(dbRowIdCol).append(" = ?").add(rowId);
+                SQLFragment sql = new SQLFragment()
+                    .append("UPDATE ")
+                    .append(table.getSelectName())
+                    .append(" SET ")
+                    .append(dbIdCol)
+                    .append(" = ?")
+                    .add(id)
+                    .append(" WHERE ")
+                    .append(dbRowIdCol)
+                    .append(" = ?")
+                    .add(rowId);
+
                 new SqlExecutor(table.getSchema()).execute(sql);
             }
         }
@@ -451,7 +459,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         {
             specimenColumnMap = new HashMap<>();
             for (SpecimenColumn col : getSpecimenColumns())
-                specimenColumnMap.put(col.getTsvColumnName(), col);
+                col.getImportNames().forEach(n->specimenColumnMap.put(n, col));
         }
 
         return specimenColumnMap.get(name);

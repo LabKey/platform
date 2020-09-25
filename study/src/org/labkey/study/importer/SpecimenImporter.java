@@ -107,6 +107,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -250,14 +251,25 @@ public class SpecimenImporter
             return _legalDbColumnName;
         }
 
+        // Preferred TSV column name. For example, the name that gets exported.
+        public String getPrimaryTsvColumnName()
+        {
+            return _tsvColumnName;
+        }
+
+        @Deprecated
         public String getTsvColumnName()
         {
             return _tsvColumnName;
         }
 
-        public Collection<String> getTsvColumnAliases()
+        // All valid import names: primary name plus all import aliases
+        public Collection<String> getImportNames()
         {
-            return _tsvColumnAliases;
+            List<String> ret = new LinkedList<>(_tsvColumnAliases);
+            ret.add(_tsvColumnName);
+
+            return ret;
         }
 
         public boolean isUnique()
