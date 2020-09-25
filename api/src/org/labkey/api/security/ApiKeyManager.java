@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -151,7 +152,12 @@ public class ApiKeyManager
                 if (null == user)
                     throw new ConfigurationException("Unrecognized user specified in ApiKey startup property: " + prop.getName());
 
-                createKey(user, -1, prop.getValue());
+                String apiKey = prop.getValue();
+
+                if (!StringUtils.startsWith(apiKey, "apikey|"))
+                    throw new ConfigurationException("Invalid API key specified in ApiKey startup property; API keys must start with \"apikey|\": " + apiKey);
+
+                createKey(user, -1, apiKey);
             }
             catch (InvalidEmailException e)
             {
