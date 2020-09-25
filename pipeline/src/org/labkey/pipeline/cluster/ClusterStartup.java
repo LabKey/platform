@@ -122,9 +122,11 @@ public class ClusterStartup extends AbstractPipelineStartup
             }
             finally
             {
+                int exitVal = 0;
                 if (job.getActiveTaskStatus() == PipelineJob.TaskStatus.error)
                 {
                     job.error("Task failed");
+                    exitVal = 1;
                 }
                 else if (job.getActiveTaskStatus() != PipelineJob.TaskStatus.complete)
                 {
@@ -134,10 +136,7 @@ public class ClusterStartup extends AbstractPipelineStartup
                 //NOTE: we need to set error status before writing out the XML so this information is retained
                 job.writeToFile(file);
 
-                if (job.getErrors() > 0)
-                {
-                    System.exit(1);
-                }
+                System.exit(exitVal);
             }
         }
         finally
