@@ -1041,7 +1041,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             {
                 //noinspection ThrowableInstanceNeverThrown
                 String msgColumnName =
-                        (column.getParentTable()==null?"":column.getParentTable().getName()) +
+                        (column.getParentTable()==null?"":(column.getParentTable().getName() + ".")) +
                         column.getName();
                 qpe.add(new MetadataParseWarning("Schema " + xbColumn.getFk().getFkDbSchema() + " not found, in foreign key definition: " + msgColumnName));
                 return;
