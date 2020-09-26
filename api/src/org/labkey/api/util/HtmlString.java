@@ -25,9 +25,10 @@ import java.util.Objects;
 public final class HtmlString implements SafeToRender, DOM.Renderable, Comparable<HtmlString>
 {
     // Helpful constants for convenience (and efficiency)
-    public static HtmlString EMPTY_STRING = HtmlString.of("");
-    public static HtmlString NBSP = HtmlString.unsafe("&nbsp;");
-    public static HtmlString NDASH = HtmlString.unsafe("&ndash;");
+    public static final HtmlString EMPTY_STRING = HtmlString.of("");
+    public static final HtmlString NBSP = HtmlString.unsafe("&nbsp;");
+    public static final HtmlString NDASH = HtmlString.unsafe("&ndash;");
+    public static final HtmlString BR = HtmlString.unsafe("<br/>");
 
     private final @NotNull String _s;
 
@@ -36,9 +37,14 @@ public final class HtmlString implements SafeToRender, DOM.Renderable, Comparabl
      * @param s A String. A null value results in an empty HtmlString (equivalent of HtmlString.of("")).
      * @return An HtmlString that encodes and wraps the String.
      */
-    public static @NotNull HtmlString of(@Nullable String s)
+    public static @NotNull HtmlString of(@Nullable CharSequence s)
     {
         return new HtmlString(PageFlowUtil.filter(s));
+    }
+
+    public static @NotNull HtmlString of(@Nullable Object o)
+    {
+        return of(o == null ? null : o.toString());
     }
 
     /**
@@ -48,7 +54,7 @@ public final class HtmlString implements SafeToRender, DOM.Renderable, Comparabl
      * @param translateWhiteSpace A flag that determines whether whitespace should be encoded or not
      * @return An HtmlString that encodes and wraps the String, respecting the translateWhiteSpace flag.
      */
-    public static @NotNull HtmlString of(@Nullable String s, boolean translateWhiteSpace)
+    public static @NotNull HtmlString of(@Nullable CharSequence s, boolean translateWhiteSpace)
     {
         return new HtmlString(PageFlowUtil.filter(s, translateWhiteSpace));
     }

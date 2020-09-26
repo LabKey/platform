@@ -34,6 +34,7 @@ import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
@@ -373,7 +374,7 @@ public class DataColumn extends DisplayColumn
         {
             String url = renderURLorValueURL(ctx);
 
-            HtmlString formattedValue = HtmlString.unsafe(getFormattedValue(ctx));
+            HtmlString formattedValue = getFormattedHtml(ctx);
 
             if (StringUtils.isNotBlank(url))
             {
@@ -527,9 +528,9 @@ public class DataColumn extends DisplayColumn
     }
 
     @Override @NotNull
-    public String getFormattedValue(RenderContext ctx)
+    public HtmlString getFormattedHtml(RenderContext ctx)
     {
-        StringBuilder sb = new StringBuilder();
+        HtmlStringBuilder hsb = HtmlStringBuilder.of();
         Object value = ctx.get(_displayColumn.getFieldKey());
         if (value == null)
         {
@@ -544,11 +545,11 @@ public class DataColumn extends DisplayColumn
                 // In many entry paths we've already checked for null, but not all (for example, MVDisplayColumn or when the TargetStudy no longer exists or is empty string)
                 if (boundValue == null || "".equals(boundValue))
                 {
-                    sb.append("&nbsp;");
+                    hsb.append(HtmlString.NBSP);
                 }
                 else
                 {
-                    sb.append(PageFlowUtil.filter("<" + boundValue + ">"));
+                    hsb.append("<" + boundValue + ">");
                 }
             }
         }
@@ -560,16 +561,16 @@ public class DataColumn extends DisplayColumn
                 formatted = PageFlowUtil.filter(formatted);
 
             if (formatted.length() == 0)
-                formatted = "&nbsp;";
+                hsb.append(HtmlString.NBSP);
             else if (isPreserveNewlines())
                 formatted = formatted.replaceAll("\\n", "<br>\n");
             else if (value instanceof Date)
-                formatted = "<nobr>" + formatted + "</nobr>";
+                hsb.append("<nobr>" + formatted + "</nobr>");
 
-            sb.append(formatted);
+            hsb.append(HtmlString.unsafe(formatted));
         }
 
-        return sb.toString();
+        return hsb.getHtmlString();
     }
 
     protected boolean isDisabledInput()

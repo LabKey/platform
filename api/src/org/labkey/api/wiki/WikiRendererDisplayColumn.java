@@ -22,6 +22,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.HtmlString;
 
 import java.util.Set;
 
@@ -49,16 +50,16 @@ public class WikiRendererDisplayColumn extends DataColumn
     @Override
     public Object getDisplayValue(RenderContext ctx)
     {
-        return getFormattedValue(ctx);
+        return getFormattedHtml(ctx);
     }
 
     @Override @NotNull
-    public String getFormattedValue(RenderContext ctx)
+    public HtmlString getFormattedHtml(RenderContext ctx)
     {
         WikiRenderingService wikiService = WikiRenderingService.get();
         String content = (String) getValue(ctx);
         if (null == content)
-            return "&nbsp";
+            return HtmlString.NBSP;
 
         WikiRendererType rendererType = _defaultRenderer;
         Object rendererTypeName = ctx.get(getRenderTypeFieldKey());
@@ -74,7 +75,7 @@ public class WikiRendererDisplayColumn extends DataColumn
             }
         }
 
-        return wikiService.getFormattedHtml(rendererType, content).toString();
+        return wikiService.getFormattedHtml(rendererType, content);
     }
 
     private FieldKey getRenderTypeFieldKey()

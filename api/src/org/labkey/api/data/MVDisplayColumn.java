@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
@@ -73,9 +74,9 @@ public class MVDisplayColumn extends DataColumn
             String popupText = PageFlowUtil.filter(MvUtil.getMvLabel(mvIndicator, ctx.getContainer()));
 
             // If we have a raw value, include it in the popup
-            String value = super.getFormattedValue(ctx);
-            if (!"".equals(value))
-                popupText += ("<p>The value as originally entered was: '" + PageFlowUtil.filter(value) + "'.</p>");
+            HtmlString value = super.getFormattedHtml(ctx);
+            if (value.length() != 0)
+                popupText += ("<p>The value as originally entered was: '" + value.toString() + "'.</p>");
 
             out.write("<font class=\"labkey-mv\">");
             out.write(PageFlowUtil.helpPopup("Missing Value Indicator: " + mvIndicator, popupText, true, h(mvIndicator)));
@@ -127,11 +128,11 @@ public class MVDisplayColumn extends DataColumn
     }
 
     @Override @NotNull
-    public String getFormattedValue(RenderContext ctx)
+    public HtmlString getFormattedHtml(RenderContext ctx)
     {
         if (getMvIndicator(ctx) != null)
-            return "";
-        return super.getFormattedValue(ctx);
+            return HtmlString.EMPTY_STRING;
+        return super.getFormattedHtml(ctx);
     }
 
     @Override
