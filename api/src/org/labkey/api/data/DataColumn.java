@@ -389,7 +389,7 @@ public class DataColumn extends DisplayColumn
                 {
                     out.write("\" target=\"");
                     out.write(linkTarget);
-                    out.write("\" rel=\"noopener noreferrer\"");
+                    out.write("\" rel=\"noopener noreferrer");
                 }
 
                 String linkCls = getLinkCls();
