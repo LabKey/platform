@@ -107,16 +107,7 @@
         <tr>
             <td class="labkey-form-label">Definition URI</td>
             <td>
-                <%
-                if (dataset.getTypeURI() == null)
-                {
-                    %><a href="importDataType.view?<%=h(DatasetDefinition.DATASETKEY)%>=<%= dataset.getDatasetId() %>">[Upload]</a><%
-                }
-                else
-                {
-                    %><%= h(dataset.getTypeURI()) %><%
-                }
-                %>
+                <%= h(dataset.getTypeURI()) %>
             </td>
         </tr>
         </table>
