@@ -39,6 +39,7 @@ import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
+import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -257,19 +258,25 @@ public class SpecimenImporter
             return _tsvColumnName;
         }
 
-        @Deprecated
+        @Deprecated // Use getPrimaryTsvColumnName() instead
         public String getTsvColumnName()
         {
             return _tsvColumnName;
         }
 
         // All valid import names: primary name plus all import aliases
+        // TODO: Might want to hold a set? Initialize unmodifiable version in constructor?
         public Collection<String> getImportNames()
         {
             List<String> ret = new LinkedList<>(_tsvColumnAliases);
             ret.add(_tsvColumnName);
 
             return ret;
+        }
+
+        public Collection<String> getImportAliases()
+        {
+            return _tsvColumnAliases;
         }
 
         public boolean isUnique()
@@ -3158,8 +3165,21 @@ public class SpecimenImporter
         @Override
         public DataIterator getDataIterator(final DataIteratorContext context)
         {
+//            ValidationException setupError = new ValidationException();
+//            DataIterator matchColumns = new MatchColumnsDataIterator(dib.getDataIterator(context), target, setupError, getContainer());
+//            if (setupError.hasErrors())
+//                context.getErrors().addRowError(setupError);
             MapDataIterator in = DataIteratorUtil.wrapMap(dib.getDataIterator(context), false);
             return new SpecimenImportIterator(this, in, context);
+        }
+    }
+
+    private static class MatchColumnsDataIterator extends WrapperDataIterator
+    {
+        protected MatchColumnsDataIterator(DataIterator di, TableInfo target, ValidationException setupError, Container c)
+        {
+            super(di);
+            ArrayList<ColumnInfo> columns = DataIteratorUtil.matchColumns(di, target, true, setupError,  c);
         }
     }
 
@@ -3253,7 +3273,7 @@ public class SpecimenImporter
         Map<String, ColumnDescriptor> expectedColumns = new HashMap<>(columns.size());
 
         for (ImportableColumn col : columns)
-            expectedColumns.put(col.getTsvColumnName().toLowerCase(), col.getColumnDescriptor());
+            col.getImportNames().forEach(n->expectedColumns.put(n.toLowerCase(), col.getColumnDescriptor()));
 
         DataLoader loader = importFile.getDataLoader();
 
@@ -3784,7 +3804,11 @@ public class SpecimenImporter
         {
             String name = col.getLegalDbColumnName(_dialect);
             sql.append(",\n    ").append(name).append(" ").append(col.getDbType());
-            columns.add(new BaseColumnInfo(name, col.getJdbcType(), col.getMaxSize(), true));
+            BaseColumnInfo colInfo = new BaseColumnInfo(name, col.getJdbcType(), col.getMaxSize(), true);
+            Collection<String> aliases = col.getImportAliases();
+            if (!aliases.isEmpty())
+                colInfo.setImportAliasesSet(new HashSet<>(aliases));
+            columns.add(colInfo);
         }
         sql.append("\n);");
 
