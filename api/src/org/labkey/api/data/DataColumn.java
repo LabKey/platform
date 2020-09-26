@@ -34,6 +34,7 @@ import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -372,54 +373,48 @@ public class DataColumn extends DisplayColumn
         {
             String url = renderURLorValueURL(ctx);
 
+            HtmlString formattedValue = HtmlString.unsafe(getFormattedValue(ctx));
+
             if (StringUtils.isNotBlank(url))
             {
-                out.write("<a href=\"");
-                out.write(PageFlowUtil.filter(url));
+                Link.LinkBuilder link = new Link.LinkBuilder(formattedValue).href(url).clearClasses();
 
                 String linkTitle = renderURLTitle(ctx);
                 if (null != linkTitle)
                 {
-                    out.write("\" title=\"");
-                    out.write(linkTitle);
+                    link.title(linkTitle);
                 }
 
                 String linkTarget = getLinkTarget();
                 if (null != linkTarget)
                 {
-                    out.write("\" target=\"");
-                    out.write(linkTarget);
-                    out.write("\" rel=\"noopener noreferrer");
+                    link.target(linkTarget).rel("noopener noreferrer");
                 }
 
                 String linkCls = getLinkCls();
                 if (null != linkCls)
                 {
-                    out.write("\" class=\"");
-                    out.write(linkCls);
+                    link.addClass(linkCls);
                 }
 
                 String onClick = getOnClick();
                 if (null != onClick)
                 {
-                    out.write("\" onclick=\"");
-                    out.write(onClick);
+                    link.onClick(onClick);
                 }
 
                 String css = getCssStyle(ctx);
                 if (!css.isEmpty())
                 {
-                    out.write("\" style=\"");
-                    out.write(css);
+                    link.style(css);
                 }
 
-                out.write("\">");
+                link.build().appendTo(out);
             }
-
-            out.write(getFormattedValue(ctx));
-
-            if (null != url)
-                out.write("</a>");
+            else
+            {
+                formattedValue.appendTo(out);
+            }
         }
         else
             out.write("&nbsp;");
