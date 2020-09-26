@@ -565,7 +565,7 @@ public class DataColumn extends DisplayColumn
             else if (isPreserveNewlines())
                 formatted = formatted.replaceAll("\\n", "<br>\n");
             else if (value instanceof Date)
-                hsb.append("<nobr>" + formatted + "</nobr>");
+                formatted = "<nobr>" + formatted + "</nobr>";
 
             hsb.append(HtmlString.unsafe(formatted));
         }
