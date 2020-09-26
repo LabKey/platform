@@ -140,7 +140,7 @@ public class PolynomialCurveFit extends DefaultCurveFit implements CurveFit
     }
 
     @Override
-    public double fitCurveY(double y)
+    public double solveForX(double y)
     {
         try
         {

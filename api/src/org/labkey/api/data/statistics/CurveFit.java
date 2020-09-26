@@ -73,10 +73,10 @@ public interface CurveFit
     double fitCurve(double x, Parameters parameters);
 
     /**
-     * Returns the corresponding x value for the specified value on the y axis using
-     * the generated curve fit parameters.
+     * For a curve fit, return the x value given y. Can be used in assays where dose
+     * values need to be calculated from measured responses (known y but unknown x).
      */
-    double fitCurveY(double y);
+    double solveForX(double y);
 
     /**
      * Calculates the fit error : r squared (or coefficient of determination) of the fitted curve

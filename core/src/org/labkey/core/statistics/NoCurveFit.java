@@ -47,7 +47,7 @@ public class NoCurveFit extends DefaultCurveFit
     }
 
     @Override
-    public double fitCurveY(double y)
+    public double solveForX(double y)
     {
         return 0;
     }
