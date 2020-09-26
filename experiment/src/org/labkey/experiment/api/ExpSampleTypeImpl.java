@@ -246,6 +246,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         DomainProperty result = getDomainProperty(_object.getIdCol1());
         if (result == null)
         {
+            // CONSIDER: don't grab the first property but require it to be explicitly set when the sample set is saved
             List<? extends DomainProperty> props = getDomain().getProperties();
             if (!props.isEmpty())
             {

@@ -20,6 +20,7 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ExperimentalFeatureService;
@@ -49,6 +50,15 @@ public class LabKeyJspWriter extends JspWriterWrapper
                 "Throw exceptions for JSP warnings",
                 "Enables strict checking of JSP output. For example, calling print(String) results in an IllegalStateException.",
                 false);
+        }
+    }
+
+    public static void turnOnExperimentalFeature(User user)
+    {
+        // Don't bother setting the flag in production mode since LabKeyJspWriter is registered only in development mode
+        if (AppProps.getInstance().isDevMode())
+        {
+            ExperimentalFeatureService.get().setFeatureEnabled(EXPERIMENTAL_THROW_ON_WARNING, true, user);
         }
     }
 
