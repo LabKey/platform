@@ -47,8 +47,9 @@ public class CurveFitFactory
                 return new ParameterCurveImpl.FiveParameterCurve(wellGroups, assumeDecreasing, percentCalculator);
             case POLYNOMIAL:
                 return new PolynomialCurveImpl(wellGroups, assumeDecreasing, percentCalculator);
-            case NONE:
             case LINEAR:
+                return new LinearCurveImpl(wellGroups, assumeDecreasing, percentCalculator);
+            case NONE:
                 return new EmptyCurveImpl(wellGroups, assumeDecreasing, percentCalculator);
         }
         throw new IllegalArgumentException("Unable to find a DilutionCurve implementation for type: " + type.getLabel());
