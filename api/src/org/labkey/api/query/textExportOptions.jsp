@@ -127,23 +127,19 @@
 
             var doTsvExport = function(isSign) {
                 var exportRegionName = <%=q(exportRegionName)%>;
-                var selectedParam = exportRegionName + '.showRows=SELECTED';
                 var url = isSign ?
-                        <%=q(model.getSignTsvURL())%> :
-                        <%=q(model.getTsvURL())%>;
+                        new URL(<%=q(model.getSignTsvURL().getURIString())%>) :
+                        new URL(<%=q(model.getTsvURL().getURIString())%>);
                 if (exportSelectedEl.is(':checked')) {
-                    if (url.indexOf(exportRegionName + '.showRows=ALL') == -1) {
-                        url = url+'&'+selectedParam;
-                    }
-                    else {
-                        url = url.replace(exportRegionName + '.showRows=ALL', selectedParam);
-                    }
-                    url = url + '&' + exportRegionName + '.selectionKey=' + dr.selectionKey;
+                    url.searchParams.set(exportRegionName + '.showRows', "SELECTED");
+                    url.searchParams.set(exportRegionName + '.selectionKey', dr.selectionKey);
                 }
 
-                url = url + '&delim=' + delimEl.val() + '&quote=' + quoteEl.val();
-                if (headerEl && headerEl.val())
-                    url = url + '&headerType=' + headerEl.val();
+                url.searchParams.set('delim', delimEl.val());
+                url.searchParams.set('quote', quoteEl.val());
+                if (headerEl && headerEl.val()) {
+                    url.searchParams.set('headerType', headerEl.val());
+                }
 
                 if (!isSign) {
                     dr.addMessage({
