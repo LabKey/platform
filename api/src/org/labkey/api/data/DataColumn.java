@@ -561,7 +561,7 @@ public class DataColumn extends DisplayColumn
                 formatted = PageFlowUtil.filter(formatted);
 
             if (formatted.length() == 0)
-                hsb.append(HtmlString.NBSP);
+                formatted = "&nbsp;";
             else if (isPreserveNewlines())
                 formatted = formatted.replaceAll("\\n", "<br>\n");
             else if (value instanceof Date)
