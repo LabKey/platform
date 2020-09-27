@@ -34,7 +34,7 @@ public final class HtmlString implements SafeToRender, DOM.Renderable, Comparabl
 
     /**
      * Returns an HtmlString that wraps an HTML encoded version of the passed in String.
-     * @param s A String. A null value results in an empty HtmlString (equivalent of HtmlString.of("")).
+     * @param s A char sequence. A null value results in an empty HtmlString (equivalent of HtmlString.of("")).
      * @return An HtmlString that encodes and wraps the String.
      */
     public static @NotNull HtmlString of(@Nullable CharSequence s)
