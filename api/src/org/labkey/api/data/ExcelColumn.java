@@ -431,7 +431,7 @@ public class ExcelColumn extends RenderColumn
                     break;
 
                 case TYPE_BOOLEAN:
-                    String s = _dc.getFormattedValue(ctx);
+                    String s = _dc.getTsvFormattedValue(ctx);
                     cell.setCellValue(s);
                     if (_style != null)
                         cell.setCellStyle(_style);

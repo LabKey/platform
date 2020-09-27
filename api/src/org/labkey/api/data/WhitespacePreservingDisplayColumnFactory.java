@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 
 /**
@@ -41,7 +42,7 @@ public class WhitespacePreservingDisplayColumnFactory implements DisplayColumnFa
 
         @NotNull
         @Override
-        public String getFormattedValue(RenderContext ctx)
+        public HtmlString getFormattedHtml(RenderContext ctx)
         {
             Object value = ctx.get(getDisplayColumn().getFieldKey());
             if (value == null)
@@ -52,9 +53,9 @@ public class WhitespacePreservingDisplayColumnFactory implements DisplayColumnFa
 
             if (value == null)
             {
-                return "&nbsp;";
+                return HtmlString.NBSP;
             }
-            return PageFlowUtil.filter(value.toString(), true, false);
+            return HtmlString.of(value.toString(), true);
         }
     }
 }

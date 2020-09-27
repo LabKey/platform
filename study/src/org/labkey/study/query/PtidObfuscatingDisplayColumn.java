@@ -22,6 +22,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.DemoMode;
+import org.labkey.api.util.HtmlString;
 
 /*
 * User: adam
@@ -42,9 +43,9 @@ public class PtidObfuscatingDisplayColumn extends DataColumn
     }
 
     @Override @NotNull
-    public String getFormattedValue(RenderContext ctx)
+    public HtmlString getFormattedHtml(RenderContext ctx)
     {
-        return getValue(ctx);
+        return HtmlString.of(getValue(ctx));
     }
 
     @Override
