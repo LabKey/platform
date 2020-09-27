@@ -15,13 +15,19 @@
  */
 package org.labkey.api.audit.data;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,21 +41,29 @@ public class DataMapColumn extends DataColumn
     }
 
     @Override @NotNull
-    public String getFormattedValue(RenderContext ctx)
+    public HtmlString getFormattedHtml(RenderContext ctx)
     {
-        return formatColumn(getValue(ctx), "<br>");
+        HtmlStringBuilder b = HtmlStringBuilder.of();
+        HtmlString separator = HtmlString.EMPTY_STRING;
+        for (String s : formatColumn(getValue(ctx)))
+        {
+            b.append(separator);
+            separator = HtmlString.BR;
+            b.append(s);
+        }
+        return b.getHtmlString();
     }
 
     @Override
     public String getTsvFormattedValue(RenderContext ctx)
     {
-        return formatColumn(getValue(ctx), "\n");
+        return StringUtils.join(formatColumn(getValue(ctx)), "\n");
     }
 
     @Override
     public Object getDisplayValue(RenderContext ctx)
     {
-        return formatColumn(getValue(ctx), "\n");
+        return StringUtils.join(formatColumn(getValue(ctx)), "\n");
     }
 
     @Override
@@ -64,22 +78,18 @@ public class DataMapColumn extends DataColumn
     }
 
     @NotNull
-    private String formatColumn(@Nullable Object contents, String lineBreak)
+    private List<String> formatColumn(@Nullable Object contents)
     {
         if (contents instanceof String)
         {
-            String delim = "";
-            StringBuilder sb = new StringBuilder();
+            List<String> result = new ArrayList<>();
 
             for (Map.Entry<String, String> entry : AbstractAuditTypeProvider.decodeFromDataMap((String) contents).entrySet())
             {
-                sb.append(delim);
-                sb.append(entry.getKey()).append(": ").append(entry.getValue());
-
-                delim = lineBreak;
+                result.add(entry.getKey() + ": " + entry.getValue());
             }
-            return sb.toString();
+            return result;
         }
-        return "";
+        return Collections.emptyList();
     }
 }

@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
@@ -43,18 +44,18 @@ public class HtmlDisplayColumnFactory implements DisplayColumnFactory
 
         @NotNull
         @Override
-        public String getFormattedValue(RenderContext ctx)
+        public HtmlString getFormattedHtml(RenderContext ctx)
         {
             Object value = ctx.get(getBoundColumn().getFieldKey());
             if (null == value)
-                return "";
+                return HtmlString.EMPTY_STRING;
             String rawHtml = String.valueOf(value);
             ArrayList<String> errors = new ArrayList<>();
             String tidyHtml = PageFlowUtil.validateHtml(rawHtml, errors, false);
             if (errors.isEmpty())
-                return tidyHtml;
+                return HtmlString.unsafe(tidyHtml);
             else
-                return PageFlowUtil.filter(errors.get(0));
+                return HtmlString.of(errors.get(0));
         }
     }
 }

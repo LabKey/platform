@@ -103,6 +103,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -2358,7 +2359,7 @@ public class AnnouncementsController extends SpringActionController
 
 
             @Override @NotNull
-            public String getFormattedValue(RenderContext ctx)
+            public HtmlString getFormattedHtml(RenderContext ctx)
             {
                 Integer userId = (Integer)getValue(ctx);
 
@@ -2367,10 +2368,10 @@ public class AnnouncementsController extends SpringActionController
                     User user = UserManager.getUser(userId);
 
                     if (null != user)
-                        return SecurityManager.getGroupList(ctx.getContainer(), user);
+                        return HtmlString.of(SecurityManager.getGroupList(ctx.getContainer(), user));
                 }
 
-                return "";
+                return HtmlString.EMPTY_STRING;
             }
         }
     }

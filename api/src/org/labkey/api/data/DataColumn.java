@@ -34,6 +34,8 @@ import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -372,54 +374,48 @@ public class DataColumn extends DisplayColumn
         {
             String url = renderURLorValueURL(ctx);
 
+            HtmlString formattedValue = getFormattedHtml(ctx);
+
             if (StringUtils.isNotBlank(url))
             {
-                out.write("<a href=\"");
-                out.write(PageFlowUtil.filter(url));
+                Link.LinkBuilder link = new Link.LinkBuilder(formattedValue).href(url).clearClasses();
 
                 String linkTitle = renderURLTitle(ctx);
                 if (null != linkTitle)
                 {
-                    out.write("\" title=\"");
-                    out.write(linkTitle);
+                    link.title(linkTitle);
                 }
 
                 String linkTarget = getLinkTarget();
                 if (null != linkTarget)
                 {
-                    out.write("\" target=\"");
-                    out.write(linkTarget);
-                    out.write("\" rel=\"noopener noreferrer\"");
+                    link.target(linkTarget).rel("noopener noreferrer");
                 }
 
                 String linkCls = getLinkCls();
                 if (null != linkCls)
                 {
-                    out.write("\" class=\"");
-                    out.write(linkCls);
+                    link.addClass(linkCls);
                 }
 
                 String onClick = getOnClick();
                 if (null != onClick)
                 {
-                    out.write("\" onclick=\"");
-                    out.write(onClick);
+                    link.onClick(onClick);
                 }
 
                 String css = getCssStyle(ctx);
                 if (!css.isEmpty())
                 {
-                    out.write("\" style=\"");
-                    out.write(css);
+                    link.style(css);
                 }
 
-                out.write("\">");
+                link.build().appendTo(out);
             }
-
-            out.write(getFormattedValue(ctx));
-
-            if (null != url)
-                out.write("</a>");
+            else
+            {
+                formattedValue.appendTo(out);
+            }
         }
         else
             out.write("&nbsp;");
@@ -532,9 +528,9 @@ public class DataColumn extends DisplayColumn
     }
 
     @Override @NotNull
-    public String getFormattedValue(RenderContext ctx)
+    public HtmlString getFormattedHtml(RenderContext ctx)
     {
-        StringBuilder sb = new StringBuilder();
+        HtmlStringBuilder hsb = HtmlStringBuilder.of();
         Object value = ctx.get(_displayColumn.getFieldKey());
         if (value == null)
         {
@@ -549,11 +545,11 @@ public class DataColumn extends DisplayColumn
                 // In many entry paths we've already checked for null, but not all (for example, MVDisplayColumn or when the TargetStudy no longer exists or is empty string)
                 if (boundValue == null || "".equals(boundValue))
                 {
-                    sb.append("&nbsp;");
+                    hsb.append(HtmlString.NBSP);
                 }
                 else
                 {
-                    sb.append(PageFlowUtil.filter("<" + boundValue + ">"));
+                    hsb.append("<" + boundValue + ">");
                 }
             }
         }
@@ -571,10 +567,10 @@ public class DataColumn extends DisplayColumn
             else if (value instanceof Date)
                 formatted = "<nobr>" + formatted + "</nobr>";
 
-            sb.append(formatted);
+            hsb.append(HtmlString.unsafe(formatted));
         }
 
-        return sb.toString();
+        return hsb.getHtmlString();
     }
 
     protected boolean isDisabledInput()
