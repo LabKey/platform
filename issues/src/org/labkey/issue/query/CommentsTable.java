@@ -34,6 +34,8 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.security.User;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.Issue;
@@ -84,15 +86,15 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
             {
                 DataColumn dc = new DataColumn(colInfo) {
                     @Override @NotNull
-                    public String getFormattedValue(RenderContext ctx)
+                    public HtmlString getFormattedHtml(RenderContext ctx)
                     {
-                        String html = super.getFormattedValue(ctx);
+                        HtmlString html = super.getFormattedHtml(ctx);
 
                         // Comment HTML is stored in the database, so use an HTML5 scoped style tag to remove the borders
                         // Unconventional, but this seems to be supported on most browsers
-                        String inline = "<style type=\"text/css\" scoped>table.issues-Changes td {border:none;}</style>";
-
-                        return "<span>" + inline + "</span>" + html;
+                        return HtmlString.unsafe(
+                                "<span><style type=\"text/css\" scoped>table.issues-Changes td {border:none;}</style></span>" +
+                                html);
                     }
                 };
                 dc.setRequiresHtmlFiltering(false);
@@ -142,10 +144,10 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
 
         @NotNull
         @Override
-        public String getFormattedValue(RenderContext ctx)
+        public HtmlString getFormattedHtml(RenderContext ctx)
         {
             String title = getIssueTitle(ctx);
-            return title != null ? title : super.getFormattedValue(ctx);
+            return title != null ? HtmlString.of(title) : super.getFormattedHtml(ctx);
         }
 
         @Nullable

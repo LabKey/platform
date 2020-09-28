@@ -19,6 +19,8 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -70,7 +72,13 @@ public class OutOfRangeDisplayColumn extends DataColumn
     }
 
     @Override @NotNull
-    public String getFormattedValue(RenderContext ctx)
+    public HtmlString getFormattedHtml(RenderContext ctx)
+    {
+        return HtmlStringBuilder.of(getOORPrefix(ctx)).append(super.getFormattedHtml(ctx)).getHtmlString();
+    }
+
+    @NotNull
+    private String getOORPrefix(RenderContext ctx)
     {
         StringBuilder result = new StringBuilder();
         if (_oorIndicatorColumn != null)
@@ -78,10 +86,7 @@ public class OutOfRangeDisplayColumn extends DataColumn
             Object oorValue = _oorIndicatorColumn.getValue(ctx);
             if (oorValue != null)
             {
-                if (getRequiresHtmlFiltering())
-                    result.append(h(oorValue));
-                else
-                    result.append(oorValue);
+                result.append(oorValue);
             }
         }
         else
@@ -101,41 +106,22 @@ public class OutOfRangeDisplayColumn extends DataColumn
             if (row == 1)
             {
                 String msg = "<missing column " + getColumnInfo().getName() + OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX + ">";
-                if (getRequiresHtmlFiltering())
-                    result.append(h(msg));
-                else
-                    result.append(msg);
+                result.append(msg);
             }
         }
-        result.append(super.getFormattedValue(ctx));
         return result.toString();
     }
 
     @Override
     public Object getDisplayValue(RenderContext ctx)
     {
-        return getFormattedValue(ctx);
+        return getOORPrefix(ctx) + super.getDisplayValue(ctx);
     }
 
     @Override
     public String getTsvFormattedValue(RenderContext ctx)
     {
-        return getFormattedValue(ctx);
-    }
-
-    @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-    {
-        String value = getFormattedValue(ctx);
-
-        if ("".equals(value.trim()))
-        {
-            out.write("&nbsp;");
-        }
-        else
-        {
-            out.write(value);
-        }
+        return getOORPrefix(ctx) + super.getTsvFormattedValue(ctx);
     }
 
     @Override

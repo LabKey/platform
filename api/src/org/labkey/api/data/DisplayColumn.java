@@ -30,6 +30,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Formats;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -413,27 +414,13 @@ public abstract class DisplayColumn extends RenderColumn
      * Format the display value as html for rendering within the DataRegion grid,
      * including encoding html.
      *
-     * @deprecated Use getFormattedHtml instead.
      * @return the HTML version of this column's value.
      */
-    @Deprecated
     @NotNull
-    public String getFormattedValue(RenderContext ctx)
+    public HtmlString getFormattedHtml(RenderContext ctx)
     {
         Format format = getFormat();
-        return formatValue(ctx, getDisplayValue(ctx), getTextExpressionCompiled(ctx), format);
-    }
-
-    /**
-     * Format the display value as html for rendering within the DataRegion grid,
-     * including encoding html.
-     *
-     * @see #getFormattedText(RenderContext)
-     */
-    @NotNull
-    public String getFormattedHtml(RenderContext ctx)
-    {
-        return getFormattedValue(ctx);
+        return HtmlString.of(formatValue(ctx, getDisplayValue(ctx), getTextExpressionCompiled(ctx), format));
     }
 
     /**

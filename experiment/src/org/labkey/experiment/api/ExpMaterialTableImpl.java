@@ -603,6 +603,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         visibleColumns.remove(FieldKey.fromParts("Run"));
 
+        // When not using name expressions, mark the ID columns as required.
+        // NOTE: If not explicitly set, the first domain property will be chosen as the ID column.
+        final List<DomainProperty> idCols = st.hasNameExpression() ? Collections.emptyList() : st.getIdCols();
+
         for (ColumnInfo dbColumn : dbTable.getColumns())
         {
             if (lsidColumn.getFieldKey().equals(dbColumn.getFieldKey()))
@@ -625,7 +629,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 PropertyColumn.copyAttributes(schema.getUser(), propColumn, dp.getPropertyDescriptor(), schema.getContainer(),
                     SchemaKey.fromParts("samples"), st.getName(), FieldKey.fromParts("RowId"));
-                if (isIdCol(st, dp.getPropertyDescriptor()))
+
+                if (idCols.contains(dp.getPropertyDescriptor()))
                 {
                     propColumn.setNullable(false);
                     propColumn.setDisplayColumnFactory(new IdColumnRendererFactory());
@@ -680,13 +685,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
 
-    private boolean isIdCol(ExpSampleType st, PropertyDescriptor pd)
-    {
-        for (DomainProperty dp : st.getIdCols())
-            if (dp.getPropertyDescriptor() == pd)
-                return true;
-        return false;
-    }
 
     private class IdColumnRendererFactory implements DisplayColumnFactory
     {

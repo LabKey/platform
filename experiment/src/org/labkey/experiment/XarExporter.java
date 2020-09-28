@@ -59,6 +59,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.DateUtil;
@@ -570,20 +571,26 @@ public class XarExporter
         {
             xSampleSet.setDescription(sampleType.getDescription());
         }
-        if (!sampleType.hasNameExpression())
+
+        if (sampleType.hasNameExpression())
+        {
+            xSampleSet.setNameExpression(sampleType.getNameExpression());
+        }
+        else if (sampleType.hasNameAsIdCol())
+        {
+            xSampleSet.addKeyField(ExpMaterialTable.Column.Name.name());
+        }
+        else if (sampleType.hasIdColumns())
         {
             for (DomainProperty keyCol : sampleType.getIdCols())
             {
                 xSampleSet.addKeyField(getPropertyName(keyCol));
             }
         }
+
         if (sampleType.getParentCol() != null)
         {
             xSampleSet.setParentField(getPropertyName(sampleType.getParentCol()));
-        }
-        if (sampleType.hasNameExpression())
-        {
-            xSampleSet.setNameExpression(sampleType.getNameExpression());
         }
         if (sampleType.getLabelColor() != null)
         {
