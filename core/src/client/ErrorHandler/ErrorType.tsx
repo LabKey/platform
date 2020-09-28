@@ -60,7 +60,8 @@ const NOTFOUND_INSTRUCTION = (errorCode?: string) => (
 );
 const NOTFOUND_DETAILS = (errorMessage?: string) => (
     <>
-        <p className="labkey-error-details labkey-error-details-question">What went wrong?</p>
+        <div className="labkey-error-details labkey-error-details-question">What went wrong?</div>
+        <div className="error-page-br" />
 
         <p className="labkey-error-details">
             {errorMessage !== undefined
@@ -68,8 +69,8 @@ const NOTFOUND_DETAILS = (errorMessage?: string) => (
                 : 'Unfortunately, we are unable to specifically identify what went wrong. However, here are the most common\n' +
                   '            errors:'}
         </p>
-        <br />
-        <p className="labkey-error-details">
+        <div className="error-page-br" />
+        <div className="labkey-error-details">
             <ul>
                 <li>
                     <b>Incorrect URL: </b>the wrong web address has been typed. {helpLinkNode('url', 'Read More >')}
@@ -89,7 +90,7 @@ const NOTFOUND_DETAILS = (errorMessage?: string) => (
                 <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Contact your
                 administrator to request access.
             </div>
-        </p>
+        </div>
 
         {DETAILS_SUB_INSTRUCTION}
     </>
@@ -109,7 +110,7 @@ const PERMISSION_DETAILS = () => (
             <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Try contacting your
             server administrator to request access to this page.
         </div>
-        <p className="labkey-error-details">
+        <div className="labkey-error-details">
             <ul>
                 <li>
                     {' '}
@@ -121,42 +122,35 @@ const PERMISSION_DETAILS = () => (
                         : 'You are not logged in.'}
                 </li>
             </ul>
-        </p>
+        </div>
         {getServerContext().impersonatingUser !== undefined && (
-            <>
-                <div className="labkey-error labkey-error-details labkey-error-subdetails">
-                    <FontAwesomeIcon icon={faExclamationCircle} className="permission-warning-icon" /> You are currently
-                    impersonating: <b>{getServerContext().user.displayName} </b>
-                    <br />
-                    <br />
-                    <Button
-                        className="btn btn-primary error-backButton"
-                        bsStyle="info"
-                        onClick={() => {
-                            const returnUrl =
-                                ActionURL.getParameter('returnUrl') !== undefined
-                                    ? ActionURL.getParameter('returnUrl')
-                                    : ActionURL.getBaseURL(false);
-                            Ajax.request({
-                                url: ActionURL.buildURL(
-                                    'login',
-                                    'StopImpersonating',
-                                    getServerContext().container.path
-                                ),
-                                method: 'post',
-                                jsonData: {
-                                    returnUrl,
-                                },
-                                callback: () => {
-                                    window.location.href = returnUrl;
-                                },
-                            });
-                        }}
-                    >
-                        Stop Impersonating
-                    </Button>
-                </div>
-            </>
+            <div className="labkey-error labkey-error-details labkey-error-subdetails">
+                <FontAwesomeIcon icon={faExclamationCircle} className="permission-warning-icon" /> You are currently
+                impersonating: <b>{getServerContext().user.displayName} </b>
+                <div className="error-page-br" />
+                <div className="error-page-br" />
+                <Button
+                    className="btn btn-primary"
+                    onClick={() => {
+                        const returnUrl =
+                            ActionURL.getParameter('returnUrl') !== undefined
+                                ? ActionURL.getParameter('returnUrl')
+                                : ActionURL.getBaseURL(false);
+                        Ajax.request({
+                            url: ActionURL.buildURL('login', 'StopImpersonating', getServerContext().container.path),
+                            method: 'post',
+                            jsonData: {
+                                returnUrl,
+                            },
+                            callback: () => {
+                                window.location.href = returnUrl;
+                            },
+                        });
+                    }}
+                >
+                    Stop Impersonating
+                </Button>
+            </div>
         )}
     </>
 );
@@ -184,8 +178,9 @@ const CONFIGURATION_DETAILS = (errorMessage?: string) => (
                 : 'Unfortunately, we are unable to specifically identify what went wrong.'}{' '}
             It seems that there might be some issues with your server configuration.
         </p>
-        <br />
-        <p className="labkey-error-details">
+        <div className="error-page-br" />
+        <div className="error-page-br" />
+        <div className="labkey-error-details">
             <ul>
                 <li>
                     <b>Server Configuration Errors (Tomcat Errors): </b>issues related to your machine, software
@@ -196,7 +191,7 @@ const CONFIGURATION_DETAILS = (errorMessage?: string) => (
                 <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Try restarting your
                 current instance of LabKey.
             </div>
-        </p>
+        </div>
 
         {DETAILS_SUB_INSTRUCTION}
     </>
