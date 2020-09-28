@@ -4760,11 +4760,16 @@ public class DavController extends SpringActionController
 
     static Cache<Path,JSONObject> exceptionCache = CacheManager.getCache(1000, 5*CacheManager.MINUTE, "webdav errors");
 
-    private Path getErrorCacheKey()
+    private @Nullable Path getErrorCacheKey()
     {
         Path path = getResourcePath();
         HttpServletRequest request = getRequest();
-        HttpSession session =  request.getSession(true);
+        HttpSession session = null;
+        try
+        {
+            request.getSession(true);
+        }
+        catch (IllegalStateException ignored) {}
         if (null == session)
             return null;
         String sessionId = session.getId();
@@ -4802,20 +4807,25 @@ public class DavController extends SpringActionController
         @Override
         public Object execute(Object o, BindException bindErrors)
         {
-            Path key = getErrorCacheKey();
-
-            JSONObject x = exceptionCache.get(key);
-            if (null != x)
-                exceptionCache.remove(key);
-
             JSONObject ret = new JSONObject();
             ret.put("success",true);
             JSONArray errors = new JSONArray();
             ret.put("errors", errors);
-            if (null != x)
+
+            Path key = getErrorCacheKey();
+            if (key != null)
             {
-                errors.put(x);
+                JSONObject x = exceptionCache.get(key);
+                if (null != x)
+                {
+                    exceptionCache.remove(key);
+                }
+                if (null != x)
+                {
+                    errors.put(x);
+                }
             }
+
             return ret;
         }
     }

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="65px" height="64px" viewBox="0 0 65 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 63.1 (92452) - https://sketch.com -->
+    <title>freezer_blue_svg</title>
+    <desc>Created with Sketch.</desc>
+    <g id="freezer_blue" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" transform="translate(1.000000, 0.000000)">
+        <path d="M46.7777778,4 L50.4722222,4 C50.7888889,4 51,4.23333333 51,4.58333333 L51,59.4166667 C51,59.7666667 50.7888889,60 50.4722222,60 L13.5277778,60 C13.2111111,60 13,59.7666667 13,59.4166667 L13,4.58333333 C13,4.23333333 13.2111111,4 13.5277778,4 L17.2222222,4 L46.7777778,4 Z" id="Body" stroke="#0067C5" stroke-width="2" fill="#99C9E8" stroke-linecap="round"></path>
+        <g id="Grill" transform="translate(13.000000, 45.000000)" stroke="#0067C5" stroke-width="2">
+            <path d="M0,1 L0,14 C6.76353751e-17,14.5522847 0.44771525,15 1,15 L37,15 C37.5522847,15 38,14.5522847 38,14 L38,1 C38,0.44771525 37.5522847,-1.01453063e-16 37,0 L1,0 C0.44771525,1.01453063e-16 -6.76353751e-17,0.44771525 0,1 Z" id="Body" fill="#FFFFFF"></path>
+            <line x1="1" y1="10" x2="38" y2="10" id="Bottom-Line" stroke-linecap="round"></line>
+            <line x1="1" y1="5" x2="38" y2="5" id="Top-Line" stroke-linecap="round"></line>
+        </g>
+        <g id="Display" transform="translate(31.000000, 12.000000)" stroke="#0067C5" stroke-linecap="round" stroke-width="2">
+            <path d="M16,1 L16,11 C16,11.5522847 15.5522847,12 15,12 L1,12 C0.44771525,12 6.76353751e-17,11.5522847 0,11 L0,1 C-6.76353751e-17,0.44771525 0.44771525,1.01453063e-16 1,0 L15,0 C15.5522847,-1.01453063e-16 16,0.44771525 16,1 Z" id="Handle" fill="#FFFFFF" transform="translate(8.000000, 6.000000) scale(1, -1) translate(-8.000000, -6.000000) "></path>
+            <path d="M10,2 L10,10 C10,10.5522847 9.55228475,11 9,11 L7,11 C6.44771525,11 6,10.5522847 6,10 L6,2 C6,1.44771525 6.44771525,1 7,1 L9,1 C9.55228475,1 10,1.44771525 10,2 Z" id="Handle" fill="#99C9E8" transform="translate(8.000000, 6.000000) rotate(-90.000000) translate(-8.000000, -6.000000) "></path>
+        </g>
+        <path d="M21,13 L21,35 C21,35.5522847 20.5522847,36 20,36 L18,36 C17.4477153,36 17,35.5522847 17,35 L17,13 C17,12.4477153 17.4477153,12 18,12 L20,12 C20.5522847,12 21,12.4477153 21,13 Z" id="Handle" stroke="#0067C5" stroke-width="2" fill="#FFFFFF" stroke-linecap="round"></path>
+    </g>
+</svg>

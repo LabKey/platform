@@ -1,0 +1,4 @@
+{table}
+Filename|Component|Version|Source|License|LabKey Dev|Purpose
+commons-math3-3.6.1.jar|Commons Math|3.6.1|{link:Apache|http://commons.apache.org/math/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|klum|Lightweight, self-contained mathematics and statistics components
+{table}

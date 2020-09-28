@@ -200,7 +200,7 @@ public class PageFlowUtil
 
 
     /** HTML encode a string */
-    static public String filter(String s, boolean encodeSpace, boolean encodeLinks)
+    static public String filter(CharSequence s, boolean encodeSpace, boolean encodeLinks)
     {
         if (null == s || 0 == s.length())
             return "";
@@ -262,7 +262,7 @@ public class PageFlowUtil
                 case 'm':
                     if (encodeLinks)
                     {
-                        String sub = s.substring(i);
+                        CharSequence sub = s.subSequence(i, s.length() - 1);
                         if (StringUtilsLabKey.startsWithURL(sub))
                         {
                             Matcher m = urlPatternStart.matcher(sub);
@@ -309,14 +309,14 @@ public class PageFlowUtil
     /**
      * HTML encode a string
      */
-    public static String filter(String s)
+    public static String filter(CharSequence s)
     {
         return filter(s, false, false);
     }
 
 
     /** HTML encode a string */
-    static public String filter(String s, boolean translateWhiteSpace)
+    static public String filter(CharSequence s, boolean translateWhiteSpace)
     {
         return filter(s, translateWhiteSpace, false);
     }

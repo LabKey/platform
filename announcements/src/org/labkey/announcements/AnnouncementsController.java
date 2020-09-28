@@ -103,6 +103,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -1300,11 +1301,23 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    public static ActionURL getThreadURL(Container c, String threadId, int rowId)
+    public static ActionURL getThreadURL(Container c, @Nullable String threadEntityId, int rowId)
     {
-        ActionURL url = new ActionURL(ThreadAction.class, c);
-        url.addParameter("entityId", threadId);
-        url.addParameter("_anchor", rowId);
+        final ActionURL url;
+
+        // threadEntityId is null if called on the parent message with ann.getParent(), which several actions like doing.
+        // In this case, just pass the rowId. #41040
+        if (null == threadEntityId)
+        {
+            url = getThreadURL(c, rowId);
+        }
+        else
+        {
+            url = new ActionURL(ThreadAction.class, c);
+            url.addParameter("entityId", threadEntityId);
+            url.addParameter("_anchor", rowId);
+        }
+
         return url;
     }
 
@@ -1410,7 +1423,7 @@ public class AnnouncementsController extends SpringActionController
             // TODO: This only grabs announcementModels... add responses too?
             Pair<Collection<AnnouncementModel>, Boolean> pair = AnnouncementManager.getAnnouncements(c, filter, getSettings().getSort(), 100);
 
-            ActionURL url = getThreadURL(c, "", 0).deleteParameters().addParameter("rowId", null);
+            ActionURL url = new ActionURL(ThreadAction.class, c).addParameter("rowId", null);
 
             WebPartView v = new RssView(pair.first, url.getURIString());
 
@@ -2346,7 +2359,7 @@ public class AnnouncementsController extends SpringActionController
 
 
             @Override @NotNull
-            public String getFormattedValue(RenderContext ctx)
+            public HtmlString getFormattedHtml(RenderContext ctx)
             {
                 Integer userId = (Integer)getValue(ctx);
 
@@ -2355,10 +2368,10 @@ public class AnnouncementsController extends SpringActionController
                     User user = UserManager.getUser(userId);
 
                     if (null != user)
-                        return SecurityManager.getGroupList(ctx.getContainer(), user);
+                        return HtmlString.of(SecurityManager.getGroupList(ctx.getContainer(), user));
                 }
 
-                return "";
+                return HtmlString.EMPTY_STRING;
             }
         }
     }

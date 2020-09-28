@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.HtmlString;
 
 import java.io.IOException;
 
@@ -44,11 +45,11 @@ public class JsonPrettyPrintDisplayColumnFactory extends ExpandableTextDisplayCo
 
         @NotNull
         @Override
-        public String getFormattedValue(RenderContext ctx)
+        public HtmlString getFormattedHtml(RenderContext ctx)
         {
             Object value = getValueFromCtx(ctx);
             if (null == value)
-                return "";
+                return HtmlString.EMPTY_STRING;
 
             ObjectMapper mapper = new ObjectMapper();
             DefaultPrettyPrinter pp = new DefaultPrettyPrinter();
@@ -61,7 +62,7 @@ public class JsonPrettyPrintDisplayColumnFactory extends ExpandableTextDisplayCo
             }
             catch (IOException e)
             {
-                return "Bad JSON object";
+                return HtmlString.of("Bad JSON object");
             }
         }
     }

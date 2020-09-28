@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.ClientDependency;
 
@@ -41,11 +42,11 @@ public class ExpandableTextDisplayColumnFactory implements DisplayColumnFactory
 
         @NotNull
         @Override
-        public String getFormattedValue(RenderContext ctx)
+        public HtmlString getFormattedHtml(RenderContext ctx)
         {
             Object value = getValueFromCtx(ctx);
             if (null == value)
-                return "";
+                return HtmlString.EMPTY_STRING;
 
             return getFormattedOutputText(value.toString(), 10, 500);
         }
@@ -61,7 +62,7 @@ public class ExpandableTextDisplayColumnFactory implements DisplayColumnFactory
             return value;
         }
 
-        protected String getFormattedOutputText(String value, @Nullable Integer maxLineCount, @Nullable Integer maxCharCount)
+        protected HtmlString getFormattedOutputText(String value, @Nullable Integer maxLineCount, @Nullable Integer maxCharCount)
         {
             // Too bad there's no way to configure EOL characters for the Jackson pretty printer.
             // It seems to use system defaults.
@@ -84,7 +85,7 @@ public class ExpandableTextDisplayColumnFactory implements DisplayColumnFactory
                         + "</div>";
             }
 
-            return outputTxt;
+            return HtmlString.unsafe(outputTxt);
         }
 
         @NotNull
