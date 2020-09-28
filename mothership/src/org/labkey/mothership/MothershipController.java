@@ -50,6 +50,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -1439,7 +1440,7 @@ public class MothershipController extends SpringActionController
             DataColumn replacementServerInstallationColumn = new DataColumn(defaultServerInstallationColumn.getColumnInfo())
             {
                 @Override @NotNull
-                public String getFormattedValue(RenderContext ctx)
+                public HtmlString getFormattedHtml(RenderContext ctx)
                 {
                     Map<String, Object> row = ctx.getRow();
 
@@ -1448,7 +1449,7 @@ public class MothershipController extends SpringActionController
                     ServerInstallation si = MothershipManager.get().getServerInstallation(((Integer) row.get("ServerInstallationId")).intValue(), ctx.getContainer());
                     if (si != null && si.getNote() != null && si.getNote().trim().length() > 0)
                     {
-                        return PageFlowUtil.filter(si.getNote());
+                        return HtmlString.of(si.getNote());
                     }
                     else
                     {
@@ -1457,15 +1458,15 @@ public class MothershipController extends SpringActionController
                         {
                             if (si != null && si.getServerHostName() != null && si.getServerHostName().trim().length() > 0)
                             {
-                                return PageFlowUtil.filter(si.getServerHostName());
+                                return HtmlString.of(si.getServerHostName());
                             }
                             else
                             {
-                                return PageFlowUtil.filter("[Unnamed]");
+                                return HtmlString.of("[Unnamed]");
                             }
                         }
                     }
-                    return super.getFormattedValue(ctx);
+                    return super.getFormattedHtml(ctx);
                 }
             };
 
