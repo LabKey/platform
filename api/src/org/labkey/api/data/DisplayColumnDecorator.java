@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ViewContext;
 
@@ -291,9 +292,9 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override @NotNull
-    public String getFormattedValue(RenderContext ctx)
+    public HtmlString getFormattedHtml(RenderContext ctx)
     {
-        return _column.getFormattedValue(ctx);
+        return _column.getFormattedHtml(ctx);
     }
 
     @Override

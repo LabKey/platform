@@ -74,7 +74,7 @@ public class JavaScriptDisplayColumn extends DataColumn
             if (eventExpressionEvalResult != null)
                 out.write(eventExpressionEvalResult);
             out.write(">");
-            out.write(getFormattedValue(ctx));
+            getFormattedHtml(ctx).appendTo(out);
             out.write("</a>");
         }
         else
