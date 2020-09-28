@@ -39,7 +39,7 @@
 
 <script type="application/javascript">
     // pulling in theme based css for the not found pages to still respect the site's theme
-    LABKEY.requiresCss("<%=PageFlowUtil.filter("/core/css/" + unsafe(PageFlowUtil.resolveThemeName(getContainer())) + ".css")%>");
+    LABKEY.requiresCss(<%=q("/core/css/" + PageFlowUtil.resolveThemeName(getContainer()) + ".css")%>);
 
     LABKEY.requiresScript('core/gen/errorHandler.js', function() {
     // LABKEY.requiresScript('http://localhost:3001/errorHandler.js', function() {
@@ -48,10 +48,10 @@
 
         LABKEY.App.loadApp('errorHandler', <%=q(appId)%>, {
             errorDetails : {
-                message: "<%=unsafe(model.getHeading())%>",
-                errorType: "<%=unsafe(model.getErrorType())%>",
-                stackTrace: "<%=q(stackTrace.toString())%>",
-                errorCode: "<%=unsafe(model.getErrorCode())%>"
+                message: <%=q(model.getHeading())%>,
+                errorType: <%=q(model.getErrorType())%>,
+                stackTrace: <%=q(stackTrace.toString())%>,
+                errorCode: <%=q(model.getErrorCode())%>
             }
         });
     });

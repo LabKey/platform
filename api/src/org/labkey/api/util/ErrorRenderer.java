@@ -73,7 +73,7 @@ public class ErrorRenderer
         }
         else
         {
-            _heading = _errorRendererProps.getHeading(_isStartupFailure);
+            _heading = null != heading ? heading : _errorRendererProps.getHeading(_isStartupFailure);
             _title = _errorRendererProps.getTitle();
         }
     }

@@ -16,11 +16,14 @@ interface ErrorHandlerProps {
 
 interface ErrorHandlerState {
     showDetails: boolean;
+    viewDetailsBtnText: string;
 }
 
 export class ErrorHandler extends PureComponent<ErrorHandlerProps, ErrorHandlerState> {
+    private _viewDetails = 'View Details';
+    private _hideDetails = 'Hide Details';
 
-    state: Readonly<ErrorHandlerState> = { showDetails: false };
+    state: Readonly<ErrorHandlerState> = { showDetails: false, viewDetailsBtnText: this._viewDetails };
 
     onBackClick = (): void => {
         // Back button - takes you back to the previous page if available
@@ -35,31 +38,35 @@ export class ErrorHandler extends PureComponent<ErrorHandlerProps, ErrorHandlerS
 
     onViewDetailsClick = (): void => {
         const { showDetails } = this.state;
-        this.setState({ showDetails: !showDetails });
+        const viewDetailsBtnText = !showDetails ? this._hideDetails : this._viewDetails;
+
+        this.setState(state => ({ showDetails: !state.showDetails, viewDetailsBtnText }));
     };
 
     render() {
         const { errorDetails } = this.props.context;
-        const { showDetails } = this.state;
+        const { showDetails, viewDetailsBtnText } = this.state;
 
         return (
             <>
                 <div className="error-details-body">
                     <div className="row">
-                        <div className="col-md-8">
+                        <div className="col-md-1" />
+                        <div className="col-md-7">
                             <div className="labkey-error-top">
                                 {getErrorHeading()}
                                 {getSubHeading(errorDetails)}
                                 {getInstruction(errorDetails)}
-                                <button className="btn btn-info error-backButton" onClick={this.onBackClick}>
+                                <button className="btn btn-primary error-backButton" onClick={this.onBackClick}>
                                     Back
                                 </button>
                                 <button className="btn btn-default error-details-btn" onClick={this.onViewDetailsClick}>
-                                    View Details
+                                    {viewDetailsBtnText}
                                 </button>
                             </div>
                         </div>
-                        <div className="col-md-4">{getImage(errorDetails)}</div>
+                        <div className="col-md-3 hidden-xs hidden-sm">{getImage(errorDetails)}</div>
+                        <div className="col-md-1" />
                     </div>
                 </div>
                 {showDetails && <div className="error-details-container">{getViewDetails(errorDetails)}</div>}

@@ -11,29 +11,27 @@ const ERROR_HEADING = 'Oops! An error has occurred.';
 
 const DETAILS_SUB_INSTRUCTION = (
     <>
-        <div className="labkey-error-details labkey-error-details-question">What else can I do?</div>
-        <div className="labkey-error-details">
+        <p className="labkey-error-details labkey-error-details-question">What else can I do?</p>
+        <p className="labkey-error-details">
             If you are subscribed to LabKey, then reach out to your account manager for immediate help. If you are using
             the community edition, your support ticket will be resolved within the next 2 to 3 weeks.
-        </div>
-        <br />
-        <div className="labkey-error-details">
+        </p>
+        <p className="labkey-error-details">
             {helpLinkNode('default', 'LabKey support documentation')} is another immediate resource that is available to
             all users. A search through the documentation or previous forum questions may also help troubleshoot your
             issue.
-        </div>
+        </p>
     </>
 );
 
 const NOTFOUND_SUBHEADING = (errorMessage?: string) => (
     <>
-        {' '}
+        {'The requested page cannot be found. '}
         {errorMessage !== undefined
             ? errorMessage.endsWith('.')
                 ? errorMessage
                 : errorMessage + '.'
-            : 'It seems like something went wrong.'}{' '}
-        The requested page cannot be found.
+            : 'It seems like something went wrong.'}
     </>
 );
 const NOTFOUND_INSTRUCTION = (errorCode?: string) => (
@@ -44,7 +42,7 @@ const NOTFOUND_INSTRUCTION = (errorCode?: string) => (
                 LabKey support forum.
             </a>
         </div>
-        {errorCode !== undefined && (
+        {errorCode !== undefined && errorCode !== null && (
             <div className="labkey-error-instruction">
                 If you would like to file a{' '}
                 <a
@@ -62,74 +60,73 @@ const NOTFOUND_INSTRUCTION = (errorCode?: string) => (
 );
 const NOTFOUND_DETAILS = (errorMessage?: string) => (
     <>
-        <div className="labkey-error-details labkey-error-details-question">What went wrong?</div>
+        <p className="labkey-error-details labkey-error-details-question">What went wrong?</p>
 
-        <div className="labkey-error-details">
+        <p className="labkey-error-details">
             {errorMessage !== undefined
                 ? 'Here are the most common errors:'
                 : 'Unfortunately, we are unable to specifically identify what went wrong. However, here are the most common\n' +
                   '            errors:'}
-        </div>
+        </p>
         <br />
-        <br />
-        <div className="labkey-error-details labkey-error-subdetails">
-            <div>
+        <p className="labkey-error-details">
+            <ul>
                 <li>
                     <b>Incorrect URL: </b>the wrong web address has been typed. {helpLinkNode('url', 'Read More >')}
                 </li>
+            </ul>
+            <div className="labkey-error-subdetails">
+                <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Double check and
+                make sure that your URL has been correctly input.
             </div>
-            <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Double check and make
-            sure that your URL has been correctly input.
-            <br />
-            <br />
-            <div>
+            <ul>
                 <li>
                     <b>Permissions: </b>your account does not have the permissions to view this page.{' '}
                     {helpLinkNode('permissionLevels', 'Read More >')}
                 </li>
+            </ul>
+            <div className="labkey-error-subdetails">
+                <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Contact your
+                administrator to request access.
             </div>
-            <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Contact your
-            administrator to request for access.
-        </div>
-        <br />
-        <br />
+        </p>
 
         {DETAILS_SUB_INSTRUCTION}
     </>
 );
 
 const PERMISSION_SUBHEADING = () => 'You do not have the permissions required to access this page.';
-const PERMISSION_INSTRUCTION = () => "Please contact this server's admin to gain access.";
+const PERMISSION_INSTRUCTION = () => "Please contact this server's administrator to gain access.";
 const PERMISSION_DETAILS = () => (
     <>
-        <div className="labkey-error-details labkey-error-details-question">What is a permission error?</div>
+        <p className="labkey-error-details labkey-error-details-question">What is a permission error?</p>
 
-        <div className="labkey-error-details">
+        <p className="labkey-error-details">
             A permission error occurs when the account you've logged into does not have the set permissions to access
             this page. {helpLinkNode('permissionLevels', 'Read More >')}
-        </div>
+        </p>
         <div className="labkey-error-details labkey-error-subdetails">
             <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Try contacting your
             server administrator to request access to this page.
         </div>
-        <br />
-        <br />
-        <div className="labkey-error-details labkey-error-subdetails">
-            <li>
-                {' '}
-                {getServerContext().user.isSignedIn
-                    ? 'You are currently logged in as: ' + getServerContext().impersonatingUser !== undefined
-                        ? getServerContext().impersonatingUser.displayName
-                        : getServerContext().user.displayName
-                    : 'You are not logged in.'}
-            </li>
-        </div>
-        <br />
+        <p className="labkey-error-details">
+            <ul>
+                <li>
+                    {' '}
+                    {getServerContext().user.isSignedIn
+                        ? 'You are currently logged in as: ' +
+                          (getServerContext().impersonatingUser !== undefined
+                              ? getServerContext().impersonatingUser.displayName
+                              : getServerContext().user.displayName)
+                        : 'You are not logged in.'}
+                </li>
+            </ul>
+        </p>
         {getServerContext().impersonatingUser !== undefined && (
             <>
-                <div className="labkey-error-details labkey-error-subdetails">
+                <div className="labkey-error labkey-error-details labkey-error-subdetails">
                     <FontAwesomeIcon icon={faExclamationCircle} className="permission-warning-icon" /> You are currently
-                    impersonating as: {getServerContext().user.displayName}
+                    impersonating: <b>{getServerContext().user.displayName} </b>
                     <br />
                     <br />
                     <Button
@@ -166,40 +163,40 @@ const PERMISSION_DETAILS = () => (
 
 const CONFIGURATION_SUBHEADING = (errorMessage?: string) => (
     <>
-        {' '}
+        {'The requested page cannot be found. '}
         {errorMessage !== undefined
             ? errorMessage.endsWith('.')
                 ? errorMessage
                 : errorMessage + '.'
-            : 'It seems like something went wrong.'}{' '}
-        The requested page cannot be found.
+            : 'It seems like something went wrong.'}
     </>
 );
 const CONFIGURATION_INSTRUCTION = () => 'Please check your server configurations.';
 const CONFIGURATION_DETAILS = (errorMessage?: string) => (
     <>
-        <div className="labkey-error-details labkey-error-details-question">What went wrong?</div>
+        <p className="labkey-error-details labkey-error-details-question">What went wrong?</p>
 
-        <div className="labkey-error-details">
+        <p className="labkey-error-details">
             {errorMessage !== undefined
-                ? errorMessage
+                ? errorMessage.endsWith('.')
+                    ? errorMessage
+                    : errorMessage + '.'
                 : 'Unfortunately, we are unable to specifically identify what went wrong.'}{' '}
             It seems that there might be some issues with your server configuration.
-        </div>
+        </p>
         <br />
-        <br />
-        <div className="labkey-error-details labkey-error-subdetails">
-            <div>
+        <p className="labkey-error-details">
+            <ul>
                 <li>
                     <b>Server Configuration Errors (Tomcat Errors): </b>issues related to your machine, software
                     version, or running dependencies. {helpLinkNode('troubleshootingAdmin', 'Read More >')}
                 </li>
+            </ul>
+            <div className="labkey-error-subdetails">
+                <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Try restarting your
+                current instance of LabKey.
             </div>
-            <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Try restarting your
-            current instance of LabKey.
-        </div>
-        <br />
-        <br />
+        </p>
 
         {DETAILS_SUB_INSTRUCTION}
     </>
@@ -216,13 +213,15 @@ const EXECUTION_SUB_HEADING = (errorMessage?: string) => (
 const EXECUTION_INSTRUCTION = (errorCode?: string) => (
     <>
         <div className="labkey-error-instruction">
-            Please report this bug to <a href="#"> LabKey Support </a> by copying and pasting both unique reference code
-            and code under 'view details'.
+            Please report this bug to <a href="#"> LabKey Support </a> by copying and pasting both your unique reference
+            code and the full stack trace in the View Details section below.
         </div>
-        <div className="labkey-error-instruction">Your unique reference code is: {errorCode}</div>
+        <div className="labkey-error-instruction">
+            Your unique reference code is: <b>{errorCode}</b>
+        </div>
     </>
 );
-const EXECUTION_DETAILS = (stackTrace?: string) => <div className="labkey-error-stacktrace">{stackTrace}</div>;
+const EXECUTION_DETAILS = (stackTrace?: string) => <pre>{stackTrace}</pre>;
 
 type ErrorTypeInfo = {
     details: (errorMessage?: string) => ReactNode;
@@ -293,5 +292,11 @@ export const getViewDetails = (errorDetails: ErrorDetails): ReactNode => {
         details = info.details(message);
     }
 
-    return <div>{details}</div>;
+    return (
+        <div className="row">
+            <div className="col-md-1" />
+            <div className="col-md-10">{details}</div>
+            <div className="col-md-1" />
+        </div>
+    );
 };

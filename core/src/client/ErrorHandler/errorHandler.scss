@@ -7,7 +7,6 @@
 .labkey-error-heading {
   color : #B82025;
   font-size: 48px;
-  font-weight: 600
 }
 
 .labkey-error-subheading {
@@ -24,25 +23,16 @@
 }
 
 .labkey-error-details {
-  font-size: 18px;
-  letter-spacing: 0;
-  line-height: 21px;
-  padding-bottom: 2px;
-  padding-left: 2rem;
+  font-size: 16px;
 }
 
 .labkey-error-subdetails {
   padding-left: 5rem;
+  padding-bottom: 3rem;
 }
 
 .labkey-error-details-question {
   font-weight: bold;
-}
-
-.labkey-error-stacktrace {
-  font-size: 14px;
-  padding-bottom: 15px;
-  width: 560px;
 }
 
 .error-backButton {
@@ -77,13 +67,13 @@
   content: '';
   position: absolute;
   bottom: 100%;
-  left: 14rem;
+  left: 24rem;
   border: 4rem solid transparent;
   border-bottom-color: #F3F3F4;
 }
 
 .error-details-container:after {
-  left: 15rem;
+  left: 25rem;
   border: 3rem solid transparent;
   border-bottom-color: #F3F3F4;
 }

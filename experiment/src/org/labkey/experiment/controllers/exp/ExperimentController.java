@@ -2238,7 +2238,7 @@ public class ExperimentController extends SpringActionController
             catch (JSONException | ClassCastException e)
             {
                 // We can get a ClassCastException if we expect an array and get a simple String, for example
-                ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to Excel - invalid inpu", e, getViewContext().getRequest(), false, false);
+                ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to Excel - invalid input", e, getViewContext().getRequest(), false, false);
                 renderer.setErrorType(ErrorRenderer.ErrorType.notFound);
                 HttpView<?> errorView = getPageConfig().getTemplate().getTemplate(getViewContext(), new ErrorView(renderer), getPageConfig());
                 errorView.render(getViewContext().getRequest(), getViewContext().getResponse());
