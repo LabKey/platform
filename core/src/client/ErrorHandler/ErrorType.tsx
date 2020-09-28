@@ -258,7 +258,7 @@ export const getImage = (errorDetails: ErrorDetails): ReactNode => {
     const info = ERROR_TYPE_INFO[errorDetails.errorType];
     if (!info) return null;
 
-    return <img alt="LabKey Error" src={imageURL('_images', info.imagePath)} />;
+    return <img alt="LabKey Error" src={imageURL('_images', info.imagePath)} className={'pull-right'}/>;
 };
 
 export const getSubHeading = (errorDetails: ErrorDetails): ReactNode => {
@@ -289,9 +289,9 @@ export const getViewDetails = (errorDetails: ErrorDetails): ReactNode => {
 
     return (
         <div className="row">
-            <div className="col-md-1" />
-            <div className="col-md-10">{details}</div>
-            <div className="col-md-1" />
+            <div className="col-lg-1 col-md-1 hidden-xs hidden-sm" />
+            <div className="col-lg-10 col-md-10 col-sm-12 col-xs-12">{details}</div>
+            <div className="col-lg-1 col-md-1 hidden-xs hidden-sm" />
         </div>
     );
 };

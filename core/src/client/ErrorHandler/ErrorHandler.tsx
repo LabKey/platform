@@ -51,9 +51,9 @@ export class ErrorHandler extends PureComponent<ErrorHandlerProps, ErrorHandlerS
             <>
                 <div className="error-details-body">
                     <div className="row">
-                        <div className="col-md-1" />
-                        <div className="col-md-7">
-                            <div className="labkey-error-top">
+                        <div className="col-lg-1 col-md-1 hidden-xs hidden-sm" />
+                        <div className="col-lg-7 col-md-6 col-sm-12 col-xs-12">
+                            <div>
                                 {getErrorHeading()}
                                 {getSubHeading(errorDetails)}
                                 {getInstruction(errorDetails)}
@@ -65,8 +65,8 @@ export class ErrorHandler extends PureComponent<ErrorHandlerProps, ErrorHandlerS
                                 </button>
                             </div>
                         </div>
-                        <div className="col-md-3 hidden-xs hidden-sm">{getImage(errorDetails)}</div>
-                        <div className="col-md-1" />
+                        <div className="col-lg-3 col-md-4 hidden-xs hidden-sm">{getImage(errorDetails)}</div>
+                        <div className="col-lg-1 col-md-1 hidden-xs hidden-sm" />
                     </div>
                 </div>
                 {showDetails && <div className="error-details-container">{getViewDetails(errorDetails)}</div>}

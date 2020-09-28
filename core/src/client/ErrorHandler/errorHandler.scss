@@ -1,9 +1,5 @@
 @import "~@labkey/components/dist/assets/scss/theme";
 
-.labkey-error-top {
-  width: 100%
-}
-
 .labkey-error-heading {
   color : #B82025;
   font-size: 48px;
@@ -13,13 +9,11 @@
   font-size: 24px;
   text-overflow: ellipsis;
   padding-bottom: 3rem;
-  width: 587px
 }
 
 .labkey-error-instruction {
   font-size: 18px;
   padding-bottom: 15px;
-  width: 560px;
 }
 
 .labkey-error-details {
@@ -59,23 +53,25 @@
   background: #F3F3F4;
   border: 1px solid transparent;
   margin-top: 5rem;
-  padding-top: 5rem;
-  padding-bottom: 5rem;
+  padding: 3rem 1rem;
 }
 
 .error-details-container:before, .error-details-container:after {
   content: '';
   position: absolute;
   bottom: 100%;
-  left: 24rem;
   border: 4rem solid transparent;
   border-bottom-color: #F3F3F4;
-}
 
-.error-details-container:after {
-  left: 25rem;
-  border: 3rem solid transparent;
-  border-bottom-color: #F3F3F4;
+  @media (min-width: $screen-xs-min) {
+    left: 14rem;
+  }
+  @media (min-width: $screen-md-min) {
+    left: 22rem;
+  }
+  @media (min-width: $screen-lg-min) {
+    left: 25rem;
+  }
 }
 
 .permission-warning-icon {
