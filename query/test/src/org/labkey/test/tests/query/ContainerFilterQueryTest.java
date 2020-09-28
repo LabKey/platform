@@ -4,17 +4,24 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.remoteapi.CommandException;
+import org.labkey.remoteapi.Connection;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locators;
 import org.labkey.test.categories.DailyC;
+import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.APIContainerHelper;
 import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.PermissionsHelper;
+import org.labkey.test.util.SchemaHelper;
+import org.labkey.test.util.TestDataGenerator;
 import org.openqa.selenium.WebElement;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -27,7 +34,7 @@ import static org.junit.Assert.assertThat;
 @Category({DailyC.class})
 public class ContainerFilterQueryTest extends BaseWebDriverTest
 {
-    private static final String OTHER_PROJECT = "Other ContainerFilterQueryTest Project"; // for permissions check
+    private static final String OTHER_PROJECT = "Other ContainerFilterQueryTest Project"; // for permissions and linked schema tests
     private static final String FOLDER_NAME = "CF Subfolder";
     private static final String USER = "cfq_user@containerfilterquery.test";
 
@@ -56,6 +63,7 @@ public class ContainerFilterQueryTest extends BaseWebDriverTest
     {
         _containerHelper.createProject(getProjectName(), null);
         _containerHelper.createSubfolder(getProjectName(), FOLDER_NAME);
+        _containerHelper.createProject(OTHER_PROJECT);
     }
 
     @Test
@@ -147,7 +155,6 @@ public class ContainerFilterQueryTest extends BaseWebDriverTest
         String queryName = "testContainerFilterAnnotationPermission";
 
         ApiPermissionsHelper apiPermissionsHelper = new ApiPermissionsHelper(this);
-        _containerHelper.createProject(OTHER_PROJECT);
         _userHelper.createUser(USER);
         apiPermissionsHelper
             .addMemberToRole(USER, "Reader", PermissionsHelper.MemberType.user, getFolderPath());
@@ -160,6 +167,45 @@ public class ContainerFilterQueryTest extends BaseWebDriverTest
             not(hasItem(getProjectName())),
             not(hasItem(OTHER_PROJECT))
         ));
+    }
+
+    @Test
+    public void testFolderSpecWithContainerFilter()
+    {
+        final String sql = "SELECT Containers.Name FROM \"/home/\".core.Containers[ContainerFilter='Current']";
+        final String queryName = "testFolderSpecWithContainerFilter";
+
+        DataRegionTable table = createQuery(getFolderPath(), queryName, "core", sql);
+        table.setContainerFilter(DataRegionTable.ContainerFilterType.ALL_FOLDERS);
+        List<String> containerNames = table.getColumnDataAsText("Name");
+        assertEquals("Folder spec in query should be respected.",
+            List.of("home"), containerNames);
+    }
+
+    @Test
+    public void testContainerFilterOnLinkedSchema() throws IOException, CommandException
+    {
+        final String linkedSchemaName = "linkedLizts";
+        final String listName = "myList";
+        final String sql = String.format("SELECT * FROM %s.%s[ContainerFilter='AllFolders']", linkedSchemaName, listName);
+        final String queryName = "testContainerFilterOnLinkedSchema";
+
+        TestDataGenerator list1 = new TestDataGenerator("lists", listName, getFolderPath())
+            .withColumns(List.of(
+                new FieldDefinition("name", FieldDefinition.ColumnType.String)
+            ))
+            .addCustomRow(Map.of("name", "Geoffrey"))
+            .addCustomRow(Map.of("name", "William"))
+            .addCustomRow(Map.of("name", "James"));
+        Connection connection = createDefaultConnection();
+        list1.createList(connection, "Key");
+        list1.insertRows(connection);
+
+        new SchemaHelper(this).createLinkedSchema(getProjectName(), null, linkedSchemaName, getFolderPath(), null, "lists", null, null);
+
+        DataRegionTable table = createQuery(getProjectName(), queryName, "linkedLizts", sql);
+        List<String> names = table.getColumnDataAsText("Name");
+        assertEquals("Wrong data in container filtered linked schema.", List.of("Geoffrey", "William", "James"), names);
     }
 
     @NotNull
