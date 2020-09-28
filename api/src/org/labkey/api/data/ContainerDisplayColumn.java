@@ -34,6 +34,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
@@ -179,12 +180,12 @@ public class ContainerDisplayColumn extends DataColumn
     }
 
     @Override @NotNull
-    public String getFormattedValue(RenderContext ctx)
+    public HtmlString getFormattedHtml(RenderContext ctx)
     {
         String displayValue = getDisplayValue(ctx).toString();
         if (getRequiresHtmlFiltering())
-            displayValue = PageFlowUtil.filter(displayValue);
-        return displayValue;
+            return HtmlString.of(displayValue);
+        return HtmlString.unsafe(displayValue);
     }
 
     @Override
