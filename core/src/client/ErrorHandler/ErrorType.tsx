@@ -130,7 +130,7 @@ const PERMISSION_DETAILS = () => (
                     <br />
                     <br />
                     <Button
-                        className="btn-group error-backButton"
+                        className="btn btn-primary error-backButton"
                         bsStyle="info"
                         onClick={() => {
                             const returnUrl =
