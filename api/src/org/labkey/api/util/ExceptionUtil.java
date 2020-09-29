@@ -882,6 +882,7 @@ public class ExceptionUtil
             if (HttpView.hasCurrentView())
             {
                 errorView = pageConfig.getTemplate().getTemplate(context, new ErrorView(renderer), pageConfig);
+                pageConfig.setTitle(ErrorView.ERROR_PAGE_TITLE);
 
                 if (null == errorView)
                 {
@@ -900,6 +901,12 @@ public class ExceptionUtil
         }
         catch (Exception e)
         {
+            // config exceptions that occur before jsps have been initialized
+            if (ex instanceof ConfigurationException && e instanceof NullPointerException)
+            {
+                throw new ConfigurationException(ex.getMessage());
+            }
+
             // try to render just the react app
             try
             {
@@ -922,7 +929,8 @@ public class ExceptionUtil
     {
         ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(responseStatus, message, ex, context.getRequest(), isPart, isStartupFailure);
         renderer.setErrorType(errorType);
-        HttpView<?> errorView = pageConfig.getTemplate().getTemplate(context, new ErrorView(renderer), pageConfig);
+        pageConfig.setTitle(ErrorView.ERROR_PAGE_TITLE);
+        HttpView<?> errorView = PageConfig.Template.App.getTemplate(context, new ErrorView(renderer), pageConfig);
         if (null != errorView)
         {
             pageConfig.addClientDependencies(errorView.getClientDependencies());
