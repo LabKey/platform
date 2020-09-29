@@ -57,6 +57,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     protected String _tsvFormatString;
     protected StringExpression _textExpression;
     protected int _scale = 0;
+    protected int _decimalDigits = 0;
     protected String _propertyURI;
     protected String _conceptURI;
     protected String _rangeURI;
@@ -151,6 +152,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         to._redactedText = _redactedText;
         to._isExcludeFromShifting = _isExcludeFromShifting;
         to._scale = _scale;
+        to._decimalDigits = _decimalDigits;
         to._propertyURI = _propertyURI;
         to._conceptURI = _conceptURI;
         to._rangeURI = _rangeURI;
@@ -829,6 +831,19 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     {
         assert _checkLocked();
         _scale = scale;
+    }
+
+    @Override
+    public int getDecimalDigits()
+    {
+        return _decimalDigits;
+    }
+
+    @Override
+    public void setDecimalDigits(int decimalDigits)
+    {
+        assert _checkLocked();
+        _decimalDigits = decimalDigits;
     }
 
     @Override

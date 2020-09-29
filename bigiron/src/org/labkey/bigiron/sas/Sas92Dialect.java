@@ -49,6 +49,7 @@ public class Sas92Dialect extends SasDialect
             _nameKey = "COLUMN_NAME";
             _sqlTypeKey = "DATA_TYPE";
             _scaleKey = "COLUMN_SIZE";
+            _decimalDigitsKey = "DECIMAL_DIGITS";
             _nullableKey = "NULLABLE";
             _postionKey = "ORDINAL_POSITION";
         }

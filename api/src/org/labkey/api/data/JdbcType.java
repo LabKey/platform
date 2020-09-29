@@ -422,6 +422,12 @@ public enum JdbcType
         return Number.class.isAssignableFrom(this.cls);
     }
 
+    public boolean isDecimal()
+    {
+        return isNumeric() &&
+                this.getSqlTypes().contains(Types.DECIMAL) ||
+                this.getSqlTypes().contains(Types.NUMERIC);
+    }
 
     public boolean isInteger()
     {
@@ -580,8 +586,6 @@ public enum JdbcType
     {
         if (n instanceof BigDecimal)
             return (BigDecimal)n;
-        if (n instanceof Double || n instanceof Float)
-            return new BigDecimal(n.doubleValue());
         if (n instanceof Integer || n instanceof Long)
             return new BigDecimal(n.longValue());
         return new BigDecimal(n.toString());

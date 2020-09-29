@@ -1137,6 +1137,11 @@ public class StatementUtils
         {
             type = "NVARCHAR(MAX)";
         }
+        // Add scale and precision for decimal values specifying scale
+        if (jdbcType.isDecimal() && ph.p.getDecimalDigits() > 0)
+        {
+            type = type + "(" + ph.p.getLength() + "," + ph.p.getDecimalDigits() + ")";
+        }
         sqlfDeclare.append(type);
         if (jdbcType.isText() && jdbcType != JdbcType.LONGVARCHAR && jdbcType != JdbcType.GUID)
         {

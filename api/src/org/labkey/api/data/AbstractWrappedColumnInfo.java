@@ -722,6 +722,12 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
+    public int getDecimalDigits()
+    {
+        return delegate.getDecimalDigits();
+    }
+
+    @Override
     public boolean hasDbSequence()
     {
         return delegate.hasDbSequence();

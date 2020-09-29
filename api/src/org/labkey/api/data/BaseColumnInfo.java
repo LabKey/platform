@@ -1606,6 +1606,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     col._sqlTypeName = reader.getSqlTypeName();
                     col._isAutoIncrement = reader.isAutoIncrement();
                     col._scale = reader.getScale();
+                    col._decimalDigits = reader.getDecimalDigits();
                     col._nullable = reader.isNullable();
                     col._jdbcDefaultValue = reader.getDefault();
 
