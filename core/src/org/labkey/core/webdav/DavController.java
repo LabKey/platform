@@ -178,6 +178,7 @@ public class DavController extends SpringActionController
 
     public static final String name = "_dav_";
     public static final String mimeSeparation = "<[[mime " + GUID.makeHash() + "_separator_]]>";
+    public static final String CONTENT_TYPE_HTML = "text/html";
 
     static boolean _readOnly = false;
     static boolean _locking = true;
@@ -410,24 +411,6 @@ public class DavController extends SpringActionController
             String message = x.getMessage() != null ? x.getMessage() : status.message;
             if (x instanceof ConfigurationException)
                 message += "\nThis may be a server configuration problem.  Contact the site administrator.";
-
-            ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_BAD_REQUEST, message, x, getViewContext().getRequest(), false, false);
-            renderer.setErrorType(ErrorRenderer.ErrorType.notFound);
-            PageConfig pageConfig = new PageConfig();
-            HttpView<?> errorView = PageConfig.Template.App.getTemplate(getViewContext(), new ErrorView(renderer), pageConfig);
-            if (null != errorView)
-            {
-                pageConfig.addClientDependencies(errorView.getClientDependencies());
-                try
-                {
-                    errorView.render(getViewContext().getRequest(), getViewContext().getResponse());
-                    return WebdavStatus.SC_BAD_REQUEST;
-                }
-                catch (Exception e)
-                {
-                    return sendError(status, message);
-                }
-            }
             return sendError(status, message);
         }
 
@@ -468,6 +451,19 @@ public class DavController extends SpringActionController
                             super.setHeader("Content-Type", CONTENT_TYPE_JSON);
                             super.getWriter().write(o.toString());
                             super.setStatus(HttpServletResponse.SC_OK);
+                        }
+                    }
+                    else if (CONTENT_TYPE_HTML.equals(getRequest().getHeader("Content-Type)")) ||
+                            accept.contains(CONTENT_TYPE_HTML))
+                    {
+                        try
+                        {
+                            ExceptionUtil.renderErrorView(getViewContext(), new PageConfig(), ErrorRenderer.ErrorType.notFound, HttpServletResponse.SC_BAD_REQUEST, message, null, false, false );
+                            return WebdavStatus.SC_BAD_REQUEST;
+                        }
+                        catch (Exception e)
+                        {
+                            return sendError(status, message);
                         }
                     }
                     else

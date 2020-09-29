@@ -918,6 +918,19 @@ public class ExceptionUtil
     }
 
 
+    public static void renderErrorView(ViewContext context, PageConfig pageConfig, ErrorRenderer.ErrorType errorType, int responseStatus, String message, @Nullable Throwable ex, boolean isPart, boolean isStartupFailure) throws Exception
+    {
+        ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(responseStatus, message, ex, context.getRequest(), isPart, isStartupFailure);
+        renderer.setErrorType(errorType);
+        HttpView<?> errorView = pageConfig.getTemplate().getTemplate(context, new ErrorView(renderer), pageConfig);
+        if (null != errorView)
+        {
+            pageConfig.addClientDependencies(errorView.getClientDependencies());
+            errorView.render(context.getRequest(), context.getResponse());
+        }
+    }
+
+
     public static void doErrorRedirect(HttpServletResponse response, String url)
     {
         response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);

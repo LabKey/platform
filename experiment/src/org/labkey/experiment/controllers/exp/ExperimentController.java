@@ -2238,10 +2238,7 @@ public class ExperimentController extends SpringActionController
             catch (JSONException | ClassCastException e)
             {
                 // We can get a ClassCastException if we expect an array and get a simple String, for example
-                ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to Excel - invalid input", e, getViewContext().getRequest(), false, false);
-                renderer.setErrorType(ErrorRenderer.ErrorType.notFound);
-                HttpView<?> errorView = getPageConfig().getTemplate().getTemplate(getViewContext(), new ErrorView(renderer), getPageConfig());
-                errorView.render(getViewContext().getRequest(), getViewContext().getResponse());
+                ExceptionUtil.renderErrorView(getViewContext(), getPageConfig(), ErrorRenderer.ErrorType.notFound, HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to Excel - invalid input", e, false, false);
             }
         }
     }
@@ -2310,14 +2307,7 @@ public class ExperimentController extends SpringActionController
             }
             catch (JSONException e)
             {
-                ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to table - invalid input", e, getViewContext().getRequest(), false, false);
-                renderer.setErrorType(ErrorRenderer.ErrorType.notFound);
-                HttpView<?> errorView = getPageConfig().getTemplate().getTemplate(getViewContext(), new ErrorView(renderer), getPageConfig());
-                if (null != errorView)
-                {
-                    getPageConfig().addClientDependencies(errorView.getClientDependencies());
-                    errorView.render(getViewContext().getRequest(), getViewContext().getResponse());
-                }
+                ExceptionUtil.renderErrorView(getViewContext(), getPageConfig(), ErrorRenderer.ErrorType.notFound, HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to table - invalid input", e, false, false);
             }
         }
     }
