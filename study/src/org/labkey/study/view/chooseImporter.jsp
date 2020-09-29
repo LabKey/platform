@@ -10,10 +10,13 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.study.SpecimenTransform" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.api.data.PropertyManager" %>
+
 <%@ page import="com.google.common.collect.Iterables" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -31,12 +34,11 @@
     URLHelper cancelLink = getActionURL().getReturnURL();
     if (cancelLink == null)
         cancelLink = new ActionURL(StudyController.ManageStudyAction.class, getContainer());
-
     int numberOfTransforms = specimenTransforms.size();
-    int i = 0;
+    int rowNumber = 0;
 %>
 
-<style>
+<style type="text/css">
     .importer-radio-cell {
         text-align: center;
         margin-top: 4px;
@@ -46,10 +48,9 @@
 <labkey:errors/>
 
 <div>
-    <% if (true) { %>
-<%--    <% if (numberOfTransforms > 1) { %>--%>
+    <% if (numberOfTransforms > 1) { %>
         <%
-            String selected = "name";
+            String selected = SpecimenService.get().getActiveSpecimenImporter(getContainer());
         %>
         <p>
             Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
@@ -74,16 +75,17 @@
                             HtmlString transformName = h(transform.getName());
 
                     %>
-                            <tr class="<%=getShadeRowClass(i++)%>">
+                            <tr class="<%=getShadeRowClass(rowNumber++)%>">
                                 <td class="lk-study-prop-label"><%=transformName%></td>
                                 <td class="lk-study-prop-desc">
                                     <div class="importer-radio-cell">
-                                        <input type="radio"
-                                               name="activeTransform"
+                                        <input
+                                            type="radio"
+                                            name="activeTransform"
 <%--                                               would using this (below) be good form?--%>
 <%--                                               value="<%=StudyController.EnabledSpecimenImportForm.ActiveTransformEnum.FreezerPro%>"--%>
-                                               value="<%=transformName%>"
-<%--                                        <%=checked(transformName.toString().equals(selected))%>--%>
+                                            value="<%=transformName%>"
+                                            <%=checked(transformName.toString().equals(selected))%>
                                         >
                                     </div>
                                 </td>
@@ -118,24 +120,24 @@
         </p>
         <br/>
 
-        <labkey:panel id="overview" className="lk-sg-section">
-            <h4 class="labkey-page-section-header">Configure Specimen Import</h4>
+<%--    I go back of fourth on which looks better, panel or no --%>
+<%--        <labkey:panel id="overview" className="lk-sg-section">--%>
+<%--            <h4 class="labkey-page-section-header">Configure Specimen Import</h4>--%>
 
-            <table class="labkey-data-region-legacy labkey-show-borders">
-                <tr class="<%=getShadeRowClass(i++)%>">
-                    <td class="lk-study-prop-label"><%=h(transform.getName())%></td>
-                    <td><%=link("configure", manageAction)%></td>
-                </tr>
-            </table>
+        <table class="labkey-data-region-legacy labkey-show-borders">
+            <tr class="<%=getShadeRowClass(rowNumber++)%>">
+                <td class="lk-study-prop-label"><%=h(transform.getName())%></td>
+                <td><%=link("configure", manageAction)%></td>
+            </tr>
+        </table>
 
-            <br/>
+        <br/><br/>
 
-            <%=  new Button.ButtonBuilder("Done")
-                    .href(cancelLink)
-                    .build()
-            %>
-        </labkey:panel>
-
+        <%=  new Button.ButtonBuilder("Done")
+                .href(cancelLink)
+                .build()
+        %>
+<%--        </labkey:panel>--%>
 
     <% } else { %>
         <div class="alert alert-info">

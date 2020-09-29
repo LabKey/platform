@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -313,6 +314,13 @@ public class SpecimenServiceImpl implements SpecimenService
     public Lsid getSpecimenMaterialLsid(@NotNull Container studyContainer, @NotNull String id)
     {
         return new Lsid(StudyService.SPECIMEN_NAMESPACE_PREFIX, "Folder-" + studyContainer.getRowId(), id);
+    }
+
+    @Override
+    public String getActiveSpecimenImporter(@NotNull Container container)
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getProperties(container, "enabledSpecimenImporter");
+        return props.get("active");
     }
 
     @Override

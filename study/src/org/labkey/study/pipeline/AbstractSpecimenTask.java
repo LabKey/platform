@@ -121,6 +121,11 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
             {
                 if (transformer.getFileType().isType(inputFile))
                 {
+                    String activeImporter = SpecimenService.get().getActiveSpecimenImporter(ctx.getContainer());
+                    if (null != activeImporter && !transformer.getName().equals(activeImporter))
+                    {
+                        throw new PipelineJobException(activeImporter + " is the active specimen importer in this Study. Cancelling " + transformer.getName() + " import.");
+                    }
                     if (job != null)
                         job.setStatus("OPTIONAL POST TRANSFORMING STEP " + transformer.getName() + " DATA");
                     File specimenArchive = SpecimenBatch.ARCHIVE_FILE_TYPE.getFile(inputFile.getParentFile(), transformer.getFileType().getBaseName(inputFile));

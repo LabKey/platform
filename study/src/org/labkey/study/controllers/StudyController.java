@@ -139,6 +139,8 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.MasterPatientIndexService;
 import org.labkey.api.study.ParticipantCategory;
+import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -6253,13 +6255,21 @@ public class StudyController extends BaseStudyController
         @Override
         public boolean handlePost(EnabledSpecimenImportForm form, BindException errors) throws Exception
         {
-            return false;
+            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getContainer(), "enabledSpecimenImporter", true);
+            props.put("active", form.getActiveTransform());
+            props.save();
+            return true;
         }
 
         @Override
         public URLHelper getSuccessURL(EnabledSpecimenImportForm configForm)
         {
-            return new ActionURL(ManageStudyAction.class, getContainer());
+            Container c = getContainer();
+            SpecimenService specimenService = SpecimenService.get();
+
+            String active = specimenService.getActiveSpecimenImporter(c);
+            SpecimenTransform activeTransform = specimenService.getSpecimenTransform(active);
+            return activeTransform.getManageAction(c, getUser());
         }
     }
 
