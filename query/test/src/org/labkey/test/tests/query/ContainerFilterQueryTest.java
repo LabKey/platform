@@ -20,6 +20,7 @@ import org.openqa.selenium.WebElement;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -201,11 +202,12 @@ public class ContainerFilterQueryTest extends BaseWebDriverTest
         list1.createList(connection, "Key");
         list1.insertRows(connection);
 
-        new SchemaHelper(this).createLinkedSchema(getProjectName(), null, linkedSchemaName, getFolderPath(), null, "lists", null, null);
+        new SchemaHelper(this).createLinkedSchema(getProjectName(), linkedSchemaName, getFolderPath(), null, "lists", null, null);
 
         DataRegionTable table = createQuery(getProjectName(), queryName, "linkedLizts", sql);
         List<String> names = table.getColumnDataAsText("Name");
-        assertEquals("Wrong data in container filtered linked schema.", List.of("Geoffrey", "William", "James"), names);
+        Collections.sort(names);
+        assertEquals("Wrong data in container filtered linked schema.", List.of("Geoffrey", "James", "William"), names);
     }
 
     @NotNull
