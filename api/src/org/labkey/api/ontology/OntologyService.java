@@ -1,16 +1,23 @@
 package org.labkey.api.ontology;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.MutableColumnRenderProperties;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.data.xml.ColumnType;
 
 import java.util.List;
 
 /** public interface to ontology services, largely implemented by OntologyManager */
 public interface OntologyService
 {
+    String conceptCodeConceptURI = "http://www.labkey.org/types#conceptCode";
+
     void registerProvider(OntologyProvider provider);
 
     default List<Ontology> getOntologies(Container c)
@@ -35,5 +42,22 @@ public interface OntologyService
     static void setInstance(OntologyService impl)
     {
         ServiceRegistry.get().registerService(OntologyService.class, impl);
+    }
+
+    void parseXml(ColumnType xmlCol, MutableColumnRenderProperties col);
+
+    void writeXml(ColumnRenderProperties col, ColumnType colXml);
+
+    interface ConceptInfo
+    {
+        String getLabelColumn();
+        String getImportColumn();
+        String getSubClassOfPath();
+    }
+
+    interface OntologyAnnotations
+    {
+        @NotNull ConceptInfo getConceptInfo();
+        @Nullable String getPrincipalConceptCode();
     }
 }

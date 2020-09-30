@@ -38,6 +38,7 @@ import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
@@ -394,6 +395,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
         setCalculated(col.isCalculated());
 
+        OntologyService s = OntologyService.get();
         setPrincipalConceptCode(col.getPrincipalConceptCode());
     }
 
@@ -1242,8 +1244,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                 LOG.error("Can't instantiate DisplayColumnFactory: " + displayColumnClassName, e);
             }
         }
-        if (xmlCol.isSetPrincipalConceptCode())
-            setPrincipalConceptCode(xmlCol.getPrincipalConceptCode());
+
+        var os = OntologyService.get();
+        if (null != os)
+        {
+            os.parseXml(xmlCol, this);
+        }
     }
 
     @Override
