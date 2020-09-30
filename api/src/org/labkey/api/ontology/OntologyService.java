@@ -2,6 +2,8 @@ package org.labkey.api.ontology;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.services.ServiceRegistry;
 
 import java.util.List;
@@ -17,6 +19,13 @@ public interface OntologyService
     }
 
     Concept resolveCode(String code);
+
+    /** Resolve a concept based on exact match of label or synonym
+     *  CONSIDER: may also want a scoped version of this method (e.g. (Ontology o, String term) or (String path, String term)
+     */
+    //Concept resolveTerm(String term);
+
+    DataIteratorBuilder getConceptLookupDataIteratorBuilder(DataIteratorBuilder in, TableInfo target);
 
     static OntologyService get()
     {

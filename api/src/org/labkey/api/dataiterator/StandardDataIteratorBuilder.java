@@ -29,6 +29,7 @@ import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
@@ -131,7 +132,13 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
                 propertiesMap.put(dp.getPropertyURI(), dp);
         }
 
-        DataIterator input = _inputBuilder.getDataIterator(context);
+        DataIteratorBuilder dib = _inputBuilder;
+
+        // Add translator/validator for ontology import features
+        if (null != OntologyService.get())
+            dib = OntologyService.get().getConceptLookupDataIteratorBuilder(_inputBuilder, _target);
+
+        DataIterator input = dib.getDataIterator(context);
 
         if (null == input)
         {
@@ -140,6 +147,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
             // going to crash anyway, might as well do it now
             throw new NullPointerException("null dataiterator returned");
         }
+
 
         //
         // pass through all the source columns

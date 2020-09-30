@@ -139,7 +139,7 @@ public class SimpleDocumentResource extends AbstractDocumentResource
     @Override
     public String getExecuteHref(ViewContext context)
     {
-        return _executeUrl.getLocalURIString();
+        return null == _executeUrl ? null : _executeUrl.getLocalURIString();
     }
 
     @Override
