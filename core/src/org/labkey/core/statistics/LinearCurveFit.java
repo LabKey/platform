@@ -8,12 +8,12 @@ import org.labkey.api.data.statistics.StatsService;
 
 import java.util.Map;
 
-public class LinearCurveFit extends DefaultCurveFit implements CurveFit
+public class LinearCurveFit extends DefaultCurveFit<LinearCurveFit.LinearParameters> implements CurveFit<LinearCurveFit.LinearParameters>
 {
-    private static class LinearParameters implements CurveFit.Parameters
+    public static class LinearParameters implements CurveFit.Parameters
     {
-        private double _slope;
-        private double _intercept;
+        private final double _slope;
+        private final double _intercept;
 
         public LinearParameters(double slope, double intercept)
         {
@@ -50,7 +50,7 @@ public class LinearCurveFit extends DefaultCurveFit implements CurveFit
     }
 
     @Override
-    protected Parameters computeParameters()
+    protected LinearParameters computeParameters()
     {
         SimpleRegression regression = new SimpleRegression(true);
         for (DoublePoint point : getData())
@@ -78,14 +78,14 @@ public class LinearCurveFit extends DefaultCurveFit implements CurveFit
     }
 
     @Override
-    public double fitCurve(double x, Parameters parameters)
+    public double fitCurve(double x, LinearParameters parameters)
     {
-        if (parameters instanceof LinearParameters)
+        if (parameters != null)
         {
             double xValue = hasXLogScale() ? Math.log10(x) : x;
-            return xValue * ((LinearParameters) parameters).getSlope() + ((LinearParameters) parameters).getIntercept();
+            return xValue * parameters.getSlope() + parameters.getIntercept();
         }
-        throw new IllegalArgumentException("curveParameters must be an instance of LinearParameters");
+        throw new IllegalArgumentException("No curve fit parameters for LinearCurveFit");
     }
 
     @Override
@@ -93,13 +93,12 @@ public class LinearCurveFit extends DefaultCurveFit implements CurveFit
     {
         try
         {
-            Parameters parameters = getParameters();
-            if (parameters instanceof LinearParameters)
+            LinearParameters parameters = getParameters();
+            if (parameters != null)
             {
-                LinearParameters lp = (LinearParameters)parameters;
-                return (y - lp.getIntercept()) / lp.getSlope();
+                return (y - parameters.getIntercept()) / parameters.getSlope();
             }
-            throw new IllegalArgumentException("curveParameters must be an instance of LinearParameters");
+            throw new IllegalArgumentException("No curve fit parameters for LinearCurveFit");
         }
         catch (FitFailedException e)
         {

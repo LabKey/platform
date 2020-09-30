@@ -28,11 +28,11 @@ import java.util.Map;
 /**
  * Created by klum on 1/16/14.
  */
-public class PolynomialCurveFit extends DefaultCurveFit implements CurveFit
+public class PolynomialCurveFit extends DefaultCurveFit<PolynomialCurveFit.PolynomialParameters> implements CurveFit<PolynomialCurveFit.PolynomialParameters>
 {
     private static int ORDER = 3;       // the order of the polynomial
 
-    private static class PolynomialParameters implements CurveFit.Parameters
+    public static class PolynomialParameters implements CurveFit.Parameters
     {
         private double[] _coefficients = new double[ORDER];
 
@@ -80,7 +80,7 @@ public class PolynomialCurveFit extends DefaultCurveFit implements CurveFit
      * Calculates the coefficients of an n-order polynomial using a least squares fit
      */
     @Override
-    protected Parameters computeParameters()
+    protected PolynomialParameters computeParameters()
     {
         assert getData() != null;
 
@@ -120,11 +120,11 @@ public class PolynomialCurveFit extends DefaultCurveFit implements CurveFit
     }
 
     @Override
-    public double fitCurve(double x, Parameters curveParameters)
+    public double fitCurve(double x, PolynomialParameters curveParameters)
     {
-        if (curveParameters instanceof PolynomialParameters)
+        if (curveParameters != null)
         {
-            double[] params = ((PolynomialParameters)curveParameters).getCoefficients();
+            double[] params = curveParameters.getCoefficients();
             double y = 0;
             double xValue = 0;
 
@@ -136,7 +136,7 @@ public class PolynomialCurveFit extends DefaultCurveFit implements CurveFit
 
             return y;
         }
-        throw new IllegalArgumentException("curveParameters must be an instance of PolynomialParameters");
+        throw new IllegalArgumentException("No curve fit parameters for PolynomialCurveFit");
     }
 
     @Override
@@ -144,10 +144,10 @@ public class PolynomialCurveFit extends DefaultCurveFit implements CurveFit
     {
         try
         {
-            Parameters parameters = getParameters();
-            if (parameters instanceof PolynomialParameters)
+            PolynomialParameters parameters = getParameters();
+            if (parameters != null)
             {
-                double[] params = ((PolynomialParameters)parameters).getCoefficients();
+                double[] params =parameters.getCoefficients();
                 double x = 0;
 
                 for (int i=0; i < params.length; i++)
@@ -156,7 +156,7 @@ public class PolynomialCurveFit extends DefaultCurveFit implements CurveFit
                 }
                 return x;
             }
-            throw new IllegalArgumentException("curveParameters must be an instance of PolynomialParameters");
+            throw new IllegalArgumentException("No curve fit parameters for PolynomialCurveFit");
         }
         catch (FitFailedException e)
         {
