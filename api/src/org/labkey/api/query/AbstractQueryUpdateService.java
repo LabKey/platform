@@ -959,8 +959,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @Test
         public void MERGE() throws Exception
         {
-            assert(getRows().size()==0);
             INSERT();
+            assertEquals("Wrong number of rows after INSERT", 3, getRows().size());
 
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
@@ -971,7 +971,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             mergeRows.add(CaseInsensitiveHashMap.of("pk",3,"s","THREE"));
             BatchValidationException errors = new BatchValidationException();
             var count = qus.mergeRows(user, c, new ListofMapsDataIterator(mergeRows.get(0).keySet(), mergeRows), errors, null, null);
-            assertFalse(errors.hasErrors());
+            assertFalse("mergeRows error(s): " + errors.getMessage(), errors.hasErrors());
             assertEquals(count,2);
             var rows = getRows();
             // test existing row value is updated

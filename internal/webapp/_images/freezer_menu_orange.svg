@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 63.1 (92452) - https://sketch.com -->
+    <title>mega_menu_orange</title>
+    <desc>Created with Sketch.</desc>
+    <g id="mega_menu_orange" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M46.7777778,4 L50.4722222,4 C50.7888889,4 51,4.23333333 51,4.58333333 L51,59.4166667 C51,59.7666667 50.7888889,60 50.4722222,60 L13.5277778,60 C13.2111111,60 13,59.7666667 13,59.4166667 L13,4.58333333 C13,4.23333333 13.2111111,4 13.5277778,4 L17.2222222,4 L46.7777778,4 Z" id="Body" stroke="#FFA500" stroke-width="2" fill="#FFCC81" stroke-linecap="round"></path>
+        <g id="Grill" transform="translate(13.000000, 46.000000)" stroke="#FFA500" stroke-width="2">
+            <path d="M0,1 L0,13 C6.76353751e-17,13.5522847 0.44771525,14 1,14 L37,14 C37.5522847,14 38,13.5522847 38,13 L38,1 C38,0.44771525 37.5522847,-1.01453063e-16 37,0 L1,0 C0.44771525,1.01453063e-16 -6.76353751e-17,0.44771525 0,1 Z" id="Body" fill="#FFFFFF"></path>
+            <line x1="1" y1="7" x2="38" y2="7" id="Top-Line" stroke-linecap="round"></line>
+        </g>
+        <g id="Display" transform="translate(31.000000, 12.000000)" fill="#FFFFFF" stroke="#FFA500" stroke-linecap="round" stroke-width="2">
+            <path d="M16,1 L16,11 C16,11.5522847 15.5522847,12 15,12 L1,12 C0.44771525,12 6.76353751e-17,11.5522847 0,11 L0,1 C-6.76353751e-17,0.44771525 0.44771525,1.01453063e-16 1,0 L15,0 C15.5522847,-1.01453063e-16 16,0.44771525 16,1 Z" id="Handle" transform="translate(8.000000, 6.000000) scale(1, -1) translate(-8.000000, -6.000000) "></path>
+        </g>
+        <path d="M23,13 L23,35 C23,35.5522847 22.5522847,36 22,36 L18,36 C17.4477153,36 17,35.5522847 17,35 L17,13 C17,12.4477153 17.4477153,12 18,12 L22,12 C22.5522847,12 23,12.4477153 23,13 Z" id="Handle" stroke="#FFA500" stroke-width="2" fill="#FFFFFF" stroke-linecap="round"></path>
+    </g>
+</svg>
