@@ -29,13 +29,13 @@ import java.util.Map;
 /**
  * Created by klum on 1/16/14.
  */
-public abstract class DefaultCurveFit implements CurveFit
+public abstract class DefaultCurveFit<P extends CurveFit.Parameters> implements CurveFit<P>
 {
     private static double EPSILON = 0.00001;
 
     protected Map<StatsService.AUCType, Double> _aucMap = new HashMap<>();
     protected List<AUCRange> _ranges = new ArrayList<>();
-    protected Parameters _parameters;
+    protected P _parameters;
     protected DoublePoint[] _data;
     protected DoublePoint _minX;        // first data point
     protected DoublePoint _maxX;        // last data point
@@ -44,7 +44,7 @@ public abstract class DefaultCurveFit implements CurveFit
     // Whether the curve is assumed to be decreasing by default.  Used only if the data points are too chaotic to provide a reasonable guess.
     protected boolean _assumeDecreasing = true;
 
-    protected abstract Parameters computeParameters();
+    protected abstract P computeParameters();
 
     public DefaultCurveFit(DoublePoint[] data)
     {
@@ -65,7 +65,7 @@ public abstract class DefaultCurveFit implements CurveFit
     }
 
     @Override
-    public Parameters getParameters() throws FitFailedException
+    public P getParameters() throws FitFailedException
     {
         ensureCurve();
         return _parameters;
@@ -189,7 +189,7 @@ public abstract class DefaultCurveFit implements CurveFit
             if (_ranges.isEmpty())
             {
                 try {
-                    Parameters parameters = getParameters();
+                    P parameters = getParameters();
                     AUCRange currentRange = null;
 
                     double step = (end - start) / 200;
@@ -234,7 +234,7 @@ public abstract class DefaultCurveFit implements CurveFit
         }
     }
 
-    private double findRoot(double x1, double x2, double y1, double y2, CurveFit.Parameters parameters, int maxRecursionDepth, double error)
+    private double findRoot(double x1, double x2, double y1, double y2, P parameters, int maxRecursionDepth, double error)
     {
         double mid = x1 + (x2 - x1) / 2;
         double y = fitCurve(mid, parameters);
@@ -259,7 +259,7 @@ public abstract class DefaultCurveFit implements CurveFit
     private double integrate(double a, double b, double epsilon, int maxRecursionDepth)
     {
         try {
-            Parameters parameters = getParameters();
+            P parameters = getParameters();
 
             double c = (a + b)/2;
             double h = hasXLogScale() ? Math.log10(b) - Math.log10(a) : (b-a);
@@ -277,7 +277,7 @@ public abstract class DefaultCurveFit implements CurveFit
     }
 
     private double _integrate(double a, double b, double epsilon, double s,
-                              double fa, double fb, double fc, int bottom, Parameters parameters)
+                              double fa, double fb, double fc, int bottom, P parameters)
     {
         double c = (a + b)/2;
         double h = hasXLogScale() ? Math.log10(b) - Math.log10(a) : (b-a);
@@ -302,7 +302,7 @@ public abstract class DefaultCurveFit implements CurveFit
         return calculateFitError(getParameters());
     }
 
-    protected double calculateFitError(Parameters parameters)
+    protected double calculateFitError(P parameters)
     {
         double deviationValue = 0;
         for (DoublePoint point : getData())
