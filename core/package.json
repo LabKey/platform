@@ -90,7 +90,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.1.1",
-    "@labkey/components": "0.94.1-fb-ErrorPage-7767.0",
+    "@labkey/components": "0.97.0",
     "@labkey/eslint-config-react": "0.0.8",
     "@labkey/themes": "1.0.0"
   },
