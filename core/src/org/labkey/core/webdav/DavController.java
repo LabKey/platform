@@ -476,7 +476,7 @@ public class DavController extends SpringActionController
                         try
                         {
                             ExceptionUtil.renderErrorView(getViewContext(), new PageConfig(), ErrorRenderer.ErrorType.notFound, status.code, message, null, false, false );
-                            return WebdavStatus.SC_BAD_REQUEST;
+                            return WebdavStatus.fromCode(status.code);
                         }
                         catch (Exception e)
                         {

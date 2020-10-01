@@ -834,6 +834,10 @@ public class ExceptionUtil
         }
         else
         {
+            response.setContentType("text/html");
+            response.setStatus(responseStatus);
+            for (Map.Entry<String, String> entry : headers.entrySet())
+                response.addHeader(entry.getKey(), entry.getValue());
             renderErrorPage(ex, responseStatus, message, request, response, pageConfig, errorType, user, log, startupFailure);
         }
 

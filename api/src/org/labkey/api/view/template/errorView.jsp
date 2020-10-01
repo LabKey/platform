@@ -38,7 +38,11 @@
 %>
 
 <script type="application/javascript">
-    // pulling in theme based css for the not found pages to still respect the site's theme
+    /*
+         This error page may be invoked without the themes having been loaded for this container.
+         We load the theme artifact for this container here to ensure the correct theme is loaded
+         as this cannot be resolved during "addClientDependencies()" for this view.
+     */
     LABKEY.requiresCss(<%=q("/core/css/" + PageFlowUtil.resolveThemeName(getContainer()) + ".css")%>);
 
     LABKEY.requiresScript('core/gen/errorHandler.js', function() {
