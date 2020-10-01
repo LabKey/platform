@@ -37,6 +37,14 @@ public interface SpecimenTransform
      */
     String getName();
 
+    /**
+     * Returns whether module containing transform is present for a container
+     */
+    boolean isValid(Container container);
+
+    /**
+     * Returns whether transform is toggled on to run for a container
+     */
     boolean isEnabled(Container container);
 
     /**

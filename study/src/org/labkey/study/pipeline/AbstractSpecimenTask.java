@@ -96,6 +96,17 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         doImport(inputFile, job, ctx, merge, syncParticipantVisit, new DefaultImportHelper());
     }
 
+    private static void doPostTransform(SpecimenTransform transformer, File inputFile, PipelineJob job) throws PipelineJobException
+    {
+        if (transformer.getFileType().isType(inputFile))
+        {
+            if (job != null)
+                job.setStatus("OPTIONAL POST TRANSFORMING STEP " + transformer.getName() + " DATA");
+            File specimenArchive = SpecimenBatch.ARCHIVE_FILE_TYPE.getFile(inputFile.getParentFile(), transformer.getFileType().getBaseName(inputFile));
+            transformer.postTransform(job, inputFile, specimenArchive);
+        }
+    }
+
     public static void doImport(@Nullable File inputFile, PipelineJob job, StudyImportContext ctx, boolean merge,
             boolean syncParticipantVisit, ImportHelper importHelper) throws PipelineJobException
     {
@@ -117,20 +128,22 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
             importer.process(specimenDir, merge, ctx, job, syncParticipantVisit);
 
             // perform any tasks after the transform and import has been completed
-            for (SpecimenTransform transformer : SpecimenService.get().getSpecimenTransforms(ctx.getContainer()))
+            String activeImporter = SpecimenService.get().getActiveSpecimenImporter(ctx.getContainer());
+            if (null != activeImporter)
             {
-                if (transformer.getFileType().isType(inputFile))
+                SpecimenTransform activeTransformer = SpecimenService.get().getSpecimenTransform(activeImporter);
+                if (activeTransformer.getFileType().isType(inputFile))
+                    doPostTransform(activeTransformer, inputFile, job);
+            }
+            else
+            {
+                for (SpecimenTransform transformer : SpecimenService.get().getSpecimenTransforms(ctx.getContainer()))
                 {
-                    String activeImporter = SpecimenService.get().getActiveSpecimenImporter(ctx.getContainer());
-                    if (null != activeImporter && !transformer.getName().equals(activeImporter))
+                    if (transformer.getFileType().isType(inputFile))
                     {
-                        throw new PipelineJobException(activeImporter + " is the active specimen importer in this Study. Cancelling " + transformer.getName() + " import.");
+                        doPostTransform(transformer, inputFile, job);
+                        break;
                     }
-                    if (job != null)
-                        job.setStatus("OPTIONAL POST TRANSFORMING STEP " + transformer.getName() + " DATA");
-                    File specimenArchive = SpecimenBatch.ARCHIVE_FILE_TYPE.getFile(inputFile.getParentFile(), transformer.getFileType().getBaseName(inputFile));
-                    transformer.postTransform(job, inputFile, specimenArchive);
-                    break;
                 }
             }
         }

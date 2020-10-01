@@ -28,8 +28,6 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
-<%@ page import="org.labkey.api.study.SpecimenService" %>
-<%@ page import="org.labkey.api.study.SpecimenTransform" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyManagementOption" %>
 <%@ page import="org.labkey.api.study.StudyReloadSource" %>
@@ -344,7 +342,6 @@
             ActionURL specimenEventUrl = null;
             ActionURL vialUrl = null;
             ActionURL specimenUrl = null;
-            ActionURL specimenImportUrl = null;
 
             if (domainEvent != null)
             {
@@ -363,12 +360,6 @@
                 specimenUrl = domainSpecimen.getDomainKind().urlEditDefinition(domainSpecimen, getViewContext())
                     .addReturnURL(getViewContext().getActionURL());
             }
-
-            if (true) // perhaps need to
-            {
-
-            }
-
 %>
             <labkey:panel title="Specimen Repository Settings">
                 <table class="lk-fields-table">

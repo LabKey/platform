@@ -320,6 +320,16 @@ public class SpecimenServiceImpl implements SpecimenService
     public String getActiveSpecimenImporter(@NotNull Container container)
     {
         PropertyManager.PropertyMap props = PropertyManager.getProperties(container, "enabledSpecimenImporter");
+        String activeTransform = props.get("active");
+        if (null == activeTransform)
+            return null;
+
+        // Module with active transform has been disabled in container
+        Collection<SpecimenTransform> transforms = getSpecimenTransforms(container);
+        boolean noTransformsActive = transforms.stream().allMatch(transform -> !activeTransform.equals(transform.getName()));
+
+        if (noTransformsActive)
+            return null;
         return props.get("active");
     }
 
@@ -361,7 +371,7 @@ public class SpecimenServiceImpl implements SpecimenService
 
         for (SpecimenTransform transform : _specimenTransformMap.values())
         {
-            if (transform.isEnabled(container))
+            if (transform.isValid(container))
                 transforms.add(transform);
         }
         return transforms;

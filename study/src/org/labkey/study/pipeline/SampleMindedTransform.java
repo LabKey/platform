@@ -21,6 +21,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.security.User;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
@@ -42,9 +43,15 @@ public class SampleMindedTransform implements SpecimenTransform
     }
 
     @Override
-    public boolean isEnabled(Container container)
+    public boolean isValid(Container container)
     {
         return container.getActiveModules().contains(ModuleLoader.getInstance().getModule(StudyModule.class));
+    }
+
+    @Override
+    public boolean isEnabled(Container container)
+    {
+        return true;
     }
 
     @Override

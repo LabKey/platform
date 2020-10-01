@@ -97,7 +97,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     }
 
 
-    public ViewContext(ViewBackgroundInfo copyFrom) //Flag
+    public ViewContext(ViewBackgroundInfo copyFrom)
     {
         _url = copyFrom.getURL();
         _user = copyFrom.getUser();

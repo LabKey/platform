@@ -10,22 +10,13 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.study.SpecimenTransform" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="org.labkey.api.data.PropertyManager" %>
 
 <%@ page import="com.google.common.collect.Iterables" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%!
-    @Override
-    public void addClientDependencies(ClientDependencies dependencies)
-    {
-        // Don't think we need this
-    }
-%>
 
 <%
     Collection<SpecimenTransform> specimenTransforms = SpecimenService.get().getSpecimenTransforms(getContainer());
