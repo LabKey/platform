@@ -789,13 +789,8 @@ public class DavController extends SpringActionController
                     SearchService ss = SearchService.get();
                     if (null != ss)
                         ss.notFound((URLHelper)getRequest().getAttribute(ViewServlet.ORIGINAL_URL_URLHELPER));
-
-                    getResponse().sendError(dex.getStatus(), dex);
                 }
-                else
-                {
-                    getResponse().sendError(dex.getStatus(), dex.getMessage());
-                }
+                getResponse().sendError(dex.getStatus(), dex.getMessage());
 
                 if (dex.getStatus() != null && dex.getStatus().code == HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
                 {
