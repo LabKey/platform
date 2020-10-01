@@ -1,6 +1,7 @@
 package org.labkey.api.ontology;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnRenderProperties;
@@ -8,6 +9,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.MutableColumnRenderProperties;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.data.xml.ColumnType;
 
@@ -47,6 +49,10 @@ public interface OntologyService
     void parseXml(ColumnType xmlCol, MutableColumnRenderProperties col);
 
     void writeXml(ColumnRenderProperties col, ColumnType colXml);
+
+    void parseXml(PropertyDescriptorType xmlProp, DomainProperty domainProp);
+
+    void writeXml(DomainProperty domainProp, PropertyDescriptorType xProp);
 
     interface ConceptInfo
     {

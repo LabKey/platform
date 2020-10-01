@@ -60,6 +60,7 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.DateUtil;
@@ -721,8 +722,9 @@ public class XarExporter
         if (domainProp.getRangeURI().equals("http://www.w3.org/2001/XMLSchema#string"))
             xProp.setScale(domainProp.getScale());
 
-        if (null != domainProp.getPrincipalConceptCode())
-            xProp.setPrincipalConceptCode(domainProp.getPrincipalConceptCode());
+        OntologyService os = OntologyService.get();
+        if (null != os)
+            os.writeXml(domainProp, xProp);
 
         ConditionalFormat.convertToXML(domainProp.getConditionalFormats(), xProp);
 
