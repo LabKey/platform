@@ -1,6 +1,8 @@
 import React from 'react';
 import { mount, shallow } from 'enzyme';
 
+import { getServerContext } from '@labkey/api';
+
 import { ErrorHandler } from './ErrorHandler';
 import { ErrorDetails, ErrorType } from './model';
 
@@ -46,6 +48,12 @@ describe('ErrorHandler', () => {
             errorType: ErrorType.permission,
             message: 'This is a permission exception',
         };
+
+        const realUser = 'realUser';
+        const impersonatedUser = 'impersonatedUser';
+        getServerContext().impersonatingUser = { displayName: impersonatedUser };
+        getServerContext().user = { displayName: realUser, isSignedIn: true };
+
         const subheading = 'You do not have the permissions required to access this page.';
         const wrapper = shallow(<ErrorHandler context={{ errorDetails }} />);
         expect(wrapper.find('.labkey-error-subheading').text().includes(subheading)).toBeTruthy();
@@ -54,6 +62,8 @@ describe('ErrorHandler', () => {
         wrapper.setState({ showDetails: true });
         const question = wrapper.find('.error-details-container');
         expect(question.text().startsWith('What is a permission error?')).toBeTruthy();
+        expect(question.text().includes('You are currently logged in as: ' + impersonatedUser)).toBeTruthy();
+        expect(question.text().includes('You are currently impersonating: ' + realUser)).toBeTruthy();
 
         wrapper.unmount();
     });
