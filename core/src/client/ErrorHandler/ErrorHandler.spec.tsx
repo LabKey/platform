@@ -28,7 +28,9 @@ describe('ErrorHandler', () => {
             errorType: ErrorType.configuration,
             message: 'This is a configuration exception',
         };
+        const subheading = 'The requested page cannot be found.';
         const wrapper = mount(<ErrorHandler context={{ errorDetails }} />);
+        expect(wrapper.find('.labkey-error-subheading').text().includes(subheading)).toBeTruthy();
         expect(wrapper.find('.error-details-container')).toHaveLength(0);
 
         wrapper.setState({ showDetails: true });
@@ -44,7 +46,9 @@ describe('ErrorHandler', () => {
             errorType: ErrorType.permission,
             message: 'This is a permission exception',
         };
+        const subheading = 'You do not have the permissions required to access this page.';
         const wrapper = shallow(<ErrorHandler context={{ errorDetails }} />);
+        expect(wrapper.find('.labkey-error-subheading').text().includes(subheading)).toBeTruthy();
         expect(wrapper.find('.error-details-container')).toHaveLength(0);
 
         wrapper.setState({ showDetails: true });
@@ -64,6 +68,7 @@ describe('ErrorHandler', () => {
             stackTrace: expectedStackTrace,
         };
         const wrapper = shallow(<ErrorHandler context={{ errorDetails }} />);
+        expect(wrapper.find('.labkey-error-subheading').text().includes(errorDetails.message)).toBeTruthy();
         expect(wrapper.find('.error-details-container')).toHaveLength(0);
 
         wrapper.setState({ showDetails: true });
