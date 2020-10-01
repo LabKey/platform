@@ -46,7 +46,7 @@ const NOTFOUND_INSTRUCTION = (errorCode?: string) => (
             <div className="labkey-error-instruction">
                 If you would like to file a{' '}
                 <a
-                    href="https://www.labkey.org/Support%20Tickets/wiki-edit.view?"
+                    href="https://www.labkey.org/project/home/Support/begin.view?"
                     rel="noopener noreferrer"
                     target="_blank"
                 >

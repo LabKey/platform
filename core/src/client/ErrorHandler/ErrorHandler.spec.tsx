@@ -12,11 +12,13 @@ describe('ErrorHandler', () => {
             message: 'This is a not found exception',
         };
         const wrapper = mount(<ErrorHandler context={{ errorDetails }} />);
+        expect(wrapper.find('.labkey-error-subheading').text().includes(errorDetails.message)).toBeTruthy();
         expect(wrapper.find('.error-details-container')).toHaveLength(0);
 
         wrapper.setState({ showDetails: true });
         const question = wrapper.find('.error-details-container');
         expect(question.text().startsWith('What went wrong?')).toBeTruthy();
+        expect(question.text().includes('Incorrect URL:')).toBeTruthy();
 
         wrapper.unmount();
     });
@@ -32,6 +34,7 @@ describe('ErrorHandler', () => {
         wrapper.setState({ showDetails: true });
         const question = wrapper.find('.error-details-container');
         expect(question.text().startsWith('What went wrong?')).toBeTruthy();
+        expect(question.text().includes('Server Configuration Errors')).toBeTruthy();
 
         wrapper.unmount();
     });

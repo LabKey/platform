@@ -16,14 +16,10 @@ interface ErrorHandlerProps {
 
 interface ErrorHandlerState {
     showDetails: boolean;
-    viewDetailsBtnText: string;
 }
 
 export class ErrorHandler extends PureComponent<ErrorHandlerProps, ErrorHandlerState> {
-    private _viewDetails = 'View Details';
-    private _hideDetails = 'Hide Details';
-
-    state: Readonly<ErrorHandlerState> = { showDetails: false, viewDetailsBtnText: this._viewDetails };
+    state: Readonly<ErrorHandlerState> = { showDetails: false };
 
     onBackClick = (): void => {
         // Back button - takes you back to the previous page if available
@@ -37,15 +33,14 @@ export class ErrorHandler extends PureComponent<ErrorHandlerProps, ErrorHandlerS
     };
 
     onViewDetailsClick = (): void => {
-        const { showDetails } = this.state;
-        const viewDetailsBtnText = !showDetails ? this._hideDetails : this._viewDetails;
-
-        this.setState(state => ({ showDetails: !state.showDetails, viewDetailsBtnText }));
+        this.setState(state => ({ showDetails: !state.showDetails }));
     };
 
     render() {
         const { errorDetails } = this.props.context;
-        const { showDetails, viewDetailsBtnText } = this.state;
+        const { showDetails } = this.state;
+
+        const viewDetailsBtnText = showDetails ? 'Hide Details' : 'View Details';
 
         return (
             <>
