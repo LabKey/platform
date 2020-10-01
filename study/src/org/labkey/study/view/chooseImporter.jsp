@@ -54,7 +54,7 @@
                 <table class="labkey-data-region-legacy labkey-show-borders">
                     <tr>
                         <td class="labkey-column-header">Name</td>
-                        <td class="labkey-column-header">Enabled</td>
+                        <td class="labkey-column-header">Active</td>
                         <td class="labkey-column-header"></td>
                     </tr>
 
