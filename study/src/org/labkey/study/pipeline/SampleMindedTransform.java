@@ -49,7 +49,7 @@ public class SampleMindedTransform implements SpecimenTransform
     }
 
     @Override
-    public boolean isEnabled(Container container)
+    public boolean isActive(Container container)
     {
         return true;
     }

@@ -77,7 +77,6 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -360,6 +359,7 @@
                 specimenUrl = domainSpecimen.getDomainKind().urlEditDefinition(domainSpecimen, getViewContext())
                     .addReturnURL(getViewContext().getActionURL());
             }
+
 %>
             <labkey:panel title="Specimen Repository Settings">
                 <table class="lk-fields-table">
@@ -397,9 +397,6 @@
                         <td class="lk-study-prop-label">Specimen Import</td>
                         <td class="lk-study-prop-desc">Choose and configure a specimen import.</td>
                         <td><%=link("Configure specimen import", ChooseImporterAction.class)%></td>
-                            <%--                                <td class="lk-study-prop-label">External Specimen Repository</td>--%>
-                            <%--                                <td class="lk-study-prop-desc">Configure settings for a <%=h(transform.getName())%> repository.</td>--%>
-                            <%--                                <td><%=link("Configure " + transform.getName(), manageAction)%></td>--%>
                     </tr>
                 </table>
             </labkey:panel>

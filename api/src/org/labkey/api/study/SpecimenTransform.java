@@ -43,9 +43,9 @@ public interface SpecimenTransform
     boolean isValid(Container container);
 
     /**
-     * Returns whether transform is toggled on to run for a container
+     * Returns whether transform is active for a container
      */
-    boolean isEnabled(Container container);
+    boolean isActive(Container container);
 
     /**
      * Returns the file type that this transform can accept

@@ -4,7 +4,6 @@
      * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
      */
 %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.util.Button" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -73,8 +72,6 @@
                                         <input
                                             type="radio"
                                             name="activeTransform"
-<%--                                               would using this (below) be good form?--%>
-<%--                                               value="<%=StudyController.EnabledSpecimenImportForm.ActiveTransformEnum.FreezerPro%>"--%>
                                             value="<%=transformName%>"
                                             <%=checked(transformName.toString().equals(selected))%>
                                         >
@@ -111,10 +108,6 @@
         </p>
         <br/>
 
-<%--    I go back of fourth on which looks better, panel or no --%>
-<%--        <labkey:panel id="overview" className="lk-sg-section">--%>
-<%--            <h4 class="labkey-page-section-header">Configure Specimen Import</h4>--%>
-
         <table class="labkey-data-region-legacy labkey-show-borders">
             <tr class="<%=getShadeRowClass(rowNumber++)%>">
                 <td class="lk-study-prop-label"><%=h(transform.getName())%></td>
@@ -128,7 +121,6 @@
                 .href(cancelLink)
                 .build()
         %>
-<%--        </labkey:panel>--%>
 
     <% } else { %>
         <div class="alert alert-info">

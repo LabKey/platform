@@ -239,7 +239,7 @@ public class SystemMaintenance
          */
         String getName();
 
-        /**d
+        /**
          * Perform the maintenance. Logger provides access to the pipeline log, see #28464.
          *
          * @param log Logger for maintenance tasks to use

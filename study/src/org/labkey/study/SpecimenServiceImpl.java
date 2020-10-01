@@ -324,7 +324,7 @@ public class SpecimenServiceImpl implements SpecimenService
         if (null == activeTransform)
             return null;
 
-        // Module with active transform has been disabled in container
+        // In case module with active transform has been disabled in container
         Collection<SpecimenTransform> transforms = getSpecimenTransforms(container);
         boolean noTransformsActive = transforms.stream().allMatch(transform -> !activeTransform.equals(transform.getName()));
 
