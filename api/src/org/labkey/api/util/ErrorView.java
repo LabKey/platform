@@ -4,7 +4,7 @@ import org.labkey.api.view.JspView;
 
 public class ErrorView extends JspView<ErrorRenderer>
 {
-    public static String ERROR_PAGE_TITLE = "Oops! Error";
+    public static String ERROR_PAGE_TITLE = "Error Page";
 
     public ErrorView(ErrorRenderer renderer)
     {

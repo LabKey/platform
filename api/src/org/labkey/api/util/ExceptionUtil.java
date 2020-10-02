@@ -883,16 +883,10 @@ public class ExceptionUtil
         try
         {
             renderer.setErrorType(errorType);
+
             if (HttpView.hasCurrentView())
             {
                 errorView = pageConfig.getTemplate().getTemplate(context, new ErrorView(renderer), pageConfig);
-                pageConfig.setTitle(ErrorView.ERROR_PAGE_TITLE);
-
-                if (null == errorView)
-                {
-                    log.error("Failed to create errorView in response to exception", ex);
-                    return;
-                }
             }
             else
             {
@@ -900,8 +894,7 @@ public class ExceptionUtil
                 errorView = PageConfig.Template.Body.getTemplate(new ViewContext(request, response, new ActionURL(ActionURL.getBaseServerURL())), new ErrorView(renderer), pageConfig);
             }
 
-            pageConfig.addClientDependencies(errorView.getClientDependencies());
-            errorView.getView().render(errorView.getModel(), request, response);
+            addDependenciesAndRender(responseStatus, pageConfig, errorView, ex, request, response);
         }
         catch (Exception e)
         {
@@ -915,8 +908,7 @@ public class ExceptionUtil
             try
             {
                 errorView = PageConfig.Template.App.getTemplate(context, new ErrorView(renderer), pageConfig);
-                pageConfig.addClientDependencies(errorView.getClientDependencies());
-                errorView.getView().render(errorView.getModel(), request, response);
+                addDependenciesAndRender(responseStatus, pageConfig, errorView, ex, request, response);
 
             }
             catch (Exception exc)
@@ -928,18 +920,27 @@ public class ExceptionUtil
         }
     }
 
-
     public static void renderErrorView(ViewContext context, PageConfig pageConfig, ErrorRenderer.ErrorType errorType, int responseStatus, String message, @Nullable Throwable ex, boolean isPart, boolean isStartupFailure) throws Exception
     {
         ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(responseStatus, message, ex, context.getRequest(), isPart, isStartupFailure);
         renderer.setErrorType(errorType);
-        pageConfig.setTitle(ErrorView.ERROR_PAGE_TITLE);
         HttpView<?> errorView = PageConfig.Template.App.getTemplate(context, new ErrorView(renderer), pageConfig);
         if (null != errorView)
         {
-            pageConfig.addClientDependencies(errorView.getClientDependencies());
-            errorView.render(context.getRequest(), context.getResponse());
+            addDependenciesAndRender(responseStatus, pageConfig, errorView, ex, context.getRequest(), context.getResponse());
         }
+    }
+
+    private static void addDependenciesAndRender(int responseStatus, PageConfig pageConfig, HttpView<?> errorView, Throwable ex, HttpServletRequest request, HttpServletResponse response) throws Exception
+    {
+        if (null == errorView)
+        {
+            LOG.error("Failed to create errorView in response to exception", ex);
+            return;
+        }
+        pageConfig.addClientDependencies(errorView.getClientDependencies());
+        pageConfig.setTitle(responseStatus + ": " + ErrorView.ERROR_PAGE_TITLE, false);
+        errorView.getView().render(errorView.getModel(), request, response);
     }
 
 
