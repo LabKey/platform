@@ -899,7 +899,7 @@ public class ExceptionUtil
         catch (Exception e)
         {
             // config exceptions that occur before jsps have been initialized
-            if (ex instanceof ConfigurationException && e instanceof NullPointerException)
+            if (ex instanceof ConfigurationException && null != ModuleLoader.getInstance().getStartupFailure())
             {
                 throw new ConfigurationException(ex.getMessage());
             }
