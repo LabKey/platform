@@ -6,7 +6,11 @@
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "types": [] // don't implicitly include any @types, only those included via import
+    "types": [], // don't implicitly include any @types, only those included via import
+    "baseUrl": ".",
+    "paths": {
+      "@labkey/components": ["../../../../labkey-ui-components/packages/components"]
+    }
   }
 }
 
