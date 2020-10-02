@@ -9,6 +9,7 @@
     "types": [], // don't implicitly include any @types, only those included via import
     "baseUrl": ".",
     "paths": {
+      "immutable": ["../../../../labkey-ui-components/packages/components/node_modules/immutable"],
       "@labkey/components": ["../../../../labkey-ui-components/packages/components"]
     }
   }
