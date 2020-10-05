@@ -5,7 +5,7 @@
     "setup": "npm ci",
     "build": "npm run build-dev",
     "build-dev": "npm run copy-distributions && cross-env NODE_ENV=development LK_MODULE=core webpack --config ../webpack/dev.config.js --progress --profile --colors",
-    "build-prod": "npm run copy-distributions && cross-env NODE_ENV=development LK_MODULE=core webpack --config ../webpack/prod.config.js --progress --profile --colors",
+    "build-prod": "npm run copy-distributions && cross-env NODE_ENV=production LK_MODULE=core webpack --config ../webpack/prod.config.js --progress --profile --colors",
     "clean": "rimraf resources/web/core/gen && rimraf resources/web/core/css && rimraf resources/web/clientapi",
     "copy-distributions": "npm run clean && node copy-distributions.js",
     "start": "cross-env NODE_ENV=development LK_MODULE=core webpack-dev-server --config ../webpack/watch.config.js",
