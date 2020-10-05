@@ -15,9 +15,11 @@
  */
 package org.labkey.api.data.statistics;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 
 import java.awt.geom.Arc2D;
+import java.util.Arrays;
 import java.util.Collection;
 
 /**
@@ -64,24 +66,16 @@ public interface StatsService
             return _label;
         }
 
+        @Nullable
         public static CurveFitType fromLabel(String label)
         {
-            for (CurveFitType type : values())
-            {
-                if (type.getLabel().equals(label))
-                    return type;
-            }
-            return null;
+            return Arrays.stream(values()).filter(type -> type.getLabel().equals(label)).findFirst().orElse(null);
         }
 
+        @Nullable
         public static CurveFitType fromColSuffix(String suffix)
         {
-            for (CurveFitType type : values())
-            {
-                if (type.getColSuffix().equals(suffix))
-                    return type;
-            }
-            return null;
+            return Arrays.stream(values()).filter(type -> type.getColSuffix().equals(suffix)).findFirst().orElse(null);
         }
     }
 

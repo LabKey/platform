@@ -71,6 +71,12 @@ public abstract class DefaultCurveFit<P extends CurveFit.Parameters> implements 
         return _parameters;
     }
 
+    @Override
+    public void setParameters(P parameters)
+    {
+        _parameters = parameters;
+    }
+
     protected boolean hasXLogScale()
     {
         return _hasXLogScale;

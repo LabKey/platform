@@ -130,13 +130,21 @@ public class RunDetailsHeaderView extends AssayHeaderView
         NavTree menu = new NavTree("Curve Type");
         for (StatsService.CurveFitType type : StatsService.CurveFitType.values())
         {
-            ActionURL changeCurveURL = getViewContext().cloneActionURL();
-            changeCurveURL.replaceParameter("fitType", type.name());
+            // filter by allowed NAb types, need a better way to handle this, maybe introduce
+            // something at the assay provider level
+            if (type == StatsService.CurveFitType.FIVE_PARAMETER ||
+                    type == StatsService.CurveFitType.FOUR_PARAMETER ||
+                    type == StatsService.CurveFitType.POLYNOMIAL ||
+                    type == StatsService.CurveFitType.NONE)
+            {
+                ActionURL changeCurveURL = getViewContext().cloneActionURL();
+                changeCurveURL.replaceParameter("fitType", type.name());
 
-            NavTree item = new NavTree(type.getLabel(), changeCurveURL);
-            item.setSelected(type.name().equals(currentFit));
+                NavTree item = new NavTree(type.getLabel(), changeCurveURL);
+                item.setSelected(type.name().equals(currentFit));
 
-            menu.addChild(item);
+                menu.addChild(item);
+            }
         }
 
         return menu;

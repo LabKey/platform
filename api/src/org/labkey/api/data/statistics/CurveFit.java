@@ -51,6 +51,8 @@ public interface CurveFit<P extends CurveFit.Parameters>
      */
     P getParameters() throws FitFailedException;
 
+    void setParameters(P parameters);
+
     /**
      * Sets whether the curve is assumed to be decreasing by default.  It's used as an optimization during 4&5
      * parameter curve fitting and used only if the data points are too chaotic to provide a reasonable guess.
