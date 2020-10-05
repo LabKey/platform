@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -109,19 +110,19 @@ public class ContainerFilterQueryTest extends BaseWebDriverTest
     {
         final String sql = "SELECT Containers.Name FROM Containers[ContainerFilter='CurrentAndSubfolders']";
         String queryName = "testCurrentAndSubfoldersAnnotation";
-        List<String> expectedFolders = List.of(getProjectName(), FOLDER_NAME);
+        List<String> expectedFolders = List.of(getProjectName(), FOLDER_NAME).stream().sorted().collect(Collectors.toList());
 
         DataRegionTable table = createQuery(getProjectName(), queryName, "core", sql);
-        List<String> containerNames = table.getColumnDataAsText("Name");
+        List<String> containerNames = table.getColumnDataAsText("Name").stream().sorted().collect(Collectors.toList());
         assertEquals("Wrong containers for 'CurrentAndSubfolders' container filter.",
             expectedFolders, containerNames);
 
         table.setContainerFilter(DataRegionTable.ContainerFilterType.CURRENT_FOLDER);
-        containerNames = table.getColumnDataAsText("Name");
+        containerNames = table.getColumnDataAsText("Name").stream().sorted().collect(Collectors.toList());
         assertEquals("ContainerFilter annotation should ignore data region container filter.", expectedFolders, containerNames);
 
         table.setContainerFilter(DataRegionTable.ContainerFilterType.ALL_FOLDERS);
-        containerNames = table.getColumnDataAsText("Name");
+        containerNames = table.getColumnDataAsText("Name").stream().sorted().collect(Collectors.toList());
         assertEquals("ContainerFilter annotation should ignore data region container filter.", expectedFolders, containerNames);
     }
 
@@ -201,11 +202,11 @@ public class ContainerFilterQueryTest extends BaseWebDriverTest
         list1.createList(connection, "Key");
         list1.insertRows(connection);
 
-        new SchemaHelper(this).createLinkedSchema(getProjectName(), null, linkedSchemaName, getFolderPath(), null, "lists", null, null);
+        new SchemaHelper(this).createLinkedSchema(getProjectName(), linkedSchemaName, getFolderPath(), null, "lists", null, null);
 
         DataRegionTable table = createQuery(getProjectName(), queryName, "linkedLizts", sql);
-        List<String> names = table.getColumnDataAsText("Name");
-        assertEquals("Wrong data in container filtered linked schema.", List.of("Geoffrey", "William", "James"), names);
+        List<String> names = table.getColumnDataAsText("Name").stream().sorted().collect(Collectors.toList());
+        assertEquals("Wrong data in container filtered linked schema.", List.of("Geoffrey", "James", "William"), names);
     }
 
     @NotNull
