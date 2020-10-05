@@ -41,6 +41,7 @@ public interface StatsService
     {
         FOUR_PARAMETER("Four Parameter", "4pl"),
         FIVE_PARAMETER("Five Parameter", "5pl"),
+        FOUR_PARAMETER_SIMPLEX("4 Parameter", "4param"),
         POLYNOMIAL("Polynomial", "poly"),
         LINEAR("Linear", "linear"),
         NONE("None", "none");

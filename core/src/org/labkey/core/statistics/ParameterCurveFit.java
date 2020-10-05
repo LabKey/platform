@@ -175,7 +175,7 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
         }
     }
 
-    private SigmoidalParameters calculateFitParameters(double minValue, double maxValue)
+    protected SigmoidalParameters calculateFitParameters(double minValue, double maxValue)
     {
         SigmoidalParameters bestFit = null;
         SigmoidalParameters parameters = new SigmoidalParameters();

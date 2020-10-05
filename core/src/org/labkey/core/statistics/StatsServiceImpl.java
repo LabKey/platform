@@ -59,6 +59,8 @@ public class StatsServiceImpl implements StatsService
     {
         switch (type)
         {
+            case FOUR_PARAMETER_SIMPLEX:
+                return new FourParameterSimplex(data);
             case FOUR_PARAMETER:
             case FIVE_PARAMETER:
                 return new ParameterCurveFit(data, type);
