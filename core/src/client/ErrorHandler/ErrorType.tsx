@@ -13,20 +13,23 @@ const DETAILS_SUB_INSTRUCTION = (
     <>
         <p className="labkey-error-details labkey-error-details-question">What else can I do?</p>
         <p className="labkey-error-details">
-            If you are subscribed to LabKey, then reach out to your account manager for immediate help. If you are using
-            the community edition, your support ticket will be resolved within the next 2 to 3 weeks.
+            Search through the {helpLinkNode('default', 'LabKey support documentation')} and previous forum questions to
+            troubleshoot your issue.
         </p>
         <p className="labkey-error-details">
-            {helpLinkNode('default', 'LabKey support documentation')} is another immediate resource that is available to
-            all users. A search through the documentation or previous forum questions may also help troubleshoot your
-            issue.
+            If you are a <a href="https://labkey.com/products-services/labkey-server/#server-editions">premium user</a>{' '}
+            , contact your account manager for direct customer support. If you are using the community edition, feel
+            free to post on the{' '}
+            <a href="https://www.labkey.org/project/home/Support/begin.view?" rel="noopener noreferrer" target="_blank">
+                LabKey support forum.
+            </a>
         </p>
     </>
 );
 
+const NOTFOUND_HEADING = 'Oops! The requested page cannot be found.';
 const NOTFOUND_SUBHEADING = (errorMessage?: string) => (
     <>
-        {'The requested page cannot be found. '}
         {errorMessage !== undefined
             ? errorMessage.endsWith('.')
                 ? errorMessage
@@ -58,13 +61,13 @@ const NOTFOUND_INSTRUCTION = (errorCode?: string) => (
         )}
     </>
 );
-const NOTFOUND_DETAILS = (errorMessage?: string) => (
+const NOTFOUND_DETAILS = (errorDetails: ErrorDetails) => (
     <>
         <div className="labkey-error-details labkey-error-details-question">What went wrong?</div>
         <div className="error-page-br" />
 
         <p className="labkey-error-details">
-            {errorMessage !== undefined
+            {errorDetails.message !== undefined
                 ? 'Here are the most common errors:'
                 : 'Unfortunately, we are unable to specifically identify what went wrong. However, here are the most common\n' +
                   '            errors:'}
@@ -155,6 +158,7 @@ const PERMISSION_DETAILS = () => (
     </>
 );
 
+const CONFIGURATION_HEADING = 'Oops! A server configuration error has occurred.';
 const CONFIGURATION_SUBHEADING = (errorMessage?: string) => (
     <>
         {'The requested page cannot be found. '}
@@ -166,15 +170,15 @@ const CONFIGURATION_SUBHEADING = (errorMessage?: string) => (
     </>
 );
 const CONFIGURATION_INSTRUCTION = () => 'Please check your server configurations.';
-const CONFIGURATION_DETAILS = (errorMessage?: string) => (
+const CONFIGURATION_DETAILS = (errorDetails: ErrorDetails) => (
     <>
         <p className="labkey-error-details labkey-error-details-question">What went wrong?</p>
 
         <p className="labkey-error-details">
-            {errorMessage !== undefined
-                ? errorMessage.endsWith('.')
-                    ? errorMessage
-                    : errorMessage + '.'
+            {errorDetails.message !== undefined
+                ? errorDetails.message.endsWith('.')
+                    ? errorDetails.message
+                    : errorDetails.message + '.'
                 : 'Unfortunately, we are unable to specifically identify what went wrong.'}{' '}
             It seems that there might be some issues with your server configuration.
         </p>
@@ -183,8 +187,8 @@ const CONFIGURATION_DETAILS = (errorMessage?: string) => (
         <div className="labkey-error-details">
             <ul>
                 <li>
-                    <b>Server Configuration Errors (Tomcat Errors): </b>issues related to your machine, software
-                    version, or running dependencies. {helpLinkNode('troubleshootingAdmin', 'Read More >')}
+                    <b>Server Configuration Errors: </b>issues related to your machine, software version, or running
+                    dependencies. {helpLinkNode('troubleshootingAdmin', 'Read More >')}
                 </li>
             </ul>
             <div className="labkey-error-subdetails">
@@ -194,6 +198,7 @@ const CONFIGURATION_DETAILS = (errorMessage?: string) => (
         </div>
 
         {DETAILS_SUB_INSTRUCTION}
+        <pre>{errorDetails.stackTrace}</pre>
     </>
 );
 
@@ -208,19 +213,25 @@ const EXECUTION_SUB_HEADING = (errorMessage?: string) => (
 const EXECUTION_INSTRUCTION = (errorCode?: string) => (
     <>
         <div className="labkey-error-instruction">
-            Please report this bug to <a href="#"> LabKey Support </a> by copying and pasting both your unique reference
-            code and the full stack trace in the View Details section below.
+            Please report this bug to{' '}
+            <a href="https://www.labkey.org/project/home/Support/begin.view?" rel="noopener noreferrer" target="_blank">
+                {' '}
+                LabKey Support{' '}
+            </a>{' '}
+            by copying and pasting both your unique reference code and the full stack trace in the View Details section
+            below.
         </div>
         <div className="labkey-error-instruction">
             Your unique reference code is: <b>{errorCode}</b>
         </div>
     </>
 );
-const EXECUTION_DETAILS = (stackTrace?: string) => <pre>{stackTrace}</pre>;
+const EXECUTION_DETAILS = (errorDetails: ErrorDetails) => <pre>{errorDetails.stackTrace}</pre>;
 
 type ErrorTypeInfo = {
-    details: (errorMessage?: string) => ReactNode;
-    heading: (errorMessage?: string) => ReactNode;
+    details: (errorDetails?: ErrorDetails) => ReactNode;
+    heading: string;
+    subHeading: (errorMessage?: string) => ReactNode;
     imagePath: string;
     instruction: (errorCode?: string) => ReactNode;
 };
@@ -228,44 +239,53 @@ type ErrorTypeInfo = {
 const ERROR_TYPE_INFO: { [key in ErrorType]: ErrorTypeInfo } = {
     configuration: {
         details: CONFIGURATION_DETAILS,
-        heading: CONFIGURATION_SUBHEADING,
+        heading: CONFIGURATION_HEADING,
         imagePath: 'configuration_error.svg',
         instruction: CONFIGURATION_INSTRUCTION,
+        subHeading: CONFIGURATION_SUBHEADING,
     },
     execution: {
         details: EXECUTION_DETAILS,
-        heading: EXECUTION_SUB_HEADING,
+        heading: ERROR_HEADING,
         imagePath: 'code_error.svg',
         instruction: EXECUTION_INSTRUCTION,
+        subHeading: EXECUTION_SUB_HEADING,
     },
     notFound: {
         details: NOTFOUND_DETAILS,
-        heading: NOTFOUND_SUBHEADING,
+        heading: NOTFOUND_HEADING,
         imagePath: 'notFound_error.svg',
         instruction: NOTFOUND_INSTRUCTION,
+        subHeading: NOTFOUND_SUBHEADING,
     },
     permission: {
         details: PERMISSION_DETAILS,
-        heading: PERMISSION_SUBHEADING,
+        heading: ERROR_HEADING,
         imagePath: 'permission_error.svg',
         instruction: PERMISSION_INSTRUCTION,
+        subHeading: PERMISSION_SUBHEADING,
     },
 };
 
-export const getErrorHeading = () => <div className="labkey-error-heading">{ERROR_HEADING}</div>;
+export const getErrorHeading = (errorDetails: ErrorDetails): ReactNode => {
+    const info = ERROR_TYPE_INFO[errorDetails.errorType];
+    if (!info) return null;
+
+    return <div className="labkey-error-heading">{info.heading}</div>;
+};
 
 export const getImage = (errorDetails: ErrorDetails): ReactNode => {
     const info = ERROR_TYPE_INFO[errorDetails.errorType];
     if (!info) return null;
 
-    return <img alt="LabKey Error" src={imageURL('_images', info.imagePath)} className={'pull-right'}/>;
+    return <img alt="LabKey Error" src={imageURL('_images', info.imagePath)} className="pull-right" />;
 };
 
 export const getSubHeading = (errorDetails: ErrorDetails): ReactNode => {
     const info = ERROR_TYPE_INFO[errorDetails.errorType];
     if (!info) return null;
 
-    return <div className="labkey-error-subheading">{info.heading(errorDetails.message)}</div>;
+    return <div className="labkey-error-subheading">{info.subHeading(errorDetails.message)}</div>;
 };
 
 export const getInstruction = (errorDetails: ErrorDetails): ReactNode => {
@@ -280,17 +300,10 @@ export const getViewDetails = (errorDetails: ErrorDetails): ReactNode => {
     const info = ERROR_TYPE_INFO[errorType];
     if (!info) return null;
 
-    let details;
-    if (stackTrace && errorType === ErrorType.execution) {
-        details = info.details(stackTrace);
-    } else {
-        details = info.details(message);
-    }
-
     return (
         <div className="row">
             <div className="col-lg-1 col-md-1 hidden-xs hidden-sm" />
-            <div className="col-lg-10 col-md-10 col-sm-12 col-xs-12">{details}</div>
+            <div className="col-lg-10 col-md-10 col-sm-12 col-xs-12">{info.details(errorDetails)}</div>
             <div className="col-lg-1 col-md-1 hidden-xs hidden-sm" />
         </div>
     );

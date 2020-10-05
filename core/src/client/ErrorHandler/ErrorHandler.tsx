@@ -49,7 +49,7 @@ export class ErrorHandler extends PureComponent<ErrorHandlerProps, ErrorHandlerS
                         <div className="col-lg-1 col-md-1 hidden-xs hidden-sm" />
                         <div className="col-lg-7 col-md-6 col-sm-12 col-xs-12">
                             <div>
-                                {getErrorHeading()}
+                                {getErrorHeading(errorDetails)}
                                 {getSubHeading(errorDetails)}
                                 {getInstruction(errorDetails)}
                                 <button className="btn btn-primary error-backButton" onClick={this.onBackClick}>
