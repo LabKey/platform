@@ -17,9 +17,13 @@ const DETAILS_SUB_INSTRUCTION = (
             troubleshoot your issue.
         </p>
         <p className="labkey-error-details">
-            If you are a <a href="https://labkey.com/products-services/labkey-server/#server-editions">premium user</a>{' '}
-            , contact your account manager for direct customer support. If you are using the community edition, feel
-            free to post on the{' '}
+            If you are part of a{' '}
+            <a href="https://labkey.com/products-services/labkey-server/#server-editions" rel="noopener noreferrer" target="_blank">
+                {' '}
+                LabKey Server Premium Edition
+            </a>{' '}
+            subscription, please use your support portal or contact your account manager for assistance. If you are
+            using the free Community Edition, you may find help by posting on the{' '}
             <a href="https://www.labkey.org/project/home/Support/begin.view?" rel="noopener noreferrer" target="_blank">
                 LabKey support forum.
             </a>
