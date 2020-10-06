@@ -169,6 +169,18 @@ public class MiniProfilerController extends SpringActionController
         }
     }
 
+    // Invoked by test framework
+    @RequiresSiteAdmin
+    public class EnableTroubleshootingStacktracesAction extends MutatingApiAction<EnableForm>
+    {
+        @Override
+        public Object execute(EnableForm form, BindException errors)
+        {
+            MiniProfiler.setCollectTroubleshootingStackTraces(form.isEnabled());
+            return success(Collections.singletonMap("enabled", MiniProfiler.isCollectTroubleshootingStackTraces()));
+        }
+    }
+
     @JsonIgnoreProperties("apiVersion")
     public static class EnableForm
     {
