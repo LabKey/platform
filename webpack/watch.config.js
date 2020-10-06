@@ -70,7 +70,7 @@ module.exports = {
         alias: {
             // uncomment and adjust the relative path for your enlistment to enable hot reloading of the app when
             // new builds happen in @labkey/components
-            // '@labkey/components': path.resolve(__dirname, "../../../../../../labkey-ui-components/packages/components"),
+            // '@labkey/components': constants.labkeyUIComponentsPath,
 
             // This assures there is only one copy of react in the application
             react: path.resolve(__dirname, "../node_modules/react")
