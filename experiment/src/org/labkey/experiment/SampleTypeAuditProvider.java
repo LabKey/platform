@@ -97,6 +97,7 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
         private String _sourceLsid;
         private String _sampleTypeName;
         private String _insertUpdateChoice;
+        private Long _transactionId;
 
         public SampleTypeAuditEvent()
         {
@@ -138,6 +139,16 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
             _insertUpdateChoice = insertUpdateChoice;
         }
 
+        public Long getTransactionId()
+        {
+            return _transactionId;
+        }
+
+        public void setTransactionId(Long transactionId)
+        {
+            _transactionId = transactionId;
+        }
+
         @Override
         public Map<String, Object> getAuditLogMessageElements()
         {
@@ -145,6 +156,7 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
             elements.put("sourceLsid", getSourceLsid());
             elements.put("sampleSetName", getSampleTypeName());
             elements.put("insertUpdateChoice", getInsertUpdateChoice());
+            elements.put("transactionId", getTransactionId());
             elements.putAll(super.getAuditLogMessageElements());
             return elements;
         }
@@ -164,6 +176,7 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
             fields.add(createPropertyDescriptor(COLUMN_NAME_SOURCE_LSID, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_SAMPLE_TYPE_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_INSERT_UPDATE_CHOICE, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_ID, PropertyType.BIGINT));
             _fields = Collections.unmodifiableSet(fields);
         }
 

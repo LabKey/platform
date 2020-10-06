@@ -935,6 +935,9 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
     private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow, @Nullable QueryService.AuditAction action)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c.getId(), comment);
+        var tx = getExpSchema().getScope().getCurrentTransaction();
+        if (tx != null)
+            event.setTransactionId(tx.getAuditId());
 
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
@@ -985,6 +988,8 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
     private SampleTimelineAuditEvent createAuditRecord(Container container, String comment, ExpMaterial sample, Map<String, Object> metadata)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(container.getId(), comment);
+        if (getExpSchema().getScope().getCurrentTransaction() != null)
+            event.setTransactionId(getExpSchema().getScope().getCurrentTransaction().getAuditId());
         if (container.getProject() != null)
             event.setProjectId(container.getProject().getId());
         event.setSampleName(sample.getName());
