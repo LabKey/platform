@@ -93,6 +93,9 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     protected CrosstabMember _crosstabColumnMember;
 
     // OntologyService related annotations
+    protected String _sourceOntology = null;
+    protected String _conceptImportColumn = null;
+    protected String _conceptLabelColumn = null;
     protected String _principalConceptCode = null;
 
 
@@ -156,7 +159,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         to._rangeURI = _rangeURI;
         to._propertyType = _propertyType;
         to._defaultValueType = _defaultValueType;
+        to._sourceOntology = _sourceOntology;
         to._principalConceptCode = _principalConceptCode;
+        to._conceptImportColumn = _conceptImportColumn;
+        to._conceptLabelColumn = _conceptLabelColumn;
     }
 
     @Override
@@ -829,6 +835,42 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     {
         assert _checkLocked();
         _scale = scale;
+    }
+
+    @Override
+    public String getSourceOntology()
+    {
+        return _sourceOntology;
+    }
+
+    @Override
+    public void setSourceOntology(String sourceOntology)
+    {
+        _sourceOntology = sourceOntology;
+    }
+
+    @Override
+    public String getConceptImportColumn()
+    {
+        return _conceptImportColumn;
+    }
+
+    @Override
+    public void setConceptImportColumn(String conceptImportColumn)
+    {
+        _conceptImportColumn = conceptImportColumn;
+    }
+
+    @Override
+    public String getConceptLabelColumn()
+    {
+        return _conceptLabelColumn;
+    }
+
+    @Override
+    public void setConceptLabelColumn(String conceptLabelColumn)
+    {
+        _conceptLabelColumn = conceptLabelColumn;
     }
 
     @Override

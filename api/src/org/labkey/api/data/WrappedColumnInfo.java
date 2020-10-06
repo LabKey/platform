@@ -915,6 +915,24 @@ public class WrappedColumnInfo
                 }
             };
         }
+
+        @Override
+        public void setSourceOntology(String abbr)
+        {
+            throw new java.lang.UnsupportedOperationException();
+        }
+
+        @Override
+        public void setConceptImportColumn(String name)
+        {
+            throw new java.lang.UnsupportedOperationException();
+        }
+
+        @Override
+        public void setConceptLabelColumn(String name)
+        {
+            throw new java.lang.UnsupportedOperationException();
+        }
     }
 
 
