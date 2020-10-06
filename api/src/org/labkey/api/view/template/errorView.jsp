@@ -45,7 +45,7 @@
      */
     LABKEY.requiresCss(<%=q("/core/css/" + PageFlowUtil.resolveThemeName(getContainer()) + ".css")%>);
 
-    LABKEY.requiresScript('core/gen/errorHandler.js', function() {
+    LABKEY.requiresScript('core/gen/errorHandler', function() {
     // LABKEY.requiresScript('http://localhost:3001/errorHandler.js', function() {
 
         LABKEY.App.__app__.isDOMContentLoaded = true;
