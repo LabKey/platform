@@ -756,7 +756,7 @@ public class DomainImpl implements Domain
 
             if (propChanged)
             {
-                final Integer domainEventId = addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()));
+                final Long domainEventId = addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()));
                 propertyAuditInfo.forEach(auditInfo -> addPropertyAuditEvent(user, auditInfo.getProp(), auditInfo.getAction(), domainEventId, getName(), auditInfo.getDetails()));
             }
             else if (!isDomainNew)
@@ -791,7 +791,7 @@ public class DomainImpl implements Domain
         }
     }
 
-    private Integer addAuditEvent(@Nullable User user, String comment)
+    private Long addAuditEvent(@Nullable User user, String comment)
     {
         if (user != null)
         {
@@ -809,7 +809,7 @@ public class DomainImpl implements Domain
         return null;
     }
 
-    private void addPropertyAuditEvent(@Nullable User user, DomainProperty prop, String action, Integer domainEventId, String domainName, String comment)
+    private void addPropertyAuditEvent(@Nullable User user, DomainProperty prop, String action, Long domainEventId, String domainName, String comment)
     {
         DomainPropertyAuditProvider.DomainPropertyAuditEvent event =
                 new DomainPropertyAuditProvider.DomainPropertyAuditEvent(getContainer().getId(), prop.getPropertyURI(), prop.getName(),
