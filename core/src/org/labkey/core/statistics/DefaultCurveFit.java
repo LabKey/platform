@@ -15,6 +15,7 @@
  */
 package org.labkey.core.statistics;
 
+import org.json.JSONObject;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
@@ -75,6 +76,12 @@ public abstract class DefaultCurveFit<P extends CurveFit.Parameters> implements 
     public void setParameters(P parameters)
     {
         _parameters = parameters;
+    }
+
+    @Override
+    public void setParameters(JSONObject json)
+    {
+        throw new UnsupportedOperationException("This method is not implemented for this curve fit");
     }
 
     protected boolean hasXLogScale()

@@ -16,6 +16,7 @@
 package org.labkey.core.statistics;
 
 import Jama.Matrix;
+import org.json.JSONObject;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
@@ -63,6 +64,17 @@ public class PolynomialCurveFit extends DefaultCurveFit<PolynomialCurveFit.Polyn
             }
             return Collections.unmodifiableMap(params);
         }
+
+        public static PolynomialParameters fromJSON(JSONObject json)
+        {
+            double[] coefficients = new double[ORDER];
+
+            for (int i=0; i < ORDER; i++)
+            {
+                coefficients[i] = json.getDouble("beta" + i);
+            }
+            return new PolynomialParameters(coefficients);
+        }
     }
 
     public PolynomialCurveFit(DoublePoint[] data)
@@ -74,6 +86,12 @@ public class PolynomialCurveFit extends DefaultCurveFit<PolynomialCurveFit.Polyn
     public StatsService.CurveFitType getType()
     {
         return StatsService.CurveFitType.POLYNOMIAL;
+    }
+
+    @Override
+    public void setParameters(JSONObject json)
+    {
+        _parameters = PolynomialParameters.fromJSON(json);
     }
 
     /**
