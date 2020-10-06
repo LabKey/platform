@@ -29,11 +29,15 @@ import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParentFactory;
 import org.labkey.api.attachments.SpringAttachmentFile;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -95,6 +99,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
+import static org.labkey.api.audit.TransactionAuditProvider.DB_SEQUENCE_NAME;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment;
 
@@ -143,6 +148,19 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return result;
     }
 
+    public static TransactionAuditProvider.TransactionAuditEvent addTransactionAuditEvent(DbScope.Transaction transaction, Container container, User user, AuditBehaviorType auditBehaviorType, QueryService.AuditAction auditAction)
+    {
+        if (auditBehaviorType != null && auditBehaviorType != AuditBehaviorType.NONE)
+        {
+            long auditId = DbSequenceManager.get(container, DB_SEQUENCE_NAME).next();
+
+            TransactionAuditProvider.TransactionAuditEvent event = new TransactionAuditProvider.TransactionAuditEvent(container.getId(), auditAction, auditId);
+            transaction.addCommitTask(() -> AuditLogService.get().addEvent(user, event), DbScope.CommitTaskOption.POSTCOMMIT);
+            transaction.setAuditId(auditId);
+            return event;
+        }
+        return null;
+    }
 
     protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, InsertOption forImport, Map<Enum, Object> configParameters)
     {

@@ -405,6 +405,17 @@ public abstract class SasDialect extends SimpleSqlDialect
         {
             return false;
         }
+
+        @Override @Nullable
+        public Long getAuditId()
+        {
+            return null;
+        }
+
+        @Override
+        public void setAuditId(Long auditId)
+        {
+        }
     }
 
 

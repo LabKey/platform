@@ -38,6 +38,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
@@ -3570,7 +3571,7 @@ public class QueryController extends SpringActionController
 
     private enum CommandType
     {
-        insert(InsertPermission.class)
+        insert(InsertPermission.class, QueryService.AuditAction.INSERT)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3583,7 +3584,7 @@ public class QueryController extends SpringActionController
                 return qus.getRows(user, container, insertedRows);
             }
         },
-        insertWithKeys(InsertPermission.class)
+        insertWithKeys(InsertPermission.class, QueryService.AuditAction.INSERT)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3616,7 +3617,7 @@ public class QueryController extends SpringActionController
                 return results;
             }
         },
-        importRows(InsertPermission.class)
+        importRows(InsertPermission.class, QueryService.AuditAction.INSERT)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3630,7 +3631,7 @@ public class QueryController extends SpringActionController
                 return Collections.emptyList();
             }
         },
-        update(UpdatePermission.class)
+        update(UpdatePermission.class, QueryService.AuditAction.UPDATE)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3640,7 +3641,7 @@ public class QueryController extends SpringActionController
                 return qus.getRows(user, container, updatedRows);
             }
         },
-        updateChangingKeys(UpdatePermission.class)
+        updateChangingKeys(UpdatePermission.class, QueryService.AuditAction.UPDATE)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3671,7 +3672,7 @@ public class QueryController extends SpringActionController
                 return results;
             }
         },
-        delete(DeletePermission.class)
+        delete(DeletePermission.class, QueryService.AuditAction.DELETE)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3682,15 +3683,22 @@ public class QueryController extends SpringActionController
         };
 
         private final Class<? extends Permission> _permission;
+        private final QueryService.AuditAction _auditAction;
 
-        CommandType(Class<? extends Permission> permission)
+        CommandType(Class<? extends Permission> permission, QueryService.AuditAction auditAction)
         {
             _permission = permission;
+            _auditAction = auditAction;
         }
 
         public Class<? extends Permission> getPermission()
         {
             return _permission;
+        }
+
+        public QueryService.AuditAction getAuditAction()
+        {
+            return _auditAction;
         }
 
         public abstract List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3780,11 +3788,12 @@ public class QueryController extends SpringActionController
 
             Map<Enum, Object> configParameters = new HashMap<>();
             String auditBehavior = json.getString("auditBehavior");
+            AuditBehaviorType behaviorType = null;
             if (!StringUtils.isEmpty(auditBehavior))
             {
                 try
                 {
-                    AuditBehaviorType behaviorType = AuditBehaviorType.valueOf(auditBehavior);
+                    behaviorType = AuditBehaviorType.valueOf(auditBehavior);
                     configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
                     String auditComment = json.getString("auditUserComment");
                     if (!StringUtils.isEmpty(auditComment))
@@ -3814,8 +3823,12 @@ public class QueryController extends SpringActionController
 
             try (DbScope.Transaction transaction = transacted ? table.getSchema().getScope().ensureTransaction() : NO_OP_TRANSACTION)
             {
+                TransactionAuditProvider.TransactionAuditEvent event = AbstractQueryUpdateService.addTransactionAuditEvent(transaction, getContainer(), getUser(), behaviorType, commandType.getAuditAction());
+
                 List<Map<String, Object>> responseRows =
                         commandType.saveRows(qus, rowsToProcess, getUser(), getContainer(), configParameters, extraContext);
+                if (event != null)
+                    event.setRowCount(responseRows.size());
 
                 if (commandType != CommandType.importRows)
                     response.put("rows", responseRows);

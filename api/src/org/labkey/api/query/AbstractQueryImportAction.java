@@ -27,6 +27,7 @@ import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.FileAttachmentFile;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -71,6 +72,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.labkey.api.query.AbstractQueryUpdateService.addTransactionAuditEvent;
 
 
 /**
@@ -543,9 +546,13 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
             try (DbScope.Transaction transaction = _target.getSchema().getScope().ensureTransaction())
             {
+                TransactionAuditProvider.TransactionAuditEvent event = addTransactionAuditEvent(transaction, getContainer(), getUser(), auditBehaviorType, QueryService.AuditAction.INSERT);
                 int count = _updateService.loadRows(getUser(), getContainer(), dl, context, new HashMap<>());
                 if (errors.hasErrors())
                     return 0;
+                if (event != null)
+                    event.setRowCount(count);
+
                 transaction.commit();
                 return count;
             }
