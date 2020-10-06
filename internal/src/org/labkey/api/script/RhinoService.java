@@ -940,7 +940,7 @@ class SandboxContextFactory extends ContextFactory
     {
         SandboxContext ctx = (SandboxContext)cx;
         long currentTime = HeartBeat.currentTimeMillis();
-        final int timeout = 60;
+        final int timeout = 300;
         if (currentTime - ctx.startTime > timeout*1000)
             Context.reportError("Script execution exceeded " + timeout + " seconds.");
     }
