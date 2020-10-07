@@ -102,7 +102,8 @@ public abstract class BrowserEndpoint
     public void onClose(Session session, CloseReason closeReason)
     {
         LOG.debug("BrowserEndpoint.onClose()");
-        serverEndpoint.close();
+        if (null != serverEndpoint)
+            serverEndpoint.close();
     }
 
     @OnError
