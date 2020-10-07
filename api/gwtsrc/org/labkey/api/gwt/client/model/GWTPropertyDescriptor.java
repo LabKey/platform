@@ -72,6 +72,9 @@ public class GWTPropertyDescriptor implements IsSerializable
     private BooleanProperty isPreventReordering = new BooleanProperty();
     private BooleanProperty isDisableEditing = new BooleanProperty();
     private IntegerProperty scale = new IntegerProperty(4000);
+    private StringProperty sourceOntology = new StringProperty();
+    private StringProperty conceptImportColumn = new StringProperty();
+    private StringProperty conceptLabelColumn = new StringProperty();
     private StringProperty principalConceptCode = new StringProperty();
     private StringProperty redactedText = new StringProperty();
     private BooleanProperty isPrimaryKey = new BooleanProperty(false);
@@ -491,6 +494,36 @@ public class GWTPropertyDescriptor implements IsSerializable
 
     public void setPrincipalConceptCode(String code) { this.principalConceptCode.set(code); }
 
+    public String getSourceOntology()
+    {
+        return sourceOntology.getString();
+    }
+
+    public void setSourceOntology(String sourceOntology)
+    {
+        this.sourceOntology.set(sourceOntology);
+    }
+
+    public String getConceptImportColumn()
+    {
+        return conceptImportColumn.getString();
+    }
+
+    public void setConceptImportColumn(String conceptImportColumn)
+    {
+        this.conceptImportColumn.set(conceptImportColumn);
+    }
+
+    public String getConceptLabelColumn()
+    {
+        return conceptLabelColumn.getString();
+    }
+
+    public void setConceptLabelColumn(String conceptLabelColumn)
+    {
+        this.conceptLabelColumn.set(conceptLabelColumn);
+    }
+
     public String getRedactedText()
     {
         return redactedText.getString();
@@ -532,6 +565,13 @@ public class GWTPropertyDescriptor implements IsSerializable
         return getName() + " " + getLabel() + " " + getRangeURI() + " " + isRequired() + " " + getDescription();
     }
 
+    private boolean equals(String a, String b)
+    {
+        if (null == a || null == b)
+            return a==b;
+        return a.equals(b);
+    }
+
     public boolean equals(Object o)
     {
         if (this == o) return true;
@@ -568,8 +608,8 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (isMeasure() != that.isMeasure()) return false;
         if (isDimension() != that.isDimension()) return false;
         if (isRecommendedVariable() != that.isRecommendedVariable()) return false;
-        if (!StringUtils.equals(getDefaultScale(), that.getDefaultScale())) return false;
-        if (!StringUtils.equals(getFacetingBehaviorType(), that.getFacetingBehaviorType())) return false;
+        if (!equals(getDefaultScale(), that.getDefaultScale())) return false;
+        if (!equals(getFacetingBehaviorType(), that.getFacetingBehaviorType())) return false;
         if (getPHI() != null ? !getPHI().equals(that.getPHI()) : that.getPHI() != null) return false;
         if (isExcludeFromShifting() != that.isExcludeFromShifting()) return false;
 
@@ -579,7 +619,11 @@ public class GWTPropertyDescriptor implements IsSerializable
             return false;
         }
         if (!getScale().equals(that.getScale())) return false;
-        if (!StringUtils.equals(getPrincipalConceptCode(),that.getPrincipalConceptCode())) return false;
+        if (!equals(getSourceOntology(),that.getSourceOntology())) return false;
+        if (!equals(getConceptImportColumn(),that.getConceptImportColumn())) return false;
+        if (!equals(getConceptLabelColumn(),that.getConceptLabelColumn())) return false;
+        if (!equals(getPrincipalConceptCode(),that.getPrincipalConceptCode())) return false;
+
         if (getRedactedText() != null ? !getRedactedText().equals(that.getRedactedText()) : that.getRedactedText() != null) return false;
 
         return true;
@@ -619,8 +663,11 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + (phi.getString() != null ? phi.hashCode() : 0);
         result = 31 * result + (isExcludeFromShifting.getBoolean() != null ? isExcludeFromShifting.getBoolean().hashCode() : 0);
         result = 31 * result + (scale.getInteger() != null ? scale.getInteger().hashCode() : 0);
-        result = 31 * result + (principalConceptCode.getString() != null ? principalConceptCode.getString().hashCode() : 0);
-        result = 31 * result + (redactedText.getString() != null ? redactedText.getString().hashCode() : 0);
+        result = 31 * result + sourceOntology.hashCode();
+        result = 31 * result + conceptImportColumn.hashCode();
+        result = 31 * result + conceptLabelColumn.hashCode();
+        result = 31 * result + principalConceptCode.hashCode();
+        result = 31 * result + redactedText.hashCode();
 
         for (GWTPropertyValidator gwtPropertyValidator : getPropertyValidators())
         {

@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
-import org.labkey.api.ontology.Ontology;
 import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
@@ -179,7 +178,7 @@ public interface ColumnRenderProperties extends ImportAliasable
     // Properties loaded by OntologyService
     default boolean isConceptColumn()
     {
-        return conceptCodeConceptURI.equals(getConceptURI()) && null != OntologyService.get();
+        return getJdbcType().isText() && conceptCodeConceptURI.equals(getConceptURI()) && null != OntologyService.get();
     }
 
     default String getSourceOntology()

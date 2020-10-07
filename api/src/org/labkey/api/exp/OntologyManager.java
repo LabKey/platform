@@ -1579,7 +1579,8 @@ public class OntologyManager
                 "format, container, project, lookupcontainer, lookupschema, lookupquery, defaultvaluetype, hidden, " +
                 "mvenabled, importaliases, url, shownininsertview, showninupdateview, shownindetailsview, dimension, " +
                 "measure, scale, recommendedvariable, defaultscale, createdby, created, modifiedby, modified, facetingbehaviortype, " +
-                "phi, redactedText, excludefromshifting, mvindicatorstoragecolumnname, principalconceptcode)\n");
+                "phi, redactedText, excludefromshifting, mvindicatorstoragecolumnname, " +
+                "sourceontology, conceptimportcolumn, conceptlabelcolumn, principalconceptcode)\n");
         sql.append("SELECT " +
                 "? as propertyuri, " +
                 "? as name, " +
@@ -1616,6 +1617,9 @@ public class OntologyManager
                 "? as redactedText, " +
                 "? as excludefromshifting, " +
                 "? as mvindicatorstoragecolumnname, " +
+                "? as sourceontology," +
+                "? as conceptimportcolumn," +
+                "? as conceptlabelcolumn," +
                 "? as principalconceptcode\n");
         sql.append("WHERE NOT EXISTS (SELECT propertyid FROM exp.propertydescriptor WHERE propertyuri=? AND container=?);\n");
 
@@ -1654,6 +1658,10 @@ public class OntologyManager
         sql.add(pd.getRedactedText());
         sql.add(pd.isExcludeFromShifting());
         sql.add(pd.getMvIndicatorStorageColumnName());
+        // ontology metadata
+        sql.add(pd.getSourceOntology());
+        sql.add(pd.getConceptImportColumn());
+        sql.add(pd.getConceptLabelColumn());
         sql.add(pd.getPrincipalConceptCode());
         // WHERE
         sql.add(pd.getPropertyURI());
@@ -1713,6 +1721,15 @@ public class OntologyManager
 
         if (!Objects.equals(pdIn.getLookupQuery(), pd.getLookupQuery()))
             colDiffs.add("LookupQuery");
+
+        if (!Objects.equals(pdIn.getSourceOntology(), pd.getSourceOntology()))
+            colDiffs.add("SourceOntology");
+
+        if (!Objects.equals(pdIn.getConceptImportColumn(), pd.getConceptImportColumn()))
+            colDiffs.add("ConceptImportColumn");
+
+        if (!Objects.equals(pdIn.getConceptLabelColumn(), pd.getConceptLabelColumn()))
+            colDiffs.add("ConceptLabelColumn");
 
         if (!Objects.equals(pdIn.getPrincipalConceptCode(), pd.getPrincipalConceptCode()))
             colDiffs.add("PrincipalConceptCode");
@@ -2301,14 +2318,16 @@ public class OntologyManager
 
     static final String parameters = "propertyuri,name,description,rangeuri,concepturi,label," +
             "format,container,project,lookupcontainer,lookupschema,lookupquery,defaultvaluetype,hidden," +
-            "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale,principalconceptcode,recommendedvariable";
+            "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale," +
+            "sourceontology, conceptimportcolumn, conceptlabelcolumn, principalconceptcode," +
+            "recommendedvariable";
     static final String[] parametersArray = parameters.split(",");
     static final String insertSql;
     static final String updateSql;
 
     static
     {
-        insertSql = "INSERT INTO exp.propertydescriptor (" + parameters + ")\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        insertSql = "INSERT INTO exp.propertydescriptor (" + parameters + ")\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         StringBuilder sb = new StringBuilder("UPDATE exp.propertydescriptor SET");
         String comma = " ";
         for (String p : parametersArray)
@@ -2550,7 +2569,7 @@ public class OntologyManager
             assertNotNull(getTinfoPropertyDescriptor());
             assertNotNull(ExperimentService.get().getTinfoSampleType());
 
-            assertEquals(getTinfoPropertyDescriptor().getColumns("PropertyId,PropertyURI,RangeURI,Name,Description,PrincipalConceptCode").size(), 6);
+            assertEquals(getTinfoPropertyDescriptor().getColumns("PropertyId,PropertyURI,RangeURI,Name,Description,SourceOntology,ConceptImportColumn,ConceptLabel,Column,PrincipalConceptCode").size(), 9);
             assertEquals(getTinfoObject().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId").size(), 4);
             assertEquals(getTinfoObjectPropertiesView().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId,Name,PropertyURI,RangeURI,TypeTag,StringValue,DateTimeValue,FloatValue").size(), 11);
             assertEquals(ExperimentService.get().getTinfoSampleType().getColumns("RowId,Name,LSID,MaterialLSIDPrefix,Description,Created,CreatedBy,Modified,ModifiedBy,Container").size(), 10);
