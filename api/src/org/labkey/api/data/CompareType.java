@@ -771,7 +771,7 @@ public abstract class CompareType
     public static final CompareType Q = new CompareType("Search", "q", "Q", true /* dataValueRequired */, "sql", OperatorType.Q)
     {
         @Override
-        protected QClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public QClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             return new QClause((String) value);
         }
@@ -1073,7 +1073,7 @@ public abstract class CompareType
     }
 
     // Each compare type uses CompareClause by default
-    protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+    public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
     {
         return new CompareClause(fieldKey, this, value);
     }
