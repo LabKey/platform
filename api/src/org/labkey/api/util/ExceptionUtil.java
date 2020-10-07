@@ -939,7 +939,9 @@ public class ExceptionUtil
             return;
         }
         pageConfig.addClientDependencies(errorView.getClientDependencies());
-        pageConfig.setTitle(responseStatus + ": " + ErrorView.ERROR_PAGE_TITLE, false);
+
+        var title = responseStatus + ": " + ErrorView.ERROR_PAGE_TITLE + " -- " + ex.getMessage();
+        pageConfig.setTitle(title, false);
         errorView.getView().render(errorView.getModel(), request, response);
     }
 
