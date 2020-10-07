@@ -61,6 +61,7 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
             case Name:
             case NameExpression:
             case LabelColor:
+            case MetricUnit:
             case RowId:
                 return wrapColumn(alias, _rootTable.getColumn(column.toString()));
             case Created:
