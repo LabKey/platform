@@ -29,11 +29,11 @@ import java.util.Map;
 /**
  * Created by klum on 1/20/14.
  */
-public class ParameterCurveFit extends DefaultCurveFit implements CurveFit
+public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.SigmoidalParameters> implements CurveFit<ParameterCurveFit.SigmoidalParameters>
 {
     private StatsService.CurveFitType _fitType;
 
-    private static class SigmoidalParameters implements CurveFit.Parameters, Cloneable
+    public static class SigmoidalParameters implements CurveFit.Parameters, Cloneable
     {
         public Double fitError;
         public double asymmetry;
@@ -105,7 +105,13 @@ public class ParameterCurveFit extends DefaultCurveFit implements CurveFit
     }
 
     @Override
-    protected Parameters computeParameters()
+    public StatsService.CurveFitType getType()
+    {
+        return _fitType;
+    }
+
+    @Override
+    protected SigmoidalParameters computeParameters()
     {
         assert getData() != null;
 
@@ -134,20 +140,39 @@ public class ParameterCurveFit extends DefaultCurveFit implements CurveFit
     }
 
     @Override
-    public double fitCurve(double x, Parameters params)
+    public double fitCurve(double x, SigmoidalParameters params)
     {
-        if (params instanceof SigmoidalParameters)
+        if (params != null)
         {
-            SigmoidalParameters parameters = (SigmoidalParameters)params;
             if (hasXLogScale())
-                return parameters.getMin() + ((parameters.getMax() - parameters.getMin()) /
-                        Math.pow(1 + Math.pow(10, (Math.log10(parameters.getInflection()) - Math.log10(x)) * parameters.getSlope()), parameters.getAsymmetry()));
+                return params.getMin() + ((params.getMax() - params.getMin()) /
+                        Math.pow(1 + Math.pow(10, (Math.log10(params.getInflection()) - Math.log10(x)) * params.getSlope()), params.getAsymmetry()));
             else
-                return parameters.getMin() + ((parameters.getMax() - parameters.getMin()) /
-                        Math.pow(1 + ((parameters.getInflection() - x) * parameters.getSlope()), parameters.getAsymmetry()));
+                return params.getMin() + ((params.getMax() - params.getMin()) /
+                        Math.pow(1 + ((params.getInflection() - x) * params.getSlope()), params.getAsymmetry()));
 
         }
-        throw new IllegalArgumentException("params is not an instance of SigmoidalParameters");
+        throw new IllegalArgumentException("No curve fit parameters for " + _fitType.name());
+    }
+
+    @Override
+    public double solveForX(double y)
+    {
+        try
+        {
+            SigmoidalParameters params = getParameters();
+            if (params != null)
+            {
+                double exp = (params.getMax()-params.getMin())/(y- params.getMin());
+
+                return params.getInflection() - ((Math.pow(exp, 1d/params.getAsymmetry())- 1) / params.getSlope());
+            }
+            throw new IllegalArgumentException("No curve fit parameters for " + _fitType.name());
+        }
+        catch (FitFailedException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     private SigmoidalParameters calculateFitParameters(double minValue, double maxValue)

@@ -16,6 +16,14 @@
 
 package org.labkey.api.assay.plate;
 
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AbstractTsvAssayProvider;
+import org.labkey.api.assay.AssayDataType;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayRunCreator;
+import org.labkey.api.assay.AssayRunUploadContext;
+import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.actions.PlateUploadForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.ExperimentException;
@@ -30,14 +38,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.actions.PlateUploadForm;
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AbstractTsvAssayProvider;
-import org.labkey.api.assay.AssayDataType;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayRunCreator;
-import org.labkey.api.assay.AssayRunUploadContext;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
 import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
@@ -217,10 +217,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         // If we don't have a sample helper yet, create it here:
         if (helper == null)
         {
-            if (getMetadataInputFormat(context.getProtocol()) == SampleMetadataInputFormat.MANUAL)
-                helper = new PlateSamplePropertyHelper(selectedSampleProperties, template);
-            else
-                helper = createSampleFilePropertyHelper(context.getContainer(), context.getProtocol(), selectedSampleProperties, template, ((PlateBasedAssayProvider)context.getProvider()).getMetadataInputFormat(context.getProtocol()));
+            helper = createSampleFilePropertyHelper(context.getContainer(), context.getProtocol(), selectedSampleProperties, template, ((PlateBasedAssayProvider)context.getProvider()).getMetadataInputFormat(context.getProtocol()));
             context.setSamplePropertyHelper(helper);
         }
         else
@@ -233,7 +230,10 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
 
     protected PlateSamplePropertyHelper createSampleFilePropertyHelper(Container c, ExpProtocol protocol, List<? extends DomainProperty> sampleProperties, PlateTemplate template, SampleMetadataInputFormat inputFormat)
     {
-        return new PlateSampleFilePropertyHelper(c, protocol, sampleProperties, template, inputFormat);
+        if (inputFormat == SampleMetadataInputFormat.MANUAL)
+            return new PlateSamplePropertyHelper(sampleProperties, template);
+        else
+            return new PlateSampleFilePropertyHelper(c, protocol, sampleProperties, template, inputFormat);
     }
 
     /**
