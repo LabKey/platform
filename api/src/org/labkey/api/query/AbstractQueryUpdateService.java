@@ -36,6 +36,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.ImportAliasable;
@@ -148,18 +149,16 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return result;
     }
 
-    public static TransactionAuditProvider.TransactionAuditEvent addTransactionAuditEvent(DbScope.Transaction transaction, Container container, User user, AuditBehaviorType auditBehaviorType, QueryService.AuditAction auditAction)
+    public static TransactionAuditProvider.TransactionAuditEvent createTransactionAuditEvent(Container container, QueryService.AuditAction auditAction)
     {
-        if (auditBehaviorType != null && auditBehaviorType != AuditBehaviorType.NONE)
-        {
-            long auditId = DbSequenceManager.get(container, DB_SEQUENCE_NAME).next();
+        long auditId = DbSequenceManager.get(ContainerManager.getRoot(), DB_SEQUENCE_NAME).next();
+        return new TransactionAuditProvider.TransactionAuditEvent(container.getId(), auditAction, auditId);
+    }
 
-            TransactionAuditProvider.TransactionAuditEvent event = new TransactionAuditProvider.TransactionAuditEvent(container.getId(), auditAction, auditId);
-            transaction.addCommitTask(() -> AuditLogService.get().addEvent(user, event), DbScope.CommitTaskOption.POSTCOMMIT);
-            transaction.setAuditId(auditId);
-            return event;
-        }
-        return null;
+    public static void addTransactionAuditEvent(DbScope.Transaction transaction,  User user, TransactionAuditProvider.TransactionAuditEvent auditEvent)
+    {
+        transaction.addCommitTask(() -> AuditLogService.get().addEvent(user, auditEvent), DbScope.CommitTaskOption.POSTCOMMIT);
+        transaction.setAuditId(auditEvent.getRowId());
     }
 
     protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, InsertOption forImport, Map<Enum, Object> configParameters)

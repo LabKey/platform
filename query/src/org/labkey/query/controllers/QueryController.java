@@ -3820,15 +3820,19 @@ public class QueryController extends SpringActionController
             // 11741: A transaction may already be active if we're trying to
             // insert/update/delete from within a transformation/validation script.
             boolean transacted = allowTransaction && json.optBoolean("transacted", true);
-
+            TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
             try (DbScope.Transaction transaction = transacted ? table.getSchema().getScope().ensureTransaction() : NO_OP_TRANSACTION)
             {
-                TransactionAuditProvider.TransactionAuditEvent event = AbstractQueryUpdateService.addTransactionAuditEvent(transaction, getContainer(), getUser(), behaviorType, commandType.getAuditAction());
+                if (behaviorType != null && behaviorType != AuditBehaviorType.NONE)
+                {
+                    auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), commandType.getAuditAction());
+                    AbstractQueryUpdateService.addTransactionAuditEvent(transaction,  getUser(), auditEvent);
+                }
 
                 List<Map<String, Object>> responseRows =
                         commandType.saveRows(qus, rowsToProcess, getUser(), getContainer(), configParameters, extraContext);
-                if (event != null)
-                    event.setRowCount(responseRows.size());
+                if (auditEvent != null)
+                    auditEvent.setRowCount(responseRows.size());
 
                 if (commandType != CommandType.importRows)
                     response.put("rows", responseRows);
@@ -3890,6 +3894,8 @@ public class QueryController extends SpringActionController
                     throw e;
                 }
             }
+            if (auditEvent != null)
+                response.put("transactionAuditId", auditEvent.getRowId());
 
             response.put("rowsAffected", rowsAffected);
 
