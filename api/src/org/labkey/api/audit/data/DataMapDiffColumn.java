@@ -24,6 +24,8 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Collections;
 import java.util.Map;
@@ -70,21 +72,21 @@ public class DataMapDiffColumn extends AliasedColumn
         }
 
         @Override @NotNull
-        public String getFormattedValue(RenderContext ctx)
+        public HtmlString getFormattedHtml(RenderContext ctx)
         {
-            return formatColumn(ctx.get(_oldValues.getFieldKey()), ctx.get(_newValues.getFieldKey()), "<br>");
+            return HtmlString.unsafe(formatColumn(ctx.get(_oldValues.getFieldKey()), ctx.get(_newValues.getFieldKey()), true));
         }
 
         @Override
         public String getTsvFormattedValue(RenderContext ctx)
         {
-            return formatColumn(ctx.get(_oldValues.getFieldKey()), ctx.get(_newValues.getFieldKey()), "\n");
+            return formatColumn(ctx.get(_oldValues.getFieldKey()), ctx.get(_newValues.getFieldKey()), false);
         }
 
         @Override
         public Object getDisplayValue(RenderContext ctx)
         {
-            return formatColumn(ctx.get(_oldValues.getFieldKey()), ctx.get(_newValues.getFieldKey()), "\n");
+            return formatColumn(ctx.get(_oldValues.getFieldKey()), ctx.get(_newValues.getFieldKey()), false);
         }
 
         @Override
@@ -109,8 +111,11 @@ public class DataMapDiffColumn extends AliasedColumn
         }
 
         @NotNull
-        private String formatColumn(Object oldContent, Object newContent, String lineBreak)
+        private String formatColumn(Object oldContent, Object newContent, boolean html)
         {
+            String arrow = html ? "&nbsp;&raquo;&nbsp;" : " > ";
+            String lineBreak = html ? "<br/>" : "\n";
+
             if (oldContent != null || newContent != null)
             {
                 String delim = "";
@@ -138,8 +143,11 @@ public class DataMapDiffColumn extends AliasedColumn
                     if (!newValue.equals(oldValue))
                     {
                         sb.append(delim);
-                        sb.append(entry.getKey()).append(": ").append(oldValue);
-                        sb.append("&nbsp;&raquo;&nbsp;").append(newValue);
+                        sb.append(html ? PageFlowUtil.filter(entry.getKey()) : entry.getKey());
+                        sb.append(": ");
+                        sb.append(html ? PageFlowUtil.filter(oldValue) : oldValue);
+                        sb.append(arrow);
+                        sb.append(html ? PageFlowUtil.filter(newValue) : newValue);
 
                         delim = lineBreak;
                     }
@@ -148,14 +156,15 @@ public class DataMapDiffColumn extends AliasedColumn
                 for (Map.Entry<String, String> entry : newValues.entrySet())
                 {
                     sb.append(delim);
-                    sb.append(entry.getKey()).append(": ");
+                    sb.append(html ? PageFlowUtil.filter(entry.getKey()) : entry.getKey());
+                    sb.append(": ");
 
                     String newValue = entry.getValue();
                     if (newValue == null)
                         newValue = "";
 
-                    sb.append("&nbsp;&raquo;&nbsp;");
-                    sb.append(newValue);
+                    sb.append(arrow);
+                    sb.append(html ? PageFlowUtil.filter(newValue) : newValue);
 
                     delim = lineBreak;
                 }

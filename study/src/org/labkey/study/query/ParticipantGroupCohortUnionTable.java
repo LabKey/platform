@@ -30,6 +30,8 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.study.CohortForeignKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
@@ -83,9 +85,9 @@ public class ParticipantGroupCohortUnionTable extends BaseStudyTable
                     }
 
                     @Override @NotNull
-                    public String getFormattedValue(RenderContext ctx)
+                    public HtmlString getFormattedHtml(RenderContext ctx)
                     {
-                        return _getValue(ctx) + "<br>";
+                        return HtmlStringBuilder.of(_getValue(ctx)).append(HtmlString.BR).getHtmlString();
                     }
 
                     @NotNull

@@ -458,6 +458,7 @@
       <column columnName="RedactedText"/>
       <column columnName="MvIndicatorStorageColumnName"/>
       <column columnName="TextExpression"/>
+      <column columnName="PrincipalConceptCode"/>
   </columns>
   </table>
   <table tableName="DomainDescriptor" tableDbType="TABLE">

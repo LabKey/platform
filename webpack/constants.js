@@ -9,7 +9,13 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
+// This path assumes the enlistment in labkey-ui-components is a sibling of the root of the LabKey enlistment.
+// Adjust as necessary for your enlistment in order to use hot reloading that picks up changes from @labkey/components
+const labkeyUIComponentsPath = path.resolve("../../../../../labkey-ui-components/packages/components");
+console.log("Using @labkey/components path: " + labkeyUIComponentsPath);
+
 module.exports = {
+    labkeyUIComponentsPath: labkeyUIComponentsPath,
     context: function(dir) {
         return path.resolve(dir, '..');
     },
@@ -114,6 +120,14 @@ module.exports = {
                 },{
                     loader: 'ts-loader',
                     options: {
+                        // override default "compilerOptions" declared in tsconfig.json
+                        compilerOptions: {
+                            "baseUrl": ".",
+                            "paths": {
+                                "immutable": [labkeyUIComponentsPath + "/node_modules/immutable"],
+                                "@labkey/components": [labkeyUIComponentsPath]
+                            }
+                        },
                         onlyCompileBundledFiles: true
                         // this flag and the test regex will make sure that test files do not get bundled
                         // see: https://github.com/TypeStrong/ts-loader/issues/267

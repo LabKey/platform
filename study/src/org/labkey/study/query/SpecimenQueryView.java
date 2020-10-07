@@ -48,6 +48,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -988,7 +989,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 builder.append("    <td style=\"border: 1px solid #BBBBBB\">").append(row).append("</td>\n");
                 for (DisplayColumn col : columns)
                 {
-                    String value = col.getFormattedValue(renderContext);
+                    HtmlString value = col.getFormattedHtml(renderContext);
                     builder.append("    <td style=\"border: 1px solid #BBBBBB\">").append(value).append("</td>\n");
                 }
                 builder.append("  </tr>\n");

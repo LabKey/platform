@@ -18,6 +18,7 @@ package org.labkey.pipeline.cluster;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,7 +39,6 @@ import org.labkey.pipeline.mule.test.DummyPipelineJob;
 import org.mule.umo.manager.UMOManager;
 import org.springframework.beans.factory.BeanFactory;
 
-import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -122,9 +122,11 @@ public class ClusterStartup extends AbstractPipelineStartup
             }
             finally
             {
+                int exitVal = 0;
                 if (job.getActiveTaskStatus() == PipelineJob.TaskStatus.error)
                 {
                     job.error("Task failed");
+                    exitVal = 1;
                 }
                 else if (job.getActiveTaskStatus() != PipelineJob.TaskStatus.complete)
                 {
@@ -134,10 +136,7 @@ public class ClusterStartup extends AbstractPipelineStartup
                 //NOTE: we need to set error status before writing out the XML so this information is retained
                 job.writeToFile(file);
 
-                if (job.getErrors() > 0)
-                {
-                    System.exit(1);
-                }
+                System.exit(exitVal);
             }
         }
         finally

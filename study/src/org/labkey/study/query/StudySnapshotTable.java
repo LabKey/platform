@@ -38,6 +38,7 @@ import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.StudySchema;
 
@@ -152,9 +153,9 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
                 {
                     @NotNull
                     @Override
-                    public String getFormattedValue(RenderContext ctx)
+                    public HtmlString getFormattedHtml(RenderContext ctx)
                     {
-                        return "Republish";
+                        return HtmlString.of("Republish");
                     }
 
                     @Override

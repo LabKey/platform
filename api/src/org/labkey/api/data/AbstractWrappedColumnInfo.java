@@ -740,6 +740,12 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
+    public String getPrincipalConceptCode()
+    {
+        return delegate.getPrincipalConceptCode();
+    }
+
+    @Override
     public String toString()
     {
         return ColumnInfo.toString(this);

@@ -603,6 +603,19 @@ public class DomainPropertyImpl implements DomainProperty
         edit().setLookupSchema(lookup.getSchemaName());
     }
 
+    @Override
+    public void setPrincipalConceptCode(String code)
+    {
+        if (!StringUtils.equals(code, getPrincipalConceptCode()))
+            edit().setPrincipalConceptCode(code);
+    }
+
+    @Override
+    public String getPrincipalConceptCode()
+    {
+        return _pd.getPrincipalConceptCode();
+    }
+
 
     @Override
     public PropertyDescriptor getPropertyDescriptor()
@@ -777,6 +790,7 @@ public class DomainPropertyImpl implements DomainProperty
         setMvEnabled(propSrc.isMvEnabled());
         setDefaultValueTypeEnum(propSrc.getDefaultValueTypeEnum());
         setScale(propSrc.getScale());
+        setPrincipalConceptCode(propSrc.getPrincipalConceptCode());
 
         // check to see if we're moving a lookup column to another container:
         Lookup lookup = propSrc.getLookup();

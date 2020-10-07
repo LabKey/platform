@@ -539,5 +539,6 @@ public class PropertyServiceImpl implements PropertyService
             prop.setDimension(xProp.getDimension());
         prop.setRecommendedVariable(xProp.getRecommendedVariable());
 
+        prop.setPrincipalConceptCode(xProp.getPrincipalConceptCode());
     }
 }

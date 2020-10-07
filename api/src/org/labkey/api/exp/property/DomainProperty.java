@@ -123,4 +123,7 @@ public interface DomainProperty extends ImportAliasable
      * making a schema change will cause the property to be dropped and re-added
      */
     void setSchemaImport(boolean isSchemaImport);
+
+    void setPrincipalConceptCode(String code);
+    String getPrincipalConceptCode();
 }

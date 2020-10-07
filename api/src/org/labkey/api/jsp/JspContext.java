@@ -52,9 +52,8 @@ public abstract class JspContext extends HttpJspBase
     }
 
     /**
-     * This soon will be called by every JSP to get our standard JspWriter. In production mode, this is a pass-through;
-     * in dev mode, it wraps the standard JspWriter with LabKeyJspWriter, an implementation that protects against unsafe
-     * output.
+     * This is called by every JSP to get our standard JspWriter. In production mode, this is a pass-through; in dev mode,
+     * it wraps the standard JspWriter with LabKeyJspWriter, an implementation that protects against unsafe output.
      */
     protected JspWriter getLabKeyJspWriter(JspWriter out)
     {

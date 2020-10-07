@@ -66,6 +66,7 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -440,10 +441,24 @@ public class XarReader extends AbstractXarImporter
         materialSource.setMaterialLSIDPrefix(LsidUtils.resolveLsidFromTemplate(sampleSet.getMaterialLSIDPrefix(), getRootContext(), ExpMaterial.DEFAULT_CPAS_TYPE));
 
         Domain domain = materialSource.getDomain();
-        if (sampleSet.getKeyFieldArray() != null && sampleSet.getKeyFieldArray().length > 0)
+        String[] keyFieldArray = sampleSet.getKeyFieldArray();
+        List<String> keyFields = keyFieldArray != null && keyFieldArray.length > 0 ?
+                Arrays.asList(keyFieldArray) :
+                Collections.emptyList();
+
+        if (sampleSet.isSetNameExpression())
         {
-            List<String> propertyURIs = new ArrayList<>(sampleSet.getKeyFieldArray().length);
-            for (String keyField : sampleSet.getKeyFieldArray())
+            materialSource.setNameExpression(sampleSet.getNameExpression());
+        }
+        else if (keyFields.size() == 1 && keyFields.get(0).equals(ExpMaterialTable.Column.Name.name()))
+        {
+            // We can use Name as the idCol1 without requiring it to be a domain property
+            materialSource.setIdCol1(ExpMaterialTable.Column.Name.name());
+        }
+        else if (keyFields.size() > 0)
+        {
+            List<String> propertyURIs = new ArrayList<>(keyFields.size());
+            for (String keyField : keyFields)
             {
                 DomainProperty dp = findPropertyByUriOrName(domain, keyField);
                 if (dp == null)
@@ -453,6 +468,7 @@ public class XarReader extends AbstractXarImporter
             }
             materialSource.setIdCols(propertyURIs);
         }
+
         if (sampleSet.getParentField() != null)
         {
             DomainProperty dp = findPropertyByUriOrName(domain, sampleSet.getParentField());
@@ -461,9 +477,10 @@ public class XarReader extends AbstractXarImporter
             else
                 materialSource.setParentCol(dp.getPropertyURI());
         }
-        if (sampleSet.isSetNameExpression())
+
+        if (sampleSet.isSetLabelColor())
         {
-            materialSource.setNameExpression(sampleSet.getNameExpression());
+            materialSource.setLabelColor(sampleSet.getLabelColor());
         }
 
         if (existingMaterialSource != null)
@@ -536,16 +553,17 @@ public class XarReader extends AbstractXarImporter
                     IdentifiableEntity.diff(oldProp.getLabel(), newProp.getLabel(), key + " label", diffs);
                     IdentifiableEntity.diff(oldProp.getName(), newProp.getName(), key + " name", diffs);
                     IdentifiableEntity.diff(oldProp.isHidden(), newProp.isHidden(), key + " hidden", diffs);
-                    IdentifiableEntity.diff(oldProp.isShownInDetailsView(), newProp.isShownInDetailsView(), key + " hidden", diffs);
-                    IdentifiableEntity.diff(oldProp.isShownInInsertView(), newProp.isShownInInsertView(), key + " hidden", diffs);
-                    IdentifiableEntity.diff(oldProp.isShownInUpdateView(), newProp.isShownInUpdateView(), key + " hidden", diffs);
+                    IdentifiableEntity.diff(oldProp.isShownInDetailsView(), newProp.isShownInDetailsView(), key + " shown in details view", diffs);
+                    IdentifiableEntity.diff(oldProp.isShownInInsertView(), newProp.isShownInInsertView(), key + " shown in insert view", diffs);
+                    IdentifiableEntity.diff(oldProp.isShownInUpdateView(), newProp.isShownInUpdateView(), key + " shown in update view", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyURI(), newProp.getPropertyURI(), key + " property URI", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyDescriptor().getRangeURI(), newProp.getPropertyDescriptor().getRangeURI(), key + " range URI", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyDescriptor().getConceptURI(), newProp.getPropertyDescriptor().getConceptURI(), key + " concept URI", diffs);
-                    IdentifiableEntity.diff(oldProp.isMvEnabled(), newProp.isMvEnabled(), key + " qc enabled", diffs);
+                    IdentifiableEntity.diff(oldProp.isMvEnabled(), newProp.isMvEnabled(), key + " missing value enabled", diffs);
                     IdentifiableEntity.diff(oldProp.getURL(), newProp.getURL(), key + " url", diffs);
-                    IdentifiableEntity.diff(oldProp.getImportAliasSet(), newProp.getImportAliasSet(), key + " url", diffs);
+                    IdentifiableEntity.diff(oldProp.getImportAliasSet(), newProp.getImportAliasSet(), key + " import aliases", diffs);
                     IdentifiableEntity.diff(oldProp.getDefaultValueTypeEnum(), newProp.getDefaultValueTypeEnum(), key + " default value type", diffs);
+                    IdentifiableEntity.diff(oldProp.getPrincipalConceptCode(), newProp.getPrincipalConceptCode(), key + " principal concept code", diffs);
                     IdentifiableEntity.diff(existingDefaultValues.get(oldProp), newDefaultValues.get(newProp), key + " default value", diffs);
                 }
             }

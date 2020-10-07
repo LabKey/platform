@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Type;
@@ -262,6 +263,9 @@ public class TableInfoWriter
         // Export scale only if column is a string
         if (column.isStringType())
             columnXml.setScale(column.getScale());
+
+        if (!StringUtils.isBlank(column.getPrincipalConceptCode()))
+            columnXml.setPrincipalConceptCode(column.getPrincipalConceptCode());
     }
 
     protected String getConceptURI(ColumnInfo column)

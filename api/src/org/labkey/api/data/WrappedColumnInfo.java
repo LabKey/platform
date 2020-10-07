@@ -730,7 +730,7 @@ public class WrappedColumnInfo
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
                 @Override
-                public JdbcType getJdbcType()
+                public @NotNull JdbcType getJdbcType()
                 {
                     return jdbcType;
                 }
@@ -900,6 +900,20 @@ public class WrappedColumnInfo
         public void setIsRootDbSequence(boolean b)
         {
             throw new java.lang.UnsupportedOperationException();
+        }
+
+        @Override
+        public void setPrincipalConceptCode(String code)
+        {
+            checkLocked();
+            delegate = new AbstractWrappedColumnInfo(delegate)
+            {
+                @Override
+                public String getPrincipalConceptCode()
+                {
+                    return code;
+                }
+            };
         }
     }
 

@@ -85,6 +85,8 @@ import org.labkey.api.study.assay.StudyContainerFilter;
 import org.labkey.api.study.assay.StudyDatasetColumn;
 import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory;
@@ -321,7 +323,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
         errors = new ArrayList<>();
         Path dir = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY);
-        Collection<TableType> metadata = QueryService.get().findMetadataOverride(this, name, false, true, errors, dir);
+        Collection<TableType> metadata = QueryService.get().findMetadataOverride(this, name, false, false, errors, dir);
         if (errors.isEmpty())
             table.overlayMetadata(metadata, this, errors);
     }
@@ -841,7 +843,15 @@ public abstract class AssayProtocolSchema extends AssaySchema
                 String studyName = assayDataset.getStudy().getLabel();
                 if (studyName == null)
                     continue; // No study in that folder
-                String studyColumnName = "copied_to_" + sanitizeName(studyName);
+
+                String studyColumnName;
+                if (sanitizeName(studyName).isEmpty())
+                {
+                    // issue 41472 include the prefix as part of the sanitization process
+                    studyColumnName = sanitizeName("copied_to_" + studyName);
+                }
+                else
+                    studyColumnName = "copied_to_" + sanitizeName(studyName);
 
                 // column names must be unique. Prevent collisions
                 while (usedColumnNames.contains(studyColumnName))
@@ -981,7 +991,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
         @NotNull
         @Override
-        public String getFormattedValue(RenderContext ctx)
+        public HtmlString getFormattedHtml(RenderContext ctx)
         {
             // Value may be a simple string (legacy), or JSON.
 
@@ -990,7 +1000,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
             try
             {
                 Map<String, String> decodedVals = new ObjectMapper().readValue(val.toString(), Map.class);
-                StringBuilder sb = new StringBuilder(decodedVals.remove(ParticipantVisitResolverType.Serializer.STRING_VALUE_PROPERTY_NAME));
+                HtmlStringBuilder sb = HtmlStringBuilder.of(decodedVals.remove(ParticipantVisitResolverType.Serializer.STRING_VALUE_PROPERTY_NAME));
 
                 // Issue 21126 If lookup was pasted tsv, could still get a default list entry in properties list. Fix the redisplay
                 // This addresses the issue for existing runs. New runs avoid the problem with corresponding change in ParticipantResolverType.Serializer.encode
@@ -1001,18 +1011,18 @@ public abstract class AssayProtocolSchema extends AssaySchema
                 }
                 for (Map.Entry<String, String> decodedVal : decodedVals.entrySet())
                 {
-                    sb.append("<br/>");
+                    sb.append(HtmlString.unsafe("<br/>"));
                     sb.append(StringUtils.substringAfter(decodedVal.getKey(), ThawListResolverType.NAMESPACE_PREFIX));
                     sb.append(" : ");
                     sb.append(decodedVal.getValue());
                 }
 
-                return sb.toString();
+                return sb.getHtmlString();
             }
             catch (IOException e)
             {
                 // Value wasn't JSON, was a legacy simple string. Output it
-                return  val.toString();
+                return HtmlString.of(val.toString());
             }
         }
     }
