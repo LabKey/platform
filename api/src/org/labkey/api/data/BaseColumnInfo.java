@@ -395,7 +395,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
         setCalculated(col.isCalculated());
 
-        OntologyService s = OntologyService.get();
+        setSourceOntology(col.getSourceOntology());
+        setConceptImportColumn(col.getConceptImportColumn());
+        setConceptLabelColumn(col.getConceptLabelColumn());
         setPrincipalConceptCode(col.getPrincipalConceptCode());
     }
 
@@ -470,6 +472,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
         setCalculated(col.isCalculated());
 
+        setSourceOntology(col.getSourceOntology());
+        setConceptImportColumn(col.getConceptImportColumn());
+        setConceptLabelColumn(col.getConceptLabelColumn());
         setPrincipalConceptCode(col.getPrincipalConceptCode());
     }
 
