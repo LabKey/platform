@@ -96,6 +96,7 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
         addColumn(ExpSampleTypeTable.Column.Description);
         addColumn(ExpSampleTypeTable.Column.NameExpression).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.LabelColor).setHidden(true);
+        addColumn(ExpSampleTypeTable.Column.MetricUnit).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.LSID).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.MaterialLSIDPrefix).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.Created);

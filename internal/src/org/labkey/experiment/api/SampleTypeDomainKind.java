@@ -323,6 +323,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         if (StringUtils.isNotBlank(options.getLabelColor()) && options.getLabelColor().length() > labelColorMax)
             throw new IllegalArgumentException("Value for Label Color field may not exceed " + labelColorMax + " characters.");
 
+        int metricUnitMax = materialSourceTI.getColumn("MetricUnit").getScale();
+        if (StringUtils.isNotBlank(options.getMetricUnit()) && options.getMetricUnit().length() > metricUnitMax)
+            throw new IllegalArgumentException("Value for Metric Unit field may not exceed " + metricUnitMax + " characters.");
+
         Map<String, String> aliasMap = options.getImportAliases();
         if (aliasMap == null || aliasMap.size() == 0)
             return;

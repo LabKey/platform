@@ -3512,6 +3512,7 @@ public class ExperimentController extends SpringActionController
         sampleType.put("name", st.getName());
         sampleType.put("nameExpression", st.getNameExpression());
         sampleType.put("labelColor", st.getLabelColor());
+        sampleType.put("metricUnit", st.getMetricUnit());
         sampleType.put("description", st.getDescription());
         sampleType.put("importAliases", st.getImportAliasMap());
         sampleType.put("lsid", st.getLSID());
