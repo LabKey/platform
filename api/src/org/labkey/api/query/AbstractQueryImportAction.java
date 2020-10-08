@@ -414,7 +414,12 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             configureLoader(loader);
 
             TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
-            if (getAuditBehaviorType() != null && getAuditBehaviorType() != AuditBehaviorType.NONE)
+            // Check first if the audit behavior has been defined for the table either in code or through XML.
+            // If not defined there, check for the audit behavior defined in the action form (getAuditBehaviorType()).
+            AuditBehaviorType behaviorType = (_target != null) ? _target.getAuditBehavior() : null;
+            if (behaviorType == null || behaviorType == AuditBehaviorType.NONE)
+                behaviorType = getAuditBehaviorType();
+            if (behaviorType != null && behaviorType != AuditBehaviorType.NONE)
                 auditEvent = createTransactionAuditEvent(getContainer(), QueryService.AuditAction.INSERT);
             int rowCount = importData(loader, file, originalName, ve, getAuditBehaviorType(), auditEvent);
 

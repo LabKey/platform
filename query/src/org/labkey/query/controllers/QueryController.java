@@ -3787,24 +3787,31 @@ public class QueryController extends SpringActionController
                 extraContext = new CaseInsensitiveHashMap<>();
 
             Map<Enum, Object> configParameters = new HashMap<>();
-            String auditBehavior = json.getString("auditBehavior");
-            AuditBehaviorType behaviorType = null;
-            if (!StringUtils.isEmpty(auditBehavior))
+
+            // Check first if the audit behavior has been defined for the table either in code or through XML.
+            // If not defined there, check for the audit behavior defined in the action form (json).
+            AuditBehaviorType behaviorType = table.getAuditBehavior();
+            if (behaviorType == null || behaviorType == AuditBehaviorType.NONE)
             {
-                try
+                String auditBehavior = json.getString("auditBehavior");
+                if (!StringUtils.isEmpty(auditBehavior))
                 {
-                    behaviorType = AuditBehaviorType.valueOf(auditBehavior);
-                    configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
-                    String auditComment = json.getString("auditUserComment");
-                    if (!StringUtils.isEmpty(auditComment))
+                    try
                     {
-                        configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
+                        behaviorType = AuditBehaviorType.valueOf(auditBehavior);
+                    }
+                    catch (IllegalArgumentException ignored)
+                    {
+                        logger.warn("Unknown log level type " + auditBehavior + " ignored.");
                     }
                 }
-                catch (IllegalArgumentException ignored)
-                {
-                    logger.warn("Unknown log level type " + auditBehavior + " ignored.");
-                }
+            }
+            if (behaviorType != null)
+            {
+                configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
+                String auditComment = json.getString("auditUserComment");
+                if (!StringUtils.isEmpty(auditComment))
+                    configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
             }
 
             //setup the response, providing the schema name, query name, and operation
@@ -5489,6 +5496,32 @@ public class QueryController extends SpringActionController
         public void setChecked(boolean checked)
         {
             this.checked = checked;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class ReplaceSelectedAction extends MutatingApiAction<SetCheckForm>
+    {
+        @Override
+        public ApiResponse execute(final SetCheckForm form, BindException errors)
+        {
+            String[] ids = form.getId(getViewContext().getRequest());
+            List<String> selection = new ArrayList<>();
+            if (ids != null)
+            {
+                for (String id : ids)
+                {
+                    if (StringUtils.isNotBlank(id))
+                        selection.add(id);
+                }
+            }
+
+
+            DataRegionSelection.clearAll(getViewContext(), form.getKey());
+            int count = DataRegionSelection.setSelected(
+                    getViewContext(), form.getKey(),
+                    selection, true);
+            return new DataRegionSelection.SelectionResponse(count);
         }
     }
 
