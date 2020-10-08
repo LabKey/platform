@@ -168,6 +168,8 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
             fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_TYPE, PropertyType.STRING));
             _fields = Collections.unmodifiableSet(fields);
 
+            // We override the base fields so we can use a DbSequence as the RowId and make it available
+            // throughout the transaction for use in other audit logs that are created.
             Set<PropertyStorageSpec> baseFields = super.getBaseProperties(null).stream()
                     .filter(field -> !field.getName().equalsIgnoreCase("RowId"))
                     .collect(Collectors.toCollection(LinkedHashSet::new));
