@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class TransactionAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
@@ -47,7 +48,6 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
     {
         return new TransactionAuditDomainKind();
     }
-
 
     @Override
     public String getEventName()
@@ -156,21 +156,8 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
         public static final String NAME = "TransactionAuditDomain";
         public static String NAMESPACE_PREFIX = "Audit-" + NAME;
         private final Set<PropertyDescriptor> _fields;
-        private static final Set<PropertyStorageSpec> _baseFields;
+        private final Set<PropertyStorageSpec> _baseFields;
 
-        static
-        {
-            Set<PropertyStorageSpec> baseFields = new LinkedHashSet<>();
-            baseFields.add(createFieldSpec("RowId", JdbcType.BIGINT, true, false));
-            baseFields.add(createFieldSpec("Container", JdbcType.GUID).setNullable(false));
-            baseFields.add(createFieldSpec("Comment", JdbcType.VARCHAR));
-            baseFields.add(createFieldSpec("EventType", JdbcType.VARCHAR));
-            baseFields.add(createFieldSpec("Created", JdbcType.TIMESTAMP));
-            baseFields.add(createFieldSpec("CreatedBy", JdbcType.INTEGER));
-            baseFields.add(createFieldSpec("ImpersonatedBy", JdbcType.INTEGER));
-            baseFields.add(createFieldSpec("ProjectId", JdbcType.GUID));  // Nullable
-            _baseFields = Collections.unmodifiableSet(baseFields);
-        }
 
         public TransactionAuditDomainKind()
         {
@@ -180,6 +167,12 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
             fields.add(createPropertyDescriptor(COLUMN_NAME_START_TIME, PropertyType.DATE_TIME));
             fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_TYPE, PropertyType.STRING));
             _fields = Collections.unmodifiableSet(fields);
+
+            Set<PropertyStorageSpec> baseFields = super.getBaseProperties(null).stream()
+                    .filter(field -> !field.getName().equalsIgnoreCase("RowId"))
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            baseFields.add(createFieldSpec("RowId", JdbcType.BIGINT, true, false));
+            _baseFields = Collections.unmodifiableSet(baseFields);
         }
 
         @Override
