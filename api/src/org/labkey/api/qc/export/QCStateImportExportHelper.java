@@ -44,7 +44,6 @@ public interface QCStateImportExportHelper
 
     /**
      * Relative priority to other helpers, a lower number represents a higher priority
-     * @return
      */
     int getPriority();
 
@@ -53,6 +52,7 @@ public interface QCStateImportExportHelper
     boolean isQCStateInUse(Container container, QCState state);
 
     QCState insertQCState(User user, QCState state);
+    QCState updateQCState(User user, QCState state);
 
     void setDefaultAssayQCState(Container container, User user, Integer stateId);
     void setDefaultPipelineQCState(Container container, User user, Integer stateId);
