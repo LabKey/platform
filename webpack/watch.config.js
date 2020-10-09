@@ -7,6 +7,7 @@ const lkModule = process.env.LK_MODULE;
 const webpack = require('webpack');
 const entryPoints = require('../' + lkModule + '/src/client/entryPoints');
 const constants = require('./constants');
+const path = require('path');
 
 // set based on the lk module calling this config
 __dirname = lkModule;
@@ -65,8 +66,14 @@ module.exports = {
 
     resolve: {
         extensions: constants.extensions.TYPESCRIPT,
+
         alias: {
-            'react-dom': '@hot-loader/react-dom'
+            // uncomment and adjust the relative path for your enlistment to enable hot reloading of the app when
+            // new builds happen in @labkey/components
+            // '@labkey/components': constants.labkeyUIComponentsPath,
+
+            // This assures there is only one copy of react in the application
+            react: path.resolve(__dirname, "../node_modules/react")
         }
     },
 

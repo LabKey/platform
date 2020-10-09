@@ -273,10 +273,10 @@ public class MothershipTest extends BaseWebDriverTest
 
     private String getErrorCode()
     {
-        if (!isElementPresent(Locator.tagWithClass("table", "server-error")))
+        if (!isElementPresent(Locator.tagWithClass("div", "labkey-error-instruction")))
             fail("Expected to be on an error page");
-        String error = Locators.labkeyError.findElement(getDriver()).getText();
-        Pattern errorCodePattern = Pattern.compile(".*please refer to error code: ([^\\s]+)");
+        String error = Locators.labkeyErrorInstruction.findElement(getDriver()).getText();
+        Pattern errorCodePattern = Pattern.compile(".*Your unique reference code is: ([^\\s]+)");
         Matcher matcher = errorCodePattern.matcher(error);
         if(matcher.find())
             return matcher.group(1);
