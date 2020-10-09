@@ -67,6 +67,12 @@ public interface StatsService
             return _label;
         }
 
+        @Override
+        public String toString()
+        {
+            return _label;
+        }
+
         @Nullable
         public static CurveFitType fromLabel(String label)
         {

@@ -128,7 +128,7 @@ public class RunDetailsHeaderView extends AssayHeaderView
     {
         String currentFit = getViewContext().getActionURL().getParameter("fitType");
         NavTree menu = new NavTree("Curve Type");
-        for (StatsService.CurveFitType type : StatsService.CurveFitType.values())
+        for (StatsService.CurveFitType type : ((DilutionAssayProvider)getProvider()).getCurveFits())
         {
             // filter by allowed NAb types, need a better way to handle this, maybe introduce
             // something at the assay provider level
