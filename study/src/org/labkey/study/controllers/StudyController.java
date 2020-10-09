@@ -6225,7 +6225,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(AdminPermission.class) // TODO: What permission?
+    @RequiresPermission(AdminPermission.class)
     public class ChooseImporterAction extends FormViewAction<EnabledSpecimenImportForm>
     {
         @Override

@@ -43,7 +43,10 @@
             String selected = SpecimenService.get().getActiveSpecimenImporter(getContainer());
         %>
         <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+            Activate automatic import of specimen data from an external source on this page. In order to prevent automated reloads from overwriting specimen data upon manual or scheduled imports, only one specimen import mechanism may be active at a time for a given container.
+        </p>
+        <p>
+            Learn more about <%=helpLink("externalSpecimens", "Automated External Specimen Imports")%>.
         </p>
         <br/>
 
@@ -104,7 +107,7 @@
             ActionURL manageAction = transform.getManageAction(getContainer(), getUser());
         %>
         <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+            Learn more about <%=helpLink("externalSpecimens", "Automated External Specimen Imports")%>.
         </p>
         <br/>
 

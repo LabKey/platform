@@ -106,6 +106,7 @@ public interface SpecimenService
 
     Domain getSpecimenEventDomain(Container container, User user);
 
+    @Nullable
     Map<String, String> getSpecimenImporterTsvColumnMap();
 
     SpecimenRequestCustomizer getRequestCustomizer();
