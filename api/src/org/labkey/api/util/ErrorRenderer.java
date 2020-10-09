@@ -17,6 +17,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.collections4.IteratorUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
@@ -40,16 +41,16 @@ public class ErrorRenderer
     private final boolean _isStartupFailure;
     private final ErrorRendererProperties _errorRendererProps;
     private final String _title;
-
-    // TODO: ErrorPage use these in React app
-    private boolean _includeHomeButton = true;
-    private boolean _includeBackButton = true;
-    private boolean _includeFolderButton = true;
-    private boolean _includeStopImpersonatingButton = false;
+    private final String _errorCode;
 
     private ErrorType _errorType;
 
-    enum ErrorType
+    public String getStackTrace()
+    {
+        return ExceptionUtils.getStackTrace(getException());
+    }
+
+    public enum ErrorType
     {
         notFound,
         permission,
@@ -57,52 +58,13 @@ public class ErrorRenderer
         execution
     }
 
-    public boolean isIncludeHomeButton()
-    {
-        return _includeHomeButton;
-    }
-
-    public void setIncludeHomeButton(boolean includeHomeButton)
-    {
-        _includeHomeButton = includeHomeButton;
-    }
-
-    public boolean isIncludeBackButton()
-    {
-        return _includeBackButton;
-    }
-
-    public void setIncludeBackButton(boolean includeBackButton)
-    {
-        _includeBackButton = includeBackButton;
-    }
-
-    public boolean isIncludeFolderButton()
-    {
-        return _includeFolderButton;
-    }
-
-    public void setIncludeFolderButton(boolean includeFolderButton)
-    {
-        _includeFolderButton = includeFolderButton;
-    }
-
-    public boolean isIncludeStopImpersonatingButton()
-    {
-        return _includeStopImpersonatingButton;
-    }
-
-    public void setIncludeStopImpersonatingButton(boolean includeStopImpersonatingButton)
-    {
-        _includeStopImpersonatingButton = includeStopImpersonatingButton;
-    }
-
-    ErrorRenderer(int status, String heading, Throwable x, boolean isStartupFailure)
+    ErrorRenderer(int status, String errorCode, String heading, Throwable x, boolean isStartupFailure)
     {
         _status = status;
         _exception = x;
         _isStartupFailure = isStartupFailure;
         _errorRendererProps = (x instanceof ErrorRendererProperties ? (ErrorRendererProperties)x : null);
+        _errorCode = errorCode;
 
         if (null == _errorRendererProps)
         {
@@ -111,7 +73,7 @@ public class ErrorRenderer
         }
         else
         {
-            _heading = _errorRendererProps.getHeading(_isStartupFailure);
+            _heading = null != heading ? heading : _errorRendererProps.getHeading(_isStartupFailure);
             _title = _errorRendererProps.getTitle();
         }
     }
@@ -300,5 +262,10 @@ public class ErrorRenderer
     public void setErrorType(ErrorType errorType)
     {
         _errorType = errorType;
+    }
+
+    public String getErrorCode()
+    {
+        return _errorCode;
     }
 }
