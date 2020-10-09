@@ -77,6 +77,9 @@
     ActionURL subjectUrl = new ActionURL(ParticipantAction.class, container);
     if ("participant2".equals(getViewContext().getActionURL().getAction()))
         subjectUrl = new ActionURL(Participant2Action.class, container);
+    String subjectUrlString = subjectUrl.toString();
+    if (!subjectUrlString.endsWith("?"))
+        subjectUrlString = subjectUrlString + "?";
 
     DbSchema dbschema    = StudySchema.getInstance().getSchema();
     final JspWriter _out = out;
@@ -98,7 +101,7 @@
     var $h = Ext4.util.Format.htmlEncode;
     var first = true;
 
-    const _urlTemplate = <%= q(subjectUrl) %>;
+    const _urlTemplate = <%= q(subjectUrlString) %>;
     const _singularNoun = <%= q(singularNoun) %>;
     const _pluralNoun = <%= q(pluralNoun) %>;
     const _divId = <%= q(divId) %>;
