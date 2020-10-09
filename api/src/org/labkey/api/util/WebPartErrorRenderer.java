@@ -22,9 +22,9 @@ class WebPartErrorRenderer extends ErrorRenderer
 {
     private String _id;
 
-    WebPartErrorRenderer(int status, String message, Throwable x, boolean isStartupFailure)
+    WebPartErrorRenderer(int status, String errorCode, String message, Throwable x, boolean isStartupFailure)
     {
-        super(status, message, x, isStartupFailure);
+        super(status, errorCode, message, x, isStartupFailure);
     }
 
     @Override
