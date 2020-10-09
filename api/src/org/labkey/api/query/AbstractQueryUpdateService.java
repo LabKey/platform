@@ -157,7 +157,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     public static void addTransactionAuditEvent(DbScope.Transaction transaction,  User user, TransactionAuditProvider.TransactionAuditEvent auditEvent)
     {
-        transaction.addCommitTask(() -> AuditLogService.get().addEvent(user, auditEvent), DbScope.CommitTaskOption.POSTCOMMIT);
+        transaction.addCommitTask(() -> AuditLogService.get().addEvent(user, auditEvent), DbScope.CommitTaskOption.PRECOMMIT);
         transaction.setAuditId(auditEvent.getRowId());
     }
 
