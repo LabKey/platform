@@ -15,16 +15,24 @@
  */
 package org.labkey.core.statistics;
 
+import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
+import org.labkey.api.data.statistics.StatsService;
 
 /**
  * Created by klum on 10/10/2014.
  */
-public class NoCurveFit extends DefaultCurveFit
+public class NoCurveFit extends DefaultCurveFit<CurveFit.Parameters> implements CurveFit<CurveFit.Parameters>
 {
     public NoCurveFit(DoublePoint[] data)
     {
         super(data);
+    }
+
+    @Override
+    public StatsService.CurveFitType getType()
+    {
+        return StatsService.CurveFitType.NONE;
     }
 
     @Override
@@ -35,6 +43,12 @@ public class NoCurveFit extends DefaultCurveFit
 
     @Override
     public double fitCurve(double x)
+    {
+        return 0;
+    }
+
+    @Override
+    public double solveForX(double y)
     {
         return 0;
     }
