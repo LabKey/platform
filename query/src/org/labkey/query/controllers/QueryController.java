@@ -3790,22 +3790,7 @@ public class QueryController extends SpringActionController
 
             // Check first if the audit behavior has been defined for the table either in code or through XML.
             // If not defined there, check for the audit behavior defined in the action form (json).
-            AuditBehaviorType behaviorType = table.getAuditBehavior();
-            if (behaviorType == null || behaviorType == AuditBehaviorType.NONE)
-            {
-                String auditBehavior = json.getString("auditBehavior");
-                if (!StringUtils.isEmpty(auditBehavior))
-                {
-                    try
-                    {
-                        behaviorType = AuditBehaviorType.valueOf(auditBehavior);
-                    }
-                    catch (IllegalArgumentException ignored)
-                    {
-                        logger.warn("Unknown log level type " + auditBehavior + " ignored.");
-                    }
-                }
-            }
+            AuditBehaviorType behaviorType = table.getAuditBehavior(json.getString("auditBehavior"));
             if (behaviorType != null)
             {
                 configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
