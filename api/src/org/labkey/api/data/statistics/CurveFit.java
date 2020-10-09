@@ -20,7 +20,7 @@ import java.util.Map;
 /**
  * Created by klum on 1/16/14.
  */
-public interface CurveFit
+public interface CurveFit<P extends CurveFit.Parameters>
 {
     interface Parameters
     {
@@ -28,8 +28,10 @@ public interface CurveFit
          * Returns a map representation of the parameters, used for
          * serialization of parameter information in the Client API
          */
-        public Map<String, Object> toMap();
+        Map<String, Object> toMap();
     }
+
+    StatsService.CurveFitType getType();
 
     /**
      * Sets the data that this curve fit will be applied to.
@@ -47,7 +49,7 @@ public interface CurveFit
      * Returns the parameters necessary to represent the fitted curve
      * @return
      */
-    Parameters getParameters() throws FitFailedException;
+    P getParameters() throws FitFailedException;
 
     /**
      * Sets whether the curve is assumed to be decreasing by default.  It's used as an optimization during 4&5
@@ -66,11 +68,15 @@ public interface CurveFit
     /**
      * Returns the corresponding y value for the specified value on the x axis using
      * the passed in curve fit parameters
-     * @param x
-     * @return
      */
     double fitCurve(double x);
-    double fitCurve(double x, Parameters parameters);
+    double fitCurve(double x, P parameters);
+
+    /**
+     * For a curve fit, return the x value given y. Can be used in assays where dose
+     * values need to be calculated from measured responses (known y but unknown x).
+     */
+    double solveForX(double y);
 
     /**
      * Calculates the fit error : r squared (or coefficient of determination) of the fitted curve
