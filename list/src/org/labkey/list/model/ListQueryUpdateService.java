@@ -442,7 +442,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         ListManager.get().deleteIndexedList(_list);
 
         // Delete attachments and discussions associated with a list in batches of 1,000
-        new TableSelector(getDbTable(), new CaseInsensitiveHashSet("entityId")).forEachBatch(new ForEachBatchBlock<String>()
+        new TableSelector(getDbTable(), new CaseInsensitiveHashSet("entityId")).forEachBatch(String.class, 1000, new ForEachBatchBlock<String>()
         {
             @Override
             public boolean accept(String entityId)
@@ -456,7 +456,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 // delete the related list data for this block
                 deleteRelatedListData(user, container, entityIds);
             }
-        }, String.class, 1000);
+        });
     }
 
     // delete the related list data for this block of entityIds
