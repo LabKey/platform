@@ -1208,7 +1208,6 @@ public abstract class Method
         JdbcMethod(String name, JdbcType jdbcType, int min, int max)
         {
             super(name, jdbcType, min, max);
-            _declaringSchemaName = declaringSchemaName;
         }
 
         @Override
