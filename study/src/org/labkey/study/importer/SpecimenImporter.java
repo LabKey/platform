@@ -262,12 +262,6 @@ public class SpecimenImporter
             return _tsvColumnName;
         }
 
-        @Deprecated // Use getPrimaryTsvColumnName() instead
-        public String getTsvColumnName()
-        {
-            return _tsvColumnName;
-        }
-
         // All valid import names: primary name plus all import aliases
         public Collection<String> getImportNames()
         {
@@ -2346,7 +2340,7 @@ public class SpecimenImporter
 
         for (SpecimenColumn specimenColumn : info.getAvailableColumns())
         {
-            if (GLOBAL_UNIQUE_ID_TSV_COL.equals(specimenColumn.getTsvColumnName()))
+            if (GLOBAL_UNIQUE_ID_TSV_COL.equals(specimenColumn.getPrimaryTsvColumnName()))
             {
                 columnName = specimenColumn.getDbColumnName();
                 break;
@@ -2357,7 +2351,7 @@ public class SpecimenImporter
         {
             for (SpecimenColumn specimenColumn : info.getAvailableColumns())
             {
-                if (SPEC_NUMBER_TSV_COL.equals(specimenColumn.getTsvColumnName()))
+                if (SPEC_NUMBER_TSV_COL.equals(specimenColumn.getPrimaryTsvColumnName()))
                 {
                     columnName = specimenColumn.getDbColumnName();
                     break;
@@ -2924,7 +2918,7 @@ public class SpecimenImporter
 
         for (T column : potentialColumns)
         {
-            if (tsvColumnNames.contains(column.getTsvColumnName()) || tsvColumnNames.contains(column.getDbColumnName()))
+            if (tsvColumnNames.contains(column.getPrimaryTsvColumnName()) || tsvColumnNames.contains(column.getDbColumnName()))
             {
                 availableColumns.add(column);
                 skipColumns.remove(column.getDbColumnName());
@@ -3697,11 +3691,11 @@ public class SpecimenImporter
         String strType = schema.getSqlDialect().getSqlCastTypeName(JdbcType.VARCHAR);
 
         Map<String, SpecimenColumn> loadedColumnMap = new HashMap<>();
-        loadedColumns.forEach(col -> loadedColumnMap.put(col.getTsvColumnName(), col));
+        loadedColumns.forEach(col -> loadedColumnMap.put(col.getPrimaryTsvColumnName(), col));
         BASE_SPECIMEN_COLUMNS.forEach(col -> {
             if (col.getTargetTable().isSpecimens())
             {
-                if (loadedColumnMap.isEmpty() || loadedColumnMap.containsKey(col.getTsvColumnName()))
+                if (loadedColumnMap.isEmpty() || loadedColumnMap.containsKey(col.getPrimaryTsvColumnName()))
                 {
                     String columnName = innerTable + col.getLegalDbColumnName(schema.getSqlDialect());
                     hash.add("'~'");
@@ -3720,8 +3714,8 @@ public class SpecimenImporter
     private Object getValue(ImportableColumn col, Map tsvRow)
     {
         Object value = null;
-        if (tsvRow.containsKey(col.getTsvColumnName()))
-            value = tsvRow.get(col.getTsvColumnName());
+        if (tsvRow.containsKey(col.getPrimaryTsvColumnName()))
+            value = tsvRow.get(col.getPrimaryTsvColumnName());
         else if (tsvRow.containsKey(col.getDbColumnName()))
             value = tsvRow.get(col.getDbColumnName());
         return value;

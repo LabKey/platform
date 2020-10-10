@@ -124,8 +124,8 @@ public class EditableSpecimenImporter extends SpecimenImporter
                     SpecimenColumn specCol = findSpecimenColumnFromDbName(columnName);
                     if (null != specCol)
                     {
-                        newRow.put(specCol.getTsvColumnName(), value);
-                        seenFields.add(specCol.getTsvColumnName());
+                        newRow.put(specCol.getPrimaryTsvColumnName(), value);
+                        seenFields.add(specCol.getPrimaryTsvColumnName());
                     }
                 }
             }
