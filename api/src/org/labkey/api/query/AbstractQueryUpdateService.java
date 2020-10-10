@@ -157,8 +157,20 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     public static void addTransactionAuditEvent(DbScope.Transaction transaction,  User user, TransactionAuditProvider.TransactionAuditEvent auditEvent)
     {
-        transaction.addCommitTask(() -> AuditLogService.get().addEvent(user, auditEvent), DbScope.CommitTaskOption.PRECOMMIT);
-        transaction.setAuditId(auditEvent.getRowId());
+        UserSchema schema = AuditLogService.getAuditLogSchema(user, ContainerManager.getRoot());
+
+        if (schema != null)
+        {
+            // This is a little hack to ensure that the audit table has actually been created and gets put into the table cache by the time the
+            // pre-commit task is executed.  Otherwise, since the creation of the table happens while within the commit for the
+            // outermost transaction, it looks like there is a close that hasn't happened when trying to commit the transaction for creating the
+            // table.
+            schema.getTable(auditEvent.getEventType(), false);
+
+            transaction.addCommitTask(() -> AuditLogService.get().addEvent(user, auditEvent), DbScope.CommitTaskOption.PRECOMMIT);
+
+            transaction.setAuditId(auditEvent.getRowId());
+        }
     }
 
     protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, InsertOption forImport, Map<Enum, Object> configParameters)
