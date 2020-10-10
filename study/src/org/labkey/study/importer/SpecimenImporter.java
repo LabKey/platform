@@ -3014,7 +3014,6 @@ public class SpecimenImporter
         else
             executeSQL(schema, "DELETE FROM " + tableName);
 
-
         ArrayList<ComputedColumn> computedColumns = new ArrayList<>();
         if (null != drawDate)
             computedColumns.add(drawDate);
@@ -3085,13 +3084,13 @@ public class SpecimenImporter
 */
             // CONSIDER turn off data conversion
             //for (ColumnDescriptor cd : tsvColumns) cd.clazz = String.class;
-            // CONSIDER sue AsyncDataIterator
+            // CONSIDER use AsyncDataIterator
             //DataIteratorBuilder asyncIn = new AsyncDataIterator.Builder(tsv);
             DataIteratorBuilder asyncIn = tsv;
             DataIteratorBuilder specimenWrapped = new SpecimenImportBuilder(target, asyncIn, file.getTableType().getColumns(), computedColumns);
             DataIteratorBuilder standardEtl = StandardDataIteratorBuilder.forInsert(target, specimenWrapped, _container, getUser(), dix);
             DataIteratorBuilder persist = ((UpdateableTableInfo)target).persistRows(standardEtl, dix);
-            Pump pump = new Pump(persist,dix);
+            Pump pump = new Pump(persist, dix);
             pump.setProgress(new ListImportProgress()
             {
                 long heartBeat = HeartBeat.currentTimeMillis();
@@ -3099,7 +3098,6 @@ public class SpecimenImporter
                 @Override
                 public void setTotalRows(int rows)
                 {
-
                 }
 
                 @Override
@@ -3125,23 +3123,32 @@ public class SpecimenImporter
             rowCount = pump.getRowCount();
 
             info(tableName + ": Replaced all data with " + rowCount + " new rows.");
-
         }
         finally
         {
             file.getStrategy().close();
         }
 
+//        List<T> availableColumns = new ArrayList<>();
+//        Set<String> tsvColumnNames = new CaseInsensitiveHashSet();
+//        for (ColumnDescriptor c : tsvColumns)
+//            tsvColumnNames.add(c.getColumnName());
+//
+//        for (T column : (Collection<T>)file.getTableType().getColumns())
+//        {
+//            if (tsvColumnNames.contains(column.getTsvColumnName()) || tsvColumnNames.contains(column.getDbColumnName()))
+//                availableColumns.add(column);
+//        }
 
+        // TODO: Probably should prune availableColumns to those that were actually populated by the DataIterators above, but
+        // I don't know how to get this list from SpecimenImportIterator. The commented out code just above was attempting to
+        // prune, but it fails to account for import aliases. We shouldn't be using the TSV names at this point, because
+        // aliased columns have already been mapped to their canonical names.
         List<T> availableColumns = new ArrayList<>();
-        Set<String> tsvColumnNames = new CaseInsensitiveHashSet();
-        for (ColumnDescriptor c : tsvColumns)
-            tsvColumnNames.add(c.getColumnName());
 
         for (T column : (Collection<T>)file.getTableType().getColumns())
         {
-            if (tsvColumnNames.contains(column.getTsvColumnName()) || tsvColumnNames.contains(column.getDbColumnName()))
-                availableColumns.add(column);
+            availableColumns.add(column);
         }
 
         return new Pair<>(availableColumns, rowCount);
@@ -3166,21 +3173,8 @@ public class SpecimenImporter
         @Override
         public DataIterator getDataIterator(final DataIteratorContext context)
         {
-//            ValidationException setupError = new ValidationException();
-//            DataIterator matchColumns = new MatchColumnsDataIterator(dib.getDataIterator(context), target, setupError, getContainer());
-//            if (setupError.hasErrors())
-//                context.getErrors().addRowError(setupError);
             MapDataIterator in = DataIteratorUtil.wrapMap(dib.getDataIterator(context), false);
             return new SpecimenImportIterator(this, in, context);
-        }
-    }
-
-    private static class MatchColumnsDataIterator extends WrapperDataIterator
-    {
-        protected MatchColumnsDataIterator(DataIterator di, TableInfo target, ValidationException setupError, Container c)
-        {
-            super(di);
-            ArrayList<ColumnInfo> columns = DataIteratorUtil.matchColumns(di, target, true, setupError,  c);
         }
     }
 
@@ -3189,7 +3183,7 @@ public class SpecimenImporter
     // TODO StandardDataIteratorBuilder should be enforcing max length
     private class SpecimenImportIterator extends SimpleTranslator
     {
-        Map<String,Object> _rowMap;
+        Map<String, Object> _rowMap;
 
         SpecimenImportIterator(SpecimenImportBuilder sib, MapDataIterator in, DataIteratorContext context)
         {
@@ -3225,11 +3219,11 @@ public class SpecimenImporter
                 if (seen.add(ic.getLegalDbColumnName(d)))
                 {
                     String boundInputColumnName = null;
-                    Optional<String> importName = ic.getImportNames().stream()
+                    Optional<String> firstImportName = ic.getImportNames().stream()
                         .filter(tsvColumnNames::contains)
                         .findFirst();
-                    if (importName.isPresent())
-                        boundInputColumnName = importName.get();
+                    if (firstImportName.isPresent())
+                        boundInputColumnName = firstImportName.get();
                     else if (tsvColumnNames.contains(ic.getDbColumnName()))
                         boundInputColumnName = ic.getDbColumnName();
                     final String name = boundInputColumnName;
