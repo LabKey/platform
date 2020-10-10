@@ -39,7 +39,6 @@ import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
-import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -785,8 +784,7 @@ public class SpecimenImporter
             @Override
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
-                return (from.equals(to) || canPromoteNumeric(from, to)) &&
-                        (from.isNumeric() || from.isText());
+                return (from.equals(to) || canPromoteNumeric(from, to)) && (from.isNumeric() || from.isText());
             }
         };
 
@@ -2452,7 +2450,7 @@ public class SpecimenImporter
         {
             // reserve rowids for this insert
             // NOTE QuerySchema exp.Materials (plural) has dbsequence info, but DbSchema exp.Material (singular) does not
-            TableInfo material = DefaultSchema.get(info.getUser(),info.getContainer(),"exp").getTable("Materials", null);
+            TableInfo material = DefaultSchema.get(info.getUser(), info.getContainer(),"exp").getTable("Materials", null);
             ColumnInfo rowId = material.getColumn("RowId");
             DbSequence seq = DbSequenceManager.getPreallocatingSequence(rowId.getDbSequenceContainer(null), material.getDbSequenceName(rowId.getName()), 0, 1000);
 
@@ -2948,12 +2946,12 @@ public class SpecimenImporter
         if (keyColumns.isEmpty())
             keyColumns = null;
 
-        DataIteratorBuilder specimenIter = new SpecimenImportBuilder(target, new DataIteratorBuilder.Wrapper(iter), potentialColumns, Collections.singletonList(idCol));
+        DataIteratorBuilder specimenIter = new SpecimenImportBuilder(new DataIteratorBuilder.Wrapper(iter), potentialColumns, Collections.singletonList(idCol));
         DataIteratorBuilder std = StandardDataIteratorBuilder.forInsert(target, specimenIter, _container, getUser(), dix);
         DataIteratorBuilder tableIter = new TableInsertDataIteratorBuilder(std, target, _container)
-                .setKeyColumns(keyColumns)
-                .setAddlSkipColumns(skipColumns)
-                .setDontUpdate(dontUpdate);
+            .setKeyColumns(keyColumns)
+            .setAddlSkipColumns(skipColumns)
+            .setDontUpdate(dontUpdate);
 
         assert !_specimensTableType.getTableName().equalsIgnoreCase(tableName);
         info(tableName + ": Starting merge of data...");
@@ -3087,7 +3085,7 @@ public class SpecimenImporter
             // CONSIDER use AsyncDataIterator
             //DataIteratorBuilder asyncIn = new AsyncDataIterator.Builder(tsv);
             DataIteratorBuilder asyncIn = tsv;
-            DataIteratorBuilder specimenWrapped = new SpecimenImportBuilder(target, asyncIn, file.getTableType().getColumns(), computedColumns);
+            DataIteratorBuilder specimenWrapped = new SpecimenImportBuilder(asyncIn, file.getTableType().getColumns(), computedColumns);
             DataIteratorBuilder standardEtl = StandardDataIteratorBuilder.forInsert(target, specimenWrapped, _container, getUser(), dix);
             DataIteratorBuilder persist = ((UpdateableTableInfo)target).persistRows(standardEtl, dix);
             Pump pump = new Pump(persist, dix);
@@ -3103,7 +3101,7 @@ public class SpecimenImporter
                 @Override
                 public void setCurrentRow(int currentRow)
                 {
-                    if (0 == currentRow%SQL_BATCH_SIZE)
+                    if (0 == currentRow % SQL_BATCH_SIZE)
                     {
                         if (0 == currentRow % (SQL_BATCH_SIZE*100))
                             info(currentRow + " rows loaded...");
@@ -3129,26 +3127,16 @@ public class SpecimenImporter
             file.getStrategy().close();
         }
 
-//        List<T> availableColumns = new ArrayList<>();
-//        Set<String> tsvColumnNames = new CaseInsensitiveHashSet();
-//        for (ColumnDescriptor c : tsvColumns)
-//            tsvColumnNames.add(c.getColumnName());
-//
-//        for (T column : (Collection<T>)file.getTableType().getColumns())
-//        {
-//            if (tsvColumnNames.contains(column.getTsvColumnName()) || tsvColumnNames.contains(column.getDbColumnName()))
-//                availableColumns.add(column);
-//        }
-
-        // TODO: Probably should prune availableColumns to those that were actually populated by the DataIterators above, but
-        // I don't know how to get this list from SpecimenImportIterator. The commented out code just above was attempting to
-        // prune, but it fails to account for import aliases. We shouldn't be using the TSV names at this point, because
-        // aliased columns have already been mapped to their canonical names.
+        // Note: this duplicates the logic in SpecimenImportIterator (just below). Keep these code paths in sync.
         List<T> availableColumns = new ArrayList<>();
+        Set<String> tsvColumnNames = new CaseInsensitiveHashSet();
+        for (ColumnDescriptor c : tsvColumns)
+            tsvColumnNames.add(c.getColumnName());
 
         for (T column : (Collection<T>)file.getTableType().getColumns())
         {
-            availableColumns.add(column);
+            if (column.getImportNames().stream().anyMatch(tsvColumnNames::contains) || tsvColumnNames.contains(column.getDbColumnName()))
+                availableColumns.add(column);
         }
 
         return new Pair<>(availableColumns, rowCount);
@@ -3157,15 +3145,13 @@ public class SpecimenImporter
 
     private class SpecimenImportBuilder implements DataIteratorBuilder
     {
-        final TableInfo target;
-        final DataIteratorBuilder dib;
-        final Collection<? extends ImportableColumn> importColumns;
-        final List<ComputedColumn> computedColumns;
+        private final DataIteratorBuilder dib;
+        private final Collection<? extends ImportableColumn> importColumns;
+        private final List<ComputedColumn> computedColumns;
 
-        SpecimenImportBuilder(TableInfo table, DataIteratorBuilder in, Collection<? extends ImportableColumn> importColumns, List<ComputedColumn> computedColumns)
+        SpecimenImportBuilder(DataIteratorBuilder in, Collection<? extends ImportableColumn> importColumns, List<ComputedColumn> computedColumns)
         {
             dib = in;
-            this.target = table;
             this.importColumns = importColumns;
             this.computedColumns = computedColumns;
         }
@@ -3183,7 +3169,7 @@ public class SpecimenImporter
     // TODO StandardDataIteratorBuilder should be enforcing max length
     private class SpecimenImportIterator extends SimpleTranslator
     {
-        Map<String, Object> _rowMap;
+        private Map<String, Object> _rowMap;
 
         SpecimenImportIterator(SpecimenImportBuilder sib, MapDataIterator in, DataIteratorContext context)
         {
@@ -3246,7 +3232,7 @@ public class SpecimenImporter
 
                         return ret;
                     };
-                    addColumn(col,call);
+                    addColumn(col, call);
                 }
             }
         }
@@ -3373,7 +3359,7 @@ public class SpecimenImporter
             {
                 Object s = SpecimenImporter.this.getValue(visitCol, row);
                 Object d = SpecimenImporter.this.getValue(dateCol, row);
-                Double sequencenum = h.translateSequenceNum(s,d);
+                Double sequencenum = h.translateSequenceNum(s, d);
 //                if (sequencenum == null)
 //                    throw new org.apache.commons.beanutils.ConversionException("No visit_value provided: visit_value=" + String.valueOf(s) + " draw_timestamp=" + String.valueOf(d));
                 if (null == sequencenum)
@@ -3895,7 +3881,7 @@ public class SpecimenImporter
         public void createTable()
         {
             List<BaseColumnInfo> columns = new ArrayList<>();
-            columns.add(new BaseColumnInfo("Container",JdbcType.GUID, 0, false));
+            columns.add(new BaseColumnInfo("Container", JdbcType.GUID, 0, false));
             columns.add(new BaseColumnInfo("id", JdbcType.VARCHAR, 0, false));
             columns.add(new BaseColumnInfo("s", JdbcType.VARCHAR, 30, true));
             columns.get(columns.size()-1).setKeyField(true);
@@ -3917,7 +3903,7 @@ public class SpecimenImporter
 
         private TableResultSet selectValues()
         {
-            return new SqlSelector(_simpleTable.getSchema(), "SELECT Container,id,s,i,entityid FROM " + _simpleTable + " ORDER BY id").getResultSet();
+            return new SqlSelector(_simpleTable.getSchema(), "SELECT Container, id, s, i, entityid FROM " + _simpleTable + " ORDER BY id").getResultSet();
         }
 
         private Map<String, Object> row(String s, Integer i)
