@@ -113,6 +113,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
@@ -140,6 +141,7 @@ public class SpecimenImporter
 
         private final String _tsvColumnName;
         private final Collection<String> _tsvColumnAliases;
+        private final Collection<String> _importNames;
         private final String _dbColumnName;
         private final boolean _maskOnExport;
         private final boolean _unique;
@@ -173,6 +175,9 @@ public class SpecimenImporter
         {
             _tsvColumnName = tsvColumnName;
             _tsvColumnAliases = tsvColumnAliases;
+            List<String> importNames = new LinkedList<>(_tsvColumnAliases);
+            importNames.add(0, _tsvColumnName);
+            _importNames = Collections.unmodifiableList(importNames);
             _dbColumnName = dbColumnName;
             _unique = unique;
             _maskOnExport = maskOnExport;
@@ -265,13 +270,9 @@ public class SpecimenImporter
         }
 
         // All valid import names: primary name plus all import aliases
-        // TODO: Might want to hold a set? Initialize unmodifiable version in constructor?
         public Collection<String> getImportNames()
         {
-            List<String> ret = new LinkedList<>(_tsvColumnAliases);
-            ret.add(_tsvColumnName);
-
-            return ret;
+            return _importNames;
         }
 
         public Collection<String> getImportAliases()
@@ -3224,8 +3225,11 @@ public class SpecimenImporter
                 if (seen.add(ic.getLegalDbColumnName(d)))
                 {
                     String boundInputColumnName = null;
-                    if (tsvColumnNames.contains(ic.getTsvColumnName()))
-                        boundInputColumnName = ic.getTsvColumnName();
+                    Optional<String> importName = ic.getImportNames().stream()
+                        .filter(tsvColumnNames::contains)
+                        .findFirst();
+                    if (importName.isPresent())
+                        boundInputColumnName = importName.get();
                     else if (tsvColumnNames.contains(ic.getDbColumnName()))
                         boundInputColumnName = ic.getDbColumnName();
                     final String name = boundInputColumnName;
