@@ -1921,7 +1921,7 @@ public class SpecimenImporter
             .add(true)
             .add(true);
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), selectCommentsSql).forEach(comment -> qcCommentMap.put(comment.getGlobalUniqueId(), comment), SpecimenComment.class);
+        new SqlSelector(StudySchema.getInstance().getSchema(), selectCommentsSql).forEach(SpecimenComment.class, comment -> qcCommentMap.put(comment.getGlobalUniqueId(), comment));
 
 //        if (!merge)
 //            new SpecimenTablesProvider(getContainer(), getUser(), null).dropTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
@@ -1940,7 +1940,7 @@ public class SpecimenImporter
             _iTimer.setPhase(ImportPhases.GetVialBatch);
             TableSelector vialSelector = new TableSelector(getTableInfoVial(), null, new Sort("RowId"));
 
-            vialSelector.forEachMapBatch(vialBatch -> {
+            vialSelector.forEachMapBatch(CURRENT_SITE_UPDATE_SIZE, vialBatch -> {
                 int count = rowCount.intValue();
                 if (count % CURRENT_SITE_UPDATE_LOGGING_SIZE == 0)
                     info("Updating vial rows " + (count + 1) + " through " + (count + CURRENT_SITE_UPDATE_LOGGING_SIZE) + ".");
@@ -2128,7 +2128,7 @@ public class SpecimenImporter
 
                 rowCount.add(CURRENT_SITE_UPDATE_SIZE);
                 _iTimer.setPhase(ImportPhases.GetVialBatch);
-            }, CURRENT_SITE_UPDATE_SIZE);
+            });
         }
         catch (SQLException e)
         {
