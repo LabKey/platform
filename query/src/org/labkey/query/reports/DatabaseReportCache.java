@@ -59,7 +59,7 @@ public class DatabaseReportCache
             MultiValuedMap<String, Report> reportKeyMap = new CaseInsensitiveArrayListValuedMap<>(); // Issue 36199: change map to by case insensitive
             List<Report> inheritableReports = new LinkedList<>();
 
-            new TableSelector(CoreSchema.getInstance().getTableInfoReport(), SimpleFilter.createContainerFilter(c, "ContainerId"), null).forEach(reportDB -> {
+            new TableSelector(CoreSchema.getInstance().getTableInfoReport(), SimpleFilter.createContainerFilter(c, "ContainerId"), null).forEach(ReportDB.class, reportDB -> {
                 Report report = svc._getInstance(reportDB);
 
                 // Reports can be null if type is unknown (e.g., defining module disappears)
@@ -72,7 +72,7 @@ public class DatabaseReportCache
                     if ((reportDB.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0)
                         inheritableReports.add(report);
                 }
-            }, ReportDB.class);
+            });
 
             _rowIdMap = Collections.unmodifiableMap(rowIdMap);
             _entityIdMap = Collections.unmodifiableMap(entityIdMap);

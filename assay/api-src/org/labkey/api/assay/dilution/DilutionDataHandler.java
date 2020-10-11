@@ -724,8 +724,8 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     {
         Map<String, Pair<Integer, String>> wellGroupNameToNabSpecimen = new HashMap<>();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString("RunId"), run.getRowId());
-        new TableSelector(DilutionManager.getTableInfoNAbSpecimen(), filter, null).forEach((NabSpecimen nabSpecimen) ->
-                wellGroupNameToNabSpecimen.put(nabSpecimen.getWellgroupName(), new Pair<>(nabSpecimen.getRowId(), nabSpecimen.getSpecimenLsid())), NabSpecimen.class);
+        new TableSelector(DilutionManager.getTableInfoNAbSpecimen(), filter, null).forEach(NabSpecimen.class, (NabSpecimen nabSpecimen) ->
+                wellGroupNameToNabSpecimen.put(nabSpecimen.getWellgroupName(), new Pair<>(nabSpecimen.getRowId(), nabSpecimen.getSpecimenLsid())));
 
         populateWellData(protocol, run, user, getCutoffFormats(protocol, run), wellGroupNameToNabSpecimen);
     }
@@ -750,8 +750,8 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     {
         Map<String, Pair<Integer, String>> wellGroupNameToNabSpecimen = new HashMap<>();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString("RunId"), run.getRowId());
-        new TableSelector(DilutionManager.getTableInfoNAbSpecimen(), filter, null).forEach((NabSpecimen nabSpecimen) ->
-                wellGroupNameToNabSpecimen.put(nabSpecimen.getWellgroupName(), new Pair<>(nabSpecimen.getRowId(), nabSpecimen.getSpecimenLsid())), NabSpecimen.class);
+        new TableSelector(DilutionManager.getTableInfoNAbSpecimen(), filter, null).forEach(NabSpecimen.class, (NabSpecimen nabSpecimen) ->
+                wellGroupNameToNabSpecimen.put(nabSpecimen.getWellgroupName(), new Pair<>(nabSpecimen.getRowId(), nabSpecimen.getSpecimenLsid())));
 
         _populateWellData(protocol, run, user, getCutoffFormats(protocol, run), wellGroupNameToNabSpecimen, false, false, dilutionData, wellData);
     }
