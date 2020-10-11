@@ -1,13 +1,13 @@
-import React from 'react';
+import React, { PureComponent } from 'react';
+import { ActionURL } from '@labkey/api';
 
-import { ErrorTopSection } from '../components/ErrorTopSection';
-import { ErrorType } from './ErrorType';
+import { getErrorHeading, getImage, getInstruction, getSubHeading, getViewDetails } from './ErrorType';
+import { ErrorDetails } from './model';
 
 import './errorHandler.scss';
 
 export interface AppContext {
-    message: string;
-    errorType: ErrorType;
+    errorDetails: ErrorDetails;
 }
 
 interface ErrorHandlerProps {
@@ -18,38 +18,53 @@ interface ErrorHandlerState {
     showDetails: boolean;
 }
 
-export class ErrorHandler extends React.PureComponent<ErrorHandlerProps, ErrorHandlerState> {
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            showDetails: false,
-        };
-    }
+export class ErrorHandler extends PureComponent<ErrorHandlerProps, ErrorHandlerState> {
+    state: Readonly<ErrorHandlerState> = { showDetails: false };
 
     onBackClick = (): void => {
-        window.history.back();
+        // Back button - takes you back to the previous page if available
+        // and to the ‘home’ folder if not possible to go back to the previous page
+        if (window.history.length !== 1) {
+            // browsers like chrome stores their homepage as first item
+            window.history.back();
+        } else {
+            window.location.href = ActionURL.getBaseURL(false);
+        }
     };
 
     onViewDetailsClick = (): void => {
-        this.setState(() => ({
-            showDetails: true,
-        }));
+        this.setState(state => ({ showDetails: !state.showDetails }));
     };
 
     render() {
-        const { errorType, message } = this.props.context;
+        const { errorDetails } = this.props.context;
         const { showDetails } = this.state;
+
+        const viewDetailsBtnText = showDetails ? 'Hide Details' : 'View Details';
 
         return (
             <>
-                <ErrorTopSection
-                    errorType={errorType}
-                    onBackClick={this.onBackClick}
-                    onViewDetailsClick={this.onViewDetailsClick}
-                />
-                {/* TODO : ErrorPage, following section in next story*/}
-                {showDetails && <h3 className="labkey-error">{message}</h3>}
+                <div className="error-details-body">
+                    <div className="row">
+                        <div className="col-lg-1 col-md-1 hidden-xs hidden-sm" />
+                        <div className="col-lg-7 col-md-6 col-sm-12 col-xs-12">
+                            <div>
+                                {getErrorHeading(errorDetails)}
+                                {getSubHeading(errorDetails)}
+                                {getInstruction(errorDetails)}
+                                <button className="btn btn-primary error-backButton" onClick={this.onBackClick}>
+                                    Back
+                                </button>
+                                <button className="btn btn-default error-details-btn" onClick={this.onViewDetailsClick}>
+                                    {viewDetailsBtnText}
+                                </button>
+                            </div>
+                        </div>
+                        <div className="col-lg-3 col-md-4 hidden-xs hidden-sm">{getImage(errorDetails)}</div>
+                        <div className="col-lg-1 col-md-1 hidden-xs hidden-sm" />
+                    </div>
+                </div>
+                {showDetails && <div className="error-details-container">{getViewDetails(errorDetails)}</div>}
             </>
         );
     }

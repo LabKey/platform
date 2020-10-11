@@ -61,7 +61,7 @@ public class QueryDefCache
             Map<String, Map<String, QueryDef>> customQueryDefs = new CaseInsensitiveHashMap<>();
             Map<Integer, QueryDef> queryDefIdMap = new HashMap<>();
 
-            new TableSelector(QueryManager.get().getTableInfoQueryDef(), SimpleFilter.createContainerFilter(c), null).forEach(queryDef -> {
+            new TableSelector(QueryManager.get().getTableInfoQueryDef(), SimpleFilter.createContainerFilter(c), null).forEach(QueryDef.class, queryDef -> {
 
                 if (queryDef.getSql() != null)
                 {
@@ -75,7 +75,7 @@ public class QueryDefCache
                 }
                 queryDefIdMap.put(queryDef.getQueryDefId(), queryDef);
 
-            }, QueryDef.class);
+            });
 
             _queryDefs = Collections.unmodifiableMap(queryDefs);
             _customQueryDefs = Collections.unmodifiableMap(customQueryDefs);

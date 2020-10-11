@@ -58,7 +58,7 @@ public class IssueListDefCache
             Map<String, IssueListDef> nameMap = new HashMap<>();
             Map<String, List<IssueListDef>> domainKindMap = new HashMap<>();
 
-            new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), SimpleFilter.createContainerFilter(c), null).forEach(issueDef -> {
+            new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), SimpleFilter.createContainerFilter(c), null).forEach(IssueListDef.class, issueDef -> {
 
                 rowIdMap.put(issueDef.getRowId(), issueDef);
                 nameMap.put(issueDef.getName(), issueDef);
@@ -68,7 +68,7 @@ public class IssueListDefCache
 
                 domainKindMap.get(issueDef.getKind()).add(issueDef);
 
-            }, IssueListDef.class);
+            });
 
             _rowIdMap = Collections.unmodifiableMap(rowIdMap);
             _nameMap = Collections.unmodifiableMap(nameMap);
