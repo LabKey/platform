@@ -351,9 +351,10 @@ public class AuditController extends SpringActionController
         {
             List<Integer> rowIds;
             if (form.isSampleType())
-                rowIds = getTransactionSampleIds(form.getTransactionAuditId(), getCanSeeAuditLogUser(getUser()), getContainer());
+                rowIds = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), getCanSeeAuditLogUser(getUser()), getContainer());
             else
-                rowIds = getTransactionSourceIds(form.getTransactionAuditId(), getUser(), getContainer());;
+                rowIds = AuditLogImpl.get().getTransactionSourceIds(form.getTransactionAuditId(), getUser(), getContainer());
+            ;
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("success", true);
@@ -374,43 +375,7 @@ public class AuditController extends SpringActionController
 
             return elevatedUser;
         }
-
-        private List<Integer> getTransactionSampleIds(long transactionAuditId, User user, Container container)
-        {
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition(FieldKey.fromParts("TransactionID"), transactionAuditId);
-
-            List<SampleTimelineAuditEvent> events = AuditLogService.get().getAuditEvents(container, user, SampleTimelineAuditEvent.EVENT_TYPE, filter, null);
-            return events.stream().map(SampleTimelineAuditEvent::getSampleId).collect(Collectors.toList());
-        }
-
-        private List<Integer> getTransactionSourceIds(long transactionAuditId, User user, Container container)
-        {
-            List<DetailedAuditTypeEvent> events = QueryService.get().getQueryUpdateAuditRecords(user, container, transactionAuditId);
-            List<String> lsids = new ArrayList<>();
-            List<Integer> sourceIds = new ArrayList<>();
-            events.forEach((event) -> {
-                if (event.getNewRecordMap() != null)
-                {
-                    Map<String, String> newRecord = AbstractAuditTypeProvider.decodeFromDataMap(event.getNewRecordMap());
-                    if (newRecord.containsKey("RowId"))
-                        sourceIds.add(Integer.valueOf(newRecord.get("RowId")));
-                    else if (newRecord.containsKey("LSID"))
-                        lsids.add(newRecord.get("LSID"));
-
-                }
-            });
-            if (!lsids.isEmpty())
-            {
-                SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-                filter.addCondition(FieldKey.fromParts("LSID"), lsids, CompareType.IN);
-                TableSelector selector = new TableSelector(ExperimentService.get().getTinfoData(), Collections.singleton("RowId"), filter, null);
-                sourceIds.addAll(selector.getArrayList(Integer.class));
-            }
-            return sourceIds;
-        }
     }
-
 
     public static class AuditTransactionForm
     {
