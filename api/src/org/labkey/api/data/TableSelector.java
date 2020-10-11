@@ -251,10 +251,10 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     }
 
     @Override
-    protected void forEach(ForEachBlock<ResultSet> block, ResultSetFactory factory)
+    protected void forEach(ResultSetFactory factory, ForEachBlock<ResultSet> block)
     {
         ensureStableColumnOrder("forEach(ForEachBlock<ResultSet> block)");
-        super.forEach(block, factory);
+        super.forEach(factory, block);
     }
 
     public void forEachResults(ForEachBlock<Results> block)
