@@ -986,7 +986,7 @@ public class IssueManager
 
         // Index issues in batches of 100
         new TableSelector(_issuesSchema.getTableInfoIssues(), PageFlowUtil.set("issueid"), f, null)
-                .forEachBatch(batch -> task.addRunnable(new IndexGroup(task, batch), SearchService.PRIORITY.group), Integer.class, 100);
+            .forEachBatch(Integer.class, 100, batch -> task.addRunnable(new IndexGroup(task, batch), SearchService.PRIORITY.group));
     }
 
     private static class IndexGroup implements Runnable
@@ -1265,10 +1265,10 @@ public class IssueManager
                 append(" WHERE IssueId IN (SELECT IssueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
                 append(" WHERE IssueDefId = ?)");
         commentsSQL.add(issueDef.getRowId());
-        new SqlSelector(IssuesSchema.getInstance().getSchema(), commentsSQL).forEach(entityId -> {
+        new SqlSelector(IssuesSchema.getInstance().getSchema(), commentsSQL).forEach(String.class, entityId -> {
             CommentAttachmentParent parent = new CommentAttachmentParent(c.getId(), entityId);
             attachmentParents.add(parent);
-        }, String.class);
+        });
 
         AttachmentService.get().deleteAttachments(attachmentParents);
 

@@ -2212,12 +2212,12 @@ public class StudyController extends BaseStudyController
                     "SELECT v.RowId FROM study.Visit v WHERE Container = ? AND NOT EXISTS (SELECT * FROM study.ParticipantVisit pv WHERE pv.Container = ? and pv.VisitRowId = v.RowId)",
                     getContainer(), getContainer()
                 )
-            ).forEach(rowId -> {
+            ).forEach(Integer.class, rowId -> {
                 VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, rowId);
 
                 if (null != visit)
                     visits.add(visit);
-            }, Integer.class);
+            });
 
             return visits;
         }
