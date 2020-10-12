@@ -275,10 +275,10 @@ public class RelativeDateVisitManager extends VisitManager
         // Build up a set so that we can create all of them in bulk
         Set<Double> daysToEnsure = new HashSet<>();
 
-        new SqlSelector(schema, sql).forEach(day -> {
+        new SqlSelector(schema, sql).forEach(Integer.class, day -> {
             double seqNum = null != day ? day : 0;
             daysToEnsure.add(seqNum);
-        }, Integer.class);
+        });
 
         StudyManager.getInstance().ensureVisits(getStudy(), user, daysToEnsure, null);
 

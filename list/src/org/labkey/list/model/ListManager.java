@@ -1058,12 +1058,12 @@ public class ListManager implements SearchService.DocumentProvider
         String listSchemaName = ListSchema.getInstance().getSchemaName();
 
         // Now clear LastIndexed column of every underlying list table, which addresses the "index each list item as a separate document" case. See #28748.
-        new TableSelector(getListMetadataTable()).forEach(listDef -> {
+        new TableSelector(getListMetadataTable()).forEach(ListDef.class, listDef -> {
             ListDefinition list = new ListDefinitionImpl(listDef);
             Domain domain = list.getDomain();
             if (null != domain && null != domain.getStorageTableName())
                 clearLastIndexed(scope, listSchemaName + "." + domain.getStorageTableName());
-        }, ListDef.class);
+        });
     }
 
     private void clearLastIndexed(DbScope scope, String selectName)

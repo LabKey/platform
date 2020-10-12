@@ -59,13 +59,13 @@ public class QCStateManager
             Map<Integer, QCState> qcStateIdMap = new HashMap<>();
             Map<String, QCState>  qcStateLabelMap = new HashMap<>();
 
-            new TableSelector(CoreSchema.getInstance().getTableInfoQCState(), SimpleFilter.createContainerFilter(c), new Sort("Label")).forEach(qcState -> {
+            new TableSelector(CoreSchema.getInstance().getTableInfoQCState(), SimpleFilter.createContainerFilter(c), new Sort("Label")).forEach(QCState.class, qcState -> {
 
                 qcStates.add(qcState);
                 qcStateIdMap.put(qcState.getRowId(), qcState);
                 qcStateLabelMap.put(qcState.getLabel(), qcState);
 
-            }, QCState.class);
+            });
 
             _qcStates = Collections.unmodifiableList(qcStates);
             _qcStateIdMap = Collections.unmodifiableMap(qcStateIdMap);

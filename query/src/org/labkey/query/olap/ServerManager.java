@@ -179,7 +179,7 @@ public class ServerManager
             SimpleFilter filter = SimpleFilter.createContainerFilter(c);
 
             new TableSelector(QueryManager.get().getTableInfoOlapDef(), filter, null)
-                .forEach(def -> map.put(def.getName(), new CustomOlapSchemaDescriptor(def)), OlapDef.class);
+                .forEach(OlapDef.class, def -> map.put(def.getName(), new CustomOlapSchemaDescriptor(def)));
 
             return map.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(map);
         }
