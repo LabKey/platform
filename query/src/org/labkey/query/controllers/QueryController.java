@@ -5465,7 +5465,8 @@ public class QueryController extends SpringActionController
             // 5025 : DataRegion checkbox names may contain comma
             // Beehive parses a single parameter value with commas into an array
             // which is not what we want.
-            return request.getParameterValues("id");
+            String[] paramIds = request.getParameterValues("id");
+            return  paramIds == null ? ids: paramIds;
         }
 
         public void setId(String[] ids)
