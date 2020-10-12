@@ -579,8 +579,9 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     /**
      * Retrieves the audit behavior for this table taking into account, in order of precedence:
      *  - the setting from the XML file (always returned if there is a value set)
-     *  - the value supplied by this table's implementation (returned if not NONE or overrideValue is null)
      *  - the override value provided
+     *  - the value supplied by this table's implementation
+     *
      * @param overrideValue value used to override the behavior type provided by the table implementation
      * @return audit behavior for this table
      */
@@ -589,10 +590,9 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         AuditBehaviorType type = getXmlAuditBehaviorType();
         if (type != null)
             return type;
-        type = getAuditBehavior();
-        if (type == AuditBehaviorType.NONE || type == null)
+        if (overrideValue != null)
             return overrideValue;
-        return type;
+        return getAuditBehavior();
     }
 
     default AuditBehaviorType getAuditBehavior(@Nullable String overrideValue)
