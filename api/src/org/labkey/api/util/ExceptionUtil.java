@@ -931,7 +931,7 @@ public class ExceptionUtil
         }
     }
 
-    private static void addDependenciesAndRender(int responseStatus, PageConfig pageConfig, HttpView<?> errorView, Throwable ex, HttpServletRequest request, HttpServletResponse response) throws Exception
+    private static void addDependenciesAndRender(int responseStatus, PageConfig pageConfig, HttpView<?> errorView, @Nullable Throwable ex, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         if (null == errorView)
         {
@@ -940,7 +940,11 @@ public class ExceptionUtil
         }
         pageConfig.addClientDependencies(errorView.getClientDependencies());
 
-        var title = responseStatus + ": " + ErrorView.ERROR_PAGE_TITLE + " -- " + ex.getMessage();
+        var title = responseStatus + ": " + ErrorView.ERROR_PAGE_TITLE;
+        if (null != ex)
+        {
+            title += " -- " + ex.getMessage();
+        }
         pageConfig.setTitle(title, false);
         errorView.getView().render(errorView.getModel(), request, response);
     }
