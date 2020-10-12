@@ -135,7 +135,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         assertEquals(count, selector.getCollection(User.class).size());
 
         final MutableInt forEachCount = new MutableInt(0);
-        selector.forEach(user -> forEachCount.increment(), User.class);
+        selector.forEach(User.class, user -> forEachCount.increment());
         assertEquals(count, forEachCount.intValue());
 
         final MutableInt forEachMapCount = new MutableInt(0);
@@ -143,11 +143,11 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         assertEquals(count, forEachMapCount.intValue());
 
         final MutableInt forEachBatchCount = new MutableInt(0);
-        selector.forEachBatch(batch -> {
+        selector.forEachBatch(User.class, 3, batch -> {
             assertFalse(batch.isEmpty());
             assertTrue(batch.size() <= 3);
             forEachBatchCount.add(batch.size());
-        }, User.class, 3);
+        });
         assertEquals(count, forEachBatchCount.intValue());
 
         assertEquals(count, selector.stream(User.class).count());
@@ -346,7 +346,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             int offset = 2;
 
             MutableInt testCount = new MutableInt(0);
-            selector.forEach(new ForEachBlock<K>()
+            selector.forEach(clazz, new ForEachBlock<K>()
             {
                 @Override
                 public void exec(K object) throws StopIteratingException
@@ -356,7 +356,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
                     if (testCount.intValue() == rowCount)
                         stopIterating();
                 }
-            }, clazz);
+            });
             assertEquals(rowCount, testCount.intValue());
 
             selector.setMaxRows(Table.ALL_ROWS);

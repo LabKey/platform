@@ -82,13 +82,13 @@ public class WellGroupTable extends BasePlateTable
         filter.addCondition(FieldKey.fromParts("PropertyURI"), propPrefix, CompareType.STARTS_WITH);
         final Map<String, PropertyDescriptor> map = new TreeMap<>();
 
-        new TableSelector(OntologyManager.getTinfoPropertyDescriptor(), filter, null).forEach(pd -> {
+        new TableSelector(OntologyManager.getTinfoPropertyDescriptor(), filter, null).forEach(PropertyDescriptor.class, pd -> {
             if (pd.getPropertyType() == PropertyType.DOUBLE)
                 pd.setFormat("0.##");
             map.put(pd.getName(), pd);
             visibleColumns.add(new FieldKey(keyProp, pd.getName()));
 
-        }, PropertyDescriptor.class);
+        });
 
         colProperty.setFk(new PropertyForeignKey(schema, null, map));
         colProperty.setIsUnselectable(true);

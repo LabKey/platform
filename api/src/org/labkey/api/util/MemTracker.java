@@ -118,7 +118,7 @@ public class MemTracker
 
     public static class HeldReference extends AllocationInfo
     {
-        private Object _reference;
+        private final Object _reference;
 
         private HeldReference(Object held, AllocationInfo allocationInfo)
         {
