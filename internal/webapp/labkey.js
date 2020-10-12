@@ -354,11 +354,30 @@ if (typeof LABKEY == "undefined")
             return qs;
         };
 
+        var slash = function(part)
+        {
+            return part ? (part.indexOf('/') === 0 ? '' : '/') + part : '';
+        }
+
+        // Composes a URL from origin so as not to assume pathing
+        var buildURL = function(controller, action, params, containerPath)
+        {
+            var qsParams = qs(params);
+
+            return [
+                window.location.origin,
+                slash(configs.contextPath),
+                slash(containerPath),
+                slash(controller + '-' + action),
+                qsParams ? '?' + qsParams : ''
+            ].join('');
+        }
+
         // So as not to confuse with native support for fetch()
-        var _fetch = function(url, params, success, failure)
+        var _fetch = function(controller, action, params, containerPath, success, failure)
         {
             var xhr = new XMLHttpRequest();
-            var _url = url + (url.indexOf('?') === -1 ? '?' : '&') + qs(params);
+            var url = buildURL(controller, action, params, containerPath);
 
             xhr.onreadystatechange = function()
             {
@@ -369,7 +388,7 @@ if (typeof LABKEY == "undefined")
                 }
             };
 
-            xhr.open('GET', _url, true);
+            xhr.open('GET', url, true);
 
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             if (LABKEY.CSRF)
@@ -559,9 +578,10 @@ if (typeof LABKEY == "undefined")
                 scriptCache.callbacksOnCache(_lib);
             };
 
-            _fetch('core-loadLibrary.api', {
+            // fetch library definition from the root container
+            _fetch('core', 'loadLibrary.api', {
                 library: _lib
-            }, function(data) {
+            }, undefined, function(data) {
                 // success
                 var json = JSON.parse(data.responseText);
                 var definition = json['libraries'][_lib];

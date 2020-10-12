@@ -843,7 +843,15 @@ public abstract class AssayProtocolSchema extends AssaySchema
                 String studyName = assayDataset.getStudy().getLabel();
                 if (studyName == null)
                     continue; // No study in that folder
-                String studyColumnName = "copied_to_" + sanitizeName(studyName);
+
+                String studyColumnName;
+                if (sanitizeName(studyName).isEmpty())
+                {
+                    // issue 41472 include the prefix as part of the sanitization process
+                    studyColumnName = sanitizeName("copied_to_" + studyName);
+                }
+                else
+                    studyColumnName = "copied_to_" + sanitizeName(studyName);
 
                 // column names must be unique. Prevent collisions
                 while (usedColumnNames.contains(studyColumnName))
