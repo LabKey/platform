@@ -917,7 +917,7 @@ public class ParticipantGroupManager
         final List<ParticipantGroup> groups = new ArrayList<>();
 
         Filter filter = new SimpleFilter(FieldKey.fromParts("categoryId"), def.getRowId());
-        new TableSelector(StudySchema.getInstance().getTableInfoParticipantGroup(), filter, new Sort("rowId")).forEach(group -> {
+        new TableSelector(StudySchema.getInstance().getTableInfoParticipantGroup(), filter, new Sort("rowId")).forEach(ParticipantGroup.class, group -> {
             // get the participants assigned to this group
             Filter filter1 = new SimpleFilter(FieldKey.fromParts("groupId"), group.getRowId());
             Set<String> participants = new HashSet<>();
@@ -926,7 +926,7 @@ public class ParticipantGroupManager
             group.setParticipantSet(participants);
             group.setCategoryLabel(def.getLabel());
             groups.add(group);
-        }, ParticipantGroup.class);
+        });
 
         return Collections.unmodifiableList(groups);
     };
