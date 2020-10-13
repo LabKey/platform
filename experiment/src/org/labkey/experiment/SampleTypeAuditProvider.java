@@ -19,9 +19,14 @@ import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
+import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -81,6 +86,20 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
     }
 
     @Override
+    public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
+    {
+        return new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, getDefaultVisibleColumns())
+        {
+            @Override
+            protected void initColumn(MutableColumnInfo col)
+            {
+                if (COLUMN_NAME_SAMPLE_TYPE_NAME.equalsIgnoreCase(col.getName()))
+                    col.setLabel("Sample Type");
+            }
+        };
+    }
+
+    @Override
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
         return (Class<K>) SampleTypeAuditEvent.class;
@@ -95,7 +114,7 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
     public static class SampleTypeAuditEvent extends AuditTypeEvent
     {
         private String _sourceLsid;
-        private String _sampleTypeName;
+        private String _sampleSetName;
         private String _insertUpdateChoice;
         private Long _transactionId;
 
@@ -119,14 +138,14 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
             _sourceLsid = sourceLsid;
         }
 
-        public String getSampleTypeName()
+        public String getSampleSetName()
         {
-            return _sampleTypeName;
+            return _sampleSetName;
         }
 
-        public void setSampleTypeName(String sampleTypeName)
+        public void setSampleSetName(String sampleSetName)
         {
-            _sampleTypeName = sampleTypeName;
+            _sampleSetName = sampleSetName;
         }
 
         public String getInsertUpdateChoice()
@@ -154,7 +173,7 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
         {
             Map<String, Object> elements = new LinkedHashMap<>();
             elements.put("sourceLsid", getSourceLsid());
-            elements.put("sampleSetName", getSampleTypeName());
+            elements.put("sampleSetName", getSampleSetName());
             elements.put("insertUpdateChoice", getInsertUpdateChoice());
             elements.put("transactionId", getTransactionId());
             elements.putAll(super.getAuditLogMessageElements());

@@ -507,7 +507,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (tx != null)
             event.setTransactionId(tx.getAuditId());
         event.setSourceLsid(_sampleType.getLSID());
-        event.setSampleTypeName(_sampleType.getName());
+        event.setSampleSetName(_sampleType.getName());
         event.setInsertUpdateChoice(auditAction.toString().toLowerCase());
         AuditLogService.get().addEvent(getUser(), event);
     }
