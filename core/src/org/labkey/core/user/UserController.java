@@ -325,6 +325,13 @@ public class UserController extends SpringActionController
         boolean canDeleteUser = user.hasRootPermission(DeleteUserPermission.class);
         boolean canUpdateUser = user.hasRootPermission(UpdateUserPermission.class);
 
+        if (canAddUser)
+        {
+            ActionButton insert = new ActionButton(PageFlowUtil.urlProvider(SecurityUrls.class).getAddUsersURL(), "Add Users");
+            insert.setActionType(ActionButton.Action.LINK);
+            gridButtonBar.add(insert);
+        }
+
         if (getContainer().isRoot())
         {
             if (canUpdateUser)
@@ -346,13 +353,6 @@ public class UserController extends SpringActionController
                 delete.setRequiresSelection(true);
                 delete.setActionType(ActionButton.Action.POST);
                 gridButtonBar.add(delete);
-            }
-
-            if (canAddUser)
-            {
-                ActionButton insert = new ActionButton(PageFlowUtil.urlProvider(SecurityUrls.class).getAddUsersURL(), "Add Users");
-                insert.setActionType(ActionButton.Action.LINK);
-                gridButtonBar.add(insert);
             }
 
             Domain domain = null;
