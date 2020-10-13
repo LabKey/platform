@@ -47,7 +47,7 @@ public final class DatasetNotificationInfoProvider extends NotificationInfoProvi
         filter.addBetween(FieldKey.fromString("Modified"), modifiedRangeStart, modifiedRangeEnd);
         Sort sort = new Sort("DisplayOrder");
         TableSelector selector = new TableSelector(reportTableInfo, filter, sort);
-        selector.forEach(report -> {
+        selector.forEach(DatasetDB.class, report -> {
             String containerId = report.getContainer();
             if (!notificationInfoMap.containsKey(containerId))
                 notificationInfoMap.put(containerId, new HashMap<>());
@@ -72,7 +72,7 @@ public final class DatasetNotificationInfoProvider extends NotificationInfoProvi
                     }
                 }
             }
-        }, DatasetDB.class);
+        });
         return notificationInfoMap;
     }
 }

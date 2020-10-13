@@ -247,13 +247,13 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
                 .append(" AND (m.lastIndexed IS NULL OR m.lastIndexed < ? OR (m.modified IS NOT NULL AND m.lastIndexed < m.modified))")
                 .add(sampleType.getModified());
 
-        new SqlSelector(getExpSchema().getScope(), sql).forEachBatch(batch -> {
+        new SqlSelector(getExpSchema().getScope(), sql).forEachBatch(Material.class, 1000, batch -> {
             for (Material m : batch)
             {
                 ExpMaterialImpl impl = new ExpMaterialImpl(m);
                 impl.index(task);
             }
-        }, Material.class, 1000);
+        });
     }
 
 

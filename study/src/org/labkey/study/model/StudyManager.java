@@ -1396,10 +1396,10 @@ public class StudyManager
             throw new IllegalStateException("Study Import/Export expected TableInfo.");
 
         TableSelector selector = new TableSelector(tinfo, containerFilter, null);
-        selector.forEach(visitTag -> {
+        selector.forEach(VisitTag.class, visitTag -> {
             allVisitTagMap.put(visitTag.getName(), visitTag);
             newVisitTagMap.remove(visitTag.getName());
-        }, VisitTag.class);
+        });
 
         List<VisitTag> newVisitTags = new ArrayList<>();
         newVisitTags.addAll(newVisitTagMap.values());
@@ -1459,7 +1459,7 @@ public class StudyManager
         final Map<String, VisitTag> visitTags = new HashMap<>();
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTag();
-        new TableSelector(tinfo, containerFilter, null).forEach(visitTag -> visitTags.put(visitTag.getName(), visitTag), VisitTag.class);
+        new TableSelector(tinfo, containerFilter, null).forEach(VisitTag.class, visitTag -> visitTags.put(visitTag.getName(), visitTag));
         return visitTags;
     }
 
@@ -1471,7 +1471,7 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
         filter.addCondition(FieldKey.fromString("Name"), visitTagName);
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTag();
-        new TableSelector(tinfo, filter, null).forEach(visitTags::add, VisitTag.class);
+        new TableSelector(tinfo, filter, null).forEach(VisitTag.class, visitTags::add);
 
         if (visitTags.isEmpty())
             return null;
@@ -1485,11 +1485,11 @@ public class StudyManager
         final Map<Integer, List<VisitTagMapEntry>> visitTagMapMap = new HashMap<>();
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
-        new TableSelector(tinfo, containerFilter, null).forEach(visitTagMapEntry -> {
+        new TableSelector(tinfo, containerFilter, null).forEach(VisitTagMapEntry.class, visitTagMapEntry -> {
             if (!visitTagMapMap.containsKey(visitTagMapEntry.getVisitId()))
                 visitTagMapMap.put(visitTagMapEntry.getVisitId(), new ArrayList<>());
             visitTagMapMap.get(visitTagMapEntry.getVisitId()).add(visitTagMapEntry);
-        }, VisitTagMapEntry.class);
+        });
 
         return visitTagMapMap;
     }
@@ -1499,11 +1499,11 @@ public class StudyManager
         final Map<String, List<VisitTagMapEntry>> visitTagToVisitTagMapEntries = new HashMap<>();
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
-        new TableSelector(tinfo, containerFilter, null).forEach(visitTagMapEntry -> {
+        new TableSelector(tinfo, containerFilter, null).forEach(VisitTagMapEntry.class, visitTagMapEntry -> {
             if (!visitTagToVisitTagMapEntries.containsKey(visitTagMapEntry.getVisitTag()))
                 visitTagToVisitTagMapEntries.put(visitTagMapEntry.getVisitTag(), new ArrayList<>());
             visitTagToVisitTagMapEntries.get(visitTagMapEntry.getVisitTag()).add(visitTagMapEntry);
-        }, VisitTagMapEntry.class);
+        });
 
         return visitTagToVisitTagMapEntries;
     }
@@ -1514,7 +1514,7 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
         filter.addCondition(FieldKey.fromString("VisitTag"), visitTagName);
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
-        new TableSelector(tinfo, filter, null).forEach(visitTagMapEntries::add, VisitTagMapEntry.class);
+        new TableSelector(tinfo, filter, null).forEach(VisitTagMapEntry.class, visitTagMapEntries::add);
 
         return visitTagMapEntries;
     }

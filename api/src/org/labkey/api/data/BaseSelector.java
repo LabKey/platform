@@ -48,7 +48,7 @@ import java.util.stream.StreamSupport;
  * Date: 12/11/12
  */
 
-public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCommand<SELECTOR> implements Selector
+public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends JdbcCommand<SELECTOR> implements Selector
 {
     BaseSelector(@NotNull DbScope scope, @Nullable Connection conn)
     {
@@ -93,7 +93,6 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
     @Override
     public @NotNull Collection<Map<String, Object>> getMapCollection()
     {
-        //noinspection unchecked
         return Arrays.asList(getMapArray());
     }
 
@@ -363,10 +362,10 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
     @Override
     public void forEach(final ForEachBlock<ResultSet> block)
     {
-        forEach(block, getStandardResultSetFactory());
+        forEach(getStandardResultSetFactory(), block);
     }
 
-    protected void forEach(final ForEachBlock<ResultSet> block, ResultSetFactory factory)
+    protected void forEach(ResultSetFactory factory, final ForEachBlock<ResultSet> block)
     {
         factory.handleResultSet(((rs, conn) -> {
             try
@@ -385,10 +384,10 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
     @Override
     public void forEachMap(final ForEachBlock<Map<String, Object>> block)
     {
-        forEachMap(block, getStandardResultSetFactory());
+        forEachMap(getStandardResultSetFactory(), block);
     }
 
-    private void forEachMap(final ForEachBlock<Map<String, Object>> block, ResultSetFactory factory)
+    private void forEachMap(ResultSetFactory factory, final ForEachBlock<Map<String, Object>> block)
     {
         factory.handleResultSet((rs, conn) -> {
             ResultSetIterator iter = new ResultSetIterator(rs);
@@ -412,18 +411,18 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
     }
 
     @Override
-    public <T> void forEach(final ForEachBlock<T> block, Class<T> clazz)
+    public <T> void forEach(Class<T> clazz, final ForEachBlock<T> block)
     {
-        forEach(block, clazz, getStandardResultSetFactory());
+        forEach(clazz, getStandardResultSetFactory(), block);
     }
 
-    public <T> void forEach2(final ForEachBlock<T> block, Class<T> clazz)
+    public <T> void forEach2(Class<T> clazz, final ForEachBlock<T> block)
     {
-        forEach2(() -> uncachedStream(clazz), block, getStandardResultSetFactory());
+        forEach2(() -> uncachedStream(clazz), getStandardResultSetFactory(), block);
     }
 
     // Prototype general purpose forEach() built on an uncached stream (not used)
-    private <T> void forEach2(Supplier<Stream<T>> streamFactory, ForEachBlock<T> block, ResultSetFactory resultSetFactory)
+    private <T> void forEach2(Supplier<Stream<T>> streamFactory, ResultSetFactory resultSetFactory, ForEachBlock<T> block)
     {
         try (Stream<T> stream = streamFactory.get())
         {
@@ -460,17 +459,17 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
         }
     }
 
-    private <T> void forEach(final ForEachBlock<T> block, Class<T> clazz, ResultSetFactory resultSetFactory)
+    private <T> void forEach(Class<T> clazz, ResultSetFactory resultSetFactory, final ForEachBlock<T> block)
     {
         final Getter getter = Getter.forClass(clazz);
 
         // This is a simple object (Number, String, Date, etc.)
         if (null != getter)
         {
-            forEach(rs -> {
+            forEach(resultSetFactory, rs -> {
                 //noinspection unchecked
                 block.exec((T)getter.getObject(rs));
-            }, resultSetFactory);
+            });
         }
         else
         {
@@ -478,19 +477,19 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
 
             ForEachBlock<Map<String, Object>> mapBlock = map -> block.exec(factory.fromMap(map));
 
-            forEachMap(mapBlock, resultSetFactory);
+            forEachMap(resultSetFactory, mapBlock);
         }
     }
 
     @Override
-    public void forEachMapBatch(ForEachBatchBlock<Map<String, Object>> batchBlock, int batchSize)
+    public void forEachMapBatch(int batchSize, ForEachBatchBlock<Map<String, Object>> batchBlock)
     {
         ResultSetFactory factory = getStandardResultSetFactory();
 
         // Try-with-resources ensures that the final batch gets processed (on close())
-        try (BatchForEachBlock<Map<String, Object>> bfeb = new BatchForEachBlock<>(batchBlock, batchSize))
+        try (BatchForEachBlock<Map<String, Object>> bfeb = new BatchForEachBlock<>(batchSize, batchBlock))
         {
-            forEachMap(bfeb, factory);
+            forEachMap(factory, bfeb);
         }
         catch (SQLException e)
         {
@@ -499,14 +498,14 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
     }
 
     @Override
-    public <T> void forEachBatch(ForEachBatchBlock<T> batchBlock, Class<T> clazz, int batchSize)
+    public <T> void forEachBatch(Class<T> clazz, int batchSize, ForEachBatchBlock<T> batchBlock)
     {
         ResultSetFactory factory = getStandardResultSetFactory();
 
         // Try-with-resources ensures that the final batch gets processed (on close())
-        try (BatchForEachBlock<T> bfeb = new BatchForEachBlock<>(batchBlock, batchSize))
+        try (BatchForEachBlock<T> bfeb = new BatchForEachBlock<>(batchSize, batchBlock))
         {
-            forEach(bfeb, clazz, factory);
+            forEach(clazz, factory, bfeb);
         }
         catch (SQLException e)
         {
@@ -516,15 +515,15 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
 
     private static class BatchForEachBlock<T> implements ForEachBlock<T>, AutoCloseable
     {
-        private final ForEachBatchBlock<T> _batchBlock;
         private final int _batchSize;
         private final List<T> _batch;
+        private final ForEachBatchBlock<T> _batchBlock;
 
-        private BatchForEachBlock(ForEachBatchBlock<T> batchBlock, int batchSize)
+        private BatchForEachBlock(int batchSize, ForEachBatchBlock<T> batchBlock)
         {
-            _batchBlock = batchBlock;
             _batchSize = batchSize;
             _batch = new ArrayList<>(_batchSize);
+            _batchBlock = batchBlock;
         }
 
         @Override

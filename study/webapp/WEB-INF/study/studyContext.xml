@@ -167,7 +167,6 @@
                     <property name="protocolFactoryName" value="specimenImport"/>
                     <property name="defaultDisplayState" value="hidden"/>
                     <property name="allowForTriggerConfiguration" value="true"/>
-                    <property name="activeModuleRequired" value="false"/>
                     <property name="initialInputExts">
                         <list>
                             <ref bean="zipFileType"/>

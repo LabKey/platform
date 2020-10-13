@@ -42,7 +42,7 @@ public final class ReportNotificationInfoProvider extends NotificationInfoProvid
         filter.addBetween(FieldKey.fromString("Modified"), modifiedRangeStart, modifiedRangeEnd);
         Sort sort = new Sort("DisplayOrder");
         TableSelector selector = new TableSelector(reportTableInfo, filter, sort);
-        selector.forEach(report ->
+        selector.forEach(ReportDB.class, report ->
         {
             String containerId = report.getContainerId();
             if (!reportInfoMap.containsKey(containerId))
@@ -57,7 +57,7 @@ public final class ReportNotificationInfoProvider extends NotificationInfoProvid
                     subMap.put(categoryId, new ArrayList<>());
                 subMap.get(categoryId).add(notificationInfo);
             }
-        }, ReportDB.class);
+        });
         return reportInfoMap;
     }
 }
