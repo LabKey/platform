@@ -1312,12 +1312,18 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresPermission(AddUserPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class AddUsersAction extends FormViewAction<AddUsersForm>
     {
         @Override
         public ModelAndView getView(AddUsersForm form, boolean reshow, BindException errors)
         {
+            Container c = getContainer();
+            if (!c.isRoot() && !c.getProject().hasPermission(getUser(), AdminPermission.class))
+                throw new UnauthorizedException("You must be an administrator at the project level to add new users.");
+            else if (!c.hasPermission(getUser(), AddUserPermission.class))
+                throw new UnauthorizedException("You do not have permissions to create new users.");
+
             return new JspView<Object>("/org/labkey/core/security/addUsers.jsp", form, errors);
         }
 

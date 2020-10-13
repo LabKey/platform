@@ -321,7 +321,7 @@ public class UserController extends SpringActionController
     private void populateUserGridButtonBar(ButtonBar gridButtonBar, boolean isAnyAdmin)
     {
         User user = getUser();
-        boolean canAddUser = user.hasRootPermission(AddUserPermission.class);
+        boolean canAddUser = user.hasRootPermission(AddUserPermission.class) || getContainer().hasPermission(user, AddUserPermission.class);
         boolean canDeleteUser = user.hasRootPermission(DeleteUserPermission.class);
         boolean canUpdateUser = user.hasRootPermission(UpdateUserPermission.class);
 
