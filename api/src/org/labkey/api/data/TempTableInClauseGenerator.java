@@ -219,10 +219,9 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         {
             SQLFragment sourceSQL = new SQLFragment("SELECT a from (SELECT 1 AS a UNION SELECT 2 AS a UNION SELECT 7 AS a) b WHERE a ");
             SQLFragment secondSelectSQL;
-            SQLFragment originalSelectSQL;
             try (DbScope.Transaction transaction = _scope.ensureTransaction())
             {
-                originalSelectSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
+                SQLFragment originalSelectSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
                 Assert.assertEquals("Validate inside transaction", 2, new SqlSelector(_scope, originalSelectSQL).getRowCount());
 
                 secondSelectSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
@@ -232,7 +231,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
                 transaction.commit();
             }
             SQLFragment postCommitSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
-            Assert.assertTrue("SQL should match after the original has been committed", secondSelectSQL.equals(postCommitSQL) || originalSelectSQL.equals(postCommitSQL));
+            Assert.assertEquals("SQL should match after the original has been committed", secondSelectSQL, postCommitSQL);
             Assert.assertEquals("Validate after commit", 2, new SqlSelector(_scope, postCommitSQL).getRowCount());
         }
 
