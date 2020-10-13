@@ -408,13 +408,13 @@
                     %>
                         <tr>
                             <td class="lk-study-prop-label">Specimen Import</td>
-                            <td class="lk-study-prop-desc">Configure a specimen import.</td>
+                            <td class="lk-study-prop-desc">Configure a specimen import</td>
                             <td><%=link("Configure specimen import", manageAction)%></td>
                         </tr>
                     <% } else { %>
                         <tr>
                             <td class="lk-study-prop-label">Specimen Import</td>
-                            <td class="lk-study-prop-desc">Choose and configure a specimen import.</td>
+                            <td class="lk-study-prop-desc">Choose and configure a specimen import</td>
                             <td><%=link("Configure specimen import", ChooseImporterAction.class)%></td>
                         </tr>
                     <%
