@@ -171,7 +171,7 @@ public interface ColumnRenderProperties extends ImportAliasable
 
     int getScale();
 
-    int getDecimalDigits();
+    int getPrecision();
 
     String getPrincipalConceptCode();
 }

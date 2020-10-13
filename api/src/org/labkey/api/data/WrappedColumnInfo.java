@@ -525,7 +525,7 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setDecimalDigits(int scale)
+        public void setPrecision(int scale)
         {
             checkLocked();
             throw new UnsupportedOperationException();

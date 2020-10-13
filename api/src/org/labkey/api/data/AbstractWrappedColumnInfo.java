@@ -722,9 +722,9 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
-    public int getDecimalDigits()
+    public int getPrecision()
     {
-        return delegate.getDecimalDigits();
+        return delegate.getPrecision();
     }
 
     @Override

@@ -55,6 +55,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1605,8 +1606,13 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     col._selectName = dialect.getSelectNameFromMetaDataName(metaDataName);
                     col._sqlTypeName = reader.getSqlTypeName();
                     col._isAutoIncrement = reader.isAutoIncrement();
+                    int type = reader.getSqlType();
+                    if (type == Types.DECIMAL || type == Types.NUMERIC)
+                    {
+                        col._scale = reader.getDecimalDigits();
+                        col._precision = reader.getScale();
+                    }
                     col._scale = reader.getScale();
-                    col._decimalDigits = reader.getDecimalDigits();
                     col._nullable = reader.isNullable();
                     col._jdbcDefaultValue = reader.getDefault();
 
