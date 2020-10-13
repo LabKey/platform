@@ -1612,7 +1612,10 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                         col._scale = reader.getDecimalDigits();
                         col._precision = reader.getScale();
                     }
-                    col._scale = reader.getScale();
+                    else
+                    {
+                        col._scale = reader.getScale();
+                    }
                     col._nullable = reader.isNullable();
                     col._jdbcDefaultValue = reader.getDefault();
 
