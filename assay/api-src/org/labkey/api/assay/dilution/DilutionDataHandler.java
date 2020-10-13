@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.assay.nab.NabSpecimen;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -27,6 +28,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.ExperimentException;
@@ -195,6 +197,9 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
                 // TODO: factor this out in the nab data handlers
                 props.put("VirusWellGroupName", group.getProperty("VirusWellGroupName"));
+
+                CurveFit.Parameters fitParams = dilution.getCurveParameters(assayResults.getRenderedCurveFitType());
+                props.put(FIT_PARAMETERS_PROPERTY_NAME, fitParams != null ? new JSONObject(fitParams.toMap()) : null);
             }
             return results;
         }
@@ -524,6 +529,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                 DILUTION_INPUT_MATERIAL_DATA_PROPERTY.equals(propertyName) ||
                 WELLGROUP_NAME_PROPERTY.equals(propertyName) ||
                 FIT_ERROR_PROPERTY.equals(propertyName) ||
+                FIT_PARAMETERS_PROPERTY_NAME.equals(propertyName) ||
                 propertyName.startsWith(AUC_PREFIX) ||
                 propertyName.startsWith(pAUC_PREFIX) ||
                 propertyName.startsWith(CURVE_IC_PREFIX) ||
