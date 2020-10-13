@@ -91,6 +91,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     public static final String DATA_ROW_LSID_PROPERTY = "Data Row LSID";
     public static final String AUC_PROPERTY_FORMAT = "0.000";
     public static final String STD_DEV_PROPERTY_NAME = "StandardDeviation";
+    public static final String FIT_PARAMETERS_PROPERTY_NAME = "FitParameters";
 
     /** Lock object to only allow one thread to be populating well data at a time */
     public static final Object WELL_DATA_LOCK_OBJECT = new Object();
