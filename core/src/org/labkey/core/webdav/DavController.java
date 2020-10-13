@@ -480,6 +480,7 @@ public class DavController extends SpringActionController
                         }
                         catch (Exception e)
                         {
+                            _log.debug("Failed to render the error page.", e);
                             super.sendError(status.code, message);
                         }
                     }

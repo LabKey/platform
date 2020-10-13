@@ -122,14 +122,14 @@ public class WebPartCache
 
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), containerId);
 
-            new TableSelector(Portal.getTableInfoPortalWebParts(), filter, new Sort("Index")).forEach(wp -> {
+            new TableSelector(Portal.getTableInfoPortalWebParts(), filter, new Sort("Index")).forEach(WebPart.class, wp -> {
                 Portal.PortalPage p = pagesByRowId.get(wp.getPortalPageId());
                 if (null != p)
                 {
                     p.addWebPart(wp);
                     wp.setPageId(p.getPageId());
                 }
-            }, WebPart.class);
+            });
 
             // create immutable PortalPage objects for caching
             CaseInsensitiveHashMap<Portal.PortalPage> ret = new CaseInsensitiveHashMap<>();

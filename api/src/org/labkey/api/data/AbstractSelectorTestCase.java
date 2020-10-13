@@ -53,23 +53,23 @@ public abstract class AbstractSelectorTestCase<SELECTOR extends Selector> extend
         assertEquals(count, selector.getArray(clazz).length);
 
         rowCount.setValue(0);
-        selector.forEach(bean -> rowCount.increment(), clazz);
+        selector.forEach(clazz, bean -> rowCount.increment());
         assertEquals(count, rowCount.intValue());
 
         rowCount.setValue(0);
-        selector.forEachBatch(batch -> {
+        selector.forEachBatch(clazz, 3, batch -> {
             assertFalse(batch.isEmpty());
             assertTrue(batch.size() <= 3);
             rowCount.add(batch.size());
-        }, clazz, 3);
+        });
         assertEquals(count, rowCount.intValue());
 
         rowCount.setValue(0);
-        selector.forEachMapBatch(batch -> {
+        selector.forEachMapBatch(5, batch -> {
             assertFalse(batch.isEmpty());
             assertTrue(batch.size() <= 5);
             rowCount.add(batch.size());
-        }, 5);
+        });
         assertEquals(count, rowCount.intValue());
 
         // Test ResultSet operations

@@ -26,7 +26,7 @@ import java.sql.Connection;
  * Date: 7/11/2014
  * Time: 6:51 AM
  */
-public abstract class NonSqlExecutingSelector<SELECTOR extends NonSqlExecutingSelector> extends BaseSelector<SELECTOR>
+public abstract class NonSqlExecutingSelector<SELECTOR extends NonSqlExecutingSelector<?>> extends BaseSelector<SELECTOR>
 {
     protected NonSqlExecutingSelector(@NotNull DbScope scope, @Nullable Connection conn)
     {

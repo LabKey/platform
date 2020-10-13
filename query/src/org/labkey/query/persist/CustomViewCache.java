@@ -61,7 +61,7 @@ public class CustomViewCache
             Map<Integer, CstmView> rowIdMap = new HashMap<>();
             Map<String, CstmView> entityIdMap = new HashMap<>();
 
-            new TableSelector(QueryManager.get().getTableInfoCustomView(), SimpleFilter.createContainerFilter(c), null).forEach(cstmView -> {
+            new TableSelector(QueryManager.get().getTableInfoCustomView(), SimpleFilter.createContainerFilter(c), null).forEach(CstmView.class, cstmView -> {
 
                 MultiValuedMap<String, CstmView> viewMap = ensureViewMultiMap(customViews, cstmView.getSchema());
 
@@ -74,7 +74,7 @@ public class CustomViewCache
                     inheritableViewMap.put(cstmView.getQueryName(), cstmView);
                 }
 
-            }, CstmView.class);
+            });
 
             _customViews = getUnmodifiable(customViews);
             _rowIdMap = Collections.unmodifiableMap(rowIdMap);
