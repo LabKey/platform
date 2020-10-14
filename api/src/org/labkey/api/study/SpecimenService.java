@@ -72,6 +72,8 @@ public interface SpecimenService
 
     Lsid getSpecimenMaterialLsid(@NotNull Container studyContainer, @NotNull String id);
 
+    String getActiveSpecimenImporter(@NotNull Container studyContainer);
+
     void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException;
 
     void registerSpecimenImportStrategyFactory(SpecimenImportStrategyFactory factory);
@@ -104,6 +106,7 @@ public interface SpecimenService
 
     Domain getSpecimenEventDomain(Container container, User user);
 
+    @Nullable
     Map<String, String> getSpecimenImporterTsvColumnMap();
 
     SpecimenRequestCustomizer getRequestCustomizer();
