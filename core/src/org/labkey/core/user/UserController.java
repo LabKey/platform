@@ -327,7 +327,7 @@ public class UserController extends SpringActionController
 
         if (canAddUser)
         {
-            ActionButton insert = new ActionButton(PageFlowUtil.urlProvider(SecurityUrls.class).getAddUsersURL(), "Add Users");
+            ActionButton insert = new ActionButton(PageFlowUtil.urlProvider(SecurityUrls.class).getAddUsersURL(getContainer()), "Add Users");
             insert.setActionType(ActionButton.Action.LINK);
             gridButtonBar.add(insert);
         }

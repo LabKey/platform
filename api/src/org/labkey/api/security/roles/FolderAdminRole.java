@@ -21,7 +21,6 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
@@ -42,8 +41,7 @@ public class FolderAdminRole extends AbstractRole implements AdminRoleListener
         AdminPermission.class,
         FolderExportPermission.class,
         DesignDataClassPermission.class,
-        DesignSampleTypePermission.class,
-        AddUserPermission.class
+        DesignSampleTypePermission.class
     );
 
     public FolderAdminRole()
