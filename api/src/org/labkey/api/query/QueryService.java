@@ -20,6 +20,7 @@ import org.apache.commons.collections4.SetValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -444,6 +445,7 @@ public interface QueryService
     void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment, @Nullable Integer dataRowCount);
     void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, @Nullable String userComment, AuditAction action, List<Map<String, Object>>... params);
     void addSummaryAuditEvent(User user, Container c, TableInfo table, AuditAction action, Integer dataRowCount);
+    List<DetailedAuditTypeEvent> getQueryUpdateAuditRecords(User user, Container container, long transactionAuditId);
 
     /**
      * Returns a URL for the audit history for the table.

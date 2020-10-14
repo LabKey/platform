@@ -155,7 +155,7 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
             fields.add(createPropertyDescriptor(COLUMN_NAME_PROPERTY_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_ACTION, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_DOMAIN_NAME, PropertyType.STRING));
-            fields.add(createPropertyDescriptor(COLUMN_NAME_DOMAIN_EVENT_ID, PropertyType.INTEGER));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_DOMAIN_EVENT_ID, PropertyType.BIGINT));
             _fields = Collections.unmodifiableSet(fields);
         }
 
@@ -183,7 +183,7 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
         private String _propertyUri;
         private String _propertyName;
         private String _action;
-        private Integer _domainEventId;
+        private Long _domainEventId;
         private String _domainName;
 
         public DomainPropertyAuditEvent()
@@ -192,7 +192,7 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
         }
 
         public DomainPropertyAuditEvent(String container, String propertyUri, String propertyName, String action,
-                                        Integer domainEventId, String domainName, String comment)
+                                        Long domainEventId, String domainName, String comment)
         {
             super(EVENT_NAME, container, comment);
             _propertyName = propertyName;
@@ -232,12 +232,12 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
             _action = action;
         }
 
-        public Integer getDomainEventId()
+        public Long getDomainEventId()
         {
             return _domainEventId;
         }
 
-        public void setDomainEventId(Integer domainEventId)
+        public void setDomainEventId(Long domainEventId)
         {
             _domainEventId = domainEventId;
         }
