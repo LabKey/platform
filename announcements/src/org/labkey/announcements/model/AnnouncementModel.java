@@ -15,6 +15,9 @@
  */
 package org.labkey.announcements.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -49,6 +52,8 @@ import static org.labkey.announcements.model.AnnouncementManager.DEFAULT_MESSAGE
 /**
  * Bean Class for AnnouncementModel.
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AnnouncementModel extends Entity implements Serializable
 {
     private int _rowId = 0;
@@ -74,7 +79,6 @@ public class AnnouncementModel extends Entity implements Serializable
     private Set<User> _authors;
     private Date _approved = null;
 
-
     /**
      * Standard constructor.
      */
@@ -92,7 +96,6 @@ public class AnnouncementModel extends Entity implements Serializable
         return _rowId;
     }
 
-
     /**
      * Sets the rowId
      *
@@ -102,7 +105,6 @@ public class AnnouncementModel extends Entity implements Serializable
     {
         _rowId = rowId;
     }
-
 
     /**
      * Returns the title
@@ -114,17 +116,15 @@ public class AnnouncementModel extends Entity implements Serializable
         return _title;
     }
 
-
     /**
      * Sets the title
      *
      * @param title the new title value
      */
-    public void setTitle(java.lang.String title)
+    public void setTitle(String title)
     {
         _title = title;
     }
-
 
     /**
      * Returns the expires
@@ -136,17 +136,15 @@ public class AnnouncementModel extends Entity implements Serializable
         return _expires;
     }
 
-
     /**
      * Sets the expires
      *
      * @param expires the new expires value
      */
-    public void setExpires(java.util.Date expires)
+    public void setExpires(Date expires)
     {
         _expires = expires;
     }
-
 
     /**
      * Returns the body
@@ -157,7 +155,6 @@ public class AnnouncementModel extends Entity implements Serializable
     {
         return _body;
     }
-
 
     /**
      * Sets the body
@@ -174,7 +171,6 @@ public class AnnouncementModel extends Entity implements Serializable
         return _parentId;
     }
 
-
     public void setParent(String parentId)
     {
         _parentId = parentId;
@@ -185,12 +181,11 @@ public class AnnouncementModel extends Entity implements Serializable
         return UserManager.getDisplayNameOrUserId(getAssignedTo(), currentUser);
     }
 
-
+    @JsonIgnore // TODO: See about making Attachment serializable
     public @NotNull Collection<Attachment> getAttachments()
     {
         return AttachmentService.get().getAttachments(getAttachmentParent());
     }
-
 
     public @NotNull Collection<AnnouncementModel> getResponses()
     {
@@ -201,12 +196,10 @@ public class AnnouncementModel extends Entity implements Serializable
         return _responses;
     }
 
-
     public void setResponses(Collection<AnnouncementModel> responses)
     {
         _responses = responses;
     }
-
 
     public ActionURL getThreadURL(Container container)
     {
@@ -277,6 +270,7 @@ public class AnnouncementModel extends Entity implements Serializable
     }
 
     @NotNull
+    @JsonIgnore
     public List<Integer> getMemberListIds()
     {
         if (_memberListIds == null)
@@ -291,6 +285,7 @@ public class AnnouncementModel extends Entity implements Serializable
         _memberListIds = memberListIds;
     }
 
+    @JsonIgnore
     public String getMemberListInput()
     {
         return _memberListInput;
@@ -301,6 +296,7 @@ public class AnnouncementModel extends Entity implements Serializable
         _memberListInput = memberListInput;
     }
 
+    @JsonIgnore
     public List<String> getMemberListDisplay(Container c, User currentUser)
     {
         if (_memberListDisplay == null)
@@ -324,7 +320,6 @@ public class AnnouncementModel extends Entity implements Serializable
         return _discussionSrcIdentifier;
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
     public void setDiscussionSrcIdentifier(String discussionSrcIdentifier)
     {
         _discussionSrcIdentifier = discussionSrcIdentifier;
@@ -340,17 +335,18 @@ public class AnnouncementModel extends Entity implements Serializable
         _discussionSrcURL = discussionSrcURL;
     }
 
+    @JsonIgnore
     public int getResponseCount()
     {
         return _responseCount;
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
     public void setResponseCount(int responseCount)
     {
         _responseCount = responseCount;
     }
 
+    @JsonIgnore
     public Set<User> getAuthors()
     {
         if (null == _authors)
@@ -403,6 +399,7 @@ public class AnnouncementModel extends Entity implements Serializable
         }
     }
 
+    @JsonIgnore
     public AttachmentParent getAttachmentParent()
     {
         return new AnnouncementAttachmentParent(this);
@@ -418,6 +415,7 @@ public class AnnouncementModel extends Entity implements Serializable
         _approved = approved;
     }
 
+    @JsonIgnore
     public boolean isSpam()
     {
         return AnnouncementManager.isSpam(this);

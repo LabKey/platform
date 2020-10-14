@@ -16,7 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
-<%@ page import="org.labkey.announcements.AnnouncementsController.DeleteThreadAction" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.DeleteAction" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.RespondAction" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.ThreadView" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.ThreadViewBean" %>
@@ -277,7 +277,7 @@ if (!bean.isResponse && !bean.print)
     }
     if (bean.perm.allowDeleteMessage(announcementModel))
     {
-        ActionURL deleteThread = announcementURL(c, DeleteThreadAction.class, "entityId", announcementModel.getEntityId());
+        ActionURL deleteThread = announcementURL(c, DeleteAction.class, "entityId", announcementModel.getEntityId());
         deleteThread.addCancelURL(bean.currentURL);
         if (bean.embedded)
         {

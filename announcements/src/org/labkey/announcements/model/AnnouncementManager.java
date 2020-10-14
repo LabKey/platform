@@ -90,6 +90,7 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -154,6 +155,18 @@ public class AnnouncementManager
         Sort sort = new Sort("-Created");
 
         return new TableSelector(_comm.getTableInfoAnnouncements(), filter, sort).getCollection(AnnouncementModel.class);
+    }
+
+    public static @NotNull List<AnnouncementModel> getDiscussions(Container c, String identifier)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("discussionSrcIdentifier"), identifier);
+        return getAnnouncements(c, filter, new Sort("Created"));
+    }
+
+    public static @NotNull Collection<AnnouncementModel> getDiscussions(Container c, String[] identifiers)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("discussionSrcIdentifier"), Arrays.asList(identifiers), CompareType.IN);
+        return getAnnouncements(c, filter, new Sort("Created"));
     }
 
     public static Collection<AnnouncementModel> getResponses(AnnouncementModel parent)
@@ -281,7 +294,9 @@ public class AnnouncementManager
                 notifyModerators(c, user, ann);
         }
 
-        return ann;
+        // The approval state, attachments, etc may have changed after insert.
+        // Return an up-to-date copy of the model.
+        return getAnnouncement(c, ann.getRowId());
     }
 
     public static void approve(Container c, User user, boolean sendEmailNotifications, AnnouncementModel ann, Date date)

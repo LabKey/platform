@@ -158,6 +158,7 @@ import static org.labkey.announcements.model.AnnouncementManager.DEFAULT_MESSAGE
  *   user=user,container,Object="Announcements"
  *              key="email":0 (no email), 1 (email all entries), 2 (email responses to messages I've created or replied to)
  */
+@Marshal(Marshaller.Jackson)
 public class AnnouncementsController extends SpringActionController
 {
     private static final CommSchema _comm = CommSchema.getInstance();
@@ -427,7 +428,7 @@ public class AnnouncementsController extends SpringActionController
 
 
     @RequiresNoPermission  // Custom permission checking in base class to handle owner-delete
-    public class DeleteThreadAction extends DeleteMessageAction
+    public class DeleteAction extends DeleteMessageAction
     {
         @Override
         String getWhat()
@@ -2788,6 +2789,260 @@ public class AnnouncementsController extends SpringActionController
         public URLHelper getSuccessURL(ModeratorReviewForm form)
         {
             return null;
+        }
+    }
+
+    public static class ThreadIdentityForm
+    {
+        private String _entityId;
+        private Integer _rowId;
+
+        public String getEntityId()
+        {
+            return _entityId;
+        }
+
+        public void setEntityId(String entityId)
+        {
+            _entityId = entityId;
+        }
+
+        public Integer getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(Integer rowId)
+        {
+            _rowId = rowId;
+        }
+    }
+
+    public static class ThreadForm
+    {
+        private AnnouncementModel _thread;
+
+        public AnnouncementModel getThread()
+        {
+            return _thread;
+        }
+
+        public void setThread(AnnouncementModel thread)
+        {
+            _thread = thread;
+        }
+    }
+
+    private @Nullable AnnouncementModel getThread(Container container, Integer rowId, String entityId)
+    {
+        AnnouncementModel thread = null;
+
+        if (rowId != null)
+            thread = AnnouncementManager.getAnnouncement(container, rowId);
+        else if (entityId != null)
+            thread = AnnouncementManager.getAnnouncement(container, entityId);
+
+        return thread;
+    }
+
+    public static class CreateThreadForm extends ThreadForm
+    {
+        private boolean _reply;
+
+        public boolean isReply()
+        {
+            return _reply;
+        }
+
+        public void setReply(boolean reply)
+        {
+            _reply = reply;
+        }
+    }
+
+    @RequiresAnyOf({InsertMessagePermission.class, InsertPermission.class})
+    public class CreateThreadAction extends MutatingApiAction<CreateThreadForm>
+    {
+        @Override
+        public void validateForm(CreateThreadForm form, Errors errors)
+        {
+            if (form.getThread() == null)
+                errors.reject(ERROR_MSG, "A \"thread\" object is required to create a thread.");
+            else if (form.isReply() && form.getThread().getParent() == null)
+                errors.reject(ERROR_MSG, "Failed to reply to thread. Improper request for a reply as a parent was not specified.");
+            else if (!form.isReply() && form.getThread().getParent() != null)
+                errors.reject(ERROR_MSG, "Failed to create thread. Improper request for create as a parent was specified.");
+        }
+
+        @Override
+        public Object execute(CreateThreadForm form, BindException errors)
+        {
+            var rawThread = form.getThread();
+            var newThread = new AnnouncementModel();
+
+            // Ensure parent exists
+            if (form.isReply() && rawThread.getParent() != null)
+            {
+                var parentThread = getThread(getContainer(), null, rawThread.getParent());
+
+                if (parentThread == null)
+                {
+                    errors.reject(ERROR_MSG, "Failed to reply to thread. Unable to find parent thread \"" + rawThread.getParent() + "\".");
+                    return null;
+                }
+
+                newThread.setParent(rawThread.getParent());
+            }
+
+            // Only allow specifying a subset of properties
+            if (rawThread.getBody() != null)
+                newThread.setBody(rawThread.getBody());
+            if (rawThread.getDiscussionSrcIdentifier() != null)
+                newThread.setDiscussionSrcIdentifier(rawThread.getDiscussionSrcIdentifier());
+            if (rawThread.getRendererType() != null)
+                newThread.setRendererType(rawThread.getRendererType());
+            if (rawThread.getTitle() != null)
+                newThread.setTitle(rawThread.getTitle());
+
+            try
+            {
+                var insertedThread = AnnouncementManager.insertAnnouncement(getContainer(), getUser(), newThread, getAttachmentFileList());
+                return success(insertedThread);
+            }
+            catch (IOException e)
+            {
+                errors.reject(ERROR_MSG, "Failed to create thread in folder " + getContainer().getPath());
+                errors.reject(ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
+            }
+
+            return null;
+        }
+    }
+
+    @RequiresNoPermission // Checked by action
+    public class DeleteThreadAction extends MutatingApiAction<ThreadIdentityForm>
+    {
+        @Override
+        public Object execute(ThreadIdentityForm form, BindException errors)
+        {
+            var thread = getThread(getContainer(), form.getRowId(), form.getEntityId());
+
+            if (thread == null)
+            {
+                errors.reject(ERROR_MSG, "Unable to find thread to delete in folder " + getContainer().getPath());
+                return null;
+            }
+
+            if (!getPermissions().allowDeleteMessage(thread))
+                throw new UnauthorizedException();
+
+            AnnouncementManager.deleteAnnouncement(getContainer(), thread.getRowId());
+
+            return success();
+        }
+    }
+
+    public static class GetDiscussionsForm
+    {
+        private String _discussionSrcIdentifier;
+
+        public String getDiscussionSrcIdentifier()
+        {
+            return _discussionSrcIdentifier;
+        }
+
+        public void setDiscussionSrcIdentifier(String discussionSrcIdentifier)
+        {
+            _discussionSrcIdentifier = discussionSrcIdentifier;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class GetDiscussionsAction extends ReadOnlyApiAction<GetDiscussionsForm>
+    {
+        @Override
+        public void validateForm(GetDiscussionsForm form, Errors errors)
+        {
+            if (form.getDiscussionSrcIdentifier() == null)
+                errors.reject(ERROR_MSG, "A \"discussionSrcIdentifier\" must be provided to retrieve discussions.");
+        }
+
+        @Override
+        public Object execute(GetDiscussionsForm form, BindException errors)
+        {
+            return success(AnnouncementManager.getDiscussions(getContainer(), form.getDiscussionSrcIdentifier()));
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class GetThreadAction extends ReadOnlyApiAction<ThreadIdentityForm>
+    {
+        @Override
+        public void validateForm(ThreadIdentityForm form, Errors errors)
+        {
+            if (form.getRowId() == null && form.getEntityId() == null)
+                errors.reject(ERROR_MSG, "A \"rowId\" or an \"entityId\" must be provided to retrieve a thread.");
+        }
+
+        @Override
+        public Object execute(ThreadIdentityForm form, BindException errors)
+        {
+            AnnouncementModel thread = getThread(getContainer(), form.getRowId(), form.getEntityId());
+
+            if (thread == null)
+            {
+                errors.reject(ERROR_MSG, "Unable to find thread in folder " + getContainer().getPath());
+                return null;
+            }
+
+            return success(thread);
+        }
+    }
+
+    @RequiresNoPermission   // Custom permission checking below to handle owner-update
+    public class UpdateThreadAction extends MutatingApiAction<ThreadForm>
+    {
+        @Override
+        public Object execute(ThreadForm form, BindException errors)
+        {
+            var rawThread = form.getThread();
+            var thread = getThread(getContainer(), rawThread.getRowId(), rawThread.getEntityId());
+
+            if (thread == null)
+            {
+                errors.reject(ERROR_MSG, "Unable to find thread to update in folder " + getContainer().getPath());
+                return null;
+            }
+
+            if (!getPermissions().allowUpdate(thread))
+                throw new UnauthorizedException();
+
+            // Only allow updating of a subset of properties
+            if (rawThread.getBody() != null)
+                thread.setBody(rawThread.getBody());
+            if (rawThread.getRendererType() != null)
+                thread.setRendererType(rawThread.getRendererType());
+            if (rawThread.getTitle() != null)
+                thread.setTitle(rawThread.getTitle());
+
+            try
+            {
+                AnnouncementManager.updateAnnouncement(getUser(), thread, getAttachmentFileList());
+            }
+            catch (IOException e)
+            {
+                errors.reject(ERROR_MSG, "Failed to update attachments.");
+            }
+
+            thread = getThread(getContainer(), thread.getRowId(), thread.getEntityId());
+
+            if (thread == null)
+            {
+                errors.reject(ERROR_MSG, "Failed to find thread after update in folder " + getContainer().getPath());
+                return null;
+            }
+
+            return success(thread);
         }
     }
 }
