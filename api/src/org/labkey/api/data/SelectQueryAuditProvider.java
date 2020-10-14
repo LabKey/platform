@@ -96,7 +96,7 @@ public class SelectQueryAuditProvider extends AbstractAuditTypeProvider
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
             fields.add(createPropertyDescriptor("LoggedColumns", PropertyType.STRING));
             fields.add(createPropertyDescriptor("IdentifiedData", PropertyType.STRING, -1));
-            fields.add(createPropertyDescriptor("QueryId", PropertyType.INTEGER));
+            fields.add(createPropertyDescriptor("QueryId", PropertyType.BIGINT));
             _fields = Collections.unmodifiableSet(fields);
         }
 

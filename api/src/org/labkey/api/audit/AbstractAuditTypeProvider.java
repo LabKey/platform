@@ -80,6 +80,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public static final String COLUMN_NAME_CREATED_BY = "CreatedBy";
     public static final String COLUMN_NAME_IMPERSONATED_BY = "ImpersonatedBy";
     public static final String COLUMN_NAME_PROJECT_ID = "ProjectId";
+    public static final String COLUMN_NAME_TRANSACTION_ID = "TransactionID";
 
     public static final String OLD_RECORD_PROP_NAME = "oldRecordMap";
     public static final String OLD_RECORD_PROP_CAPTION = "Old Record Values";
