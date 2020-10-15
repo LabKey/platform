@@ -27,6 +27,7 @@ import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.FileAttachmentFile;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -71,6 +72,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.labkey.api.query.AbstractQueryUpdateService.addTransactionAuditEvent;
+import static org.labkey.api.query.AbstractQueryUpdateService.createTransactionAuditEvent;
 
 
 /**
@@ -409,12 +413,20 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
             configureLoader(loader);
 
-            int rowCount = importData(loader, file, originalName, ve, getAuditBehaviorType());
+            TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
+            // Check first if the audit behavior has been defined for the table either in code or through XML.
+            // If not defined there, check for the audit behavior defined in the action form (getAuditBehaviorType()).
+            AuditBehaviorType behaviorType = (_target != null) ? _target.getAuditBehavior(getAuditBehaviorType()) : getAuditBehaviorType();
+            if (behaviorType != null && behaviorType != AuditBehaviorType.NONE)
+                auditEvent = createTransactionAuditEvent(getContainer(), QueryService.AuditAction.INSERT);
+            int rowCount = importData(loader, file, originalName, ve, getAuditBehaviorType(), auditEvent);
 
             if (ve.hasErrors())
                 throw ve;
 
             JSONObject response = createSuccessResponse(rowCount);
+            if (auditEvent != null)
+                response.put("transactionAuditId", auditEvent.getRowId());
             return new ApiSimpleResponse(response);
         }
         catch (IOException e)
@@ -522,7 +534,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     }
 
     /* TODO change prototype to take DataIteratorBuilder, and DataIteratorContext */
-    protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType) throws IOException
+    protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
     {
         if (_target != null)
         {
@@ -543,9 +555,14 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
             try (DbScope.Transaction transaction = _target.getSchema().getScope().ensureTransaction())
             {
+                if (auditEvent != null)
+                    addTransactionAuditEvent(transaction,  getUser(), auditEvent);
                 int count = _updateService.loadRows(getUser(), getContainer(), dl, context, new HashMap<>());
                 if (errors.hasErrors())
                     return 0;
+                if (auditEvent != null)
+                    auditEvent.setRowCount(count);
+
                 transaction.commit();
                 return count;
             }

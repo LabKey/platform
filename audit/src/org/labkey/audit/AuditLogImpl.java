@@ -19,13 +19,21 @@ package org.labkey.audit;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.audit.SampleTimelineAuditEvent;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -39,11 +47,15 @@ import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
 
 import javax.servlet.ServletContext;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * User: Karl Lum
@@ -205,5 +217,40 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     public ActionURL getAuditUrl()
     {
         return new ActionURL(AuditController.ShowAuditLogAction.class, ContainerManager.getRoot());
+    }
+
+    public List<Integer> getTransactionSampleIds(long transactionAuditId, User user, Container container)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("TransactionID"), transactionAuditId);
+
+        List<SampleTimelineAuditEvent> events = AuditLogService.get().getAuditEvents(container, user, SampleTimelineAuditEvent.EVENT_TYPE, filter, null);
+        return events.stream().map(SampleTimelineAuditEvent::getSampleId).collect(Collectors.toList());
+    }
+
+    public List<Integer> getTransactionSourceIds(long transactionAuditId, User user, Container container)
+    {
+        List<DetailedAuditTypeEvent> events = QueryService.get().getQueryUpdateAuditRecords(user, container, transactionAuditId);
+        List<String> lsids = new ArrayList<>();
+        List<Integer> sourceIds = new ArrayList<>();
+        events.forEach((event) -> {
+            if (event.getNewRecordMap() != null)
+            {
+                Map<String, String> newRecord = AbstractAuditTypeProvider.decodeFromDataMap(event.getNewRecordMap());
+                if (newRecord.containsKey("RowId"))
+                    sourceIds.add(Integer.valueOf(newRecord.get("RowId")));
+                else if (newRecord.containsKey("LSID"))
+                    lsids.add(newRecord.get("LSID"));
+
+            }
+        });
+        if (!lsids.isEmpty())
+        {
+            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+            filter.addCondition(FieldKey.fromParts("LSID"), lsids, CompareType.IN);
+            TableSelector selector = new TableSelector(ExperimentService.get().getTinfoData(), Collections.singleton("RowId"), filter, null);
+            sourceIds.addAll(selector.getArrayList(Integer.class));
+        }
+        return sourceIds;
     }
 }

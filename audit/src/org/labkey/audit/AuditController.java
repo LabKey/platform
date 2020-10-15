@@ -25,21 +25,33 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
 import org.labkey.api.audit.view.AuditChangesView;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.TroubleShooterPermission;
+import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HelpTopic;
@@ -52,12 +64,19 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.VBox;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: adam
@@ -315,6 +334,92 @@ public class AuditController extends SpringActionController
         public void setAuditEventType(String auditEventType)
         {
             this.auditEventType = auditEventType;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class GetTransactionRowIdsAction extends ReadOnlyApiAction<AuditTransactionForm>
+    {
+        @Override
+        public void validateForm(AuditTransactionForm form, Errors errors)
+        {
+            form.validate(errors);
+        }
+
+        @Override
+        public Object execute(AuditTransactionForm form, BindException errors) throws Exception
+        {
+            List<Integer> rowIds;
+            if (form.isSampleType())
+                rowIds = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), getCanSeeAuditLogUser(getUser()), getContainer());
+            else
+                rowIds = AuditLogImpl.get().getTransactionSourceIds(form.getTransactionAuditId(), getUser(), getContainer());
+            ;
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("success", true);
+            response.put("rowIds", rowIds);
+
+            return response;
+        }
+
+        private User getCanSeeAuditLogUser(User user)
+        {
+            User elevatedUser = user;
+            if (!getContainer().hasPermission(getUser(), CanSeeAuditLogPermission.class))
+            {
+                Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
+                contextualRoles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
+                elevatedUser = new LimitedUser(user, user.getGroups(), contextualRoles, false);
+            }
+
+            return elevatedUser;
+        }
+    }
+
+    public static class AuditTransactionForm
+    {
+        private Long _transactionAuditId;
+        private String _dataType;
+        private boolean _isSampleType;
+
+        public Long getTransactionAuditId()
+        {
+            return _transactionAuditId;
+        }
+
+        public void setTransactionAuditId(Long transactionAuditId)
+        {
+            _transactionAuditId = transactionAuditId;
+        }
+
+        public String getDataType()
+        {
+            return _dataType;
+        }
+
+        public void setDataType(String dataType)
+        {
+            _dataType = dataType;
+        }
+
+        public boolean isSampleType()
+        {
+            return _isSampleType;
+        }
+
+        public void validate(Errors errors)
+        {
+            if (getTransactionAuditId() == null)
+                errors.reject(ERROR_REQUIRED, "'transactionAuditId' is required");
+            if (getDataType() == null)
+                errors.reject(ERROR_REQUIRED, "'dataType' is required");
+            else
+            {
+                _isSampleType = getDataType().equalsIgnoreCase("samples");
+                if (!_isSampleType && !getDataType().equalsIgnoreCase("sources"))
+                    errors.reject(ERROR_MSG, "Unknown dataType: " + getDataType());
+            }
         }
     }
 }
