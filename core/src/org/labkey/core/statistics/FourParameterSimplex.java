@@ -100,7 +100,6 @@ public class FourParameterSimplex extends ParameterCurveFit implements Multivari
             _minError = optimum.getValue();
             _bestFit = optimum.getPoint().clone();
             _lastOptimizer = optimizer;
-            //_log.info("optimizer: " + optimizer.toString() + " fit error : " + _minError + " evals: " + optimizer.getEvaluations());
         }
     }
 
