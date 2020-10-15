@@ -3003,6 +3003,13 @@ public class AnnouncementsController extends SpringActionController
     public class UpdateThreadAction extends MutatingApiAction<ThreadForm>
     {
         @Override
+        public void validateForm(ThreadForm form, Errors errors)
+        {
+            if (form.getThread() == null)
+                errors.reject(ERROR_MSG, "A \"thread\" object is required to create a thread.");
+        }
+
+        @Override
         public Object execute(ThreadForm form, BindException errors)
         {
             var rawThread = form.getThread();
