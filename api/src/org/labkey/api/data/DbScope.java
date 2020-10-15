@@ -1790,6 +1790,11 @@ public class DbScope
         boolean isAborted();
 
         String getId();
+
+        @Nullable
+        Long getAuditId();
+
+        void setAuditId(Long auditId);
     }
 
     /** A dummy object for swap-in usage when no transaction is actually desired */
@@ -1835,6 +1840,18 @@ public class DbScope
         public boolean isAborted()
         {
             return false;
+        }
+
+        @Override @Nullable
+        public Long getAuditId()
+        {
+            return null;
+        }
+
+        @Override
+        public void setAuditId(Long auditId)
+        {
+
         }
     };
 
@@ -1892,6 +1909,7 @@ public class DbScope
         private int _closesToIgnore = 0;
         private Throwable _creation = new Throwable();
         private final TransactionKind _transactionKind;
+        private Long _auditId;
 
         TransactionImpl(@NotNull ConnectionWrapper conn, TransactionKind transactionKind)
         {
@@ -1903,6 +1921,18 @@ public class DbScope
             _conn = conn;
             _transactionKind = transactionKind;
             increment(transactionKind.isReleaseLocksOnFinalCommit(), extraLocks);
+        }
+
+        @Override @Nullable
+        public Long getAuditId()
+        {
+            return _auditId;
+        }
+
+        @Override
+        public void setAuditId(Long auditId)
+        {
+            _auditId = auditId;
         }
 
         <K, V> Cache<K, V> getCache(DatabaseCache<K, V> cache)
