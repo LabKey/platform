@@ -236,13 +236,9 @@ public class AnnouncementManager
     }
 
 
-    public static AnnouncementModel getLatestPost(Container c, AnnouncementModel parent)
+    public static AnnouncementModel getLatestPost(Container c, AnnouncementModel parent) throws NotFoundException
     {
-        SQLFragment sql = new SQLFragment( "SELECT LatestId FROM ");
-        sql.append(_comm.getTableInfoThreads(), "t");
-        sql.append(" WHERE RowId = ?");
-        sql.add(parent.getRowId());
-        Integer postId = new SqlSelector(_comm.getSchema(), sql).getObject(Integer.class);
+        Integer postId = getLatestPostId(parent);
 
         if (null == postId)
             throw new NotFoundException("Can't find most recent post");
@@ -250,6 +246,14 @@ public class AnnouncementManager
         return getAnnouncement(c, postId);
     }
 
+    public static @Nullable Integer getLatestPostId(AnnouncementModel parent)
+    {
+        SQLFragment sql = new SQLFragment( "SELECT LatestId FROM ");
+        sql.append(_comm.getTableInfoThreads(), "t");
+        sql.append(" WHERE RowId = ?");
+        sql.add(parent.getRowId());
+        return new SqlSelector(_comm.getSchema(), sql).getObject(Integer.class);
+    }
 
     public static AnnouncementModel insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files) throws IOException
     {

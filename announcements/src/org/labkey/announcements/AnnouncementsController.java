@@ -2890,6 +2890,11 @@ public class AnnouncementsController extends SpringActionController
                     errors.reject(ERROR_MSG, "Failed to reply to thread. Unable to find parent thread \"" + rawThread.getParent() + "\".");
                     return null;
                 }
+                else if (AnnouncementManager.getLatestPostId(parentThread) == null)
+                {
+                    errors.reject(ERROR_MSG, "Failed to reply to thread. Could not locate most recent response for thread \"" + parentThread.getEntityId() + "\".");
+                    return null;
+                }
 
                 newThread.setParent(rawThread.getParent());
             }
@@ -2922,6 +2927,13 @@ public class AnnouncementsController extends SpringActionController
     @RequiresNoPermission // Checked by action
     public class DeleteThreadAction extends MutatingApiAction<ThreadIdentityForm>
     {
+        @Override
+        public void validateForm(ThreadIdentityForm form, Errors errors)
+        {
+            if (form.getRowId() == null && form.getEntityId() == null)
+                errors.reject(ERROR_MSG, "A \"rowId\" or an \"entityId\" must be provided to delete a thread.");
+        }
+
         @Override
         public Object execute(ThreadIdentityForm form, BindException errors)
         {
