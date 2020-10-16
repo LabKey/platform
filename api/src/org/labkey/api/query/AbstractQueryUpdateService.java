@@ -29,11 +29,16 @@ import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParentFactory;
 import org.labkey.api.attachments.SpringAttachmentFile;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -95,6 +100,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
+import static org.labkey.api.audit.TransactionAuditProvider.DB_SEQUENCE_NAME;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment;
 
@@ -143,6 +149,29 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return result;
     }
 
+    public static TransactionAuditProvider.TransactionAuditEvent createTransactionAuditEvent(Container container, QueryService.AuditAction auditAction)
+    {
+        long auditId = DbSequenceManager.get(ContainerManager.getRoot(), DB_SEQUENCE_NAME).next();
+        return new TransactionAuditProvider.TransactionAuditEvent(container.getId(), auditAction, auditId);
+    }
+
+    public static void addTransactionAuditEvent(DbScope.Transaction transaction,  User user, TransactionAuditProvider.TransactionAuditEvent auditEvent)
+    {
+        UserSchema schema = AuditLogService.getAuditLogSchema(user, ContainerManager.getRoot());
+
+        if (schema != null)
+        {
+            // This is a little hack to ensure that the audit table has actually been created and gets put into the table cache by the time the
+            // pre-commit task is executed.  Otherwise, since the creation of the table happens while within the commit for the
+            // outermost transaction, it looks like there is a close that hasn't happened when trying to commit the transaction for creating the
+            // table.
+            schema.getTable(auditEvent.getEventType(), false);
+
+            transaction.addCommitTask(() -> AuditLogService.get().addEvent(user, auditEvent), DbScope.CommitTaskOption.PRECOMMIT);
+
+            transaction.setAuditId(auditEvent.getRowId());
+        }
+    }
 
     protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, InsertOption forImport, Map<Enum, Object> configParameters)
     {

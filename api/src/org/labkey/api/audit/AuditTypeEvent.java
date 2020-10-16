@@ -41,7 +41,8 @@ public class AuditTypeEvent
     protected static final String PROJECT_KEY = "project";
     protected static final String COMMENT_KEY = "comment";
 
-    private int _rowId;
+    // long type used here to allow for DbSequences to supply the rowId
+    private long _rowId;
     private Integer _impersonatedBy;
     private String _comment;
     private String _projectId;
@@ -66,12 +67,12 @@ public class AuditTypeEvent
 
     public AuditTypeEvent(){}
 
-    public int getRowId()
+    public long getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(int rowId)
+    public void setRowId(long rowId)
     {
         _rowId = rowId;
     }

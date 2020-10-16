@@ -28,8 +28,6 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
-<%@ page import="org.labkey.api.study.SpecimenService" %>
-<%@ page import="org.labkey.api.study.SpecimenTransform" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyManagementOption" %>
 <%@ page import="org.labkey.api.study.StudyReloadSource" %>
@@ -54,6 +52,7 @@
 <%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.SnapshotSettingsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.StudyScheduleAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ChooseImporterAction" %>
 <%@ page import="org.labkey.study.controllers.StudyDefinitionController.EditStudyDefinitionAction" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController.ManageStudyProductsAction" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController.BeginAction" %>
@@ -75,9 +74,12 @@
 <%@ page import="org.labkey.study.model.StudySnapshot" %>
 <%@ page import="org.labkey.study.query.SpecimenTablesProvider" %>
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
+<%@ page import="com.google.common.collect.Iterables" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.study.SpecimenTransform" %>
+<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -343,6 +345,10 @@
             ActionURL vialUrl = null;
             ActionURL specimenUrl = null;
 
+            Collection<SpecimenTransform> specimenTransforms = SpecimenService.get().getSpecimenTransforms(getContainer());
+            specimenTransforms.removeIf(transform -> null == transform.getManageAction(getContainer(), getUser()));
+            int numberOfTransforms = specimenTransforms.size();
+
             if (domainEvent != null)
             {
                 specimenEventUrl = domainEvent.getDomainKind().urlEditDefinition(domainEvent, getViewContext())
@@ -394,22 +400,26 @@
                         <td class="lk-study-prop-desc">Configure the specimen groupings in the specimen web part</td>
                         <td><%= link("Configure Specimen Groupings", ManageSpecimenWebPartAction.class) %></td>
                     </tr>
-                <%
-                            for (SpecimenTransform transform : SpecimenService.get().getSpecimenTransforms(c))
-                            {
-                                ActionURL manageAction = transform.getManageAction(c, getUser());
-                                if (manageAction != null)
-                                {
-                %>
+
+                    <% if (numberOfTransforms == 1) { %>
+                    <%
+                        SpecimenTransform transform = Iterables.get(specimenTransforms, 0);
+                        ActionURL manageAction = transform.getManageAction(getContainer(), getUser());
+                    %>
                         <tr>
-                            <td class="lk-study-prop-label">External Specimen Repository</td>
-                            <td class="lk-study-prop-desc">Configure settings for a <%=h(transform.getName())%> repository.</td>
-                            <td><%=link("Configure " + transform.getName(), manageAction)%></td>
+                            <td class="lk-study-prop-label">Specimen Import</td>
+                            <td class="lk-study-prop-desc">Configure a specimen import</td>
+                            <td><%=link("Configure specimen import", manageAction)%></td>
                         </tr>
-                <%
-                                }
-                            }
-                %>
+                    <% } else { %>
+                        <tr>
+                            <td class="lk-study-prop-label">Specimen Import</td>
+                            <td class="lk-study-prop-desc">Choose and configure a specimen import</td>
+                            <td><%=link("Configure specimen import", ChooseImporterAction.class)%></td>
+                        </tr>
+                    <%
+                        }
+                    %>
                 </table>
             </labkey:panel>
         <%
