@@ -16,6 +16,8 @@
 
 package org.labkey.api.security;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -387,6 +389,13 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return _impersonationContext.getContextualRoles(this, policy);
     }
 
+    @JsonValue
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public JSONObject getUserProps()
+    {
+        return User.getUserProps(this);
+    }
+
     // Return the usual contextual roles
     public Set<Role> getStandardContextualRoles()
     {
@@ -577,6 +586,11 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     public String getAvatarThumbnailPath()
     {
         return getAvatarUrl() != null ? getAvatarUrl().toString() : AvatarThumbnailProvider.THUMBNAIL_PATH;
+    }
+
+    public static JSONObject getUserProps(User user)
+    {
+        return getUserProps(user, user, null, false);
     }
 
     public static JSONObject getUserProps(User user, @Nullable Container container)

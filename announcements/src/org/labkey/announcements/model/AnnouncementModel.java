@@ -18,6 +18,7 @@ package org.labkey.announcements.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -344,6 +345,12 @@ public class AnnouncementModel extends Entity implements Serializable
     public void setResponseCount(int responseCount)
     {
         _responseCount = responseCount;
+    }
+
+    @JsonProperty("author")
+    public @Nullable User getAuthor()
+    {
+        return UserManager.getUser(getCreatedBy());
     }
 
     @JsonIgnore
