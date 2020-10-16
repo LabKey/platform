@@ -198,6 +198,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                 // TODO: factor this out in the nab data handlers
                 props.put("VirusWellGroupName", group.getProperty("VirusWellGroupName"));
 
+                // TODO once 20.7 changes merged in, use fitParams.toJSON helper
                 CurveFit.Parameters fitParams = dilution.getCurveParameters(assayResults.getRenderedCurveFitType());
                 props.put(FIT_PARAMETERS_PROPERTY_NAME, fitParams != null ? new JSONObject(fitParams.toMap()) : null);
             }
