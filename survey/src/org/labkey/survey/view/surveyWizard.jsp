@@ -84,6 +84,7 @@
 
     Ext4.onReady(function(){
 
+        Ext4.QuickTips.init();
         var panel = Ext4.create('LABKEY.ext4.SurveyDisplayPanel', {
             cls             : 'lk-survey-panel themed-panel',
             rowId           : <%=rowId%>,
