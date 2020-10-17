@@ -2770,10 +2770,10 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
             filter.addInClause(FieldKey.fromParts("GlobalUniqueId"), idToVial.keySet());
 
-            new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null).forEach(comment -> {
+            new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null).forEach(SpecimenComment.class, comment -> {
                 Vial vial = idToVial.get(comment.getGlobalUniqueId());
                 result.put(vial, comment);
-            }, SpecimenComment.class);
+            });
 
             offset += GET_COMMENT_BATCH_SIZE;
         }

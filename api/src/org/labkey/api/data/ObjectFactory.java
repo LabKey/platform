@@ -48,7 +48,7 @@ public interface ObjectFactory<K>
     K[] handleArray(ResultSet rs) throws SQLException;
 
 
-    public static class Registry
+    class Registry
     {
         private static final Logger _log = LogManager.getLogger(Registry.class);
         private static final Map<Class, ObjectFactory> _registry = new ConcurrentHashMap<>(64);

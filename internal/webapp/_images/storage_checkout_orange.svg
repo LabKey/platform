@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 63.1 (92452) - https://sketch.com -->
+    <title>check_out_orange</title>
+    <desc>Created with Sketch.</desc>
+    <g id="check_out_orange" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Fridge" transform="translate(26.000000, 8.000000)" stroke="#FFA500" stroke-width="2">
+            <path d="M28.4444444,0 L31.5555556,0 C31.8222222,0 32,0.2 32,0.5 L32,47.5 C32,47.8 31.8222222,48 31.5555556,48 L0.444444444,48 C0.177777778,48 0,47.8 0,47.5 L0,0.5 C0,0.2 0.177777778,0 0.444444444,0 L3.55555556,0 L28.4444444,0 Z" id="Body" fill="#FFCC81" stroke-linecap="round"></path>
+            <path d="M8,9 L8,25 C8,25.5522847 7.55228475,26 7,26 L5,26 C4.44771525,26 4,25.5522847 4,25 L4,9 C4,8.44771525 4.44771525,8 5,8 L7,8 C7.55228475,8 8,8.44771525 8,9 Z" id="Handle" fill="#FFFFFF" stroke-linecap="round"></path>
+            <line x1="0" y1="35.5" x2="32" y2="35.5" id="Path-2"></line>
+        </g>
+        <g id="Minus" transform="translate(3.000000, 23.000000)">
+            <circle id="Circle" stroke="#FFA500" stroke-width="2" fill="#FFFFFF" cx="9" cy="9" r="9"></circle>
+            <rect id="Rectangle" fill="#FFCC81" transform="translate(9.000000, 9.000000) rotate(-270.000000) translate(-9.000000, -9.000000) " x="7" y="3" width="4" height="12"></rect>
+        </g>
+    </g>
+</svg>

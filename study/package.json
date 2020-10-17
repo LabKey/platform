@@ -1,48 +1,22 @@
 {
   "name": "study",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "private": true,
   "scripts": {
     "setup": "npm ci",
     "build": "npm run build-dev",
-    "start": "bnr build:watch",
-    "build-dev": "npm run clean && bnr build:dev",
-    "build-prod": "npm run clean && bnr build:prod",
-    "clean": "bnr clean"
-  },
-  "betterScripts": {
-    "build:watch": {
-      "command": "webpack-dev-server --config ../webpack/watch.config.js",
-      "env": {
-        "LK_MODULE": "study",
-        "NODE_ENV": "development"
-      }
-    },
-    "build:dev": {
-      "command": "webpack --config ../webpack/dev.config.js --progress --profile --colors",
-      "env": {
-        "LK_MODULE": "study",
-        "NODE_ENV": "development"
-      }
-    },
-    "build:prod": {
-      "command": "webpack --config ../webpack/prod.config.js --progress --profile --colors",
-      "env": {
-        "LK_MODULE": "study",
-        "NODE_ENV": "production"
-      }
-    },
-    "clean": {
-      "command": "rimraf resources/web/study/gen && rimraf resources/views/datasetDesigner*"
-    }
+    "start": "cross-env NODE_ENV=development LK_MODULE=study webpack-dev-server --config ../webpack/watch.config.js",
+    "build-dev": "npm run clean && cross-env NODE_ENV=development LK_MODULE=study webpack --config ../webpack/dev.config.js --progress --profile --colors",
+    "build-prod": "npm run clean && cross-env NODE_ENV=production LK_MODULE=study webpack --config ../webpack/prod.config.js --progress --profile --colors",
+    "clean": "rimraf resources/web/study/gen && rimraf resources/views/datasetDesigner*"
   },
   "dependencies": {
-    "@labkey/components": "0.96.1"
+    "@labkey/components": "0.97.0"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.13.0",
     "@types/react": "16.9.44",
-    "better-npm-run": "0.1.1",
+    "cross-env": "7.0.2",
     "react-hot-loader": "4.12.21",
     "rimraf": "3.0.2",
     "webpack": "4.44.1",

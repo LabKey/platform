@@ -28,7 +28,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -44,7 +43,6 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -60,6 +58,7 @@ import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
@@ -72,7 +71,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.AuditBehaviorType;
-import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
@@ -140,6 +138,8 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.MasterPatientIndexService;
 import org.labkey.api.study.ParticipantCategory;
+import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -181,7 +181,6 @@ import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.MasterPatientIndexMaintenanceTask;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.StudyFolderType;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
@@ -2215,12 +2214,12 @@ public class StudyController extends BaseStudyController
                     "SELECT v.RowId FROM study.Visit v WHERE Container = ? AND NOT EXISTS (SELECT * FROM study.ParticipantVisit pv WHERE pv.Container = ? and pv.VisitRowId = v.RowId)",
                     getContainer(), getContainer()
                 )
-            ).forEach(rowId -> {
+            ).forEach(Integer.class, rowId -> {
                 VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, rowId);
 
                 if (null != visit)
                     visits.add(visit);
-            }, Integer.class);
+            });
 
             return visits;
         }
@@ -2551,7 +2550,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType)
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable  TransactionAuditProvider.TransactionAuditEvent auditEvent)
         {
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
             {
@@ -6212,6 +6211,61 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    public static class EnabledSpecimenImportForm
+    {
+        private String _activeTransform;
+
+        public String getActiveTransform()
+        {
+            return _activeTransform;
+        }
+
+        public void setActiveTransform(String activeTransform)
+        {
+            _activeTransform = activeTransform;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class ChooseImporterAction extends FormViewAction<EnabledSpecimenImportForm>
+    {
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            root.addChild("Specimen Import Mechanism");
+        }
+
+        @Override
+        public void validateCommand(EnabledSpecimenImportForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(EnabledSpecimenImportForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/study/view/chooseImporter.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(EnabledSpecimenImportForm form, BindException errors) throws Exception
+        {
+            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getContainer(), "enabledSpecimenImporter", true);
+            props.put("active", form.getActiveTransform());
+            props.save();
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(EnabledSpecimenImportForm configForm)
+        {
+            Container c = getContainer();
+            SpecimenService specimenService = SpecimenService.get();
+
+            String active = specimenService.getActiveSpecimenImporter(c);
+            SpecimenTransform activeTransform = specimenService.getSpecimenTransform(active);
+            return activeTransform.getManageAction(c, getUser());
+        }
+    }
 
     public static class ImportVisitMapForm
     {
@@ -7394,7 +7448,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType) throws IOException
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
         {
             if (null == _study)
                 return 0;

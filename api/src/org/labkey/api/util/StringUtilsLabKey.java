@@ -142,7 +142,7 @@ public class StringUtilsLabKey
     /** Recognizes strings that start with http://, https://, ftp://, or mailto: */
     private static final String[] URL_PREFIXES = {"http://", "https://", "ftp://", "mailto:"};
 
-    public static boolean startsWithURL(String s)
+    public static boolean startsWithURL(CharSequence s)
     {
         if (s != null)
         {

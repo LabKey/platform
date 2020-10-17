@@ -56,7 +56,7 @@ import java.util.Map;
  */
 public class ReportQueryViewFactory
 {
-    private static ReportQueryViewFactory _instance = new ReportQueryViewFactory();
+    private static final ReportQueryViewFactory _instance = new ReportQueryViewFactory();
 
     public static ReportQueryViewFactory get()
     {
@@ -79,7 +79,6 @@ public class ReportQueryViewFactory
             // by default we want all rows since the data may be used for a chart, grid based reports will ask for paging
             // at the report level.
             settings.setMaxRows(Table.ALL_ROWS);
-
 
             ReportQueryView view = new StudyReportQueryView(schema, settings);
             view.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);

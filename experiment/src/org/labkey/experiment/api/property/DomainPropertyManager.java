@@ -169,7 +169,7 @@ public class DomainPropertyManager
 
         final MultiValuedMap<Integer, PropertyValidator> validators = new ArrayListValuedHashMap<>();
 
-        new SqlSelector(getExpSchema(), sql, containerId).forEach(pv -> validators.put(pv.getPropertyId(), pv), PropertyValidator.class);
+        new SqlSelector(getExpSchema(), sql, containerId).forEach(PropertyValidator.class, pv -> validators.put(pv.getPropertyId(), pv));
 
         return validators.isEmpty() ? MultiMapUtils.emptyMultiValuedMap() : MultiMapUtils.unmodifiableMultiValuedMap(validators);
     };

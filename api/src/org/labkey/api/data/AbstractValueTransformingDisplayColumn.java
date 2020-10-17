@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 
 /**
@@ -78,9 +79,9 @@ public abstract class AbstractValueTransformingDisplayColumn<RawDataType, Transf
     }
 
     @Override
-    public @NotNull String getFormattedValue(RenderContext ctx)
+    public @NotNull HtmlString getFormattedHtml(RenderContext ctx)
     {
-        return PageFlowUtil.filter(getDisplayValue(ctx));
+        return HtmlString.of(getDisplayValue(ctx));
     }
 
     /** Convert from the raw database value to however it should be presented */

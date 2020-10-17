@@ -227,7 +227,7 @@ public class ExperimentServiceImpl implements ExperimentService
         TableSelector selector = new TableSelector(getTinfoExperimentRun(), filter, null);
 
         final List<ExpRunImpl> runs = new ArrayList<>(rowids.size());
-        selector.forEach(run -> runs.add(new ExpRunImpl(run)), ExperimentRun.class);
+        selector.forEach(ExperimentRun.class, run -> runs.add(new ExpRunImpl(run)));
 
         return runs;
     }
@@ -619,7 +619,7 @@ public class ExperimentServiceImpl implements ExperimentService
         TableSelector selector = new TableSelector(getTinfoMaterial(), filter, null);
 
         final List<ExpMaterialImpl> materials = new ArrayList<>(rowids.size());
-        selector.forEach(material -> materials.add(new ExpMaterialImpl(material)), Material.class);
+        selector.forEach(Material.class, material -> materials.add(new ExpMaterialImpl(material)));
 
         return materials;
     }
@@ -631,7 +631,7 @@ public class ExperimentServiceImpl implements ExperimentService
         TableSelector selector = new TableSelector(getTinfoMaterial(), filter, null);
 
         final List<ExpMaterialImpl> materials = new ArrayList<>(lsids.size());
-        selector.forEach(material -> materials.add(new ExpMaterialImpl(material)), Material.class);
+        selector.forEach(Material.class, material -> materials.add(new ExpMaterialImpl(material)));
 
         return materials;
     }
@@ -879,13 +879,13 @@ public class ExperimentServiceImpl implements ExperimentService
                 .append(" AND (d.lastIndexed IS NULL OR d.lastIndexed < ? OR (d.modified IS NOT NULL AND d.lastIndexed < d.modified))")
                 .add(dataClass.getModified());
 
-        new SqlSelector(table.getSchema().getScope(), sql).forEachBatch(batch -> {
+        new SqlSelector(table.getSchema().getScope(), sql).forEachBatch(Data.class, 1000, batch -> {
             for (Data data : batch)
             {
                 ExpDataImpl impl = new ExpDataImpl(data);
                 impl.index(task);
             }
-        }, Data.class, 1000);
+        });
     }
 
     private void indexDataClass(ExpDataClass expDataClass, SearchService.IndexTask task)

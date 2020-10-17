@@ -32,6 +32,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientApiAuditProvider;
 import org.labkey.api.audit.DefaultAuditProvider;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
@@ -387,8 +388,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsole.addExperimentalFeatureFlag(RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE, "Resolve lookups by Value",
                 "This feature will attempt to resolve lookups by value through the UI insert/update form. This can be useful when the " +
                         "lookup list is long (> 10000) and the UI stops rendering a dropdown.", false);
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_ERROR_PAGE, "New Error Page",
-                "This is the new error page.", false);
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
@@ -808,6 +807,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AuditLogService.get().registerAuditType(new FileSystemBatchAuditProvider());
             AuditLogService.get().registerAuditType(new ClientApiAuditProvider());
             AuditLogService.get().registerAuditType(new AuthenticationSettingsAuditTypeProvider());
+            AuditLogService.get().registerAuditType(new TransactionAuditProvider());
 
             QCStateManager.getInstance().registerQCHandler(new CoreQCStateHandler());
         }
