@@ -23,7 +23,8 @@ Ext4.define('LABKEY.vis.TimeChartXAxisField', {
         this.items = [
             this.getTimeTypeRadioGroup(),
             this.getIntervalCombo(),
-            this.getZeroDateColCombo()
+            this.getZeroDateColCombo(),
+            this.getVisitDisplayPropertyCombo()
         ];
 
         this.callParent();
@@ -55,8 +56,9 @@ Ext4.define('LABKEY.vis.TimeChartXAxisField', {
                     change: function(rg, newValue)
                     {
                         this.isVisitBased = newValue.time == 'visit';
-                        this.getIntervalCombo().setDisabled(this.isVisitBased);
-                        this.getZeroDateColCombo().setDisabled(this.isVisitBased);
+                        this.getIntervalCombo().setVisible(!this.isVisitBased);
+                        this.getZeroDateColCombo().setVisible(!this.isVisitBased);
+                        this.getVisitDisplayPropertyCombo().setVisible(this.isVisitBased);
                     }
                 }
             });
@@ -76,7 +78,7 @@ Ext4.define('LABKEY.vis.TimeChartXAxisField', {
             this.intervalCombo = Ext4.create('Ext.form.field.ComboBox', {
                 name: 'interval',
                 fieldLabel: 'Time Interval',
-                disabled: this.isVisitBased,
+                hidden: this.isVisitBased,
                 labelWidth: 110,
                 width: 295,
                 padding: '0 0 0 5px',
@@ -96,6 +98,33 @@ Ext4.define('LABKEY.vis.TimeChartXAxisField', {
         return this.intervalCombo;
     },
 
+    getVisitDisplayPropertyCombo : function()
+    {
+        if (!this.visitDisplayPropertyCombo)
+        {
+            this.visitDisplayPropertyCombo = Ext4.create('Ext.form.field.ComboBox', {
+                name: 'visitDisplayProperty',
+                fieldLabel: 'Display Property',
+                hidden: !this.isVisitBased,
+                labelWidth: 110,
+                width: 295,
+                padding: '0 0 0 5px',
+                store: Ext4.create('Ext.data.ArrayStore', {
+                    fields: ['value','label'],
+                    data: [['displayOrder','Visit'], ['protocolDay','Protocol Day'], ['sequenceNumMin','Sequence Num Min'], ['sequenceNumMax','Sequence Num Max']]
+                }),
+                queryMode: 'local',
+                editable: false,
+                forceSelection: true,
+                displayField: 'label',
+                valueField: 'value',
+                value: this.initData.visitDisplayProperty || 'displayOrder'
+            });
+        }
+
+        return this.visitDisplayPropertyCombo;
+    },
+
     getZeroDateColCombo : function()
     {
         if (!this.zeroDateColCombo)
@@ -103,7 +132,7 @@ Ext4.define('LABKEY.vis.TimeChartXAxisField', {
             this.zeroDateColCombo = Ext4.create('Ext.form.field.ComboBox', {
                 name: 'zeroDateCol',
                 fieldLabel: 'Interval Start Date',
-                disabled: this.isVisitBased,
+                hidden: this.isVisitBased,
                 labelWidth: 110,
                 width: 295,
                 padding: '0 0 0 5px',
@@ -221,8 +250,11 @@ Ext4.define('LABKEY.vis.TimeChartXAxisField', {
     getValue : function()
     {
         var values = {time: this.getTimeTypeRadioGroup().getValue().time};
-        if (!this.isVisitBased)
-        {
+        if (this.isVisitBased) {
+            values.visitDisplayProperty = this.getVisitDisplayPropertyCombo().getValue();
+            values.visitDisplayLabel = this.getVisitDisplayPropertyCombo().getDisplayValue();
+        }
+        else{
             values.interval = this.getIntervalCombo().getValue();
             values.zeroDateCol = this.getZeroDateColData();
         }

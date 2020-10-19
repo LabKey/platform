@@ -109,7 +109,7 @@ LABKEY.vis.TimeChartHelper = new function() {
             }
         }
 
-        if (config.measures[0].time != "date")
+        if (config.measures[0].time == "visit" && (config.measures[0].visitOptions.visitDisplayProperty === 'displayOrder'))
         {
             xTickFormat = function(value) {
                 return tickMap[value] ? tickMap[value].label : "";
@@ -229,7 +229,8 @@ LABKEY.vis.TimeChartHelper = new function() {
         }
         else {
             xAes = function(row) {
-                return visitMap[_getRowValue(row, intervalKey, 'value')].displayOrder;
+                var displayProp = config.measures[0].visitOptions.visitDisplayProperty;
+                return visitMap[_getRowValue(row, intervalKey, 'value')][displayProp];
             };
         }
 
@@ -653,7 +654,8 @@ LABKEY.vis.TimeChartHelper = new function() {
                 var visitMap = data.individual ? data.individual.visitMap : data.aggregate.visitMap;
                 xName = LABKEY.vis.getColumnAlias(columnAliases, nounSingular + "Visit/Visit");
                 xFunc = function(row){
-                    return visitMap[_getRowValue(row, xName, 'value')].displayOrder;
+                    var displayProp = config.measures[0].visitOptions.visitDisplayProperty;
+                    return visitMap[_getRowValue(row, xName, 'value')][displayProp];
                 };
             }
 
