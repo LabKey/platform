@@ -66,6 +66,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
@@ -745,7 +746,23 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         {
             try
             {
-                return _convertCol.convert(o);
+                Object value =  _convertCol.convert(o);
+                ForeignKey fk = _toCol.getFk();
+                // issue 40909 : allow String columns to resolve lookups by alternate key if the raw lookup fails to resolve
+                if (fk != null && Objects.equals(o, value) && String.class.equals(_toCol.getJavaObjectClass()))
+                {
+                    if (fk.getLookupTableInfo() != null)
+                    {
+                        TableSelector selector = new TableSelector(fk.getLookupTableInfo(), Collections.singleton(fk.getLookupColumnName()));
+                        Object lookupValue = selector.getObject(value, _toCol.getJavaObjectClass());
+                        if (lookupValue == null)
+                        {
+                            Object remappedValue = _remapper.mappedValue(o);
+                            value = remappedValue != null ? remappedValue : value;
+                        }
+                    }
+                }
+                return value;
             }
             catch (ConversionException ex)
             {
