@@ -37,7 +37,15 @@ public interface SpecimenTransform
      */
     String getName();
 
-    boolean isEnabled(Container container);
+    /**
+     * Returns whether module containing transform is present for a container
+     */
+    boolean isValid(Container container);
+
+    /**
+     * Returns whether transform is active for a container
+     */
+    boolean isActive(Container container);
 
     /**
      * Returns the file type that this transform can accept

@@ -114,6 +114,10 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
                 {
                     col.setLabel("Inventory Update Type");
                 }
+                else if (COLUMN_NAME_TRANSACTION_ID.equalsIgnoreCase(col.getName()))
+                {
+                    col.setLabel("Transaction ID");
+                }
             }
         };
         table.setTitleColumn(SAMPLE_NAME_COLUMN_NAME);
@@ -154,6 +158,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
             fields.add(createPropertyDescriptor(METADATA_COLUMN_NAME, PropertyType.STRING, -1));        // varchar max
             fields.add(createPropertyDescriptor(OLD_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
             fields.add(createPropertyDescriptor(NEW_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
+            fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_ID, PropertyType.BIGINT));        // varchar max
             _fields = Collections.unmodifiableSet(fields);
         }
 
