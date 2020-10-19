@@ -85,6 +85,36 @@ public class CaseInsensitiveHashSet extends HashSet<String>
         return modified;
     }
 
+    public static CaseInsensitiveHashSet of()
+    {
+        return new CaseInsensitiveHashSet();
+    }
+
+    public static CaseInsensitiveHashSet of(String s1)
+    {
+        return new CaseInsensitiveHashSet(s1);
+    }
+
+    public static CaseInsensitiveHashSet of(String s1, String s2)
+    {
+        return new CaseInsensitiveHashSet(s1, s2);
+    }
+
+    public static CaseInsensitiveHashSet of(String s1, String s2, String s3)
+    {
+        return new CaseInsensitiveHashSet(s1, s2);
+    }
+
+    public static CaseInsensitiveHashSet of(String s1, String s2, String s3, String s4)
+    {
+        return new CaseInsensitiveHashSet(s1, s2, s3, s4);
+    }
+
+    public static CaseInsensitiveHashSet of(String s1, String s2, String s3, String s4, String s5)
+    {
+        return new CaseInsensitiveHashSet(s1, s2, s3, s4, s5);
+    }
+
 
     public static class TestCase extends Assert
     {
