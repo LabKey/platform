@@ -881,6 +881,9 @@ public class DomainUtil
 
         if (from.getScale() != null)
             to.setScale(from.getScale());
+
+        if (from.getDefaultValueType() != null)
+            to.setDefaultValueType(from.getDefaultValueType().toString());
     }
 
     @SuppressWarnings("unchecked")
