@@ -36,11 +36,11 @@ import java.util.Map;
 */
 public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable<UserSchema>
 {
-    private final Class<EnumType> _enum;
-    private final EnumValueGetter<EnumType> _valueGetter;
-    private final EnumRowIdGetter<EnumType> _rowIdGetter;
-    @Nullable private String _schemaName;
-    @Nullable private String _queryName;
+    protected final Class<EnumType> _enum;
+    protected final EnumValueGetter<EnumType> _valueGetter;
+    protected final EnumRowIdGetter<EnumType> _rowIdGetter;
+    @Nullable protected String _schemaName;
+    @Nullable protected String _queryName;
 
     /**
      * Turns an enum value into a string to expose in the virtual table

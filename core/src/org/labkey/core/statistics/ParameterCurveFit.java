@@ -15,6 +15,7 @@
  */
 package org.labkey.core.statistics;
 
+import org.json.JSONObject;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
@@ -96,6 +97,19 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
 
             return Collections.unmodifiableMap(params);
         }
+
+        public static SigmoidalParameters fromJSON(JSONObject json)
+        {
+            SigmoidalParameters parameters = new SigmoidalParameters();
+
+            parameters.asymmetry = json.getDouble("asymmetry");
+            parameters.inflection = json.getDouble("inflection");
+            parameters.slope = json.getDouble("slope");
+            parameters.max = json.getDouble("max");
+            parameters.min = json.getDouble("min");
+
+            return parameters;
+        }
     }
 
     public ParameterCurveFit(DoublePoint[] data, StatsService.CurveFitType fitType)
@@ -125,6 +139,12 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
         double maxValue = values.get(values.size() - 1);
 
         return calculateFitParameters(minValue, maxValue);
+    }
+
+    @Override
+    public void setParameters(JSONObject json)
+    {
+        _parameters = SigmoidalParameters.fromJSON(json);
     }
 
     @Override
@@ -175,7 +195,7 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
         }
     }
 
-    private SigmoidalParameters calculateFitParameters(double minValue, double maxValue)
+    protected SigmoidalParameters calculateFitParameters(double minValue, double maxValue)
     {
         SigmoidalParameters bestFit = null;
         SigmoidalParameters parameters = new SigmoidalParameters();
