@@ -90,6 +90,7 @@ public interface DomainProperty extends ImportAliasable
 
     DefaultValueType getDefaultValueTypeEnum();
     void setDefaultValueTypeEnum(DefaultValueType defaultValueType);
+    void setDefaultValueType(String defaultValueTypeName);
     void setDefaultValue(String value);
 
     PropertyType getPropertyType();

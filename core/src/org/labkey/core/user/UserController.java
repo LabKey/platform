@@ -321,9 +321,16 @@ public class UserController extends SpringActionController
     private void populateUserGridButtonBar(ButtonBar gridButtonBar, boolean isAnyAdmin)
     {
         User user = getUser();
-        boolean canAddUser = user.hasRootPermission(AddUserPermission.class);
+        boolean canAddUser = user.hasRootPermission(AddUserPermission.class) || getContainer().hasPermission(user, AddUserPermission.class);
         boolean canDeleteUser = user.hasRootPermission(DeleteUserPermission.class);
         boolean canUpdateUser = user.hasRootPermission(UpdateUserPermission.class);
+
+        if (canAddUser)
+        {
+            ActionButton insert = new ActionButton(PageFlowUtil.urlProvider(SecurityUrls.class).getAddUsersURL(getContainer()), "Add Users");
+            insert.setActionType(ActionButton.Action.LINK);
+            gridButtonBar.add(insert);
+        }
 
         if (getContainer().isRoot())
         {
@@ -346,13 +353,6 @@ public class UserController extends SpringActionController
                 delete.setRequiresSelection(true);
                 delete.setActionType(ActionButton.Action.POST);
                 gridButtonBar.add(delete);
-            }
-
-            if (canAddUser)
-            {
-                ActionButton insert = new ActionButton(PageFlowUtil.urlProvider(SecurityUrls.class).getAddUsersURL(), "Add Users");
-                insert.setActionType(ActionButton.Action.LINK);
-                gridButtonBar.add(insert);
             }
 
             Domain domain = null;
