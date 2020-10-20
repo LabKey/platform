@@ -86,6 +86,10 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             if (job == null)
                 throw new NoSuchJobException("Job checkpoint does not exist.");
 
+            // If the job is already runnning (i.e. maybe it was started from a defferred upgrade script), skip requeueing it
+            if (PipelineJob.TaskStatus.running.matches(sf.getStatus()))
+                return;
+
             // If the job is being retried from a non-error status, then don't
             // increment error and retry counts.  This happens when a server restart
             // causes all previously queued jobs to be requeued.
