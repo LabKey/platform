@@ -80,5 +80,7 @@ public interface MutableColumnRenderProperties extends ColumnRenderProperties
 
     void setScale(int scale);
 
+    void setPrecision(int scale);
+
     void setPrincipalConceptCode(String code);
 }

@@ -271,12 +271,6 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        public ActionURL urlDeleteReport(Container c)
-        {
-            return new ActionURL(DeleteReportAction.class, c);
-        }
-
-        @Override
         public ActionURL urlExportCrosstab(Container c)
         {
             return new ActionURL(CrosstabExportAction.class, c);
