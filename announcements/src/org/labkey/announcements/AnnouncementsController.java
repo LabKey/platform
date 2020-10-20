@@ -1604,7 +1604,6 @@ public class AnnouncementsController extends SpringActionController
     }
 
     // Used for testing announcement daily digest email notifications
-    @Marshal(Marshaller.Jackson)
     @RequiresSiteAdmin
     public class SendDailyDigestAction extends MutatingApiAction
     {
