@@ -14,6 +14,7 @@ if(!LABKEY.vis) {
 LABKEY.vis.TimeChartHelper = new function() {
 
     var $ = jQuery;
+    var defaultVisitProperty = 'displayOrder';
 
     /**
      * Generate the main title and axis labels for the chart based on the specified x-axis and y-axis (left and right) labels.
@@ -109,7 +110,7 @@ LABKEY.vis.TimeChartHelper = new function() {
             }
         }
 
-        if (config.measures[0].time == "visit" && (config.measures[0].visitOptions.visitDisplayProperty === 'displayOrder'))
+        if (config.measures[0].time == "visit" && (config.measures[0].visitOptions === undefined || config.measures[0].visitOptions.visitDisplayProperty === defaultVisitProperty))
         {
             xTickFormat = function(value) {
                 return tickMap[value] ? tickMap[value].label : "";
@@ -194,7 +195,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         {
             if (visitMap.hasOwnProperty(rowId))
             {
-                tickMap[visitMap[rowId].displayOrder] = {
+                tickMap[visitMap[rowId][defaultVisitProperty]] = {
                     label: visitMap[rowId].displayName,
                     description: visitMap[rowId].description || visitMap[rowId].displayName
                 };
@@ -229,7 +230,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         }
         else {
             xAes = function(row) {
-                var displayProp = config.measures[0].visitOptions.visitDisplayProperty;
+                var displayProp = config.measures[0].visitOptions ? config.measures[0].visitOptions.visitDisplayProperty : defaultVisitProperty;
                 return visitMap[_getRowValue(row, intervalKey, 'value')][displayProp];
             };
         }
@@ -654,7 +655,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                 var visitMap = data.individual ? data.individual.visitMap : data.aggregate.visitMap;
                 xName = LABKEY.vis.getColumnAlias(columnAliases, nounSingular + "Visit/Visit");
                 xFunc = function(row){
-                    var displayProp = config.measures[0].visitOptions.visitDisplayProperty;
+                    var displayProp = config.measures[0].visitOptions ? config.measures[0].visitOptions.visitDisplayProperty : defaultVisitProperty;
                     return visitMap[_getRowValue(row, xName, 'value')][displayProp];
                 };
             }
