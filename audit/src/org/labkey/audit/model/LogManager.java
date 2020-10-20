@@ -87,9 +87,9 @@ public class LogManager
 
             UserSchema schema = AuditLogService.getAuditLogSchema(user, c != null ? c : ContainerManager.getRoot());
 
-                if (schema != null)
-                {
-                    TableInfo table = schema.getTable(provider.getEventName(), false);
+            if (schema != null)
+            {
+                TableInfo table = schema.getTable(provider.getEventName(), false);
 
                 if (table instanceof DefaultAuditTypeTable)
                 {

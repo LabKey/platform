@@ -98,7 +98,7 @@
     var $h = Ext4.util.Format.htmlEncode;
     var first = true;
 
-    const _urlTemplate = <%= q(subjectUrl) %>;
+    const _urlTemplate = new URL(<%= q(subjectUrl.getURIString())%>);
     const _singularNoun = <%= q(singularNoun) %>;
     const _pluralNoun = <%= q(pluralNoun) %>;
     const _divId = <%= q(divId) %>;
@@ -298,8 +298,7 @@
         _ptids[i] = {
             index:i,
             ptid:ptid,
-            html:(h==ptid?ptid:h),
-            urlParam: Ext4.Object.toQueryString({participantId: ptid})
+            html:(h==ptid?ptid:h)
         };
     }
     avgPtidLength = _ptids.length > 0 ? sumPtidLength / _ptids.length : 0;
@@ -590,8 +589,9 @@
                 html.push('</ul></td><td valign="top"><ul class="subjectlist">');
             }
 
+            _urlTemplate.searchParams.set('participantId', p.ptid);
             html.push('<li class="ptid" index=' + p.index + ' ptid="' + p.html + '" style="white-space:nowrap;">');
-            html.push('<a href="' + _urlTemplate + p.urlParam + '">' + (LABKEY.demoMode?LABKEY.id(p.ptid):p.html) + '</a>');
+            html.push('<a href="' + _urlTemplate.toString() + '">' + (LABKEY.demoMode?LABKEY.id(p.ptid):p.html) + '</a>');
             html.push('</li>\n');
         }
         html.push('</ul></td></tr></table>');

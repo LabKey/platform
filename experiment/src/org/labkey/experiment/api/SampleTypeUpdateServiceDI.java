@@ -503,8 +503,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(
                 getContainer().getId(), "Samples " + auditAction.getVerbPastTense() + " in: " + _sampleType.getName());
+        var tx = getSchema().getDbSchema().getScope().getCurrentTransaction();
+        if (tx != null)
+            event.setTransactionId(tx.getAuditId());
         event.setSourceLsid(_sampleType.getLSID());
-        event.setSampleTypeName(_sampleType.getName());
+        event.setSampleSetName(_sampleType.getName());
         event.setInsertUpdateChoice(auditAction.toString().toLowerCase());
         AuditLogService.get().addEvent(getUser(), event);
     }

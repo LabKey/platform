@@ -25,9 +25,6 @@
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.UserSchema" %>
-<%@ page import="org.labkey.api.reports.Report" %>
-<%@ page import="org.labkey.api.reports.ReportService" %>
-<%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
@@ -43,7 +40,6 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.DatasetController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.Arrays" %>
@@ -118,27 +114,7 @@
         %></th>
     </tr>
     <%
-
-        for (Report report : ReportService.get().getReports(user, study.getContainer(), Integer.toString(datasetId)))
-        {
-            if (updateAccess)
-            {
-    %>
-    <tr style="<%=text(expanded ? "" : "display:none")%>">
-        <td>
-            <a href="<%=h(new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString()))%>">[remove]</a>
-        </td>
-    </tr>
-    <%
-        }
-    %>
-    <tr style="<%=text(expanded ? "" : "display:none")%>">
-        <td><img
-                src="<%=h(new ActionURL(ReportsController.PlotChartAction.class, study.getContainer()).addParameter("participantId", bean.getParticipantId()).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString()))%>">
-        </td>
-    </tr>
-    <%
-        }
+        // TODO Issue 40643: Support viewing reports/charts for demographics dataset (see participantAll.jsp usages of ReportService.get().getReports())
 
         int row = 0;
 

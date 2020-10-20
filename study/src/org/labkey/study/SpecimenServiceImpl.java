@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -316,6 +317,23 @@ public class SpecimenServiceImpl implements SpecimenService
     }
 
     @Override
+    public String getActiveSpecimenImporter(@NotNull Container container)
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getProperties(container, "enabledSpecimenImporter");
+        String activeTransform = props.get("active");
+        if (null == activeTransform)
+            return null;
+
+        // In case module with active transform has been disabled in container
+        Collection<SpecimenTransform> transforms = getSpecimenTransforms(container);
+        boolean noTransformsActive = transforms.stream().allMatch(transform -> !activeTransform.equals(transform.getName()));
+
+        if (noTransformsActive)
+            return null;
+        return props.get("active");
+    }
+
+    @Override
     public void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws IOException, ValidationException
     {
         // CONSIDER: move ShowUploadSpecimensAction validation to importer.process()
@@ -353,7 +371,7 @@ public class SpecimenServiceImpl implements SpecimenService
 
         for (SpecimenTransform transform : _specimenTransformMap.values())
         {
-            if (transform.isEnabled(container))
+            if (transform.isValid(container))
                 transforms.add(transform);
         }
         return transforms;

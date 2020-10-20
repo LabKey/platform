@@ -34,6 +34,7 @@ import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -144,6 +145,7 @@ import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.gwt.client.AuditBehaviorType.SUMMARY;
+import static org.labkey.query.audit.QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT;
 
 
 public class QueryServiceImpl extends AuditHandler implements QueryService
@@ -2955,6 +2957,9 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     private  QueryUpdateAuditProvider.QueryUpdateAuditEvent createAuditRecord(Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row)
     {
         QueryUpdateAuditProvider.QueryUpdateAuditEvent event = new QueryUpdateAuditProvider.QueryUpdateAuditEvent(c.getId(), comment);
+        DbScope.Transaction tx = tinfo.getSchema().getScope().getCurrentTransaction();
+        if (tx != null)
+            event.setTransactionId(tx.getAuditId());
 
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
@@ -2971,6 +2976,14 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             }
         }
         return event;
+    }
+
+    public List<DetailedAuditTypeEvent> getQueryUpdateAuditRecords(User user, Container container, long transactionAuditId)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("TransactionID"), transactionAuditId);
+
+        return AuditLogService.get().getAuditEvents(container, user, QUERY_UPDATE_AUDIT_EVENT, filter, null);
     }
 
     @Override

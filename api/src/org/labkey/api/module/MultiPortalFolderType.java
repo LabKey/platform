@@ -238,8 +238,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         // if startURL for this folderType specified in the folderType.xml use that
         if (_startUrl != null && !_startUrl.equals(""))
         {
-            String encodedContainerPath = PageFlowUtil.encode(c.getPath());
-            return new ActionURL(encodedContainerPath + "/" + _startUrl);
+            return new ActionURL(c.getEncodedPath() + _startUrl);
         }
         // otherwise get the startURL from the tab configs
         else

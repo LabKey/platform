@@ -29,7 +29,7 @@ public class SelectQueryAuditEvent extends AuditTypeEvent
 {
     private String _loggedColumns;
     private String _identifiedData;
-    private Integer _queryId;
+    private Long _queryId;
 
     public SelectQueryAuditEvent()
     {
@@ -95,12 +95,12 @@ public class SelectQueryAuditEvent extends AuditTypeEvent
         _identifiedData = identifiedData;
     }
 
-    public Integer getQueryId()
+    public Long getQueryId()
     {
         return _queryId;
     }
 
-    public void setQueryId(Integer queryId)
+    public void setQueryId(Long queryId)
     {
         _queryId = queryId;
     }

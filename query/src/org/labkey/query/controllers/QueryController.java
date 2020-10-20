@@ -38,6 +38,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
@@ -3570,7 +3571,7 @@ public class QueryController extends SpringActionController
 
     private enum CommandType
     {
-        insert(InsertPermission.class)
+        insert(InsertPermission.class, QueryService.AuditAction.INSERT)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3583,7 +3584,7 @@ public class QueryController extends SpringActionController
                 return qus.getRows(user, container, insertedRows);
             }
         },
-        insertWithKeys(InsertPermission.class)
+        insertWithKeys(InsertPermission.class, QueryService.AuditAction.INSERT)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3616,7 +3617,7 @@ public class QueryController extends SpringActionController
                 return results;
             }
         },
-        importRows(InsertPermission.class)
+        importRows(InsertPermission.class, QueryService.AuditAction.INSERT)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3630,7 +3631,7 @@ public class QueryController extends SpringActionController
                 return Collections.emptyList();
             }
         },
-        update(UpdatePermission.class)
+        update(UpdatePermission.class, QueryService.AuditAction.UPDATE)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3640,7 +3641,7 @@ public class QueryController extends SpringActionController
                 return qus.getRows(user, container, updatedRows);
             }
         },
-        updateChangingKeys(UpdatePermission.class)
+        updateChangingKeys(UpdatePermission.class, QueryService.AuditAction.UPDATE)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3671,7 +3672,7 @@ public class QueryController extends SpringActionController
                 return results;
             }
         },
-        delete(DeletePermission.class)
+        delete(DeletePermission.class, QueryService.AuditAction.DELETE)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3682,15 +3683,22 @@ public class QueryController extends SpringActionController
         };
 
         private final Class<? extends Permission> _permission;
+        private final QueryService.AuditAction _auditAction;
 
-        CommandType(Class<? extends Permission> permission)
+        CommandType(Class<? extends Permission> permission, QueryService.AuditAction auditAction)
         {
             _permission = permission;
+            _auditAction = auditAction;
         }
 
         public Class<? extends Permission> getPermission()
         {
             return _permission;
+        }
+
+        public QueryService.AuditAction getAuditAction()
+        {
+            return _auditAction;
         }
 
         public abstract List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3779,23 +3787,16 @@ public class QueryController extends SpringActionController
                 extraContext = new CaseInsensitiveHashMap<>();
 
             Map<Enum, Object> configParameters = new HashMap<>();
-            String auditBehavior = json.getString("auditBehavior");
-            if (!StringUtils.isEmpty(auditBehavior))
+
+            // Check first if the audit behavior has been defined for the table either in code or through XML.
+            // If not defined there, check for the audit behavior defined in the action form (json).
+            AuditBehaviorType behaviorType = table.getAuditBehavior(json.getString("auditBehavior"));
+            if (behaviorType != null)
             {
-                try
-                {
-                    AuditBehaviorType behaviorType = AuditBehaviorType.valueOf(auditBehavior);
-                    configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
-                    String auditComment = json.getString("auditUserComment");
-                    if (!StringUtils.isEmpty(auditComment))
-                    {
-                        configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
-                    }
-                }
-                catch (IllegalArgumentException ignored)
-                {
-                    logger.warn("Unknown log level type " + auditBehavior + " ignored.");
-                }
+                configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
+                String auditComment = json.getString("auditUserComment");
+                if (!StringUtils.isEmpty(auditComment))
+                    configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
             }
 
             //setup the response, providing the schema name, query name, and operation
@@ -3811,11 +3812,19 @@ public class QueryController extends SpringActionController
             // 11741: A transaction may already be active if we're trying to
             // insert/update/delete from within a transformation/validation script.
             boolean transacted = allowTransaction && json.optBoolean("transacted", true);
-
+            TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
             try (DbScope.Transaction transaction = transacted ? table.getSchema().getScope().ensureTransaction() : NO_OP_TRANSACTION)
             {
+                if (behaviorType != null && behaviorType != AuditBehaviorType.NONE)
+                {
+                    auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), commandType.getAuditAction());
+                    AbstractQueryUpdateService.addTransactionAuditEvent(transaction,  getUser(), auditEvent);
+                }
+
                 List<Map<String, Object>> responseRows =
                         commandType.saveRows(qus, rowsToProcess, getUser(), getContainer(), configParameters, extraContext);
+                if (auditEvent != null)
+                    auditEvent.setRowCount(responseRows.size());
 
                 if (commandType != CommandType.importRows)
                     response.put("rows", responseRows);
@@ -3877,6 +3886,8 @@ public class QueryController extends SpringActionController
                     throw e;
                 }
             }
+            if (auditEvent != null)
+                response.put("transactionAuditId", auditEvent.getRowId());
 
             response.put("rowsAffected", rowsAffected);
 
@@ -5454,7 +5465,8 @@ public class QueryController extends SpringActionController
             // 5025 : DataRegion checkbox names may contain comma
             // Beehive parses a single parameter value with commas into an array
             // which is not what we want.
-            return request.getParameterValues("id");
+            String[] paramIds = request.getParameterValues("id");
+            return  paramIds == null ? ids: paramIds;
         }
 
         public void setId(String[] ids)
@@ -5470,6 +5482,32 @@ public class QueryController extends SpringActionController
         public void setChecked(boolean checked)
         {
             this.checked = checked;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class ReplaceSelectedAction extends MutatingApiAction<SetCheckForm>
+    {
+        @Override
+        public ApiResponse execute(final SetCheckForm form, BindException errors)
+        {
+            String[] ids = form.getId(getViewContext().getRequest());
+            List<String> selection = new ArrayList<>();
+            if (ids != null)
+            {
+                for (String id : ids)
+                {
+                    if (StringUtils.isNotBlank(id))
+                        selection.add(id);
+                }
+            }
+
+
+            DataRegionSelection.clearAll(getViewContext(), form.getKey());
+            int count = DataRegionSelection.setSelected(
+                    getViewContext(), form.getKey(),
+                    selection, true);
+            return new DataRegionSelection.SelectionResponse(count);
         }
     }
 
