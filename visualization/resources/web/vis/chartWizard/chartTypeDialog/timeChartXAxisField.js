@@ -254,7 +254,7 @@ Ext4.define('LABKEY.vis.TimeChartXAxisField', {
             values.visitDisplayProperty = this.getVisitDisplayPropertyCombo().getValue();
             values.visitDisplayLabel = this.getVisitDisplayPropertyCombo().getDisplayValue();
         }
-        else{
+        else {
             values.interval = this.getIntervalCombo().getValue();
             values.zeroDateCol = this.getZeroDateColData();
         }
