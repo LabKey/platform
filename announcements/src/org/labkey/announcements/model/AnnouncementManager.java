@@ -36,11 +36,9 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
@@ -52,6 +50,7 @@ import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.message.settings.MessageConfigService.ConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService.NotificationOption;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -96,6 +95,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -117,6 +117,32 @@ public class AnnouncementManager
 
     private AnnouncementManager()
     {
+    }
+
+    private static @Nullable AnnouncementModel getAnnouncement(@Nullable Container c, @NotNull SimpleFilter filter)
+    {
+        if (c != null)
+            filter.addCondition(FieldKey.fromParts("Container"), c);
+
+        return new TableSelector(_comm.getTableInfoAnnouncements(), filter, null).getObject(AnnouncementModel.class);
+    }
+
+    public static @Nullable AnnouncementModel getAnnouncement(@Nullable Container c, int rowId)
+    {
+        return getAnnouncement(c, new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
+    }
+
+    public static @Nullable AnnouncementModel getAnnouncement(@Nullable Container c, String entityId)
+    {
+        try
+        {
+            return getAnnouncement(c, new SimpleFilter(FieldKey.fromParts("EntityId"), new GUID(entityId)));
+        }
+        catch (IllegalArgumentException e)
+        {
+            // Bad GUID, no match!
+            return null;
+        }
     }
 
     // Get first rowlimit threads in this container, filtered using filter
@@ -183,24 +209,6 @@ public class AnnouncementManager
     }
 
 
-    public static @Nullable AnnouncementModel getAnnouncement(@Nullable Container c, String entityId)
-    {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EntityId"), new GUID(entityId));
-            if (c != null)
-            {
-                filter.addCondition(FieldKey.fromParts("Container"), c);
-            }
-            return new TableSelector(_comm.getTableInfoAnnouncements(), filter, null).getObject(AnnouncementModel.class);
-        }
-        catch (IllegalArgumentException e)
-        {
-            // Bad GUID, no match!
-            return null;
-        }
-    }
-
     private static ConfigTypeProvider _configProvider;
 
     public static ConfigTypeProvider getAnnouncementConfigProvider()
@@ -223,19 +231,6 @@ public class AnnouncementManager
         getAnnouncementConfigProvider().savePreference(currentUser, c, projectUser, emailPreference, srcIdentifier);
     }
 
-
-    public static AnnouncementModel getAnnouncement(@Nullable Container c, int rowId)
-    {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
-        if (c != null)
-        {
-            filter.addCondition(FieldKey.fromParts("Container"), c);
-        }
-        Selector selector = new TableSelector(_comm.getTableInfoAnnouncements(), filter, null);
-        return selector.getObject(AnnouncementModel.class);
-    }
-
-
     public static AnnouncementModel getLatestPost(Container c, AnnouncementModel parent) throws NotFoundException
     {
         Integer postId = getLatestPostId(parent);
@@ -255,13 +250,15 @@ public class AnnouncementManager
         return new SqlSelector(_comm.getSchema(), sql).getObject(Integer.class);
     }
 
-    public static AnnouncementModel insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files) throws IOException
+    public static AnnouncementModel insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files) throws IOException, RuntimeValidationException
     {
         return insertAnnouncement(c, user, insert, files, true);
     }
 
-    public static AnnouncementModel insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files, boolean sendEmailNotifications) throws IOException
+    public static AnnouncementModel insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files, boolean sendEmailNotifications) throws IOException, RuntimeValidationException
     {
+        insert = validateModelWithSideEffects(insert, c, user, true);
+
         // If no srcIdentifier is set and this is a parent message, set its source to the container
         if (insert.getDiscussionSrcIdentifier() == null && insert.getParent() == null)
         {
@@ -362,6 +359,117 @@ public class AnnouncementManager
         }
     }
 
+    public static Permissions getPermissions(Container c, User user, Settings settings)
+    {
+        if (settings.isSecure())
+            return new SecureMessageBoardPermissions(c, user, settings);
+        else
+            return new NormalMessageBoardPermissions(c, user, settings);
+    }
+
+    private static AnnouncementModel validateModelWithSideEffects(AnnouncementModel model, Container c, User user, boolean isInsert) throws RuntimeValidationException
+    {
+        Settings settings = getMessageBoardSettings(c);
+
+        // Validate title
+        if (StringUtils.trimToNull(model.getTitle()) == null)
+            throw new RuntimeValidationException("Title must not be blank.");
+
+        // Validate member list
+        String memberListInput = model.getMemberListInput();
+        List<Integer> memberListIds = new ArrayList<>();
+
+        boolean currentUserCanSeeEmails = SecurityManager.canSeeUserDetails(c, user);
+        if (!StringUtils.isEmpty(memberListInput))
+        {
+            List<String> parsedMemberList = UserManager.parseUserListInput(StringUtils.split(StringUtils.trimToEmpty(memberListInput), "\n"));
+
+            for (String userEntry : parsedMemberList)
+            {
+                try
+                {
+                    memberListIds.add(Integer.parseInt(userEntry));
+                }
+                catch (NumberFormatException nfe)
+                {
+                    throw new RuntimeValidationException(userEntry + ": Invalid email address or user");
+                }
+            }
+
+            // New up an announcementModel to check permissions for the member list
+            AnnouncementModel ann = new AnnouncementModel();
+            ann.setMemberListIds(memberListIds);
+
+            for (Integer userId : memberListIds)
+            {
+                User memberUser = UserManager.getUser(userId);
+
+                if (null == memberUser)
+                    throw new RuntimeValidationException(userId + ": Invalid id for user");
+
+                Permissions perm = getPermissions(c, memberUser, settings);
+
+                if (!perm.allowRead(ann))
+                    throw new RuntimeValidationException("Can't add " + (currentUserCanSeeEmails ? memberUser.getEmail() : memberUser.getDisplayName(user)) + " to the member list: This user doesn't have permission to read the thread.");
+            }
+        }
+
+        // side-effect
+        model.setMemberListIds(memberListIds);
+
+        // Default assignedTo upon insert
+        if (isInsert && model.getAssignedTo() == null && settings.getDefaultAssignedTo() != null)
+        {
+            // side-effect
+            model.setAssignedTo(settings.getDefaultAssignedTo());
+        }
+
+        // Validate assignedTo
+        Integer assignedTo = model.getAssignedTo();
+
+        if (null != assignedTo)
+        {
+            User assignedToUser = UserManager.getUser(assignedTo);
+
+            if (null == assignedToUser)
+                throw new RuntimeValidationException("Assigned to user " + assignedTo + ": Doesn't exist");
+
+            Permissions perm = getPermissions(c, assignedToUser, settings);
+
+            // New up an announcementModel to check permissions for the assigned to user
+            AnnouncementModel ann = new AnnouncementModel();
+            ann.setMemberListIds(memberListIds);
+
+            if (!perm.allowRead(ann))
+                throw new RuntimeValidationException("Can't assign to " + (currentUserCanSeeEmails ? assignedToUser.getEmail() : assignedToUser.getDisplayName(user)) + ": This user doesn't have permission to read the thread.");
+        }
+
+        // Validate and sanitize HTML body
+        if ("HTML".equals(model.getRendererType()))
+        {
+            String body = model.getBody();
+
+            if (!StringUtils.isEmpty(body))
+            {
+                boolean hasDeveloperPermission = user.isTrustedBrowserDev();
+                Collection<String> validateErrors = new LinkedList<>();
+
+                body = PageFlowUtil.validateHtml(body, validateErrors, hasDeveloperPermission);
+
+                if (validateErrors.size() > 0)
+                    throw new RuntimeValidationException("Invalid HTML markup. " + String.join("\n", validateErrors));
+
+                // side-effect
+                if (hasDeveloperPermission)
+                    model.setBody(body);
+                else
+                    model.setBody(PageFlowUtil.sanitizeHtml(body, validateErrors));
+            }
+        }
+
+        return model;
+    }
+
     // Magic date value used to mark an announcement that a moderator has reviewed and marked as spam
     private static final Date SPAM_MAGIC_DATE = new Date(0);
 
@@ -397,7 +505,7 @@ public class AnnouncementManager
             boolean isResponse = null != a.getParent();
             AnnouncementModel parent = a;
             if (isResponse)
-                parent = AnnouncementManager.getAnnouncement(c, a.getParent());
+                parent = getAnnouncement(c, a.getParent());
 
             //  See bug #6585 -- thread might have been deleted already
             if (null == parent)
@@ -502,8 +610,10 @@ public class AnnouncementManager
     }
 
 
-    public static AnnouncementModel updateAnnouncement(User user, AnnouncementModel update, List<AttachmentFile> files) throws IOException
+    public static AnnouncementModel updateAnnouncement(User user, AnnouncementModel update, List<AttachmentFile> files) throws IOException, RuntimeValidationException
     {
+        update = validateModelWithSideEffects(update, ContainerManager.getForId(update.getContainerId()), user, false);
+
         update.beforeUpdate(user);
         AnnouncementModel result = Table.update(user, _comm.getTableInfoAnnouncements(), update, update.getRowId());
 
@@ -525,20 +635,22 @@ public class AnnouncementManager
 
     private static void deleteAnnouncement(AnnouncementModel ann)
     {
+        // Delete the announcement
         Table.delete(_comm.getTableInfoAnnouncements(), ann.getRowId());
+
         // Delete the member list associated with this announcement
         Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter(FieldKey.fromParts("MessageId"), ann.getRowId()));
+
+        // Delete attachments to the announcement
         AttachmentService.get().deleteAttachments(ann.getAttachmentParent());
     }
 
 
     public static void deleteAnnouncement(Container c, int rowId)
     {
-        DbSchema schema = _comm.getSchema();
-
         AnnouncementModel ann;
 
-        try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
+        try (DbScope.Transaction transaction = _comm.getSchema().getScope().ensureTransaction())
         {
             ann = getAnnouncement(c, rowId);
             if (ann != null)
