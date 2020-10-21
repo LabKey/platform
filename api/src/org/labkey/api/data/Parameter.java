@@ -113,6 +113,8 @@ public class Parameter implements AutoCloseable
     String _name;
     @Nullable String _uri = null;       // for migration of ontology based code
     final @Nullable JdbcType _type;
+    int _scale;
+    int _precision;
     boolean setFileAsName = false;
 
     // only allow setting once, do not clear
@@ -187,6 +189,8 @@ public class Parameter implements AutoCloseable
         _name = c.getJdbcRsName();
         _uri = c.getPropertyURI();
         _type = c.getJdbcType();
+        _scale = c.getScale();
+        _precision = c.getPrecision();
         _indexes = indexes;
         // CONSIDER: this seems pretty low-level for this check (see also DefaultQueryUpdateService.convertTypes())
         setFileAsName = (c.getInputType().equalsIgnoreCase("file") && _type == JdbcType.VARCHAR);
@@ -219,11 +223,15 @@ public class Parameter implements AutoCloseable
         return _type;
     }
 
-//    public void setValue(Object in, boolean constant) throws SQLException
-//    {
-//        setValue(in);
-//        _constant = constant;
-//    }
+    public int getScale()
+    {
+        return _scale;
+    }
+
+    public int getPrecision()
+    {
+        return _precision;
+    }
 
     public void setValue(@Nullable Object in) throws SQLException
     {

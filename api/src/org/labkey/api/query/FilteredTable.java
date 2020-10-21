@@ -304,6 +304,17 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         _filter.addAllClauses(filter);
     }
 
+    /**
+     * Create a wrapped copy of the underlying column.
+     *
+     * wrapColumnFromJoinedTable is just like {@link #wrapColumn(ColumnInfo)} except the underlying
+     * column may come from a table that is joined to the FilteredTable's parent table.
+     *
+     * For example, the {@link org.labkey.api.exp.query.ExpDataClassDataTable} query table joins
+     * together the exp.data table and the provisioned expdataclass.* table. To create wrapped
+     * columns from the provisioned SchemaTableInfo, we must use {@link #wrapColumnFromJoinedTable(String, ColumnInfo)}
+     * instead of {@link #wrapColumn(ColumnInfo)} since ExpDataClassDataTable uses exp.data as it's root table.
+     */
     public MutableColumnInfo wrapColumnFromJoinedTable(String alias, ColumnInfo underlyingColumn)
     {
         return copyColumnFromJoinedTable(alias, underlyingColumn);
@@ -325,13 +336,21 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return ret;
     }
 
+    /**
+     * Create a wrapped copy of the underlying column.
+     * TODO: Describe how this is different from {@link #addWrapColumn(ColumnInfo)}
+     */
     public MutableColumnInfo wrapColumn(String alias, ColumnInfo underlyingColumn)
     {
         assert underlyingColumn.getParentTable() == _rootTable;
         return wrapColumnFromJoinedTable(alias, underlyingColumn);
     }
 
-    public MutableColumnInfo wrapColumn(ColumnInfo underlyingColumn)
+    /**
+     * Create a wrapped copy of the underlying column.
+     * TODO: Describe how this is different from {@link #addWrapColumn(ColumnInfo)}
+     */
+     public MutableColumnInfo wrapColumn(ColumnInfo underlyingColumn)
     {
         return wrapColumn(underlyingColumn.getName(), underlyingColumn);
     }
@@ -516,6 +535,10 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return result;
     }
 
+    /**
+     * Create a new AliasColumn over the underlying column and add it to this table.
+     * TODO: Describe how this is different from {@link #wrapColumn(ColumnInfo)}
+     */
     public MutableColumnInfo addWrapColumn(String name, ColumnInfo column)
     {
         assert column.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
@@ -548,6 +571,10 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return null;
     }
 
+    /**
+     * Create a new AliasColumn over the underlying column and add it to this table.
+     * TODO: Describe how this is different from {@link #wrapColumn(ColumnInfo)}
+     */
     public MutableColumnInfo addWrapColumn(ColumnInfo column)
     {
         return addWrapColumn(column.getName(), column);

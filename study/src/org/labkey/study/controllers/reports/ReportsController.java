@@ -63,7 +63,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -111,7 +110,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.PrintWriter;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -157,53 +155,6 @@ public class ReportsController extends BaseStudyController
                 root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
             else
                 root.addChild("Views");
-        }
-    }
-
-    @RequiresPermission(UpdatePermission.class)
-    public class DeleteReportAction extends FormHandlerAction<Object>
-    {
-        @Override
-        public void validateCommand(Object target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(Object o, BindException errors) throws Exception
-        {
-            String reportIdParam = getRequest().getParameter(ReportDescriptor.Prop.reportId.name());
-            ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdParam, getViewContext().getUser(), getViewContext().getContainer());
-
-            Report report = null;
-
-            if (reportId != null)
-                report = reportId.getReport(getViewContext());
-
-            if (report != null)
-            {
-                ReportManager.get().deleteReport(getViewContext(), report);
-            }
-
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(Object o)
-        {
-            String redirectUrl = getRequest().getParameter(ReportDescriptor.Prop.redirectUrl.name());
-            if (redirectUrl != null)
-            {
-                try
-                {
-                    return new URLHelper(redirectUrl);
-                }
-                catch (URISyntaxException e)
-                {
-                    // ignore bad URI
-                }
-            }
-
-            return PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer());
         }
     }
 
@@ -1155,107 +1106,6 @@ public class ReportsController extends BaseStudyController
         public void setRedirectUrl(String redirectUrl)
         {
             _redirectUrl = redirectUrl;
-        }
-    }
-
-    public static class PlotForm
-    {
-        private ReportIdentifier _reportId;
-        private int _datasetId = 0;
-        private int _visitRowId = 0;
-        private String _action;
-        private int _chartsPerRow = 3;
-        private Report[] _reports;
-        private boolean _isPlotView; // = true;
-        private String _participantId;
-        private String _queryName;
-        private String _schemaName;
-        private String _filterParam;
-        private String _viewName;
-
-        public int getDatasetId()
-        {
-            return _datasetId;
-        }
-
-        public void setDatasetId(int datasetId)
-        {
-            _datasetId = datasetId;
-        }
-
-        public int getVisitRowId()
-        {
-            return _visitRowId;
-        }
-
-        public void setVisitRowId(int visitRowId)
-        {
-            _visitRowId = visitRowId;
-        }
-
-        public ReportIdentifier getReportId()
-        {
-            return _reportId;
-        }
-
-        public void setReportId(ReportIdentifier reportId)
-        {
-            _reportId = reportId;
-        }
-
-        public Report[] getReports()
-        {
-            return _reports;
-        }
-
-        public void setReports(Report[] reports)
-        {
-            _reports = reports;
-        }
-
-        public void setAction(String action){_action = action;}
-        public String getAction(){return _action;}
-
-        public void setChartsPerRow(int chartsPerRow){_chartsPerRow = chartsPerRow;}
-        public int getChartsPerRow(){return _chartsPerRow;}
-
-        public void setIsPlotView(boolean isPlotView){_isPlotView = isPlotView;}
-        public boolean getIsPlotView(){return _isPlotView;}
-
-        public void setParticipantId(String participantId){_participantId = participantId;}
-        public String getParticipantId(){return _participantId;}
-
-        public void setSchemaName(String schemaName){_schemaName = schemaName;}
-        public String getSchemaName(){return _schemaName;}
-        public void setQueryName(String queryName){_queryName = queryName;}
-        public String getQueryName(){return _queryName;}
-        public void setFilterParam(String filterParam){_filterParam = filterParam;}
-        public String getFilterParam(){return _filterParam;}
-        public void setViewName(String viewName){_viewName = viewName;}
-        public String getViewName(){return _viewName;}
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class PlotChartAction extends SimpleViewAction<PlotForm>
-    {
-        @Override
-        public ModelAndView getView(PlotForm form, BindException errors) throws Exception
-        {
-            final ViewContext context = getViewContext();
-            ReportIdentifier reportId = form.getReportId();
-
-            if (reportId != null)
-            {
-                Report report = reportId.getReport(getViewContext());
-                if (report != null)
-                    return report.renderReport(context);
-            }
-            return null;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
         }
     }
 

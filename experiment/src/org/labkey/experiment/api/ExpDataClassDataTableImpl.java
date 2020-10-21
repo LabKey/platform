@@ -35,6 +35,7 @@ import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.NameExpressionDataIteratorBuilder;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
@@ -302,12 +303,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         //TODO: may need to expose ExpData.Run as well
 
         // Add the domain columns
-        Collection<BaseColumnInfo> cols = new ArrayList<>(20);
-        Set skipCols = new CaseInsensitiveHashSet();
-        skipCols.add("lsid");
-        skipCols.add("rowid");
-        skipCols.add("name");
-        skipCols.add("classid");
+        Collection<MutableColumnInfo> cols = new ArrayList<>(20);
+        Set<String> skipCols = CaseInsensitiveHashSet.of("lsid", "rowid", "name", "classid");
         for (ColumnInfo col : extTable.getColumns())
         {
             // Skip the lookup column itself, LSID, and exp.data.rowid -- it is added above
@@ -327,23 +324,20 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             for (int i = 0; null != getColumn(newName); i++)
                 newName = newName + i;
 
-            // TODO use wrapColumnFromTable()
-            ExprColumn expr = new ExprColumn(this, col.getName(), col.getValueSql(ExprColumn.STR_TABLE_ALIAS), col.getJdbcType());
-            expr.copyAttributesFrom(col);
-            if (col.isHidden())
-                expr.setHidden(true);
-            addColumn(expr);
-            cols.add(expr);
+            // Can't use addWrapColumn here since 'col' isn't from the parent table
+            var wrapped = wrapColumnFromJoinedTable(col.getName(), col);
+            addColumn(wrapped);
+            cols.add(wrapped);
         }
 
         HashMap<String,DomainProperty> properties = new HashMap<>();
         for (DomainProperty dp : getDomain().getProperties())
             properties.put(dp.getPropertyURI(), dp);
 
+        FieldKey lsidFieldKey = FieldKey.fromParts(Column.LSID.name());
         for (var col : cols)
         {
             String propertyURI = col.getPropertyURI();
-            // TODO use PropertyColumn.copyAttributes()
             if (null != propertyURI)
             {
                 DomainProperty dp = properties.get(propertyURI);
@@ -351,21 +345,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
                 if (null != dp && null != pd)
                 {
-                    col.setName(dp.getName());
-                    if (pd.getLookupQuery() != null || pd.getConceptURI() != null)
-                    {
-                        col.setFk(PdLookupForeignKey.create(schema, pd));
-                    }
+                    PropertyColumn.copyAttributes(_userSchema.getUser(), col, dp, getContainer(), lsidFieldKey);
+                    col.setFieldKey(FieldKey.fromParts(dp.getName()));
 
-                    if (pd.getPropertyType() == PropertyType.MULTI_LINE)
-                    {
-                        col.setDisplayColumnFactory(colInfo -> {
-                            DataColumn dc = new DataColumn(colInfo);
-                            dc.setPreserveNewlines(true);
-                            return dc;
-                        });
-                    }
-                    else if (pd.getPropertyType() == PropertyType.ATTACHMENT)
+                    if (pd.getPropertyType() == PropertyType.ATTACHMENT)
                     {
                         col.setURL(StringExpressionFactory.createURL(
                                 new ActionURL(ExperimentController.DataClassAttachmentDownloadAction.class, schema.getContainer())
