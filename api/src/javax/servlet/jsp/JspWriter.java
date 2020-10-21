@@ -473,8 +473,9 @@ public abstract class JspWriter extends java.io.Writer {
      *
      * Note that some modules may bind to the "real" JspWriter residing in tomcat-jsp-api-8.5.51.jar, in which case some
      * safe print() invocations may resolve to print(Object). If this occurs, you can delete the JspWriter source and class
-     * files from the Tomcat jars in your gradle cache. To fine those files, search &lt;HOME>/.gradle/cache for
-     * tomcat-jsp-api-8.5.51.jar and tomcat-jsp-api-8.5.51-sources.jar.
+     * files from the Tomcat jars in your gradle cache. To find those files, search &lt;HOME>/.gradle/caches for
+     * tomcat-jsp-api-8.5.51.jar and tomcat-jsp-api-8.5.51-sources.jar, and excise JspWriter.class and JspWriter.java from
+     * those jar files.
      */
 
 //    public void print(SafeToRender str) throws IOException

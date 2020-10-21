@@ -199,9 +199,6 @@ public class ReportsController extends SpringActionController
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ReportsController.class);
     private static final MimeMap _mimeMap = new MimeMap();
 
-    public static final String TAB_SOURCE = "source";
-    public static final String TAB_VIEW = "report";
-
     public static class ReportUrlsImpl implements ReportUrls
     {
         @Override
@@ -351,34 +348,6 @@ public class ReportsController extends SpringActionController
     public ReportsController()
     {
         setActionResolver(_actionResolver);
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class DeleteReportAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            String reportId = getViewContext().getRequest().getParameter(ReportDescriptor.Prop.reportId.name());
-            String forwardUrl = getViewContext().getRequest().getParameter(ReportUtil.FORWARD_URL);
-            Report report = null;
-
-            if (reportId != null)
-                report = ReportService.get().getReport(getContainer(), NumberUtils.toInt(reportId));
-
-            if (report != null)
-            {
-                if (!report.canDelete(getUser(), getContainer()))
-                    throw new UnauthorizedException();
-                ReportService.get().deleteReport(getViewContext(), report);
-            }
-            return HttpView.redirect(forwardUrl);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-        }
     }
 
     public static class CreateSessionForm
@@ -988,7 +957,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class RunReportAction extends SimpleViewAction<ReportDesignBean>
     {
-        Report _report;
+        private Report _report;
 
         @Override
         public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
