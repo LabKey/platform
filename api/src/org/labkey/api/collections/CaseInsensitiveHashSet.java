@@ -20,8 +20,12 @@ import org.junit.Test;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
+import static java.util.Collections.emptySet;
+import static java.util.Collections.unmodifiableSet;
 
 /**
  * Simple case-insensitive version of HashSet -- simply forces all Strings to lowercase before adding, removing,
@@ -85,34 +89,34 @@ public class CaseInsensitiveHashSet extends HashSet<String>
         return modified;
     }
 
-    public static CaseInsensitiveHashSet of()
+    public static Set<String> of()
     {
-        return new CaseInsensitiveHashSet();
+        return emptySet();
     }
 
-    public static CaseInsensitiveHashSet of(String s1)
+    public static Set<String> of(String s1)
     {
-        return new CaseInsensitiveHashSet(s1);
+        return unmodifiableSet(new CaseInsensitiveHashSet(s1));
     }
 
-    public static CaseInsensitiveHashSet of(String s1, String s2)
+    public static Set<String> of(String s1, String s2)
     {
-        return new CaseInsensitiveHashSet(s1, s2);
+        return unmodifiableSet(new CaseInsensitiveHashSet(s1, s2));
     }
 
-    public static CaseInsensitiveHashSet of(String s1, String s2, String s3)
+    public static Set<String> of(String s1, String s2, String s3)
     {
-        return new CaseInsensitiveHashSet(s1, s2);
+        return unmodifiableSet(new CaseInsensitiveHashSet(s1, s2, s3));
     }
 
-    public static CaseInsensitiveHashSet of(String s1, String s2, String s3, String s4)
+    public static Set<String> of(String s1, String s2, String s3, String s4)
     {
-        return new CaseInsensitiveHashSet(s1, s2, s3, s4);
+        return unmodifiableSet(new CaseInsensitiveHashSet(s1, s2, s3, s4));
     }
 
-    public static CaseInsensitiveHashSet of(String s1, String s2, String s3, String s4, String s5)
+    public static Set<String> of(String s1, String s2, String s3, String s4, String s5)
     {
-        return new CaseInsensitiveHashSet(s1, s2, s3, s4, s5);
+        return unmodifiableSet(new CaseInsensitiveHashSet(s1, s2, s3, s4, s5));
     }
 
 
@@ -154,6 +158,29 @@ public class CaseInsensitiveHashSet extends HashSet<String>
             assertEquals(4, set.size());
             set.removeAll(PageFlowUtil.set("foo", "BAR", "FLIP", "FLAP", "FLOP", "THIS", "ThAt"));
             assertEquals(1, set.size());
+        }
+
+        @Test
+        public void testUnmodifiable()
+        {
+            Set<String> set = CaseInsensitiveHashSet.of("This", "that", "TOTHER");
+            assertTrue(set.contains("This"));
+            assertTrue(set.contains("this"));
+            assertTrue(set.contains("That"));
+            assertTrue(set.contains("that"));
+            assertTrue(set.contains("Tother"));
+            assertTrue(set.contains("tother"));
+            assertTrue(set.contains("tOtHeR"));
+
+            try
+            {
+                set.add("BAH");
+                fail("Should be unmodifiableSet");
+            }
+            catch (UnsupportedOperationException e)
+            {
+                // expected
+            }
         }
     }
 }
