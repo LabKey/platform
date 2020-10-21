@@ -34,12 +34,11 @@
 %>
 <div id="<%= h(bean.getModuleName()) %>-Root" class="<%=h(bean.getLoadingStyleName())%>"></div>
 <%
-String contextPath = request.getContextPath();
 String jsPath = bean.getModuleName() + "/" + bean.getModuleName() + ".nocache.js";
-String hashedPath = contextPath + "/" + jsPath + "?" + PageFlowUtil.getServerSessionHash();
+String hashedPath = "/" + jsPath + "?" + PageFlowUtil.getServerSessionHash();
 %>
 <script id="__gwt_marker_<%=h(bean.getModuleName())%>"></script>
-<script type="text/javascript" src="<%=h(hashedPath)%>"></script>
+<%=getScriptTag(hashedPath)%>
 <script type="text/javascript">
     <!-- Pass through name/value property map to GWT app so it can initialize itself appropriately -->
 <%= text(GWTView.PROPERTIES_OBJECT_NAME) %> = {<%
