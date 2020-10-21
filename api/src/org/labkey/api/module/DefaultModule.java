@@ -17,7 +17,8 @@ package org.labkey.api.module;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -26,7 +27,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -37,7 +37,6 @@ import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.UpgradeCode;
-import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.ModuleXml.ModuleXmlCacheHandler;
 import org.labkey.api.query.OlapSchemaInfo;
@@ -100,7 +99,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public static final String CORE_MODULE_NAME = "Core";
 
     private static final String DEPENDENCIES_FILE_PATH = "credits/dependencies.txt";
-    private static final Logger _log = Logger.getLogger(DefaultModule.class);
+    private static final Logger _log = LogManager.getLogger(DefaultModule.class);
     private static final Set<Pair<Class<? extends DefaultModule>, String>> INSTANTIATED_MODULES = new HashSet<>();
     static final ModuleResourceCache<ModuleXml> MODULE_XML_CACHE = ModuleResourceCaches.create("module.xml files", new ModuleXmlCacheHandler(), ResourceRootProvider.getStandard(new Path()));
 
@@ -318,9 +317,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
             if (null == getSchemaVersion())
             {
-                // TODO: Change to an assert or exception once we no longer support old version methods/properties
-                _log.warn("getSchemaVersion() was null for module: " + getName() + " even though hasScripts() was true");
-                return;
+                throw new IllegalStateException("getSchemaVersion() was null for module: " + getName() + " even though hasScripts() was true");
             }
 
             SqlScriptProvider provider = new FileSqlScriptProvider(this);
@@ -583,17 +580,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     public @Nullable Double getSchemaVersion()
     {
-        // For now, delegate to getVersion() for modules that still override that method
-        if (-1 != getVersion())
-        {
-            _log.warn("The \"" + getName() + "\" module overrides the getVersion() method, which is no longer supported. Please override getSchemaVersion() instead.");
-
-            return getVersion();
-        }
-        else
-        {
-            return _schemaVersion;
-        }
+        return _schemaVersion;
     }
 
     public final void setSchemaVersion(Double schemaVersion)
@@ -839,38 +826,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public void setVcsTag(String vcsTag)
     {
         _vcsTag = vcsTag;
-    }
-
-    /** @deprecated Use getVcsRevision() instead. */
-    @Deprecated
-    public final String getSvnRevision()
-    {
-        return _vcsRevision;
-    }
-
-    /** @deprecated Use setVcsRevision() instead. Available only for initializing from module.properties and config/module.xml file. */
-    @Deprecated
-    @SuppressWarnings({"UnusedDeclaration"})
-    public final void setSvnRevision(String svnRevision)
-    {
-        checkLocked();
-        _vcsRevision = svnRevision;
-    }
-
-    /** @deprecated  Use getVcsUrl() instead. */
-    @Deprecated
-    public final String getSvnUrl()
-    {
-        return _vcsUrl;
-    }
-
-    /** @deprecated Use setVcsUrl() instead. Available only for initializing from module.properties and config/module.xml file. */
-    @Deprecated
-    @SuppressWarnings({"UnusedDeclaration"})
-    public final void setSvnUrl(String svnUrl)
-    {
-        checkLocked();
-        _vcsUrl = svnUrl;
     }
 
     public final String getBuildUser()
@@ -1530,48 +1485,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             throw new IllegalStateException("Module info setters can only be called in constructor.");
     }
 
-    // TODO: Delete these getters/setters once we no longer want to support modules built with the old properties.
-    // Note that spring explodes if it sees a property in module.xml without a corresponding getter/setter pair.
-
-    @Deprecated
-    public double getVersion()
-    {
-        return -1;
-    }
-
-    public final void setVersion(double version)
-    {
-        _log.warn("Module \"" + getName() + "\" still specifies the \"version\" property; this module needs to be recompiled.");
-        setSchemaVersion(version);
-    }
-
-    // consolidateScripts property is no longer read or used. But, leave getter and setter behind for now so Spring
-    // doesn't explode if it sees this property in an old module.
-    @SuppressWarnings("unused")
-    public Boolean getConsolidateScripts()
-    {
-        return false;
-    }
-
-    @SuppressWarnings("unused")
-    public void setConsolidateScripts(Boolean consolidate)
-    {
-        _log.warn("Module \"" + getName() + "\" still specifies the \"consolidateScripts\" property; this module needs to be recompiled.");
-    }
-
-    @SuppressWarnings("unused")  // "labkeyVersion" is the old name of the property in module.xml
-    public String getLabkeyVersion()
-    {
-        return _releaseVersion;
-    }
-
-    @SuppressWarnings("unused")  // "labkeyVersion" is the old name of the property in module.xml
-    public void setLabkeyVersion(String labkeyVersion)
-    {
-        _log.warn("Module \"" + getName() + "\" still specifies the \"labkeyVersion\" property; this module needs to be recompiled.");
-        _releaseVersion = labkeyVersion;
-    }
-
     public void copyPropertiesFrom(DefaultModule from)
     {
         this.setAuthor(from.getAuthor());
@@ -1584,7 +1497,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         this.setDescription(from.getDescription());
         this.setEnlistmentId(from.getEnlistmentId());
         this.setLabel(from.getLabel());
-        this.setLabkeyVersion(from.getLabkeyVersion());
         this.setLicense(from.getLicense());
         this.setLicenseUrl(from.getLicenseUrl());
         this.setMaintainer(from.getMaintainer());
@@ -1595,7 +1507,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         this.setVcsRevision(from.getVcsRevision());
         this.setVcsTag(from.getVcsTag());
         this.setVcsUrl(from.getVcsUrl());
-        this.setVersion(from.getVersion());
         this.setZippedPath(from.getZippedPath());
     }
 }

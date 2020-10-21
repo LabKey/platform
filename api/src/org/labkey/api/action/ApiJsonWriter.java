@@ -164,11 +164,10 @@ public class ApiJsonWriter extends ApiResponseWriter
                 jg.writeFieldName("unhandledException");
             }
             jg.writeStartObject();
-            for (Object o : ((Map) value).keySet())
+            for (var e : ((Map<Object,Object>)value).entrySet())
             {
-                String key = o.toString();
-                jg.writeFieldName(key);
-                writeObject(((Map) value).get(o));
+                jg.writeFieldName(String.valueOf(e.getKey()));
+                writeObject(e.getValue());
             }
             jg.writeEndObject();
             if (badContext)

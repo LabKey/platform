@@ -22,7 +22,6 @@ import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
@@ -194,6 +193,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         private String _rowPk;
         private String _schemaName;
         private String _queryName;
+        private Long _transactionId;
 
         public QueryUpdateAuditEvent()
         {
@@ -235,6 +235,16 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
             _queryName = queryName;
         }
 
+        public Long getTransactionId()
+        {
+            return _transactionId;
+        }
+
+        public void setTransactionId(Long transactionId)
+        {
+            _transactionId = transactionId;
+        }
+
         @Override
         public Map<String, Object> getAuditLogMessageElements()
         {
@@ -242,6 +252,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
             elements.put("rowPk", getRowPk());
             elements.put("schemaName", getSchemaName());
             elements.put("queryName", getQueryName());
+            elements.put("transactionId", getTransactionId());
             // N.B. oldRecordMap and newRecordMap are potentially very large (and are not displayed in the default grid view)
             elements.putAll(super.getAuditLogMessageElements());
             return elements;
@@ -265,6 +276,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
             fields.add(createPropertyDescriptor(COLUMN_NAME_QUERY_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(OLD_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
             fields.add(createPropertyDescriptor(NEW_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
+            fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_ID, PropertyType.BIGINT));
             _fields = Collections.unmodifiableSet(fields);
         }
 

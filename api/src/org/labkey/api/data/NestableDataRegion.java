@@ -19,10 +19,10 @@ package org.labkey.api.data;
 import org.labkey.api.query.AbstractNestableDataRegion;
 import org.labkey.api.query.QuerySettings;
 
-import java.io.Writer;
 import java.io.IOException;
-import java.sql.SQLException;
+import java.io.Writer;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 
@@ -94,7 +94,7 @@ public class NestableDataRegion extends AbstractNestableDataRegion
             while (nestedRS.next())
             {
                 Object outerValue = ctx.getRow().get(_uniqueColumnName);
-                Object innerValue = nestedRS.getInt(_uniqueColumnName);
+                Object innerValue = nestedRS.getObject(_uniqueColumnName);
                 if (!Objects.equals(outerValue, innerValue))
                 {
                     throw new IllegalArgumentException("Ids do not match for the outer and inner result sets for column " + _uniqueColumnName + " - " + outerValue + " vs " + innerValue);

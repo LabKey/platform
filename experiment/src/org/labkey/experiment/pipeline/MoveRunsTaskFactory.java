@@ -15,13 +15,15 @@
  */
 package org.labkey.experiment.pipeline;
 
-import org.labkey.api.pipeline.*;
-import org.labkey.api.util.FileType;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.pipeline.AbstractTaskFactory;
+import org.labkey.api.pipeline.AbstractTaskFactorySettings;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.util.FileType;
 
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * User: jeckels

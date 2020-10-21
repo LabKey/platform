@@ -17,7 +17,6 @@ package org.labkey.api.premium;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.view.ViewBackgroundInfo;

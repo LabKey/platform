@@ -19,7 +19,7 @@ package org.labkey.announcements;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -103,9 +103,12 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.element.Option.OptionBuilder;
+import org.labkey.api.util.element.Select.SelectBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -134,6 +137,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -729,7 +733,7 @@ public class AnnouncementsController extends SpringActionController
         public Settings settings;
         public URLHelper returnURL;    // TODO: Settings has a returnUrl
         public String securityWarning;
-        public String assignedToSelect;
+        public SelectBuilder assignedToSelect;
     }
 
 
@@ -945,71 +949,39 @@ public class AnnouncementsController extends SpringActionController
             return new VBox(threadView, respondView);
         }
 
-
         @Override
         public void addNavTrail(NavTree root)
         {
             new BeginAction(getViewContext()).addNavTrail(root);
             if (_parent != null)
             {
-                root.addChild(_parent.getTitle(), "thread.view?rowId=" + _parent.getRowId())
-                        .addChild("Respond to " + getSettings().getConversationName());
+                root.addChild(_parent.getTitle(), getThreadURL(getContainer(), _parent.getRowId()));
+                root.addChild("Respond to " + getSettings().getConversationName());
             }
          }
     }
 
 
-    private static String getStatusSelect(String currentValue)
+    private static SelectBuilder getStatusSelect(String currentValue)
     {
-        StringBuilder sb = new StringBuilder();
-        sb.append("    <select name=\"status\">\n");
-
-        for (StatusOption option : StatusOption.values())
-        {
-            sb.append("      <option");
-
-            if (option.name().equals(currentValue))
-                sb.append(" selected");
-
-            sb.append(">");
-            sb.append(PageFlowUtil.filter(option.name()));
-            sb.append("</option>\n");
-        }
-        sb.append("    </select>");
-
-        return sb.toString();
+        return new SelectBuilder().name("status").className(null).selected(currentValue)
+            .addOptions(Arrays.stream(StatusOption.values()).map(Enum::name));
     }
 
 
     // AssignedTo == null => assigned to no one.
-    private static String getAssignedToSelect(Container c, Integer assignedTo, String name, final User currentUser)
+    private static SelectBuilder getAssignedToSelect(Container c, Integer assignedTo, String name, final User currentUser)
     {
         Set<Class<? extends Permission>> perms = Collections.singleton(InsertPermission.class);
         List<User> possibleAssignedTo = SecurityManager.getUsersWithPermissions(c, perms);
-
         possibleAssignedTo.sort(Comparator.comparing(user -> user.getDisplayName(currentUser), String.CASE_INSENSITIVE_ORDER));
 
-        // TODO: Should merge all this with IssuesManager.getAssignedToList()
-        StringBuilder select = new StringBuilder("    <select name=\"" + name + "\">\n");
-        select.append("      <option value=\"\"");
-        select.append(null == assignedTo ? " selected" : "");
-        select.append("></option>\n");
+        SelectBuilder builder = new SelectBuilder().name(name).className(null)
+            .addOption(new OptionBuilder("", "").selected(null == assignedTo));
 
-        for (User user : possibleAssignedTo)
-        {
-            select.append("      <option value=").append(user.getUserId());
-
-            if (assignedTo != null && assignedTo == user.getUserId())
-                select.append(" selected");
-
-            select.append(">");
-            select.append(PageFlowUtil.filter(user.getDisplayName(currentUser)));
-            select.append("</option>\n");
-        }
-
-        select.append("    </select>");
-
-        return select.toString();
+        return builder.addOptions(possibleAssignedTo.stream()
+            .map(user->new OptionBuilder(user.getDisplayName(currentUser), user.getUserId())
+                .selected(assignedTo != null && assignedTo == user.getUserId())));
     }
 
 
@@ -1136,10 +1108,10 @@ public class AnnouncementsController extends SpringActionController
 
             bean.assignedToSelect = getAssignedToSelect(c, assignedTo, "assignedTo", getViewContext().getUser());
             bean.settings = settings;
-            bean.statusSelect = getStatusSelect((String)form.get("status"));
+            bean.statusSelect = getStatusSelect(form.get("status"));
 
             User u = form.getUser() == null ? getViewContext().getUser() : form.getUser();
-            bean.memberList = getMemberList(u, c, latestPost, (String) (reshow ? form.get("memberList") : null));
+            bean.memberList = getMemberList(u, c, latestPost, reshow ? form.get("memberList") : null);
             bean.currentRendererType = currentRendererType;
             bean.renderers = WikiRendererType.values();
             bean.form = form;
@@ -1160,8 +1132,8 @@ public class AnnouncementsController extends SpringActionController
         public static class InsertBean
         {
             public Settings settings;
-            public String assignedToSelect;
-            public String statusSelect;
+            public SelectBuilder assignedToSelect;
+            public SelectBuilder statusSelect;
             public String memberList;
             public WikiRendererType[] renderers;
             public WikiRendererType currentRendererType;
@@ -1311,7 +1283,7 @@ public class AnnouncementsController extends SpringActionController
             if (null != urlHelper)
                 throw new RedirectException(urlHelper);
             else
-                throw new RedirectException(new ActionURL(ThreadAction.class, getContainer()).addParameter("rowId",ann.getRowId()));
+                throw new RedirectException(getThreadURL(getContainer(), ann.getParent(), ann.getRowId()));
         }
 
         @Override
@@ -1324,20 +1296,38 @@ public class AnnouncementsController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             new BeginAction(getViewContext()).addNavTrail(root);
-            root.addChild(_ann.getTitle(), "thread.view?rowId=" + _ann.getRowId());
-            root.addChild("Respond to " + getSettings().getConversationName());
+            root.addChild(_ann.getTitle(), getThreadURL(getContainer(), _ann.getParent(), _ann.getRowId()));
+            root.addChild("Edit Response to " + getSettings().getConversationName());
         }
     }
 
-
-    public static ActionURL getThreadURL(Container c, String threadId, int rowId)
+    public static ActionURL getThreadURL(Container c, @Nullable String threadEntityId, int rowId)
     {
-        ActionURL url = new ActionURL(ThreadAction.class, c);
-        url.addParameter("entityId", threadId);
-        url.addParameter("_anchor", rowId);
+        final ActionURL url;
+
+        // threadEntityId is null if called on the parent message with ann.getParent(), which several actions like doing.
+        // In this case, just pass the rowId. #41040
+        if (null == threadEntityId)
+        {
+            url = getThreadURL(c, rowId);
+        }
+        else
+        {
+            url = new ActionURL(ThreadAction.class, c);
+            url.addParameter("entityId", threadEntityId);
+            url.addParameter("_anchor", rowId);
+        }
+
         return url;
     }
 
+    // Note: ThreadAction expects that rowId is a top-level message, not a response
+    public static ActionURL getThreadURL(Container c, int rowId)
+    {
+        ActionURL url = new ActionURL(ThreadAction.class, c);
+        url.addParameter("rowId", rowId);
+        return url;
+    }
 
     @RequiresPermission(ReadPermission.class)
     public class ThreadAction extends SimpleViewAction<AnnouncementForm>
@@ -1433,7 +1423,7 @@ public class AnnouncementsController extends SpringActionController
             // TODO: This only grabs announcementModels... add responses too?
             Pair<Collection<AnnouncementModel>, Boolean> pair = AnnouncementManager.getAnnouncements(c, filter, getSettings().getSort(), 100);
 
-            ActionURL url = getThreadURL(c, "", 0).deleteParameters().addParameter("rowId", null);
+            ActionURL url = new ActionURL(ThreadAction.class, c).addParameter("rowId", null);
 
             WebPartView v = new RssView(pair.first, url.getURIString());
 
@@ -1639,7 +1629,7 @@ public class AnnouncementsController extends SpringActionController
                 }
                 catch (Exception e)
                 {
-                    Logger.getLogger(AnnouncementsController.class).error(e);
+                    LogManager.getLogger(AnnouncementsController.class).error(e);
                 }
             });
             digestThread.start();
@@ -2369,7 +2359,7 @@ public class AnnouncementsController extends SpringActionController
 
 
             @Override @NotNull
-            public String getFormattedValue(RenderContext ctx)
+            public HtmlString getFormattedHtml(RenderContext ctx)
             {
                 Integer userId = (Integer)getValue(ctx);
 
@@ -2378,10 +2368,10 @@ public class AnnouncementsController extends SpringActionController
                     User user = UserManager.getUser(userId);
 
                     if (null != user)
-                        return SecurityManager.getGroupList(ctx.getContainer(), user);
+                        return HtmlString.of(SecurityManager.getGroupList(ctx.getContainer(), user));
                 }
 
-                return "";
+                return HtmlString.EMPTY_STRING;
             }
         }
     }
@@ -2687,8 +2677,8 @@ public class AnnouncementsController extends SpringActionController
         {
             public AnnouncementModel annModel;
             public Settings settings;
-            public String assignedToSelect;
-            public String statusSelect;
+            public SelectBuilder assignedToSelect;
+            public SelectBuilder statusSelect;
             public String memberList;
             public WikiRendererType[] renderers;
             public WikiRendererType currentRendererType;
@@ -2697,13 +2687,13 @@ public class AnnouncementsController extends SpringActionController
             private UpdateBean(AnnouncementForm form, AnnouncementModel ann)
             {
                 Container c = form.getContainer();
-                String reshowMemberList = (String)form.get("memberList");
+                String reshowMemberList = form.get("memberList");
 
                 annModel = ann;
                 settings = getSettings(c);
                 currentRendererType = WikiRendererType.valueOf(ann.getRendererType());
                 renderers = WikiRendererType.values();
-                memberList = getMemberList(form.getUser(), c, ann, null != reshowMemberList ? reshowMemberList : null);
+                memberList = getMemberList(form.getUser(), c, ann, reshowMemberList);
                 statusSelect = getStatusSelect(ann.getStatus());
                 assignedToSelect = getAssignedToSelect(c, ann.getAssignedTo(), "assignedTo", getViewContext().getUser());
                 returnURL = form.getReturnURLHelper();

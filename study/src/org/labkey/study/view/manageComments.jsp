@@ -21,20 +21,20 @@
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageCommentsForm" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageSpecimenCommentsAction" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="java.util.List" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<SpecimenController.ManageCommentsForm> me = (JspView<SpecimenController.ManageCommentsForm>) HttpView.currentView();
-    SpecimenController.ManageCommentsForm bean = me.getModelBean();
+    JspView<ManageCommentsForm> me = (JspView<ManageCommentsForm>) HttpView.currentView();
+    ManageCommentsForm bean = me.getModelBean();
 
     StudyImpl study = getStudy();
     StudyManager manager = StudyManager.getInstance();
@@ -67,7 +67,7 @@
 %>
 <labkey:errors/>
 
-<labkey:form action="<%=h(buildURL(SpecimenController.ManageSpecimenCommentsAction.class))%>" name="manageComments" method="post">
+<labkey:form action="<%=urlFor(ManageSpecimenCommentsAction.class)%>" name="manageComments" method="post">
     <table class="lk-fields-table">
         <tr>
             <td><b>Note:</b> Only users with read access to the selected dataset(s) will be able to view comment
@@ -206,7 +206,7 @@
             <td colspan="2">
                 <br/>
                 <%= button("Save").submit(true) %>
-                <%= button("Cancel").href(new ActionURL(StudyController.ManageStudyAction.class, getContainer())) %>
+                <%= button("Cancel").href(urlFor(ManageStudyAction.class)) %>
             </td>
         </tr>
     </table>

@@ -19,7 +19,8 @@ package org.labkey.query.persist;
 import org.apache.commons.collections4.Bag;
 import org.apache.commons.collections4.bag.HashBag;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -39,6 +40,8 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.ontology.Concept;
+import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewChangeListener;
@@ -78,7 +81,7 @@ import java.util.stream.Collectors;
 
 public class QueryManager
 {
-    private static final Logger _log = Logger.getLogger(QueryManager.class);
+    private static final Logger _log = LogManager.getLogger(QueryManager.class);
     private static final QueryManager instance = new QueryManager();
     private static final String SCHEMA_NAME = "query";
     private static final List<QueryChangeListener> QUERY_LISTENERS = new CopyOnWriteArrayList<>();
@@ -665,6 +668,22 @@ public class QueryManager
                 queryDef.validateQuery(schema, errors, warnings);
             }
         }
+
+        OntologyService os = OntologyService.get();
+        if (null != os)
+        {
+            for (var col : table.getColumns())
+            {
+                String code = col.getPrincipalConceptCode();
+                if (null != code)
+                {
+                    Concept concept = os.resolveCode(code);
+                    if (null == concept)
+                        warnings.add(new QueryParseException("Concept not found: " + code, null, 0, 0));
+                }
+            }
+        }
+
         return errors.isEmpty();
     }
 

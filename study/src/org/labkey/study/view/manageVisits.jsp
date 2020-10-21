@@ -104,7 +104,7 @@
             rowCount++;
     %>
         <tr class="visit-row <%=h(rowCount % 2 == 1 ? "labkey-alternate-row" : "labkey-row")%>">
-            <td width="20"><%= iconLink("fa fa-pencil", "edit", editTimepointURL.replaceParameter("id", String.valueOf(visit.getRowId()))) %></td>
+            <td width="20"><%= iconLink("fa fa-pencil", "edit", editTimepointURL.replaceParameter("id", visit.getRowId())) %></td>
             <td align=left><%= h(visit.getDisplayString()) %></td>
             <td class="visit-range-cell"><%=h(visit.getSequenceString())%></td>
             <td><%= h(visit.getCohort() != null ? h(visit.getCohort().getLabel()) : "All") %></td>

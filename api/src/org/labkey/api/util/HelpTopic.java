@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.view.NavTree;
 
 import java.util.Formatter;
@@ -74,14 +75,19 @@ public class HelpTopic
     // the provided text, using the standard target, etc. Use in cases where LabKey standard link style doesn't fit in.
     public HtmlString getSimpleLinkHtml(String displayText)
     {
-        return PageFlowUtil.link(displayText).href(getHelpTopicHref()).target(TARGET_NAME).clearClasses().getHtmlString();
+        return getLink(displayText).clearClasses().getHtmlString();
     }
 
     // TODO: Use this in places where it makes sense (search results page, etc.)
     // Create a standard LabKey style link (all caps + arrow right) to the help topic, displaying the provided text, using the standard target, etc.
     public HtmlString getLinkHtml(String displayText)
     {
-        return PageFlowUtil.link(displayText).href(getHelpTopicHref()).target(TARGET_NAME).getHtmlString();
+        return getLink(displayText).getHtmlString();
+    }
+
+    private LinkBuilder getLink(String displayText)
+    {
+        return PageFlowUtil.link(displayText).href(getHelpTopicHref()).target(TARGET_NAME).rel("noopener noreferrer");
     }
 
     // Create a NavTree for a menu item that links to the help topic, displaying the provided text, using the standard target, etc.

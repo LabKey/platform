@@ -17,7 +17,9 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -42,7 +44,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
-import org.labkey.api.view.ForbiddenProjectException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
@@ -51,6 +52,8 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.webdav.DavException;
 import org.springframework.dao.DataAccessResourceFailureException;
 
 import javax.servlet.ServletException;
@@ -93,7 +96,7 @@ public class ExceptionUtil
     public static final String REQUEST_EXCEPTION_ATTRIBUTE = ExceptionUtil.class.getName() + "$exception";
 
     private static final JobRunner JOB_RUNNER = new JobRunner("Mothership Reporting", 1);
-    private static final Logger LOG = Logger.getLogger(ExceptionUtil.class);
+    private static final Logger LOG = LogManager.getLogger(ExceptionUtil.class);
     // Allow 10 report submissions to mothership per minute
     private static final RateLimiter _reportingRateLimiter = new RateLimiter("exception reporting", 10, TimeUnit.MINUTES);
 
@@ -169,23 +172,6 @@ public class ExceptionUtil
                 "</td></tr></table>");
     }
 
-
-    public static ErrorView getErrorView(int responseStatus, String message, Throwable ex,
-                                        HttpServletRequest request, boolean startupFailure)
-    {
-        ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, false, startupFailure);
-        return new ErrorView(renderer, startupFailure);
-    }
-
-
-    public static ErrorView getErrorView(int responseStatus, String message, Throwable ex,
-                                        HttpServletRequest request, boolean startupFailure, boolean popup)
-    {
-        ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, false, startupFailure);
-        return new ErrorView(renderer, startupFailure, popup);
-    }
-
-
     public static WebPartView getErrorWebPartView(int responseStatus, String message, Throwable ex,
                                                   HttpServletRequest request)
     {
@@ -197,27 +183,16 @@ public class ExceptionUtil
     public static ErrorRenderer getErrorRenderer(int responseStatus, String message, Throwable ex,
                              @Nullable HttpServletRequest request, boolean isPart, boolean isStartupFailure)
     {
+        String errorCode = null;
         if (!isStartupFailure && responseStatus == HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
         {
-            String errorCode = logExceptionToMothership(request, ex);
-            if (null != errorCode)
-            {
-                message = StringUtils.trimToEmpty(message);
-                if (message.length() > 0)
-                {
-                    if (message.endsWith("."))
-                        message += " ";
-                    else
-                        message += ". ";
-                }
-                message += "If contacting support regarding this error, please refer to error code: " + errorCode;
-            }
+            errorCode = logExceptionToMothership(request, ex);
         }
 
         if (isPart)
-            return new WebPartErrorRenderer(responseStatus, message, ex, isStartupFailure);
+            return new WebPartErrorRenderer(responseStatus, errorCode, message, ex, isStartupFailure);
         else
-            return new ErrorRenderer(responseStatus, message, ex, isStartupFailure);
+            return new ErrorRenderer(responseStatus, errorCode, message, ex, isStartupFailure);
     }
 
     private static ExceptionReportingLevel getExceptionReportingLevel()
@@ -562,9 +537,10 @@ public class ExceptionUtil
             {
                 return true;
             }
-            if (ex.getClass().equals(IllegalStateException.class) &&
+            if (ex.getClass().equals(IllegalStateException.class) && ex.getMessage() != null &&
                     ("Cannot create a session after the response has been committed".equals(ex.getMessage()) ||
-                        "Cannot call sendError() after the response has been committed".equals(ex.getMessage())))
+                        "Cannot call sendError() after the response has been committed".equals(ex.getMessage()) ||
+                            ex.getMessage().contains("Session already invalidated")))
 
             {
                 return true;
@@ -593,14 +569,19 @@ public class ExceptionUtil
         return false;
     }
 
-    // This is called by SpringActionController (to display unhandled exceptions) and called directly by AuthFilter.doFilter() (to display startup errors and bypass normal request handling)
     public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure)
     {
-        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG);
+        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, null);
+    }
+
+    // This is called by SpringActionController (to display unhandled exceptions) and called directly by AuthFilter.doFilter() (to display startup errors and bypass normal request handling)
+    public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure, @Nullable PageConfig pageConfig)
+    {
+        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, pageConfig);
     }
 
     static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure,
-        SearchService ss, Logger log)
+        SearchService ss, Logger log, @Nullable PageConfig pageConfig)
     {
         try
         {
@@ -628,6 +609,7 @@ public class ExceptionUtil
         }
 
         int responseStatus = HttpServletResponse.SC_OK;
+        ErrorRenderer.ErrorType errorType = ErrorRenderer.ErrorType.execution;
 
         if (response.isCommitted())
         {
@@ -685,6 +667,7 @@ public class ExceptionUtil
         else if (ex instanceof ApiUsageException)
         {
             responseStatus = HttpServletResponse.SC_BAD_REQUEST;
+            errorType = ErrorRenderer.ErrorType.notFound;
             if (ex.getMessage() != null)
             {
                 message = ex.getMessage();
@@ -696,12 +679,14 @@ public class ExceptionUtil
         else if (ex instanceof BadRequestException)
         {
             responseStatus = ((BadRequestException) ex).getStatus();
+            errorType = ErrorRenderer.ErrorType.notFound;
             message = ex.getMessage();
             unhandledException = null;
         }
         else if (ex instanceof NotFoundException)
         {
             responseStatus = HttpServletResponse.SC_NOT_FOUND;
+            errorType = ErrorRenderer.ErrorType.notFound;
             if (ex.getMessage() != null)
             {
                 message = ex.getMessage();
@@ -743,6 +728,7 @@ public class ExceptionUtil
 
             // we know who you are, you're just forbidden from seeing it (unless bad CSRF, silly kids)
             responseStatus = isGuest || isCSRFViolation ? HttpServletResponse.SC_UNAUTHORIZED : HttpServletResponse.SC_FORBIDDEN;
+            errorType = ErrorRenderer.ErrorType.permission;
 
             message = ex.getMessage();
             responseStatusMessage = message;
@@ -769,11 +755,15 @@ public class ExceptionUtil
                 unhandledException = ex;
             }
         }
+        else if (ex instanceof ConfigurationException)
+        {
+            errorType = ErrorRenderer.ErrorType.configuration;
+        }
 
         if (null == message && null != unhandledException)
         {
             responseStatus = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-            message = responseStatus + ": Unexpected server error";
+            message = ex.getMessage();
         }
 
         //don't log unauthorized (basic-auth challenge), forbiddens, or simple not found (404s)
@@ -844,43 +834,119 @@ public class ExceptionUtil
         }
         else
         {
-            ErrorView errorView = ExceptionUtil.getErrorView(responseStatus, message, unhandledException, request, startupFailure);
-
-            if (ex instanceof UnauthorizedException)
-            {
-                if (ex instanceof ForbiddenProjectException)
-                {
-                    // Not allowed in the project... don't offer Home or Folder buttons
-                    errorView.setIncludeHomeButton(false);
-                    errorView.setIncludeFolderButton(false);
-                }
-
-                // Provide "Stop Impersonating" button if unauthorized while impersonating
-                if (user.isImpersonated())
-                    errorView.setIncludeStopImpersonatingButton(true);
-            }
-
-            try
-            {
-                response.setContentType("text/html");
-                if (null == responseStatusMessage)
-                    response.setStatus(responseStatus);
-                else
-                    response.setStatus(responseStatus, responseStatusMessage);
-                for (Map.Entry<String, String> entry : headers.entrySet())
-                    response.addHeader(entry.getKey(), entry.getValue());
-                errorView.render(request, response);
-            }
-            catch (IllegalStateException ignored)
-            {
-            }
-            catch (Exception x)
-            {
-                log.error("Global.handleException", x);
-            }
+            response.setContentType("text/html");
+            response.setStatus(responseStatus);
+            for (Map.Entry<String, String> entry : headers.entrySet())
+                response.addHeader(entry.getKey(), entry.getValue());
+            renderErrorPage(ex, responseStatus, message, request, response, pageConfig, errorType, user, log, startupFailure);
         }
 
         return null;
+    }
+
+    private static void renderErrorPage(Throwable ex, int responseStatus, String message, HttpServletRequest request, HttpServletResponse response, PageConfig pageConfig, ErrorRenderer.ErrorType errorType, User user, Logger log, boolean startupFailure)
+    {
+        // 7629: Error page redesign -- development in-progress. This path shows the new error view.
+        ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, false, startupFailure);
+
+        if (ex instanceof UnauthorizedException)
+        {
+           errorType = ErrorRenderer.ErrorType.permission;
+        }
+
+        if (ex instanceof DavException)
+        {
+            errorType = ErrorRenderer.ErrorType.notFound;
+        }
+
+        if (pageConfig == null)
+        {
+            pageConfig = new PageConfig();
+            pageConfig.setTemplate(PageConfig.Template.Home);
+        }
+
+        HttpView<?> errorView;
+        ViewContext context = null;
+
+        if (HttpView.hasCurrentView())
+        {
+            context = HttpView.currentContext();
+        }
+        else
+        {
+            // context is null in cases of garbage urls, this helps in rendering error page in App template
+            context = new ViewContext();
+            context.setRequest(request);
+            context.setResponse(response);
+        }
+
+        try
+        {
+            renderer.setErrorType(errorType);
+
+            if (HttpView.hasCurrentView())
+            {
+                errorView = pageConfig.getTemplate().getTemplate(context, new ErrorView(renderer), pageConfig);
+            }
+            else
+            {
+                // context can be null for configuration exceptions depending on how far server got through initialization
+                errorView = PageConfig.Template.Body.getTemplate(new ViewContext(request, response, new ActionURL(ActionURL.getBaseServerURL())), new ErrorView(renderer), pageConfig);
+            }
+
+            addDependenciesAndRender(responseStatus, pageConfig, errorView, ex, request, response);
+        }
+        catch (Exception e)
+        {
+            // config exceptions that occur before jsps have been initialized
+            if (ex instanceof ConfigurationException && null != ModuleLoader.getInstance().getStartupFailure())
+            {
+                throw new ConfigurationException(ex.getMessage());
+            }
+
+            // try to render just the react app
+            try
+            {
+                errorView = PageConfig.Template.App.getTemplate(context, new ErrorView(renderer), pageConfig);
+                addDependenciesAndRender(responseStatus, pageConfig, errorView, ex, request, response);
+
+            }
+            catch (Exception exc)
+            {
+                log.error("Global.handleException", e);
+                log.error("Failed to create App template", exc);
+            }
+
+        }
+    }
+
+    public static void renderErrorView(ViewContext context, PageConfig pageConfig, ErrorRenderer.ErrorType errorType, int responseStatus, String message, @Nullable Throwable ex, boolean isPart, boolean isStartupFailure) throws Exception
+    {
+        ErrorRenderer renderer = ExceptionUtil.getErrorRenderer(responseStatus, message, ex, context.getRequest(), isPart, isStartupFailure);
+        renderer.setErrorType(errorType);
+        HttpView<?> errorView = PageConfig.Template.App.getTemplate(context, new ErrorView(renderer), pageConfig);
+        if (null != errorView)
+        {
+            addDependenciesAndRender(responseStatus, pageConfig, errorView, ex, context.getRequest(), context.getResponse());
+        }
+    }
+
+    private static void addDependenciesAndRender(int responseStatus, PageConfig pageConfig, HttpView<?> errorView, @Nullable Throwable ex, HttpServletRequest request, HttpServletResponse response) throws Exception
+    {
+        if (null == errorView)
+        {
+            LOG.error("Failed to create errorView in response to exception", ex);
+            return;
+        }
+        pageConfig.addClientDependencies(errorView.getClientDependencies());
+
+        var title = responseStatus + ": " + ErrorView.ERROR_PAGE_TITLE;
+        if (null != ex)
+        {
+            title += " -- " + ex.getMessage();
+        }
+        pageConfig.setTitle(title, false);
+        errorView.getView().render(errorView.getModel(), request, response);
     }
 
 
@@ -1023,7 +1089,7 @@ public class ExceptionUtil
                 return null;
             };
             SearchService dummySearch = (SearchService) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{SearchService.class}, h);
-            Logger dummyLog = new Logger("mock logger")
+            Logger dummyLog = new org.apache.logging.log4j.core.Logger((LoggerContext) LogManager.getContext(), "mock logger", LogManager.getLogger("mock logger").getMessageFactory())
             {
                 @Override
                 public void debug(Object message)
@@ -1038,9 +1104,9 @@ public class ExceptionUtil
                 {
                 }
                 @Override
-                public void error(Object message, Throwable t)
+                public void error(String message, Throwable t)
                 {
-                    res.addHeader("Logger.error", null!=message?String.valueOf(message):null!=t?t.getMessage():"");
+                    res.addHeader("Logger.error", null!=message? message :null!=t?t.getMessage():"");
                 }
                 @Override
                 public void fatal(Object message)
@@ -1066,9 +1132,15 @@ public class ExceptionUtil
                 {
                     return user;
                 }
+
+                @Override
+                public String getMethod()
+                {
+                    return "GET";
+                }
             };
             ExceptionUtil.decorateException(ex, ExceptionInfo.SkipMothershipLogging, "true", true);
-            ActionURL url = ExceptionUtil.handleException(req, res, ex, message, false, dummySearch, dummyLog);
+            ActionURL url = ExceptionUtil.handleException(req, res, ex, message, false, dummySearch, dummyLog, null);
             ExceptionResponse ret = new ExceptionResponse();
             ret.redirect = url;
             ret.response = res;

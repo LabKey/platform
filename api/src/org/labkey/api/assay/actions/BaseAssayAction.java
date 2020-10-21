@@ -74,14 +74,6 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
         return rgn;
     }
 
-    @Deprecated
-    @Override
-    public NavTree appendNavTrail(NavTree root)
-    {
-        addNavTrail(root);
-        return root;
-    }
-
     @Override
     public void addNavTrail(NavTree root)
     {

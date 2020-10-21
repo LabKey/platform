@@ -15,8 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.query.controllers.OlapController" %>
@@ -228,7 +227,7 @@
     <tr data-name="<%=h(contextName)%>">
         <td><%=h(contextName)%></td>
         <td><%=link("edit", urlFor(OlapController.EditAppAction.class).addParameter("contextName", contextName))%></td>
-        <td><%=link("delete").href("#").onClick("confirmDeleteApp(" + PageFlowUtil.jsString(contextName) + ");return false;")%></td>
+        <td><%=link("delete").href("#").onClick("confirmDeleteApp(" + q(contextName) + ");return false;")%></td>
     </tr>
 <% } %>
 </table>

@@ -57,6 +57,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     protected String _tsvFormatString;
     protected StringExpression _textExpression;
     protected int _scale = 0;
+    protected int _precision = 0;
     protected String _propertyURI;
     protected String _conceptURI;
     protected String _rangeURI;
@@ -91,6 +92,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     protected Boolean _isExcludeFromShifting = false;
     protected FieldKey _crosstabColumnDimension;
     protected CrosstabMember _crosstabColumnMember;
+
+    // OntologyService related annotations
+    protected String _principalConceptCode = null;
+
 
     abstract public void checkLocked();
     private boolean _checkLocked()
@@ -147,11 +152,13 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         to._redactedText = _redactedText;
         to._isExcludeFromShifting = _isExcludeFromShifting;
         to._scale = _scale;
+        to._precision = _precision;
         to._propertyURI = _propertyURI;
         to._conceptURI = _conceptURI;
         to._rangeURI = _rangeURI;
         to._propertyType = _propertyType;
         to._defaultValueType = _defaultValueType;
+        to._principalConceptCode = _principalConceptCode;
     }
 
     @Override
@@ -824,5 +831,31 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     {
         assert _checkLocked();
         _scale = scale;
+    }
+
+    @Override
+    public int getPrecision()
+    {
+        return _precision;
+    }
+
+    @Override
+    public void setPrecision(int precision)
+    {
+        assert _checkLocked();
+        _precision = precision;
+    }
+
+    @Override
+    public String getPrincipalConceptCode()
+    {
+        return _principalConceptCode;
+    }
+
+    @Override
+    public void setPrincipalConceptCode(String code)
+    {
+        assert _checkLocked();
+        _principalConceptCode = code;
     }
 }

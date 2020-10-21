@@ -21,8 +21,9 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DatasetDetailsAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.UpdateDatasetVisitMappingAction" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
@@ -31,10 +32,8 @@
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.Map" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.io.Writer" %>
-<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
+<%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -56,11 +55,11 @@
 %>
 <labkey:errors/>
 <%
-    ActionURL updateDatasetURL = new ActionURL(StudyController.UpdateDatasetVisitMappingAction.class, container);
+    ActionURL updateDatasetURL = urlFor(UpdateDatasetVisitMappingAction.class);
 %>
 
-<labkey:form action="<%=h(updateDatasetURL.getLocalURIString())%>" method="POST">
-<%= button("Save").submit(true) %>&nbsp;<%= text(button("Cancel").href(buildURL(StudyController.DatasetDetailsAction.class, "id=" + dataset.getDatasetId())).toString()) %>
+<labkey:form action="<%=updateDatasetURL%>" method="POST">
+<%= button("Save").submit(true) %>&nbsp;<%=button("Cancel").href(urlFor(DatasetDetailsAction.class).addParameter("id", dataset.getDatasetId()))%>
 <%
     FrameFactoryClassic.startTitleFrame(out, "Dataset Properties", null, "100%", null);
 %>
@@ -108,16 +107,7 @@
         <tr>
             <td class="labkey-form-label">Definition URI</td>
             <td>
-                <%
-                if (dataset.getTypeURI() == null)
-                {
-                    %><a href="importDataType.view?<%=h(DatasetDefinition.DATASETKEY)%>=<%= dataset.getDatasetId() %>">[Upload]</a><%
-                }
-                else
-                {
-                    %><%= h(dataset.getTypeURI()) %><%
-                }
-                %>
+                <%= h(dataset.getTypeURI()) %>
             </td>
         </tr>
         </table>
@@ -160,5 +150,5 @@
 <%
     FrameFactoryClassic.endTitleFrame(out);
 %>
-<%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(buildURL(StudyController.DatasetDetailsAction.class, "id=" + dataset.getDatasetId())) %>
+<%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(urlFor(DatasetDetailsAction.class).addParameter("id", dataset.getDatasetId())) %>
 </labkey:form>

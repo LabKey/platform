@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import com.google.common.io.Files;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Assert;
@@ -26,6 +27,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -34,8 +36,12 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.webdav.WebdavService;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -149,7 +155,8 @@ public class WorkbookContainerType implements ContainerType
     {
         switch (dataType)
         {
-            //The intent is that outside of these blacklisted actions, return the current container (parent otherwise)
+            //The intent is that outside of these specially supported actions, return the current container (parent otherwise)
+            //Note: fileRoot has been deliberately removed to allow per-workbook override
             case customQueryViews:
             case domainDefinitions:
             case dataspace:
@@ -159,7 +166,6 @@ public class WorkbookContainerType implements ContainerType
             case properties:
             case protocol:
             case folderManagement:
-            case fileRoot:
             case tabParent:
             case sharedSchemaOwner:
                 return currentContainer.getParent();
@@ -400,6 +406,52 @@ public class WorkbookContainerType implements ContainerType
         public void testCrossContainerBehaviorsForList() throws Exception
         {
             testCrossContainerBehaviors(_project, _workbooks, "Lists", LIST1, LIST2, "PKField", "LookupField", Arrays.asList("Value1", "Value2", "Value3", "Value4"), null);
+        }
+
+        @Test
+        public void testFileRootOverride() throws Exception
+        {
+            String subfolderName = "sub1";
+            String subfolderName2 = "sub2";
+
+            Container parent = ContainerManager.createContainer(_project, subfolderName);
+            Container sub = ContainerManager.createContainer(parent, subfolderName2);
+
+            Container wbOverride = ContainerManager.createContainer(parent, "WorkbookOverride", "WorkbookOverride", null, WorkbookContainerType.NAME, TestContext.get().getUser());
+            Container wbDefaultRoot = ContainerManager.createContainer(parent, "WorkbookNoOverride", "WorkbookNoOverride", null, WorkbookContainerType.NAME, TestContext.get().getUser());
+
+            File parentRoot = FileContentService.get().getFileRoot(parent);
+            File origSubRoot = FileContentService.get().getFileRoot(sub);
+            File origWbRoot = FileContentService.get().getFileRoot(wbOverride);
+            File wbOverrideRoot = new File(FileContentService.get().getSiteDefaultRoot(), "_foo");
+
+            FileContentService.get().setFileRoot(wbOverride, wbOverrideRoot);
+
+            Assert.assertFalse("Should have file root override", FileContentService.get().isUseDefaultRoot(wbOverride));
+            Assert.assertTrue("Should not have file root override", FileContentService.get().isUseDefaultRoot(wbDefaultRoot));
+
+            Assert.assertEquals("Should not have changed", origSubRoot, FileContentService.get().getFileRoot(sub));
+            Assert.assertEquals("Should not have changed", parentRoot, FileContentService.get().getFileRoot(parent));
+
+            Assert.assertEquals("Incorrect file root", wbOverrideRoot, FileContentService.get().getFileRoot(wbOverride));
+            Assert.assertEquals("Should not have changed", origWbRoot, FileContentService.get().getDefaultRoot(wbOverride, false));
+
+            Assert.assertEquals("Incorrect file root", new File(parentRoot, wbDefaultRoot.getName()), FileContentService.get().getFileRoot(wbDefaultRoot));
+
+            File test = new File(FileContentService.get().getFileRoot(wbOverride), "/@files/test.txt");
+            if (!test.getParentFile().exists())
+            {
+                test.getParentFile().mkdirs();
+            }
+
+            Files.touch(test);
+
+            WebdavResource resource = WebdavService.get().getResolver().lookup(Path.parse("_webdav/" + wbOverride.getPath() + "/@files/test.txt"));
+
+            assertEquals("File path does not match", test, resource.getFile());
+            assertTrue("File does not exist", resource.getFile().exists());
+
+            test.delete();
         }
 
         @After

@@ -16,9 +16,9 @@
 
 package org.labkey.api.data;
 
-import java.util.List;
-import java.io.Writer;
 import java.io.IOException;
+import java.io.Writer;
+import java.util.List;
 
 /**
  * User: jeckels

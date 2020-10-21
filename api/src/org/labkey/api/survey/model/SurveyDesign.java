@@ -19,9 +19,6 @@ import org.json.JSONObject;
 import org.labkey.api.data.Entity;
 import org.labkey.api.security.User;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 /**
  * User: klum
  * Date: 12/11/12

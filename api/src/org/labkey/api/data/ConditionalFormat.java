@@ -15,13 +15,12 @@
  */
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SimpleFilter.FilterClause;
-import org.labkey.api.exp.PropertyColumn;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.URLHelper;
@@ -33,7 +32,6 @@ import org.labkey.data.xml.ConditionalFormatType;
 import org.labkey.data.xml.ConditionalFormatsType;
 
 import java.awt.*;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,7 +45,7 @@ import java.util.List;
  */
 public class ConditionalFormat extends GWTConditionalFormat
 {
-    private static final Logger LOG = Logger.getLogger(ConditionalFormat.class);
+    private static final Logger LOG = LogManager.getLogger(ConditionalFormat.class);
 
     public ConditionalFormat(GWTConditionalFormat f)
     {

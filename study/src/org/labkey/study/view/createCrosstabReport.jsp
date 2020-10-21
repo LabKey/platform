@@ -22,20 +22,20 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.StudySchema" %>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController.CreateCrosstabBean" %>
+<%@ page import="org.labkey.study.controllers.reports.ReportsController.ParticipantCrosstabAction" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.reports.StudyCrosstabReport" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<CreateCrosstabBean> me = (JspView<ReportsController.CreateCrosstabBean>) HttpView.currentView();
+    JspView<CreateCrosstabBean> me = (JspView<CreateCrosstabBean>) HttpView.currentView();
     CreateCrosstabBean bean = me.getModelBean();
 
     ActionURL returnURL = urlProvider(ReportUrls.class).urlManageViews(getContainer());
 %>
-<labkey:form action="<%=h(buildURL(ReportsController.ParticipantCrosstabAction.class))%>" method="GET">
+<labkey:form action="<%=urlFor(ParticipantCrosstabAction.class)%>" method="GET">
 <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=h(StudySchema.getInstance().getSchemaName())%>">
 <input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=h(StudyCrosstabReport.TYPE)%>">
 <input type="hidden" name="redirectUrl" value="<%=h(returnURL)%>">

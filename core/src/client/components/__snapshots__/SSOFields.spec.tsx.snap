@@ -62,7 +62,9 @@ Array [
             <div
               className="wizard-row--container"
             >
-              <div>
+              <div
+                className=""
+              >
                 <div
                   className="file-upload--container block"
                 >
@@ -160,7 +162,9 @@ Array [
             <div
               className="wizard-row--container"
             >
-              <div>
+              <div
+                className=""
+              >
                 <div
                   className="file-upload--container block"
                 >
@@ -260,7 +264,9 @@ Array [
             <div
               className="wizard-row--container"
             >
-              <div>
+              <div
+                className=""
+              >
                 <div
                   className="file-upload--container block"
                 >
@@ -358,7 +364,9 @@ Array [
             <div
               className="wizard-row--container"
             >
-              <div>
+              <div
+                className=""
+              >
                 <div
                   className="file-upload--container block"
                 >

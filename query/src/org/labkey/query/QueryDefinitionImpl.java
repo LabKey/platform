@@ -18,7 +18,8 @@ package org.labkey.query;
 
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
@@ -61,7 +62,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
-import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.queryCustomView.NamedFiltersType;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.QueryDef;
@@ -86,7 +86,7 @@ import java.util.Objects;
 public abstract class QueryDefinitionImpl implements QueryDefinition
 {
     private static final QueryManager mgr = QueryManager.get();
-    private static final Logger log = Logger.getLogger(QueryDefinitionImpl.class);
+    private static final Logger log = LogManager.getLogger(QueryDefinitionImpl.class);
 
     protected final User _user;
     protected final Container _container;

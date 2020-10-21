@@ -22,7 +22,6 @@ import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;

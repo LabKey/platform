@@ -21,7 +21,8 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -54,6 +55,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -73,7 +75,7 @@ import java.util.Set;
  */
 public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements MutableColumnInfo
 {
-    private static final Logger LOG = Logger.getLogger(ColumnInfo.class);
+    private static final Logger LOG = LogManager.getLogger(ColumnInfo.class);
     private static final Set<String> NON_EDITABLE_COL_NAMES = new CaseInsensitiveHashSet("created", "createdBy", "modified", "modifiedBy", "_ts", "entityId", "container");
 
     private FieldKey _fieldKey;
@@ -126,13 +128,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         _fieldKey = key;
         _parentTable = parentTable;
         _columnLogging = new ColumnLogging(key, parentTable);
-    }
-
-    @Deprecated // Pass in a type!
-    public BaseColumnInfo(FieldKey key)
-    {
-        this(key, (TableInfo)null);
-        _name = null;
     }
 
     public BaseColumnInfo(FieldKey key, JdbcType t)
@@ -399,6 +394,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setCrosstabColumnMember(col.getCrosstabColumnMember());
 
         setCalculated(col.isCalculated());
+
+        setPrincipalConceptCode(col.getPrincipalConceptCode());
     }
 
     /*
@@ -471,6 +468,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setCrosstabColumnMember(col.getCrosstabColumnMember());
 
         setCalculated(col.isCalculated());
+
+        setPrincipalConceptCode(col.getPrincipalConceptCode());
     }
 
 
@@ -1244,6 +1243,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                 LOG.error("Can't instantiate DisplayColumnFactory: " + displayColumnClassName, e);
             }
         }
+        if (xmlCol.isSetPrincipalConceptCode())
+            setPrincipalConceptCode(xmlCol.getPrincipalConceptCode());
     }
 
     @Override
@@ -1605,7 +1606,16 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     col._selectName = dialect.getSelectNameFromMetaDataName(metaDataName);
                     col._sqlTypeName = reader.getSqlTypeName();
                     col._isAutoIncrement = reader.isAutoIncrement();
-                    col._scale = reader.getScale();
+                    int type = reader.getSqlType();
+                    if (type == Types.DECIMAL || type == Types.NUMERIC)
+                    {
+                        col._scale = reader.getDecimalDigits();
+                        col._precision = reader.getScale();
+                    }
+                    else
+                    {
+                        col._scale = reader.getScale();
+                    }
                     col._nullable = reader.isNullable();
                     col._jdbcDefaultValue = reader.getDefault();
 

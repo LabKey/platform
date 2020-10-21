@@ -18,7 +18,8 @@ package org.labkey.study.controllers.specimen;
 
 import org.apache.commons.io.Charsets;
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -38,6 +39,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.BeanViewForm;
@@ -205,7 +207,7 @@ import java.util.TreeMap;
 @SuppressWarnings("UnusedDeclaration")
 public class SpecimenController extends BaseStudyController
 {
-    private static final Logger _log = Logger.getLogger(SpecimenController.class);
+    private static final Logger _log = LogManager.getLogger(SpecimenController.class);
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
         SpecimenController.class,
@@ -5538,7 +5540,7 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType) throws IOException
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable TransactionAuditProvider.TransactionAuditEvent auditEvent) throws IOException
         {
             List<String> errorList = new LinkedList<>();
 

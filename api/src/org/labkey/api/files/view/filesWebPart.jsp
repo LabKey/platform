@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.premium.PremiumService" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -48,7 +47,7 @@
     if (!bean.isEnabled())
     {
 %>
-    File sharing has been disabled for this project. Sharing can be configured from the <a href="<%=projConfig%>">project settings</a> view.
+    File sharing has been disabled for this project. Sharing can be configured from the <a href="<%=h(projConfig)%>">project settings</a> view.
 <%
     }
     else if (!bean.isRootValid(c))
@@ -82,7 +81,7 @@
         var startDirectory;
 
         <% if (bean.getDirectory() != null) { %>
-        startDirectory = <%=PageFlowUtil.jsString(bean.getDirectory().toString())%>;
+        startDirectory = <%=q(bean.getDirectory().toString())%>;
         <% } %>
 
         var config = {

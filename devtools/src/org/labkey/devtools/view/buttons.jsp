@@ -15,18 +15,18 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.devtools.TestController.ButtonForm" %>
 <%@ page import="org.labkey.api.util.Button" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.devtools.TestController" %>
+<%@ page import="org.labkey.devtools.TestController.ButtonAction" %>
+<%@ page import="org.labkey.devtools.TestController.ButtonForm" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ButtonForm> me = (JspView<ButtonForm>) HttpView.currentView();
     ButtonForm form = me.getModelBean();
-    ActionURL formURL = new ActionURL(TestController.ButtonAction.class, getContainer());
+    ActionURL formURL = urlFor(ButtonAction.class);
 %>
 <labkey:form method="POST">
     <table>

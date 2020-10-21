@@ -17,8 +17,9 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.study.controllers.BaseStudyController.StudyJspView"%>
-<%@ page import="org.labkey.study.controllers.StudyController.BulkImportTypesForm"%>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.BulkImportDataTypesAction"%>
+<%@ page import="org.labkey.study.controllers.StudyController.BulkImportTypesForm" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageTypesAction" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -111,7 +112,7 @@ For more information about the schema definition format, see <%=helpLink("Datase
     </tr>
 </table>
 
-<labkey:form action="<%=h(buildURL(StudyController.BulkImportDataTypesAction.class))%>" method="POST" enctype="multipart/form-data">
+<labkey:form action="<%=urlFor(BulkImportDataTypesAction.class)%>" method="POST" enctype="multipart/form-data">
     <table>
         <tr>
             <td class=labkey-form-label>Header of column containing dataset Name (e.g., platename)<span class="labkey-error">*</span></td>
@@ -138,7 +139,7 @@ For more information about the schema definition format, see <%=helpLink("Datase
             <td><textarea name=tsv rows=25 cols=80><%=h(bean.getTsv())%></textarea></td>
         </tr>
         <tr>
-            <td><%= button("Submit").submit(true) %>&nbsp;<%= button("Cancel").href(StudyController.ManageTypesAction.class, getContainer()) %></td>
+            <td><%= button("Submit").submit(true) %>&nbsp;<%= button("Cancel").href(ManageTypesAction.class, getContainer()) %></td>
         </tr>
     </table>
 </labkey:form>

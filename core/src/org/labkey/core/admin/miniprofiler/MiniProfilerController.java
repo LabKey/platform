@@ -16,7 +16,8 @@
 package org.labkey.core.admin.miniprofiler;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.IgnoresAllocationTracking;
@@ -58,7 +59,7 @@ public class MiniProfilerController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(MiniProfilerController.class);
 
-    private static final Logger LOG = Logger.getLogger(MiniProfilerController.class);
+    private static final Logger LOG = LogManager.getLogger(MiniProfilerController.class);
 
     public MiniProfilerController()
     {
@@ -165,6 +166,18 @@ public class MiniProfilerController extends SpringActionController
             MiniProfiler.saveSettings(settings);
             boolean enabled = settings.isEnabled();
             return success(Collections.singletonMap("enabled", enabled));
+        }
+    }
+
+    // Invoked by test framework
+    @RequiresSiteAdmin
+    public class EnableTroubleshootingStacktracesAction extends MutatingApiAction<EnableForm>
+    {
+        @Override
+        public Object execute(EnableForm form, BindException errors)
+        {
+            MiniProfiler.setCollectTroubleshootingStackTraces(form.isEnabled());
+            return success(Collections.singletonMap("enabled", MiniProfiler.isCollectTroubleshootingStackTraces()));
         }
     }
 

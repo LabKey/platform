@@ -24,10 +24,10 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -43,7 +43,6 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -59,6 +58,7 @@ import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
@@ -71,7 +71,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.AuditBehaviorType;
-import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
@@ -139,6 +138,8 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.MasterPatientIndexService;
 import org.labkey.api.study.ParticipantCategory;
+import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -180,7 +181,6 @@ import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.MasterPatientIndexMaintenanceTask;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.StudyFolderType;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
@@ -250,7 +250,7 @@ import static org.labkey.api.util.PageFlowUtil.filter;
  */
 public class StudyController extends BaseStudyController
 {
-    private static final Logger _log = Logger.getLogger(StudyController.class);
+    private static final Logger _log = LogManager.getLogger(StudyController.class);
 
     private static final String PARTICIPANT_CACHE_PREFIX = "Study_participants/participantCache";
     private static final String EXPAND_CONTAINERS_KEY = StudyController.class.getName() + "/expandedContainers";
@@ -717,7 +717,7 @@ public class StudyController extends BaseStudyController
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
                                         replaceParameter(DATASET_REPORT_ID_PARAMETER_NAME, report.getDescriptor().getReportId().toString()).
-                                        replaceParameter(DatasetDefinition.DATASETKEY, String.valueOf(def.getDatasetId()));
+                                        replaceParameter(DatasetDefinition.DATASETKEY, def.getDatasetId());
 
                 return HttpView.redirect(url);
             }
@@ -2214,12 +2214,12 @@ public class StudyController extends BaseStudyController
                     "SELECT v.RowId FROM study.Visit v WHERE Container = ? AND NOT EXISTS (SELECT * FROM study.ParticipantVisit pv WHERE pv.Container = ? and pv.VisitRowId = v.RowId)",
                     getContainer(), getContainer()
                 )
-            ).forEach(rowId -> {
+            ).forEach(Integer.class, rowId -> {
                 VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, rowId);
 
                 if (null != visit)
                     visits.add(visit);
-            }, Integer.class);
+            });
 
             return visits;
         }
@@ -2550,7 +2550,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType)
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable  TransactionAuditProvider.TransactionAuditEvent auditEvent)
         {
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
             {
@@ -2722,7 +2722,8 @@ public class StudyController extends BaseStudyController
                 @Override
                 public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
                 {
-                    out.write(PageFlowUtil.link("Download Data File").href("downloadTsv.view?id=" + ctx.get("RowId")).toString());
+                    ActionURL url = new ActionURL(DownloadTsvAction.class, ctx.getContainer()).addParameter("id", String.valueOf(ctx.get("RowId")));
+                    out.write(PageFlowUtil.link("Download Data File").href(url).toString());
                 }
             };
             dr.addDisplayColumn(dc);
@@ -4720,157 +4721,6 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
-    public class QuickCreateStudyAction extends MutatingApiAction<SimpleApiJsonForm>
-    {
-        @Override
-        public ApiResponse execute(SimpleApiJsonForm simpleApiJsonForm, BindException errors) throws Exception
-        {
-            JSONObject json = simpleApiJsonForm.getJsonObject();
-            if (!json.has("name"))
-                throw new IllegalArgumentException("name is a required attribute.");
-
-            String folderName = json.getString("name");
-            Date startDate;
-            if (json.has("startDate"))
-                startDate = new Date(DateUtil.parseDateTime(json.getString("startDate")));
-            else
-                startDate = new Date();
-
-            String cohortDatasetName = json.getString("cohortDataset");
-            String cohortProperty = json.getString("cohortProperty");
-            if (null != cohortDatasetName && null == cohortProperty)
-                throw new IllegalArgumentException("Specified cohort dataset, but not property");
-
-            JSONArray visits = null;
-            if (json.has("visits"))
-                visits = json.getJSONArray("visits");
-
-            JSONArray jsonDatasets = null;
-            if (json.has("datasets"))
-            {
-                boolean hasCohortDataset = false;
-                jsonDatasets = json.getJSONArray("datasets");
-                for (JSONObject jdataset : jsonDatasets.toJSONObjectArray())
-                {
-                    if (!jdataset.has("name"))
-                        throw new IllegalArgumentException("Dataset name required.");
-
-                    if (jdataset.get("name").equals(cohortDatasetName))
-                        hasCohortDataset = true;
-                }
-
-                if (null != cohortDatasetName && !hasCohortDataset)
-                    throw new IllegalArgumentException("Couldn't find cohort dataset");
-            }
-
-
-            JSONArray jsonWebParts = null;
-            if (json.has("webParts"))
-                jsonWebParts = json.getJSONArray("webParts");
-
-
-            Container parent = getContainer();
-            Container studyFolder = parent.getChild(folderName);
-            if (null == studyFolder)
-                studyFolder = ContainerManager.createContainer(parent, folderName);
-            if (null != StudyManager.getInstance().getStudy(studyFolder))
-                throw new IllegalStateException("Study already exists in folder");
-
-            SecurityManager.setInheritPermissions(studyFolder);
-            studyFolder.setFolderType(FolderTypeManager.get().getFolderType(StudyFolderType.NAME), getUser());
-
-            StudyImpl study = new StudyImpl(studyFolder, folderName + " Study");
-            study.setTimepointType(TimepointType.DATE);
-            study.setStartDate(startDate);
-            study = StudyManager.getInstance().createStudy(getUser(), study);
-
-            if (null != visits)
-            {
-                for (JSONObject obj : visits.toJSONObjectArray())
-                {
-                    VisitImpl visit = new VisitImpl(studyFolder, obj.getDouble("minDays"), obj.getDouble("maxDays"), obj.getString("label"), Visit.Type.REQUIRED_BY_TERMINATION);
-                    StudyManager.getInstance().createVisit(study, getUser(), visit);
-                }
-            }
-
-            DbScope scope = StudySchema.getInstance().getSchema().getScope();
-
-            List<DatasetDefinition> datasets = new ArrayList<>();
-
-            if (null != jsonDatasets)
-            {
-                try (DbScope.Transaction transaction = scope.ensureTransaction())
-                {
-                    for (JSONObject jdataset : jsonDatasets.toJSONObjectArray())
-                    {
-                        DatasetDefinition dataset = AssayPublishManager.getInstance().createAssayDataset(getUser(), study, jdataset.getString("name"),
-                                jdataset.getString("keyPropertyName"),
-                                jdataset.has("id") ? jdataset.getInt("id") : null,
-                                jdataset.has("demographicData") && jdataset.getBoolean("demographicData"),
-                                null);
-
-                        if (jdataset.has("keyPropertyManaged") && jdataset.getBoolean("keyPropertyManaged"))
-                        {
-                            dataset = dataset.createMutable();
-                            dataset.setKeyManagementType(KeyManagementType.RowId);
-                            StudyManager.getInstance().updateDatasetDefinition(getUser(), dataset);
-                        }
-
-                        if (dataset.getName().equals(cohortDatasetName))
-                        {
-                            study = study.createMutable();
-                            study.setParticipantCohortDatasetId(dataset.getDatasetId());
-                            study.setParticipantCohortProperty(cohortProperty);
-                            StudyManager.getInstance().updateStudy(getUser(), study);
-                        }
-
-                        OntologyManager.ensureDomainDescriptor(dataset.getTypeURI(), dataset.getName(), study.getContainer());
-                        datasets.add(dataset);
-                    }
-                    transaction.commit();
-                }
-            }
-
-            if (null != jsonWebParts)
-            {
-                List<Portal.WebPart> webParts = new ArrayList<>();
-                for (JSONObject obj : jsonWebParts.toJSONObjectArray())
-                {
-                    WebPartFactory factory = Portal.getPortalPartCaseInsensitive(obj.getString("partName"));
-                    if (null == factory)
-                        continue; //Silently ignore
-                    String location = obj.getString("location");
-                    if (null == location || "body".equals(location))
-                        location = HttpView.BODY;
-                    JSONObject partConfig = null;
-                    if (obj.has("partConfig"))
-                        partConfig = obj.getJSONObject("partConfig");
-
-                    Portal.WebPart part = factory.createWebPart();
-                    part.setLocation(location);
-                    if (null != partConfig)
-                    {
-                        for (Map.Entry<String,Object> entry : partConfig.entrySet())
-                            part.setProperty(entry.getKey(), entry.getValue().toString());
-                    }
-
-                    webParts.add(part);
-                }
-                Portal.saveParts(studyFolder, webParts);
-            }
-
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("label", study.getLabel());
-            response.put("containerId", study.getContainer().getId());
-            response.put("containerPath", study.getContainer().getPath());
-            response.putBeanList("datasets", datasets, "name", "typeURI", "datasetId");
-
-
-            return response;
-        }
-    }
-
     public static class StudySnapshotForm extends QuerySnapshotForm
     {
         private int _snapshotDatasetId = -1;
@@ -5068,8 +4918,8 @@ public class StudyController extends BaseStudyController
                     {
                         ActionURL returnUrl = getViewContext().cloneActionURL()
                             .replaceParameter("ff_snapshotName", form.getSnapshotName())
-                            .replaceParameter("ff_updateDelay", String.valueOf(form.getUpdateDelay()))
-                            .replaceParameter("ff_snapshotDatasetId", String.valueOf(form.getSnapshotDatasetId()));
+                            .replaceParameter("ff_updateDelay", form.getUpdateDelay())
+                            .replaceParameter("ff_snapshotDatasetId", form.getSnapshotDatasetId());
 
                         _successURL = new ActionURL(StudyController.EditTypeAction.class, getContainer())
                                 .addParameter("datasetId", def.getDatasetId())
@@ -6361,6 +6211,61 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    public static class EnabledSpecimenImportForm
+    {
+        private String _activeTransform;
+
+        public String getActiveTransform()
+        {
+            return _activeTransform;
+        }
+
+        public void setActiveTransform(String activeTransform)
+        {
+            _activeTransform = activeTransform;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class ChooseImporterAction extends FormViewAction<EnabledSpecimenImportForm>
+    {
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            root.addChild("Specimen Import Mechanism");
+        }
+
+        @Override
+        public void validateCommand(EnabledSpecimenImportForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(EnabledSpecimenImportForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/study/view/chooseImporter.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(EnabledSpecimenImportForm form, BindException errors) throws Exception
+        {
+            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getContainer(), "enabledSpecimenImporter", true);
+            props.put("active", form.getActiveTransform());
+            props.save();
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(EnabledSpecimenImportForm configForm)
+        {
+            Container c = getContainer();
+            SpecimenService specimenService = SpecimenService.get();
+
+            String active = specimenService.getActiveSpecimenImporter(c);
+            SpecimenTransform activeTransform = specimenService.getSpecimenTransform(active);
+            return activeTransform.getManageAction(c, getUser());
+        }
+    }
 
     public static class ImportVisitMapForm
     {
@@ -7331,10 +7236,15 @@ public class StudyController extends BaseStudyController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class ExportParticipantTransformsAction extends SimpleViewAction<Object>
+    public class ExportParticipantTransformsAction extends FormHandlerAction<Object>
     {
         @Override
-        public ModelAndView getView(Object form, BindException errors) throws Exception
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
             Study study = StudyManager.getInstance().getStudy(getContainer());
             if (study != null)
@@ -7360,16 +7270,16 @@ public class StudyController extends BaseStudyController
                     writer.write(getViewContext().getResponse());
                 }
 
-                return null;
+                return false;  // Don't redirect
             }
             else
                 throw new IllegalStateException("A study does not exist in this folder");
         }
 
         @Override
-        public void addNavTrail(NavTree root)
+        public URLHelper getSuccessURL(Object o)
         {
-            throw new UnsupportedOperationException();
+            throw new IllegalStateException();
         }
     }
 
@@ -7538,11 +7448,21 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType) throws IOException
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
         {
             if (null == _study)
                 return 0;
-            return StudyManager.getInstance().setImportedAlternateParticipantIds(_study, dl, errors);
+            int rows = StudyManager.getInstance().setImportedAlternateParticipantIds(_study, dl, errors);
+
+            // Insert a clear warning at the top that the mappings have not been imported, #36517
+            if (errors.hasErrors())
+            {
+                List<ValidationException> rowErrors = errors.getRowErrors();
+                int count = rowErrors.size();
+                rowErrors.add(0, new ValidationException("Warning: NONE of participant mappings have been imported because this mapping file contains " + (1 == count ? "an error" : "errors") + "! Please correct the following:"));
+            }
+
+            return rows;
         }
 
         @Override

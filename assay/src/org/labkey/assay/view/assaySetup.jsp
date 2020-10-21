@@ -16,13 +16,13 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page import="org.labkey.api.assay.AssayService" %>
+<%@ page import="org.labkey.api.assay.security.DesignAssayPermission" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
-<%@ page import="org.labkey.api.assay.AssayService" %>
-<%@ page import="org.labkey.api.assay.security.DesignAssayPermission" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>

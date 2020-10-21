@@ -16,7 +16,8 @@
 package org.labkey.api.assay.dilution;
 
 import org.apache.commons.lang3.EnumUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.nab.NabSpecimen;
@@ -76,7 +77,7 @@ import java.util.Set;
  */
 public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 {
-    public static final Logger LOG = Logger.getLogger(DilutionDataHandler.class);
+    public static final Logger LOG = LogManager.getLogger(DilutionDataHandler.class);
 
     public static final String NAB_PROPERTY_LSID_PREFIX = "NabProperty";
 
@@ -505,8 +506,13 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     public PropertyDescriptor getStringPropertyDescriptor(Container container, ExpProtocol protocol, String propertyName)
     {
+        return getTypedPropertyDescriptor(container, protocol, propertyName, PropertyType.STRING);
+    }
+
+    public PropertyDescriptor getTypedPropertyDescriptor(Container container, ExpProtocol protocol, String propertyName, PropertyType type)
+    {
         Lsid propertyURI = new Lsid(NAB_PROPERTY_LSID_PREFIX, protocol.getName(), propertyName);
-        PropertyDescriptor pd = new PropertyDescriptor(propertyURI.toString(), PropertyType.STRING, propertyName, propertyName, container);
+        PropertyDescriptor pd = new PropertyDescriptor(propertyURI.toString(), type, propertyName, propertyName, container);
         pd.setFormat(null);
         return pd;
     }
@@ -718,8 +724,8 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     {
         Map<String, Pair<Integer, String>> wellGroupNameToNabSpecimen = new HashMap<>();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString("RunId"), run.getRowId());
-        new TableSelector(DilutionManager.getTableInfoNAbSpecimen(), filter, null).forEach((NabSpecimen nabSpecimen) ->
-                wellGroupNameToNabSpecimen.put(nabSpecimen.getWellgroupName(), new Pair<>(nabSpecimen.getRowId(), nabSpecimen.getSpecimenLsid())), NabSpecimen.class);
+        new TableSelector(DilutionManager.getTableInfoNAbSpecimen(), filter, null).forEach(NabSpecimen.class, (NabSpecimen nabSpecimen) ->
+                wellGroupNameToNabSpecimen.put(nabSpecimen.getWellgroupName(), new Pair<>(nabSpecimen.getRowId(), nabSpecimen.getSpecimenLsid())));
 
         populateWellData(protocol, run, user, getCutoffFormats(protocol, run), wellGroupNameToNabSpecimen);
     }
@@ -744,8 +750,8 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     {
         Map<String, Pair<Integer, String>> wellGroupNameToNabSpecimen = new HashMap<>();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString("RunId"), run.getRowId());
-        new TableSelector(DilutionManager.getTableInfoNAbSpecimen(), filter, null).forEach((NabSpecimen nabSpecimen) ->
-                wellGroupNameToNabSpecimen.put(nabSpecimen.getWellgroupName(), new Pair<>(nabSpecimen.getRowId(), nabSpecimen.getSpecimenLsid())), NabSpecimen.class);
+        new TableSelector(DilutionManager.getTableInfoNAbSpecimen(), filter, null).forEach(NabSpecimen.class, (NabSpecimen nabSpecimen) ->
+                wellGroupNameToNabSpecimen.put(nabSpecimen.getWellgroupName(), new Pair<>(nabSpecimen.getRowId(), nabSpecimen.getSpecimenLsid())));
 
         _populateWellData(protocol, run, user, getCutoffFormats(protocol, run), wellGroupNameToNabSpecimen, false, false, dilutionData, wellData);
     }

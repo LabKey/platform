@@ -21,50 +21,56 @@
 <%@ page import="org.labkey.api.pipeline.PipelineJobData" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.pipeline.PipelineController" %>
+<%@ page import="org.labkey.pipeline.PipelineController.CancelJobAction" %>
+<%@ page import="org.labkey.pipeline.PipelineController.StatusModel" %>
+<%@ page import="org.labkey.pipeline.PipelineController.StatusParams" %>
 <%@ page import="org.labkey.pipeline.status.StatusController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-private Object outputJob(String status, PipelineJob job,
-                         boolean isAllContainers, boolean canCancel)
+private HtmlString outputJob(String status, PipelineJob job,
+                             boolean isAllContainers, boolean canCancel)
 {
-    StringBuffer ret = new StringBuffer("<tr><td>");
+    StringBuilder ret = new StringBuilder("<tr><td>");
     URLHelper href = null;
     if (!status.equals("pending"))
         href = job.getStatusHref();
 
     if (href == null)
     {
-        ret.append(status);
+        ret.append(h(status));
     }
     else
     {
         ret.append("<a href=\"").append(h(href)).append("\">")
-                .append(status).append("</a>");
+            .append(h(status)).append("</a>");
     }
     ret.append("</td><td>");
-    ret.append(job.getUser().getName()).append("</td>\n<td>");
-    ret.append(job.getDescription()).append("</td>");
+    ret.append(h(job.getUser().getName())).append("</td>\n<td>");
+    ret.append(h(job.getDescription())).append("</td>");
     if (isAllContainers)
-        ret.append("<td>").append(job.getContainer().getPath()).append("</td>");
+        ret.append("<td>").append(h(job.getContainer().getPath())).append("</td>");
 
     if (status.equals("pending") && canCancel)
     {
         ret.append("<td>");
-        ret.append(button("cancel").href(buildURL(PipelineController.CancelJobAction.class, "jobId=" + job.getJobGUID() + (isAllContainers ? "&allcontainers=1" : ""))));
+        ActionURL cancelUrl = urlFor(CancelJobAction.class).addParameter("jobId", job.getJobGUID());
+        if (isAllContainers)
+            cancelUrl.addParameter("allcontainers", "1");
+        ret.append(button("cancel").href(cancelUrl));
         ret.append("</td>");
     }
-    return ret;
+    return HtmlString.unsafe(ret.toString());
 }
 
 %>
 <%
-    JspView<PipelineController.StatusModel> me =
-            (JspView<PipelineController.StatusModel>) HttpView.currentView();
-    PipelineController.StatusModel bean = me.getModelBean();
+    JspView<StatusModel> me = (JspView<StatusModel>) HttpView.currentView();
+    StatusModel bean = me.getModelBean();
     PipelineJobData jobData = bean.getJobData();
 
     Container c = getContainer();
@@ -72,7 +78,7 @@ private Object outputJob(String status, PipelineJob job,
 
     boolean canCancel = c.hasPermission(user, DeletePermission.class);
 
-    boolean isAllContainers = request.getParameter(PipelineController.StatusParams.allcontainers.toString()) != null;
+    boolean isAllContainers = request.getParameter(StatusParams.allcontainers.toString()) != null;
 
     if (jobData.getRunningJobs().size() == 0 && jobData.getPendingJobs().size() == 0)
     { %>

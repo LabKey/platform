@@ -16,17 +16,16 @@
 
 package org.labkey.api.assay;
 
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.SimpleDisplayColumn;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
 
-import java.io.Writer;
 import java.io.IOException;
+import java.io.Writer;
 
 /**
  * User: jeckels

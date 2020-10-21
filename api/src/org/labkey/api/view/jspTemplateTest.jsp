@@ -15,4 +15,5 @@
  * limitations under the License.
  */
 %>
+<%@ page extends="org.labkey.api.jsp.JspContext" %>
 This is a JSP used by the JspTemplate.TestCase

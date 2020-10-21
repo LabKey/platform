@@ -17,13 +17,14 @@
 package org.labkey.study.pipeline;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -37,7 +38,6 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.api.qc.QCState;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 

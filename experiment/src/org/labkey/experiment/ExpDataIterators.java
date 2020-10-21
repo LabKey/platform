@@ -15,7 +15,6 @@
  */
 package org.labkey.experiment;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -45,8 +44,10 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRunItem;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -63,7 +64,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExpDataClassDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
-import org.labkey.experiment.api.SampleSetUpdateServiceDI;
+import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.api.VocabularyDomainKind;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.labkey.experiment.samples.UploadSamplesHelper;
@@ -401,7 +402,7 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _pre.getDataIterator(context);
-            if (null != context.getConfigParameters() && context.getConfigParameters().containsKey(SampleSetUpdateServiceDI.Options.SkipDerivation))
+            if (null != context.getConfigParameters() && context.getConfigParameters().containsKey(SampleTypeUpdateServiceDI.Options.SkipDerivation))
             {
                 return pre;
             }
@@ -416,6 +417,9 @@ public class ExpDataIterators
         final Map<Integer, String> _parentCols;
         // Map from Data LSID to Set of (parentColName, parentName)
         final Map<String, Set<Pair<String, String>>> _parentNames;
+        /** Cache sample type lookups because even though we do caching in SampleTypeService, it's still a lot of overhead to check permissions for the user */
+        final Map<String, ExpSampleType> _sampleTypes = new HashMap<>();
+        final Map<String, ExpDataClass> _dataClasses = new HashMap<>();
 
         final Container _container;
         final User _user;
@@ -515,7 +519,7 @@ public class ExpDataIterators
             {
                 try
                 {
-                    RemapCache cache = new RemapCache();
+                    RemapCache cache = new RemapCache(true);
                     Map<Integer, ExpMaterial> materialCache = new HashMap<>();
                     Map<Integer, ExpData> dataCache = new HashMap<>();
 
@@ -525,7 +529,25 @@ public class ExpDataIterators
                         String lsid = entry.getKey();
                         Set<Pair<String, String>> parentNames = entry.getValue();
 
-                        ExpRunItem runItem = _isSample ? ExperimentService.get().getExpMaterial(lsid) : ExperimentService.get().getExpData(lsid);
+                        ExpRunItem runItem;
+                        if (_isSample)
+                        {
+                            ExpMaterial m = ExperimentService.get().getExpMaterial(lsid);
+                            if (m != null)
+                            {
+                                materialCache.put(m.getRowId(), m);
+                            }
+                            runItem = m;
+                        }
+                        else
+                        {
+                            ExpData d = ExperimentService.get().getExpData(lsid);
+                            if (d != null)
+                            {
+                                dataCache.put(d.getRowId(), d);
+                            }
+                            runItem = d;
+                        }
                         if (runItem == null) // nothing to do if the item does not exist
                             continue;
 
@@ -533,13 +555,13 @@ public class ExpDataIterators
                         if (_isSample && _context.getInsertOption().mergeRows)
                         {
                             pair = UploadSamplesHelper.resolveInputsAndOutputs(
-                                    _user, _container, runItem, parentNames, null, cache, materialCache, dataCache);
+                                    _user, _container, runItem, parentNames, null, cache, materialCache, dataCache, _sampleTypes, _dataClasses);
 
                         }
                         else
                         {
                             pair = UploadSamplesHelper.resolveInputsAndOutputs(
-                                    _user, _container, null, parentNames, null, cache, materialCache, dataCache);
+                                    _user, _container, null, parentNames, null, cache, materialCache, dataCache, _sampleTypes, _dataClasses);
 
                         }
 
@@ -673,11 +695,11 @@ public class ExpDataIterators
                 {
                     final ArrayList<String> lsids = new ArrayList<>(_lsids);
                     final Runnable indexTask = _indexFunction.apply(lsids);
-                    Runnable commitTask = () -> ss.defaultTask().addRunnable(indexTask, SearchService.PRIORITY.bulk);
-                    if (null != DbScope.getLabKeyScope() && null != DbScope.getLabKeyScope().getCurrentTransaction())
-                        DbScope.getLabKeyScope().getCurrentTransaction().addCommitTask(commitTask, DbScope.CommitTaskOption.POSTCOMMIT);
+
+                    if (null != DbScope.getLabKeyScope())
+                        DbScope.getLabKeyScope().addCommitTask(indexTask, DbScope.CommitTaskOption.POSTCOMMIT);
                     else
-                        commitTask.run();
+                        indexTask.run();
                 }
             }
             return hasNext;

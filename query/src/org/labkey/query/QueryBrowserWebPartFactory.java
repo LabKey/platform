@@ -20,7 +20,6 @@ import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartConfigurationException;
 import org.labkey.api.view.WebPartView;
 
 public class QueryBrowserWebPartFactory extends BaseWebPartFactory

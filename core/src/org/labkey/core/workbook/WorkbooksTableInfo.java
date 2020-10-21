@@ -30,6 +30,7 @@ import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -315,19 +316,19 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
     }
 
     @Override
-    public Parameter.ParameterMap insertStatement(Connection conn, User user)
+    public ParameterMapStatement insertStatement(Connection conn, User user)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns)
+    public ParameterMapStatement updateStatement(Connection conn, User user, Set<String> columns)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Parameter.ParameterMap deleteStatement(Connection conn)
+    public ParameterMapStatement deleteStatement(Connection conn)
     {
         throw new UnsupportedOperationException();
     }

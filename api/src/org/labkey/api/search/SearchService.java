@@ -16,7 +16,8 @@
 package org.labkey.api.search;
 
 import org.apache.commons.collections4.ListUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -49,6 +50,7 @@ import java.io.Reader;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -66,8 +68,8 @@ import java.util.function.Function;
 public interface SearchService
 {
     // create logger for package which can be set via logger-manage.view
-    Logger _packageLogger = Logger.getLogger(SearchService.class.getPackage().getName());
-    Logger _log = Logger.getLogger(SearchService.class);
+    Logger _packageLogger = LogManager.getLogger(SearchService.class.getPackage().getName());
+    Logger _log = LogManager.getLogger(SearchService.class);
 
     long DEFAULT_FILE_SIZE_LIMIT = 100L; // 100 MB
 
@@ -185,6 +187,9 @@ public interface SearchService
         void addResource(@NotNull String identifier, SearchService.PRIORITY pri);
 
         void addResource(@NotNull WebdavResource r, SearchService.PRIORITY pri);
+
+        /* This adds do nothing item to the queue, this is only useful for tracking progress of the queue. see TaskListener. */
+        void addNoop(SearchService.PRIORITY pri);
 
         default <T> void addResourceList(List<T> list, int batchSize, Function<T,WebdavResource> mapper)
         {
@@ -356,6 +361,7 @@ public interface SearchService
     IndexTask createTask(String description, TaskListener l);
 
     void deleteResource(String identifier);
+    void deleteResources(Collection<String> ids);
 
     // Delete all resources whose documentIds starts with the given prefix
     void deleteResourcesForPrefix(String prefix);

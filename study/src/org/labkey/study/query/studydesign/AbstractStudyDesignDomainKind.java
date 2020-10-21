@@ -15,8 +15,6 @@
  */
 package org.labkey.study.query.studydesign;
 
-import org.json.JSONObject;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;

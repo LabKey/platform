@@ -31,9 +31,10 @@ import java.util.stream.Collectors;
 public enum JavaVersion
 {
     JAVA_UNSUPPORTED(-1, true, false),
-    JAVA_13(13, false, true),
+    JAVA_13(13, true, true),
     JAVA_14(14, false, true),
-    JAVA_15(15, false, false),
+    JAVA_15(15, false, true),
+    JAVA_16(16, false, false),
     JAVA_FUTURE(Integer.MAX_VALUE, false, false);
 
     private final int _version;
@@ -68,9 +69,9 @@ public enum JavaVersion
 
     public static JavaVersion get()
     {
-        // Determine current Java specification version, normalized to an int (e.g., 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16...). Commons lang
-        // methods like SystemUtils.isJavaVersionAtLeast() aren't an option because that library isn't released often enough
-        // to keep up with the Java rapid release cadence.
+        // Determine current Java specification version, normalized to an int (e.g., 10, 11, 12, 13, 14, 15, 16...).
+        // Commons lang methods like SystemUtils.isJavaVersionAtLeast() aren't an option because that library isn't
+        // released often enough to keep up with the Java rapid release cadence.
         String[] versionArray = SystemUtils.JAVA_SPECIFICATION_VERSION.split("\\.");
 
         int version = Integer.parseInt("1".equals(versionArray[0]) ? versionArray[1] : versionArray[0]);
@@ -104,7 +105,7 @@ public enum JavaVersion
 
     public static String getRecommendedJavaVersion()
     {
-        return "AdoptOpenJDK 14 with HotSpot JVM";
+        return "AdoptOpenJDK 15 64-bit (x64) with HotSpot JVM";
     }
 
     public static class TestCase extends Assert
@@ -116,9 +117,9 @@ public enum JavaVersion
             test(13, JAVA_13);
             test(14, JAVA_14);
             test(15, JAVA_15);
+            test(16, JAVA_16);
 
             // Future
-            test(16, JAVA_FUTURE);
             test(17, JAVA_FUTURE);
             test(18, JAVA_FUTURE);
             test(19, JAVA_FUTURE);

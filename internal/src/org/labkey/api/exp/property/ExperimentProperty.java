@@ -25,7 +25,7 @@ public class ExperimentProperty
     static public SystemProperty COMMENT = new SystemProperty(EXPERIMENT_PROPERTY_URIBASE + "Comment", PropertyType.STRING);
     static public SystemProperty LOGTEXT = new SystemProperty(EXPERIMENT_PROPERTY_URIBASE + "LogText", PropertyType.STRING);
     static public SystemProperty PROTOCOLIMPLEMENTATION = new SystemProperty(EXPERIMENT_PROPERTY_URIBASE + "ProtocolImplementation", PropertyType.STRING);
-    static public SystemProperty SampleSetLSID = new SystemProperty(EXPERIMENT_PROPERTY_URIBASE + "SampleSetLSID", PropertyType.STRING);
+    static public SystemProperty SampleTypeLSID = new SystemProperty(EXPERIMENT_PROPERTY_URIBASE + "SampleSetLSID", PropertyType.STRING);
     static public void register()
     {
         // do nothing

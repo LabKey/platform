@@ -18,7 +18,8 @@ package org.labkey.api.exp;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -96,7 +97,7 @@ import static org.labkey.api.search.SearchService.PROPERTY;
  */
 public class OntologyManager
 {
-    private static final Logger _log = Logger.getLogger(OntologyManager.class);
+    private static final Logger _log = LogManager.getLogger(OntologyManager.class);
     private static final Cache<String, Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 10000, "Property maps");
     private static final Cache<String, Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "ObjectIds");
     private static final Cache<Pair<String, GUID>, PropertyDescriptor> propDescCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 40000, CacheManager.UNLIMITED, "Property descriptors"), new CacheLoader<>()
@@ -457,7 +458,7 @@ public class OntologyManager
         ValidatorContext validatorCache = new ValidatorContext(c, user);
 
         Connection conn = null;
-        Parameter.ParameterMap parameterMap = null;
+        ParameterMapStatement parameterMap = null;
 
         Map<String, Object> currentRow = null;
 
@@ -705,7 +706,7 @@ public class OntologyManager
          * <p>
          * TODO maybe this can be handled declaratively? see UpdateableTableInfo
          */
-        void bindAdditionalParameters(Map<String, Object> map, Parameter.ParameterMap target) throws ValidationException;
+        void bindAdditionalParameters(Map<String, Object> map, ParameterMapStatement target) throws ValidationException;
     }
 
 
@@ -1574,22 +1575,19 @@ public class OntologyManager
         TableInfo t = getTinfoPropertyDescriptor();
         SQLFragment sql = new SQLFragment();
         sql.append("INSERT INTO exp.propertydescriptor (" +
-                "propertyuri, ontologyuri, name, storagecolumnname, description, rangeuri, concepturi, label, searchterms, semantictype, " +
+                "propertyuri, name, storagecolumnname, description, rangeuri, concepturi, label, " +
                 "format, container, project, lookupcontainer, lookupschema, lookupquery, defaultvaluetype, hidden, " +
                 "mvenabled, importaliases, url, shownininsertview, showninupdateview, shownindetailsview, dimension, " +
                 "measure, scale, recommendedvariable, defaultscale, createdby, created, modifiedby, modified, facetingbehaviortype, " +
-                "phi, redactedText, excludefromshifting, mvindicatorstoragecolumnname)\n");
+                "phi, redactedText, excludefromshifting, mvindicatorstoragecolumnname, principalconceptcode)\n");
         sql.append("SELECT " +
                 "? as propertyuri, " +
-                "? as ontolotyuri, " +
                 "? as name, " +
                 "? as storagecolumnname, " +
                 "? as description, " +
                 "? as rangeuri, " +
                 "? as concepturi, " +
                 "? as label, " +
-                "? as searchterms, " +
-                "? as semantictype, " +
                 "? as format, " +
                 "? as container, " +
                 "? as project, " +
@@ -1617,19 +1615,17 @@ public class OntologyManager
                 "? as phi, " +
                 "? as redactedText, " +
                 "? as excludefromshifting, " +
-                "? as mvindicatorstoragecolumnname\n");
+                "? as mvindicatorstoragecolumnname, " +
+                "? as principalconceptcode\n");
         sql.append("WHERE NOT EXISTS (SELECT propertyid FROM exp.propertydescriptor WHERE propertyuri=? AND container=?);\n");
 
         sql.add(pd.getPropertyURI());
-        sql.add(pd.getOntologyURI());
         sql.add(pd.getName());
         sql.add(pd.getStorageColumnName());
         sql.add(pd.getDescription());
         sql.add(pd.getRangeURI());
         sql.add(pd.getConceptURI());
         sql.add(pd.getLabel());
-        sql.add(pd.getSearchTerms());
-        sql.add(pd.getSemanticType());
         sql.add(pd.getFormat());
         sql.add(pd.getContainer());
         sql.add(pd.getProject());
@@ -1658,6 +1654,7 @@ public class OntologyManager
         sql.add(pd.getRedactedText());
         sql.add(pd.isExcludeFromShifting());
         sql.add(pd.getMvIndicatorStorageColumnName());
+        sql.add(pd.getPrincipalConceptCode());
         // WHERE
         sql.add(pd.getPropertyURI());
         sql.add(pd.getContainer());
@@ -1681,35 +1678,26 @@ public class OntologyManager
         // check the pd values that can't change
         if (!pd.getRangeURI().equals(pdIn.getRangeURI()))
             colDiffs.add("RangeURI");
-        if (!pd.getPropertyType().equals(pdIn.getPropertyType()))
+        if (!Objects.equals(pd.getPropertyType(), pdIn.getPropertyType()))
             colDiffs.add("PropertyType");
 
-        if (pdIn.getPropertyId() != 0 && !(pd.getPropertyId() == pdIn.getPropertyId()))
+        if (pdIn.getPropertyId() != 0 && pd.getPropertyId() != pdIn.getPropertyId())
             colDiffs.add("PropertyId");
 
-        if (Objects.equals(pdIn.getName(), pd.getName()))
+        if (!Objects.equals(pdIn.getName(), pd.getName()))
             colDiffs.add("Name");
 
-        if (Objects.equals(pdIn.getConceptURI(), pd.getConceptURI()))
+        if (!Objects.equals(pdIn.getConceptURI(), pd.getConceptURI()))
             colDiffs.add("ConceptURI");
 
-        if (Objects.equals(pdIn.getDescription(), pd.getDescription()))
+        if (!Objects.equals(pdIn.getDescription(), pd.getDescription()))
             colDiffs.add("Description");
 
-        if (Objects.equals(pdIn.getFormat(), pd.getFormat()))
+        if (!Objects.equals(pdIn.getFormat(), pd.getFormat()))
             colDiffs.add("Format");
 
-        if (Objects.equals(pdIn.getLabel(), pd.getLabel()))
+        if (!Objects.equals(pdIn.getLabel(), pd.getLabel()))
             colDiffs.add("Label");
-
-        if (Objects.equals(pdIn.getOntologyURI(), pd.getOntologyURI()))
-            colDiffs.add("OntologyURI");
-
-        if (Objects.equals(pdIn.getSearchTerms(), pd.getSearchTerms()))
-            colDiffs.add("SearchTerms");
-
-        if (Objects.equals(pdIn.getSemanticType(), pd.getSemanticType()))
-            colDiffs.add("SemanticType");
 
         if (pdIn.isHidden() != pd.isHidden())
             colDiffs.add("IsHidden");
@@ -1717,14 +1705,17 @@ public class OntologyManager
         if (pdIn.isMvEnabled() != pd.isMvEnabled())
             colDiffs.add("IsMvEnabled");
 
-        if (Objects.equals(pdIn.getLookupContainer(), pd.getLookupContainer()))
+        if (!Objects.equals(pdIn.getLookupContainer(), pd.getLookupContainer()))
             colDiffs.add("LookupContainer");
 
-        if (Objects.equals(pdIn.getLookupSchema(), pd.getLookupSchema()))
+        if (!Objects.equals(pdIn.getLookupSchema(), pd.getLookupSchema()))
             colDiffs.add("LookupSchema");
 
-        if (Objects.equals(pdIn.getLookupQuery(), pd.getLookupQuery()))
+        if (!Objects.equals(pdIn.getLookupQuery(), pd.getLookupQuery()))
             colDiffs.add("LookupQuery");
+
+        if (!Objects.equals(pdIn.getPrincipalConceptCode(), pd.getPrincipalConceptCode()))
+            colDiffs.add("PrincipalConceptCode");
 
         return colDiffs;
     }
@@ -2308,16 +2299,16 @@ public class OntologyManager
     }
 
 
-    static final String parameters = "propertyuri,ontologyuri,name,description,rangeuri,concepturi,label,searchterms," +
-            "semantictype,format,container,project,lookupcontainer,lookupschema,lookupquery,defaultvaluetype,hidden," +
-            "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale,recommendedvariable";
+    static final String parameters = "propertyuri,name,description,rangeuri,concepturi,label," +
+            "format,container,project,lookupcontainer,lookupschema,lookupquery,defaultvaluetype,hidden," +
+            "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale,principalconceptcode,recommendedvariable";
     static final String[] parametersArray = parameters.split(",");
     static final String insertSql;
     static final String updateSql;
 
     static
     {
-        insertSql = "INSERT INTO exp.propertydescriptor (" + parameters + ")\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        insertSql = "INSERT INTO exp.propertydescriptor (" + parameters + ")\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         StringBuilder sb = new StringBuilder("UPDATE exp.propertydescriptor SET");
         String comma = " ";
         for (String p : parametersArray)
@@ -2557,12 +2548,12 @@ public class OntologyManager
         {
             assertNotNull(getExpSchema());
             assertNotNull(getTinfoPropertyDescriptor());
-            assertNotNull(ExperimentService.get().getTinfoMaterialSource());
+            assertNotNull(ExperimentService.get().getTinfoSampleType());
 
-            assertEquals(getTinfoPropertyDescriptor().getColumns("PropertyId,PropertyURI,OntologyURI,RangeURI,Name,Description").size(), 6);
+            assertEquals(getTinfoPropertyDescriptor().getColumns("PropertyId,PropertyURI,RangeURI,Name,Description,PrincipalConceptCode").size(), 6);
             assertEquals(getTinfoObject().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId").size(), 4);
             assertEquals(getTinfoObjectPropertiesView().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId,Name,PropertyURI,RangeURI,TypeTag,StringValue,DateTimeValue,FloatValue").size(), 11);
-            assertEquals(ExperimentService.get().getTinfoMaterialSource().getColumns("RowId,Name,LSID,MaterialLSIDPrefix,Description,Created,CreatedBy,Modified,ModifiedBy,Container").size(), 10);
+            assertEquals(ExperimentService.get().getTinfoSampleType().getColumns("RowId,Name,LSID,MaterialLSIDPrefix,Description,Created,CreatedBy,Modified,ModifiedBy,Container").size(), 10);
         }
 
 
@@ -2592,6 +2583,9 @@ public class OntologyManager
             String intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
             insertProperties(c, parentObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 5));
 
+            String longProp = new Lsid("Junit", "OntologyManager", "longProp").toString();
+            insertProperties(c, parentObjectLsid, new ObjectProperty(childObjectLsid, c, longProp, 6L));
+
             Calendar cal = Calendar.getInstance();
             cal.set(Calendar.MILLISECOND, 0);
             String dateProp = new Lsid("Junit", "OntologyManager", "dateProp").toString();
@@ -2599,9 +2593,10 @@ public class OntologyManager
 
             Map m = getProperties(c, oChild.getObjectURI());
             assertNotNull(m);
-            assertEquals(m.size(), 3);
+            assertEquals(m.size(), 4);
             assertEquals(m.get(strProp), "The String");
             assertEquals(m.get(intProp), 5);
+            assertEquals(m.get(longProp), 6L);
             assertEquals(m.get(dateProp), cal.getTime());
 
 
@@ -2937,6 +2932,7 @@ public class OntologyManager
             assertEquals(0L, getObjectCount(c));
             String ownerObjectLsid = new Lsid("Junit", "OntologyManager", "parent").toString();
             String childObjectLsid = new Lsid("Junit", "OntologyManager", "child").toString();
+            String child2ObjectLsid = new Lsid("Junit", "OntologyManager", "child2").toString();
 
             ensureObject(c, childObjectLsid, ownerObjectLsid);
             OntologyObject oParent = getOntologyObject(c, ownerObjectLsid);
@@ -2947,6 +2943,7 @@ public class OntologyManager
             String domURIa = new Lsid("Junit", "DD", "Domain1").toString();
             String strPropURI = new Lsid("Junit", "PD", "Domain1.stringProp").toString();
             String intPropURI = new Lsid("Junit", "PD", "Domain1.intProp").toString();
+            String longPropURI = new Lsid("Junit", "PD", "Domain1.longProp").toString();
 
             DomainDescriptor dd = ensureDomainDescriptor(domURIa, "Domain1", c);
             assertNotNull(dd);
@@ -2961,23 +2958,71 @@ public class OntologyManager
             assertNotNull(pdStr);
 
             PropertyDescriptor pdInt = ensurePropertyDescriptor(intPropURI, PropertyType.INTEGER, "Domain1.intProp", c);
+            PropertyDescriptor pdLong = ensurePropertyDescriptor(longPropURI, PropertyType.BIGINT, "Domain1.longProp", c);
 
             ensurePropertyDomain(pdStr, dd);
             ensurePropertyDomain(pdInt, dd);
+            ensurePropertyDomain(pdLong, dd);
 
             List<PropertyDescriptor> pds = getPropertiesForType(domURIa, c);
-            assertEquals(2, pds.size());
+            assertEquals(3, pds.size());
             Map<String, PropertyDescriptor> mPds = new HashMap<>();
             for (PropertyDescriptor pd1 : pds)
                 mPds.put(pd1.getPropertyURI(), pd1);
 
             assertTrue(mPds.containsKey(strPropURI));
             assertTrue(mPds.containsKey(intPropURI));
+            assertTrue(mPds.containsKey(longPropURI));
 
             ObjectProperty strProp = new ObjectProperty(childObjectLsid, c, strPropURI, "String value");
             ObjectProperty intProp = new ObjectProperty(childObjectLsid, c, intPropURI, 42);
+            ObjectProperty longProp = new ObjectProperty(childObjectLsid, c, longPropURI, 52L);
             insertProperties(c, ownerObjectLsid, strProp);
             insertProperties(c, ownerObjectLsid, intProp);
+            insertProperties(c, ownerObjectLsid, longProp);
+
+            Map m = getProperties(c, oChild.getObjectURI());
+            assertNotNull(m);
+            assertEquals(m.size(), 3);
+            assertEquals(m.get(strPropURI), "String value");
+            assertEquals(m.get(intPropURI), 42);
+            assertEquals(m.get(longPropURI), 52L);
+
+
+            // test insertTabDelimited
+            List<Map<String, Object>> rows = List.of(
+                    Map.of("lsid", child2ObjectLsid,
+                            strPropURI, "Second value",
+                            intPropURI, 62,
+                            longPropURI, 72L)
+            );
+            ImportHelper helper = new ImportHelper()
+            {
+                @Override
+                public String beforeImportObject(Map<String, Object> map) throws SQLException
+                {
+                    return (String)map.get("lsid");
+                }
+
+                @Override
+                public void afterBatchInsert(int currentRow) throws SQLException { }
+
+                @Override
+                public void updateStatistics(int currentRow) throws SQLException { }
+            };
+            try (Transaction tx = getExpSchema().getScope().ensureTransaction())
+            {
+                insertTabDelimited(c, TestContext.get().getUser(), oParent.getObjectId(), helper, pds, rows, false);
+                tx.commit();
+            }
+
+            m = getProperties(c, child2ObjectLsid);
+            assertNotNull(m);
+            assertEquals(m.size(), 3);
+            assertEquals(m.get(strPropURI), "Second value");
+            assertEquals(m.get(intPropURI), 62);
+            assertEquals(m.get(longPropURI), 72L);
+
 
             deleteType(domURIa, c);
             assertEquals(0L, getObjectCount(c));
@@ -3068,6 +3113,7 @@ public class OntologyManager
                 case DATE_TIME:
                     this.dateTimeValue = (java.util.Date) p.first;
                     break;
+                case BIGINT:
                 case INTEGER:
                 case DOUBLE:
                 case DECIMAL:
@@ -3318,9 +3364,7 @@ public class OntologyManager
         validateValue(pd.getLabel(), "Label", null);
         validateValue(pd.getImportAliases(), "ImportAliases", null);
         validateValue(pd.getURL() != null ? pd.getURL().getSource() : null, "URL", null);
-        validateValue(pd.getOntologyURI(), "OntologyURI", null);
         validateValue(pd.getConceptURI(), "ConceptURI", null);
-        validateValue(pd.getSemanticType(), "SemanticType", null);
         validateValue(pd.getRangeURI(), "RangeURI", null);
 
         // Issue 15484: adding a column ending in 'mvIndicator' is problematic if another column w/ the same

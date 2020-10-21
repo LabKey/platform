@@ -15,7 +15,8 @@
  */
 package org.labkey.pipeline.analysis;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -43,7 +44,7 @@ import java.util.List;
  */
 public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySettings, ConvertTaskFactory>
 {
-    private static final Logger LOG = Logger.getLogger(ConvertTaskFactory.class);
+    private static final Logger LOG = LogManager.getLogger(ConvertTaskFactory.class);
 
     private String _statusName = "CONVERSION";
     private TaskId[] _commands;

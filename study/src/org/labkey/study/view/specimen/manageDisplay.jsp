@@ -15,23 +15,20 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageDisplaySettingsAction" %>
 <%@ page import="org.labkey.study.specimen.settings.DisplaySettings" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DisplaySettings> me = (JspView<DisplaySettings>) HttpView.currentView();
     DisplaySettings bean = me.getModelBean();
-    Container container = getContainer();
 %>
 
 <labkey:errors/>
-<labkey:form action="<%=h(buildURL(SpecimenController.ManageDisplaySettingsAction.class))%>" method="POST">
+<labkey:form action="<%=urlFor(ManageDisplaySettingsAction.class)%>" method="POST">
     <table class="labkey-manage-display" width=600>
         <tr>
             <td colspan="2" class="labkey-announcement-title" align="left">
@@ -103,7 +100,7 @@
             <td colspan="2">
                 <br/>
                 <%= button("Save").submit(true) %>&nbsp;
-                <%= button("Cancel").href(new ActionURL(StudyController.ManageStudyAction.class, container)) %>
+                <%= button("Cancel").href(urlFor(ManageStudyAction.class)) %>
             </td>
         </tr>
     </table>

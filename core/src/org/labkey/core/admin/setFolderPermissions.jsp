@@ -35,8 +35,8 @@
 <div id="folderPermissionsDiv"></div>
 <script type="text/javascript">
     Ext4.onReady(function() {
-        var isProject = <%=h(c.isProject())%>;
-        var hasNext = isProject || <%= h(!c.getFolderType().getExtraSetupSteps(c).isEmpty()) %>;
+        var isProject = <%=c.isProject()%>;
+        var hasNext = isProject || <%= !c.getFolderType().getExtraSetupSteps(c).isEmpty() %>;
         var containerNoun = isProject ? 'Project' : 'Folder';
 
         var buttons = [];

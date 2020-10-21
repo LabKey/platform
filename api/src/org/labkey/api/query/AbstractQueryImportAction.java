@@ -25,7 +25,9 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExtFormResponseWriter;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.FileAttachmentFile;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -45,7 +47,6 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.PageFlowUtil;
@@ -71,6 +72,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.labkey.api.query.AbstractQueryUpdateService.addTransactionAuditEvent;
+import static org.labkey.api.query.AbstractQueryUpdateService.createTransactionAuditEvent;
 
 
 /**
@@ -176,12 +180,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     public void setAcceptZeroResults(boolean acceptZeroResults)
     {
         _importViewBean.acceptZeroResults = acceptZeroResults;
-    }
-
-    @Deprecated
-    public ModelAndView getDefaultImportView(FORM form, JSONArray extraFields, BindException errors)
-    {
-        return getDefaultImportView(form, errors);
     }
 
     public ModelAndView getDefaultImportView(FORM form, BindException errors)
@@ -413,29 +411,22 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             //di = wrap(di, ve);
             //importData(di, ve);
 
-            //apply known columns so loader can do better type conversion
-            if (loader != null && _target != null)
-                loader.setKnownColumns(_target.getColumns());
+            configureLoader(loader);
 
-            Map<String, String> renamedColumns = getRenamedColumns();
-            if (loader != null && renamedColumns != null)
-            {
-                ColumnDescriptor[]  columnDescriptors = loader.getColumns();
-                for (ColumnDescriptor columnDescriptor : columnDescriptors)
-                {
-                    if (renamedColumns.containsKey(columnDescriptor.getColumnName()))
-                    {
-                        columnDescriptor.name = renamedColumns.get(columnDescriptor.getColumnName());
-                    }
-                }
-            }
-
-            int rowCount = importData(loader, file, originalName, ve, getAuditBehaviorType());
+            TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
+            // Check first if the audit behavior has been defined for the table either in code or through XML.
+            // If not defined there, check for the audit behavior defined in the action form (getAuditBehaviorType()).
+            AuditBehaviorType behaviorType = (_target != null) ? _target.getAuditBehavior(getAuditBehaviorType()) : getAuditBehaviorType();
+            if (behaviorType != null && behaviorType != AuditBehaviorType.NONE)
+                auditEvent = createTransactionAuditEvent(getContainer(), QueryService.AuditAction.INSERT);
+            int rowCount = importData(loader, file, originalName, ve, getAuditBehaviorType(), auditEvent);
 
             if (ve.hasErrors())
                 throw ve;
 
             JSONObject response = createSuccessResponse(rowCount);
+            if (auditEvent != null)
+                response.put("transactionAuditId", auditEvent.getRowId());
             return new ApiSimpleResponse(response);
         }
         catch (IOException e)
@@ -449,6 +440,26 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 file.closeInputStream();
             if (null != dataFile && !Boolean.parseBoolean(saveToPipeline))
                 dataFile.delete();
+        }
+    }
+
+    protected void configureLoader(DataLoader loader) throws IOException
+    {
+        //apply known columns so loader can do better type conversion
+        if (loader != null && _target != null)
+            loader.setKnownColumns(_target.getColumns());
+
+        Map<String, String> renamedColumns = getRenamedColumns();
+        if (loader != null && renamedColumns != null)
+        {
+            ColumnDescriptor[]  columnDescriptors = loader.getColumns(renamedColumns);
+            for (ColumnDescriptor columnDescriptor : columnDescriptors)
+            {
+                if (renamedColumns.containsKey(columnDescriptor.getColumnName()))
+                {
+                    columnDescriptor.name = renamedColumns.get(columnDescriptor.getColumnName());
+                }
+            }
         }
     }
 
@@ -523,7 +534,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     }
 
     /* TODO change prototype to take DataIteratorBuilder, and DataIteratorContext */
-    protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType) throws IOException
+    protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
     {
         if (_target != null)
         {
@@ -544,9 +555,14 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
             try (DbScope.Transaction transaction = _target.getSchema().getScope().ensureTransaction())
             {
+                if (auditEvent != null)
+                    addTransactionAuditEvent(transaction,  getUser(), auditEvent);
                 int count = _updateService.loadRows(getUser(), getContainer(), dl, context, new HashMap<>());
                 if (errors.hasErrors())
                     return 0;
+                if (auditEvent != null)
+                    auditEvent.setRowCount(count);
+
                 transaction.commit();
                 return count;
             }

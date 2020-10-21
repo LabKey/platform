@@ -17,10 +17,12 @@
 %>
 <%@ page import="org.labkey.api.study.TimepointType"%>
 <%@ page import="org.labkey.api.study.Visit"%>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.CreateVisitAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
 <%@ page import="org.labkey.study.controllers.VisitForm" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -37,7 +39,7 @@
 
     ActionURL returnURL = form.getReturnActionURL();
     if (null == returnURL)
-        returnURL = new ActionURL(StudyController.ManageVisitsAction.class, getContainer());
+        returnURL = urlFor(ManageVisitsAction.class);
 %>
 <labkey:errors/>
 <p style="width: 750px;">
@@ -60,7 +62,7 @@ is uploaded along with the data. This form allows you to define a range of seque
     }
 %>
 </p>
-<labkey:form action="<%=h(buildURL(StudyController.CreateVisitAction.class))%>" method="POST">
+<labkey:form action="<%=urlFor(CreateVisitAction.class)%>" method="POST">
     <table class="lk-fields-table">
         <tr>
             <td class="labkey-form-label">Label&nbsp;<%=helpPopup("Label", "Descriptive label, e.g. 'Enrollment interview' or '2 Weeks'")%></td>
@@ -71,7 +73,7 @@ is uploaded along with the data. This form allows you to define a range of seque
         <tr>
             <td class="labkey-form-label"><%=h(isDateBased ? "Day Range" : "VisitId/Sequence Range")%></td>
             <td>
-                <input type="text" size="26" name="sequenceNumMin" value="<%=v.getFormattedSequenceNumMin()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=v.getSequenceNumMin().equals(v.getSequenceNumMax()) ? "" : v.getFormattedSequenceNumMax()%>">
+                <input type="text" size="26" name="sequenceNumMin" value="<%=h(v.getFormattedSequenceNumMin())%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=v.getSequenceNumMin().equals(v.getSequenceNumMax()) ? HtmlString.EMPTY_STRING : h(v.getFormattedSequenceNumMax())%>">
             </td>
         </tr>
         <tr>
@@ -128,6 +130,6 @@ is uploaded along with the data. This form allows you to define a range of seque
         </tr>
     </table>
     <br/>
-    <input type="hidden" name="returnUrl" value="<%= returnURL %>">
+    <input type="hidden" name="returnUrl" value="<%=h(returnURL)%>">
     <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(returnURL) %>
 </labkey:form>

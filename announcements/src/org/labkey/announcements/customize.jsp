@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.announcements.AnnouncementsController" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.CustomizeAction" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.CustomizeBean" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.ModeratorReviewAction" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
@@ -31,7 +31,7 @@
     CustomizeBean bean = me.getModelBean();
     DiscussionService.Settings settings = bean.settings;
 
-%><labkey:form action="<%=h(buildURL(AnnouncementsController.CustomizeAction.class))%>" method="post">
+%><labkey:form action="<%=urlFor(CustomizeAction.class)%>" method="post">
 <%=generateReturnUrlFormField(bean.returnURL)%>
 <table class="lk-fields-table">
     <tr>
@@ -44,7 +44,7 @@
     <tr>
         <td class="labkey-form-label">Conversation name</td>
         <td>
-            Custom term used in this folder to refer to a conversation.  Examples: "Thread", "Discussion", "Announcement", "Consultation", etc.<br/>
+            Custom term used in this folder to refer to a conversation. Examples: "Thread", "Discussion", "Announcement", "Consultation", etc.<br/>
             <input type="text" size="30" value="<%=h(settings.getConversationName())%>" name="conversationName">
         </td>
     </tr>
@@ -135,7 +135,7 @@
     </tr>
     <tr>
         <td class="labkey-form-label">Include Assigned To</td>
-        <td><table><tr><td><input type="checkbox" name="assignedTo"<%=checked(settings.hasAssignedTo())%>><td class="labkey-form-label">Default Assigned To</td><td><%=text(bean.assignedToSelect)%></td></tr></table></td>
+        <td><table><tr><td><input type="checkbox" name="assignedTo"<%=checked(settings.hasAssignedTo())%>><td class="labkey-form-label">Default Assigned To</td><td><%=bean.assignedToSelect%></td></tr></table></td>
     </tr>
     <tr>
         <td class="labkey-form-label">Include Format Picker</td>

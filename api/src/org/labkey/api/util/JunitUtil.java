@@ -16,7 +16,9 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 import org.junit.Assume;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -35,10 +37,8 @@ import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
@@ -74,8 +74,7 @@ public class JunitUtil
         fact.setIgnoringComments(true);
         fact.setNamespaceAware(false);
         DocumentBuilder builder = fact.newDocumentBuilder();
-        Document doc = builder.parse(new InputSource(new StringReader(tidy)));
-        return doc;
+        return builder.parse(new InputSource(new StringReader(tidy)));
     }
 
     /**
@@ -149,7 +148,7 @@ public class JunitUtil
         };
 
         ExecutorService pool = Executors.newFixedThreadPool(threads);
-        Collection<Future> futures = new LinkedList<>();
+        Collection<Future<?>> futures = new LinkedList<>();
 
         for (int i = 0; i < threads; i++)
             futures.add(pool.submit(runnableWrapper));
@@ -157,7 +156,7 @@ public class JunitUtil
         pool.shutdown();
         pool.awaitTermination(timeoutSeconds, TimeUnit.SECONDS);
 
-        for (Future future : futures)
+        for (Future<?> future : futures)
         {
             try
             {
@@ -185,29 +184,29 @@ public class JunitUtil
     private static Map<String, File> _sampleDataDirectories = null;
 
     /**
-     * Retrieves sample data files from the specified module or, if no module is specified, from the top-level sampledata
+     * Retrieves sample data files from the specified module or, if no module is specified, the testAutomation data
      * directory. Similar to TestFileUtils.getSampleData() used in Selenium tests.
      *
-     * @param module Module that contains the sample data. If null, central sampledata directory will be searched.
+     * @param module Module that contains the sample data. If null, testAutomation repository will be searched.
      * @param relativePath e.g. "lists/ListDemo.lists.zip" or "OConnor_Test.folder.zip"
-     * @return File object to the specified file or directory, if it exists on this server. Otherwise, null.
+     * @return File object to the specified file or directory, if it exists on this server.
+     * @throws AssertionError in dev mode if file is not found.
+     * @throws org.junit.AssumptionViolatedException in production mode if file is not found.
      */
-    public static @Nullable File getSampleData(@Nullable Module module, String relativePath) throws IOException
+    public static @NotNull File getSampleData(@Nullable Module module, String relativePath) throws IOException
     {
         String projectRoot = AppProps.getInstance().getProjectRoot();
 
-        if (null == projectRoot)
-            return null;
-
-//            Some of the individual tests did this... and I'm not sure why
-//            if (projectRoot == null)
-//                projectRoot = System.getProperty("user.dir") + "/..";
+        if (AppProps.getInstance().isDevMode())
+            Assert.assertNotNull("Project root not found. Can't load sample data.", projectRoot);
+        else
+            Assume.assumeNotNull("Project root not found. Skipping test in production mode.", projectRoot);
 
         final File sampleDataDir;
 
         if (null == module)
         {
-            sampleDataDir = new File(projectRoot, "sampledata");
+            sampleDataDir = new File(projectRoot, "server/testAutomation/data");
         }
         else
         {
@@ -246,8 +245,29 @@ public class JunitUtil
 
         File file = new File(sampleDataDir, relativePath);
 
-        Assume.assumeTrue((null == sampleDataDir ? "Sample data directory is null." : "No sample data directory was found at '" + sampleDataDir.getAbsolutePath() + "'.") + " Skipping test.", null != sampleDataDir && sampleDataDir.exists());
+        String message = null;
+        if (null != module)
+        {
+            if (sampleDataDir == null || !sampleDataDir.exists())
+            {
+                message = "Sample data directory not found for [" + module.getName() + "] module.";
+            }
+        }
+        if (message == null && !file.exists())
+        {
+            message = "No sample data found at [" + file.getAbsolutePath() + "].";
+        }
 
-        return file.exists() ? file : null;
+        if (AppProps.getInstance().isDevMode())
+        {
+            //noinspection SimplifiableJUnitAssertion
+            Assert.assertTrue(message, message == null);
+        }
+        else
+        {
+            Assume.assumeTrue(message + " Skipping test in production mode.", message == null);
+        }
+
+        return file;
     }
 }

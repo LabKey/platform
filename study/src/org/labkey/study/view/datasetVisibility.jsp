@@ -17,11 +17,16 @@
 %>
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper"%>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.element.Select.SelectBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DatasetVisibilityAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DatasetVisibilityData" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DefineDatasetTypeAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageTypesAction" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.ArrayList" %>
@@ -39,20 +44,20 @@
     }
 %>
 <%
-    JspView<Map<Integer,StudyController.DatasetVisibilityData>> me = (JspView<Map<Integer,StudyController.DatasetVisibilityData>>) HttpView.currentView();
+    JspView<Map<Integer, DatasetVisibilityData>> me = (JspView<Map<Integer, DatasetVisibilityData>>) HttpView.currentView();
 
     Study study = getStudy();
     Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
 
     List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getUser());
-    Map<Integer,StudyController.DatasetVisibilityData> bean = me.getModelBean();
+    Map<Integer, DatasetVisibilityData> bean = me.getModelBean();
     ArrayList<Integer> emptyDatasets = new ArrayList<>();
 
     String storeId = "dataset-visibility-category-store";
     ObjectMapper jsonMapper = new ObjectMapper();
 
     List<Map<String, Object>> datasetInfo = new ArrayList<>();
-    for (Map.Entry<Integer, StudyController.DatasetVisibilityData> entry : bean.entrySet())
+    for (Map.Entry<Integer, DatasetVisibilityData> entry : bean.entrySet())
     {
         Map<String, Object> ds = new HashMap<>();
         Integer categoryId = entry.getValue().categoryId;
@@ -86,17 +91,17 @@
 <%
     if (bean.entrySet().size() == 0)
     {
-        ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, getContainer());
+        ActionURL createURL = urlFor(DefineDatasetTypeAction.class);
 %>
     No datasets have been created in this study.<br><br>
-    <%= button("Create New Dataset").href(createURL) %>&nbsp;<%= button("Cancel").href(StudyController.ManageTypesAction.class, getContainer()) %>
+    <%= button("Create New Dataset").href(createURL) %>&nbsp;<%= button("Cancel").href(urlFor(ManageTypesAction.class)) %>
 <%
     }
     else
     {
 %>
 
-<labkey:form action="<%=h(buildURL(StudyController.DatasetVisibilityAction.class))%>" method="POST">
+<labkey:form action="<%=urlFor(DatasetVisibilityAction.class)%>" method="POST">
 
 <p>Datasets can be hidden on the study overview screen.</p>
 <p>Hidden data can always be viewed, but is not shown by default.</p>
@@ -113,17 +118,18 @@
             </tr>
         </thead>
     <%
-        for (Map.Entry<Integer, StudyController.DatasetVisibilityData> entry : bean.entrySet())
+        for (Map.Entry<Integer, DatasetVisibilityData> entry : bean.entrySet())
         {
             int id = entry.getKey().intValue();
-            StudyController.DatasetVisibilityData data = entry.getValue();
+            String prefix = "dataset[" + id + "].";
+            DatasetVisibilityData data = entry.getValue();
             if (data.empty)
                 emptyDatasets.add(id);
     %>
         <tr data-datasetid="<%=id%>">
             <td><%= id %></td>
             <td>
-                <input type="text" size="20" name="<%="dataset[" + id + "].label"%>" value="<%= h(data.label != null ? data.label : "") %>" placeholder="Dataset label required" <%=readonly(data.inherited)%>>
+                <%=input().name(prefix + "label").value(data.label).size(20).placeholder("Dataset label required").readOnly(data.inherited).className(null)%>
             </td>
             <td>
                 <div id="<%=h(id + "-viewcategory")%>"></div>
@@ -138,23 +144,18 @@
                     }
                     else
                     {
-                    %>
-                    <select name="<%="dataset[" + id + "].cohort"%>" <%=disabled(data.inherited)%>>
-                        <labkey:options value="<%=data.cohort%>" map="<%=cohortOpts%>"/>
-                    </select>
-                    <%
+                        SelectBuilder select = select().name(prefix + "cohort").disabled(data.inherited).addOptions(cohortOpts).selected(data.cohort).className(null);
+                        out.println(select);
                     }
                 %>
             </td>
             <td>
-                <select name="<%="dataset[" + id + "].status"%>" <%=disabled(data.inherited)%>>
-                    <labkey:options value="<%=data.status%>" map="<%=statusOpts%>"/>
-                </select>
+                <%=select().name(prefix + "status").disabled(data.inherited).addOptions(statusOpts).selected(data.status).className(null)%>
             </td>
             <td align="center">
-                <labkey:checkbox name='<%="dataset[" + id + "].visible"%>' id='<%="dataset[" + id + "].visible"%>' value="true" checked="<%=data.visible%>"/>
+                <%=input().type("checkbox").name(prefix + "visible").id(prefix + "visible").value("true").checked(data.visible)%>
             </td>
-            <td><%= text(data.empty ? "empty" : "&nbsp;") %></td>
+            <td><%=data.empty ? h("empty") : HtmlString.NBSP%></td>
         </tr>
     <%
         }
@@ -162,7 +163,7 @@
     </table>
     <p>
     <%= button("Save").submit(true) %>&nbsp;
-    <%= button("Cancel").href(StudyController.ManageTypesAction.class, getContainer()) %>&nbsp;
+    <%= button("Cancel").href(ManageTypesAction.class, getContainer()) %>&nbsp;
     <% if (sharedStudy == null) { %>
     <%= button("Manage Categories").href("javascript:void(0);").onClick("onManageCategories()") %>
     <% } %>

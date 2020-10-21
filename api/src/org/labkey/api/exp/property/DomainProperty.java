@@ -90,6 +90,7 @@ public interface DomainProperty extends ImportAliasable
 
     DefaultValueType getDefaultValueTypeEnum();
     void setDefaultValueTypeEnum(DefaultValueType defaultValueType);
+    void setDefaultValueType(String defaultValueTypeName);
     void setDefaultValue(String value);
 
     PropertyType getPropertyType();
@@ -123,4 +124,7 @@ public interface DomainProperty extends ImportAliasable
      * making a schema change will cause the property to be dropped and re-added
      */
     void setSchemaImport(boolean isSchemaImport);
+
+    void setPrincipalConceptCode(String code);
+    String getPrincipalConceptCode();
 }

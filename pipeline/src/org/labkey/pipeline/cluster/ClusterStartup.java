@@ -18,6 +18,7 @@ package org.labkey.pipeline.cluster;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -27,8 +28,6 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.reader.Readers;
-import org.labkey.api.test.TestTimeout;
-import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
@@ -40,7 +39,6 @@ import org.labkey.pipeline.mule.test.DummyPipelineJob;
 import org.mule.umo.manager.UMOManager;
 import org.springframework.beans.factory.BeanFactory;
 
-import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -65,7 +63,7 @@ public class ClusterStartup extends AbstractPipelineStartup
      */
     public void run(List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, File webappDir, String[] args) throws IOException, PipelineJobException
     {
-        Map<String, BeanFactory> factories = initContext("org/labkey/pipeline/mule/config/cluster.log4j.properties", moduleFiles, moduleConfigFiles, customConfigFiles, webappDir, PipelineJobService.LocationType.RemoteExecutionEngine);
+        Map<String, BeanFactory> factories = initContext("ClusterStartup", "org/labkey/pipeline/mule/config/cluster.log4j.properties", moduleFiles, moduleConfigFiles, customConfigFiles, webappDir, PipelineJobService.LocationType.RemoteExecutionEngine);
 
         // First arg is URI to serialized job's JSON file, based on the web server's file system
         if (args.length < 1)
@@ -124,9 +122,11 @@ public class ClusterStartup extends AbstractPipelineStartup
             }
             finally
             {
+                int exitVal = 0;
                 if (job.getActiveTaskStatus() == PipelineJob.TaskStatus.error)
                 {
                     job.error("Task failed");
+                    exitVal = 1;
                 }
                 else if (job.getActiveTaskStatus() != PipelineJob.TaskStatus.complete)
                 {
@@ -136,10 +136,7 @@ public class ClusterStartup extends AbstractPipelineStartup
                 //NOTE: we need to set error status before writing out the XML so this information is retained
                 job.writeToFile(file);
 
-                if (job.getErrors() > 0)
-                {
-                    System.exit(1);
-                }
+                System.exit(exitVal);
             }
         }
         finally

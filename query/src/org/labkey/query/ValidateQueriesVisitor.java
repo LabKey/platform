@@ -15,7 +15,7 @@
  */
 package org.labkey.query;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.SchemaTreeWalker;

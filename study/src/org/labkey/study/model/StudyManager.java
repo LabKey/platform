@@ -19,12 +19,14 @@ package org.labkey.study.model;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -119,7 +121,6 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -188,7 +189,7 @@ public class StudyManager
     public static final SearchService.SearchCategory datasetCategory = new SearchService.SearchCategory("dataset", "Study Dataset");
     public static final SearchService.SearchCategory subjectCategory = new SearchService.SearchCategory("subject", "Study Subject");
 
-    private static final Logger _log = Logger.getLogger(StudyManager.class);
+    private static final Logger _log = LogManager.getLogger(StudyManager.class);
     private static final StudyManager _instance = new StudyManager();
     private static final StudySchema SCHEMA = StudySchema.getInstance();
 
@@ -1395,10 +1396,10 @@ public class StudyManager
             throw new IllegalStateException("Study Import/Export expected TableInfo.");
 
         TableSelector selector = new TableSelector(tinfo, containerFilter, null);
-        selector.forEach(visitTag -> {
+        selector.forEach(VisitTag.class, visitTag -> {
             allVisitTagMap.put(visitTag.getName(), visitTag);
             newVisitTagMap.remove(visitTag.getName());
-        }, VisitTag.class);
+        });
 
         List<VisitTag> newVisitTags = new ArrayList<>();
         newVisitTags.addAll(newVisitTagMap.values());
@@ -1458,7 +1459,7 @@ public class StudyManager
         final Map<String, VisitTag> visitTags = new HashMap<>();
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTag();
-        new TableSelector(tinfo, containerFilter, null).forEach(visitTag -> visitTags.put(visitTag.getName(), visitTag), VisitTag.class);
+        new TableSelector(tinfo, containerFilter, null).forEach(VisitTag.class, visitTag -> visitTags.put(visitTag.getName(), visitTag));
         return visitTags;
     }
 
@@ -1470,7 +1471,7 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
         filter.addCondition(FieldKey.fromString("Name"), visitTagName);
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTag();
-        new TableSelector(tinfo, filter, null).forEach(visitTags::add, VisitTag.class);
+        new TableSelector(tinfo, filter, null).forEach(VisitTag.class, visitTags::add);
 
         if (visitTags.isEmpty())
             return null;
@@ -1484,11 +1485,11 @@ public class StudyManager
         final Map<Integer, List<VisitTagMapEntry>> visitTagMapMap = new HashMap<>();
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
-        new TableSelector(tinfo, containerFilter, null).forEach(visitTagMapEntry -> {
+        new TableSelector(tinfo, containerFilter, null).forEach(VisitTagMapEntry.class, visitTagMapEntry -> {
             if (!visitTagMapMap.containsKey(visitTagMapEntry.getVisitId()))
                 visitTagMapMap.put(visitTagMapEntry.getVisitId(), new ArrayList<>());
             visitTagMapMap.get(visitTagMapEntry.getVisitId()).add(visitTagMapEntry);
-        }, VisitTagMapEntry.class);
+        });
 
         return visitTagMapMap;
     }
@@ -1498,11 +1499,11 @@ public class StudyManager
         final Map<String, List<VisitTagMapEntry>> visitTagToVisitTagMapEntries = new HashMap<>();
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
-        new TableSelector(tinfo, containerFilter, null).forEach(visitTagMapEntry -> {
+        new TableSelector(tinfo, containerFilter, null).forEach(VisitTagMapEntry.class, visitTagMapEntry -> {
             if (!visitTagToVisitTagMapEntries.containsKey(visitTagMapEntry.getVisitTag()))
                 visitTagToVisitTagMapEntries.put(visitTagMapEntry.getVisitTag(), new ArrayList<>());
             visitTagToVisitTagMapEntries.get(visitTagMapEntry.getVisitTag()).add(visitTagMapEntry);
-        }, VisitTagMapEntry.class);
+        });
 
         return visitTagToVisitTagMapEntries;
     }
@@ -1513,7 +1514,7 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
         filter.addCondition(FieldKey.fromString("VisitTag"), visitTagName);
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
-        new TableSelector(tinfo, filter, null).forEach(visitTagMapEntries::add, VisitTagMapEntry.class);
+        new TableSelector(tinfo, filter, null).forEach(VisitTagMapEntry.class, visitTagMapEntries::add);
 
         return visitTagMapEntries;
     }
@@ -3365,7 +3366,7 @@ public class StudyManager
     public int setImportedAlternateParticipantIds(Study study, DataLoader dl, BatchValidationException errors) throws IOException
     {
         // Use first line to determine order of columns we care about
-        // The first columcn in the data must contain the ones we are seeking
+        // The first column in the data must contain the ones we are seeking
         String[][] firstline = dl.getFirstNLines(1);
         if (null == firstline || 0 == firstline.length)
             return 0;       // Unexpected but just in case
@@ -4459,7 +4460,7 @@ public class StudyManager
         }
 
         ActionURL view = new ActionURL(StudyController.DatasetAction.class, null);
-        view.replaceParameter("datasetId", String.valueOf(dsd.getDatasetId()));
+        view.replaceParameter("datasetId", dsd.getDatasetId());
         view.setExtraPath(dsd.getContainer().getId());
 
         SimpleDocumentResource r = new SimpleDocumentResource(new Path(docid), docid,
@@ -4869,7 +4870,7 @@ public class StudyManager
 
 
     // To see detailed logging from StatementDataIterator, configure org.labkey.study.model.StudyManager$DatasetImportTestCase to level TRACE
-    private static final Logger TEST_LOGGER = Logger.getLogger(DatasetImportTestCase.class);
+    private static final Logger TEST_LOGGER = LogManager.getLogger(DatasetImportTestCase.class);
 
     @TestWhen(TestWhen.When.BVT)
     public static class DatasetImportTestCase extends Assert

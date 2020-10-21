@@ -15,7 +15,8 @@
  */
 package org.labkey.api.view.template;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.clientLibrary.xml.ModeTypeEnum;
 
 /**
@@ -23,7 +24,7 @@ import org.labkey.clientLibrary.xml.ModeTypeEnum;
  */
 public class ExternalClientDependency extends ClientDependency
 {
-    private static final Logger _log = Logger.getLogger(ExternalClientDependency.class);
+    private static final Logger _log = LogManager.getLogger(ExternalClientDependency.class);
 
     private final String _uri;
 

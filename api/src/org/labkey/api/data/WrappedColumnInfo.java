@@ -114,6 +114,7 @@ public class WrappedColumnInfo
             @Override
             public String getSelectName()
             {
+                assert getParentTable() instanceof SchemaTableInfo : "Use getValueSql()";
                 return sourceColumnInfo.getSelectName();
             }
 
@@ -524,6 +525,13 @@ public class WrappedColumnInfo
         }
 
         @Override
+        public void setPrecision(int scale)
+        {
+            checkLocked();
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void setFieldKey(FieldKey fieldKey)
         {
             checkLocked();
@@ -729,7 +737,7 @@ public class WrappedColumnInfo
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
                 @Override
-                public JdbcType getJdbcType()
+                public @NotNull JdbcType getJdbcType()
                 {
                     return jdbcType;
                 }
@@ -899,6 +907,20 @@ public class WrappedColumnInfo
         public void setIsRootDbSequence(boolean b)
         {
             throw new java.lang.UnsupportedOperationException();
+        }
+
+        @Override
+        public void setPrincipalConceptCode(String code)
+        {
+            checkLocked();
+            delegate = new AbstractWrappedColumnInfo(delegate)
+            {
+                @Override
+                public String getPrincipalConceptCode()
+                {
+                    return code;
+                }
+            };
         }
     }
 

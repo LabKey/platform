@@ -922,6 +922,7 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <!-- deprecated -->
 			<xs:element name="Ontology" type="dat:OntologyType" minOccurs="0">
 				<xs:annotation>
 					<xs:documentation>
@@ -947,6 +948,13 @@
                         <xs:element name="properties" minOccurs="0" maxOccurs="1" type="dat:PropertiesType"/>
                     </xs:sequence>
                 </xs:complexType>
+            </xs:element>
+            <xs:element name="principalConceptCode" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Ontology concept code associated with this column.
+                    </xs:documentation>
+                </xs:annotation>
             </xs:element>
 		</xs:all>
 		<xs:attribute name="columnName" type="xs:string" use="required">
@@ -1003,6 +1011,7 @@
         </xs:simpleContent>
     </xs:complexType>
 
+    <!-- deprecated -->
 	<xs:complexType name="OntologyType">
 		<xs:simpleContent>
 			<xs:extension base="xs:string">

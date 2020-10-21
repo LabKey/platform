@@ -15,16 +15,17 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
+<%@ page import="org.labkey.study.controllers.security.SecurityController.ExportSecurityPolicyAction" %>
+<%@ page import="org.labkey.study.controllers.security.SecurityController.ImportSecurityPolicyAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 
-<labkey:form action="<%=h(buildURL(SecurityController.ExportSecurityPolicyAction.class))%>">
+<labkey:form action="<%=urlFor(ExportSecurityPolicyAction.class)%>">
     Export Policy As XML File: <br/>
     <%= button("Export").submit(true) %>
 </labkey:form>
 <br/><br/>
-<labkey:form action="<%=h(buildURL(SecurityController.ImportSecurityPolicyAction.class))%>" enctype="multipart/form-data" method="post">
+<labkey:form action="<%=urlFor(ImportSecurityPolicyAction.class)%>" enctype="multipart/form-data" method="post">
     Import Policy From XML File: <br/>
     <input type="file" name="fileUpload" style="border: none; padding-bottom: 5px;"/>
     <%= button("Import").submit(true) %>

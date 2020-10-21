@@ -16,13 +16,15 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.pipeline.PipelineJobService;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -110,7 +112,7 @@ public class NetworkDrive
         p.waitFor();
     }
 
-    private static Logger _log = Logger.getLogger(NetworkDrive.class);
+    private static Logger _log = LogManager.getLogger(NetworkDrive.class);
 
     /**
      * @return whether the file exists, mounting the drive if needed
@@ -123,6 +125,19 @@ public class NetworkDrive
             return true;
         ensureDrive(f.getPath());
         return f.exists();
+    }
+
+    /**
+     * @return whether the file exists, mounting the drive if needed
+     */
+    public static boolean exists(java.nio.file.Path p)
+    {
+        if (p == null)
+            return false;
+        if (Files.exists(p))
+            return true;
+        ensureDrive(p.toString());
+        return Files.exists(p);
     }
 
     /**

@@ -16,16 +16,16 @@
 
 package org.labkey.api.study.actions;
 
-import org.labkey.api.data.SimpleDisplayColumn;
-import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.TableViewForm;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.study.assay.*;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.study.assay.ParticipantVisitResolverType;
+import org.labkey.api.util.PageFlowUtil;
 
-import java.io.Writer;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.List;
 
 /**

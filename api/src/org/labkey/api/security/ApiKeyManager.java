@@ -15,7 +15,8 @@
  */
 package org.labkey.api.security;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -31,8 +32,11 @@ import org.labkey.api.data.SimpleFilter.NotClause;
 import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.util.TestContext;
@@ -78,14 +82,17 @@ public class ApiKeyManager
      */
     public @NotNull String createKey(@NotNull User user, int expirationSeconds)
     {
+        return createKey(user, expirationSeconds, "apikey|" + GUID.makeHash());
+    }
+
+    private @NotNull String createKey(@NotNull User user, int expirationSeconds, String apiKey)
+    {
         if (user.isGuest())
             throw new IllegalStateException("Can't create an API key for a guest");
 
         // Disallow API key creation while impersonating, #34580
         if (user.isImpersonated())
             throw new UnauthorizedException("Can't create an API key while impersonating");
-
-        String apiKey = "apikey|" + GUID.makeHash();
 
         Map<String, Object> map = new HashMap<>();
         map.put("Crypt", crypt(apiKey));
@@ -131,6 +138,32 @@ public class ApiKeyManager
         }
 
         return null != userId ? UserManager.getUser(userId) : null;
+    }
+
+    private static final String API_KEY_SCOPE = "ApiKey";
+
+    public void handleStartupProperties()
+    {
+        ModuleLoader.getInstance().getConfigProperties(API_KEY_SCOPE).forEach(prop->{
+            try
+            {
+                User user = UserManager.getUser(new ValidEmail(prop.getName()));
+
+                if (null == user)
+                    throw new ConfigurationException("Unrecognized user specified in ApiKey startup property: " + prop.getName());
+
+                String apiKey = prop.getValue();
+
+                if (!StringUtils.startsWith(apiKey, "apikey|"))
+                    throw new ConfigurationException("Invalid API key specified in ApiKey startup property; API keys must start with \"apikey|\": " + apiKey);
+
+                createKey(user, -1, apiKey);
+            }
+            catch (InvalidEmailException e)
+            {
+                throw new ConfigurationException("Invalid email address specified in ApiKey startup property: " + prop.getName(), e);
+            }
+        });
     }
 
     private static @NotNull String crypt(@NotNull String apiKey)

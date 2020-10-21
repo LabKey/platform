@@ -28,7 +28,6 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.view.GridView;
-import org.labkey.wiki.WikiController;
 import org.springframework.validation.Errors;
 
 /**

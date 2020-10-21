@@ -17,13 +17,13 @@
 %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.core.security.SecurityController" %>
-<%@ page import="org.labkey.core.security.SecurityController.AddUsersForm" %>
-<%@ page import="org.labkey.core.user.UserController" %>
-<%@ page import="org.labkey.core.user.UserController.UserUrlsImpl" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.core.security.SecurityController.AddUsersAction" %>
+<%@ page import="org.labkey.core.security.SecurityController.AddUsersForm" %>
+<%@ page import="org.labkey.core.user.UserController.ShowUsersAction" %>
+<%@ page import="org.labkey.core.user.UserController.UserUrlsImpl" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -94,15 +94,16 @@
     });
 </script>
 
-<labkey:form action="<%=buildURL(SecurityController.AddUsersAction.class)%>" method="POST">
+<labkey:form action="<%=urlFor(AddUsersAction.class)%>" method="POST">
     <table><%
             if (getErrors("form").hasErrors());
             { %>
         <tr><td colspan="3"><labkey:errors /></td></tr><%
             }
-            if (form.getMessage() != null)
+            HtmlString msg = form.getMessage();
+            if (!HtmlString.isBlank(msg))
             {
-                %><tr><td colspan="3"><div class="labkey-message"><%=form.getMessage()%></div></td></tr><%
+                %><tr><td colspan="3"><div class="labkey-message"><%=msg%></div></td></tr><%
             }
         %>
         <tr>
@@ -122,7 +123,7 @@
             String LDAPDomain = AuthenticationManager.getLdapDomain();
             if (LDAPDomain != null && LDAPDomain.length() > 0 && !AuthenticationManager.ALL_DOMAINS.equals(LDAPDomain))
             {
-                %>, non-<%=LDAPDomain%><%
+                %>, non-<%=h(LDAPDomain)%><%
             }
             %> users</label><br><br>
         </td></tr>
@@ -130,7 +131,7 @@
             <td>
                 <labkey:button text="Add Users" />
                 <% if (form.getReturnURLHelper() == null) { %>
-                <%= button("Done").href(new ActionURL(UserController.ShowUsersAction.class, getContainer())) %>
+                <%= button("Done").href(urlFor(ShowUsersAction.class)) %>
                 <% }
                    else {
                 %>

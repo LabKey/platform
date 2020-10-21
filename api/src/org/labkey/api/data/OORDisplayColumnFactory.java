@@ -16,9 +16,9 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FilteredTable;
 
 /**
  * Factory for creating {@link OutOfRangeDisplayColumn}s. Connects the separate indicator and raw value columns together.

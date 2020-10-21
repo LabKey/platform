@@ -17,19 +17,18 @@
 %>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
+<%@ page import="org.labkey.api.qc.QCState" %>
+<%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.model.DatasetDefinition" %>
-<%@ page import="org.labkey.api.qc.QCState" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.io.Writer" %>
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
-<%@ page import="org.labkey.api.qc.QCStateManager" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DatasetAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.UpdateQCStateAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.UpdateQCStateForm" %>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -41,8 +40,8 @@
     }
 %>
 <%
-    JspView<StudyController.UpdateQCStateForm> me = (JspView<StudyController.UpdateQCStateForm>) HttpView.currentView();
-    StudyController.UpdateQCStateForm bean = me.getModelBean();
+    JspView<UpdateQCStateForm> me = (JspView<UpdateQCStateForm>) HttpView.currentView();
+    UpdateQCStateForm bean = me.getModelBean();
     Container container = getContainer();
     List<QCState> states = QCStateManager.getInstance().getQCStates(container);
 %>
@@ -50,7 +49,7 @@
     FrameFactoryClassic.startTitleFrame(out, "QC State Change", null, null, null);
 %>
 <labkey:errors/>
-<labkey:form action="<%=h(buildURL(StudyController.UpdateQCStateAction.class))%>" method="POST">
+<labkey:form action="<%=urlFor(UpdateQCStateAction.class)%>" method="POST">
     <input type="hidden" name="update" value="true" />
     <input type="hidden" name="datasetId" value="<%= bean.getDatasetId() %>" />
     <input type="hidden" name="<%= h(DataRegionSelection.DATA_REGION_SELECTION_KEY) %>" value="<%= h(bean.getDataRegionSelectionKey()) %>" />
@@ -81,7 +80,7 @@
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td><%= button("Update Status").submit(true) %> <%= button("Cancel").href(new ActionURL(StudyController.DatasetAction.class,
+            <td><%= button("Update Status").submit(true) %> <%= button("Cancel").href(new ActionURL(DatasetAction.class,
                     container).addParameter(DatasetDefinition.DATASETKEY, bean.getDatasetId())) %></td>
         </tr>
     </table>

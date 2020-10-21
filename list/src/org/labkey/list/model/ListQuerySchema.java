@@ -16,7 +16,8 @@
 
 package org.labkey.list.model;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -48,7 +49,7 @@ public class ListQuerySchema extends UserSchema
 {
     public static final String NAME = "lists";
     public static final String DESCR = "Contains a data table for each defined list";
-    private static final Logger LOG = Logger.getLogger(ListQuerySchema.class);
+    private static final Logger LOG = LogManager.getLogger(ListQuerySchema.class);
 
     public static void register(Module module)
     {

@@ -21,11 +21,18 @@ import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartConfigurationException;
+import org.labkey.api.view.WebPartView;
 
-import java.util.Map;
 import java.net.URISyntaxException;
 import java.text.ParseException;
+import java.util.Map;
 
 /**
  * User: adam

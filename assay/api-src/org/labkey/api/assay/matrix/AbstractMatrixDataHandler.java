@@ -16,7 +16,8 @@
 package org.labkey.api.assay.matrix;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
@@ -55,7 +56,7 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
     protected final String _dbSchemaName;
     protected final String _dataTableName;
 
-    private static final Logger LOG = Logger.getLogger(AbstractMatrixDataHandler.class);
+    private static final Logger LOG = LogManager.getLogger(AbstractMatrixDataHandler.class);
     private static boolean autoCreateSamples = true;     // CONSIDER: move this flag to the assay design
 
     public AbstractMatrixDataHandler(String idColName, String dbSchemaName, String dataTableName)

@@ -36,8 +36,8 @@ import org.labkey.api.writer.Writer;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.SpecimenImporter.SpecimenColumn;
-import org.labkey.study.model.Vial;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.Vial;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.io.PrintWriter;

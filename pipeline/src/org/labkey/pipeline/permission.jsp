@@ -16,9 +16,11 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.pipeline.PipeRoot" %>
 <%@ page import="org.labkey.api.security.Group" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.SecurityPolicy" %>
+<%@ page import="org.labkey.api.security.SecurityPolicyManager" %>
 <%@ page import="org.labkey.api.security.roles.AuthorRole" %>
 <%@ page import="org.labkey.api.security.roles.EditorRole" %>
 <%@ page import="org.labkey.api.security.roles.NoPermissionsRole" %>
@@ -29,16 +31,15 @@
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.pipeline.PipelineController" %>
+<%@ page import="org.labkey.pipeline.PipelineController.PermissionView" %>
+<%@ page import="org.labkey.pipeline.PipelineController.UpdateRootPermissionsAction" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.pipeline.PipeRoot" %>
-<%@ page import="org.labkey.api.security.SecurityPolicyManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <div width="240px" id="pipelineFilesPermissions">
 <%
-    PipelineController.PermissionView me = (PipelineController.PermissionView)HttpView.currentView();
+    PermissionView me = (PermissionView)HttpView.currentView();
     PipeRoot pipeRoot = me.getModelBean();
     SecurityPolicy policy = SecurityPolicyManager.getPolicy(pipeRoot);
     Container c = getContainer();
@@ -47,7 +48,7 @@
 %>
 These permissions control whether pipeline files can be downloaded and updated via the web server.
 <p />
-<labkey:form id="permissionsForm" action="<%= h(buildURL(PipelineController.UpdateRootPermissionsAction.class))%>" method="POST">
+<labkey:form id="permissionsForm" action="<%=urlFor(UpdateRootPermissionsAction.class)%>" method="POST">
 <input type="hidden" name="<%=ActionURL.Param.returnUrl%>" value="<%= h(getViewContext().getActionURL())%>" />
 <input id="enabledCheckbox" type="checkbox" name="enable"<%=checked(enableFTP)%> onclick="toggleEnableFTP(this)" onchange="toggleEnableFTP(this)"> Share files via web site<br>
     <%

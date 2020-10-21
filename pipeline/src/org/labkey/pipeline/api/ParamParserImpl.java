@@ -15,7 +15,8 @@
  */
 package org.labkey.pipeline.api;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.w3c.dom.Document;
@@ -33,8 +34,19 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.*;
-import java.util.*;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <code>InputParser</code> is used to parse a set of name-value pair
@@ -51,7 +63,7 @@ import java.util.*;
 
 public class ParamParserImpl implements ParamParser
 {
-    private static Logger _log = Logger.getLogger(ParamParserImpl.class);
+    private static Logger _log = LogManager.getLogger(ParamParserImpl.class);
 
     private static String TAG_BIOML = "bioml";
     private static String TAG_NOTE = "note";

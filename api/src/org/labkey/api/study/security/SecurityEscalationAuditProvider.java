@@ -15,7 +15,8 @@
  */
 package org.labkey.api.study.security;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
@@ -50,7 +51,7 @@ import java.util.Set;
  */
 public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
-    private static Logger _log = Logger.getLogger(SecurityEscalationAuditProvider.class);
+    private static Logger _log = LogManager.getLogger(SecurityEscalationAuditProvider.class);
 
     /**
      * A name for the event to log as.  This shouldn't have any spaces, and uniquely
@@ -278,7 +279,7 @@ public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeP
         /**
          * To be called by {@link AbstractAuditTypeProvider#getDomainKind()}.
          *
-         * @param eventType This should match it's parent's {@link SecurityEscalationAuditProvider#getEventType()}.
+         * @param eventType This should match its parent's {@link SecurityEscalationAuditProvider#getEventType()}.
          */
         public SecurityEscalationAuditDomainKind(String eventType) {
             super(eventType);

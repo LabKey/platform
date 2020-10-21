@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.security.SecurityUrls"%>
 <%@ page import="org.labkey.api.study.Study"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.study.controllers.security.SecurityController"%>
+<%@ page import="org.labkey.study.controllers.security.SecurityController.StudySecurityAction"%>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -51,7 +51,7 @@
 %>
 <p>If you want to set permissions on individual datasets within the study, you must select one of the custom study security options below.</p>
 
-<labkey:form action="<%=h(buildURL(SecurityController.StudySecurityAction.class))%>" method="post" name="studySecurityForm">
+<labkey:form action="<%=urlFor(StudySecurityAction.class)%>" method="post" name="studySecurityForm">
     <p>Study Security Type<%=helpPopup("Study Security", SecurityType.getHTMLDescription(), true, 400)%>:
     <select name="securityString" onchange="document.getElementById('securityTypeWarning').style.display = 'block';">
         <%

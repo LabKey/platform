@@ -16,7 +16,11 @@
 
 package org.labkey.api.gwt.client.ui;
 
-import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.ui.ChangeListener;
+import com.google.gwt.user.client.ui.ChangeListenerCollection;
+import com.google.gwt.user.client.ui.HasText;
+import com.google.gwt.user.client.ui.ListBox;
+import com.google.gwt.user.client.ui.Widget;
 import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.ArrayList;

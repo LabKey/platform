@@ -20,7 +20,8 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
@@ -29,10 +30,11 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
-import org.labkey.api.audit.AuditHandler;
+import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -143,11 +145,12 @@ import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.gwt.client.AuditBehaviorType.SUMMARY;
+import static org.labkey.query.audit.QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT;
 
 
 public class QueryServiceImpl extends AuditHandler implements QueryService
 {
-    private static final Logger LOG = Logger.getLogger(QueryServiceImpl.class);
+    private static final Logger LOG = LogManager.getLogger(QueryServiceImpl.class);
     private static final ResourceRootProvider QUERY_AND_ASSAY_PROVIDER = new ResourceRootProvider()
     {
         private final ResourceRootProvider ASSAY_QUERY = ResourceRootProvider.chain(ResourceRootProvider.getAssayProviders(Path.rootPath), ResourceRootProvider.QUERY);
@@ -1742,7 +1745,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             }
             catch (Exception e)
             {
-                Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
+                LogManager.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
             }
         }
 
@@ -1761,7 +1764,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             }
             catch (Exception e)
             {
-                Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
+                LogManager.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
             }
         }
 
@@ -1783,7 +1786,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             }
             catch (Exception e)
             {
-                Logger.getLogger(QueryServiceImpl.class).error("Error creating linked schema " + def.getUserSchemaName(), e);
+                LogManager.getLogger(QueryServiceImpl.class).error("Error creating linked schema " + def.getUserSchemaName(), e);
             }
         }
 
@@ -1803,7 +1806,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             }
             catch (Exception e)
             {
-                Logger.getLogger(QueryServiceImpl.class).error("Error creating linked schema " + def.getUserSchemaName(), e);
+                LogManager.getLogger(QueryServiceImpl.class).error("Error creating linked schema " + def.getUserSchemaName(), e);
             }
         }
 
@@ -1835,7 +1838,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         }
         catch (Exception e)
         {
-            Logger.getLogger(QueryServiceImpl.class).error("Error deleting linked schema " + name, e);
+            LogManager.getLogger(QueryServiceImpl.class).error("Error deleting linked schema " + name, e);
         }
     }
 
@@ -2930,7 +2933,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
 
             if (auditType == SUMMARY)
             {
-                AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, dataRowCount, null);
+                AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, null, dataRowCount, null);
 
                 AuditLogService.get().addEvent(user, event);
             }
@@ -2938,14 +2941,15 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     }
 
     @Override
-    protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
+    protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
     {
         return createAuditRecord(c, tinfo, action.getCommentDetailed(), row);
     }
 
     @Override
-    protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, int rowCount, @Nullable Map<String, Object> row)
+    protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
     {
+        // not doing anything with userComment at the moment
         return createAuditRecord(c, tInfo, String.format(action.getCommentSummary(), rowCount), row);
     }
 
@@ -2953,6 +2957,9 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     private  QueryUpdateAuditProvider.QueryUpdateAuditEvent createAuditRecord(Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row)
     {
         QueryUpdateAuditProvider.QueryUpdateAuditEvent event = new QueryUpdateAuditProvider.QueryUpdateAuditEvent(c.getId(), comment);
+        DbScope.Transaction tx = tinfo.getSchema().getScope().getCurrentTransaction();
+        if (tx != null)
+            event.setTransactionId(tx.getAuditId());
 
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
@@ -2969,6 +2976,14 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             }
         }
         return event;
+    }
+
+    public List<DetailedAuditTypeEvent> getQueryUpdateAuditRecords(User user, Container container, long transactionAuditId)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("TransactionID"), transactionAuditId);
+
+        return AuditLogService.get().getAuditEvents(container, user, QUERY_UPDATE_AUDIT_EVENT, filter, null);
     }
 
     @Override

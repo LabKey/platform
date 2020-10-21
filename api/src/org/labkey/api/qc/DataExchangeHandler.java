@@ -16,12 +16,12 @@
 package org.labkey.api.qc;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 

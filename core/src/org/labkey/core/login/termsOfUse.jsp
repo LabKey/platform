@@ -16,15 +16,15 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.RedirectException" %>
-<%@ page import="org.labkey.core.login.LoginController" %>
-<%@ page import="org.labkey.core.login.LoginController.AgreeToTermsBean" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.core.login.LoginController.AgreeToTermsAction" %>
+<%@ page import="org.labkey.core.login.LoginController.AgreeToTermsBean" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -44,7 +44,7 @@
     if (HtmlString.isBlank(termsHtml))
         throw new RedirectException(returnURL);
 
-    String formURL = buildURL(LoginController.AgreeToTermsAction.class);
+    ActionURL formURL = urlFor(AgreeToTermsAction.class);
 %>
 <style type="text/css">
     .labkey-error {

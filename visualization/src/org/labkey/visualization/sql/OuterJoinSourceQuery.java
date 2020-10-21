@@ -21,10 +21,17 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.visualization.IVisualizationSourceQuery;
 import org.labkey.api.visualization.SQLGenerationException;
 import org.labkey.api.visualization.VisualizationAggregateColumn;
-import org.labkey.api.visualization.VisualizationIntervalColumn;
 import org.labkey.api.visualization.VisualizationSourceColumn;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp

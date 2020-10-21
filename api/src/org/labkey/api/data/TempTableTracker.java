@@ -16,7 +16,8 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.FileUtil;
@@ -40,7 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class TempTableTracker extends WeakReference<Object>
 {
-    private static final Logger _log = Logger.getLogger(TempTableTracker.class);
+    private static final Logger _log = LogManager.getLogger(TempTableTracker.class);
     private static final String LOGFILE = "CPAS_sqlTempTables.log";
     private static final Map<String, TempTableTracker> createdTableNames = new TreeMap<>();
     private static final ReferenceQueue<Object> cleanupQueue = new ReferenceQueue<>();

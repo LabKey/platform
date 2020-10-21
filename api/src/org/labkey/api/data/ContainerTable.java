@@ -17,7 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -33,6 +33,8 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.SimpleNamedObject;
@@ -287,7 +289,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
             {
                 ft = FolderType.NONE;
                 iconPath = Path.parse(ft.getFolderIconPath());
-                Logger.getLogger(ContainerTable.class).warn("Could not find specified icon: "+iconPath);
+                LogManager.getLogger(ContainerTable.class).warn("Could not find specified icon: "+iconPath);
             }
             return AppProps.getInstance().getContextPath() + iconPath.toString("/","");
         }
@@ -309,13 +311,18 @@ public class ContainerTable extends FilteredTable<UserSchema>
         }
 
         @Override
-        public @NotNull String getFormattedValue(RenderContext ctx)
+        public @NotNull HtmlString getFormattedHtml(RenderContext ctx)
         {
             String img = (String)getValue(ctx);
             String a = renderURL(ctx);
             if (null == img || null == a)
-                return "";
-            return "<div class=\"tool-icon thumb-wrap thumb-wrap-bottom\"><a href=\"" + PageFlowUtil.filter(a) + "\"><div class=\"thumb-img-bottom\"><img class=\"thumb-large\" src=\"" + PageFlowUtil.filter(img) + "\"></div></a></div>";
+                return HtmlString.EMPTY_STRING;
+            return
+                    HtmlStringBuilder.of(HtmlString.unsafe("<div class=\"tool-icon thumb-wrap thumb-wrap-bottom\"><a href=\"")).
+                            append(a).
+                            append(HtmlString.unsafe("\"><div class=\"thumb-img-bottom\"><img class=\"thumb-large\" src=\"")).
+                            append(img).
+                            append(HtmlString.unsafe("\"></div></a></div>")).getHtmlString();
         }
     }
 

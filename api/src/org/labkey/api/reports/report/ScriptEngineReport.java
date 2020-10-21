@@ -17,7 +17,8 @@ package org.labkey.api.reports.report;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
@@ -111,7 +112,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     public static final String SUBSTITUTION_MAP = "substitutionMap.txt";
     public static final String CONSOLE_OUTPUT = "console.txt";
 
-    private static Logger _log = Logger.getLogger(ScriptEngineReport.class);
+    private static Logger _log = LogManager.getLogger(ScriptEngineReport.class);
 
     static
     {

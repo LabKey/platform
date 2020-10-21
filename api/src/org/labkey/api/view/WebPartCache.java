@@ -15,7 +15,8 @@
  */
 package org.labkey.api.view;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
@@ -48,7 +49,7 @@ import java.util.Map;
  */
 public class WebPartCache
 {
-    private static final Logger LOG = Logger.getLogger(WebPartCache.class);
+    private static final Logger LOG = LogManager.getLogger(WebPartCache.class);
     private static final Cache<String, Map<String, Portal.PortalPage>> CACHE = CacheManager.getStringKeyCache(10000, CacheManager.DAY, "Webparts");
 
     static public Portal.PortalPage getPortalPage(@NotNull Container c, @NotNull String pageId)
@@ -121,14 +122,14 @@ public class WebPartCache
 
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), containerId);
 
-            new TableSelector(Portal.getTableInfoPortalWebParts(), filter, new Sort("Index")).forEach(wp -> {
+            new TableSelector(Portal.getTableInfoPortalWebParts(), filter, new Sort("Index")).forEach(WebPart.class, wp -> {
                 Portal.PortalPage p = pagesByRowId.get(wp.getPortalPageId());
                 if (null != p)
                 {
                     p.addWebPart(wp);
                     wp.setPageId(p.getPageId());
                 }
-            }, WebPart.class);
+            });
 
             // create immutable PortalPage objects for caching
             CaseInsensitiveHashMap<Portal.PortalPage> ret = new CaseInsensitiveHashMap<>();

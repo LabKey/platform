@@ -27,8 +27,6 @@ import org.mule.umo.transformer.TransformerException;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
-import java.io.IOException;
-import java.sql.SQLException;
 
 /**
  * <code>PipelineJobToJMSMessage</code> transforms a PipelineJob to a JMS Message

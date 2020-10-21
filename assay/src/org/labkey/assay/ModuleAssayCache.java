@@ -1,6 +1,7 @@
 package org.labkey.assay;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.assay.AssayProvider;
@@ -24,7 +25,7 @@ import java.util.Set;
 public class ModuleAssayCache
 {
     private static final ModuleAssayCache INSTANCE = new ModuleAssayCache();
-    private static final Logger LOG = Logger.getLogger(ModuleAssayCache.class);
+    private static final Logger LOG = LogManager.getLogger(ModuleAssayCache.class);
     private static final ModuleResourceCache<Collection<ModuleAssayProvider>> PROVIDER_CACHE = ModuleResourceCaches.create("Module assay providers", new ModuleAssayCacheHandler(), ResourceRootProvider.getAssayProviders(Path.rootPath));
     private static final Object PROVIDER_LOCK = new Object();
 

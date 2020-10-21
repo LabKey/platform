@@ -17,13 +17,12 @@
 %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     @Override
@@ -176,7 +175,7 @@ function onSaveSuccess_formSubmit()
         msg: '<span class="labkey-message">Changes saved successfully.</span>',
         buttons: false
     });
-    window.location = <%=q(cancelLink.getLocalURIString())%>;
+    window.location = <%=q(cancelLink)%>;
     var el = msgbox.getEl();
     el.pause(1).fadeOut({callback:cancelButtonHandler});
 }
@@ -243,13 +242,13 @@ function editButtonHandler()
 function cancelButtonHandler()
 {
     LABKEY.setSubmit(true);
-    window.location = <%=q(cancelLink.getLocalURIString())%>;
+    window.location = <%=q(cancelLink)%>;
 }
 
 function doneButtonHandler()
 {
     LABKEY.setSubmit(true);
-    window.location = <%=q(cancelLink.getLocalURIString())%>;
+    window.location = <%=q(cancelLink)%>;
 }
 
 function destroyFormPanel()
@@ -280,7 +279,7 @@ function renderFormPanel(data, editable){
     protocolDocs.push({
         logo : '<%=getWebappURL(att.getFileIcon())%>',
         text : '<%= h(shortenFileName(att.getName()))%>',
-        removeURL : <%=PageFlowUtil.jsString(att.getName())%>,
+        removeURL : <%=q(att.getName())%>,
         atId : <%=x%>
     });
 <%

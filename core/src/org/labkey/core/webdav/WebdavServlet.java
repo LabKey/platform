@@ -24,7 +24,8 @@ package org.labkey.core.webdav;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MemTracker;
@@ -50,7 +51,7 @@ import java.net.URISyntaxException;
 
 public class WebdavServlet extends HttpServlet
 {
-    Logger _log = Logger.getLogger(WebdavServlet.class);
+    Logger _log = LogManager.getLogger(WebdavServlet.class);
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException
@@ -117,7 +118,7 @@ public class WebdavServlet extends HttpServlet
             catch (URISyntaxException e)
             {
             }
-            Logger.getRootLogger().error("Improper welcome URL: " + AppProps.getInstance().getSiteWelcomePageUrlString());
+            LogManager.getRootLogger().error("Improper welcome URL: " + AppProps.getInstance().getSiteWelcomePageUrlString());
             try {response.reset();}catch(IllegalStateException x){/*pass*/}
         }
 

@@ -5,8 +5,10 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Small class with only the properties and fields (de)serialized to the DomainKindProperties (avoids hassle of pasting @JsonIgnores all over three classes.
@@ -17,22 +19,26 @@ public class SampleTypeDomainKindProperties implements Cloneable
     {
     }
 
-    public SampleTypeDomainKindProperties(ExpSampleSet ss)
+    public SampleTypeDomainKindProperties(ExpSampleType st)
     {
-        if (ss != null)
+        if (st != null)
         {
-            this.name = ss.getName();
-            this.nameExpression = ss.getNameExpression();
-            this.domainId = ss.getDomain().getTypeId();
-            this.rowId = ss.getRowId();
-            this.lsid = ss.getLSID();
-            this.description = ss.getDescription();
-            this.idCols = new ArrayList<>();
-            ss.getIdCols().forEach(col -> this.idCols.add(col.getPropertyId()));
+            this.name = st.getName();
+            this.nameExpression = st.getNameExpression();
+            this.labelColor = st.getLabelColor();
+            this.domainId = st.getDomain().getTypeId();
+            this.rowId = st.getRowId();
+            this.lsid = st.getLSID();
+            this.description = st.getDescription();
+            this.idCols = Collections.emptyList();
+            if (st.hasIdColumns())
+            {
+                this.idCols = st.getIdCols().stream().map(col -> col.getPropertyId()).collect(Collectors.toList());
+            }
 
             try
             {
-                this.importAliases = ss.getImportAliasMap();
+                this.importAliases = st.getImportAliasMap();
             }
             catch (IOException e)
             {
@@ -42,6 +48,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
     }
 
     private String nameExpression;
+    private String labelColor;
     private Map<String, String> importAliases;
     private int rowId;
     private int domainId;
@@ -122,6 +129,16 @@ public class SampleTypeDomainKindProperties implements Cloneable
     public String getNameExpression()
     {
         return this.nameExpression;
+    }
+
+    public void setLabelColor(String labelColor)
+    {
+        this.labelColor = labelColor;
+    }
+
+    public String getLabelColor()
+    {
+        return this.labelColor;
     }
 
     public void setName(String name)

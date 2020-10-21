@@ -50,6 +50,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.DemoMode;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -335,38 +336,23 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         }
 
         @Override @NotNull
-        public String getFormattedValue(RenderContext ctx)
+        public HtmlString getFormattedHtml(RenderContext ctx)
         {
-            Object value = ctx.get(getDisplayColumn().getFieldKey());
+            Object value = getDisplayValue(ctx);
             if (value == null)
-            {
-                value = ctx.get(_seqNumMinFieldKey);
-
-                if (value == null)
-                    return super.getFormattedValue(ctx);
-            }
-            return PageFlowUtil.filter(value);
+                return super.getFormattedHtml(ctx);
+            return HtmlString.of(value);
         }
 
         @Override
         public Object getDisplayValue(RenderContext ctx)
         {
-            Object value = super.getDisplayValue(ctx);
+            Object value = ctx.get(getDisplayColumn().getFieldKey());
             if (value == null)
-                value = getFormattedValue(ctx);
+            {
+                value = ctx.get(_seqNumMinFieldKey);
+            }
             return value;
-        }
-
-        @Override
-        public String getTsvFormattedValue(RenderContext ctx)
-        {
-            return getFormattedValue(ctx);
-        }
-
-        @Override
-        public Object getExcelCompatibleValue(RenderContext ctx)
-        {
-            return getFormattedValue(ctx);
         }
 
         @Override

@@ -18,12 +18,10 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
-<%@ page import="org.labkey.api.util.URLHelper" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.specimen.ShowUploadSpecimensAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.GetSpecimenExcelAction" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -35,7 +33,7 @@
 %>
 <labkey:errors/>
 Use this form to insert or update specimens in the repository.<br>
-<%=link("Download a template workbook", SpecimenController.GetSpecimenExcelAction.class)%><br>
+<%=link("Download a template workbook", GetSpecimenExcelAction.class)%><br>
 
 <div id="showExpectedDataFieldsDiv"><%=link("Show Expected Data Fields").onClick("document.getElementById('expectedDataFields').style.display = 'block'; document.getElementById('showExpectedDataFieldsDiv').style.display = 'none'; return false;").id("showExpectedDataFieldsLink") %></div>
 
@@ -128,7 +126,7 @@ Use this form to insert or update specimens in the repository.<br>
 </div>
 <br>
 Paste data in the area below
-<labkey:form action="<%=h(buildURL(ShowUploadSpecimensAction.class))%>" method="post" enctype="multipart/form-data">
+<labkey:form action="<%=urlFor(ShowUploadSpecimensAction.class)%>" method="post" enctype="multipart/form-data">
     <textarea name=tsv id="tsv" rows=20 cols="70"><%=h(bean.getTsv())%></textarea><br>
 
 <%

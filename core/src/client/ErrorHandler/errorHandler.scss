@@ -1,0 +1,83 @@
+@import "~@labkey/components/dist/assets/scss/theme";
+
+.labkey-error-heading {
+  color : #B82025;
+  font-size: 48px;
+}
+
+.labkey-error-subheading {
+  font-size: 24px;
+  text-overflow: ellipsis;
+  padding-bottom: 3rem;
+}
+
+.labkey-error-instruction {
+  font-size: 18px;
+  padding-bottom: 15px;
+}
+
+.labkey-error-details {
+  font-size: 16px;
+}
+
+.labkey-error-subdetails {
+  padding-left: 5rem;
+  padding-bottom: 3rem;
+}
+
+.labkey-error-details-question {
+  font-weight: bold;
+}
+
+.error-backButton {
+  display: inline-block;
+  text-align: center;
+  margin: 0.5rem 5rem 0.5rem 0.5rem;
+  background-color: #538AC5;
+  font-size: 14px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.error-details-body {
+  padding: 15px;
+}
+
+.error-details-btn {
+  display: inline-block;
+  text-align: center;
+}
+
+.error-details-container {
+  position: relative;
+  background: #F3F3F4;
+  border: 1px solid transparent;
+  margin-top: 5rem;
+  padding: 3rem 1rem;
+}
+
+.error-details-container:before, .error-details-container:after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  border: 4rem solid transparent;
+  border-bottom-color: #F3F3F4;
+
+  @media (min-width: $screen-xs-min) {
+    left: 14rem;
+  }
+  @media (min-width: $screen-md-min) {
+    left: 22rem;
+  }
+  @media (min-width: $screen-lg-min) {
+    left: 25rem;
+  }
+}
+
+.permission-warning-icon {
+  color: #B82025;
+}
+
+.error-page-br {
+  margin-bottom: 1rem;
+}

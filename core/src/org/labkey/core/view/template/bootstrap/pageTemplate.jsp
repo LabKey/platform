@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
+<%@ page import="org.apache.logging.log4j.LogManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     PageTemplate me = (PageTemplate) HttpView.currentView();
@@ -54,7 +55,7 @@
     <%= PageFlowUtil.getStandardIncludes(getViewContext(), model) %>
     <% } %>
     <% if (null != model.getRssUrl()) { %>
-    <link href="<%=text(model.getRssUrl().getEncodedLocalURIString())%>" type="application/rss+xml" title="<%=h(model.getRssTitle())%>" rel="alternate"/>
+    <link href="<%=h(model.getRssUrl())%>" type="application/rss+xml" title="<%=h(model.getRssTitle())%>" rel="alternate"/>
     <% } %>
     <% if (model.getAllowTrackingScript())
        {
@@ -97,7 +98,11 @@
 </footer>
 <% } %>
 <%
-    String anchor = model.getAnchor(url);
+    String anchor = null;
+    if (null != url)
+    {
+        anchor = model.getAnchor(url);
+    }
     if (null != anchor)
     {
 %>
@@ -107,6 +112,14 @@
 %>
 <script type="text/javascript">LABKEY.loadScripts(); LABKEY.showNavTrail();</script>
 <!-- <%= h(request.getHeader("User-Agent")) %> -->
-<a href="<%=h(me.getPermaLink())%>" id="permalink" name="permalink" style="display: none;"></a>
+<%
+    // container is null for notfound pages
+    if (null != me.getViewContext().getContainer())
+    {
+%>
+        <a href="<%=h(me.getPermaLink())%>" id="permalink" name="permalink" style="display: none;"></a>
+<%
+    }
+%>
 </body>
 </html>

@@ -22,33 +22,39 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.util.Objects;
 
-public final class HtmlString implements DOM.Renderable, Comparable<HtmlString>
+public final class HtmlString implements SafeToRender, DOM.Renderable, Comparable<HtmlString>
 {
     // Helpful constants for convenience (and efficiency)
-    public static HtmlString EMPTY_STRING = HtmlString.of("");
-    public static HtmlString NBSP = HtmlString.unsafe("&nbsp;");
-    public static HtmlString NDASH = HtmlString.unsafe("&ndash;");
+    public static final HtmlString EMPTY_STRING = HtmlString.of("");
+    public static final HtmlString NBSP = HtmlString.unsafe("&nbsp;");
+    public static final HtmlString NDASH = HtmlString.unsafe("&ndash;");
+    public static final HtmlString BR = HtmlString.unsafe("<br/>");
 
     private final @NotNull String _s;
 
     /**
      * Returns an HtmlString that wraps an HTML encoded version of the passed in String.
-     * @param s A String. A null value results in an empty HtmlString (equivalent of HtmlString.of("")).
+     * @param s A char sequence. A null value results in an empty HtmlString (equivalent of HtmlString.of("")).
      * @return An HtmlString that encodes and wraps the String.
      */
-    public static @NotNull HtmlString of(@Nullable String s)
+    public static @NotNull HtmlString of(@Nullable CharSequence s)
     {
         return new HtmlString(PageFlowUtil.filter(s));
+    }
+
+    public static @NotNull HtmlString of(@Nullable Object o)
+    {
+        return of(o == null ? null : o.toString());
     }
 
     /**
      * Returns an HtmlString that wraps an HTML encoded version of the passed in String, with the option to preserve
      * whitespace.
-     * @param s A String. A null value results in an empty HtmlString (equivalent of HtmlString.of("")).
+     * @param s A char sequence. A null value results in an empty HtmlString (equivalent of HtmlString.of("")).
      * @param translateWhiteSpace A flag that determines whether whitespace should be encoded or not
      * @return An HtmlString that encodes and wraps the String, respecting the translateWhiteSpace flag.
      */
-    public static @NotNull HtmlString of(@Nullable String s, boolean translateWhiteSpace)
+    public static @NotNull HtmlString of(@Nullable CharSequence s, boolean translateWhiteSpace)
     {
         return new HtmlString(PageFlowUtil.filter(s, translateWhiteSpace));
     }
@@ -85,6 +91,18 @@ public final class HtmlString implements DOM.Renderable, Comparable<HtmlString>
         return null==html ? "" : html.toString();
     }
 
+    public static HtmlString join(Iterable<HtmlString> htmlStrings, HtmlString delimiter)
+    {
+        HtmlString sep = HtmlString.EMPTY_STRING;
+        HtmlStringBuilder builder = HtmlStringBuilder.of();
+        for (HtmlString hs : htmlStrings)
+        {
+            builder.append(sep);
+            builder.append(hs);
+            sep = delimiter;
+        }
+        return builder.getHtmlString();
+    }
 
     // Callers use factory methods of() and unsafe() instead
     private HtmlString(String s)
@@ -130,5 +148,10 @@ public final class HtmlString implements DOM.Renderable, Comparable<HtmlString>
     public int compareTo(@NotNull HtmlString o)
     {
         return this._s.compareTo(o._s);
+    }
+
+    public int length()
+    {
+        return _s.length();
     }
 }

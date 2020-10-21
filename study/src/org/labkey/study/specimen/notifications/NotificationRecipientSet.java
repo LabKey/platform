@@ -16,8 +16,6 @@
 
 package org.labkey.study.specimen.notifications;
 
-import org.labkey.api.security.ValidEmail;
-
 import javax.mail.Address;
 
 /**

@@ -23,13 +23,16 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
-import org.labkey.study.model.StudyManager;
+import org.labkey.study.importer.VisitMapRecord.VisitTagRecord;
+import org.labkey.study.model.StudyManager.VisitAlias;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitTag;
 import org.labkey.study.xml.DatasetType;
 import org.labkey.study.xml.VisitMapDocument;
+import org.labkey.study.xml.VisitMapDocument.VisitMap;
 import org.labkey.study.xml.VisitMapDocument.VisitMap.ImportAliases;
 import org.labkey.study.xml.VisitMapDocument.VisitMap.ImportAliases.Alias;
+import org.labkey.study.xml.VisitMapDocument.VisitMap.Visit;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -43,7 +46,7 @@ import java.util.List;
  */
 public class XmlVisitMapReader implements VisitMapReader
 {
-    private final VisitMapDocument.VisitMap _visitMapXml;
+    private final VisitMap _visitMapXml;
 
     public XmlVisitMapReader(String xml) throws VisitMapParseException
     {
@@ -88,10 +91,10 @@ public class XmlVisitMapReader implements VisitMapReader
     @NotNull
     public List<VisitMapRecord> getVisitMapRecords(TimepointType timepointType)
     {
-        VisitMapDocument.VisitMap.Visit[] visitsXml = _visitMapXml.getVisitArray();
+        Visit[] visitsXml = _visitMapXml.getVisitArray();
         List<VisitMapRecord> visits = new ArrayList<>(visitsXml.length);
 
-        for (VisitMapDocument.VisitMap.Visit visitXml : visitsXml)
+        for (Visit visitXml : visitsXml)
         {
             BigDecimal maxSequenceNum = visitXml.isSetMaxSequenceNum() ? visitXml.getMaxSequenceNum() : visitXml.getSequenceNum();
             BigDecimal protocolDay = null;
@@ -105,7 +108,7 @@ public class XmlVisitMapReader implements VisitMapReader
 
             if (null != visitXml.getDatasets())
             {
-                for (VisitMapDocument.VisitMap.Visit.Datasets.Dataset dataset : visitXml.getDatasets().getDatasetArray())
+                for (Visit.Datasets.Dataset dataset : visitXml.getDatasets().getDatasetArray())
                 {
                     if (dataset.getType() == DatasetType.REQUIRED)
                         required.add(dataset.getId());
@@ -115,9 +118,9 @@ public class XmlVisitMapReader implements VisitMapReader
             }
 
             VisitMapRecord record = new VisitMapRecord(visitXml.getSequenceNum(), maxSequenceNum, protocolDay, visitXml.getTypeCode(),
-                    visitXml.getLabel(), visitXml.getDescription(), visitXml.getCohort(), visitXml.getVisitDateDatasetId(), required,
-                    optional, visitXml.getShowByDefault(), visitXml.getDisplayOrder(), visitXml.getChronologicalOrder(),
-                    visitXml.getSequenceNumHandling(), getVisitTagRecords(visitXml));
+                visitXml.getLabel(), visitXml.getDescription(), visitXml.getCohort(), visitXml.getVisitDateDatasetId(), required,
+                optional, visitXml.getShowByDefault(), visitXml.getDisplayOrder(), visitXml.getChronologicalOrder(),
+                visitXml.getSequenceNumHandling(), getVisitTagRecords(visitXml));
 
             visits.add(record);
         }
@@ -128,9 +131,9 @@ public class XmlVisitMapReader implements VisitMapReader
 
     @Override
     @NotNull
-    public List<StudyManager.VisitAlias> getVisitImportAliases()
+    public List<VisitAlias> getVisitImportAliases()
     {
-        List<StudyManager.VisitAlias> ret = new LinkedList<>();
+        List<VisitAlias> ret = new LinkedList<>();
         ImportAliases importAliasesXml = _visitMapXml.getImportAliases();
 
         if (null != importAliasesXml)
@@ -138,7 +141,7 @@ public class XmlVisitMapReader implements VisitMapReader
             Alias[] aliases = importAliasesXml.getAliasArray();
 
             for (Alias alias : aliases)
-                ret.add(new StudyManager.VisitAlias(alias.getName(), alias.getSequenceNum()));
+                ret.add(new VisitAlias(alias.getName(), alias.getSequenceNum()));
         }
 
         return ret;
@@ -148,10 +151,10 @@ public class XmlVisitMapReader implements VisitMapReader
     @NotNull
     public List<VisitTag> getVisitTags()
     {
-        VisitMapDocument.VisitMap.VisitTag[] visitTagsXml = _visitMapXml.getVisitTagArray();
+        VisitMap.VisitTag[] visitTagsXml = _visitMapXml.getVisitTagArray();
         List<VisitTag> visitTags = new ArrayList<>(visitTagsXml.length);
 
-        for (VisitMapDocument.VisitMap.VisitTag visitTagXml : visitTagsXml)
+        for (VisitMap.VisitTag visitTagXml : visitTagsXml)
         {
             VisitTag visitTag = new VisitTag(visitTagXml.getName(), visitTagXml.getCaption(),
                                              visitTagXml.getDescription(), visitTagXml.getSingleUse());
@@ -161,12 +164,12 @@ public class XmlVisitMapReader implements VisitMapReader
         return visitTags;
     }
 
-    private List<VisitMapRecord.VisitTagRecord> getVisitTagRecords(VisitMapDocument.VisitMap.Visit visitXml)
+    private List<VisitTagRecord> getVisitTagRecords(Visit visitXml)
     {
-        List<VisitMapRecord.VisitTagRecord> visitTagRecords = new ArrayList<>();
+        List<VisitTagRecord> visitTagRecords = new ArrayList<>();
         if (null != visitXml.getVisitTags())
-            for (VisitMapDocument.VisitMap.Visit.VisitTags.VisitTag visitTag : visitXml.getVisitTags().getVisitTagArray())
-                visitTagRecords.add(new VisitMapRecord.VisitTagRecord(visitTag.getName(), visitTag.getCohort()));
+            for (Visit.VisitTags.VisitTag visitTag : visitXml.getVisitTags().getVisitTagArray())
+                visitTagRecords.add(new VisitTagRecord(visitTag.getName(), visitTag.getCohort()));
 
         return visitTagRecords;
     }

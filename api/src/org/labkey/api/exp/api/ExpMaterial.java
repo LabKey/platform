@@ -30,7 +30,7 @@ public interface ExpMaterial extends ExpRunItem
     String MATERIAL_OUTPUT_CHILD = "MaterialOutputs";
 
     @Nullable
-    ExpSampleSet getSampleSet();
+    ExpSampleType getSampleType();
 
     Map<PropertyDescriptor, Object> getPropertyValues();
 

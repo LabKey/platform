@@ -722,6 +722,12 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
+    public int getPrecision()
+    {
+        return delegate.getPrecision();
+    }
+
+    @Override
     public boolean hasDbSequence()
     {
         return delegate.hasDbSequence();
@@ -737,6 +743,12 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     public Container getDbSequenceContainer(Container container)
     {
         return delegate.getDbSequenceContainer(container);
+    }
+
+    @Override
+    public String getPrincipalConceptCode()
+    {
+        return delegate.getPrincipalConceptCode();
     }
 
     @Override

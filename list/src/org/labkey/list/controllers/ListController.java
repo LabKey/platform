@@ -18,7 +18,7 @@ package org.labkey.list.controllers;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -41,6 +41,7 @@ import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
@@ -682,7 +683,7 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType) throws IOException
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable TransactionAuditProvider.TransactionAuditEvent auditEvent) throws IOException
         {
             int count = _list.insertListItems(getUser(),getContainer() , dl, errors, null, null, false, _importLookupByAlternateKey);
             return count;
@@ -893,7 +894,7 @@ public class ListController extends SpringActionController
             }
             Container c = getContainer();
             String datatype = ("lists");
-            FolderExportContext ctx = new FolderExportContext(getUser(), c, PageFlowUtil.set(datatype), "List Export", new StaticLoggerGetter(Logger.getLogger(ListController.class)));
+            FolderExportContext ctx = new FolderExportContext(getUser(), c, PageFlowUtil.set(datatype), "List Export", new StaticLoggerGetter(LogManager.getLogger(ListController.class)));
             ctx.setListIds(IDs);
             ListWriter writer = new ListWriter();
 

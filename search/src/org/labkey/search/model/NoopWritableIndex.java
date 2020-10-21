@@ -16,13 +16,14 @@
 
 package org.labkey.search.model;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.store.Directory;
 import org.labkey.api.search.SearchMisconfiguredException;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -46,6 +47,12 @@ public class NoopWritableIndex implements WritableIndexManager
 
     @Override
     public void deleteDocument(String id)
+    {
+        log("delete documents from the search index");
+    }
+
+    @Override
+    public void deleteDocuments(Collection<String> ids)
     {
         log("delete documents from the search index");
     }
@@ -107,5 +114,10 @@ public class NoopWritableIndex implements WritableIndexManager
             _log.warn("Unable to " + action + "; " + _statusMessage);
 
         _errors.incrementAndGet();
+    }
+
+    @Override
+    public void refreshNow()
+    {
     }
 }

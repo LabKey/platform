@@ -63,7 +63,7 @@ public class MothershipHelper
 
     public int getLatestStackTraceId()
     {
-        Connection connection = test.createDefaultConnection(true);
+        Connection connection = test.createDefaultConnection();
         SelectRowsCommand command = new SelectRowsCommand("mothership", "ExceptionStackTrace");
         command.addSort("LastReport", Sort.Direction.DESCENDING);
         command.setMaxRows(1);
@@ -87,7 +87,7 @@ public class MothershipHelper
 
     public void updateStackTrace(int exceptionStackTraceId, String bugNumber, String comments, String assignedToEmail)
     {
-        Connection connection = test.createDefaultConnection(true);
+        Connection connection = test.createDefaultConnection();
         PostCommand command = new PostCommand("mothership", "updateStackTrace");
         Map<String, Object> params = new HashMap<>();
         params.put(ID_COLUMN, exceptionStackTraceId);
@@ -113,7 +113,7 @@ public class MothershipHelper
 
     public int getReportCount(int stackTraceId)
     {
-        Connection connection = test.createDefaultConnection(true);
+        Connection connection = test.createDefaultConnection();
         SelectRowsCommand command = new SelectRowsCommand("mothership", "ExceptionStackTrace");
         command.addFilter(ID_COLUMN, stackTraceId, Filter.Operator.EQUAL);
         try
@@ -162,7 +162,7 @@ public class MothershipHelper
         // Find the current server GUID
         String serverGUID = test.goToAdminConsole().getServerGUID();
 
-        Connection connection = test.createDefaultConnection(true);
+        Connection connection = test.createDefaultConnection();
         // Find the corresponding serverInstallationId
         SelectRowsCommand select = new SelectRowsCommand("mothership", SERVER_INSTALLATION_QUERY);
         select.setColumns(Collections.singletonList(SERVER_INSTALLATION_ID_COLUMN));

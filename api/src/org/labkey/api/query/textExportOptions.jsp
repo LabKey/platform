@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
@@ -118,7 +117,7 @@
 </table>
 <script>
     (function($) {
-        LABKEY.DataRegion.registerPane(<%=PageFlowUtil.jsString(model.getDataRegionName())%>, function(dr) {
+        LABKEY.DataRegion.registerPane(<%=q(model.getDataRegionName())%>, function(dr) {
             var delimEl = $("#<%=h(delimGUID)%>"),
                 quoteEl = $("#<%=h(quoteGUID)%>"),
                 exportSelectedEl = $("#<%=h(exportSelectedId)%>"),
@@ -127,24 +126,20 @@
             var includeSignButton = <%=model.isIncludeSignButton()%>;
 
             var doTsvExport = function(isSign) {
-                var exportRegionName = <%=PageFlowUtil.jsString(exportRegionName)%>;
-                var selectedParam = exportRegionName + '.showRows=SELECTED';
+                var exportRegionName = <%=q(exportRegionName)%>;
                 var url = isSign ?
-                        <%=PageFlowUtil.jsString(model.getSignTsvURL().toString())%> :
-                        <%=PageFlowUtil.jsString(model.getTsvURL().toString())%>;
+                        new URL(<%=q(model.getSignTsvURL().getURIString())%>) :
+                        new URL(<%=q(model.getTsvURL().getURIString())%>);
                 if (exportSelectedEl.is(':checked')) {
-                    if (url.indexOf(exportRegionName + '.showRows=ALL') == -1) {
-                        url = url+'&'+selectedParam;
-                    }
-                    else {
-                        url = url.replace(exportRegionName + '.showRows=ALL', selectedParam);
-                    }
-                    url = url + '&' + exportRegionName + '.selectionKey=' + dr.selectionKey;
+                    url.searchParams.set(exportRegionName + '.showRows', "SELECTED");
+                    url.searchParams.set(exportRegionName + '.selectionKey', dr.selectionKey);
                 }
 
-                url = url + '&delim=' + delimEl.val() + '&quote=' + quoteEl.val();
-                if (headerEl && headerEl.val())
-                    url = url + '&headerType=' + headerEl.val();
+                url.searchParams.set('delim', delimEl.val());
+                url.searchParams.set('quote', quoteEl.val());
+                if (headerEl && headerEl.val()) {
+                    url.searchParams.set('headerType', headerEl.val());
+                }
 
                 if (!isSign) {
                     dr.addMessage({

@@ -16,7 +16,7 @@
 package org.labkey.core.analytics;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.analytics.AnalyticsService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -27,7 +27,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -243,7 +242,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
                     }
                     catch (IllegalArgumentException ex)
                     {
-                        Logger.getLogger(AnalyticsServiceImpl.class).warn("error handling startup property", ex);
+                        LogManager.getLogger(AnalyticsServiceImpl.class).warn("error handling startup property", ex);
                     }
                 });
         properties.save();

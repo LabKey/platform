@@ -15,7 +15,8 @@
  */
 package org.labkey.api.pipeline;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.pipeline.protocol.xml.PipelineProtocolPropsDocument;
 import org.labkey.api.util.FileUtil;
@@ -39,7 +40,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
     protected static final String _pipelineProtocolDir = "protocols";
     private static final String _archivedProtocolDir = "archived";
 
-    private static final Logger LOG = Logger.getLogger(PipelineProtocolFactory.class);
+    private static final Logger LOG = LogManager.getLogger(PipelineProtocolFactory.class);
 
     public static File getProtocolRootDir(PipeRoot root)
     {

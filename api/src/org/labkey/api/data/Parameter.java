@@ -17,7 +17,8 @@
 package org.labkey.api.data;
 
 import com.google.common.primitives.Ints;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
@@ -29,14 +30,12 @@ import org.labkey.api.util.UnexpectedException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Array;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.GregorianCalendar;
-import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
@@ -55,7 +54,7 @@ import java.util.concurrent.Callable;
 
 public class Parameter implements AutoCloseable
 {
-    static Logger LOG = Logger.getLogger(Parameter.class);
+    static Logger LOG = LogManager.getLogger(Parameter.class);
 
     public interface JdbcParameterValue
     {
@@ -114,6 +113,8 @@ public class Parameter implements AutoCloseable
     String _name;
     @Nullable String _uri = null;       // for migration of ontology based code
     final @Nullable JdbcType _type;
+    int _scale;
+    int _precision;
     boolean setFileAsName = false;
 
     // only allow setting once, do not clear
@@ -188,6 +189,8 @@ public class Parameter implements AutoCloseable
         _name = c.getJdbcRsName();
         _uri = c.getPropertyURI();
         _type = c.getJdbcType();
+        _scale = c.getScale();
+        _precision = c.getPrecision();
         _indexes = indexes;
         // CONSIDER: this seems pretty low-level for this check (see also DefaultQueryUpdateService.convertTypes())
         setFileAsName = (c.getInputType().equalsIgnoreCase("file") && _type == JdbcType.VARCHAR);
@@ -220,11 +223,15 @@ public class Parameter implements AutoCloseable
         return _type;
     }
 
-//    public void setValue(Object in, boolean constant) throws SQLException
-//    {
-//        setValue(in);
-//        _constant = constant;
-//    }
+    public int getScale()
+    {
+        return _scale;
+    }
+
+    public int getPrecision()
+    {
+        return _precision;
+    }
 
     public void setValue(@Nullable Object in) throws SQLException
     {
@@ -445,47 +452,6 @@ public class Parameter implements AutoCloseable
                 parameter.close();
             }
             clear();
-        }
-    }
-
-    // TODO: migrate name in separate cross repository commit
-    @Deprecated
-    public static class ParameterMap extends ParameterMapStatement
-    {
-        public ParameterMap()
-        {}
-
-        public ParameterMap(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters)
-        {
-            super(scope, stmt, parameters);
-        }
-
-        public ParameterMap(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
-        {
-            super(scope, stmt, parameters, remap);
-        }
-
-        public ParameterMap(DbScope scope, SQLFragment sql, Map<String,String> remap) throws SQLException
-        {
-            super(scope, sql, remap);
-        }
-
-        public ParameterMap(DbScope scope, Connection conn, SQLFragment sql, Map<String,String> remap) throws SQLException
-        {
-            super(scope, conn, sql, remap);
-        }
-
-        public ParameterMap(ParameterMap from) throws SQLException
-        {
-            super(from);
-        }
-
-        @Override
-        public ParameterMap copy() throws SQLException
-        {
-            if (null == _sqlf || null == _conn)
-                throw new IllegalStateException("Copy can only be used on ParameterMap constructed with SQL");
-            return new ParameterMap(this);
         }
     }
 }

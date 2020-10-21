@@ -33,7 +33,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Responsible for showing custom field values (like assay run properties or sample set columns) in experiment module detail pages.
+ * Responsible for showing custom field values (like assay run properties or sample type columns) in experiment module detail pages.
  * User: jeckels
  * Date: Jan 23, 2006
  */

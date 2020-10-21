@@ -15,7 +15,7 @@
  */
 package org.labkey.api.admin;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Implementation used when an import/export context is used within an action or otherwise outside of a pipeline job.

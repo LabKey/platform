@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.json.JSONArray" %>
 <%@ page import="org.labkey.api.module.Module" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.util.ArrayList" %>
@@ -49,12 +49,12 @@ Ext4.onReady(function(){
     LABKEY.requiresScript("ModulePropertiesAdminPanel.js", function() {
 
         Ext4.create('LABKEY.ext.ModulePropertiesAdminPanel', {
-            modules: ['<%=StringUtils.join(modules, "','")%>']
-        }).render('<%=renderTarget%>');
+            modules: <%=new JSONArray(modules)%>
+        }).render('<%=h(renderTarget)%>');
 
     });
 
 });
 
 </script>
-<div id='<%=renderTarget%>'></div>
+<div id='<%=h(renderTarget)%>'></div>

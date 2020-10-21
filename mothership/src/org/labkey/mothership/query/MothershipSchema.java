@@ -333,15 +333,14 @@ public class MothershipSchema extends UserSchema
         issueURL.addParameter("issueId", "${BugNumber}");
         result.getMutableColumn("BugNumber").setURL(StringExpressionFactory.createURL(issueURL));
 
-        ActionURL stack = new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer());
-        stack.addParameter("exceptionStackTraceId","${ExceptionStackTraceId}");
-        result.getMutableColumn("ExceptionStackTraceId").setURL(StringExpressionFactory.createURL(stack));
+        result.setTitleColumn("ExceptionStackTraceId");
+        DetailsURL url = new DetailsURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()), Collections.singletonMap("exceptionStackTraceId", "ExceptionStackTraceId"));
+        result.setDetailsURL(url);
+
+        result.getMutableColumn("ExceptionStackTraceId").setURL(url);
         result.getMutableColumn("ExceptionStackTraceId").setLabel("Exception");
         result.getMutableColumn("ExceptionStackTraceId").setFormat("'#'0");
         result.getMutableColumn("ExceptionStackTraceId").setExcelFormatString("0");
-
-        result.setTitleColumn("ExceptionStackTraceId");
-        result.setDetailsURL(new DetailsURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()), Collections.singletonMap("exceptionStackTraceId", "ExceptionStackTraceId")));
 
         result.getMutableColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(this, true));
 
@@ -436,7 +435,7 @@ public class MothershipSchema extends UserSchema
     }
 
     @Override
-    public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
+    public QueryView createView(ViewContext context, @NotNull QuerySettings settings, @Nullable BindException errors)
     {
         if (EXCEPTION_STACK_TRACE_TABLE_NAME.equals(settings.getQueryName()))
         {

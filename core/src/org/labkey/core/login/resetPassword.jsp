@@ -22,7 +22,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.core.login.LoginController" %>
+<%@ page import="org.labkey.core.login.LoginController.LoginForm" %>
+<%@ page import="org.labkey.core.login.LoginController.ResetPasswordAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -32,11 +33,11 @@
     }
 %>
 <%
-    LoginController.LoginForm form = ((JspView<LoginController.LoginForm>)HttpView.currentView()).getModelBean();
+    LoginForm form = ((JspView<LoginForm>)HttpView.currentView()).getModelBean();
     ActionURL doneURL = AppProps.getInstance().getHomePageActionURL();
     String errors = formatMissedErrorsStr("form");
 %>
-<labkey:form method="POST" action="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>" className="auth-form">
+<labkey:form method="POST" action="<%=urlFor(ResetPasswordAction.class)%>" className="auth-form">
     <div class="auth-header">Reset Password</div>
     <% if (errors.length() > 0) { %>
         <%=unsafe(errors)%>

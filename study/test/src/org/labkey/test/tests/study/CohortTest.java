@@ -98,17 +98,17 @@ public class CohortTest extends BaseWebDriverTest
         assertEquals(10, Collections.frequency(cohortValues, "Positive"));
         assertEquals(10, Collections.frequency(cohortValues, "Negative"));
 
-        setCohortFilter("Negative", AdvancedCohortType.INITIAL);
+        setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.INITIAL);
         verifyVialCount(specimenTable, 20); // One participant has no cohorts.
-        setCohortFilter("Positive", AdvancedCohortType.INITIAL);
+        setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.INITIAL);
         verifyVialCount(specimenTable, 0); // All participants initially negative
-        setCohortFilter("Negative", AdvancedCohortType.CURRENT);
+        setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.CURRENT);
         verifyVialCount(specimenTable, 0); // All participants are positive by the last visit
-        setCohortFilter("Positive", AdvancedCohortType.CURRENT);
+        setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.CURRENT);
         verifyVialCount(specimenTable, 20); // All participants are positive by the last visit
-        setCohortFilter("Negative", AdvancedCohortType.DATA_COLLECTION);
+        setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.DATA_COLLECTION);
         verifyVialCount(specimenTable, 10);
-        setCohortFilter("Positive", AdvancedCohortType.DATA_COLLECTION);
+        setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.DATA_COLLECTION);
         verifyVialCount(specimenTable, 10);
 
         clickAndWait(Locator.linkWithText("Reports"));
@@ -256,17 +256,17 @@ public class CohortTest extends BaseWebDriverTest
         specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
         verifyVialCount(specimenTable, 20); // 5 participants x 4 visits (was five visits, but one was just deleted)
 
-        setCohortFilter("Negative", AdvancedCohortType.INITIAL);
+        setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.INITIAL);
         verifyVialCount(specimenTable, 16); // One participant has no cohorts.
-        setCohortFilter("Positive", AdvancedCohortType.INITIAL);
+        setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.INITIAL);
         verifyVialCount(specimenTable, 0); // All participants initially negative
-        setCohortFilter("Negative", AdvancedCohortType.CURRENT);
+        setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.CURRENT);
         verifyVialCount(specimenTable, 4); // Final visit (where Infected4 joins Positive cohort) has been deleted.
-        setCohortFilter("Positive", AdvancedCohortType.CURRENT);
+        setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.CURRENT);
         verifyVialCount(specimenTable, 12);
-        setCohortFilter("Negative", AdvancedCohortType.DATA_COLLECTION);
+        setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.DATA_COLLECTION);
         verifyVialCount(specimenTable, 10);
-        setCohortFilter("Positive", AdvancedCohortType.DATA_COLLECTION);
+        setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.DATA_COLLECTION);
         verifyVialCount(specimenTable, 6); // Visit4 samples no longer have a cohort, and are thus not shown.
 
         // Check that participant view respects filter.
@@ -277,7 +277,7 @@ public class CohortTest extends BaseWebDriverTest
         _customizeViewsHelper.addSort("ParticipantId", SortDirection.ASC);
         _customizeViewsHelper.applyCustomView();
 
-        setCohortFilter("Positive", AdvancedCohortType.DATA_COLLECTION);
+        setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.DATA_COLLECTION);
         clickAndWait(Locator.linkWithText("Infected1"));
         assertElementNotPresent(Locator.linkWithText("Previous Participant"));
         clickAndWait(Locator.linkWithText("Next Participant"));
@@ -302,9 +302,9 @@ public class CohortTest extends BaseWebDriverTest
         clickProject(PROJECT_NAME);
         waitAndClick(Locator.linkWithText("Blood"));
         DataRegionTable vials = new DataRegionTable("SpecimenDetail", getDriver());
-        vials.setFilter("CollectionCohort", "Equals", "Positive");
+        vials.setFilter("CollectionCohort", "Equals", COHORT_POSITIVE);
         assertEquals("Unexpected number of collection cohort rows", 12, vials.getDataRowCount());
-        vials.setFilter("CollectionCohort", "Equals", "Negative");
+        vials.setFilter("CollectionCohort", "Equals", COHORT_NEGATIVE);
         assertEquals("Unexpected number of collection cohort rows", 4, vials.getDataRowCount());
         vials.clearFilter("CollectionCohort");
 
@@ -367,8 +367,8 @@ public class CohortTest extends BaseWebDriverTest
         // verify that we have an 'enrolled' column and both cohorts are
         // true by default
         log("Check that cohorts are enrolled by default.");
-        verifyCohortStatus(table, "positive", true);
-        verifyCohortStatus(table, "negative", true);
+        verifyCohortStatus(table, COHORT_POSITIVE, true);
+        verifyCohortStatus(table, COHORT_NEGATIVE, true);
 
         // issue 15948: verify that a new cohort has the enrolled bit set
         log("Verify a new cohort has enrolled checked.");
@@ -378,11 +378,11 @@ public class CohortTest extends BaseWebDriverTest
         // verify we can roundtrip enrolled status
         // unenroll the "postiive" cohort and check
         log("Check that enrolled bit is roundtripped successfully.");
-        changeCohortStatus(table, "positive", false);
-        verifyCohortStatus(table, "positive", false);
+        changeCohortStatus(table, COHORT_POSITIVE, false);
+        verifyCohortStatus(table, COHORT_POSITIVE, false);
 
         // start with everyone enrolled again
-        changeCohortStatus(table, "positive", true);
+        changeCohortStatus(table, COHORT_POSITIVE, true);
         refreshParticipantList();
 
         // the rules for when we display the "enrolled" keyword are as follows:
@@ -402,8 +402,8 @@ public class CohortTest extends BaseWebDriverTest
 
         // unenroll all cohorts
         table = getCohortDataRegionTable();
-        changeCohortStatus(table, "positive", false);
-        changeCohortStatus(table, "negative", false);
+        changeCohortStatus(table, COHORT_POSITIVE, false);
+        changeCohortStatus(table, COHORT_NEGATIVE, false);
         refreshParticipantList();
 
         log("verify enrolled text: all cohorts are unenrolled");
@@ -426,8 +426,8 @@ public class CohortTest extends BaseWebDriverTest
 
         // test both enrolled and unenrolled cohorts
         table = getCohortDataRegionTable();
-        changeCohortStatus(table, "positive", true);
-        changeCohortStatus(table, "negative", false);
+        changeCohortStatus(table, COHORT_POSITIVE, true);
+        changeCohortStatus(table, COHORT_NEGATIVE, false);
         refreshParticipantList();
 
         log("verify enrolled text: Positive cohort enrolled; negative cohort unenrolled");
@@ -489,17 +489,17 @@ public class CohortTest extends BaseWebDriverTest
         clickAndWait(Locator.linkWithText("2 datasets"));
         clickAndWait(Locator.linkWithText("Test Results"));
 
-        setCohortFilter("Negative", AdvancedCohortType.CURRENT); // 4 rows
+        setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.CURRENT); // 4 rows
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.saveCustomView("CurrentNegative", true);
 
         goToCustomView("Default");
-        setCohortFilter("Negative", AdvancedCohortType.INITIAL); // 16 rows
+        setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.INITIAL); // 16 rows
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.saveCustomView("InitialPositive", true);
 
         goToCustomView("Default");
-        setCohortFilter("Positive", AdvancedCohortType.DATA_COLLECTION); // 6 rows
+        setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.DATA_COLLECTION); // 6 rows
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.saveCustomView("DataCollectionPositive", true);
 

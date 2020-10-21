@@ -16,9 +16,8 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -42,7 +41,7 @@
 <script type="text/javascript">
     var _wb_titleId = Ext4.id();
     LABKEY.NavTrail.setTrail("<span class='wb-name'><%=container.getRowId()%>:&nbsp;</span><span class='labkey-edit-in-place' id='" + _wb_titleId + "'><%=h(container.getTitle())%></span>",
-            undefined, <%=PageFlowUtil.jsString(container.getTitle())%>, false);
+            undefined, <%=q(container.getTitle())%>, false);
 
     Ext4.onReady(function(){
         if (!LABKEY.Security.currentUser.canUpdate)

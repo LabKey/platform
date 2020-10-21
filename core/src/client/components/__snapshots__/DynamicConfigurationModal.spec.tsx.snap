@@ -173,6 +173,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
         <a
           className="modal__help-link"
           href="https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureCas"
+          rel="noopener noreferrer"
           target="_blank"
         >
           More about CAS authentication
@@ -378,6 +379,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
         <a
           className="modal__help-link"
           href="https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureCas"
+          rel="noopener noreferrer"
           target="_blank"
         >
           More about CAS authentication
@@ -604,6 +606,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
         <a
           className="modal__help-link"
           href="https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureDuoTwoFactor"
+          rel="noopener noreferrer"
           target="_blank"
         >
           More about Duo 2 Factor authentication
@@ -841,6 +844,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
         <a
           className="modal__help-link"
           href="https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureDuoTwoFactor"
+          rel="noopener noreferrer"
           target="_blank"
         >
           More about Duo 2 Factor authentication

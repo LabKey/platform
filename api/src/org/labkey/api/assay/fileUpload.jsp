@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.assay.AssayRunUploadContext" %>
 <%@ page import="org.labkey.api.assay.FileUploadDataCollector" %>
 <%@ page import="org.labkey.api.assay.PreviouslyUploadedDataCollector" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.io.File" %>
@@ -90,7 +89,7 @@
         <%
         PreviouslyUploadedDataCollector reuseDataCollector = new PreviouslyUploadedDataCollector(Collections.emptyMap(), PreviouslyUploadedDataCollector.Type.ReRun);
         for (Map.Entry<String, File> entry : bean.getReusableFiles().entrySet()) { %>
-            addFileUploadInputRow(null, <%= PageFlowUtil.jsString(entry.getValue().getName())%>, <%= PageFlowUtil.jsString(reuseDataCollector.getHiddenFormElementHTML(getContainer(), entry.getKey(), entry.getValue()))%>);
+            addFileUploadInputRow(null, <%= q(entry.getValue().getName())%>, <%= q(reuseDataCollector.getHiddenFormElementHTML(getContainer(), entry.getKey(), entry.getValue()))%>);
         <% } %>
 
         // Be sure that we always have at least one file group in the list

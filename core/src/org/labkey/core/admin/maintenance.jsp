@@ -26,20 +26,20 @@
     MaintenanceBean bean = ((JspView<MaintenanceBean>)HttpView.currentView()).getModelBean();
 %>
 <labkey:errors/>
-<p><%=text(bean.content)%></p>
+<p><%=bean.content%></p>
 <% if (bean.loginURL != null) { %>
 <p><%= button("Site Admin Login").href(bean.loginURL) %></p>
 <% } %>
 <script type="text/javascript">
 (function() {
     // grab the returnUrl if present, otherwise set to loginURL
-    var nextURL = LABKEY.ActionURL.getParameter('returnUrl') || <%=q(bean.loginURL == null ? null : bean.loginURL.toString())%>;
+    var nextURL = LABKEY.ActionURL.getParameter('returnUrl') || <%=q(bean.loginURL == null ? null : bean.loginURL)%>;
     if (nextURL) {
         var delay = 500;
         // if we have a URL, check for startup complete and redirect
         function checkStartupComplete() {
             LABKEY.Ajax.request({
-                url: <%=q(new ActionURL(AdminController.StartupStatusAction.class, getContainer()).toString())%>,
+                url: <%=q(new ActionURL(AdminController.StartupStatusAction.class, getContainer()))%>,
                 success: function (response) {
                     var json = JSON.parse(response.responseText);
                     if (json && json.startupComplete && !json.adminOnly) {

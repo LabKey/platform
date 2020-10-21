@@ -16,16 +16,14 @@
 
 package org.labkey.api.assay.actions;
 
+import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.AssayUrls;
-import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;

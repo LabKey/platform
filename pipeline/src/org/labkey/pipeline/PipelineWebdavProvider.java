@@ -33,7 +33,6 @@ import org.labkey.pipeline.api.PipeRootImpl;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 
 import java.io.File;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;

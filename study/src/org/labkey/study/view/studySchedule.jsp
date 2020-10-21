@@ -59,7 +59,7 @@
             Ext4.onReady(function(){
                 Ext4.create('LABKEY.ext4.StudyScheduleGrid', {
                     renderTo      : "study-schedule-"+ <%=webPartIndex%>,
-                    timepointType : "<%=timepointType%>",
+                    timepointType : <%=q(timepointType)%>,
                     canEdit       : <%=canEdit%>
                 });
             });

@@ -15,7 +15,7 @@
  */
 package org.labkey.api.reports.report;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.reports.RScriptEngine;
 import org.labkey.api.resource.Resource;
@@ -95,7 +95,7 @@ public class ModuleRReportResource extends ModuleReportDependenciesResource
             }
             catch (XmlException e)
             {
-                Logger.getLogger(ModuleRReportResource.class).warn("Unable to load R report metadata from file "
+                LogManager.getLogger(ModuleRReportResource.class).warn("Unable to load R report metadata from file "
                         + _sourceFile.getPath(), e);
             }
         }

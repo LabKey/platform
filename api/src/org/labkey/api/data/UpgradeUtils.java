@@ -16,8 +16,9 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.query.FieldKey;
@@ -39,7 +40,7 @@ import java.util.Set;
 */
 public class UpgradeUtils
 {
-    private static final Logger LOG = Logger.getLogger(UpgradeUtils.class);
+    private static final Logger LOG = LogManager.getLogger(UpgradeUtils.class);
 
     /**
      * Uniquifies values in a column, making it possible to add a UNIQUE CONSTRAINT/INDEX OR change a case-sensitive

@@ -15,7 +15,8 @@
  */
 package org.labkey.api.module;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -29,7 +30,7 @@ import java.util.regex.Pattern;
  */
 public class ModuleResourceCaches
 {
-    private static final Logger LOGGER = Logger.getLogger(ModuleResourceCaches.class);
+    private static final Logger LOGGER = LogManager.getLogger(ModuleResourceCaches.class);
     /**
      * Create a new ModuleResourceCache that finds its resources via one or more ResourceRootProviders.
      *

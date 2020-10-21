@@ -24,7 +24,8 @@ import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fop.svg.PDFTranscoder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -142,7 +143,7 @@ public class VisualizationController extends SpringActionController
     public static final String FILTER_DATAREGION = "Dataset";
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(VisualizationController.class);
-    private static final Logger _log = Logger.getLogger(VisualizationController.class);
+    private static final Logger _log = LogManager.getLogger(VisualizationController.class);
 
     public static class VisualizationUrlsImpl implements VisualizationUrls
     {

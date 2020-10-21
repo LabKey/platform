@@ -17,14 +17,14 @@
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
-<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController.ShowAddXarFileAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <labkey:errors />
 <p>
-<labkey:form name="upload" action="<%=h(buildURL(ExperimentController.ShowAddXarFileAction.class))%>" enctype="multipart/form-data" method="post" layout="horizontal">
+<labkey:form name="upload" action="<%=urlFor(ShowAddXarFileAction.class)%>" enctype="multipart/form-data" method="post" layout="horizontal">
     <labkey:input type="file" label="Local File" id="UploadFile" name="uploadFile" value="" size="60"/>
     <%= button("Upload").submit(true) %>
 </labkey:form>
 </p>
-<p>To import a <em>.xar</em> or <em>.xar.xml</em> file that is already on the server's disk, please use the <a href="<%=h(urlProvider(PipelineUrls.class).urlSetup(getContainer()))%>">Data Pipeline</a> instead.</p>
+<p>To import a <em>.xar</em> or <em>.xar.xml</em> file that is already on the server's disk, please use the <a href="<%=h(urlProvider(PipelineUrls.class).urlBrowse(getContainer()))%>">Data Pipeline</a> instead.</p>

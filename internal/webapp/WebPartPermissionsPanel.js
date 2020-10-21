@@ -223,7 +223,7 @@ Ext4.define('LABKEY.Portal.WebPartPermissionsPanel', {
             var expandNode = function(childNodes){
                 if(nodes.length > 0){
                     for(var i = 0; i < childNodes.length; i++){
-                        if(nodes[0] === Ext4.htmlDecode(childNodes[i].data.text)){
+                        if(nodes[0] === childNodes[i].data.text){
                             nodes.shift();
                             childNodes[i].expand(false, expandNode, this);
                             break;
@@ -233,7 +233,7 @@ Ext4.define('LABKEY.Portal.WebPartPermissionsPanel', {
             };
 
             var child = this.folderTree.getRootNode().findChildBy(function(node){
-                return nodes[0] === Ext4.htmlDecode(node.data.text);
+                return nodes[0] === node.data.text;
             }, this);
 
             if(child){

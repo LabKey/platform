@@ -19,8 +19,9 @@
 <%@ page import="org.labkey.api.study.Study"%>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.study.controllers.DatasetController" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.DatasetController.BulkDatasetDeleteAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DefaultDatasetReportAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageTypesAction" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -33,7 +34,7 @@
 %>
 
 <p>Please select the datasets you want to delete:</p>
-<labkey:form action="<%=h(buildURL(DatasetController.BulkDatasetDeleteAction.class))%>" name="bulkDatasetDelete" method="POST">
+<labkey:form action="<%=urlFor(BulkDatasetDeleteAction.class)%>" name="bulkDatasetDelete" method="POST">
 <table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
         <td class="labkey-column-header"><input type="checkbox" onchange="toggleAllRows(this);"></td>
@@ -47,22 +48,21 @@
     <%
     Study study = getStudy();
     int rowCount = 0;
-    ActionURL cancelURL = new ActionURL(StudyController.ManageTypesAction.class, study.getContainer());
+    ActionURL cancelURL = new ActionURL(ManageTypesAction.class, study.getContainer());
 
     for (Dataset def : StudyManager.getInstance().getDatasetDefinitionsLocal(study, null, Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER))
     {
-        ActionURL detailsURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, study.getContainer());
+        ActionURL detailsURL = new ActionURL(DefaultDatasetReportAction.class, study.getContainer());
         detailsURL.addParameter("datasetId", def.getDatasetId());
-        String detailsLink = detailsURL.getLocalURIString();
         rowCount++;
     %>
 
     <tr class="<%=h(rowCount % 2 == 1 ? "labkey-alternate-row" : "labkey-row")%>">
         <td><input type="checkbox" name="datasetIds" value="<%=def.getDatasetId()%>"></td>
-        <td><a href="<%=detailsLink%>"><%=def.getDatasetId()%></a></td>
-        <td><a href="<%=detailsLink%>"><%= h(def.getLabel()) %></a></td>
+        <td><a href="<%=h(detailsURL)%>"><%=def.getDatasetId()%></a></td>
+        <td><a href="<%=h(detailsURL)%>"><%= h(def.getLabel()) %></a></td>
         <td><%= h(def.getViewCategory() != null ? def.getViewCategory().getLabel() : null) %></td>
-        <td><%= def.getType() %></td>
+        <td><%= h(def.getType()) %></td>
         <td align="right"><%=StudyManager.getInstance().getNumDatasetRows(getUser(), def)%></td>
     </tr>
     <%

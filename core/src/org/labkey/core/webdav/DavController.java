@@ -24,8 +24,9 @@ import org.apache.commons.fileupload.InvalidFileNameException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -71,25 +72,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.test.TestWhen;
-import org.labkey.api.util.CSRFException;
-import org.labkey.api.util.CSRFUtil;
-import org.labkey.api.util.ConfigurationException;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.FileStream;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.HeartBeat;
-import org.labkey.api.util.HttpUtil;
-import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.Path;
-import org.labkey.api.util.ResponseHelper;
-import org.labkey.api.util.ShutdownListener;
-import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DefaultModelAndView;
 import org.labkey.api.view.JspView;
@@ -167,7 +150,25 @@ import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TimeZone;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -189,11 +190,12 @@ import static org.labkey.api.action.ApiJsonWriter.CONTENT_TYPE_JSON;
  */
 public class DavController extends SpringActionController
 {
-    private static final Logger _log = Logger.getLogger(DavController.class);
+    private static final Logger _log = LogManager.getLogger(DavController.class);
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(DavController.class);
 
     public static final String name = "_dav_";
     public static final String mimeSeparation = "<[[mime " + GUID.makeHash() + "_separator_]]>";
+    public static final String CONTENT_TYPE_HTML = "text/html";
 
     static boolean _readOnly = false;
     static boolean _locking = true;
@@ -468,6 +470,20 @@ public class DavController extends SpringActionController
                             super.setStatus(HttpServletResponse.SC_OK);
                         }
                     }
+                    else if (CONTENT_TYPE_HTML.equals(getRequest().getHeader("Content-Type)")) ||
+                            accept.contains(CONTENT_TYPE_HTML))
+                    {
+                        try
+                        {
+                            ExceptionUtil.renderErrorView(getViewContext(), new PageConfig(), ErrorRenderer.ErrorType.notFound, status.code, message, null, false, false );
+                            return WebdavStatus.fromCode(status.code);
+                        }
+                        catch (Exception e)
+                        {
+                            _log.debug("Failed to render the error page.", e);
+                            super.sendError(status.code, message);
+                        }
+                    }
                     else
                     {
                         super.sendError(status.code, message);
@@ -687,7 +703,7 @@ public class DavController extends SpringActionController
             clearLastError();
 
             long start=0;
-            if (_log.isEnabledFor(Level.DEBUG))
+            if (_log.isEnabled(Level.DEBUG))
             {
                 long modified = getRequest().getDateHeader("If-Modified-Since");
                 boolean isBasicAuthentication = SecurityManager.isBasicAuthentication(getRequest());
@@ -776,6 +792,7 @@ public class DavController extends SpringActionController
                         ss.notFound((URLHelper)getRequest().getAttribute(ViewServlet.ORIGINAL_URL_URLHELPER));
                 }
                 getResponse().sendError(dex.getStatus(), dex.getMessage());
+
                 if (dex.getStatus() != null && dex.getStatus().code == HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
                 {
                     ExceptionUtil.logExceptionToMothership(request, dex);
@@ -1744,6 +1761,15 @@ public class DavController extends SpringActionController
                 resourceWriter.beginResponse(getResponse());
 
                 WebdavResource resource = root;
+
+                Map<String, Boolean> rootPermissions = new HashMap<>();
+                rootPermissions.put("canRead", resource.canRead(getUser(), false));
+                rootPermissions.put("canUpload", resource.canCreate(getUser(), false));
+                rootPermissions.put("canEdit", resource.canWrite(getUser(), false));
+                rootPermissions.put("canDelete", resource.canDelete(getUser(), false));
+                rootPermissions.put("canRename", resource.canRename(getUser(), false));
+                resourceWriter.writeProperty("permissions", rootPermissions);
+
                 if (resource.isCollection())
                 {
                     Collection<String> listPaths = resource.listNames();  // 17749
@@ -2753,6 +2779,11 @@ public class DavController extends SpringActionController
             json.key("iconHref").value(resource.getIconHref());
             json.key("iconFontCls").value(resource.getIconFontCls());
             json.key("options").value(determineMethodsAllowed(resource));
+            json.key("canDelete").value(resource.canDelete(getUser(), false));
+            json.key("canRename").value(resource.canRename(getUser(), false));
+            json.key("canEdit").value(resource.canWrite(getUser(), false));
+            json.key("canUpload").value(resource.canCreate(getUser(), false));
+            json.key("canRead").value(resource.canRead(getUser(), false));
 
             long created = resource.getCreated();
             if (Long.MIN_VALUE != created)
@@ -4737,11 +4768,16 @@ public class DavController extends SpringActionController
 
     static Cache<Path,JSONObject> exceptionCache = CacheManager.getCache(1000, 5*CacheManager.MINUTE, "webdav errors");
 
-    private Path getErrorCacheKey()
+    private @Nullable Path getErrorCacheKey()
     {
         Path path = getResourcePath();
         HttpServletRequest request = getRequest();
-        HttpSession session =  request.getSession(true);
+        HttpSession session = null;
+        try
+        {
+            request.getSession(true);
+        }
+        catch (IllegalStateException ignored) {}
         if (null == session)
             return null;
         String sessionId = session.getId();
@@ -4779,20 +4815,25 @@ public class DavController extends SpringActionController
         @Override
         public Object execute(Object o, BindException bindErrors)
         {
-            Path key = getErrorCacheKey();
-
-            JSONObject x = exceptionCache.get(key);
-            if (null != x)
-                exceptionCache.remove(key);
-
             JSONObject ret = new JSONObject();
             ret.put("success",true);
             JSONArray errors = new JSONArray();
             ret.put("errors", errors);
-            if (null != x)
+
+            Path key = getErrorCacheKey();
+            if (key != null)
             {
-                errors.put(x);
+                JSONObject x = exceptionCache.get(key);
+                if (null != x)
+                {
+                    exceptionCache.remove(key);
+                }
+                if (null != x)
+                {
+                    errors.put(x);
+                }
             }
+
             return ret;
         }
     }
@@ -4933,14 +4974,18 @@ public class DavController extends SpringActionController
     }
 
 
-    Path extPath = new Path(PageFlowUtil.extJsRoot());
-    Path mcePath = new Path("timymce");
+    static final Path jquery = new Path("internal","jQuery");
 
-    boolean alwaysCacheFile(Path p)
+    public static boolean alwaysCacheFile(Path p)
     {
-        return p.startsWith(extPath) || p.startsWith(mcePath);
+        String firstpart = p.get(0);
+        if (firstpart.startsWith("ext-"))
+            return true;
+        if (p.startsWith(jquery))
+            return true;
+        String name = p.getName();
+        return name.contains(".cache.");
     }
-
 
     private WebdavStatus serveResource(WebdavResource resource, boolean content)
             throws DavException, IOException
@@ -4973,12 +5018,11 @@ public class DavController extends SpringActionController
 
             if (!resource.getName().contains(".nocache."))
             {
-                boolean isPerfectCache = resource.getName().contains(".cache.");
                 boolean allowCaching = AppProps.getInstance().isCachingAllowed();
-
-                if (allowCaching || isPerfectCache || alwaysCacheFile(resource.getPath()))
+                boolean alwaysCache = alwaysCacheFile(resource.getPath());
+                if (allowCaching || alwaysCache)
                 {
-                    getResponse().setPublicStatic(isPerfectCache ? 365 : 35);
+                    getResponse().setPublicStatic(alwaysCache ? 365 : 35);
                 }
             }
         }

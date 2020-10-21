@@ -19,7 +19,7 @@ package org.labkey.query.sql;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -248,7 +248,7 @@ public class Query
         if (null == _querySource)
             throw new IllegalStateException("SQL has not been specified");
 
-        Logger.getLogger(Query.class).debug("Query.parse()\n" + _querySource);
+        LogManager.getLogger(Query.class).debug("Query.parse()\n" + _querySource);
         _parse(_querySource, skipSuggestedColumns);
         
         for (QueryException e : _parseErrors)
@@ -402,7 +402,7 @@ public class Query
 		SourceBuilder builder = new SourceBuilder();
 		builder.append("SELECT ");
 		builder.pushPrefix("");
-		QueryRelation relation = resolveTable(getSchema(), null, key, key.getName());
+		QueryRelation relation = resolveTable(getSchema(), null, key, key.getName(), null);
 		if (relation == null)
 		{
 			builder.append("'Table not found' AS message");
@@ -644,7 +644,7 @@ public class Query
         }
         catch (RuntimeException x)
         {
-            Logger.getLogger(Query.class).error("error", x);
+            LogManager.getLogger(Query.class).error("error", x);
             throw Query.wrapRuntimeException(x, _querySource);
         }
     }
@@ -731,7 +731,7 @@ public class Query
 	/**
 	 * Resolve a particular table name.  The table name may have schema names (folder.schema.table etc.) prepended to it.
 	 */
-    QueryRelation resolveTable(QuerySchema currentSchema, QNode node, FieldKey key, String alias) throws QueryNotFoundException
+    QueryRelation resolveTable(QuerySchema currentSchema, QNode node, FieldKey key, String alias, @Nullable ContainerFilter.Type cfType) throws QueryNotFoundException
     {
         // to simplify the logic a bit, break out the error translation from the _resolveTable()
         List<QueryException> resolveExceptions = new ArrayList<>();
@@ -740,12 +740,7 @@ public class Query
 
         try
         {
-            // find the nearest ContainerSchema
-            QuerySchema.ContainerSchema containerSchema = currentSchema.getDefaultSchema();
-            // UNDONE: currentSchema.get
-            SchemaKey containerRelativeSchemaKey = new SchemaKey(null, currentSchema.getName());
-
-            ret = _resolveTable(currentSchema, node, key, alias, resolveExceptions, queryDefOUT);
+            ret = _resolveTable(currentSchema, node, key, alias, resolveExceptions, queryDefOUT, cfType);
             if ((ret != null) && (queryDefOUT[0] == null))
             {
                 TableInfo tinfo = ret.getTableInfo();
@@ -829,9 +824,11 @@ public class Query
             QuerySchema currentSchema, QNode node, FieldKey key, String alias,
             // OUT parameters
             List<QueryException> resolveExceptions,
-            QueryDefinition[] queryDefOUT)
+            QueryDefinition[] queryDefOUT,
+            ContainerFilter.Type cfType)
         throws QueryNotFoundException
 	{
+	    FieldKey cacheKey = null==cfType ? key : key.append(" ~cf~ ", cfType.name());
         boolean trackDependency = true;
 
         ++_countResolvedTables;
@@ -842,14 +839,28 @@ public class Query
             return null;
         }
 
-        // check if we've resolved the exact same table
+        // check the cache to see if we've resolved this exact same table already
         _resolveCache.computeIfAbsent(currentSchema, k -> new HashMap<>());
-        Pair<QuerySchema, TableInfo> found = _resolveCache.get(currentSchema).get(key);
+        Pair<QuerySchema, TableInfo> found = _resolveCache.get(currentSchema).get(cacheKey);
         if (null != found)
         {
+            // ensure that the table has the same containerFilter that we asked for, otherwise don't return cached TableInfo
             TableInfo ti = found.second;
-            if (null != ti.getContainerFilter() && ti.getContainerFilter().equals(getContainerFilter()))
-                return new QueryTable(this, found.first, found.second, alias);
+            ContainerFilter cachedTableCF = ti.getContainerFilter();
+            if (null != cachedTableCF)
+            {
+                if (null != cfType)
+                {
+                    // explicit containerfilter e.g. due to SQL table annotation TABLE[ContainerFilter='Current']
+                    if (cfType == cachedTableCF.getType())
+                        return new QueryTable(this, found.first, found.second, alias);
+                }
+                // compare against default container filter for this query
+                else if (cachedTableCF.equals(getContainerFilter()))
+                {
+                    return new QueryTable(this, found.first, found.second, alias);
+                }
+            }
         }
 
 		List<String> parts = key.getParts();
@@ -857,7 +868,7 @@ public class Query
 		for (String part : parts)
 			names.add(FieldKey.decodePart(part));
 
-		ContainerFilter cf = getContainerFilter();
+		ContainerFilter cf = null==cfType ? getContainerFilter() : null;
 
         QuerySchema resolvedSchema = currentSchema;
 		for (int i = 0; i < parts.size() - 1; i ++)
@@ -886,6 +897,9 @@ public class Query
 
         try
         {
+            if (null == cf && null != cfType)
+                cf = cfType.create(resolvedSchema);
+
             if (resolvedSchema instanceof UserSchema)
             {
                 TableType tableType = lookupMetadataTable(key.getName());
@@ -893,7 +907,9 @@ public class Query
                 t = ((UserSchema) resolvedSchema)._getTableOrQuery(key.getName(), cf, true, forWrite, resolveExceptions);
             }
             else
+            {
                 t = resolvedSchema.getTable(key.getName(), cf);
+            }
         }
         catch (QueryException ex)
         {
@@ -925,7 +941,7 @@ public class Query
             TableType tableType = lookupMetadataTable(tableInfo.getName());
             if (null != tableType && tableInfo.isMetadataOverrideable() && resolvedSchema instanceof UserSchema)
                 tableInfo.overlayMetadata(Collections.singletonList(tableType), (UserSchema)resolvedSchema, _parseErrors);
-            _resolveCache.get(currentSchema).put(key, new Pair<>(resolvedSchema, tableInfo));
+            _resolveCache.get(currentSchema).put(cacheKey, new Pair<>(resolvedSchema, tableInfo));
 
             String name = ((TableInfo) t).getName();
 
@@ -1705,7 +1721,17 @@ public class Query
         new SqlTest("WITH UserCTE AS (SELECT 1001 as UserId) \n" +
                 "SELECT U1.UserId Expr1, U2.UserId Expr2\n" +
                 "FROM UserCTE AS U1, UserCTE AS U2 \n" +
-                "WHERE U1.UserId = U2.UserId", 2, 1)
+                "WHERE U1.UserId = U2.UserId", 2, 1),
+
+        // 40830, this query caused a problem because it has no simple field references (only an expression) and so
+        // getSuggestedColumns() is not called on the inner SELECT and therefore resolveFields() was not called before getKeyColumns()
+        new SqlTest("SELECT Name || '-' || Label FROM (SELECT Name, Label FROM core.Modules) M"),
+
+        // Allowed, but wrong syntax, trailing comma in select list and terminal semicolon
+        new SqlTest("SELECT 1 AS ONE", 1, 1),
+        new SqlTest("SELECT 1 AS ONE,", 1, 1),
+        new SqlTest("SELECT 1 AS ONE;", 1, 1),
+        new SqlTest("SELECT 1 AS ONE,;", 1, 1)
     };
 
 
@@ -1740,7 +1766,7 @@ public class Query
         new SqlTest("SELECT regr_slope(seven, d), day FROM R GROUP BY day", 2, 7),
         new SqlTest("SELECT regr_sxx(seven, d), day FROM R GROUP BY day", 2, 7),
         new SqlTest("SELECT regr_sxy(seven, d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT regr_syy(seven, d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT regr_syy(seven, d), day FROM R GROUP BY day", 2, 7)
     };
 
 
@@ -1771,7 +1797,12 @@ public class Query
 
         // UNDONE: should work since R.seven and seven are the same
         new FailTest("SELECT R.seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6)"),
-	};
+
+        new FailTest("SELECT A.Name FROM core.Modules A FULL JOIN core.Modules B ON B.Name=C.Name FULL JOIN core.Modules C ON A.Name=C.Name"), // Missing from-clause entry
+
+        // trailing semicolon in subselect
+        new FailTest("SELECT Parent FROM (SELECT Parent FROM core.containers;) AS X")
+    };
 
     private static final InvolvedColumnsTest[] involvedColumnsTests = new InvolvedColumnsTest[]
     {
@@ -1867,11 +1898,11 @@ public class Query
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
 			Container qtest = getSubfolder();
-            ListService s = ListService.get();
+            ListService listService = ListService.get();
             UserSchema lists = (UserSchema)DefaultSchema.get(user, c).getSchema("lists");
             assertNotNull(lists);
 
-            ListDefinition R = s.createList(c, "R", ListDefinition.KeyType.AutoIncrementInteger);
+            ListDefinition R = listService.createList(c, "R", ListDefinition.KeyType.AutoIncrementInteger);
             R.setKeyName("rowid");
             addProperties(R);
             R.save(user);
@@ -1882,7 +1913,7 @@ public class Query
             if (context.getErrors().hasErrors())
                 fail(context.getErrors().getRowErrors().get(0).toString());
 
-            ListDefinition S = s.createList(qtest, "S", ListDefinition.KeyType.AutoIncrementInteger);
+            ListDefinition S = listService.createList(qtest, "S", ListDefinition.KeyType.AutoIncrementInteger);
             S.setKeyName("rowid");
             addProperties(S);
             S.save(user);
@@ -1955,6 +1986,7 @@ public class Query
             QuerySchema schema = lists;
             if (null != container)
                 schema = schema.getSchema("Folder").getSchema(container.getPath()).getSchema("lists");
+            requireNonNull(schema);
 
 			try
 			{
@@ -1985,7 +2017,6 @@ public class Query
                 lists = DefaultSchema.get(user, c).getSchema("lists");
             }
 
-            assertNotNull(lists);
             assertNotNull(lists);
             TableInfo Rinfo = lists.getTable("R");
             assertNotNull(Rinfo);
@@ -2267,6 +2298,41 @@ public class Query
         }
 
 
+        static SqlTest containerTests[] = new SqlTest[]
+        {
+            new SqlTest("SELECT name FROM core.containers", 1, 1),
+            new SqlTest("SELECT name FROM core.containers[ContainerFilter='Current']", 1, 1),
+            new SqlTest("SELECT name FROM core.containers[ContainerFilter='CurrentAndFirstChildren']", 1, 2),
+
+            // test caching of resolved tables, these two references to core.containers should not be shared
+            new SqlTest("SELECT A.name FROM core.containers[ContainerFilter='CurrentAndFirstChildren'] A inner join core.containers B on A.entityId = B.entityId", 1, 1),
+            new SqlTest("SELECT A.name FROM core.containers A inner join core.containers[ContainerFilter='CurrentAndFirstChildren'] B on A.entityId = B.entityId", 1, 1),
+            new SqlTest("SELECT A.name FROM core.containers[ContainerFilter='AllInProject'] A inner join core.containers[ContainerFilter='CurrentAndFirstChildren'] B on A.entityId = B.entityId", 1, 2),
+            new SqlTest("SELECT A.name FROM core.containers[ContainerFilter='CurrentAndFirstChildren'] A inner join core.containers[ContainerFilter='AllInProject'] B on A.entityId = B.entityId", 1, 2)
+        };
+
+
+        @Test
+        public void testContainerAnnotation() throws Exception
+        {
+            // note getPrimarySchema() will return NULL if there are no lists yet
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+
+            if (1==1 || null == lists)
+            {
+                _tearDown();
+                _setUp();
+                lists = DefaultSchema.get(user, c).getSchema("lists");
+            }
+
+            for (SqlTest test : containerTests)
+            {
+                test.validate(this, null);
+            }
+        }
+
+
         private void validateInvolvedColumns(String sql, @Nullable Container container, List<String> expectedInvolvedColumns)
         {
             QuerySchema schema = lists;
@@ -2280,10 +2346,17 @@ public class Query
             }
             catch (QueryParseException x)
             {
-                fail(x.getMessage() + "\n" + sql);
+                fail(x, sql);
             }
         }
 
+        private void fail(QueryParseException qpe, String sql)
+        {
+            Exception ex = qpe;
+            if (ex.getCause() instanceof Exception)
+                ex = (Exception)ex.getCause();
+            fail(ex.getMessage() + "\n" + sql);
+        }
 
         private void mockSelect(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap,
                                   boolean strictColumnList, List<String> expectedColumns)

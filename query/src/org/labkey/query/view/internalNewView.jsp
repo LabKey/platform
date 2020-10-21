@@ -16,9 +16,10 @@
  */
 %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.query.controllers.InternalNewViewForm" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.query.controllers.QueryController.*" %>
+<%@ page import="org.labkey.query.controllers.InternalNewViewForm" %>
+<%@ page import="org.labkey.query.controllers.QueryController.InternalNewViewAction" %>
+<%@ page import="org.labkey.query.controllers.QueryController.ManageViewsAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -27,7 +28,7 @@
     ActionURL urlCancel = new ActionURL(ManageViewsAction.class, getContainer());
 %>
 <labkey:errors />
-<labkey:form method="POST" action="<%=h(urlPost)%>">
+<labkey:form method="POST" action="<%=urlPost%>">
     <p>Create New Custom View</p>
     <p>Schema Name: <br><input type="text" name="ff_schemaName" value="<%=h(form.ff_schemaName)%>"></p>
     <p>Query Name: <br><input type="text" name="ff_queryName" value="<%=h(form.ff_queryName)%>"></p>

@@ -19,13 +19,20 @@ package org.labkey.core.junit;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.runner.notification.Failure;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.PermissionCheckableAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -345,9 +352,12 @@ public class JunitController extends SpringActionController
         {
             _testClasses = testClasses;
             _results = results;
-            _appender = new StatusAppender();
-            _log = Logger.getLogger(JunitRunnable.class);
-            _log.addAppender(_appender);
+            _appender = new StatusAppender("StatusAppender", null, PatternLayout.createDefaultLayout(), false, null);
+            _log = LogManager.getLogger(JunitRunnable.class);
+            LoggerContext loggerContext = (LoggerContext) LogManager.getContext(true);
+            Configuration configuration = loggerContext.getConfiguration();
+            LoggerConfig loggerConfig = configuration.getLoggerConfig(_log.getName());
+            loggerConfig.addAppender(_appender, Level.toLevel(_log.getLevel().toString()), null);
             TestContext.setTestContext(request, user);
         }
 
@@ -422,10 +432,10 @@ public class JunitController extends SpringActionController
     }
 
     @RequiresSiteAdmin
-    public static class Go extends SimpleViewAction<TestForm>
+    public static class GoAction extends MutatingApiAction<TestForm>
     {
         @Override
-        public ModelAndView getView(TestForm form, BindException errors) throws Exception
+        public Object execute(TestForm form, BindException errors) throws Exception
         {
             TestContext.setTestContext(getViewContext().getRequest(), getUser());
 
@@ -436,9 +446,8 @@ public class JunitController extends SpringActionController
             Class clazz = findTestClass(form.getTestCase());
             JunitRunner.RunnerResult result = JunitRunner.run(clazz);
 
-            int status = HttpServletResponse.SC_OK;
             if (!result.junitResult.wasSuccessful())
-                status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+                getViewContext().getResponse().setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
             Map<String, Object> map = new HashMap<>();
 
@@ -460,20 +469,7 @@ public class JunitController extends SpringActionController
             }
             map.put("timers", timers);
 
-            JSONObject json = new JSONObject(map);
-
-            HttpServletResponse response = getViewContext().getResponse();
-            response.reset();
-            response.setStatus(status);
-
-            PrintWriter out = response.getWriter();
-            response.setContentType("application/json");
-            response.setCharacterEncoding("utf-8");
-
-            out.append(json.toString(4));
-            response.flushBuffer();
-
-            return null;
+            return new ApiSimpleResponse(map);
         }
 
         private static List<Map<String, Object>> toList(List<Failure> failures)
@@ -492,11 +488,6 @@ public class JunitController extends SpringActionController
             }
 
             return list;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
         }
     }
 

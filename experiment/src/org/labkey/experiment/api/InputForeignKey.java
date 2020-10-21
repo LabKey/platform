@@ -22,9 +22,9 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableDescription;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpProtocolApplicationTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -44,7 +44,7 @@ public class InputForeignKey extends LookupForeignKey
     private final ContainerFilter _filter;
 
     private Set<String> _dataInputs;
-    private Map<String, ExpSampleSet> _materialInputs;
+    private Map<String, ExpSampleType> _materialInputs;
 
     public InputForeignKey(ExpSchema schema, ExpProtocol.ApplicationType type, ContainerFilter filter)
     {
@@ -120,11 +120,11 @@ public class InputForeignKey extends LookupForeignKey
         {
             ret.safeAddColumn(ret.createDataInputColumn(role, _schema, role));
         }
-        for (Map.Entry<String, ExpSampleSet> entry : getMaterialInputs().entrySet())
+        for (Map.Entry<String, ExpSampleType> entry : getMaterialInputs().entrySet())
         {
             String role = entry.getKey();
-            ExpSampleSet sampleSet = entry.getValue();
-            ret.safeAddColumn(ret.createMaterialInputColumn(role, samplesSchema, sampleSet, role));
+            ExpSampleType sampleType = entry.getValue();
+            ret.safeAddColumn(ret.createMaterialInputColumn(role, samplesSchema, sampleType, role));
         }
         ret.setLocked(true);
         return ret;
@@ -147,11 +147,11 @@ public class InputForeignKey extends LookupForeignKey
         return _dataInputs;
     }
 
-    private Map<String, ExpSampleSet> getMaterialInputs()
+    private Map<String, ExpSampleType> getMaterialInputs()
     {
         if (_materialInputs == null)
         {
-            _materialInputs = SampleSetService.get().getSampleSetsForRoles(_schema.getContainer(), _filter, _type);
+            _materialInputs = SampleTypeService.get().getSampleTypesForRoles(_schema.getContainer(), _filter, _type);
         }
         return _materialInputs;
     }

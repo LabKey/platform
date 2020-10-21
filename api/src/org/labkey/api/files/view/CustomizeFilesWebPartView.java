@@ -17,7 +17,6 @@
 package org.labkey.api.files.view;
 
 import org.apache.commons.lang3.BooleanUtils;
-import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
@@ -28,8 +27,6 @@ import org.labkey.api.view.Portal;
 import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**

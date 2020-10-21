@@ -17,8 +17,9 @@
 package org.labkey.bigiron.mssql;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -72,7 +73,7 @@ import java.util.stream.Collectors;
 // Dialect specifics for Microsoft SQL Server
 abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 {
-    private static final Logger LOG = Logger.getLogger(BaseMicrosoftSqlServerDialect.class);
+    private static final Logger LOG = LogManager.getLogger(BaseMicrosoftSqlServerDialect.class);
 
     // SQLServer limits maximum index key size of 900 bytes
     private static final int MAX_INDEX_SIZE = 900;
@@ -320,6 +321,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     protected void checkSqlScript(String lowerNoComments, String lowerNoCommentsNoWhiteSpace, Collection<String> errors)
     {
+        if (lowerNoComments.startsWith("use ") || lowerNoComments.contains("\nuse "))
+            errors.add("USE statements are prohibited");
     }
 
 
@@ -804,6 +807,13 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     public String getDateTimeToDateCast(String expression)
     {
         return "CONVERT(DATETIME, CONVERT(VARCHAR, (" + expression + "), 101))";
+    }
+
+    public SQLFragment getNumericCast(SQLFragment expression)
+    {
+        SQLFragment cast = new SQLFragment(expression);
+        cast.setRawSQL("CAST(" + cast.getRawSQL() + " AS FLOAT)");
+        return cast;
     }
 
     @Override
@@ -1729,6 +1739,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             _sqlTypeKey = "DATA_TYPE";
             _sqlTypeNameKey = "TYPE_NAME";
             _scaleKey = "COLUMN_SIZE";
+            _decimalDigitsKey = "DECIMAL_DIGITS";
             _nullableKey = "NULLABLE";
             _postionKey = "ORDINAL_POSITION";
             _generatedKey = "IS_GENERATED";
@@ -2078,6 +2089,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             "                                    OdbcPrec(c.system_type_id,c.max_length,c.precision)\n" +
             "                                end),\n" +
             "        NULLABLE            = convert(int, c.is_nullable),\n" +
+            "        DECIMAL_DIGITS      = convert(int, OdbcScale(c.system_type_id,c.scale)),\n" +
             "        REMARKS             = convert(varchar(254),NULL),\n" +
             "        COLUMN_DEF          = convert(nvarchar(4000), object_definition(ColumnProperty(c.object_id, c.name, 'default'))),\n" +
             "        ORDINAL_POSITION    = ROW_NUMBER() OVER (ORDER BY c.column_id),\n" +

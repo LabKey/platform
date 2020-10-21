@@ -39,8 +39,8 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
  *   exp.Data.Outputs(type, depth)
  *
  * Where:
- * - (optional) type is either one of 'ExperimentRun', 'Data', or 'Material' or is the cpastype lsid of the SampleSet or DataClass.
- *   TODO: also support DataClass and SampleSet names
+ * - (optional) type is either one of 'ExperimentRun', 'Data', or 'Material' or is the cpastype lsid of the SampleType or DataClass.
+ *   TODO: also support DataClass and SampleType names
  *   CONSIDER: we could use use run.protocollsid as its cpastype.
  * - (optional) depth is an integer >= 0.
  */

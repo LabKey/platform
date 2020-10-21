@@ -51,8 +51,7 @@ public interface ModuleReportDescriptor
         if (null == ModuleEditorService.get().getFileForModuleResource(getModule(), getSourceFile().getPath()))
             errors.add(new SimpleValidationError("The source for this module report is not editable."));
         else if (!user.hasRootPermission(EditModuleResourcesPermission .class))
-            // TODO add role name here instead of permission
-            errors.add(new SimpleValidationError("You must have EditModuleResourcesPermission to edit module resources."));
+            errors.add(new SimpleValidationError("You do not have permissions to edit module resources on this server."));
         return errors.isEmpty();
     }
 }

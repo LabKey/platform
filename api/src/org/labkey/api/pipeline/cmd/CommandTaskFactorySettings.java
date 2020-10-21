@@ -20,9 +20,9 @@ import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.util.FileType;
 
-import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <code>CommandTaskFactorySettings</code> may be used with Spring configuration

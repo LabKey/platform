@@ -15,7 +15,6 @@
  */
 package org.labkey.api.assay;
 
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MutableColumnInfo;

@@ -22,7 +22,7 @@ module.exports = {
     output: {
         path: constants.outputPath(__dirname),
         publicPath: './', // allows context path to resolve in both js/css
-        filename: '[name].[contenthash].js'
+        filename: '[name].[contenthash].cache.js'
     },
 
     module: {

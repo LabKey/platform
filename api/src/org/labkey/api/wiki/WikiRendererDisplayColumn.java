@@ -15,12 +15,14 @@
  */
 package org.labkey.api.wiki;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.HtmlString;
 
 import java.util.Set;
 
@@ -35,7 +37,7 @@ public class WikiRendererDisplayColumn extends DataColumn
     @NotNull
     private String _renderTypeColumnName;
     private WikiRendererType _defaultRenderer = WikiRendererType.TEXT_WITH_LINKS;
-    private static final Logger _log = Logger.getLogger(WikiRendererDisplayColumn.class);
+    private static final Logger _log = LogManager.getLogger(WikiRendererDisplayColumn.class);
 
     public WikiRendererDisplayColumn(ColumnInfo contentColumn, @NotNull String renderTypeColumnName, WikiRendererType defaultRenderer)
     {
@@ -48,16 +50,16 @@ public class WikiRendererDisplayColumn extends DataColumn
     @Override
     public Object getDisplayValue(RenderContext ctx)
     {
-        return getFormattedValue(ctx);
+        return getFormattedHtml(ctx);
     }
 
     @Override @NotNull
-    public String getFormattedValue(RenderContext ctx)
+    public HtmlString getFormattedHtml(RenderContext ctx)
     {
         WikiRenderingService wikiService = WikiRenderingService.get();
         String content = (String) getValue(ctx);
         if (null == content)
-            return "&nbsp";
+            return HtmlString.NBSP;
 
         WikiRendererType rendererType = _defaultRenderer;
         Object rendererTypeName = ctx.get(getRenderTypeFieldKey());

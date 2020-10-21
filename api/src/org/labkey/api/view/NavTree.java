@@ -30,7 +30,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -44,7 +43,7 @@ import java.util.stream.Collectors;
 
 public class NavTree implements Collapsible
 {
-    private static final NavTree MENU_SEPARATOR = new NavTree("-");
+    public static final NavTree MENU_SEPARATOR = new NavTree("-");
 
     private String _text;
     private String _href;

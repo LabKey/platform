@@ -412,5 +412,5 @@
 
 <p>
     <i>Documentation and tutorials about the R language can be found at
-        the <a target="_blank" href="http://www.r-project.org/">R Project website</a>.</i>
+        the <a target="_blank" href="http://www.r-project.org/" rel="noopener noreferrer">R Project website</a>.</i>
 </p>

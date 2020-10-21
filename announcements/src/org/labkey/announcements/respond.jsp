@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController"%>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementForm" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.BaseInsertView" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.CompleteUserAction" %>
 <%@ page import="org.labkey.announcements.model.ModeratorReview" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.data.Container" %>
@@ -47,8 +48,8 @@
     Container c = getContainer();
     User user = getUser();
 
-    String respondUrl = AnnouncementsController.getRespondURL(c).getEncodedLocalURIString();
-    ActionURL completeUserUrl = new ActionURL(AnnouncementsController.CompleteUserAction.class, getContainer());
+    ActionURL respondUrl = AnnouncementsController.getRespondURL(c);
+    ActionURL completeUserUrl = urlFor(CompleteUserAction.class);
 
 %><%=formatMissedErrors("form")%>
 
@@ -86,12 +87,12 @@ else
 
 if (settings.hasStatus())
 {
-    %><tr><td class="labkey-form-label">Status</td><td colspan="2"><%=text(bean.statusSelect)%></td></tr><%
+    %><tr><td class="labkey-form-label">Status</td><td colspan="2"><%=bean.statusSelect%></td></tr><%
 }
 
 if (settings.hasAssignedTo())
 {
-    %><tr><td class="labkey-form-label">Assigned&nbsp;To</td><td colspan="2"><%=text(bean.assignedToSelect)%></td></tr><%
+    %><tr><td class="labkey-form-label">Assigned&nbsp;To</td><td colspan="2"><%=bean.assignedToSelect%></td></tr><%
 }
 
 if (settings.hasMemberList())
@@ -145,10 +146,9 @@ if (settings.hasFormatPicker())
               <%
                   for (WikiRendererType type : bean.renderers)
                   {
-                      String value = type.name();
                       String displayName = type.getDisplayName();
                   %>
-                      <option<%=selected(type == bean.currentRendererType)%> value="<%=h(value)%>"><%=h(displayName)%></option>
+                      <option<%=selected(type == bean.currentRendererType)%> value="<%=type%>"><%=h(displayName)%></option>
                   <%
               }%>
         </select>
@@ -189,7 +189,7 @@ else
 <%
     for (WikiRendererType renderer : WikiRendererType.values()) {
 %>
-<div class="help-<%=renderer.name()%>" style="display:none">
+<div class="help-<%=renderer%>" style="display:none">
     <% me.include(renderer.getSyntaxHelpView(), out); %>
 </div>
 <%

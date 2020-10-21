@@ -6,12 +6,12 @@
 function sampleSetDomainTypeTest(queryName, rows, description, additionalCallBack, xmlMetadata) {
 
     function getSuccessHandler(dd, queryName) {
-        console.log('The Sample Set \'' + queryName + '\' already exists.', true);
+        console.log('The Sample Type \'' + queryName + '\' already exists.', true);
         additionalCallBack.call();
     }
 
     function getErrorHandler() {
-        console.log('Did not find the \'' + queryName + '\' Sample Set.');
+        console.log('Did not find the \'' + queryName + '\' Sample Type.');
 
         // Try to create the domain
         var domainDesign = {
@@ -35,7 +35,7 @@ function sampleSetDomainTypeTest(queryName, rows, description, additionalCallBac
 
         function createSuccessHandler() {
             saveQueryXML('Samples', queryName, xmlMetadata, function() {
-                console.log('Successfully created the \'' + queryName + '\' Sample Set.');
+                console.log('Successfully created the \'' + queryName + '\' Sample Type.');
                 LABKEY.Domain.get(function() {
                     LABKEY.Query.insertRows({
                         containerPath: LABKEY.containerPath,
@@ -44,17 +44,17 @@ function sampleSetDomainTypeTest(queryName, rows, description, additionalCallBac
                         rows: rows,
                         success: additionalCallBack,
                         failure: function(response) {
-                            console.log('Failed to insert rows into the \'' + queryName + '\' Sample Set');
+                            console.log('Failed to insert rows into the \'' + queryName + '\' Sample Type');
                         }
                     });
                 }, function(response) {
-                    console.log('Failed to create the \'' + queryName + '\' Sample Set');
+                    console.log('Failed to create the \'' + queryName + '\' Sample Type');
                 }, 'Samples', queryName);
             });
         }
 
         function createErrorHandler(response) {
-            console.log('Failed to create the \'' + queryName + '\' Sample Set');
+            console.log('Failed to create the \'' + queryName + '\' Sample Type');
         }
 
         LABKEY.Domain.create(createSuccessHandler, createErrorHandler,
@@ -93,9 +93,9 @@ function setUpDomains() {
                 {"Alias":  'alias 6', "Id": 6, "Sort": 50,  "Tag": 'blue'}];
     var rows2 =[ {"Alias":  'alias 2-1', "Id": 201, "Sort": 1000, "Tag": 'square'}];
     var rows3 =[ {"Alias":  'alias 3-1', "Id": 301, "Sort": 500,  "Tag": 'Hispanic'}];
-    sampleSetDomainTypeTest('sampleDataTest1', rows1, 'A sample set with color tags', function() {
-        sampleSetDomainTypeTest('sampleDataTest2', rows2, 'A sample set with shape tags', function(){
-            sampleSetDomainTypeTest('sampleDataTest3', rows3, 'A sample set with race tags', function(){
+    sampleSetDomainTypeTest('sampleDataTest1', rows1, 'A sample type with color tags', function() {
+        sampleSetDomainTypeTest('sampleDataTest2', rows2, 'A sample type with shape tags', function(){
+            sampleSetDomainTypeTest('sampleDataTest3', rows3, 'A sample type with race tags', function(){
                 location.reload();
             });
         });

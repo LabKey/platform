@@ -253,7 +253,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
 
                     <div className="modal__bottom">
                         <div className="modal__bottom-buttons">
-                            <a target="_blank" href={modalType.helpLink} className="modal__help-link">
+                            <a target="_blank" href={modalType.helpLink} className="modal__help-link" rel="noopener noreferrer">
                                 {`More about ${authConfig.provider} authentication`}
                             </a>
 

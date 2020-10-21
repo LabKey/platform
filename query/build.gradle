@@ -14,6 +14,8 @@ dependencies {
               // exclude these because they cause interference with the tomcat versions
               exclude group: "javax.servlet", module:"jsp-api"
               exclude group: "javax.servlet", module:"servlet-api"
+               // exclude this because it brings older version of log4j
+              exclude group: "log4j", module:"log4j"
            }
 
     external "org.olap4j:olap4j:${olap4jVersion}"

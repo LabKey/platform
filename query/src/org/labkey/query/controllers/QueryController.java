@@ -25,7 +25,8 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlValidationError;
@@ -37,6 +38,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
@@ -200,7 +202,7 @@ import static org.labkey.api.util.DOM.cl;
 
 public class QueryController extends SpringActionController
 {
-    private static final Logger LOG = Logger.getLogger(QueryController.class);
+    private static final Logger LOG = LogManager.getLogger(QueryController.class);
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryController.class,
             ValidateQueryAction.class,
@@ -957,7 +959,7 @@ public class QueryController extends SpringActionController
                     //
                 }
                 errors.reject("ERROR_MSG", e.toString());
-                Logger.getLogger(QueryController.class).error("Error", e);
+                LogManager.getLogger(QueryController.class).error("Error", e);
             }
 
             Renderable moduleWarning = null;
@@ -1276,7 +1278,14 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
-            QueryView queryView = form.getQueryView();
+            QueryView queryView = null;
+
+            if (!errors.hasErrors())
+                queryView = form.getQueryView();
+
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors, true);
+
             if (isPrint())
             {
                 queryView.setPrintView(true);
@@ -2850,6 +2859,15 @@ public class QueryController extends SpringActionController
                 throw new NotFoundException("The view named '" + form.getViewName() + "' does not exist for this user!");
             }
 
+            TableInfo t = view.getTable();
+            if (null == t)
+            {
+                List<QueryException> qpes = view.getParseErrors();
+                if (!qpes.isEmpty())
+                    throw qpes.get(0);
+                throw new NotFoundException(form.getQueryName());
+            }
+
             boolean isEditable = isQueryEditable(view.getTable());
             boolean metaDataOnly = form.getQuerySettings().getMaxRows() == 0;
             boolean arrayMultiValueColumns = getRequestedApiVersion() >= 16.2;
@@ -2880,6 +2898,7 @@ public class QueryController extends SpringActionController
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
                         form.isIncludeDisplayValues());
             }
+            response.setFormat(getResponseFormat());
             response.includeStyle(form.isIncludeStyle());
 
             // Issues 29515 and 32269 - force key and other non-requested columns to be sent back, but only if the client has
@@ -3103,6 +3122,7 @@ public class QueryController extends SpringActionController
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
                         form.isIncludeDisplayValues());
             }
+            response.setFormat(getResponseFormat());
             response.includeStyle(form.isIncludeStyle());
 
             return response;
@@ -3551,7 +3571,7 @@ public class QueryController extends SpringActionController
 
     private enum CommandType
     {
-        insert(InsertPermission.class)
+        insert(InsertPermission.class, QueryService.AuditAction.INSERT)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3564,7 +3584,7 @@ public class QueryController extends SpringActionController
                 return qus.getRows(user, container, insertedRows);
             }
         },
-        insertWithKeys(InsertPermission.class)
+        insertWithKeys(InsertPermission.class, QueryService.AuditAction.INSERT)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3597,7 +3617,7 @@ public class QueryController extends SpringActionController
                 return results;
             }
         },
-        importRows(InsertPermission.class)
+        importRows(InsertPermission.class, QueryService.AuditAction.INSERT)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3611,7 +3631,7 @@ public class QueryController extends SpringActionController
                 return Collections.emptyList();
             }
         },
-        update(UpdatePermission.class)
+        update(UpdatePermission.class, QueryService.AuditAction.UPDATE)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3621,7 +3641,7 @@ public class QueryController extends SpringActionController
                 return qus.getRows(user, container, updatedRows);
             }
         },
-        updateChangingKeys(UpdatePermission.class)
+        updateChangingKeys(UpdatePermission.class, QueryService.AuditAction.UPDATE)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3652,7 +3672,7 @@ public class QueryController extends SpringActionController
                 return results;
             }
         },
-        delete(DeletePermission.class)
+        delete(DeletePermission.class, QueryService.AuditAction.DELETE)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3663,15 +3683,22 @@ public class QueryController extends SpringActionController
         };
 
         private final Class<? extends Permission> _permission;
+        private final QueryService.AuditAction _auditAction;
 
-        CommandType(Class<? extends Permission> permission)
+        CommandType(Class<? extends Permission> permission, QueryService.AuditAction auditAction)
         {
             _permission = permission;
+            _auditAction = auditAction;
         }
 
         public Class<? extends Permission> getPermission()
         {
             return _permission;
+        }
+
+        public QueryService.AuditAction getAuditAction()
+        {
+            return _auditAction;
         }
 
         public abstract List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
@@ -3730,7 +3757,7 @@ public class QueryController extends SpringActionController
             List<Map<String, Object>> rowsToProcess = new ArrayList<>();
 
             // NOTE RowMapFactory is faster, but for update it's important to preserve missing v explicit NULL values
-            // Do we need to support some soft of UNDEFINED and NULL instance of MvFieldWrapper?
+            // Do we need to support some sort of UNDEFINED and NULL instance of MvFieldWrapper?
             RowMapFactory<Object> f = null;
             if (commandType == CommandType.insert || commandType == CommandType.insertWithKeys)
                 f = new RowMapFactory<>();
@@ -3760,18 +3787,16 @@ public class QueryController extends SpringActionController
                 extraContext = new CaseInsensitiveHashMap<>();
 
             Map<Enum, Object> configParameters = new HashMap<>();
-            String auditBehavior = json.getString("auditBehavior");
-            if (!StringUtils.isEmpty(auditBehavior))
+
+            // Check first if the audit behavior has been defined for the table either in code or through XML.
+            // If not defined there, check for the audit behavior defined in the action form (json).
+            AuditBehaviorType behaviorType = table.getAuditBehavior(json.getString("auditBehavior"));
+            if (behaviorType != null)
             {
-                try
-                {
-                    AuditBehaviorType behaviorType = AuditBehaviorType.valueOf(auditBehavior);
-                    configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
-                }
-                catch (IllegalArgumentException ignored)
-                {
-                    logger.warn("Unknown log level type " + auditBehavior + " ignored.");
-                }
+                configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
+                String auditComment = json.getString("auditUserComment");
+                if (!StringUtils.isEmpty(auditComment))
+                    configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
             }
 
             //setup the response, providing the schema name, query name, and operation
@@ -3787,11 +3812,19 @@ public class QueryController extends SpringActionController
             // 11741: A transaction may already be active if we're trying to
             // insert/update/delete from within a transformation/validation script.
             boolean transacted = allowTransaction && json.optBoolean("transacted", true);
-
+            TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
             try (DbScope.Transaction transaction = transacted ? table.getSchema().getScope().ensureTransaction() : NO_OP_TRANSACTION)
             {
+                if (behaviorType != null && behaviorType != AuditBehaviorType.NONE)
+                {
+                    auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), commandType.getAuditAction());
+                    AbstractQueryUpdateService.addTransactionAuditEvent(transaction,  getUser(), auditEvent);
+                }
+
                 List<Map<String, Object>> responseRows =
                         commandType.saveRows(qus, rowsToProcess, getUser(), getContainer(), configParameters, extraContext);
+                if (auditEvent != null)
+                    auditEvent.setRowCount(responseRows.size());
 
                 if (commandType != CommandType.importRows)
                     response.put("rows", responseRows);
@@ -3853,6 +3886,8 @@ public class QueryController extends SpringActionController
                     throw e;
                 }
             }
+            if (auditEvent != null)
+                response.put("transactionAuditId", auditEvent.getRowId());
 
             response.put("rowsAffected", rowsAffected);
 
@@ -5271,7 +5306,7 @@ public class QueryController extends SpringActionController
                 }
                 catch (Exception e)
                 {
-                    Logger.getLogger(QueryController.class).error("Error", e);
+                    LogManager.getLogger(QueryController.class).error("Error", e);
                     errors.reject(ERROR_MSG, "An exception occurred: " + e);
                     return false;
                 }
@@ -5430,7 +5465,8 @@ public class QueryController extends SpringActionController
             // 5025 : DataRegion checkbox names may contain comma
             // Beehive parses a single parameter value with commas into an array
             // which is not what we want.
-            return request.getParameterValues("id");
+            String[] paramIds = request.getParameterValues("id");
+            return  paramIds == null ? ids: paramIds;
         }
 
         public void setId(String[] ids)
@@ -5446,6 +5482,32 @@ public class QueryController extends SpringActionController
         public void setChecked(boolean checked)
         {
             this.checked = checked;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class ReplaceSelectedAction extends MutatingApiAction<SetCheckForm>
+    {
+        @Override
+        public ApiResponse execute(final SetCheckForm form, BindException errors)
+        {
+            String[] ids = form.getId(getViewContext().getRequest());
+            List<String> selection = new ArrayList<>();
+            if (ids != null)
+            {
+                for (String id : ids)
+                {
+                    if (StringUtils.isNotBlank(id))
+                        selection.add(id);
+                }
+            }
+
+
+            DataRegionSelection.clearAll(getViewContext(), form.getKey());
+            int count = DataRegionSelection.setSelected(
+                    getViewContext(), form.getKey(),
+                    selection, true);
+            return new DataRegionSelection.SelectionResponse(count);
         }
     }
 
@@ -6045,7 +6107,7 @@ public class QueryController extends SpringActionController
                 if (null != x.getCause() && x != x.getCause())
                     x = x.getCause();
                 html.add("<br>" + PageFlowUtil.filter(x.toString()));
-                Logger.getLogger(QueryController.class).debug(expr,x);
+                LogManager.getLogger(QueryController.class).debug(expr,x);
             }
             if (null != e)
             {

@@ -20,7 +20,8 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
@@ -29,6 +30,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Formats;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -59,7 +61,7 @@ import java.util.Set;
  */
 public abstract class DisplayColumn extends RenderColumn
 {
-    private static final Logger LOG = Logger.getLogger(DisplayColumn.class);
+    private static final Logger LOG = LogManager.getLogger(DisplayColumn.class);
 
     protected String _textAlign = null;
     protected boolean _nowrap = false;
@@ -412,27 +414,13 @@ public abstract class DisplayColumn extends RenderColumn
      * Format the display value as html for rendering within the DataRegion grid,
      * including encoding html.
      *
-     * @deprecated Use getFormattedHtml instead.
      * @return the HTML version of this column's value.
      */
-    @Deprecated
     @NotNull
-    public String getFormattedValue(RenderContext ctx)
+    public HtmlString getFormattedHtml(RenderContext ctx)
     {
         Format format = getFormat();
-        return formatValue(ctx, getDisplayValue(ctx), getTextExpressionCompiled(ctx), format);
-    }
-
-    /**
-     * Format the display value as html for rendering within the DataRegion grid,
-     * including encoding html.
-     *
-     * @see #getFormattedText(RenderContext)
-     */
-    @NotNull
-    public String getFormattedHtml(RenderContext ctx)
-    {
-        return getFormattedValue(ctx);
+        return HtmlString.of(formatValue(ctx, getDisplayValue(ctx), getTextExpressionCompiled(ctx), format));
     }
 
     /**
@@ -688,21 +676,6 @@ public abstract class DisplayColumn extends RenderColumn
         }
         out.write("\""); // end of "class"
 
-        String style = getDefaultHeaderStyle();
-        if (style == null)
-            style = "";
-
-        // 34871: Support for column display width
-        if (!StringUtils.isBlank(getWidth()))
-            style += ";width:" + getWidth() + "px;";
-
-        if (!"".equals(style))
-        {
-            out.write(" style=\"");
-            out.write(style);
-            out.write("\"");
-        }
-
         StringBuilder tooltip = new StringBuilder();
         if (null != getDescription())
         {
@@ -733,6 +706,23 @@ public abstract class DisplayColumn extends RenderColumn
         out.write(PageFlowUtil.filter(ctx.getCurrentRegion().getName() + ":" + columnName));
         out.write("\">");
 
+        String style = getDefaultHeaderStyle();
+        if (style == null)
+            style = "";
+
+        // 34871: Support for column display width
+        if (!StringUtils.isBlank(getWidth()))
+            style += ";width:" + getWidth() + "px;";
+
+        out.write("<div ");
+        if (!"".equals(style))
+        {
+            out.write("style=\"");
+            out.write(style);
+            out.write("\"");
+        }
+        out.write(">");
+
         renderTitle(ctx, out);
 
         out.write("<span class=\"fa fa-filter\"></span>");
@@ -753,6 +743,7 @@ public abstract class DisplayColumn extends RenderColumn
             out.write("</ul>");
         }
 
+        out.write("</div>");
         out.write("</th>");
     }
 
@@ -1011,9 +1002,9 @@ public abstract class DisplayColumn extends RenderColumn
         if (_nowrap)
             style += "white-space:nowrap;";
 
-        // 34871: Support for column display width
+        // 40893: Support for column display width
         if (!StringUtils.isBlank(getWidth()))
-            style += "word-break:break-all;";
+            style += "overflow-wrap:anywhere;";
 
         return style;
     }

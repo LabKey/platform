@@ -15,7 +15,8 @@
  */
 package org.labkey.api.util;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +28,7 @@ import static java.lang.Math.min;
  */
 public class CountLimiter
 {
-    static final Logger _log = Logger.getLogger(CountLimiter.class);
+    static final Logger _log = LogManager.getLogger(CountLimiter.class);
 
     final String _name;
     boolean useSystem = false; // for small intervals or testing

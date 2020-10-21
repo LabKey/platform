@@ -17,7 +17,8 @@
 package org.labkey.api.action;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -120,7 +121,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     private static final Map<Class<? extends Controller>, ActionDescriptor> _classToDescriptor = new HashMap<>();
 
-    private static final Logger _log = Logger.getLogger(SpringActionController.class);
+    private static final Logger _log = LogManager.getLogger(SpringActionController.class);
 
     public void setActionResolver(ActionResolver actionResolver)
     {
@@ -384,6 +385,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         ActionURL url = context.getActionURL();
         long startTime = System.currentTimeMillis();
         Controller controller = null;
+        PageConfig pageConfig = null;
 
         try
         {
@@ -425,7 +427,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 }
             }
 
-            PageConfig pageConfig = defaultPageConfig();
+            pageConfig = defaultPageConfig();
 
             if (controller instanceof HasViewContext)
                 ((HasViewContext)controller).setViewContext(context);
@@ -505,7 +507,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
         catch (Throwable x)
         {
-            handleException(x);
+            handleException(x, pageConfig);
             throwable = x;
         }
         finally
@@ -521,7 +523,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
 
-    protected void handleException(Throwable x)
+    protected void handleException(Throwable x, PageConfig pageConfig)
     {
         HttpServletRequest request = getViewContext().getRequest();
         HttpServletResponse response = getViewContext().getResponse();
@@ -538,7 +540,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             }
         }
             
-        ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false);
+        ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false, pageConfig);
         if (null != errorURL)
             ExceptionUtil.doErrorRedirect(response, errorURL.toString());
     }
@@ -696,7 +698,16 @@ public abstract class SpringActionController implements Controller, HasViewConte
         if (action instanceof NavTrailAction)
         {
             ((NavTrailAction)action).addNavTrail(root);
+            assert isValidNavTree(root, action) : action.getClass().getName() + " is generating a malformed NavTree";
         }
+    }
+
+    // NavTrail renders only the first level children, so flag the NavTree as invalid if any child has children. This
+    // most likely means that addNavTrail() chained calls to addChild(), which adds nodes that will never render.
+    private boolean isValidNavTree(NavTree tree, Controller action)
+    {
+        return tree.getChildren().stream()   // Very temporary exception for RespondAction. TODO: Remove once 20.7.2 changes are merged to develop.
+            .noneMatch(NavTree::hasChildren) || "org.labkey.announcements.AnnouncementsController$RespondAction".equals(action.getClass().getName());
     }
 
     protected void beforeAction(Controller action) throws ServletException

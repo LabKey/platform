@@ -18,28 +18,30 @@
 <%@ page import="org.labkey.api.assay.plate.PlateTemplate" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.assay.PlateController" %>
+<%@ page import="org.labkey.assay.PlateController.CopyTemplateBean" %>
+<%@ page import="org.labkey.assay.PlateController.HandleCopyAction" %>
+<%@ page import="org.labkey.assay.PlateController.PlateTemplateListAction" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
-    JspView<PlateController.CopyTemplateBean> me = (JspView<PlateController.CopyTemplateBean>) HttpView.currentView();
-    PlateController.CopyTemplateBean bean = me.getModelBean();
+    JspView<CopyTemplateBean> me = (JspView<CopyTemplateBean>) HttpView.currentView();
+    CopyTemplateBean bean = me.getModelBean();
 %>
 <labkey:errors />
 <table>
     <tr>
         <td>Copy <b><%= h(bean.getTemplateName()) %></b> to:</td>
     </tr>
-    <%= text(bean.getTreeHtml()) %>
+    <%=bean.getTreeHtml()%>
     <tr>
         <td>
             <br>
-            <labkey:form action="<%=buildURL(PlateController.HandleCopyAction.class)%>" method="POST">
+            <labkey:form action="<%=urlFor(HandleCopyAction.class)%>" method="POST">
                 <input type="hidden" name="destination" value="<%= h(bean.getSelectedDestination()) %>">
                 <input type="hidden" name="templateName" value="<%= h(bean.getTemplateName()) %>">
-                <%= button("Cancel").href(PlateController.PlateTemplateListAction.class, getContainer()) %>
+                <%= button("Cancel").href(PlateTemplateListAction.class, getContainer()) %>
                 <%= bean.getSelectedDestination() != null ? button("Copy").submit(true) : button("Copy").submit(true).onClick("alert('Please select a destination folder.'); return false;") %>
             </labkey:form>
         </td>

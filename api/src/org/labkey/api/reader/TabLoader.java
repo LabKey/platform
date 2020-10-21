@@ -19,7 +19,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -69,7 +70,7 @@ public class TabLoader extends DataLoader
     public static final FileType TSV_FILE_TYPE = new TabFileType(Arrays.asList(".tsv", ".txt"), ".tsv", "text/tab-separated-values");
     public static final FileType CSV_FILE_TYPE = new TabFileType(Collections.singletonList(".csv"), ".csv", "text/comma-separated-values");
 
-    private static final Logger _log = Logger.getLogger(TabLoader.class);
+    private static final Logger _log = LogManager.getLogger(TabLoader.class);
 
     public static class TsvFactory extends AbstractDataLoaderFactory
     {
@@ -288,7 +289,7 @@ public class TabLoader extends DataLoader
 
     public Map<String, String> getComments() throws IOException
     {
-        ensureInitialized();
+        ensureInitialized(Collections.emptyMap());
 
         return Collections.unmodifiableMap(_comments);
     }
@@ -515,7 +516,7 @@ public class TabLoader extends DataLoader
         TabLoaderIterator iter;
         try
         {
-            ensureInitialized();
+            ensureInitialized(Collections.emptyMap());
             iter = new TabLoaderIterator();
         }
         catch (IOException e)
@@ -569,10 +570,10 @@ public class TabLoader extends DataLoader
     }
 
     @Override
-    protected void initialize() throws IOException
+    protected void initialize(@NotNull Map<String, String> renamedColumns) throws IOException
     {
         readComments();
-        super.initialize();
+        super.initialize(renamedColumns);
     }
 
     private void readComments() throws IOException

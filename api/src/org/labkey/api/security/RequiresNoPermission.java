@@ -16,9 +16,9 @@
 
 package org.labkey.api.security;
 
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-import java.lang.annotation.ElementType;
 
 /**
  * Indicates that an action does not require any kind of authentication or permission to invoke. Use with extreme

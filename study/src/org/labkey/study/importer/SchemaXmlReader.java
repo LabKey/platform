@@ -15,7 +15,6 @@
  */
 package org.labkey.study.importer;
 
-import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportException;

@@ -19,14 +19,15 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.SpecimenManager"%>
-<%@ page import="org.labkey.study.controllers.StudyController"%>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction"%>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteStatusAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusOrderAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusesAction" %>
 <%@ page import="org.labkey.study.model.SpecimenRequestStatus" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.specimen.settings.StatusSettings" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -46,7 +47,7 @@ function showSystemRows(value)
 }
 
 </script>
-<labkey:form action="<%=h(buildURL(SpecimenController.ManageStatusesAction.class))%>" name="manageStatuses" method="POST">
+<labkey:form action="<%=urlFor(ManageStatusesAction.class)%>" name="manageStatuses" method="POST">
     <p>
         Request statuses help a coordinator organize and track requests through the system and
         communicate progress to requesters. All requests do not need to pass through all states.
@@ -100,7 +101,7 @@ function showSystemRows(value)
                         else
                         {
                     %>
-                            <td><%=link("delete").href(buildURL(SpecimenController.DeleteStatusAction.class, "id=" + status.getRowId())).usePost()%></td>
+                            <td><%=link("delete").href(urlFor(DeleteStatusAction.class).addParameter("id", status.getRowId())).usePost()%></td>
                     <%
                         }
                     %>
@@ -120,8 +121,8 @@ function showSystemRows(value)
             <td colspan="5">
                 <br/>
                 <%= button("Save").submit(true) %>&nbsp;
-                <%= button("Change Order").submit(true).onClick("document.manageStatuses.nextPage.value='" + new ActionURL(SpecimenController.ManageStatusOrderAction.class, getContainer()).getLocalURIString() + "'; return true;") %>
-                <input type="hidden" name="nextPage" value="<%=h(new ActionURL(SpecimenController.ManageStatusesAction.class, getContainer()).getLocalURIString())%>">
+                <%= button("Change Order").submit(true).onClick("document.manageStatuses.nextPage.value='" + urlFor(ManageStatusOrderAction.class) + "'; return true;") %>
+                <input type="hidden" name="nextPage" value="<%=h(new ActionURL(ManageStatusesAction.class, getContainer()).getLocalURIString())%>">
             </td>
         </tr>
     </table>
@@ -139,5 +140,5 @@ function showSystemRows(value)
     <br/>
 
     <%= button("Done").submit(true).onClick("document.manageStatuses.nextPage.value=''; return true;")%>
-    <%= button("Cancel").href(new ActionURL(StudyController.ManageStudyAction.class, study.getContainer())) %>&nbsp;
+    <%= button("Cancel").href(new ActionURL(ManageStudyAction.class, study.getContainer())) %>&nbsp;
 </labkey:form>

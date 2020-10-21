@@ -21,7 +21,6 @@
 
 
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
@@ -71,14 +70,14 @@
 <div id="previewPanel-div" class="labkey-data-region-wrap"></div>
 <script type="text/javascript">
     (function(){
-        var jsSubjectNounColumnName = <%= PageFlowUtil.jsString(subjectNounColumnName) %>;
+        var jsSubjectNounColumnName = <%= q(subjectNounColumnName) %>;
         var oldIdField;
         var newIdField;
         var createAliasCB;
         var aliasSourceField;
-        var aliasDatasetName = <%= PageFlowUtil.jsString(aliasDatasetName) %>;
-        var aliasColumn = <%= PageFlowUtil.jsString(aliasColumn) %>;
-        var aliasSourceColumn = <%= PageFlowUtil.jsString(aliasSourceColumn) %>;
+        var aliasDatasetName = <%= q(aliasDatasetName) %>;
+        var aliasColumn = <%= q(aliasColumn) %>;
+        var aliasSourceColumn = <%= q(aliasSourceColumn) %>;
         var allowAliasCreation = <%= allowAliasCreation %>;
         var previewButton = {};
         var mergeButton = {};

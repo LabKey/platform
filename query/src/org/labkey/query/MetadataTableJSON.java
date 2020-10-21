@@ -31,9 +31,9 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.Lookup;
-import org.labkey.api.gwt.client.LockedPropertyType;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -101,6 +101,9 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), this.getName(), this.isUserDefinedQuery());
         TableInfo rawTableInfo = schema.getTable(this.getName(), false);
 
+        if (null == rawTableInfo)
+            throw new MetadataUnavailableException("No such table: " + this.getName());
+
         TablesDocument doc = null;
         TableType xmlTable = null;
 
@@ -161,7 +164,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             ColumnInfo rawColumnInfo = rawTableInfo.getColumn(metadataColumnJSON.getName());
             if (rawColumnInfo == null)
             {
-                rawColumnInfo = new BaseColumnInfo((String)null);
+                rawColumnInfo = new BaseColumnInfo((FieldKey)null, (TableInfo)null);
                 // Establish the type of the column
                 if (metadataColumnJSON.getWrappedColumnName() != null)
                 {
@@ -421,6 +424,16 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 ConditionalFormat.convertToXML(metadataColumnJSON.getConditionalFormats(), xmlColumn);
             }
 
+            // Set the concept code
+            if (shouldStoreValue(metadataColumnJSON.getPrincipalConceptCode(), rawColumnInfo.getPrincipalConceptCode()))
+            {
+                xmlColumn.setPrincipalConceptCode(rawColumnInfo.getPrincipalConceptCode());
+            }
+            else if (xmlColumn.isSetPrincipalConceptCode())
+            {
+                xmlColumn.unsetPrincipalConceptCode();
+            }
+
             if (xmlColumn.getWrappedColumnName() == null)
             {
                 NodeList childNodes = xmlColumn.getDomNode().getChildNodes();
@@ -538,6 +551,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             columnInfos.put(metadataColumnJSON.getName(), metadataColumnJSON);
             orderedPDs.add(metadataColumnJSON);
 
+            metadataColumnJSON.setLockExistingField(true);
             metadataColumnJSON.setRequired(!columnInfo.isNullable());
             metadataColumnJSON.setLabel(columnInfo.getLabel());
             metadataColumnJSON.setFormat(columnInfo.getFormat());
@@ -574,6 +588,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
 
             List<GWTConditionalFormat> formats = convertToGWT(columnInfo.getConditionalFormats());
             metadataColumnJSON.setConditionalFormats(formats);
+            metadataColumnJSON.setPrincipalConceptCode(columnInfo.getPrincipalConceptCode());
         }
 
         List<QueryDef> queryDefs = QueryServiceImpl.get().findMetadataOverrideImpl(schema, tableName, false, false, null);
@@ -700,6 +715,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         }
                         if (column.getWrappedColumnName() != null)
                         {
+                            metadataColumnJSON.setLockExistingField(false);
                             injectedColumnNames.add(column.getColumnName());
                             metadataColumnJSON.setWrappedColumnName(column.getWrappedColumnName());
                             ColumnInfo tableColumn = table.getColumn(column.getWrappedColumnName());
@@ -710,7 +726,6 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         }
                         else
                         {
-                            metadataColumnJSON.setLockType(LockedPropertyType.PartiallyLocked.name());
                             ColumnInfo tableColumn = table.getColumn(column.getColumnName());
                             if (tableColumn != null)
                             {
@@ -728,7 +743,6 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
 
         Set<String> builtInColumnNames = new CaseInsensitiveHashSet(columnInfos.keySet());
         builtInColumnNames.removeAll(injectedColumnNames);
-        metadataTableJSON.setMandatoryFieldNames(builtInColumnNames);
         metadataTableJSON.setFields(orderedPDs);
 
         // TODO: figure out something better for defaultValuesURL

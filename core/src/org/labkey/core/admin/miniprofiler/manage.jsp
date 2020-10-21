@@ -17,22 +17,26 @@
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.miniprofiler.MiniProfiler" %>
+<%@ page import="org.labkey.api.miniprofiler.MiniProfiler.RenderPosition" %>
+<%@ page import="org.labkey.api.miniprofiler.MiniProfiler.Settings" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.miniprofiler.MiniProfilerController" %>
+<%@ page import="org.labkey.core.admin.miniprofiler.MiniProfilerController.ManageAction" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.core.admin.miniprofiler.MiniProfilerController.ResetAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<MiniProfiler.Settings> me = (JspView<MiniProfiler.Settings>) HttpView.currentView();
-    MiniProfiler.Settings settings = me.getModelBean();
+    JspView<Settings> me = (JspView<Settings>) HttpView.currentView();
+    Settings settings = me.getModelBean();
 
     Map<String, String> renderOptions = new LinkedHashMap<>();
-    renderOptions.put(MiniProfiler.RenderPosition.TopLeft.name(), MiniProfiler.RenderPosition.TopLeft.toString());
-    renderOptions.put(MiniProfiler.RenderPosition.TopRight.name(), MiniProfiler.RenderPosition.TopRight.toString());
-    renderOptions.put(MiniProfiler.RenderPosition.BottomLeft.name(), MiniProfiler.RenderPosition.BottomLeft.toString());
-    renderOptions.put(MiniProfiler.RenderPosition.BottomRight.name(), MiniProfiler.RenderPosition.BottomRight.toString());
+    renderOptions.put(RenderPosition.TopLeft.name(), RenderPosition.TopLeft.toString());
+    renderOptions.put(RenderPosition.TopRight.name(), RenderPosition.TopRight.toString());
+    renderOptions.put(RenderPosition.BottomLeft.name(), RenderPosition.BottomLeft.toString());
+    renderOptions.put(RenderPosition.BottomRight.name(), RenderPosition.BottomRight.toString());
 %>
 
 LabKey Server includes some simple built-in profiling tools.
@@ -40,7 +44,7 @@ LabKey Server includes some simple built-in profiling tools.
 Some of them incur overhead to track or take space in the UI, and are thus configurable here.
 
 <labkey:errors/>
-<labkey:form action="<%=h(buildURL(MiniProfilerController.ManageAction.class))%>" method="POST">
+<labkey:form action="<%=urlFor(ManageAction.class)%>" method="POST">
     <table class="labkey-manage-display">
         <tr>
             <td class="labkey-form-label" style="width: 200px;"><label for="collectTroubleshootingStackTraces">Capture stack traces until server shutdown<%=helpPopup("Capture stack traces",
@@ -120,7 +124,7 @@ Some of them incur overhead to track or take space in the UI, and are thus confi
             <td>
                     <%--<%= button("Reset to Default"). %>&nbsp;--%>
                 <%= button("Save").submit(true) %>
-                <%= button("Reset").href(urlFor(MiniProfilerController.ResetAction.class)).usePost() %>
+                <%= button("Reset").href(urlFor(ResetAction.class)).usePost() %>
                 <%= button("Cancel").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) %>
             </td>
         </tr>

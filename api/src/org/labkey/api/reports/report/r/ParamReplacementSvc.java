@@ -17,7 +17,8 @@
 package org.labkey.api.reports.report.r;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.reports.Report;
@@ -26,7 +27,9 @@ import org.labkey.api.reports.report.r.view.HrefOutput;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.writer.PrintWriters;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -47,7 +50,7 @@ import static org.labkey.api.reports.report.ScriptEngineReport.INPUT_FILE_TSV;
  */
 public class ParamReplacementSvc
 {
-    private static final Logger _log = Logger.getLogger(ParamReplacementSvc.class);
+    private static final Logger _log = LogManager.getLogger(ParamReplacementSvc.class);
     private static final ParamReplacementSvc _instance = new ParamReplacementSvc();
     private static final Map<String, String> _outputSubstitutions = new HashMap<>();
 

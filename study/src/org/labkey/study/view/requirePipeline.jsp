@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 Before uploading datasets, an administrator must set up a "pipeline"
 directory where uploaded data will be stored.<br><br>
@@ -32,7 +32,7 @@ directory where uploaded data will be stored.<br><br>
         ActionURL pipelineUrl = urlProvider(PipelineUrls.class).urlSetup(getContainer());
         pipelineUrl.addParameter("referer", getActionURL().getLocalURIString());
         out.print(link("Pipeline Setup", pipelineUrl));
-        out.print(" ");
+        out.print(unsafe(" "));
     }
 
     if (null == HttpView.currentModel() || (Boolean) HttpView.currentModel())

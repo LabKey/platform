@@ -40,4 +40,9 @@ public interface TableResultSet extends ResultSet, Iterable<Map<String, Object>>
 
     /** @return the number of rows in the result set. -1 if unknown */
     int getSize();
+
+    default int countAll() throws SQLException
+    {
+        return getSize();
+    }
 }

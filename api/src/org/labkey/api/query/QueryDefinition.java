@@ -18,19 +18,23 @@ package org.labkey.api.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.*;
-import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.util.StringExpression;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryChangeListener.QueryProperty;
 import org.labkey.api.query.QueryChangeListener.QueryPropertyChange;
+import org.labkey.api.security.User;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.TableType;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Collection;
-import java.util.Map;
-import java.util.List;
 import java.sql.SQLException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 public interface QueryDefinition
 {

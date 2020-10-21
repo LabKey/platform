@@ -17,19 +17,23 @@
 %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.BulkDeleteVisitsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.CreateVisitAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.StudyPropertiesForm" %>
+<%@ page import="org.labkey.study.controllers.StudyController.StudyScheduleAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.UpdateParticipantVisitsAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.VisitSummaryAction" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors />
 <%
-    StudyController.StudyPropertiesForm form = (StudyController.StudyPropertiesForm) getModelBean();
+    StudyPropertiesForm form = (StudyPropertiesForm) getModelBean();
     Study study = getStudy();
     List<VisitImpl> timepoints = StudyManager.getInstance().getVisits(study, Visit.Order.DISPLAY);
 
@@ -46,7 +50,7 @@
 <table style="margin-bottom: 20px;">
     <tr>
         <td>View study schedule.</td>
-        <td><%= link("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
+        <td><%= link("Study Schedule", StudyScheduleAction.class) %></td>
     </tr>
     <tr>
         <td>Assign data to the correct timepoint</td>
@@ -55,7 +59,7 @@
 <% if (timepoints.size() > 0) { %>
     <tr>
         <td>Timepoints may be deleted by an administrator</td>
-        <td><%= link("Delete Multiple Timepoints", StudyController.BulkDeleteVisitsAction.class) %></td>
+        <td><%= link("Delete Multiple Timepoints", BulkDeleteVisitsAction.class) %></td>
     </tr>
 <% } %>
     <tr>
@@ -65,7 +69,7 @@
 </table>
 
 <labkey:panel title="Timepoint Configuration" width="800">
-<labkey:form action="<%=h(buildURL(StudyController.ManageVisitsAction.class))%>" method="POST">
+<labkey:form action="<%=urlFor(ManageVisitsAction.class)%>" method="POST">
    Data in this study is grouped using date-based timepoints rather than visit ids.
     <ul>
        <li>A timepoint is assigned to each dataset row by computing the number of days between a subject's start date and the date supplied in the row.</li>
@@ -105,14 +109,14 @@ to assign dataset data to the correct timepoints.</p>
         <td class="labkey-column-header">Description</td>
     </tr>
 <%
-    ActionURL editTimepointURL = new ActionURL(StudyController.VisitSummaryAction.class, study.getContainer());
+    ActionURL editTimepointURL = new ActionURL(VisitSummaryAction.class, study.getContainer());
     int rowCount = 0;
     for (VisitImpl timepoint : timepoints)
     {
         rowCount++;
 %>
     <tr class="<%=h(rowCount % 2 == 1 ? "labkey-alternate-row" : "labkey-row")%>">
-        <td width="20"><%= iconLink("fa fa-pencil", "edit", editTimepointURL.replaceParameter("id", String.valueOf(timepoint.getRowId()))) %></td>
+        <td width="20"><%= iconLink("fa fa-pencil", "edit", editTimepointURL.replaceParameter("id", timepoint.getRowId())) %></td>
         <td><%=h(timepoint.getLabel())%></td>
         <td><%=h(timepoint.getFormattedSequenceNumMin())%></td>
         <td><%=h(timepoint.getFormattedSequenceNumMax())%></td>

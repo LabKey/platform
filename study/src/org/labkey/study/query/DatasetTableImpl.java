@@ -17,7 +17,8 @@
 package org.labkey.study.query;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProtocolSchema;
@@ -76,6 +77,8 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.SpecimenForeignKey;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DemoMode;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -108,7 +111,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
      */
     public static final String ASSAY_RESULT_LSID = "AssayResultLsid";
 
-    private static final Logger LOG = Logger.getLogger(DatasetTableImpl.class);
+    private static final Logger LOG = LogManager.getLogger(DatasetTableImpl.class);
 
     private final @NotNull DatasetDefinition _dsd;
 
@@ -979,17 +982,17 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         }
 
         @Override @NotNull
-        public String getFormattedValue(RenderContext ctx)
+        public HtmlString getFormattedHtml(RenderContext ctx)
         {
             Object value = getValue(ctx);
-            StringBuilder formattedValue = new StringBuilder(super.getFormattedValue(ctx));
-            if (value != null && value instanceof Integer)
+            HtmlStringBuilder formattedValue = HtmlStringBuilder.of(super.getFormattedHtml(ctx));
+            if (value instanceof Integer)
             {
                 QCState state = getStateCache(ctx).get(value);
                 if (state != null && state.getDescription() != null)
-                    formattedValue.append(PageFlowUtil.helpPopup("QC State " + state.getLabel(), state.getDescription()));
+                    formattedValue.append(HtmlString.unsafe(PageFlowUtil.helpPopup("QC State " + state.getLabel(), state.getDescription())));
             }
-            return formattedValue.toString();
+            return formattedValue.getHtmlString();
         }
 
         private Map<Integer, QCState> getStateCache(RenderContext ctx)

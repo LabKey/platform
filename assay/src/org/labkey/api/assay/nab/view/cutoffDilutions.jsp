@@ -141,7 +141,8 @@
                         else if (Math.abs(val) < 1)
                             shortDecFormat = new DecimalFormat("0.###");
 
-                        out.print(modifier + shortDecFormat.format(val));
+                        out.print(unsafe(modifier));
+                        out.print(h(shortDecFormat.format(val)));
                     }
                         %>
             </td>

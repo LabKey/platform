@@ -17,7 +17,6 @@
 package org.labkey.query.sql;
 
 import org.antlr.runtime.tree.CommonTree;
-import org.labkey.query.sql.antlr.SqlBaseParser;
 
 
 public class QUnion extends QExpr

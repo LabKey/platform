@@ -15,8 +15,8 @@
  */
 package org.labkey.timeline.view;
 
-import org.labkey.timeline.TimelineSettings;
 import org.labkey.api.view.JspView;
+import org.labkey.timeline.TimelineSettings;
 
 /*
 * User: Mark Igra

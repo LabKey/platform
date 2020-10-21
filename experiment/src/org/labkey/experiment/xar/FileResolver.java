@@ -16,16 +16,22 @@
 
 package org.labkey.experiment.xar;
 
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.xar.Replacer;
+import org.labkey.api.util.FileUtil;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.FileFilter;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * User: jeckels

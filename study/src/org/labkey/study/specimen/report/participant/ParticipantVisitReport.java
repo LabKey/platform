@@ -15,22 +15,24 @@
  */
 package org.labkey.study.specimen.report.participant;
 
-import org.labkey.api.util.DemoMode;
-import org.labkey.study.SpecimenManager.SummaryByVisitParticipant;
-import org.labkey.study.model.VisitImpl;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.SpecimenManager;
-import org.labkey.study.CohortFilter;
-import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.specimen.report.SpecimenReportTitle;
-import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
-import org.labkey.study.specimen.report.SpecimenVisitReport;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.DemoMode;
+import org.labkey.api.view.ActionURL;
+import org.labkey.study.CohortFilter;
+import org.labkey.study.SpecimenManager;
+import org.labkey.study.SpecimenManager.SummaryByVisitParticipant;
+import org.labkey.study.controllers.specimen.SpecimenController;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitImpl;
+import org.labkey.study.specimen.report.SpecimenReportTitle;
+import org.labkey.study.specimen.report.SpecimenVisitReport;
+import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 
-import java.util.*;
-import java.sql.SQLException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * User: brittp

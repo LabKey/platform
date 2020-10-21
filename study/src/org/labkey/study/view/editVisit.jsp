@@ -22,7 +22,10 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.CohortFilterFactory" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ConfirmDeleteVisitAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.VisitSummaryAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.VisitSummaryBean" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
@@ -35,8 +38,8 @@
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<StudyController.VisitSummaryBean> me = (JspView<StudyController.VisitSummaryBean>) HttpView.currentView();
-    StudyController.VisitSummaryBean visitBean = me.getModelBean();
+    JspView<VisitSummaryBean> me = (JspView<VisitSummaryBean>) HttpView.currentView();
+    VisitSummaryBean visitBean = me.getModelBean();
     VisitImpl visit = visitBean.getVisit();
 
     StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
@@ -44,7 +47,7 @@
     List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
 %>
 <labkey:errors/>
-<labkey:form action="<%=h(buildURL(StudyController.VisitSummaryAction.class))%>" method="POST">
+<labkey:form action="<%=urlFor(VisitSummaryAction.class)%>" method="POST">
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(visit)%>">
 <input type="hidden" name="id" value="<%=visit.getRowId()%>">
     <table class="lk-fields-table">
@@ -67,7 +70,7 @@
         <tr>
             <td class="labkey-form-label">Protocol Day&nbsp;<%=helpPopup("Protocol Day", "The expected day for this visit according to the protocol, used for study alignment.")%></td>
             <td>
-                <input type="text" size="26" name="protocolDay" value="<%= null != visit.getProtocolDay() ? visit.getProtocolDay().intValue() : ""%>">
+                <input type="text" size="26" name="protocolDay" value="<%=h(null != visit.getProtocolDay() ? visit.getProtocolDay().intValue() : null)%>">
             </td>
         </tr>
 <%
@@ -78,13 +81,13 @@
         <tr>
             <td class="labkey-form-label">VisitId/Sequence Range</td>
             <td>
-                <input type="text" size="26" name="sequenceNumMin" value="<%=visit.getFormattedSequenceNumMin()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=visit.getFormattedSequenceNumMax()%>">
+                <input type="text" size="26" name="sequenceNumMin" value="<%=h(visit.getFormattedSequenceNumMin())%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=h(visit.getFormattedSequenceNumMax())%>">
             </td>
         </tr>
         <tr>
             <td class="labkey-form-label">Protocol Day&nbsp;<%=helpPopup("Protocol Day", "The expected day for this visit according to the protocol, used for study alignment.")%></td>
             <td>
-                <input type="text" size="26" name="protocolDay" value="<%=visit.getFormattedProtocolDay()%>">
+                <input type="text" size="26" name="protocolDay" value="<%=h(visit.getFormattedProtocolDay())%>">
             </td>
         </tr>
 <%
@@ -126,7 +129,7 @@
                     else
                     {
                     %>
-                    <select name="<%=h(CohortFilterFactory.Params.cohortId.name())%>">
+                    <select name="<%=CohortFilterFactory.Params.cohortId%>">
                         <option value="">All</option>
                     <%
 
@@ -237,6 +240,6 @@
     </table>
     <br/>
     <%= button("Save").submit(true) %>&nbsp;
-    <%= button(isDateBased ? "Delete Timepoint" : "Delete Visit").href(buildURL(StudyController.ConfirmDeleteVisitAction.class, "id="+visit.getRowId())) %>&nbsp;
-    <%= button("Cancel").href(StudyController.ManageVisitsAction.class, getContainer()) %>
+    <%= button(isDateBased ? "Delete Timepoint" : "Delete Visit").href(urlFor(ConfirmDeleteVisitAction.class).addParameter("id", visit.getRowId())) %>&nbsp;
+    <%= button("Cancel").href(urlFor(ManageVisitsAction.class)) %>
 </labkey:form>

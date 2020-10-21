@@ -15,7 +15,8 @@
  */
 package org.labkey.api.module;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -45,7 +46,7 @@ public class ModuleHtmlView extends HtmlView
 {
     public static final Path VIEWS_PATH = Path.parse("views");
 
-    private static final Logger LOG = Logger.getLogger(ModuleHtmlView.class);
+    private static final Logger LOG = LogManager.getLogger(ModuleHtmlView.class);
     private static final ModuleResourceCache<Map<Path, ModuleHtmlViewDefinition>> MODULE_HTML_VIEW_DEFINITION_CACHE = ModuleResourceCaches.create("HTML view definitions", new ModuleHtmlViewCacheHandler(), ResourceRootProvider.getStandard(VIEWS_PATH), ResourceRootProvider.getAssayProviders(VIEWS_PATH));
 
     private final ModuleHtmlViewDefinition _viewdef;

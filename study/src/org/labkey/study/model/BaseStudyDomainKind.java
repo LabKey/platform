@@ -15,7 +15,6 @@
  */
 package org.labkey.study.model;
 
-import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;

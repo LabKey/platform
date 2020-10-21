@@ -17,17 +17,20 @@
 package org.labkey.query.controllers;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.query.QueryForm;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ForeignKey;
-import org.labkey.query.sql.Query;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryForm;
 import org.labkey.query.QueryDefinitionImpl;
-import org.springframework.validation.BindException;
+import org.labkey.query.sql.Query;
 import org.springframework.beans.PropertyValues;
+import org.springframework.validation.BindException;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class TableInfoForm extends QueryForm
 {

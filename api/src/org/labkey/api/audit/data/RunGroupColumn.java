@@ -18,7 +18,6 @@ package org.labkey.api.audit.data;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExperimentService;
@@ -26,9 +25,6 @@ import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
-
-import java.io.IOException;
-import java.io.Writer;
 
 /**
  * User: klum

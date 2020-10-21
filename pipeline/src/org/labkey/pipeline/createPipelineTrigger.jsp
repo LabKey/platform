@@ -25,7 +25,8 @@
 <%@ page import="org.labkey.api.util.element.TextArea" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.pipeline.PipelineController" %>
+<%@ page import="org.labkey.pipeline.PipelineController.CreatePipelineTriggerAction" %>
+<%@ page import="org.labkey.pipeline.PipelineController.PipelineTriggerForm" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.function.Function" %>
@@ -40,16 +41,16 @@
     }
 %>
 <%
-    HttpView<PipelineController.PipelineTriggerForm> me = (HttpView<PipelineController.PipelineTriggerForm>) HttpView.currentView();
-    PipelineController.PipelineTriggerForm bean = me.getModelBean();
+    HttpView<PipelineTriggerForm> me = (HttpView<PipelineTriggerForm>) HttpView.currentView();
+    PipelineTriggerForm bean = me.getModelBean();
     String docLink = new HelpTopic("fileWatcher").getHelpTopicHref();
 
     Map<String, FileAnalysisTaskPipeline> triggerConfigTasks = PipelineJobService.get().getTaskPipelines(getContainer())
-            .stream()
-            .filter(FileAnalysisTaskPipeline.class::isInstance)
-            .map(FileAnalysisTaskPipeline.class::cast)
-            .filter(FileAnalysisTaskPipeline::isAllowForTriggerConfiguration)
-            .collect(Collectors.toMap(FileAnalysisTaskPipeline -> FileAnalysisTaskPipeline.getId().getName(), Function.identity()));
+        .stream()
+        .filter(FileAnalysisTaskPipeline.class::isInstance)
+        .map(FileAnalysisTaskPipeline.class::cast)
+        .filter(FileAnalysisTaskPipeline::isAllowForTriggerConfiguration)
+        .collect(Collectors.toMap(FileAnalysisTaskPipeline -> FileAnalysisTaskPipeline.getId().getName(), Function.identity()));
 
     // would appear on the URL param
     if (bean.getPipelineTask() != null && triggerConfigTasks.containsKey(bean.getPipelineTask()))
@@ -72,7 +73,7 @@
             triggers that can automatically initiate pipeline tasks.</p>
         <p>In addition to this feature, premium editions of LabKey Server provide professional support and advanced functionality to help teams maximize the value of the platform.</p>
         <br>
-        <p><a class="alert-link" href="https://www.labkey.com/platform/go-premium/" target="_blank">Go Premium <i class="fa fa-external-link"></i></a></p>
+        <p><a class="alert-link" href="https://www.labkey.com/platform/go-premium/" target="_blank" rel="noopener noreferrer">Go Premium <i class="fa fa-external-link"></i></a></p>
     </div>
 
 <%
@@ -80,14 +81,14 @@
     else
     {
 %>
-<labkey:form layout="horizontal" id="pipelineForm" method="POST" action="<%=h(buildURL(PipelineController.CreatePipelineTriggerAction.class))%>">
+<labkey:form layout="horizontal" id="pipelineForm" method="POST" action="<%=urlFor(CreatePipelineTriggerAction.class)%>">
     <div class="row">
         <div class="col-sm-2">
             <div id="lk-trigger-nav" class="list-group">
                 <a href="#details" class="list-group-item">Details</a>
                 <a href="#configuration" class="list-group-item">Configuration</a>
             </div>
-            <a class="list-group-item" style="margin-top: 2em" target="_blank" href="<%=h(docLink)%>">
+            <a class="list-group-item" style="margin-top: 2em" target="_blank" href="<%=h(docLink)%>" rel="noopener noreferrer">
                 Documentation &nbsp; &nbsp;<i class="fa fa-external-link" aria-hidden="true"></i>
             </a>
         </div>

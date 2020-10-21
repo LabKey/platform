@@ -77,19 +77,19 @@
                 <%
                         if (hasLinkPermission)
                         {
-                            out.print("<a href=\"" + inheritURL.getLocalURIString() + "\">");
+                            out.print(unsafe("<a href=\"" + inheritURL + "\">"));
                         }
 
                         // Always write out what we inherit from
-                        out.print(containerLabel);
+                        out.print(h(containerLabel));
 
                         if (hasLinkPermission)
                         {
-                            out.print("</a>)");
+                            out.print(unsafe("</a>"));
                         }
 
                         // Now write out what those settings are
-                        out.print(": ");
+                        out.print(h("): "));
                         boolean needComma = false;
                         for (Entry<String, String> mvEntry : MvUtil.getIndicatorsAndLabels(linkContainer).entrySet())
                         {
@@ -97,14 +97,14 @@
                             String label = mvEntry.getValue();
                             if (needComma)
                             {
-                                out.print(", ");
+                                out.print(h(", "));
                             }
                             else
                             {
                                 needComma = true;
                             }
 
-                            out.print(PageFlowUtil.helpPopup(indicator, label, false, indicator, 0));
+                            out.print(helpPopup(indicator, label, false, indicator, 0));
                         }
                     }
                 %>

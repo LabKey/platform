@@ -20,10 +20,8 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserUrls;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Objects;
@@ -47,11 +45,11 @@ public class UserIdRenderer extends DataColumn
         }
 
         @Override @NotNull
-        public String getFormattedValue(RenderContext ctx)
+        public HtmlString getFormattedHtml(RenderContext ctx)
         {
             if (isGuestUserId(getBoundColumn().getValue(ctx)))
-                return "&nbsp;";
-            return super.getFormattedValue(ctx);
+                return HtmlString.NBSP;
+            return super.getFormattedHtml(ctx);
         }
     }
 
@@ -61,13 +59,13 @@ public class UserIdRenderer extends DataColumn
     }
 
     @Override @NotNull
-    public String getFormattedValue(RenderContext ctx)
+    public HtmlString getFormattedHtml(RenderContext ctx)
     {
         if (isGuestUserId(getBoundColumn().getValue(ctx)))
         {
-            return "Guest";
+            return HtmlString.of("Guest");
         }
-        return super.getFormattedValue(ctx);
+        return super.getFormattedHtml(ctx);
     }
 
     @Override

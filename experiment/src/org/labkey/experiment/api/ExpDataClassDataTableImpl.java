@@ -16,7 +16,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.log4j.Level;
+import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;

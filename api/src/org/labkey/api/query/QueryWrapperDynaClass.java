@@ -16,12 +16,12 @@
 
 package org.labkey.api.query;
 
+import org.apache.commons.beanutils.DynaBean;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.StringWrapperDynaClass;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.apache.commons.beanutils.DynaBean;
 import org.labkey.api.data.TableInfo;
 
 import java.lang.reflect.Array;

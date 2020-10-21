@@ -86,10 +86,10 @@
 
     void writeHidden(JspWriter out, String name, Object v) throws IOException
     {
-        out.print("<input type=\"hidden\" name=\"");
+        out.print(unsafe("<input type=\"hidden\" name=\""));
         out.print(h(name));
-        out.print("\" value=\"");
+        out.print(unsafe("\" value=\""));
         out.print(h(String.valueOf(v)));
-        out.print("\">");
+        out.print(unsafe("\">"));
     }
 %>

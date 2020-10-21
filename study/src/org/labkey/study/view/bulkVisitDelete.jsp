@@ -17,24 +17,26 @@
 %>
 
 <%@ page import="org.labkey.api.study.TimepointType"%>
+<%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.study.SpecimenManager" %>
+<%@ page import="org.labkey.study.controllers.StudyController.BulkDeleteVisitsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DeleteVisitsForm" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.VisitSummaryAction" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
-<%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.study.SpecimenManager" %>
-<%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page import="org.labkey.study.model.VisitMapKey" %>
+<%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page import="java.util.Collections" %>
-<%@ page import="java.util.Map" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -54,7 +56,7 @@
     boolean isDateBased = study != null && study.getTimepointType() == TimepointType.DATE;
     String noun = isDateBased ? "Timepoint" : "Visit";
 
-    ActionURL returnURL = form.getReturnActionURL(new ActionURL(StudyController.ManageVisitsAction.class, getContainer()));
+    ActionURL returnURL = form.getReturnActionURL(urlFor(ManageVisitsAction.class));
 
     Map<VisitMapKey, VisitManager.VisitStatistics> visitSummaryMap = visitManager.getVisitSummary(getUser(), null, null, Collections.singleton(VisitManager.VisitStatistic.RowCount), true);
     Map<Integer, Integer> visitRowCountMap = new HashMap<>();
@@ -74,7 +76,7 @@
     <span style="font-weight: bold;">Note: this will also delete any related dataset and specimen rows.</span>
 </p>
 <labkey:errors/>
-<labkey:form action="<%=h(buildURL(StudyController.BulkDeleteVisitsAction.class))%>" name="bulkDeleteVisits" method="POST">
+<labkey:form action="<%=urlFor(BulkDeleteVisitsAction.class)%>" name="bulkDeleteVisits" method="POST">
 <table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
         <td class="labkey-column-header"><input type="checkbox" onchange="toggleAllRows(this);"></td>
@@ -90,7 +92,7 @@
         List<VisitImpl> allVisits = studyManager.getVisits(study, Visit.Order.DISPLAY);
         for (VisitImpl visit : allVisits)
         {
-            ActionURL visitSummaryURL = new ActionURL(StudyController.VisitSummaryAction.class, study.getContainer());
+            ActionURL visitSummaryURL = new ActionURL(VisitSummaryAction.class, study.getContainer());
             visitSummaryURL.addParameter("id", visit.getRowId());
             int dataCount = visitRowCountMap.containsKey(visit.getRowId()) ? visitRowCountMap.get(visit.getRowId()) : 0;
             int vialCount = SpecimenManager.getInstance().getSampleCountForVisit(visit);
@@ -99,7 +101,7 @@
     %>
         <tr class="visit-row <%=h(rowCount % 2 == 1 ? "labkey-alternate-row" : "labkey-row")%>">
             <td><input type="checkbox" name="visitIds" value="<%=visit.getRowId()%>"></td>
-            <td class="visit-label"><a href="<%=h(visitSummaryURL.getLocalURIString())%>"><%= h(visit.getDisplayString()) %></a></td>
+            <td class="visit-label"><a href="<%=h(visitSummaryURL)%>"><%= h(visit.getDisplayString()) %></a></td>
             <td class="visit-range"><%=h(visit.getSequenceString())%></td>
             <td><%= h(visit.getCohort() != null ? h(visit.getCohort().getLabel()) : "All") %></td>
             <td><%= h(visit.getType() != null ? visit.getType().getMeaning() : "[Not defined]") %></td>

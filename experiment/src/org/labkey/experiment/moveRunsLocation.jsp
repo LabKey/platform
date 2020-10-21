@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.MoveRunsBean" %>
-<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController.MoveRunsAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -35,14 +35,14 @@
         document.forms["moveForm"].submit();
     }
 </script>
-<labkey:form name="moveForm" action="<%=h(buildURL(ExperimentController.MoveRunsAction.class))%>" method="POST">
+<labkey:form name="moveForm" action="<%=urlFor(MoveRunsAction.class)%>" method="POST">
     <%
         for (String id : DataRegionSelection.getSelected(getViewContext(), false))
         { %>
-            <input type="hidden" name="<%= DataRegion.SELECT_CHECKBOX_NAME%>" value="<%= h(id) %>" /><%
+            <input type="hidden" name="<%=h(DataRegion.SELECT_CHECKBOX_NAME)%>" value="<%= h(id) %>" /><%
         }
     %>
-    <input type="hidden" name="<%= DataRegionSelection.DATA_REGION_SELECTION_KEY %>" value="<%= bean.getDataRegionSelectionKey() %>" />
+    <input type="hidden" name="<%=h(DataRegionSelection.DATA_REGION_SELECTION_KEY)%>" value="<%=h(bean.getDataRegionSelectionKey())%>" />
     <input type="hidden" name="targetContainerId" />
 <table class="labkey-data-region">
 <tr>
@@ -52,7 +52,7 @@
     </td>
 </tr>
 <tr><td>&nbsp;</td></tr>
-<%=bean.getContainerTree().render()%>
+<%=bean.getContainerTree().getHtmlString()%>
 </table>
 
 </labkey:form>

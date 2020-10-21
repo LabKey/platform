@@ -19,7 +19,8 @@ package org.labkey.api.data;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlCursor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -97,7 +98,7 @@ import static java.util.Collections.unmodifiableCollection;
 
 abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable, MemTrackable
 {
-    private static final Logger LOG = Logger.getLogger(AbstractTableInfo.class);
+    private static final Logger LOG = LogManager.getLogger(AbstractTableInfo.class);
 
     /**
      * Default lookup select list max size.
@@ -1040,7 +1041,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             {
                 //noinspection ThrowableInstanceNeverThrown
                 String msgColumnName =
-                        (column.getParentTable()==null?"":column.getParentTable().getName()) +
+                        (column.getParentTable()==null?"":(column.getParentTable().getName() + ".")) +
                         column.getName();
                 qpe.add(new MetadataParseWarning("Schema " + xbColumn.getFk().getFkDbSchema() + " not found, in foreign key definition: " + msgColumnName));
                 return;

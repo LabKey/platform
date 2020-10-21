@@ -19,7 +19,6 @@ package org.labkey.experiment.controllers.exp;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.springframework.web.servlet.ModelAndView;
 
 /**
  * User: jeckels

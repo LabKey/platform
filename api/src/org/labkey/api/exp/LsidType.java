@@ -16,8 +16,6 @@
 package org.labkey.api.exp;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -25,9 +23,10 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
@@ -117,15 +116,15 @@ public enum LsidType
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
-                    ExpSampleSet source = getObject(lsid);
+                    ExpSampleType source = getObject(lsid);
                     return source == null ? null :
-                            PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleSetURL(source);
+                            PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleTypeURL(source);
                 }
 
                 @Override
-                public ExpSampleSet getObject(Lsid lsid)
+                public ExpSampleType getObject(Lsid lsid)
                 {
-                    return ExperimentService.get().getSampleSet(lsid.toString());
+                    return SampleTypeService.get().getSampleType(lsid.toString());
                 }
             },
 

@@ -16,7 +16,8 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -63,7 +64,7 @@ import java.util.stream.Collectors;
 
 public class QuerySelect extends QueryRelation implements Cloneable
 {
-    private static final Logger _log = Logger.getLogger(QuerySelect.class);
+    private static final Logger _log = LogManager.getLogger(QuerySelect.class);
 
     String _queryText;
     private Map<FieldKey, SelectColumn> _columns;
@@ -269,6 +270,7 @@ groupByLoop:
             FieldKey key = qtable.getTableKey();
             String alias = qtable.getAlias().getName();
             QNode node = qtable.getTable();
+            ContainerFilter.Type containerFilter = qtable.getContainerFilterType();
 
             QueryRelation relation = null;
             if (null != qtable.getQueryRelation())
@@ -338,7 +340,7 @@ groupByLoop:
                 }
                 else
                 {
-                    relation = _query.resolveTable(_schema, node, key, alias);
+                    relation = _query.resolveTable(_schema, node, key, alias, containerFilter);
                     assert relation == null || alias.equals(relation.getAlias());
                     if (null != relation)
                         relation._parent = this;
@@ -654,7 +656,32 @@ groupByLoop:
             if (children.size() > 1 && children.get(1) instanceof QIdentifier)
                 alias = (QIdentifier) children.get(1);
 
-            QTable table = new QTable(expr);
+            ContainerFilter.Type cfType = null;
+            Map<String,Object> annotations = ((QUnknownNode)node).getAnnotations();
+            if (null != annotations)
+            {
+                for (var entry : annotations.entrySet())
+                {
+                    var value = entry.getValue();
+                    switch (entry.getKey().toLowerCase())
+                    {
+                        case "containerfilter":
+                            if (!(value instanceof String))
+                            {
+                                _query.getParseErrors().add(new QueryParseException("ContainerFilter annotation requires a string value", null, node.getLine(), node.getColumn()));
+                                continue;
+                            }
+                            cfType = ContainerFilter.getType((String)value);
+                            if (null == cfType)
+                                _query.getParseErrors().add(new QueryParseException("Unrecognized container filter type: " + value, null, node.getLine(), node.getColumn()));
+                            break;
+                        default:
+                            _query.getParseErrors().add(new QueryParseException("Unknown annotation: " + entry.getKey(), null, node.getLine(), node.getColumn()));
+                    }
+                }
+            }
+
+            QTable table = new QTable(expr, cfType);
             table.setAlias(alias);
             FieldKey aliasKey = table.getAlias();
             if (null == aliasKey)
@@ -1256,6 +1283,8 @@ groupByLoop:
                 else
                     markAllSelected(_query);
                 SQLFragment s = getSql();
+                if (!getParseErrors().isEmpty())
+                    throw getParseErrors().get(0);
                 SQLFragment f = new SQLFragment();
                 f.append("(").append(s).append(") ").append(alias);
 
@@ -1764,8 +1793,6 @@ groupByLoop:
     @Override
     Collection<String> getKeyColumns()
     {
-        if (!_resolved)
-            throw new IllegalStateException();
         // TODO handle multi column primary keys
         // TODO handle group by/distinct
         if (_tables.size() != 1 || null != _distinct || null != _groupBy || this.isAggregate())
@@ -2107,7 +2134,8 @@ groupByLoop:
         @NotNull
         public JdbcType getJdbcType()
         {
-            return null != _resolved ? _resolved.getJdbcType() : JdbcType.NULL;
+            var resolved = getResolvedField();
+            return null != resolved ? resolved.getJdbcType() : JdbcType.NULL;
         }
 
 

@@ -19,11 +19,13 @@ import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.test.Locator;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.CustomizeView;
-import org.labkey.test.params.experiment.SampleSetDefinition;
+import org.labkey.test.components.html.Table;
+import org.labkey.test.params.experiment.SampleTypeDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.PortalHelper;
-import org.labkey.test.util.SampleSetHelper;
+import org.labkey.test.util.SampleTypeHelper;
+import org.openqa.selenium.WebElement;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -56,7 +58,7 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
         PortalHelper portalHelper = new PortalHelper(this);
         _containerHelper.createProject(getProjectName(), null);
         projectMenu().navigateToProject(getProjectName());
-        portalHelper.addWebPart("Sample Sets");
+        portalHelper.addWebPart("Sample Types");
     }
 
     @Override
@@ -95,7 +97,7 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
 
         String prop2Name = "Year";
         String rangeURI2 = "int";
-        int prop2Value = 2019;
+        String prop2Value = "2019";
         PropertyDescriptor pd2 = new PropertyDescriptor(prop2Name, rangeURI2);
 
         String prop3Name = "Origin";
@@ -116,8 +118,8 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
         String sampleSetName = "Cars";
 
         goToProjectHome();
-        SampleSetHelper sampleHelper = new SampleSetHelper(this);
-        sampleHelper.createSampleSet(new SampleSetDefinition(sampleSetName));
+        SampleTypeHelper sampleHelper = new SampleTypeHelper(this);
+        sampleHelper.createSampleType(new SampleTypeDefinition(sampleSetName));
 
         log("call to insertRows with a voc property");
         int sampleSetRowCount = 0;
@@ -141,8 +143,8 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
 
         log("goto dataclass grid .. open customize grid panel");
         goToProjectHome();
-        click(Locator.linkWithText("Sample Sets"));
-        sampleHelper.goToSampleSet(sampleSetName);
+        click(Locator.linkWithText("Sample Types"));
+        sampleHelper.goToSampleType(sampleSetName);
         DataRegionTable drt = sampleHelper.getSamplesDataRegionTable();
         CustomizeView sampleSetCustomizeGrid = drt.openCustomizeGrid();
         sampleSetCustomizeGrid.showHiddenItems();
@@ -166,14 +168,31 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
 
         sampleSetCustomizeGrid.applyCustomView();
 
-        String propertiesValue = prop1Name + " " + prop2Name + " " + prop3Name + "\n" +
-                                 prop1Value + " " + prop2Value + " " + cityName;
-
         List<String> rowData = drt.getRowDataAsText(0);
+
+        // Make the test more robust by removing a dependency on string order. Get the smaller table contained in the
+        // 'Properties' and turn it into a map.
+        Table table = new Table(getDriver(),
+                Locator.tagWithClassContaining("table", "labkey-data-region")
+                        .findElement(drt.findCell(0, "Properties")));
+        List<String> propHeaders = table.getTableHeaderTexts();
+        List<String> propertiesRowText = table.getRowAsText(0);
+
+        Assert.assertEquals("How odd! The number of data columns in the smaller table do not match the number of header columns.",
+                propHeaders.size(), propertiesRowText.size());
+
+        Map<String, String> propertiesValue = new HashMap<>();
+        for(int i = 0; i < propertiesRowText.size(); i++)
+        {
+            propertiesValue.put(propHeaders.get(i), propertiesRowText.get(i));
+        }
+
+        Map<String, String> expectedPropertiesValue = Map.of(prop1Name, prop1Value, prop2Name, prop2Value, prop3Name, cityName);
+
         Assert.assertThat("Row data does not contain color property value.", rowData, hasItem(prop1Value));
         Assert.assertThat("Row data does not contain year property value.", rowData, hasItem(String.valueOf(prop2Value)));
         Assert.assertThat("Row data does not contain list property value.", rowData, hasItem(cityName));
-        Assert.assertThat("Row data does not contain properties property value.", rowData, hasItem(propertiesValue));
+        Assert.assertEquals("Row data does not contain properties property value.", expectedPropertiesValue, propertiesValue);
     }
 
     @Test
@@ -229,7 +248,7 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
         runsTableCustomizeView.addColumn(domainProperty + "/" + propNameLocation);
         runsTableCustomizeView.applyCustomView();
 
-        String propertiesValue = propNameLab + " " + propNameLocation + "\n" +
+        String propertiesValue = propNameLab + "\n" + propNameLocation + "\n" +
                 propValueLab + " " + labLocation;
         List<String> rowData = runsTable.getRowDataAsText(0);
 

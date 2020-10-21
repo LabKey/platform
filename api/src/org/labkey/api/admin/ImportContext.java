@@ -15,7 +15,7 @@
  */
 package org.labkey.api.admin;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.data.Activity;
 import org.labkey.api.data.PHI;

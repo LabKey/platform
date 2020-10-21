@@ -18,7 +18,6 @@ package org.labkey.study.importer;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;

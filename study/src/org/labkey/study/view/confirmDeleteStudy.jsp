@@ -16,8 +16,9 @@
  */
 %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.study.controllers.StudyController.DeleteStudyAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <script>
@@ -31,7 +32,7 @@
         return confirmed;
     }
 </script>
-<labkey:form action="<%=h(buildURL(StudyController.DeleteStudyAction.class))%>" method="post" onsubmit="return deleteStudy_onSubmit();">
+<labkey:form action="<%=urlFor(DeleteStudyAction.class)%>" method="post" onsubmit="return deleteStudy_onSubmit();">
 This will delete all study data in this folder.
 <ul>
 <%
@@ -47,5 +48,5 @@ for (String s : summaries)
     <br>
     Check the box below to confirm that you want to delete this study. <br>
 <input type=checkbox name=confirm id=deleteStudyConfirm value=true> Confirm Delete<br><br>
-<%= button("Delete").submit(true) %> <%= button("Cancel").href(StudyController.ManageStudyAction.class, getContainer()) %>
+<%= button("Delete").submit(true) %> <%= button("Cancel").href(urlFor(ManageStudyAction.class)) %>
 </labkey:form>

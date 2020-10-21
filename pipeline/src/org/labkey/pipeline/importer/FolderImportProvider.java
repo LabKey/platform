@@ -15,13 +15,13 @@
  */
 package org.labkey.pipeline.importer;
 
+import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineProvider;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.module.Module;
 import org.labkey.pipeline.PipelineController;
 
 import java.io.File;

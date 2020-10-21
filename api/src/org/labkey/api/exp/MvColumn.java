@@ -15,7 +15,11 @@
  */
 package org.labkey.api.exp;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 
 
 /**

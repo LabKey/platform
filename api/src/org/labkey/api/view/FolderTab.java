@@ -73,7 +73,7 @@ public abstract class FolderTab
     }
 
     /** Controllers and their child actions (both are Spring Controller classes) claimed by this tab */
-    private Set<Class<? extends Controller>> _controllersAndActions = new HashSet<>();
+    private final Set<Class<? extends Controller>> _controllersAndActions = new HashSet<>();
 
     protected List<Class<? extends Permission>> _permissions;
 

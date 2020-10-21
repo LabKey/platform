@@ -16,7 +16,6 @@
 package org.labkey.api.assay;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.view.ViewContext;

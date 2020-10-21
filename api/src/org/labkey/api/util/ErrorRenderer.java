@@ -17,6 +17,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.collections4.IteratorUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
@@ -40,13 +41,30 @@ public class ErrorRenderer
     private final boolean _isStartupFailure;
     private final ErrorRendererProperties _errorRendererProps;
     private final String _title;
+    private final String _errorCode;
 
-    ErrorRenderer(int status, String heading, Throwable x, boolean isStartupFailure)
+    private ErrorType _errorType;
+
+    public String getStackTrace()
+    {
+        return ExceptionUtils.getStackTrace(getException());
+    }
+
+    public enum ErrorType
+    {
+        notFound,
+        permission,
+        configuration,
+        execution
+    }
+
+    ErrorRenderer(int status, String errorCode, String heading, Throwable x, boolean isStartupFailure)
     {
         _status = status;
         _exception = x;
         _isStartupFailure = isStartupFailure;
         _errorRendererProps = (x instanceof ErrorRendererProperties ? (ErrorRendererProperties)x : null);
+        _errorCode = errorCode;
 
         if (null == _errorRendererProps)
         {
@@ -55,7 +73,7 @@ public class ErrorRenderer
         }
         else
         {
-            _heading = _errorRendererProps.getHeading(_isStartupFailure);
+            _heading = null != heading ? heading : _errorRendererProps.getHeading(_isStartupFailure);
             _title = _errorRendererProps.getTitle();
         }
     }
@@ -234,5 +252,20 @@ public class ErrorRenderer
     public String getTitle()
     {
         return _title;
+    }
+
+    public String getErrorType()
+    {
+        return _errorType.toString();
+    }
+
+    public void setErrorType(ErrorType errorType)
+    {
+        _errorType = errorType;
+    }
+
+    public String getErrorCode()
+    {
+        return _errorCode;
     }
 }

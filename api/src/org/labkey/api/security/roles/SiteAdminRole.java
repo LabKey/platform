@@ -15,7 +15,16 @@
  */
 package org.labkey.api.security.roles;
 
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.security.permissions.AnalystPermission;
+import org.labkey.api.security.permissions.BrowserDeveloperPermission;
+import org.labkey.api.security.permissions.CanUseSendMessageApiPermission;
+import org.labkey.api.security.permissions.EditModuleResourcesPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
+import org.labkey.api.security.permissions.SiteAdminPermission;
+import org.labkey.api.security.permissions.TrustedPermission;
+import org.labkey.api.security.permissions.UploadFileBasedModulePermission;
 import org.labkey.api.settings.AppProps;
 
 import java.util.Arrays;
@@ -27,7 +36,7 @@ import java.util.Collections;
  * User: Dave
  * Date: Apr 23, 2009
  */
-public class SiteAdminRole extends AbstractRootContainerRole
+public class SiteAdminRole extends AbstractRootContainerRole implements AdminRoleListener
 {
     private static final Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
         SiteAdminPermission.class,
@@ -49,5 +58,11 @@ public class SiteAdminRole extends AbstractRootContainerRole
             PERMISSIONS,
             AppProps.getInstance().isDevMode() ? Collections.singleton(EditModuleResourcesPermission.class) : Collections.emptyList()
         );
+    }
+
+    @Override
+    public void permissionRegistered(Class<? extends Permission> perm)
+    {
+        addPermission(perm);
     }
 }

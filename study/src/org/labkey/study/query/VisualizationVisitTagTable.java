@@ -23,7 +23,6 @@ import org.labkey.api.data.VirtualTable;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
-import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyImpl;
 
 public class VisualizationVisitTagTable extends VirtualTable

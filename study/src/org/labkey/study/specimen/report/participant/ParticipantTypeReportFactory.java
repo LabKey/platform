@@ -16,23 +16,22 @@
 package org.labkey.study.specimen.report.participant;
 
 import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.element.Option;
 import org.labkey.api.util.element.Select;
-import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
-import org.labkey.study.specimen.report.SpecimenVisitReport;
-import org.labkey.study.model.SpecimenTypeSummary;
-import org.labkey.study.model.VisitImpl;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.util.Pair;
+import org.labkey.study.model.SpecimenTypeSummary;
+import org.labkey.study.model.VisitImpl;
+import org.labkey.study.specimen.report.SpecimenVisitReport;
+import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import static org.labkey.api.util.HtmlString.unsafe;
 

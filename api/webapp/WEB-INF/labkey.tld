@@ -55,16 +55,6 @@
         </attribute>
     </tag>
     <tag>
-        <name>selectAll</name>
-        <tag-class>org.labkey.api.jsp.taglib.SelectAll</tag-class>
-        <body-content>empty</body-content>
-    </tag>
-    <tag>
-        <name>clearAll</name>
-        <tag-class>org.labkey.api.jsp.taglib.ClearAll</tag-class>
-        <body-content>empty</body-content>
-    </tag>
-    <tag>
         <name>options</name>
         <tag-class>org.labkey.api.jsp.taglib.OptionsTag</tag-class>
         <body-content>empty</body-content>
@@ -112,34 +102,6 @@
         </attribute>
         <attribute>
             <name>checkedSet</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-    </tag>
-    <tag>
-        <name>link</name>
-        <tag-class>org.labkey.api.jsp.taglib.LinkTag</tag-class>
-        <body-content>empty</body-content>
-        <attribute>
-            <name>href</name>
-            <required>true</required>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-        <attribute>
-            <name>text</name>
-            <required>true</required>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-        <attribute>
-            <name>id</name>
-            <required>false</required>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-        <attribute>
-            <name>onclick</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-        <attribute>
-            <name>rel</name>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
     </tag>
@@ -414,44 +376,6 @@
         </attribute>
         <attribute>
             <name>width</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-    </tag>
-    <tag>
-        <name>select</name>
-        <tag-class>org.labkey.api.jsp.taglib.SelectTag</tag-class>
-        <body-content>JSP</body-content>
-        <attribute>
-            <name>formGroup</name>
-            <rtexprvalue>true</rtexprvalue>
-            <type>java.lang.Boolean</type>
-        </attribute>
-        <attribute>
-            <name>label</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-        <attribute>
-            <name>message</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-        <attribute>
-            <name>name</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-        <attribute>
-            <name>onChange</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-        <attribute>
-            <name>onKeyUp</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-        <attribute>
-            <name>value</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-        <attribute>
-            <name>contextContent</name>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
     </tag>
