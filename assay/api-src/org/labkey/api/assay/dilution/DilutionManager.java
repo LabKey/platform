@@ -200,6 +200,13 @@ public class DilutionManager
     }
 
     @Nullable
+    public NabSpecimen getNabSpecimen(String specimenLsid)
+    {
+        Filter filter = new SimpleFilter(FieldKey.fromString("SpecimenLSID"), specimenLsid);
+        return getNabSpecimen(filter);
+    }
+
+    @Nullable
     public NabSpecimen getNabSpecimen(int rowId)
     {
         Filter filter = new SimpleFilter(FieldKey.fromString("RowId"), rowId);

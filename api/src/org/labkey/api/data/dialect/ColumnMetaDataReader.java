@@ -26,7 +26,7 @@ import java.sql.SQLException;
 public abstract class ColumnMetaDataReader
 {
     protected final ResultSet _rsCols;
-    protected String _nameKey, _sqlTypeKey, _sqlTypeNameKey, _scaleKey, _nullableKey, _postionKey, _generatedKey;
+    protected String _nameKey, _sqlTypeKey, _sqlTypeNameKey, _scaleKey, _nullableKey, _postionKey, _generatedKey, _decimalDigitsKey;
 
     public ColumnMetaDataReader(ResultSet rsCols)
     {
@@ -61,6 +61,11 @@ public abstract class ColumnMetaDataReader
     public int getPosition() throws SQLException
     {
         return _rsCols.getInt(_postionKey);
+    }
+
+    public int getDecimalDigits() throws SQLException
+    {
+        return _rsCols.getInt(_decimalDigitsKey);
     }
 
     public abstract boolean isAutoIncrement() throws SQLException;

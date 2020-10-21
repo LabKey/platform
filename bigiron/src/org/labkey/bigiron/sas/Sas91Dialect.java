@@ -50,6 +50,7 @@ public class Sas91Dialect extends SasDialect
             _nameKey = "NAME";
             _sqlTypeKey = "SQLTYPE";
             _scaleKey = "SIZE";
+            _decimalDigitsKey = "SCALE";
             _nullableKey = "NULLABLE";
             _postionKey = "POSITION";
         }
