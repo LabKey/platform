@@ -1739,6 +1739,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             _sqlTypeKey = "DATA_TYPE";
             _sqlTypeNameKey = "TYPE_NAME";
             _scaleKey = "COLUMN_SIZE";
+            _decimalDigitsKey = "DECIMAL_DIGITS";
             _nullableKey = "NULLABLE";
             _postionKey = "ORDINAL_POSITION";
             _generatedKey = "IS_GENERATED";
@@ -2088,6 +2089,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             "                                    OdbcPrec(c.system_type_id,c.max_length,c.precision)\n" +
             "                                end),\n" +
             "        NULLABLE            = convert(int, c.is_nullable),\n" +
+            "        DECIMAL_DIGITS      = convert(int, OdbcScale(c.system_type_id,c.scale)),\n" +
             "        REMARKS             = convert(varchar(254),NULL),\n" +
             "        COLUMN_DEF          = convert(nvarchar(4000), object_definition(ColumnProperty(c.object_id, c.name, 'default'))),\n" +
             "        ORDINAL_POSITION    = ROW_NUMBER() OVER (ORDER BY c.column_id),\n" +

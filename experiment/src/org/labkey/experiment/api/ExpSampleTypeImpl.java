@@ -308,6 +308,18 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return _object.getLabelColor();
     }
 
+    // NOTE: intentionally not public in ExpSampleType interface
+    public void setMetricUnit(String metricUnit)
+    {
+        _object.setMetricUnit(metricUnit);
+    }
+
+    @Override
+    public @Nullable String getMetricUnit()
+    {
+        return _object.getMetricUnit();
+    }
+
     @Nullable
     public NameGenerator getNameGenerator()
     {

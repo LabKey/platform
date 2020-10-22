@@ -290,7 +290,7 @@ public class PropertyManager
         private final AbstractPropertyStore _store;
 
         private boolean _modified = false;
-        Set<Object> removedKeys = null;
+        private Set<Object> removedKeys = null;
         private boolean _locked = false;
 
         /** Clone the existing map, creating our own copy of the underlying data */
@@ -803,7 +803,7 @@ public class PropertyManager
             // All categories created by test should be gone
             for (String category : test.getCategories())
             {
-                Map m = store.getProperties(user, child, category);
+                Map<String, String> m = store.getProperties(user, child, category);
                 assertSame(m, AbstractPropertyStore.NULL_MAP);
             }
         }

@@ -1,0 +1,1 @@
+ALTER TABLE exp.MaterialSource ADD COLUMN MetricUnit VARCHAR(10) NULL;
