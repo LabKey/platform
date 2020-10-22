@@ -11,7 +11,7 @@
     "clean": "rimraf resources/web/issues/gen && rimraf resources/views/*.*"
   },
   "dependencies": {
-    "@labkey/components": "0.99.0-fb-fieldEditorExportImport.0"
+    "@labkey/components": "0.99.0-fb-fieldEditorExportImport.1"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.13.0",
