@@ -4,11 +4,11 @@
   "scripts": {
     "setup": "npm ci",
     "build": "npm run build-dev",
-    "build-dev": "npm run copy-distributions && cross-env NODE_ENV=development LK_MODULE=core webpack --config ../webpack/dev.config.js --progress --profile --colors",
-    "build-prod": "npm run copy-distributions && cross-env NODE_ENV=production LK_MODULE=core webpack --config ../webpack/prod.config.js --progress --profile --colors",
+    "build-dev": "npm run copy-distributions && cross-env NODE_ENV=development LK_MODULE=core webpack --config node_modules/@labkey/build/webpack/dev.config.js --progress --profile --colors",
+    "build-prod": "npm run copy-distributions && cross-env NODE_ENV=production LK_MODULE=core webpack --config node_modules/@labkey/build/webpack/prod.config.js --progress --profile --colors",
     "clean": "rimraf resources/web/core/gen && rimraf resources/web/core/css && rimraf resources/web/clientapi",
     "copy-distributions": "npm run clean && node copy-distributions.js",
-    "start": "cross-env NODE_ENV=development LK_MODULE=core webpack-dev-server --config ../webpack/watch.config.js",
+    "start": "cross-env NODE_ENV=development LK_MODULE=core webpack-dev-server --config node_modules/@labkey/build/webpack/watch.config.js",
     "test": "cross-env NODE_ENV=test jest",
     "teamcity": "cross-env NODE_ENV=test jest --testResultsProcessor=jest-teamcity-reporter",
     "lint": "eslint --ext '*.ts,*.tsx'",
@@ -48,6 +48,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.1.1",
+    "@labkey/build": "0.0.1-fb-labkeyBuildPackage.2",
     "@labkey/components": "0.97.0",
     "@labkey/eslint-config-react": "0.0.8",
     "@labkey/themes": "1.0.0"

@@ -5,12 +5,13 @@
   "scripts": {
     "setup": "npm ci",
     "build": "npm run build-dev",
-    "start": "cross-env NODE_ENV=development LK_MODULE=experiment webpack-dev-server --config ../webpack/watch.config.js",
-    "build-dev": "npm run clean && cross-env NODE_ENV=development LK_MODULE=experiment webpack --config ../webpack/dev.config.js --progress --profile --colors",
-    "build-prod": "npm run clean && cross-env NODE_ENV=production LK_MODULE=experiment webpack --config ../webpack/prod.config.js --progress --profile --colors",
+    "start": "cross-env NODE_ENV=development LK_MODULE=experiment webpack-dev-server --config node_modules/@labkey/build/webpack/watch.config.js",
+    "build-dev": "npm run clean && cross-env NODE_ENV=development LK_MODULE=experiment webpack --config node_modules/@labkey/build/webpack/dev.config.js --progress --profile --colors",
+    "build-prod": "npm run clean && cross-env NODE_ENV=production LK_MODULE=experiment webpack --config node_modules/@labkey/build/webpack/prod.config.js --progress --profile --colors",
     "clean": "rimraf resources/web/experiment/gen && rimraf resources/views/*.*"
   },
   "dependencies": {
+    "@labkey/build": "0.0.1-fb-labkeyBuildPackage.2",
     "@labkey/components": "0.97.0"
   },
   "devDependencies": {
