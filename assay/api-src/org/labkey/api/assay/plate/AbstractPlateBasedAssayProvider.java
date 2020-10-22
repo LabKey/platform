@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay.plate;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AbstractTsvAssayProvider;
 import org.labkey.api.assay.AssayDataType;
@@ -25,7 +26,10 @@ import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.actions.PlateUploadForm;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.EnumTableInfo;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.api.ExpData;
@@ -37,6 +41,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.Module;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
@@ -47,7 +52,9 @@ import org.labkey.api.view.InsertView;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -245,6 +252,12 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         return null;
     }
 
+    @Override
+    public Collection<StatsService.CurveFitType> getCurveFits()
+    {
+        return Collections.emptyList();
+    }
+
     public static class SpecimenIDLookupResolverType extends StudyParticipantVisitResolverType
     {
         // null means we haven't checked the request yet to know whether
@@ -368,6 +381,38 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         public boolean collectPropertyOnUpload(AssayRunUploadContext<?> uploadContext, String propertyName)
         {
             return !(propertyName.equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME));
+        }
+    }
+
+    public static class CurveFitTableInfo extends EnumTableInfo
+    {
+        PlateBasedAssayProvider _provider;
+
+        public CurveFitTableInfo(UserSchema schema, PlateBasedAssayProvider provider, String description)
+        {
+            super(StatsService.CurveFitType.class, schema, description, false);
+            _provider = provider;
+        }
+
+        @Override
+        public @NotNull SQLFragment getFromSQL()
+        {
+            SQLFragment sql = new SQLFragment();
+            String separator = "";
+            EnumSet<StatsService.CurveFitType> enumSet = EnumSet.allOf(_enum);
+            for (StatsService.CurveFitType e : enumSet)
+            {
+                if (_provider.getCurveFits().contains(e))
+                {
+                    sql.append(separator);
+                    separator = " UNION ";
+                    sql.append("SELECT ? AS VALUE, ? AS RowId, ? As Ordinal");
+                    sql.add(_valueGetter.getValue(e));
+                    sql.add(_rowIdGetter.getRowId(e));
+                    sql.add(e.ordinal());
+                }
+            }
+            return sql;
         }
     }
 }

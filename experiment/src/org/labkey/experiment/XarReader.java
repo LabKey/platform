@@ -483,6 +483,11 @@ public class XarReader extends AbstractXarImporter
             materialSource.setLabelColor(sampleSet.getLabelColor());
         }
 
+        if (sampleSet.isSetMetricUnit())
+        {
+            materialSource.setMetricUnit(sampleSet.getMetricUnit());
+        }
+
         if (existingMaterialSource != null)
         {
             if (_strictValidateExistingSampleType)

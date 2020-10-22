@@ -46,7 +46,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1136,6 +1135,11 @@ public class StatementUtils
         if (("NTEXT".equalsIgnoreCase(type) || "TEXT".equalsIgnoreCase(type)) && _dialect.isSqlServer())
         {
             type = "NVARCHAR(MAX)";
+        }
+        // Add scale and precision for decimal values specifying scale
+        if (jdbcType.isDecimal() && ph.p.getScale() > 0)
+        {
+            type = type + "(" + ph.p.getPrecision() + "," + ph.p.getScale() + ")";
         }
         sqlfDeclare.append(type);
         if (jdbcType.isText() && jdbcType != JdbcType.LONGVARCHAR && jdbcType != JdbcType.GUID)

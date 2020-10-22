@@ -110,8 +110,8 @@
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Webapp Dir</td><td><%=h(bean.webappDir)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>OS</td><td><%=h(bean.osName)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Working Dir</td><td><%=h(bean.workingDir)%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Server GUID</td><td><%=h(bean.serverGuid)%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Server Session GUID</td><td><%=h(bean.serverSessionGuid)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Server GUID</td><td style="font-family:monospace"><%=h(bean.serverGuid)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Server Session GUID</td><td style="font-family:monospace"><%=h(bean.serverSessionGuid)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server Time</td><td><%=formatDateTime(new Date())%></td></tr>
             </table>
         </labkey:panel>
@@ -187,7 +187,7 @@
                         {%>
                             <tr class="<%=getShadeRowClass(count)%>">
                                 <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && sourcePathMatched && !enlistmentIdMatched) ? helpPopup("enlistment id does not match") : HtmlString.EMPTY_STRING%></td>
-                                <td nowrap="true" style="color:<%=h( (!devMode||!sourcePathMatched)?"":enlistmentIdMatched?"green":"red")%>;"><%=h(entry.getValue())%></td>
+                                <td nowrap="true" style="color:<%=h( (!devMode||!sourcePathMatched)?"":enlistmentIdMatched?"green":"red")%>;font-family:monospace"><%=h(entry.getValue())%></td>
                             </tr><%
                         }
                         else if (StringUtils.equals("OrganizationURL", entry.getKey()) || StringUtils.equals("LicenseURL", entry.getKey()))

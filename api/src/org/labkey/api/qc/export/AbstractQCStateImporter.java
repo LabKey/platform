@@ -1,6 +1,7 @@
 package org.labkey.api.qc.export;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
@@ -11,59 +12,85 @@ import java.util.Map;
 
 public abstract class AbstractQCStateImporter
 {
-    public static void importQCStates(ImportContext ctx, StudyqcDocument doc, QCStateImportExportHelper helper)
+    public static void importQCStates(ImportContext<?> ctx, StudyqcDocument doc, QCStateImportExportHelper helper)
     {
         StudyqcDocument.Studyqc qcXml = doc.getStudyqc();
         StudyqcDocument.Studyqc.Qcstates states = qcXml.getQcstates();
-        Map<String, Integer> stateMap = new HashMap<>();
 
-        for (QCState existingState : QCStateManager.getInstance().getQCStates(ctx.getContainer()))
-        {
-            // replace any existing states unless they are currently in use
-            if (!helper.isQCStateInUse(ctx.getContainer(),existingState))
-                QCStateManager.getInstance().deleteQCState(existingState);
-            else
-                stateMap.put(existingState.getLabel(), existingState.getRowId());
-        }
+        // Remember all of the states that existed before we started importing
+        Map<String, QCState> prexistingStates = getExistingQCStates(ctx);
 
         if (states != null)
         {
-            for (StudyqcDocument.Studyqc.Qcstates.Qcstate state : states.getQcstateArray())
+            for (StudyqcDocument.Studyqc.Qcstates.Qcstate xmlState : states.getQcstateArray())
             {
-                if (!stateMap.containsKey(state.getName()))
+                if (StringUtils.isBlank(xmlState.getName()))
                 {
-                    if (!StringUtils.isBlank(state.getName()))
+                    ctx.getLogger().warn("Ignoring QC state with blank name");
+                }
+                else
+                {
+                    // Check if it exists, and remove it from the map if it already does
+                    QCState state = prexistingStates.remove(xmlState.getName());
+                    if (state == null)
                     {
-                        QCState newState = new QCState();
-                        newState.setContainer(ctx.getContainer());
+                        // Insert a new record
+                        state = new QCState();
+                        state.setContainer(ctx.getContainer());
 
-                        newState.setLabel(state.getName());
-                        newState.setDescription(state.getDescription());
-                        newState.setPublicData(state.getPublic());
+                        state.setLabel(xmlState.getName());
+                        state.setDescription(xmlState.getDescription());
+                        state.setPublicData(xmlState.getPublic());
 
-                        newState = helper.insertQCState(ctx.getUser(), newState);
-                        stateMap.put(newState.getLabel(), newState.getRowId());
+                        helper.insertQCState(ctx.getUser(), state);
                     }
                     else
-                        ctx.getLogger().warn("Ignoring QC state with blank name");
+                    {
+                        // Update the existing QCState row in-place
+                        state.setDescription(xmlState.getDescription());
+                        state.setPublicData(xmlState.getPublic());
+                        helper.updateQCState(ctx.getUser(), state);
+                    }
                 }
             }
         }
 
+        // Clean up orphaned states if they don't seem to be used anymore
+        for (QCState orphanedState : prexistingStates.values())
+        {
+            if (!helper.isQCStateInUse(ctx.getContainer(), orphanedState))
+                QCStateManager.getInstance().deleteQCState(orphanedState);
+            else
+                ctx.getLogger().info("Retaining existing QCState because it is still in use, even though it's missing from the new list: " + orphanedState.getLabel());
+        }
+
+        Map<String, QCState> finalStates = getExistingQCStates(ctx);
+
         // make the default qc state assignments for dataset inserts/updates
         String pipelineDefault = qcXml.getPipelineImportDefault();
-        if (stateMap.containsKey(pipelineDefault))
-            helper.setDefaultPipelineQCState(ctx.getContainer(), ctx.getUser(), stateMap.get(pipelineDefault));
+        if (finalStates.containsKey(pipelineDefault))
+            helper.setDefaultPipelineQCState(ctx.getContainer(), ctx.getUser(), finalStates.get(pipelineDefault).getRowId());
 
         String assayDefault = qcXml.getAssayDataDefault();
-        if (stateMap.containsKey(assayDefault))
-            helper.setDefaultAssayQCState(ctx.getContainer(), ctx.getUser(), stateMap.get(assayDefault));
+        if (finalStates.containsKey(assayDefault))
+            helper.setDefaultAssayQCState(ctx.getContainer(), ctx.getUser(), finalStates.get(assayDefault).getRowId());
 
         String datasetDefault = qcXml.getInsertUpdateDefault();
-        if (stateMap.containsKey(datasetDefault))
-            helper.setDefaultDirectEntryQCState(ctx.getContainer(), ctx.getUser(), stateMap.get(datasetDefault));
+        if (finalStates.containsKey(datasetDefault))
+            helper.setDefaultDirectEntryQCState(ctx.getContainer(), ctx.getUser(), finalStates.get(datasetDefault).getRowId());
 
         helper.setShowPrivateDataByDefault(ctx.getContainer(), ctx.getUser(), qcXml.getShowPrivateDataByDefault());
         helper.setBlankQCStatePublic(ctx.getContainer(), ctx.getUser(), qcXml.getBlankQCStatePublic());
+    }
+
+    @NotNull
+    private static Map<String, QCState> getExistingQCStates(ImportContext<?> ctx)
+    {
+        Map<String, QCState> prexistingStates = new HashMap<>();
+        for (QCState s : QCStateManager.getInstance().getQCStates(ctx.getContainer()))
+        {
+            prexistingStates.put(s.getLabel(), s);
+        }
+        return prexistingStates;
     }
 }

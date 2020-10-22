@@ -73,6 +73,12 @@ public class StudyQCImportExportHelper implements QCStateImportExportHelper
     }
 
     @Override
+    public QCState updateQCState(User user, QCState state)
+    {
+        return QCStateManager.getInstance().updateQCState(user, state);
+    }
+
+    @Override
     public void setDefaultAssayQCState(Container container, User user, Integer stateId)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
