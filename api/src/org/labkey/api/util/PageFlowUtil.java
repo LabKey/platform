@@ -1655,7 +1655,7 @@ public class PageFlowUtil
 
         Set<String> preIncludedCss = getExtJSStylesheets(c, resources);
         for (String cssPath : preIncludedCss)
-            F.format(link, staticResourceUrl(cssPath));
+            F.format(link, PageFlowUtil.filter(staticResourceUrl(cssPath)));
 
         if (includeDefaultResources)
         {
