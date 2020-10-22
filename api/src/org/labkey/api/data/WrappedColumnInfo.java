@@ -525,6 +525,13 @@ public class WrappedColumnInfo
         }
 
         @Override
+        public void setPrecision(int scale)
+        {
+            checkLocked();
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void setFieldKey(FieldKey fieldKey)
         {
             checkLocked();

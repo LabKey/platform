@@ -57,6 +57,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     protected String _tsvFormatString;
     protected StringExpression _textExpression;
     protected int _scale = 0;
+    protected int _precision = 0;
     protected String _propertyURI;
     protected String _conceptURI;
     protected String _rangeURI;
@@ -154,6 +155,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         to._redactedText = _redactedText;
         to._isExcludeFromShifting = _isExcludeFromShifting;
         to._scale = _scale;
+        to._precision = _precision;
         to._propertyURI = _propertyURI;
         to._conceptURI = _conceptURI;
         to._rangeURI = _rangeURI;
@@ -835,6 +837,19 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     {
         assert _checkLocked();
         _scale = scale;
+    }
+
+    @Override
+    public int getPrecision()
+    {
+        return _precision;
+    }
+
+    @Override
+    public void setPrecision(int precision)
+    {
+        assert _checkLocked();
+        _precision = precision;
     }
 
     @Override

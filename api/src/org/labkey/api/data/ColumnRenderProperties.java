@@ -172,8 +172,16 @@ public interface ColumnRenderProperties extends ImportAliasable
 
     boolean isExcludeFromShifting();
 
+    /**
+    * For decimal values, scale is the number of digits to the right of the decimal. For all other types, scale is the
+    * total number of characters or digits
+    * */
     int getScale();
 
+    /**
+     * Only used for decimal values. This is the total number of digits in the value
+     */
+    int getPrecision();
 
     // Properties loaded by OntologyService
     default boolean isConceptColumn()

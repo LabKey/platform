@@ -547,7 +547,10 @@ public class DomainPropertyImpl implements DomainProperty
 
     public void setDefaultValueType(String defaultValueTypeName)
     {
-        _pd.setDefaultValueType(defaultValueTypeName);
+        if (getDefaultValueType() != null && getDefaultValueType().equals(defaultValueTypeName))
+            return;
+
+        edit().setDefaultValueType(defaultValueTypeName);
     }
 
     @Override
