@@ -16,6 +16,7 @@
 
 package org.labkey.api.security;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.lang3.StringUtils;
@@ -391,6 +392,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     }
 
     @JsonValue
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public JSONObject getUserProps()
     {
         return User.getUserProps(this);
