@@ -598,13 +598,13 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
             throws ExperimentException
     {
         return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3,
-                parentCol, nameExpression, templateInfo, null, null);
+                parentCol, nameExpression, templateInfo, null, null, null);
     }
 
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor)
+                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit)
         throws ExperimentException
     {
         if (name == null)
@@ -647,6 +647,11 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         int labelColorMax = materialSourceTable.getColumn("LabelColor").getScale();
         if (labelColor != null && labelColor.length() > labelColorMax)
             throw new ExperimentException("Label color may not exceed " + labelColorMax + " characters.");
+
+        // Validate the metricUnit length
+        int metricUnitMax = materialSourceTable.getColumn("MetricUnit").getScale();
+        if (metricUnit != null && metricUnit.length() > metricUnitMax)
+            throw new ExperimentException("Metric unit may not exceed " + metricUnitMax + " characters.");
 
         Lsid lsid = getSampleTypeLsid(name, c);
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
@@ -707,6 +712,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         if (nameExpression != null)
             source.setNameExpression(nameExpression);
         source.setLabelColor(labelColor);
+        source.setMetricUnit(metricUnit);
         source.setContainer(c);
         source.setMaterialParentImportAliasMap(importAliasJson);
 
@@ -864,6 +870,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
             }
 
             st.setLabelColor(options.getLabelColor());
+            st.setMetricUnit(options.getMetricUnit());
             st.setImportAliasMap(options.getImportAliases());
         }
 

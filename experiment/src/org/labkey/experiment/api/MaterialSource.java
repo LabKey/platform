@@ -46,6 +46,7 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
 
     private String _nameExpression;
     private String _labelColor;
+    private String _metricUnit;
 
     private String _materialParentImportAliasMap;
 
@@ -135,6 +136,16 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     public void setLabelColor(String labelColor)
     {
         _labelColor = labelColor;
+    }
+
+    public String getMetricUnit()
+    {
+        return _metricUnit;
+    }
+
+    public void setMetricUnit(String metricUnit)
+    {
+        _metricUnit = metricUnit;
     }
 
     public String getMaterialParentImportAliasMap()
