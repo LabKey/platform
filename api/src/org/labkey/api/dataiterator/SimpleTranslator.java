@@ -157,19 +157,37 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         private final TableInfo _targetTable;
         private final boolean _includeTitleColumn;
         private final RemapMissingBehavior _missing;
+        private boolean _includePkLookup;               // if true, will perform an initial PK lookup before attempting the AK lookup
 
         private final boolean _allowBulkLoads;
         private final Set<Pair<ColumnInfo, ColumnInfo>> _bulkLoads = new HashSet<>();
 
         private List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>>> _maps = null;
         private Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>> _titleColumnLookupMap = null;
+        private Pair<ColumnInfo, Map<?, ?>> _pkColumnLookupMap = null;
 
         public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn, RemapMissingBehavior missing, boolean allowBulkLoads)
+        {
+            this(targetTable, includeTitleColumn, missing, allowBulkLoads, false);
+        }
+
+        public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn, RemapMissingBehavior missing, boolean allowBulkLoads, boolean includePkLookup)
         {
             _targetTable = targetTable;
             _includeTitleColumn = includeTitleColumn;
             _missing = missing;
             _allowBulkLoads = allowBulkLoads;
+            _includePkLookup = includePkLookup;
+        }
+
+        public void setIncludePkLookup(boolean includePkLookup)
+        {
+            _includePkLookup = includePkLookup;
+        }
+
+        public ColumnInfo getPkColumn()
+        {
+            return _targetTable.getPkColumns().get(0);
         }
 
         private List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>>> getMaps()
@@ -178,7 +196,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             {
                 _maps = new ArrayList<>();
 
-                ColumnInfo pkCol = _targetTable.getPkColumns().get(0);
+                ColumnInfo pkCol = getPkColumn();
                 Set<ColumnInfo> seen = new HashSet<>();
 
                 // See similar check in AbstractForeignKey.allowImportByAlternateKey()
@@ -215,6 +233,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                         _titleColumnLookupMap = Triple.of(pkCol, titleColumn, new ArrayListValuedHashMap());
                     }
                 }
+
+                if (_includePkLookup)
+                {
+                    _pkColumnLookupMap = Pair.of(pkCol, new HashMap<>());
+                }
             }
             return _maps;
         }
@@ -224,7 +247,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             if (null == k)
                 return null;
 
-            for (Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?,?>> triple : getMaps())
+            List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?,?>>> maps = getMaps();
+
+            if (_pkColumnLookupMap != null)
+            {
+                Object v = fetch(_pkColumnLookupMap, k);
+                if (v != null)
+                    return v;
+            }
+
+            for (Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?,?>> triple : maps)
             {
                 Object v = fetch(triple, k);
                 if (v != null)
@@ -298,6 +330,39 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 return null;
 
             return v;
+        }
+
+        // currently only used by the PK maps
+        private Object fetch(Pair<ColumnInfo, Map<?,?>> pair, Object k)
+        {
+            final ColumnInfo pkCol = pair.getKey();
+            Map map = pair.getValue();
+
+            if (map.containsKey(k))
+            {
+                Object v = map.get(k);
+                if (v == MISS)
+                    return null;
+                return v;
+            }
+            else
+            {
+                TableSelector ts;
+                if (_allowBulkLoads)
+                    ts = createSelector(pkCol, pkCol);
+                else
+                    ts = createSelector(pkCol, pkCol, k);
+
+                ts.forEach(pkCol.getJavaObjectClass(), (Object pk) -> map.put(pk, pk));
+
+                if (map.containsKey(k))
+                    return map.get(k);
+                else
+                {
+                    map.put(k, MISS);
+                    return null;
+                }
+            }
         }
 
         private TableSelector createSelector(ColumnInfo pkCol, ColumnInfo altKeyCol)
@@ -738,7 +803,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             _toCol = toCol;
             _missing = missing;
             _includeTitleColumn = includeTitleColumn;
-            _remapper = new RemapPostConvert(_toCol.getFkTableInfo(), _includeTitleColumn, _missing, false);
+            _remapper = new RemapPostConvert(_toCol.getFkTableInfo(), _includeTitleColumn, _missing, false, true);
         }
 
         @Override
@@ -749,23 +814,20 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 Object value =  _convertCol.convert(o);
                 ForeignKey fk = _toCol.getFk();
                 // issue 40909 : allow String columns to resolve lookups by alternate key if the raw lookup fails to resolve
-                if (fk != null && Objects.equals(o, value) && String.class.equals(_toCol.getJavaObjectClass()))
+                if (fk != null && Objects.equals(o, value) && _toCol.getJdbcType().isText())
                 {
-                    if (fk.getLookupTableInfo() != null)
+                    if (_remapper.getPkColumn().getJdbcType().isText())
                     {
-                        TableSelector selector = new TableSelector(fk.getLookupTableInfo(), Collections.singleton(fk.getLookupColumnName()));
-                        Object lookupValue = selector.getObject(value, _toCol.getJavaObjectClass());
-                        if (lookupValue == null)
-                        {
-                            Object remappedValue = _remapper.mappedValue(o);
-                            value = remappedValue != null ? remappedValue : value;
-                        }
+                        Object remappedValue = _remapper.mappedValue(o);
+                        value = remappedValue != null ? remappedValue : value;
                     }
                 }
                 return value;
             }
             catch (ConversionException ex)
             {
+                // don't want to attempt to resolve by target table PK because we already know there is a type mismatch
+                _remapper.setIncludePkLookup(false);
                 return _remapper.mappedValue(o);
             }
         }
