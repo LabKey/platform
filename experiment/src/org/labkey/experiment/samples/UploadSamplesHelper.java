@@ -643,7 +643,7 @@ public abstract class UploadSamplesHelper
             super(source, context);
             this.sampletype = sampletype;
             nameGen = sampletype.getNameGenerator();
-            nameState = nameGen.createState(true);
+            nameState = nameGen.createState(true, false);
             lsidBuilder = generateSampleLSID(sampletype.getDataObject());
             CaseInsensitiveHashSet skip = new CaseInsensitiveHashSet();
             skip.addAll("name","lsid");

@@ -391,6 +391,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
+    public @Nullable ExpSampleTypeImpl getSampleType()
+    {
+        return _ss;
+    }
+
     @Override
     public void setMaterials(Set<ExpMaterial> materials)
     {

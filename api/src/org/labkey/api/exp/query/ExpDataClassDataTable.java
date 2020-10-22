@@ -15,7 +15,9 @@
  */
 package org.labkey.api.exp.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.exp.api.ExpDataClass;
 
 /**
  * User: kevink
@@ -42,4 +44,6 @@ public interface ExpDataClassDataTable extends ExpTable<ExpDataClassDataTable.Co
         DataFileUrl,
         Properties
     }
+
+    @NotNull ExpDataClass getDataClass();
 }

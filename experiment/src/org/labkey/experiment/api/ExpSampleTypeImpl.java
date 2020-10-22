@@ -384,7 +384,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 
         try
         {
-            nameGen.generateNames(maps, parentDatas, parentSamples, skipDuplicates, true);
+            nameGen.generateNames(maps, parentDatas, parentSamples, skipDuplicates, true, true);
         }
         catch (NameGenerator.DuplicateNameException dup)
         {
@@ -420,7 +420,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 
         try
         {
-            return nameGen.generateName(rowMap, parentDatas, parentSamples, true);
+            return nameGen.generateName(rowMap, parentDatas, parentSamples, true, true);
         }
         catch (NameGenerator.NameGenerationException e)
         {

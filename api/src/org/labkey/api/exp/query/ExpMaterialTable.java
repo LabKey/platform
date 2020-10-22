@@ -55,4 +55,5 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
 
     void populate(@Nullable ExpSampleType st, boolean filterSampleType);
     void setSampleType(ExpSampleType st, boolean filter);
+    @Nullable ExpSampleType getSampleType();
 }

@@ -159,7 +159,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
         {
             if (_state == null)
             {
-                _state = _nameGenerator.createState(true);
+                _state = _nameGenerator.createState(true, true);
             }
 
             Map<String, Object> context = new CaseInsensitiveHashMap<>();

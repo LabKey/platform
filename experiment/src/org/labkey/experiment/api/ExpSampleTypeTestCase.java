@@ -21,14 +21,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpLineage;
@@ -39,22 +42,29 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.TestContext;
+import org.labkey.experiment.DerivedSamplePropertyHelper;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.io.StringBufferInputStream;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -423,6 +433,90 @@ public class ExpSampleTypeTestCase extends ExpProvisionedTableTestHelper
         assertEquals(3, ret.get(2).get("genId"));
         assertEquals(expectedName3, ret.get(2).get("name"));
         assertExpectedName(st, expectedName3);
+
+    }
+
+    // Issue 40297: fail to generate sample names from expression in legacy wizard UI
+    @Test
+    public void testDeriveWithNameExpression() throws ExperimentException, SQLException, ValidationException
+    {
+        final User user = TestContext.get().getUser();
+
+        // setup
+        List<GWTPropertyDescriptor> props = new ArrayList<>();
+        props.add(new GWTPropertyDescriptor("name", "string"));
+        props.add(new GWTPropertyDescriptor("prop", "string"));
+        props.add(new GWTPropertyDescriptor("age", "int"));
+
+        final String nameExpression = "S-${prop}.${age}.${genId:number('000')}";
+
+        final ExpSampleTypeImpl st = SampleTypeServiceImpl.get().createSampleType(c, user,
+                "Samples", null, props, Collections.emptyList(),
+                -1, -1, -1, -1, nameExpression, null);
+
+        final String expectedName1 = "bob";
+        final String expectedName2 = "S-red.11.002";
+        final String expectedName3 = "S-red.11.003";
+        assertNull(st.getSample(c, expectedName1));
+        assertNull(st.getSample(c, expectedName2));
+        assertNull(st.getSample(c, expectedName3));
+
+        DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(st, 3, c, user);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addParameters(Map.of(
+                "outputSample1_Name", "bob",
+                "outputSample1_prop", "blue",
+                "outputSample1_age", "10"));
+        request.addParameters(Map.of(
+                "outputSample2_prop", "red",
+                "outputSample2_age", "11"));
+        request.addParameters(Map.of(
+                "outputSample3_prop", "red",
+                "outputSample3_age", "11"));
+
+        // generate names from request properties and the name expression
+        var allProperties = helper.getSampleProperties(request);
+
+        // persist
+        for (Map.Entry<Lsid, Map<DomainProperty, String>> entry : allProperties.entrySet())
+        {
+            Map<DomainProperty, String> propVals = entry.getValue();
+            Lsid lsid = entry.getKey();
+            String name = lsid.getObjectId();
+            assert name != null;
+
+            ExpMaterialImpl outputMaterial = ExperimentServiceImpl.get().createExpMaterial(c, entry.getKey().toString(), name);
+            outputMaterial.setCpasType(st.getLSID());
+            outputMaterial.save(user);
+
+            Map<String, Object> pvs = new HashMap<>();
+            for (Map.Entry<DomainProperty, String> propertyEntry : entry.getValue().entrySet())
+                pvs.put(propertyEntry.getKey().getName(), propertyEntry.getValue());
+            outputMaterial.setProperties(user, pvs);
+        }
+
+        // verify via query
+        UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
+        TableInfo table = schema.getTable("Samples");
+        Collection<Map<String, Object>> inserted = new TableSelector(table, TableSelector.ALL_COLUMNS, null, new Sort("rowId")).getMapCollection();
+
+        Iterator<Map<String, Object>> iter = inserted.iterator();
+        Map<String, Object> row0 = iter.next();
+//        assertEquals(1, ((Number)row0.get("genId")).intValue());
+        assertEquals(expectedName1, row0.get("name"));
+        assertEquals("blue", row0.get("prop"));
+
+        Map<String, Object> row1 = iter.next();
+//        assertEquals(2, ((Number)row1.get("genId")).intValue());
+        assertEquals(expectedName2, row1.get("name"));
+        assertEquals("red", row1.get("prop"));
+
+        Map<String, Object> row2 = iter.next();
+//        assertEquals(3, ((Number)row2.get("genId")).intValue());
+        assertEquals(expectedName3, row2.get("name"));
+        assertEquals("red", row2.get("prop"));
+
+        assertFalse(iter.hasNext());
     }
 
     @Test

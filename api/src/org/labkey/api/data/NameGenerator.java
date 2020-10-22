@@ -17,13 +17,27 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.Sets;
+import org.labkey.api.dataiterator.AbstractDataIterator;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.MapDataIterator;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.query.ExpDataClassDataTable;
+import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.StringExpressionFactory;
@@ -33,6 +47,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SubstitutionFormat;
 import org.labkey.api.util.Tuple3;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -192,21 +207,12 @@ public class NameGenerator
         _exprHasLineageInputs = hasLineageInputs;
     }
 
-    public String generateName(@NotNull Map<String, Object> map)
-            throws NameGenerationException
-    {
-        try (State state = createState(false))
-        {
-            return state.nextName(map, null, null);
-        }
-    }
-
     public String generateName(@NotNull Map<String, Object> map,
                              @Nullable Set<ExpData> parentDatas, @Nullable Set<ExpMaterial> parentSamples,
-                             boolean incrementSampleCounts)
+                             boolean incrementSampleCounts, boolean incrementTableCounters)
             throws NameGenerationException
     {
-        try (State state = createState(incrementSampleCounts))
+        try (State state = createState(incrementSampleCounts, incrementTableCounters))
         {
             return state.nextName(map, parentDatas, parentSamples);
         }
@@ -214,10 +220,10 @@ public class NameGenerator
 
     public void generateNames(@NotNull List<Map<String, Object>> maps,
                               @Nullable Set<ExpData> parentDatas, @Nullable Set<ExpMaterial> parentSamples,
-                              boolean skipDuplicates, boolean incrementSampleCounts)
+                              boolean skipDuplicates, boolean incrementSampleCounts, boolean incrementTableCounters)
             throws NameGenerationException
     {
-        try (State state = createState(incrementSampleCounts))
+        try (State state = createState(incrementSampleCounts, incrementTableCounters))
         {
             ListIterator<Map<String, Object>> li = maps.listIterator();
             while (li.hasNext())
@@ -245,11 +251,14 @@ public class NameGenerator
     /**
      * Create new state object for a batch of names.
      * @param incrementSampleCounts Increment the sample counters for each name generated.
+     * @param incrementTableCounters Increment the table specific counters ("genId" and other counters) for each name generated.
+     *                               When used in a QueryUpdateService DataIterator pipeline, the counters are incremented prior to calling the NameGenerator.
+     *                               When used in other context outside the DataIterator pipeline, we need to increment the counters in NameGenerator before evaluating the name expression.
      */
     @NotNull
-    public State createState(boolean incrementSampleCounts)
+    public State createState(boolean incrementSampleCounts, boolean incrementTableCounters)
     {
-        return new State(incrementSampleCounts);
+        return new State(incrementSampleCounts, incrementTableCounters);
     }
 
     public String generateName(@NotNull State state, @NotNull Map<String, Object> rowMap) throws NameGenerationException
@@ -267,6 +276,10 @@ public class NameGenerator
     public class State implements AutoCloseable
     {
         private final boolean _incrementSampleCounts;
+        private final boolean _incrementTableCounters;
+        private final SingleMapDataIterator _counterSource;
+        private final DataIterator _counterIterator;
+        private int _genIdColumnIndex = -1;
 
         private final Map<String, Object> _batchExpressionContext;
         private final Map<String, Integer> _newNames = new CaseInsensitiveHashMap<>();
@@ -274,9 +287,10 @@ public class NameGenerator
         private int _rowNumber = 0;
         private Map<Tuple3<String, Object, FieldKey>, Object> _lookupCache;
 
-        private State(boolean incrementSampleCounts)
+        private State(boolean incrementSampleCounts, boolean incrementTableCounters)
         {
             _incrementSampleCounts = incrementSampleCounts;
+            _incrementTableCounters = incrementTableCounters;
 
             // Create the name expression context shared for the entire batch of rows
             Map<String, Object> batchContext = new CaseInsensitiveHashMap<>();
@@ -285,6 +299,49 @@ public class NameGenerator
             _batchExpressionContext = Collections.unmodifiableMap(batchContext);
 
             _lookupCache = new HashMap<>();
+
+            // Setup mini-pipeline for incrementing the "genId" and other table counters
+            if (_incrementTableCounters)
+            {
+                assert _parentTable != null : "need a parent table";
+                List<ColumnInfo> columns = _parentTable.getColumns();
+                assert columns.stream().anyMatch(c -> "genId".equalsIgnoreCase(c.getName())) : "genId column required";
+
+                // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
+                DataIteratorContext context = new DataIteratorContext();
+                _counterSource = new SingleMapDataIterator(context, columns);
+                SimpleTranslator addGenId = new SimpleTranslator(_counterSource, context);
+                addGenId.setDebugName("add genId");
+                addGenId.selectAll(Sets.newCaseInsensitiveHashSet("genId"));
+
+                ColumnInfo genIdCol = new BaseColumnInfo(FieldKey.fromParts("genId"), JdbcType.INTEGER);
+                if (_parentTable instanceof ExpMaterialTable)
+                {
+                    ExpSampleType ss = ((ExpMaterialTable)_parentTable).getSampleType();
+                    _genIdColumnIndex = addGenId.addSequenceColumn(genIdCol, ss.getContainer(), ExpSampleType.SEQUENCE_PREFIX, ss.getRowId(), 1);
+                }
+                else if (_parentTable instanceof ExpDataClassDataTable)
+                {
+                    ExpDataClass dc = ((ExpDataClassDataTable)_parentTable).getDataClass();
+                    _genIdColumnIndex = addGenId.addSequenceColumn(genIdCol, dc.getContainer(), ExpDataClass.SEQUENCE_PREFIX, dc.getRowId(), 1);
+                }
+                else
+                {
+                    throw new IllegalArgumentException("Unsupported counter table type: " + _parentTable.getClass());
+                }
+
+                // TODO: other table counters
+//                // Table Counters
+//                DataIteratorBuilder dib = ExpDataIterators.CounterDataIteratorBuilder.create(DataIteratorBuilder.wrap(dataIterator), sampletype.getContainer(), materialTable, ExpSampleType.SEQUENCE_PREFIX, sampletype.getRowId());
+//                dataIterator = dib.getDataIterator(context);
+
+                _counterIterator = addGenId;
+            }
+            else
+            {
+                _counterSource = null;
+                _counterIterator = null;
+            }
         }
 
 
@@ -306,7 +363,7 @@ public class NameGenerator
             {
                 name = genName(rowMap, parentDatas, parentSamples);
             }
-            catch (IllegalArgumentException e)
+            catch (IllegalArgumentException | BatchValidationException e)
             {
                 throw new NameGenerationException(_rowNumber, e);
             }
@@ -326,7 +383,7 @@ public class NameGenerator
         private String genName(@NotNull Map<String, Object> rowMap,
                                @Nullable Set<ExpData> parentDatas,
                                @Nullable Set<ExpMaterial> parentSamples)
-                throws IllegalArgumentException
+                throws IllegalArgumentException, BatchValidationException
         {
             // If sample counters bound to a column are found, e.g. in the expression "${myDate:dailySampleCount}" the dailySampleCount is bound to myDate column,
             // the sample counters will be incremented for that date when the expression is evaluated -- see SubstitutionFormat.SampleCountSubstitutionFormat.
@@ -340,6 +397,18 @@ public class NameGenerator
                 sampleCounts = SampleTypeService.get().incrementSampleCounts(now);
             }
 
+            CaseInsensitiveHashMap<Object> ctx = new CaseInsensitiveHashMap<>();
+            // Just like the sample counters above, it is important to increment the table counters,
+            // even if a name has been explicitly provided so ${genId} remains accurate.
+            if (_incrementTableCounters)
+            {
+                _counterSource.setRowMap(rowMap);
+                _counterIterator.next();
+                Object genId = _counterIterator.get(_genIdColumnIndex);
+                ctx.put("genId", genId);
+                // TODO: other table counters
+            }
+
             // If a name is already provided, just use it as is
             Object currNameObj = rowMap.get("Name");
             if (currNameObj != null)
@@ -350,7 +419,7 @@ public class NameGenerator
             }
 
             // Add extra context variables
-            Map<String, Object> ctx = additionalContext(rowMap, parentDatas, parentSamples, sampleCounts);
+            additionalContext(ctx, rowMap, parentDatas, parentSamples, sampleCounts);
 
             String name = _parsedNameExpression.eval(ctx);
             if (name == null || name.length() == 0)
@@ -361,12 +430,12 @@ public class NameGenerator
 
 
         private Map<String, Object> additionalContext(
+                CaseInsensitiveHashMap<Object> ctx,
                 @NotNull Map<String, Object> rowMap,
                 Set<ExpData> parentDatas,
                 Set<ExpMaterial> parentSamples,
                 @Nullable Map<String, Long> sampleCounts)
         {
-            Map<String, Object> ctx = new CaseInsensitiveHashMap<>();
             ctx.putAll(_batchExpressionContext);
             ctx.put("_rowNumber", _rowNumber);
             ctx.put("RandomId", StringUtilsLabKey.getUniquifier(4));
@@ -543,3 +612,96 @@ public class NameGenerator
 }
 
 
+/**
+ * A source DataIterator that is manually seeded with a row map on each iteration.
+ */
+class SingleMapDataIterator extends AbstractDataIterator implements MapDataIterator
+{
+    final List<ColumnInfo> _columns;
+    final ArrayListMap.FindMap<Object> _findMap;
+
+    private int _rowNumber = 0;
+    private List<Object> _currentList;
+    private Map<String, Object> _currentMap;
+
+    protected SingleMapDataIterator(DataIteratorContext context, List<ColumnInfo> columns)
+    {
+        super(context);
+
+        _columns = new ArrayList<>(columns.size()+1);
+        _columns.add(new BaseColumnInfo("_rowNumber", JdbcType.INTEGER));
+
+        Map map = new CaseInsensitiveHashMap<Integer>(_columns.size()*2);
+        _findMap = new ArrayListMap.FindMap<>((Map<Object,Integer>)map);
+        for (int i=1; i<=columns.size(); i++)
+        {
+            var col = columns.get(i-1);
+            _columns.add(col);
+            String name = col.getName();
+            if (_findMap.containsKey(name))
+            {
+                LogManager.getLogger(MapDataIterator.class).warn("Map already has column named '" + name + "'");
+                continue;
+            }
+            _findMap.put(name, i);
+        }
+    }
+
+    public void setRowMap(Map<String, Object> row)
+    {
+        ArrayList<Object> list = new ArrayList<>(_columns.size()+1);
+        list.add(++_rowNumber);
+        for (int i=0; i<_columns.size(); i++)
+        {
+            ColumnInfo col = _columns.get(i);
+            Object value = row.get(col.getName());
+            list.add(value);
+        }
+        _currentList = list;
+        _currentMap = Collections.unmodifiableMap(new ArrayListMap(_findMap, _currentList));
+    }
+
+    @Override
+    public boolean supportsGetMap()
+    {
+        return true;
+    }
+
+    @Override
+    public Map<String, Object> getMap()
+    {
+        return _currentMap;
+    }
+
+    @Override
+    public int getColumnCount()
+    {
+        return _columns.size()-1;
+    }
+
+    @Override
+    public ColumnInfo getColumnInfo(int i)
+    {
+        return _columns.get(i);
+    }
+
+    @Override
+    public boolean next() throws BatchValidationException
+    {
+        return _currentMap != null;
+    }
+
+    @Override
+    public Object get(int i)
+    {
+        return _currentList.get(i);
+    }
+
+    @Override
+    public void close() throws IOException
+    {
+        _rowNumber = -1;
+        _currentMap = null;
+        _currentList = null;
+    }
+}

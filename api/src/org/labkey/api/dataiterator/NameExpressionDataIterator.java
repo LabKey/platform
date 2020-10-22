@@ -61,7 +61,7 @@ public class NameExpressionDataIterator extends WrapperDataIterator
     private void addNameGenerator(String nameExpression)
     {
         NameGenerator nameGen = new NameGenerator(nameExpression, _parentTable, false);
-        NameGenerator.State state = nameGen.createState(false);
+        NameGenerator.State state = nameGen.createState(false, false);
         _nameGeneratorMap.put(nameExpression, Pair.of(nameGen, state));
     }
 
