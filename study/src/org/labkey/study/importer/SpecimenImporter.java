@@ -34,6 +34,7 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
+import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
@@ -112,10 +113,11 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -140,7 +142,6 @@ public class SpecimenImporter
 
         private final String _tsvColumnName;
         private final Collection<String> _tsvColumnAliases;
-        private final Collection<String> _importNames;
         private final String _dbColumnName;
         private final boolean _maskOnExport;
         private final boolean _unique;
@@ -173,10 +174,7 @@ public class SpecimenImporter
         public ImportableColumn(String tsvColumnName, Collection<String> tsvColumnAliases, String dbColumnName, String databaseType, boolean unique, boolean maskOnExport)
         {
             _tsvColumnName = tsvColumnName;
-            _tsvColumnAliases = tsvColumnAliases;
-            List<String> importNames = new LinkedList<>(_tsvColumnAliases);
-            importNames.add(0, _tsvColumnName);
-            _importNames = Collections.unmodifiableList(importNames);
+            _tsvColumnAliases = List.copyOf(tsvColumnAliases);
             _dbColumnName = dbColumnName;
             _unique = unique;
             _maskOnExport = maskOnExport;
@@ -260,12 +258,6 @@ public class SpecimenImporter
         public String getPrimaryTsvColumnName()
         {
             return _tsvColumnName;
-        }
-
-        // All valid import names: primary name plus all import aliases
-        public Collection<String> getImportNames()
-        {
-            return _importNames;
         }
 
         public Collection<String> getImportAliases()
@@ -3122,18 +3114,22 @@ public class SpecimenImporter
         }
 
         // Note: this duplicates the logic in SpecimenImportIterator (just below). Keep these code paths in sync.
-        List<T> availableColumns = new ArrayList<>();
-        Set<String> tsvColumnNames = new CaseInsensitiveHashSet();
-        for (ColumnDescriptor c : tsvColumns)
-            tsvColumnNames.add(c.getColumnName());
-
-        for (T column : (Collection<T>)file.getTableType().getColumns())
-        {
-            if (column.getImportNames().stream().anyMatch(tsvColumnNames::contains) || tsvColumnNames.contains(column.getDbColumnName()))
-                availableColumns.add(column);
-        }
-
+        Map<String,T> importMap = (Map<String,T>)createImportMap(file.getTableType().getColumns());
+        List<T> availableColumns = Arrays.stream(tsvColumns).map(tsv -> importMap.get(tsv.getColumnName())).filter(Objects::nonNull)
+                .collect(Collectors.toList());
         return new Pair<>(availableColumns, rowCount);
+    }
+
+    static <T extends ImportableColumn>  Map<String,T> createImportMap(Collection<T> importColumns)
+    {
+        var map = new CaseInsensitiveHashMap<T>();
+        for (var c : importColumns)
+            map.put(c.getDbColumnName(), c);
+        for (var c : importColumns)
+            c.getImportAliases().forEach(n -> map.put(n, c));
+        for (var c : importColumns)
+            map.put(c.getPrimaryTsvColumnName(), c);
+        return map;
     }
 
 
@@ -3153,13 +3149,33 @@ public class SpecimenImporter
         @Override
         public DataIterator getDataIterator(final DataIteratorContext context)
         {
-            MapDataIterator in = DataIteratorUtil.wrapMap(dib.getDataIterator(context), false);
-            return new SpecimenImportIterator(this, in, context);
+            DataIterator in = dib.getDataIterator(context);
+            DataIterator aliased = LoggingDataIterator.wrap(new SpecimenImportAliasesIterator(this, in, context));
+            return LoggingDataIterator.wrap(new SpecimenImportIterator(this, DataIteratorUtil.wrapMap(aliased, false), context));
         }
     }
 
     // TODO We should consider trying to let the Standard DataIterator "import alias" replace some of this ImportableColumn behavior
     // TODO that might let us switch SpecimenImportBuilder to after StandardDataIteratorBuilder instead of before
+    // TODO Also, this would allow us to _not_ have TsvLoader do type conversion. see loadTsv().
+    private class SpecimenImportAliasesIterator extends SimpleTranslator
+    {
+        SpecimenImportAliasesIterator(SpecimenImportBuilder sib, DataIterator in, DataIteratorContext context)
+        {
+            super(in, context);
+
+            var importMap = createImportMap(sib.importColumns);
+            for (int i=1 ; i<=in.getColumnCount() ; i++)
+            {
+                ImportableColumn c = importMap.get(in.getColumnInfo(i).getName());
+                if (null != c)
+                    addColumn(c.getPrimaryTsvColumnName(), i);
+                else
+                    addColumn(i);
+            }
+        }
+    }
+
     // TODO StandardDataIteratorBuilder should be enforcing max length
     private class SpecimenImportIterator extends SimpleTranslator
     {
@@ -3199,16 +3215,11 @@ public class SpecimenImporter
                 if (seen.add(ic.getLegalDbColumnName(d)))
                 {
                     String boundInputColumnName = null;
-                    Optional<String> firstImportName = ic.getImportNames().stream()
-                        .filter(tsvColumnNames::contains)
-                        .findFirst();
-                    if (firstImportName.isPresent())
-                        boundInputColumnName = firstImportName.get();
-                    else if (tsvColumnNames.contains(ic.getDbColumnName()))
-                        boundInputColumnName = ic.getDbColumnName();
+                    if (tsvColumnNames.contains(ic.getPrimaryTsvColumnName()))
+                        boundInputColumnName = ic.getPrimaryTsvColumnName();
                     final String name = boundInputColumnName;
                     ColumnInfo col = new BaseColumnInfo(ic.getLegalDbColumnName(d), ic.getJdbcType());
-                    Callable<Object> call = () -> {
+                    Supplier<Object> call = () -> {
                         Object ret = null;
                         if (null != name)
                             ret = _rowMap.get(name);
@@ -3219,7 +3230,9 @@ public class SpecimenImporter
                         {
                             if (((String)ret).length() > ic.getMaxSize())
                             {
-                                throw new SQLException("Value \"" + ret + "\" is too long for column " +
+                                @SuppressWarnings("ThrowableNotThrown")
+                                var rowError = getRowError();
+                                rowError.addFieldError(ic.getPrimaryTsvColumnName(), "Value \"" + ret + "\" is too long for column " +
                                         ic.getDbColumnName() + ". The maximum allowable length is " + ic.getMaxSize() + ".");
                             }
                         }
@@ -3247,21 +3260,17 @@ public class SpecimenImporter
 
         info(tableName + ": Parsing data file for table...");
 
-        Collection<? extends ImportableColumn> columns = type.getColumns();
-        Map<String, ColumnDescriptor> expectedColumns = new HashMap<>(columns.size());
-
-        for (ImportableColumn col : columns)
-            col.getImportNames().forEach(n->expectedColumns.put(n.toLowerCase(), col.getColumnDescriptor()));
+        var expectedColumns = createImportMap(type.getColumns());
 
         DataLoader loader = importFile.getDataLoader();
 
         for (ColumnDescriptor column : loader.getColumns())
         {
-            ColumnDescriptor expectedColumnDescriptor = expectedColumns.get(column.name.toLowerCase());
+            var expectedColumn = expectedColumns.get(column.name.toLowerCase());
 
-            if (expectedColumnDescriptor != null)
+            if (expectedColumn != null)
             {
-                column.clazz = expectedColumnDescriptor.clazz;
+                column.clazz = expectedColumn.getJavaClass();
                 if (VISIT_COL.equals(column.name))
                     column.clazz = String.class;
             }

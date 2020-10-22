@@ -456,12 +456,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
     private SpecimenColumn findSpecimenColumn(String name)
     {
         if (null == specimenColumnMap)
-        {
-            specimenColumnMap = new HashMap<>();
-            for (SpecimenColumn col : getSpecimenColumns())
-                col.getImportNames().forEach(n->specimenColumnMap.put(n, col));
-        }
-
+            specimenColumnMap = SpecimenImporter.createImportMap(getSpecimenColumns());
         return specimenColumnMap.get(name);
     }
 
