@@ -3150,7 +3150,7 @@ public class SpecimenImporter
         public DataIterator getDataIterator(final DataIteratorContext context)
         {
             DataIterator in = dib.getDataIterator(context);
-            DataIterator aliased = LoggingDataIterator.wrap(new SpecimenImportAliasesIterator(this, in, context));
+            DataIterator aliased = LoggingDataIterator.wrap(createAliasDataIterator(this, in, context));
             return LoggingDataIterator.wrap(new SpecimenImportIterator(this, DataIteratorUtil.wrapMap(aliased, false), context));
         }
     }
@@ -3158,23 +3158,50 @@ public class SpecimenImporter
     // TODO We should consider trying to let the Standard DataIterator "import alias" replace some of this ImportableColumn behavior
     // TODO that might let us switch SpecimenImportBuilder to after StandardDataIteratorBuilder instead of before
     // TODO Also, this would allow us to _not_ have TsvLoader do type conversion. see loadTsv().
-    private class SpecimenImportAliasesIterator extends SimpleTranslator
+    DataIterator createAliasDataIterator(SpecimenImportBuilder sib, DataIterator in, DataIteratorContext context)
     {
-        SpecimenImportAliasesIterator(SpecimenImportBuilder sib, DataIterator in, DataIteratorContext context)
+        var importMap = createImportMap(sib.importColumns);
+        ArrayList<String> names = new ArrayList<>(in.getColumnCount()+1);
+        names.add(null);
+        for (int i=1 ; i<=in.getColumnCount() ; i++)
+        {
+            ImportableColumn c = importMap.get(in.getColumnInfo(i).getName());
+            names.add(c == null ? null : c.getPrimaryTsvColumnName());
+        }
+        return AliasDataIterator.wrap(in, context, names);
+    }
+
+    public static class AliasDataIterator extends SimpleTranslator
+    {
+        static DataIterator wrap(DataIterator in, DataIteratorContext context, List<String> names)
+        {
+            boolean hasAlias = false;
+            for (int i=1 ; i<=in.getColumnCount() ; i++)
+            {
+                String name = i < names.size() ? names.get(i) : null;
+                hasAlias |= name != null && !name.equals(in.getColumnInfo(i).getName());
+            }
+            if (!hasAlias)
+                return in;
+            return new AliasDataIterator(in, context, names);
+        }
+
+        /** names should be one based so they match the column indexes */
+        AliasDataIterator(DataIterator in, DataIteratorContext context, List<String> names)
         {
             super(in, context);
 
-            var importMap = createImportMap(sib.importColumns);
             for (int i=1 ; i<=in.getColumnCount() ; i++)
             {
-                ImportableColumn c = importMap.get(in.getColumnInfo(i).getName());
-                if (null != c)
-                    addColumn(c.getPrimaryTsvColumnName(), i);
+                String name = i < names.size()  ? names.get(i) : null;
+                if (null != name)
+                    addColumn(name, i);
                 else
                     addColumn(i);
             }
         }
     }
+
 
     // TODO StandardDataIteratorBuilder should be enforcing max length
     private class SpecimenImportIterator extends SimpleTranslator
