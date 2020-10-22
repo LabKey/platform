@@ -23,10 +23,7 @@
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
-<%@ page import="org.labkey.api.query.QueryService" %>
-<%@ page import="org.labkey.api.query.UserSchema" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
@@ -49,13 +46,8 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext context = getViewContext();
-    UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), "study");
     JspView<StudyManager.ParticipantViewConfig> me = (JspView<StudyManager.ParticipantViewConfig>) HttpView.currentView();
     StudyManager.ParticipantViewConfig bean = me.getModelBean();
-
-    String currentUrl = bean.getRedirectUrl();
-    if (currentUrl == null)
-        currentUrl = getActionURL().getLocalURIString();
 
     StudyManager manager = StudyManager.getInstance();
     Study study = manager.getStudy(getContainer());
@@ -63,7 +55,6 @@
     User user = (User) request.getUserPrincipal();
     List<DatasetDefinition> datasets = manager.getDatasetDefinitions(study);
     Map<Integer, String> expandedMap = StudyController.getExpandedState(context, bean.getDatasetId());
-    boolean updateAccess = study.getContainer().hasPermission(user, UpdatePermission.class);
 %>
 
 <table class="labkey-data-region">

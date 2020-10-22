@@ -94,10 +94,6 @@
     final StudyManager.ParticipantViewConfig bean = me.getModelBean();
     Map<String, String> aliasMap = bean.getAliases();
 
-    String currentUrl = bean.getRedirectUrl();
-    if (currentUrl == null)
-        currentUrl = getActionURL().getLocalURIString();
-
     StudyManager manager = StudyManager.getInstance();
     StudyImpl study = manager.getStudy(getContainer());
 
@@ -191,7 +187,7 @@
     {
         builder.append(entry.getKey() + ": " + entry.getValue() + ", ");
     }
-    String aliasString = builder.toString().substring(0, builder.toString().length() - 2);
+    String aliasString = builder.substring(0, builder.toString().length() - 2);
 %>
 <p><%=h(aliasString)%>
 </p>

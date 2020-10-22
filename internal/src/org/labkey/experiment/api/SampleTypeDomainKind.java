@@ -323,6 +323,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         if (StringUtils.isNotBlank(options.getLabelColor()) && options.getLabelColor().length() > labelColorMax)
             throw new IllegalArgumentException("Value for Label Color field may not exceed " + labelColorMax + " characters.");
 
+        int metricUnitMax = materialSourceTI.getColumn("MetricUnit").getScale();
+        if (StringUtils.isNotBlank(options.getMetricUnit()) && options.getMetricUnit().length() > metricUnitMax)
+            throw new IllegalArgumentException("Value for Metric Unit field may not exceed " + metricUnitMax + " characters.");
+
         Map<String, String> aliasMap = options.getImportAliases();
         if (aliasMap == null || aliasMap.size() == 0)
             return;
@@ -395,6 +399,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         int parentCol = -1;
         String nameExpression = null;
         String labelColor = null;
+        String metricUnit = null;
         Map<String, String> aliases = null;
 
         if (arguments != null)
@@ -408,12 +413,13 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
 
             nameExpression = StringUtils.trimToNull(arguments.getNameExpression());
             labelColor = StringUtils.trimToNull(arguments.getLabelColor());
+            metricUnit = StringUtils.trimToNull(arguments.getMetricUnit());
             aliases = arguments.getImportAliases();
         }
         ExpSampleType st;
         try
         {
-            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo, aliases, labelColor);
+            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo, aliases, labelColor, metricUnit);
         }
         catch (SQLException e)
         {
