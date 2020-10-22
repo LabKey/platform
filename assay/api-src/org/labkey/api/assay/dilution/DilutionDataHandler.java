@@ -138,6 +138,8 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         try {
             DilutionAssayRun assayResults = getAssayResults(run, user, dataFile, null, useRunForPlates, recalculateStats);
             List<Map<String, Object>> results = new ArrayList<>();
+            ExpProtocol protocol = ExperimentService.get().getExpProtocol(run.getProtocol().getLSID());
+            DilutionAssayProvider provider = (DilutionAssayProvider) AssayService.get().getProvider(protocol);
 
             for (int summaryIndex = 0; summaryIndex < assayResults.getSummaries().length; summaryIndex++)
             {
@@ -151,7 +153,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                 // generate curve ICs and AUCs for each curve fit type
                 if (assayResults.getSavedCurveFitType() != StatsService.CurveFitType.NONE)
                 {
-                    for (StatsService.CurveFitType type : StatsService.CurveFitType.values())
+                    for (StatsService.CurveFitType type : provider.getCurveFits())
                     {
                         for (Integer cutoff : assayResults.getCutoffs())
                         {
