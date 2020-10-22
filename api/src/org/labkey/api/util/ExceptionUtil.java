@@ -946,6 +946,7 @@ public class ExceptionUtil
             title += " -- " + ex.getMessage();
         }
         pageConfig.setTitle(title, false);
+        response.setStatus(responseStatus);
         errorView.getView().render(errorView.getModel(), request, response);
     }
 
