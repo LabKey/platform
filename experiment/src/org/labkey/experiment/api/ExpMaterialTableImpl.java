@@ -542,7 +542,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             setSampleType(st, filter);
             addSampleTypeColumns(st, defaultCols);
             if (InventoryService.get() != null)
-                defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(this, getContainer()));
+                defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st.getMetricUnit(), this, getContainer()));
             setName(_ss.getName());
 
             ActionURL gridUrl = new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer());

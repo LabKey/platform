@@ -35,7 +35,6 @@
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.reports.ReportService" %>
-<%@ page import="org.labkey.api.reports.report.ChartReport" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.security.User" %>
@@ -58,7 +57,6 @@
 <%@ page import="org.labkey.study.StudySchema" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ExpandStateNotifyAction" %>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -95,10 +93,6 @@
     JspView<StudyManager.ParticipantViewConfig> me = (JspView<StudyManager.ParticipantViewConfig>) HttpView.currentView();
     final StudyManager.ParticipantViewConfig bean = me.getModelBean();
     Map<String, String> aliasMap = bean.getAliases();
-
-    String currentUrl = bean.getRedirectUrl();
-    if (currentUrl == null)
-        currentUrl = getActionURL().getLocalURIString();
 
     StudyManager manager = StudyManager.getInstance();
     StudyImpl study = manager.getStudy(getContainer());
@@ -193,7 +187,7 @@
     {
         builder.append(entry.getKey() + ": " + entry.getValue() + ", ");
     }
-    String aliasString = builder.toString().substring(0, builder.toString().length() - 2);
+    String aliasString = builder.substring(0, builder.toString().length() - 2);
 %>
 <p><%=h(aliasString)%>
 </p>
@@ -654,37 +648,13 @@
 
     String datasetName = dataset.getName();
     String reportKey = ReportUtil.getReportKey("study", datasetName);
+
+    // Check for reports to render by both the reportKey and the datasetId
     Collection<Report> datasetReports = ReportService.get().getReports(getUser(), getContainer(), reportKey);
+    datasetReports.addAll(ReportService.get().getReports(user, study.getContainer(), Integer.toString(datasetId)));
 
     Map<String, String> reportIdWithNames = new HashMap<>(); // reports available to be added to the display
     Map<String, String> reportsToRender = new HashMap<>(); // reports already selected to be rendered in the page
-
-    // Display of legacy chart views that have previously been saved to this ptid view
-    List<Report> legacyReports = new ArrayList<>(ReportService.get().getReports(user, study.getContainer(), Integer.toString(datasetId)));
-    List<String> ptidLegacyReportIds = new ArrayList<>();
-    List<String> legacyReportIds = new ArrayList<>();
-
-    legacyReports.forEach(report -> ptidLegacyReportIds.add(report.getDescriptor().getProperty("reportId")));
-
-    for (Report report : datasetReports) // legacy participant chart views for the dataset
-    {
-        if (report instanceof ChartReport)
-        {
-            ReportDescriptor reportDescriptor = report.getDescriptor();
-            String filterParam = reportDescriptor.getProperty("filterParam");
-            if ("participantId".equals(filterParam))
-                legacyReports.add(report);
-            else
-                reportIdWithNames.put(reportDescriptor.getProperty("reportId"), reportDescriptor.getProperty("reportName"));
-        }
-    }
-
-    for (Report report : legacyReports)
-    {
-        ReportDescriptor reportDescriptor = report.getDescriptor();
-        legacyReportIds.add(reportDescriptor.getProperty("reportId"));
-        reportsToRender.put(reportDescriptor.getProperty("reportId"), reportDescriptor.getProperty("reportName"));
-    }
 
     for (Report report : datasetReports)
     {
@@ -716,20 +686,10 @@
 %>
                         <div id="<%=h(divId1)%>" class="labkey-ptid-chart labkey-ptid-chart-dataset<%=datasetId%>" report-id="<%=h(reportId)%>"></div>
 <%
-                        if (updateAccess)
-                        {
-                            if (ptidLegacyReportIds.contains(reportId))
-                            {
+                        if (updateAccess) {
 %>
-                                <%=link("Remove Chart").href(new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), ReportService.get().getReportIdentifier(reportId, user, getContainer()).toString())).usePost()%>
-                                <%
-                            }
-                            else
-                            {
-%>
-                                <a class="labkey-text-link labkey-ptid-remove" onclick="LABKEY.ParticipantViewRemoveChart('<%=h(reportId)%>')">Remove Chart</a>
+                            <a class="labkey-text-link labkey-ptid-remove" onclick="LABKEY.ParticipantViewRemoveChart('<%=h(reportId)%>')">Remove Chart</a>
 <%
-                            }
                         }
                     }
 %>
