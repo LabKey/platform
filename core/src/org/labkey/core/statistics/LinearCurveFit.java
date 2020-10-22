@@ -1,6 +1,7 @@
 package org.labkey.core.statistics;
 
 import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.json.JSONObject;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
@@ -36,6 +37,11 @@ public class LinearCurveFit extends DefaultCurveFit<LinearCurveFit.LinearParamet
         {
             return Map.of("slope", _slope, "intercept", _intercept);
         }
+
+        public static LinearParameters fromJSON(JSONObject json)
+        {
+            return new LinearParameters(json.getDouble("slope"), json.getDouble("intercept"));
+        }
     }
 
     public LinearCurveFit(DoublePoint[] data)
@@ -47,6 +53,12 @@ public class LinearCurveFit extends DefaultCurveFit<LinearCurveFit.LinearParamet
     public StatsService.CurveFitType getType()
     {
         return StatsService.CurveFitType.LINEAR;
+    }
+
+    @Override
+    public void setParameters(JSONObject json)
+    {
+        _parameters = LinearParameters.fromJSON(json);
     }
 
     @Override
