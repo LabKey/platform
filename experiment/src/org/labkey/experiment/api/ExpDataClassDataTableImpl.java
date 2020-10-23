@@ -326,6 +326,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             // Can't use addWrapColumn here since 'col' isn't from the parent table
             var wrapped = wrapColumnFromJoinedTable(col.getName(), col);
+            if (col.isHidden())
+                wrapped.setHidden(true);
             addColumn(wrapped);
             cols.add(wrapped);
         }
