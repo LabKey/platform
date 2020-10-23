@@ -32,6 +32,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceWrapper;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ModuleChangeListener;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 
 import java.util.Collection;
@@ -69,10 +70,11 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
 {
     private static final Logger LOG = LogManager.getLogger(ModuleResourceCache.class);
 
-    private final BlockingCache<Module, V> _cache;
+    private final BlockingCache<String, Pair<Module,V>> _cache;
     private final ModuleResourceCacheHandler<V> _handler;
     private final FileSystemWatcher _watcher = FileSystemWatchers.get();
     private final Set<String> _pathsWithListeners = new ConcurrentHashSet<>();
+    private final CacheLoader<String, Pair<Module,V>> _loader;
 
     @Override
     public void onModuleChanged(Module module)
@@ -83,13 +85,14 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
 
     ModuleResourceCache(String description, ModuleResourceCacheHandler<V> handler, ResourceRootProvider provider, ResourceRootProvider... extraProviders)
     {
-        CacheLoader<Module, V> wrapper = new CacheLoader<>()
+        _loader = new CacheLoader<>()
         {
             @Override
-            public V load(@NotNull Module module, Object argument)
+            public Pair<Module,V> load(@NotNull String moduleName, Object argument)
             {
                 @SuppressWarnings("unchecked")
-                ModuleResourceCache<V> cache = (ModuleResourceCache<V>)argument;
+                Module module = (Module)argument;
+                ModuleResourceCache<V> cache = ModuleResourceCache.this;
                 Resource resourceRoot = new FileListenerResource(module.getModuleResource(Path.rootPath), module, cache);
                 Stream<Resource> resourceRoots = getResourceRoots(resourceRoot, provider, extraProviders);
 
@@ -97,7 +100,7 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
                     .flatMap(root -> root.list().stream())
                     .filter(Resource::isFile);
 
-                return handler.load(resources, module);
+                return new Pair<>(module, handler.load(resources,module));
             }
 
             private @NotNull Stream<Resource> getResourceRoots(@NotNull Resource rootResource, ResourceRootProvider provider, ResourceRootProvider... extraProviders)
@@ -119,15 +122,38 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
             }
         };
 
-        _cache = CacheManager.getBlockingCache(Constants.getMaxModules(), CacheManager.DAY, description, wrapper);  // Cache is one entry per module
+        _cache = CacheManager.getBlockingCache(Constants.getMaxModules(), CacheManager.DAY, description, _loader);  // Cache is one entry per module
         _handler = handler;
 
         ContextListener.addModuleChangeListener(this);
     }
 
+    private V cacheGet(Module module)
+    {
+        Pair<Module,V> ret = _cache.get(module.getName(), module);
+
+        // handle common case first
+        if (null == ret || ret.first == module)
+            return ret==null ? null : ret.second;
+
+        // remove stale entries from cache (should be handled by listeners, but we're here so check again)
+        Module current = ModuleLoader.getInstance().getModule(module.getName());
+        if (null != ret && ret.first != current)
+            _cache.remove(module.getName());
+
+        // We sometimes load resources for the non-current module.  Don't use cache in that case.
+        // This can happen while a module is being loaded but before the module is "registered" in the ModuleLoader.
+        if (module == current)
+            ret = _cache.get(module.getName(), module);
+        else
+            ret = _loader.load(module.getName(), module);
+
+        return null==ret ? null : ret.second;
+    }
+
     public @NotNull V getResourceMap(Module module)
     {
-        return _cache.get(module, this);
+        return cacheGet(module);
     }
 
     /**
@@ -158,7 +184,16 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
     // Clear a single module's resource map from the cache
     private void removeResourceMap(Module module)
     {
-        _cache.remove(module);
+       _cache.remove(module.getName());
+        module.getModuleResource("/");
+    }
+
+    private void removeResourceMap(String moduleName)
+    {
+        _cache.remove(moduleName);
+        Module module = ModuleLoader.getInstance().getModule(moduleName);
+        if (null != module)
+            module.getModuleResource("/");
     }
 
     // Clear the whole cache
@@ -187,6 +222,11 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
     private String getPathsWithListenersKey(Module module, java.nio.file.Path path)
     {
         return module.getName() + ":" + path.toString();
+    }
+
+    private String getPathsWithListenersKey(String moduleName, java.nio.file.Path path)
+    {
+        return moduleName + ":" + path.toString();
     }
 
     private static class FileListenerResource extends ResourceWrapper
@@ -254,19 +294,19 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
 
     private class StandardListener implements ModuleResourceCacheListener
     {
-        private final Module _module;
+        private final String _moduleName;
         private final @Nullable ModuleResourceCacheListener _chainedListener;
 
         public StandardListener(Module module, @Nullable ModuleResourceCacheListener chainedListener)
         {
-            _module = module;
+            _moduleName = module.getName();
             _chainedListener = chainedListener;
         }
 
         @Override
         public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
         {
-            removeResourceMap(_module);
+            removeResourceMap(_moduleName);
 
             if (null != _chainedListener)
                 _chainedListener.entryCreated(directory, entry);
@@ -275,7 +315,7 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
         @Override
         public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
         {
-            removeResourceMap(_module);
+            removeResourceMap(_moduleName);
 
             if (null != _chainedListener)
                 _chainedListener.entryDeleted(directory, entry);
@@ -284,7 +324,7 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
         @Override
         public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
         {
-            removeResourceMap(_module);
+            removeResourceMap(_moduleName);
 
             if (null != _chainedListener)
                 _chainedListener.entryModified(directory, entry);
@@ -293,8 +333,12 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
         @Override
         public void directoryDeleted(java.nio.file.Path directory)
         {
-            _pathsWithListeners.remove(getPathsWithListenersKey(_module, directory));
-            moduleChanged(_module);
+            _pathsWithListeners.remove(getPathsWithListenersKey(_moduleName, directory));
+            removeResourceMap(_moduleName);
+
+            Module module = ModuleLoader.getInstance().getModule(_moduleName);
+            if (null != module)
+                moduleChanged(module);
 
             if (null != _chainedListener)
                 _chainedListener.directoryDeleted(directory);
@@ -319,6 +363,12 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
 
             if (null != _chainedListener)
                 _chainedListener.moduleChanged(module);
+        }
+
+        @Override
+        public String toString()
+        {
+            return super.toString() + " - " + _moduleName;
         }
     }
 }

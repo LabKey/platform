@@ -387,6 +387,11 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return _impersonationContext.getContextualRoles(this, policy);
     }
 
+    public JSONObject getUserProps()
+    {
+        return User.getUserProps(this);
+    }
+
     // Return the usual contextual roles
     public Set<Role> getStandardContextualRoles()
     {
@@ -577,6 +582,11 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     public String getAvatarThumbnailPath()
     {
         return getAvatarUrl() != null ? getAvatarUrl().toString() : AvatarThumbnailProvider.THUMBNAIL_PATH;
+    }
+
+    public static JSONObject getUserProps(User user)
+    {
+        return getUserProps(user, user, null, false);
     }
 
     public static JSONObject getUserProps(User user, @Nullable Container container)
