@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/query/gen && rimraf resources/views/queryMetadataEditor*"
   },
   "dependencies": {
-    "@labkey/build": "0.0.1-fb-labkeyBuildPackage.5",
+    "@labkey/build": "0.0.1-fb-labkeyBuildPackage.6",
     "@labkey/components": "0.97.0"
   },
   "devDependencies": {
