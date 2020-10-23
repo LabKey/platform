@@ -105,7 +105,7 @@ public class MiniProfiler
         if (settings == null)
             settings = SETTINGS_CACHE.get(User.guest);
 
-        // Not really cached, just piggybacking on MiniProfiler settings
+        // Stacktrace setting isn't really cached, it just piggybacks on the MiniProfiler settings bean/form
         settings.setCollectTroubleshootingStackTraces(_collectTroubleshootingStackTraces);
         return settings;
     }
