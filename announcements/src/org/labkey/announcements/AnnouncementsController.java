@@ -158,6 +158,7 @@ import static org.labkey.announcements.model.AnnouncementManager.DEFAULT_MESSAGE
  *   user=user,container,Object="Announcements"
  *              key="email":0 (no email), 1 (email all entries), 2 (email responses to messages I've created or replied to)
  */
+@Marshal(Marshaller.Jackson)
 public class AnnouncementsController extends SpringActionController
 {
     private static final CommSchema _comm = CommSchema.getInstance();
@@ -189,10 +190,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static Permissions getPermissions(Container c, User user, Settings settings)
     {
-        if (settings.isSecure())
-            return new SecureMessageBoardPermissions(c, user, settings);
-        else
-            return new NormalMessageBoardPermissions(c, user, settings);
+        return AnnouncementManager.getPermissions(c, user, settings);
     }
 
 
@@ -211,6 +209,26 @@ public class AnnouncementsController extends SpringActionController
     public static ActionURL getBeginURL(Container c)
     {
         return new ActionURL(BeginAction.class, c);
+    }
+
+
+    public static AnnouncementModel copyEditableProps(AnnouncementModel target, AnnouncementModel source, boolean isInsert)
+    {
+        if (source.getApproved() != null) target.setApproved(source.getApproved());
+        if (source.getAssignedTo() != null) target.setAssignedTo(source.getAssignedTo());
+        if (source.getBody() != null) target.setBody(source.getBody());
+        if (source.getExpires() != null) target.setExpires(source.getExpires());
+        if (source.getRendererType() != null) target.setRendererType(source.getRendererType());
+        if (source.getStatus() != null) target.setStatus(source.getStatus());
+        if (source.getTitle() != null) target.setTitle(source.getTitle());
+
+        if (isInsert)
+        {
+            if (source.getDiscussionSrcIdentifier() != null) target.setDiscussionSrcIdentifier(source.getDiscussionSrcIdentifier());
+            if (source.getParent() != null) target.setParent(source.getParent());
+        }
+
+        return target;
     }
 
 
@@ -427,7 +445,7 @@ public class AnnouncementsController extends SpringActionController
 
 
     @RequiresNoPermission  // Custom permission checking in base class to handle owner-delete
-    public class DeleteThreadAction extends DeleteMessageAction
+    public class DeleteAction extends DeleteMessageAction
     {
         @Override
         String getWhat()
@@ -788,21 +806,20 @@ public class AnnouncementsController extends SpringActionController
             if (null == insert.getParent() || 0 == insert.getParent().length())
                 insert.setParent(form.getParentId());
 
-            if (getSettings().hasMemberList() && CollectionUtils.isEmpty(form.getMemberListIds()))
-                insert.setMemberListIds(Collections.emptyList());  // Force member list to get deleted, bug #2484
-            else
-            {
-                insert.setMemberListIds(form.getMemberListIds());
-            }
-
             try
             {
                 AnnouncementManager.insertAnnouncement(c, u, insert, files);
+            }
+            catch (RuntimeValidationException e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+                return false;
             }
             catch (IOException e)
             {
                 errors.reject(ERROR_MSG, "Your changes have been saved, though some file attachments were not:");
                 errors.reject(ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
+                return false;
             }
 
             URLHelper returnURL = form.getReturnURLHelper();
@@ -1241,11 +1258,7 @@ public class AnnouncementsController extends SpringActionController
 
             Container c = getContainer();
 
-            List<AttachmentFile> files = getAttachmentFileList();
-
             AnnouncementModel update = form.getBean();
-            if (!StringUtils.isEmpty(form.getSanitizedHtml()))
-                update.setBody(form.getSanitizedHtml());
 
             // TODO: What is this checking for?
             if (!c.getId().equals(update.getContainerId()))
@@ -1253,16 +1266,9 @@ public class AnnouncementsController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            if (getSettings().hasMemberList() && CollectionUtils.isEmpty(form.getMemberListIds()))
-                update.setMemberListIds(Collections.emptyList());  // Force member list to get deleted, bug #2484
-            else
-            {
-                update.setMemberListIds(form.getMemberListIds());
-            }
-
             try
             {
-                AnnouncementManager.updateAnnouncement(getUser(), update, files);
+                AnnouncementManager.updateAnnouncement(getUser(), update, getAttachmentFileList());
             }
             catch (RuntimeValidationException e)
             {
@@ -1603,7 +1609,6 @@ public class AnnouncementsController extends SpringActionController
     }
 
     // Used for testing announcement daily digest email notifications
-    @Marshal(Marshaller.Jackson)
     @RequiresSiteAdmin
     public class SendDailyDigestAction extends MutatingApiAction
     {
@@ -1672,9 +1677,6 @@ public class AnnouncementsController extends SpringActionController
     public static class AnnouncementForm extends BeanViewForm<AnnouncementModel>
     {
         AnnouncementModel _selectedAnnouncementModel = null;
-        String _sanitizedHtml = null;
-        String _memberListInput = null;
-        List<Integer> _memberListIds = null;
 
         public AnnouncementForm()
         {
@@ -1685,22 +1687,6 @@ public class AnnouncementsController extends SpringActionController
         public String getParentId()
         {
             return _stringValues.get("parentid");
-        }
-
-        @SuppressWarnings("unused")
-        public void setMemberListInput(String memberListInput)
-        {
-            _memberListInput = memberListInput;
-        }
-
-        public List<Integer> getMemberListIds()
-        {
-            return _memberListIds;
-        }
-
-        public void setMemberListIds(List<Integer> memberListIds)
-        {
-            _memberListIds = memberListIds;
         }
 
         AnnouncementModel selectAnnouncement()
@@ -1726,13 +1712,7 @@ public class AnnouncementsController extends SpringActionController
 
         public void validate(Errors errors)
         {
-            Settings settings = getSettings(getContainer());
-            AnnouncementModel bean = getBean();
-
-            // Title can never be null.  If title is not editable, it will still be posted in a hidden field.
-            if (StringUtils.trimToNull(bean.getTitle()) == null)
-                errors.reject(ERROR_MSG, "Title must not be blank.");
-
+            // Validate "expires" conversion from String to Date
             try
             {
                 String expires = StringUtils.trimToNull((String) get("expires"));
@@ -1743,102 +1723,16 @@ public class AnnouncementsController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Expires must be blank or a valid date.");
             }
-
-            String memberListInput = bean.getMemberListInput();
-            List<Integer> memberListIds = new ArrayList<>();
-
-            boolean currentUserCanSeeEmails = SecurityManager.canSeeUserDetails(getContainer(), getUser());
-            if (null != memberListInput)
-            {
-                List<String> parsedMemberList = UserManager.parseUserListInput(StringUtils.split(StringUtils.trimToEmpty(memberListInput), "\n"));
-
-                for (String userEntry : parsedMemberList)
-                {
-                    try
-                    {
-                        memberListIds.add(Integer.parseInt(userEntry));
-                    }
-                    catch (NumberFormatException nfe)
-                    {
-                        errors.reject(ERROR_MSG, userEntry + ": Invalid email address or user");
-                    }
-                }
-
-                // New up an announcementModel to check permissions for the member list
-                AnnouncementModel ann = new AnnouncementModel();
-                ann.setMemberListIds(memberListIds);
-
-                for (Integer userId : memberListIds)
-                {
-                    User user = UserManager.getUser(userId);
-                    Permissions perm = getPermissions(getContainer(),user, settings);
-
-                    if (!perm.allowRead(ann))
-                        errors.reject(ERROR_MSG, "Can't add " + (currentUserCanSeeEmails ? user.getEmail() : user.getDisplayName(getUser())) + " to the member list: This user doesn't have permission to read the thread.");
-                }
-
-                setMemberListIds(memberListIds);
-            }
-
-            Integer assignedTo = bean.getAssignedTo();
-
-            if (null != assignedTo)
-            {
-                User assignedToUser = UserManager.getUser(assignedTo);
-
-                if (null == assignedToUser)
-                {
-                    errors.reject(ERROR_MSG, "Assigned to user " + assignedTo + ": Doesn't exist");
-                }
-                else
-                {
-                    Permissions perm = getPermissions(getContainer(), assignedToUser, settings);
-
-                    // New up an announcementModel to check permissions for the assigned to user
-                    AnnouncementModel ann = new AnnouncementModel();
-                    ann.setMemberListIds(memberListIds);
-
-                    if (!perm.allowRead(ann))
-                        errors.reject(ERROR_MSG, "Can't assign to " + (currentUserCanSeeEmails ? assignedToUser.getEmail() : assignedToUser.getDisplayName(getUser())) + ": This user doesn't have permission to read the thread.");
-                }
-            }
-
-            if ("HTML".equals(bean.getRendererType()))
-            {
-                Collection<String> validateErrors = new LinkedList<>();
-                String body = bean.getBody();
-                if (!StringUtils.isEmpty(body))
-                {
-                    boolean hasDeveloperPermission = getUser().isTrustedBrowserDev();
-                    body = PageFlowUtil.validateHtml(body, validateErrors, hasDeveloperPermission);
-                    for (String err : validateErrors)
-                        errors.reject(ERROR_MSG, err);
-                    bean.setBody(body);
-                    if (!hasDeveloperPermission)
-                    {
-                        _sanitizedHtml = PageFlowUtil.sanitizeHtml(body, validateErrors);
-                    }
-                }
-            }
         }
 
         public boolean isFromDiscussion()
         {
-            String fromDiscussion = get("fromDiscussion");
-
-            return Boolean.parseBoolean(fromDiscussion);
+            return Boolean.parseBoolean(get("fromDiscussion"));
         }
 
         public boolean allowMultipleDiscussions()
         {
-            String fromDiscussion = get("allowMultipleDiscussions");
-
-            return Boolean.parseBoolean(fromDiscussion);
-        }
-
-        public String getSanitizedHtml()
-        {
-            return _sanitizedHtml;
+            return Boolean.parseBoolean(get("allowMultipleDiscussions"));
         }
     }
 
@@ -2788,6 +2682,264 @@ public class AnnouncementsController extends SpringActionController
         public URLHelper getSuccessURL(ModeratorReviewForm form)
         {
             return null;
+        }
+    }
+
+    public static class ThreadIdentityForm
+    {
+        private String _entityId;
+        private Integer _rowId;
+
+        public String getEntityId()
+        {
+            return _entityId;
+        }
+
+        public void setEntityId(String entityId)
+        {
+            _entityId = entityId;
+        }
+
+        public Integer getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(Integer rowId)
+        {
+            _rowId = rowId;
+        }
+    }
+
+    public static class ThreadForm
+    {
+        private AnnouncementModel _thread;
+
+        public AnnouncementModel getThread()
+        {
+            return _thread;
+        }
+
+        public void setThread(AnnouncementModel thread)
+        {
+            _thread = thread;
+        }
+    }
+
+    private @Nullable AnnouncementModel getThread(Container container, Integer rowId, String entityId)
+    {
+        AnnouncementModel thread = null;
+
+        if (rowId != null)
+            thread = AnnouncementManager.getAnnouncement(container, rowId);
+        else if (entityId != null)
+            thread = AnnouncementManager.getAnnouncement(container, entityId);
+
+        return thread;
+    }
+
+    public static class CreateThreadForm extends ThreadForm
+    {
+        private boolean _reply;
+
+        public boolean isReply()
+        {
+            return _reply;
+        }
+
+        public void setReply(boolean reply)
+        {
+            _reply = reply;
+        }
+    }
+
+    @RequiresAnyOf({InsertMessagePermission.class, InsertPermission.class})
+    public class CreateThreadAction extends MutatingApiAction<CreateThreadForm>
+    {
+        @Override
+        public void validateForm(CreateThreadForm form, Errors errors)
+        {
+            if (form.getThread() == null)
+                errors.reject(ERROR_MSG, "A \"thread\" object is required to create a thread.");
+            else if (form.isReply() && form.getThread().getParent() == null)
+                errors.reject(ERROR_MSG, "Failed to reply to thread. Improper request for a reply as a parent was not specified.");
+            else if (!form.isReply() && form.getThread().getParent() != null)
+                errors.reject(ERROR_MSG, "Failed to create thread. Improper request for create as a parent was specified.");
+        }
+
+        @Override
+        public Object execute(CreateThreadForm form, BindException errors)
+        {
+            if (!getPermissions().allowInsert())
+                throw new UnauthorizedException();
+
+            var newThread = copyEditableProps(new AnnouncementModel(), form.getThread(), true);
+
+            // Ensure parent exists
+            if (form.isReply())
+            {
+                var parentThread = getThread(getContainer(), null, newThread.getParent());
+
+                if (parentThread == null)
+                {
+                    errors.reject(ERROR_MSG, "Failed to reply to thread. Unable to find parent thread \"" + newThread.getParent() + "\".");
+                    return null;
+                }
+                else if (AnnouncementManager.getLatestPostId(parentThread) == null)
+                {
+                    errors.reject(ERROR_MSG, "Failed to reply to thread. Could not locate most recent response for thread \"" + parentThread.getEntityId() + "\".");
+                    return null;
+                }
+            }
+
+            try
+            {
+                var insertedThread = AnnouncementManager.insertAnnouncement(getContainer(), getUser(), newThread, getAttachmentFileList());
+                return success(insertedThread);
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_MSG, "Failed to create thread in folder " + getContainer().getPath());
+                errors.reject(ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
+            }
+
+            return null;
+        }
+    }
+
+    @RequiresNoPermission // Checked by action
+    public class DeleteThreadAction extends MutatingApiAction<ThreadIdentityForm>
+    {
+        @Override
+        public void validateForm(ThreadIdentityForm form, Errors errors)
+        {
+            if (form.getRowId() == null && form.getEntityId() == null)
+                errors.reject(ERROR_MSG, "A \"rowId\" or an \"entityId\" must be provided to delete a thread.");
+        }
+
+        @Override
+        public Object execute(ThreadIdentityForm form, BindException errors)
+        {
+            var thread = getThread(getContainer(), form.getRowId(), form.getEntityId());
+
+            if (thread == null)
+            {
+                errors.reject(ERROR_MSG, "Unable to find thread to delete in folder " + getContainer().getPath());
+                return null;
+            }
+
+            if (!getPermissions().allowDeleteMessage(thread))
+                throw new UnauthorizedException();
+
+            AnnouncementManager.deleteAnnouncement(getContainer(), thread.getRowId());
+
+            return success();
+        }
+    }
+
+    public static class GetDiscussionsForm
+    {
+        private String _discussionSrcIdentifier;
+
+        public String getDiscussionSrcIdentifier()
+        {
+            return _discussionSrcIdentifier;
+        }
+
+        public void setDiscussionSrcIdentifier(String discussionSrcIdentifier)
+        {
+            _discussionSrcIdentifier = discussionSrcIdentifier;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class GetDiscussionsAction extends ReadOnlyApiAction<GetDiscussionsForm>
+    {
+        @Override
+        public void validateForm(GetDiscussionsForm form, Errors errors)
+        {
+            if (form.getDiscussionSrcIdentifier() == null)
+                errors.reject(ERROR_MSG, "A \"discussionSrcIdentifier\" must be provided to retrieve discussions.");
+        }
+
+        @Override
+        public Object execute(GetDiscussionsForm form, BindException errors)
+        {
+            return success(AnnouncementManager.getDiscussions(getContainer(), form.getDiscussionSrcIdentifier()));
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class GetThreadAction extends ReadOnlyApiAction<ThreadIdentityForm>
+    {
+        @Override
+        public void validateForm(ThreadIdentityForm form, Errors errors)
+        {
+            if (form.getRowId() == null && form.getEntityId() == null)
+                errors.reject(ERROR_MSG, "A \"rowId\" or an \"entityId\" must be provided to retrieve a thread.");
+        }
+
+        @Override
+        public Object execute(ThreadIdentityForm form, BindException errors)
+        {
+            AnnouncementModel thread = getThread(getContainer(), form.getRowId(), form.getEntityId());
+
+            if (thread == null)
+            {
+                errors.reject(ERROR_MSG, "Unable to find thread in folder " + getContainer().getPath());
+                return null;
+            }
+
+            return success(thread);
+        }
+    }
+
+    @RequiresNoPermission   // Custom permission checking below to handle owner-update
+    public class UpdateThreadAction extends MutatingApiAction<ThreadForm>
+    {
+        @Override
+        public void validateForm(ThreadForm form, Errors errors)
+        {
+            if (form.getThread() == null)
+                errors.reject(ERROR_MSG, "A \"thread\" object is required to create a thread.");
+        }
+
+        @Override
+        public Object execute(ThreadForm form, BindException errors)
+        {
+            var rawThread = form.getThread();
+            var thread = getThread(getContainer(), rawThread.getRowId(), rawThread.getEntityId());
+
+            if (thread == null)
+            {
+                errors.reject(ERROR_MSG, "Unable to find thread to update in folder " + getContainer().getPath());
+                return null;
+            }
+
+            if (!getPermissions().allowUpdate(thread))
+                throw new UnauthorizedException();
+
+            var updatedThread = copyEditableProps(thread, rawThread, false);
+
+            try
+            {
+                AnnouncementManager.updateAnnouncement(getUser(), updatedThread, getAttachmentFileList());
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_MSG, "Failed to update thread in folder " + getContainer().getPath());
+                errors.reject(ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
+            }
+
+            updatedThread = getThread(getContainer(), updatedThread.getRowId(), updatedThread.getEntityId());
+
+            if (updatedThread == null)
+            {
+                errors.reject(ERROR_MSG, "Failed to find thread after update in folder " + getContainer().getPath());
+                return null;
+            }
+
+            return success(updatedThread);
         }
     }
 }

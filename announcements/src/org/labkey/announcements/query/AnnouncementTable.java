@@ -33,6 +33,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -186,7 +187,7 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
             {
                 return AnnouncementManager.insertAnnouncement(container, user, bean, Collections.emptyList());
             }
-            catch (IOException e)
+            catch (RuntimeValidationException | IOException e)
             {
                 throw new QueryUpdateServiceException(e);
             }
@@ -200,7 +201,7 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
             {
                 return AnnouncementManager.updateAnnouncement(user, bean, Collections.emptyList());
             }
-            catch (IOException e)
+            catch (RuntimeValidationException | IOException e)
             {
                 throw new QueryUpdateServiceException(e);
             }
