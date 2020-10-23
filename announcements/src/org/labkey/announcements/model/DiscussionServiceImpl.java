@@ -21,12 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.DiscussionService;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -46,7 +42,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -64,7 +59,7 @@ public class DiscussionServiceImpl implements DiscussionService
     {
         if (!allowMultipleDiscussions)
         {
-            List<AnnouncementModel> discussions = getDiscussions(c, identifier);
+            List<AnnouncementModel> discussions = AnnouncementManager.getDiscussions(c, identifier);
 
             if (!discussions.isEmpty())
                 return getDiscussion(c, cancelURL, discussions.get(0), user); // TODO: cancelURL is probably not right
@@ -109,18 +104,6 @@ public class DiscussionServiceImpl implements DiscussionService
     }
 
 
-    public @NotNull List<AnnouncementModel> getDiscussions(Container c, String identifier)
-    {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("discussionSrcIdentifier"), identifier);
-        return AnnouncementManager.getAnnouncements(c, filter, new Sort("Created"));
-    }
-
-    public @NotNull Collection<AnnouncementModel> getDiscussions(Container c, String[] identifiers)
-    {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("discussionSrcIdentifier"), Arrays.asList(identifiers), CompareType.IN);
-        return AnnouncementManager.getAnnouncements(c, filter, new Sort("Created"));
-    }
-
     public WebPartView getDiscussion(Container c, URLHelper currentURL, AnnouncementModel ann, User user)
     {
         // NOTE: don't pass in AnnouncementModel, it came from getBareAnnouncements()
@@ -148,7 +131,7 @@ public class DiscussionServiceImpl implements DiscussionService
 
         // get discussion parameters
         Map<String, String> params = currentURL.getScopeParameters("discussion");
-        List<AnnouncementModel> discussions = getDiscussions(c, objectId);
+        List<AnnouncementModel> discussions = AnnouncementManager.getDiscussions(c, objectId);
 
         int discussionId = 0;
         try
@@ -247,7 +230,7 @@ public class DiscussionServiceImpl implements DiscussionService
     @Override
     public void deleteDiscussions(Container c, User user, String... identifiers)
     {
-        Collection<AnnouncementModel> discussions = getDiscussions(c, identifiers);
+        Collection<AnnouncementModel> discussions = AnnouncementManager.getDiscussions(c, identifiers);
         for (AnnouncementModel ann : discussions)
         {
             AnnouncementManager.deleteAnnouncement(c, ann.getRowId());
@@ -257,7 +240,7 @@ public class DiscussionServiceImpl implements DiscussionService
     @Override
     public void deleteDiscussions(Container container, User user, Collection<String> identifiers)
     {
-        Collection<AnnouncementModel> discussions = getDiscussions(container, identifiers.toArray(new String[identifiers.size()]));
+        Collection<AnnouncementModel> discussions = AnnouncementManager.getDiscussions(container, identifiers.toArray(new String[identifiers.size()]));
         for (AnnouncementModel ann : discussions)
         {
             AnnouncementManager.deleteAnnouncement(container, ann.getRowId());
@@ -267,7 +250,7 @@ public class DiscussionServiceImpl implements DiscussionService
     @Override
     public void unlinkDiscussions(Container c, String identifier, User user)
     {
-        Collection<AnnouncementModel> discussions = getDiscussions(c, identifier);
+        Collection<AnnouncementModel> discussions = AnnouncementManager.getDiscussions(c, identifier);
         for (AnnouncementModel ann : discussions)
         {
             try
@@ -286,7 +269,7 @@ public class DiscussionServiceImpl implements DiscussionService
     @Override
     public boolean hasDiscussions(Container container, String identifier)
     {
-        return !getDiscussions(container, identifier).isEmpty();
+        return !AnnouncementManager.getDiscussions(container, identifier).isEmpty();
     }
 
 
