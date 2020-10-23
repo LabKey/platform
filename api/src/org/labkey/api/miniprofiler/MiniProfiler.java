@@ -26,7 +26,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SafeToRenderEnum;
@@ -93,7 +92,7 @@ public class MiniProfiler
     /** Get site-wide settings. */
     public static Settings getSettings()
     {
-        return SETTINGS_CACHE.get(User.guest);
+        return getSettings(User.guest);
     }
 
     /** Get per-user settings if available or site-wide */
@@ -106,6 +105,8 @@ public class MiniProfiler
         if (settings == null)
             settings = SETTINGS_CACHE.get(User.guest);
 
+        // Not really cached, just piggybacking on MiniProfiler settings
+        settings.setCollectTroubleshootingStackTraces(_collectTroubleshootingStackTraces);
         return settings;
     }
 
@@ -118,7 +119,11 @@ public class MiniProfiler
     public static void saveSettings(@NotNull Settings settings, @NotNull User user)
     {
         PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(CATEGORY, true);
-        setCollectTroubleshootingStackTraces(settings._collectTroubleshootingStackTraces);
+        if (user.isGuest())
+        {
+            // Troubleshooting stacktraces are site-wide only
+            setCollectTroubleshootingStackTraces(settings._collectTroubleshootingStackTraces);
+        }
         SETTINGS_FACTORY.toStringMap(settings, map);
         map.save();
         SETTINGS_CACHE.remove(user);
