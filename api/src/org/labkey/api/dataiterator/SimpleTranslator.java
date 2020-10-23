@@ -347,13 +347,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
             else
             {
-                TableSelector ts;
-                if (_allowBulkLoads)
-                    ts = createSelector(pkCol, pkCol);
+                if (_allowBulkLoads && _bulkLoads.add(Pair.of(pkCol, pkCol)))
+                {
+                    TableSelector ts = createSelector(pkCol, pkCol);
+                    ts.forEach(pkCol.getJavaObjectClass(), (Object pk) -> map.put(pk, pk));
+                }
                 else
-                    ts = createSelector(pkCol, pkCol, k);
-
-                ts.forEach(pkCol.getJavaObjectClass(), (Object pk) -> map.put(pk, pk));
+                {
+                    TableSelector ts = createSelector(pkCol, pkCol, k);
+                    ts.forEach(pkCol.getJavaObjectClass(), (Object pk) -> map.put(pk, pk));
+                }
 
                 if (map.containsKey(k))
                     return map.get(k);
