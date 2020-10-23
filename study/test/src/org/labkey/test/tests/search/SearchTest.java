@@ -19,16 +19,21 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.labkey.remoteapi.Command;
 import org.labkey.remoteapi.CommandException;
+import org.labkey.remoteapi.CommandResponse;
+import org.labkey.remoteapi.Connection;
+import org.labkey.remoteapi.security.GetContainersCommand;
+import org.labkey.remoteapi.security.GetContainersResponse;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
+import org.labkey.test.TestProperties;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.pages.core.admin.logger.ManagerPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.tests.issues.IssuesTest;
 import org.labkey.test.util.ApiPermissionsHelper;
-import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.IssuesHelper;
 import org.labkey.test.util.Log4jUtils;
 import org.labkey.test.util.LogMethod;
@@ -40,10 +45,14 @@ import org.labkey.test.util.search.SearchAdminAPIHelper;
 import org.labkey.test.util.search.SearchResultsQueue;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.labkey.test.util.PermissionsHelper.MemberType.group;
 import static org.labkey.test.util.SearchHelper.getUnsearchableValue;
@@ -100,20 +109,68 @@ public abstract class SearchTest extends StudyBaseTest
     public abstract SearchAdminAPIHelper.DirectoryType directoryType();
 
     @BeforeClass
-    public static void setup()
+    public static void setup() throws IOException, CommandException
     {
         SearchTest initTest = (SearchTest)getCurrentTest();
         initTest.doSetup();
     }
 
     @LogMethod
-    private void doSetup()
+    private void doSetup() throws IOException, CommandException
     {
+        if (TestProperties.isTestRunningOnTeamCity())
+        {
+            deleteConflictingProjects();
+        }
         Log4jUtils.setLogLevel("org.labkey.search", ManagerPage.LoggingLevel.DEBUG);
         Log4jUtils.setLogLevel("org.labkey.wiki", ManagerPage.LoggingLevel.DEBUG);
         _searchHelper.initialize();
         SearchAdminAPIHelper.startCrawler(getDriver());
         enableEmailRecorder();
+    }
+
+    @LogMethod
+    private void deleteConflictingProjects() throws IOException, CommandException
+    {
+        Set<String> projects = new HashSet<>();
+        projects.addAll(getSearchResultsProjects("Owlbear")); // List
+        projects.addAll(getSearchResultsProjects("Urinalysis")); // Study
+        projects.addAll(getSearchResultsProjects(WIKI_NAME)); // Wiki
+        projects.addAll(getSearchResultsProjects(ISSUE_TITLE)); // Issues
+        projects.addAll(getSearchResultsProjects("acyclic")); // Files
+
+        for (String project : projects)
+        {
+            _containerHelper.deleteProject(project, false);
+        }
+    }
+
+    private Set<String> getSearchResultsProjects(String q) throws IOException, CommandException
+    {
+        Connection connection = createDefaultConnection();
+
+        Command<CommandResponse> command = new Command<>("search", "json");
+        command.setParameters(Map.of("q", q, "scope", "All"));
+        CommandResponse searchResponse = command.execute(connection, "/");
+        List<Map<String, Object>> hits = searchResponse.getProperty("hits");
+        Set<String> containerIds = new HashSet<>();
+        for (Map<String, Object> hit : hits)
+        {
+            containerIds.add((String) hit.get("container"));
+        }
+        Set<String> projects = new HashSet<>();
+
+        for (String containerId : containerIds)
+        {
+            GetContainersResponse response = new GetContainersCommand().execute(connection, containerId);
+            String path = response.getProperty("path");
+            path = path.substring(path.indexOf("/") + 1); // Strip leading '/'
+            if (!path.isBlank())
+            {
+                projects.add(path.split("/", 2)[0]); // Get project from path
+            }
+        }
+        return projects;
     }
 
     @Test
@@ -388,8 +445,7 @@ public abstract class SearchTest extends StudyBaseTest
         _searchHelper.enqueueSearchItem(_userHelper.getDisplayNameForEmail(USER1), Locator.linkContainingText(ISSUE_TITLE));
         _searchHelper.enqueueSearchItem("Area51", Locator.linkContainingText(ISSUE_TITLE));
         _searchHelper.enqueueSearchItem("UFO", Locator.linkContainingText(ISSUE_TITLE));
-        // TODO: 9583: Index issue attachments
-        //_searchHelper.enqueueSearchItem("Background", Locator.linkWithText(String.format("\"%s\" attached to issue \"%s\"", file.getName(), ISSUE_TITLE))); // some text from attached file
+        _searchHelper.enqueueSearchItem("Background", Locator.linkWithText(String.format("\"%s\" attached to issue \"%s\"", file.getName(), ISSUE_TITLE))); // some text from attached file
     }
 
     @LogMethod
