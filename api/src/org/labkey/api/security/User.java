@@ -16,9 +16,6 @@
 
 package org.labkey.api.security;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -63,7 +60,6 @@ import java.util.Set;
  * Represents a user in the LabKey system, typically tied to a specific individual, but see {@link GuestUser} for a
  * catch-all implementation representing anonymous users.
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class User extends UserPrincipal implements Serializable, Cloneable
 {
     private String _firstName = null;
@@ -391,8 +387,6 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return _impersonationContext.getContextualRoles(this, policy);
     }
 
-    @JsonValue
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     public JSONObject getUserProps()
     {
         return User.getUserProps(this);

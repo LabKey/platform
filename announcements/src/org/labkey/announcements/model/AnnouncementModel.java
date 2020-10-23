@@ -23,6 +23,7 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.AnnouncementsController.ThreadAction;
 import org.labkey.api.announcements.DiscussionService.StatusOption;
@@ -348,9 +349,12 @@ public class AnnouncementModel extends Entity implements Serializable
     }
 
     @JsonProperty("author")
-    public @Nullable User getAuthor()
+    public @Nullable JSONObject getAuthor()
     {
-        return UserManager.getUser(getCreatedBy());
+        var author = UserManager.getUser(getCreatedBy());
+        if (author != null)
+            return author.getUserProps();
+        return null;
     }
 
     @JsonIgnore
