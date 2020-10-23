@@ -28,7 +28,11 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * User: adam
@@ -49,6 +53,13 @@ public class NormalMessageBoardPermissions implements Permissions
         _settings = settings;
     }
 
+    protected Set<Role> getContextualRoles(AnnouncementModel ann)
+    {
+        if (userIsCreator(ann) && allowRead(ann) && allowInsert())
+            return Collections.singleton(RoleManager.getRole(OwnerRole.class));
+        return Collections.emptySet();
+    }
+
     @Override
     public boolean allowRead(@Nullable AnnouncementModel ann)
     {
@@ -58,7 +69,7 @@ public class NormalMessageBoardPermissions implements Permissions
     @Override
     public boolean allowInsert()
     {
-        return hasPermission(InsertPermission.class)|| hasPermission(InsertMessagePermission.class);
+        return hasPermission(InsertPermission.class) || hasPermission(InsertMessagePermission.class);
     }
 
     @Override
@@ -70,16 +81,14 @@ public class NormalMessageBoardPermissions implements Permissions
     @Override
     public boolean allowUpdate(AnnouncementModel ann)
     {
-        return _c.hasPermission(_user, UpdatePermission.class,
-                (ann.getCreatedBy() == _user.getUserId() && !_user.isGuest() ? RoleManager.roleSet(OwnerRole.class) : null));
+        return hasPermission(UpdatePermission.class, getContextualRoles(ann));
     }
 
     @Override
     public boolean allowDeleteMessage(AnnouncementModel ann)
     {
-        //to delete, user must have delete permission for this message and all responses
-        if (_c.hasPermission(_user, DeletePermission.class,
-                (ann.getCreatedBy() == _user.getUserId() && !_user.isGuest() ? RoleManager.roleSet(OwnerRole.class) : null)))
+        // To delete, user must have delete permission for this message and all responses
+        if (hasPermission(DeletePermission.class, getContextualRoles(ann)))
         {
             for (AnnouncementModel a : ann.getResponses())
                 if (!allowDeleteMessage(a))
@@ -87,8 +96,8 @@ public class NormalMessageBoardPermissions implements Permissions
 
             return true;
         }
-        else
-            return false;
+
+        return false;
     }
 
     @Override
@@ -105,12 +114,23 @@ public class NormalMessageBoardPermissions implements Permissions
 
     protected boolean hasPermission(Class<? extends Permission> perm)
     {
-        return _c.hasPermission(_user, perm);
+        return hasPermission(perm, null);
+    }
+
+    protected boolean hasPermission(Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
+    {
+        return _c.hasPermission(_user, perm, contextualRoles);
     }
 
     @Override
     public boolean includeGroups()
     {
         return _settings.includeGroups() && hasPermission(AdminPermission.class);
+    }
+
+    protected boolean userIsCreator(AnnouncementModel ann)
+    {
+        // Guest is never considered an announcement "creator"
+        return !_user.isGuest() && ann.getCreatedBy() == _user.getUserId();
     }
 }

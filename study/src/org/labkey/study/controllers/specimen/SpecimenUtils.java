@@ -228,8 +228,8 @@ public class SpecimenUtils
                     {
                         requestMenuButton.addMenuItem("Add To Existing Request", null,
                                 "if (verifySelected(" + jsRegionObject + ".form, '#', " +
-                                "'get', 'rows')) showRequestWindow(" + jsRegionObject + ".getChecked(), '" + (showVials ? SpecimenApiController.VialRequestForm.IdTypes.RowId
-                                : SpecimenApiController.VialRequestForm.IdTypes.SpecimenHash) + "');");
+                                "'get', 'rows')) { " + jsRegionObject + ".getSelected({success: function (data) { showRequestWindow(data.selected, '" + (showVials ? SpecimenApiController.VialRequestForm.IdTypes.RowId
+                                : SpecimenApiController.VialRequestForm.IdTypes.SpecimenHash) + "');}})}");
                     }
                 }
             }
