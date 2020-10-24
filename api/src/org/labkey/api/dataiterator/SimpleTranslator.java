@@ -87,8 +87,15 @@ import java.util.function.Supplier;
  */
 public class SimpleTranslator extends AbstractDataIterator implements DataIterator, ScrollableDataIterator
 {
-    DataIterator _data;
-    protected final ArrayList<Pair<ColumnInfo, Supplier>> _outputColumns = new ArrayList<Pair<ColumnInfo, Supplier>>()
+    private static final Logger LOG = LogManager.getLogger(SimpleTranslator.class);
+
+    private DataIterator _data;
+    private Object[] _row = null;
+    private Container _mvContainer;
+    private Map<String,String> _missingValues = Collections.emptyMap();
+    private Map<String,Integer> _inputNameMap = null;
+
+    protected final ArrayList<Pair<ColumnInfo, Supplier>> _outputColumns = new ArrayList<>()
     {
         @Override
         public boolean add(Pair<ColumnInfo, Supplier> columnInfoCallablePair)
@@ -97,12 +104,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             return super.add(columnInfoCallablePair);
         }
     };
-    Object[] _row = null;
-    Container _mvContainer;
-    Map<String,String> _missingValues = Collections.emptyMap();
-    Map<String,Integer> _inputNameMap = null;
-
-    private static final Logger LOG = LogManager.getLogger(SimpleTranslator.class);
 
     public SimpleTranslator(DataIterator source, DataIteratorContext context)
     {
@@ -858,7 +859,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     }
 
-    public Map<String,Integer> getColumnNameMap()
+    public Map<String, Integer> getColumnNameMap()
     {
         if (null == _inputNameMap)
         {

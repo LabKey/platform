@@ -456,7 +456,7 @@ public class SpecimenServiceImpl implements SpecimenService
         Map<String, String> colNameMap = new HashMap<>();
         for (SpecimenImporter.SpecimenColumn specimenColumn : SpecimenImporter.BASE_SPECIMEN_COLUMNS)
         {
-            colNameMap.put(specimenColumn.getDbColumnName(), specimenColumn.getTsvColumnName());
+            colNameMap.put(specimenColumn.getDbColumnName(), specimenColumn.getPrimaryTsvColumnName());
         }
         return colNameMap;
     }

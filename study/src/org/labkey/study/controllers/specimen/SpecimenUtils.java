@@ -116,8 +116,7 @@ import java.util.Set;
  */
 public class SpecimenUtils
 {
-    private BaseStudyController _controller;
-
+    private final BaseStudyController _controller;
 
     public SpecimenUtils(BaseStudyController controller)
     {
@@ -314,7 +313,6 @@ public class SpecimenUtils
             }
         }
 
-
         if (getViewContext().hasPermission(AdminPermission.class))
         {
             Button upload = new Button.ButtonBuilder("Import Specimens")
@@ -332,8 +330,6 @@ public class SpecimenUtils
         gridView.setButtons(buttons);
         return gridView;
     }
-
-
 
     public List<ActorNotificationRecipientSet> getPossibleNotifications(SpecimenRequest specimenRequest)
     {
@@ -542,24 +538,23 @@ public class SpecimenUtils
 
     public static class NotificationBean
     {
-        private User _user;
-        private String _specimenList;
-        private String _studyName;
-        private String _requestURI;
-        private DefaultRequestNotification _notification;
+        private final DefaultRequestNotification _notification;
+        private final User _user;
+        private final String _specimenList;
+        private final String _studyName;
+        private final String _requestURI;
+
         private boolean _includeSpecimensInBody;
 
         public NotificationBean(ViewContext context, DefaultRequestNotification notification, String specimenList, String studyName)
         {
             _notification = notification;
             _user = context.getUser();
-            if (null != specimenList)
-            {
-                _specimenList = specimenList;
-                _includeSpecimensInBody = true;
-            }
+            _specimenList = specimenList;
             _studyName = studyName;
             _requestURI = new ActionURL(SpecimenController.ManageRequestAction.class, context.getContainer()).getURIString();
+
+            _includeSpecimensInBody = null != specimenList;
         }
 
         public @NotNull List<Attachment> getAttachments()
@@ -661,6 +656,7 @@ public class SpecimenUtils
     public static Collection<Integer> getPreferredProvidingLocations(Collection<List<Vial>> specimensBySample)
     {
         Set<Integer> locationIntersection = null;
+
         for (List<Vial> vials : specimensBySample)
         {
             Set<Integer> currentLocations = new HashSet<>();
@@ -678,8 +674,10 @@ public class SpecimenUtils
                     return locationIntersection;
             }
         }
+
         if (null != locationIntersection)
             return locationIntersection;
+
         return Collections.emptySet();
     }
 
@@ -693,6 +691,7 @@ public class SpecimenUtils
     public List<Vial> getSpecimensFromRowIds(long[] requestedSampleIds)
     {
         List<Vial> requestedVials = null;
+
         if (requestedSampleIds != null)
         {
             List<Vial> vials = new ArrayList<>();
@@ -704,8 +703,8 @@ public class SpecimenUtils
             }
             requestedVials = vials;
         }
-        return requestedVials;
 
+        return requestedVials;
     }
 
     public List<Vial> getSpecimensFromGlobalUniqueIds(Set<String> globalUniqueIds)
@@ -713,6 +712,7 @@ public class SpecimenUtils
         User user = getUser();
         Container container = getContainer();
         List<Vial> requestedVials = null;
+
         if (globalUniqueIds != null)
         {
             List<Vial> vials = new ArrayList<>();
@@ -724,8 +724,8 @@ public class SpecimenUtils
             }
             requestedVials = new ArrayList<>(vials);
         }
-        return requestedVials;
 
+        return requestedVials;
     }
 
     public List<Vial> getSpecimensFromRowIds(Collection<String> ids)
@@ -759,8 +759,9 @@ public class SpecimenUtils
 
     public static class AmbiguousLocationException extends Exception
     {
-        private Container _container;
-        private Collection<Integer> _possibleLocationIds;
+        private final Container _container;
+        private final Collection<Integer> _possibleLocationIds;
+
         private LocationImpl[] _possibleLocations = null;
 
         public AmbiguousLocationException(Container container, Collection<Integer> possibleLocationIds)
@@ -790,8 +791,9 @@ public class SpecimenUtils
 
     public static class RequestedSpecimens
     {
-        private Collection<Integer> _providingLocationIds;
-        private List<Vial> _vials;
+        private final Collection<Integer> _providingLocationIds;
+        private final List<Vial> _vials;
+
         private List<Location> _providingLocations;
 
         public RequestedSpecimens(List<Vial> vials, Collection<Integer> providingLocationIds)
@@ -838,9 +840,7 @@ public class SpecimenUtils
     public RequestedSpecimens getRequestableByVialRowIds(Set<String> rowIds)
     {
         Set<Long> ids = new HashSet<>();
-        Arrays.stream(BaseStudyController.toLongArray(rowIds)).forEach(id -> {
-            ids.add(id);
-        });
+        Arrays.stream(BaseStudyController.toLongArray(rowIds)).forEach(ids::add);
         List<Vial> requestedSamples = SpecimenManager.getInstance().getRequestableVials(getContainer(), getUser(), ids);
         return new RequestedSpecimens(requestedSamples);
     }
@@ -866,10 +866,10 @@ public class SpecimenUtils
             else if (preferredLocations.size() > 1)
                 throw new AmbiguousLocationException(getContainer(), preferredLocations);
         }
-        List<Vial> requestedSamples = new ArrayList<>(vialsByHash.size());
 
-        int i = 0;
+        List<Vial> requestedSamples = new ArrayList<>(vialsByHash.size());
         Set<Integer> providingLocations = new HashSet<>();
+
         for (List<Vial> vials : vialsByHash.values())
         {
             Vial selectedVial = null;
@@ -889,6 +889,7 @@ public class SpecimenUtils
             providingLocations.add(selectedVial.getCurrentLocation());
             requestedSamples.add(selectedVial);
         }
+
         return new RequestedSpecimens(requestedSamples, providingLocations);
     }
     
@@ -912,7 +913,8 @@ public class SpecimenUtils
 
     private static class AttachmentDisplayColumn extends SimpleDisplayColumn
     {
-        private HttpServletRequest _request;
+        private final HttpServletRequest _request;
+
         public AttachmentDisplayColumn(HttpServletRequest request)
         {
             super();
@@ -946,6 +948,7 @@ public class SpecimenUtils
     {
         DataRegion rgn = new DataRegion() {
             private int i = 0;
+
             @Override
             protected void renderTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
             {
@@ -1065,7 +1068,6 @@ public class SpecimenUtils
             label = "rowId" + location.getRowId();
         return label.replaceAll("\\W+", "_");
     }
-
 
     public static boolean isFieldTrue(RenderContext ctx, String fieldName)
     {
