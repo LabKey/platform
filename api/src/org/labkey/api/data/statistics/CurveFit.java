@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data.statistics;
 
+import org.json.JSONObject;
+
 import java.util.Map;
 
 /**
@@ -29,6 +31,11 @@ public interface CurveFit<P extends CurveFit.Parameters>
          * serialization of parameter information in the Client API
          */
         Map<String, Object> toMap();
+
+        default JSONObject toJSON()
+        {
+            return new JSONObject(toMap());
+        }
     }
 
     StatsService.CurveFitType getType();
@@ -50,6 +57,13 @@ public interface CurveFit<P extends CurveFit.Parameters>
      * @return
      */
     P getParameters() throws FitFailedException;
+
+    /**
+     * Initialize parameters using an external source
+     * @param parameters
+     */
+    void setParameters(P parameters);
+    void setParameters(JSONObject json);
 
     /**
      * Sets whether the curve is assumed to be decreasing by default.  It's used as an optimization during 4&5

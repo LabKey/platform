@@ -17,6 +17,7 @@ package org.labkey.api.assay.plate;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
@@ -26,6 +27,7 @@ import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
 
 import java.io.File;
+import java.util.Collection;
 
 /**
  * User: jeckels
@@ -45,4 +47,9 @@ public interface PlateBasedAssayProvider extends AssayProvider
 
     Domain getSampleWellGroupDomain(ExpProtocol protocol);
     PlateSamplePropertyHelper getSamplePropertyHelper(PlateUploadForm context, ParticipantVisitResolverType filterInputsForType);
+
+    /**
+     * Returns the set of curve fit types that this provider supports
+     */
+    Collection<StatsService.CurveFitType> getCurveFits();
 }

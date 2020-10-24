@@ -59,6 +59,8 @@ public class StatsServiceImpl implements StatsService
     {
         switch (type)
         {
+            case FOUR_PARAMETER_SIMPLEX:
+                return new FourParameterSimplex(data);
             case FOUR_PARAMETER:
             case FIVE_PARAMETER:
                 return new ParameterCurveFit(data, type);
@@ -152,7 +154,7 @@ public class StatsServiceImpl implements StatsService
             {
                 for (CurveFitType fitType : CurveFitType.values())
                 {
-                    if (fitType != CurveFitType.NONE)
+                    if (fitType != CurveFitType.NONE && fitType != CurveFitType.FOUR_PARAMETER_SIMPLEX)
                     {
                         CurveFit fit = service.getCurveFit(fitType, validation.getData());
                         CurveResults results = validation.getResults(fitType);
