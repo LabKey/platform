@@ -50,6 +50,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.actions.UploadWizardAction;
+import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -73,7 +74,6 @@ import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.AbstractParameter;
-import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentRunListView;
@@ -86,7 +86,26 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.ProtocolApplicationParameter;
 import org.labkey.api.exp.XarContext;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.api.DataClassDomainKindProperties;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpLineage;
+import org.labkey.api.exp.api.ExpLineageOptions;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpRunAttachmentParent;
+import org.labkey.api.exp.api.ExpRunEditor;
+import org.labkey.api.exp.api.ExpRunItem;
+import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.ResolveLsidsForm;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.form.DeleteForm;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -151,8 +170,6 @@ import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.DOM.LK;
 import org.labkey.api.util.ErrorRenderer;
-import org.labkey.api.util.ErrorView;
-import org.labkey.api.util.ErrorView;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -172,7 +189,6 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HBox;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -186,7 +202,30 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.experiment.*;
+import org.labkey.experiment.ChooseExperimentTypeBean;
+import org.labkey.experiment.ConfirmDeleteView;
+import org.labkey.experiment.CustomPropertiesView;
+import org.labkey.experiment.DataClassWebPart;
+import org.labkey.experiment.DerivedSamplePropertyHelper;
+import org.labkey.experiment.DotGraph;
+import org.labkey.experiment.ExpDataFileListener;
+import org.labkey.experiment.ExperimentRunDisplayColumn;
+import org.labkey.experiment.ExperimentRunGraph;
+import org.labkey.experiment.LSIDRelativizer;
+import org.labkey.experiment.LineageGraphDisplayColumn;
+import org.labkey.experiment.MoveRunsBean;
+import org.labkey.experiment.NoPipelineRootSetView;
+import org.labkey.experiment.ParentChildView;
+import org.labkey.experiment.ProtocolApplicationDisplayColumn;
+import org.labkey.experiment.ProtocolDisplayColumn;
+import org.labkey.experiment.ProtocolWebPart;
+import org.labkey.experiment.RunGroupWebPart;
+import org.labkey.experiment.SampleTypeDisplayColumn;
+import org.labkey.experiment.SampleTypeWebPart;
+import org.labkey.experiment.StandardAndCustomPropertiesView;
+import org.labkey.experiment.XarExportPipelineJob;
+import org.labkey.experiment.XarExportType;
+import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
@@ -207,12 +246,12 @@ import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
+import org.labkey.experiment.samples.UploadSamplesHelper;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.springframework.beans.PropertyValue;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
@@ -4894,38 +4933,55 @@ public class ExperimentController extends SpringActionController
         {
             List<ExpMaterial> materials = form.lookupMaterials();
 
-            Map<ExpMaterial, String> inputMaterials = new LinkedHashMap<>();
+            Map<String, Object> inputColumns = new LinkedHashMap<>();
             for (int i = 0; i < materials.size(); i++)
             {
                 ExpMaterial m = materials.get(i);
-                String inputRole = form.determineLabel(i);
-                if (inputRole == null || "".equals(inputRole))
-                {
-                    ExpSampleType st = m.getSampleType();
-                    inputRole = st != null ? st.getName() : ExpMaterialRunInput.DEFAULT_ROLE;
-                }
-                inputMaterials.put(materials.get(i), inputRole);
+                ExpSampleType st = m.getSampleType();
+                // TODO: no way to specify input role when deriving via query insertRows
+//                String inputRole = form.determineLabel(i);
+//                if (inputRole == null || "".equals(inputRole))
+//                {
+//                    inputRole = st != null ? st.getName() : ExpMaterialRunInput.DEFAULT_ROLE;
+//                }
+
+                String columnName;
+                if (st == null)
+                    columnName = UploadSamplesHelper.PARENT;
+                else
+                    columnName = ExpMaterial.MATERIAL_INPUT_PARENT + "/" + st.getName();
+
+                // create string separated list of input parent material rowIds
+                inputColumns.merge(columnName, String.valueOf(m.getRowId()), (v0, v1) -> v0 + "," + v1);
             }
 
             ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), form.getTargetSampleTypeId());
 
             DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleType, form.getOutputCount(), getContainer(), getUser());
 
-            Map<Lsid, Map<DomainProperty, String>> allProperties;
+            List<Map<String, Object>> rows;
             try
             {
+                Map<String, Map<DomainProperty, String>> postedProperties = helper.getPostedPropertyValues(getViewContext().getRequest());
+                rows = new ArrayList<>(postedProperties.size());
+
                 boolean valid = true;
-                for (Map.Entry<String, Map<DomainProperty, String>> entry : helper.getPostedPropertyValues(getViewContext().getRequest()).entrySet())
-                    valid = UploadWizardAction.validatePostedProperties(getViewContext(), entry.getValue(), errors) && valid;
+                for (Map.Entry<String, Map<DomainProperty, String>> entry : postedProperties.entrySet())
+                {
+                    Map<DomainProperty, String> props = entry.getValue();
+                    valid = UploadWizardAction.validatePostedProperties(getViewContext(), props, errors) && valid;
+
+                    // convert to a row map including the parent material columns
+                    CaseInsensitiveHashMap<Object> row = new CaseInsensitiveHashMap<>(inputColumns);
+                    for (Map.Entry<DomainProperty, String> prop : props.entrySet())
+                    {
+                        row.put(prop.getKey().getName(), prop.getValue());
+                    }
+                    rows.add(row);
+                }
+
                 if (!valid)
                     return false;
-
-                allProperties = helper.getSampleProperties(getViewContext().getRequest(), inputMaterials.keySet());
-            }
-            catch (DuplicateMaterialException e)
-            {
-                errors.addError(new ObjectError(ColumnInfo.propNameFromName(e.getColName()), null, null, e.getMessage()));
-                return false;
             }
             catch (ExperimentException e)
             {
@@ -4933,40 +4989,23 @@ public class ExperimentController extends SpringActionController
                 return false;
             }
 
-            try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+            try (DbScope.Transaction tx = ExperimentServiceImpl.get().ensureTransaction())
             {
-                Map<ExpMaterial, String> outputMaterials = new HashMap<>();
-                int i = 0;
-                for (Map.Entry<Lsid, Map<DomainProperty, String>> entry : allProperties.entrySet())
-                {
-                    Map<DomainProperty, String> props = entry.getValue();
-                    Lsid lsid = entry.getKey();
-                    String name = lsid.getObjectId();
-                    assert name != null;
+                SamplesSchema schema = new SamplesSchema(getUser(), getContainer());
+                TableInfo table = schema.getSampleTable(sampleType, null);
+                BatchValidationException insertErrors = new BatchValidationException();
+                List<Map<String, Object>> insertedRows = table.getUpdateService().insertRows(getUser(), getContainer(), rows, insertErrors, null, null);
+                if (insertErrors.hasErrors())
+                    throw insertErrors;
 
-                    ExpMaterialImpl outputMaterial = ExperimentServiceImpl.get().createExpMaterial(getContainer(), entry.getKey().toString(), name);
-                    if (sampleType != null)
-                    {
-                        outputMaterial.setCpasType(sampleType.getLSID());
-                    }
-                    outputMaterial.save(getUser());
-
-                    if (sampleType != null)
-                    {
-                        Map<String, Object> pvs = new HashMap<>();
-                        for (Map.Entry<DomainProperty, String> propertyEntry : entry.getValue().entrySet())
-                            pvs.put(propertyEntry.getKey().getName(), propertyEntry.getValue());
-                        outputMaterial.setProperties(getUser(), pvs);
-                    }
-
-                    outputMaterials.put(outputMaterial, helper.getSampleNames().get(i++));
-                }
-
-                ExperimentService.get().deriveSamples(inputMaterials, outputMaterials, getViewBackgroundInfo(), _log);
+                if (insertedRows.size() == 0)
+                    throw new ExperimentException("Failed to create derived samples");
 
                 tx.commit();
 
-                _successUrl = ExperimentUrlsImpl.get().getShowSampleURL(getContainer(), outputMaterials.keySet().iterator().next());
+                Map<String, Object> inserted = insertedRows.get(0);
+                Integer rowId = (Integer)inserted.get("rowId");
+                _successUrl = ExperimentUrlsImpl.get().getShowSampleURL(getContainer(), rowId);
 
                 if (form.getDataRegionSelectionKey() != null)
                     DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
@@ -5954,7 +5993,12 @@ public class ExperimentController extends SpringActionController
 
         public ActionURL getShowSampleURL(Container c, ExpMaterial material)
         {
-            return new ActionURL(ShowMaterialAction.class, c).addParameter("rowId", material.getRowId());
+            return getShowSampleURL(c, material.getRowId());
+        }
+
+        public ActionURL getShowSampleURL(Container c, int rowId)
+        {
+            return new ActionURL(ShowMaterialAction.class, c).addParameter("rowId", rowId);
         }
 
         @Override

@@ -79,21 +79,16 @@ public abstract class SamplePropertyHelper<ObjectType>
 
     public Map<ObjectType, Map<DomainProperty, String>> getSampleProperties(HttpServletRequest request) throws ExperimentException
     {
-        return getSampleProperties(request, emptySet());
+        Map<String, Map<DomainProperty, String>> postedProperties = getPostedPropertyValues(request);
+        return getSampleProperties(postedProperties, emptySet());
     }
 
-    public Map<ObjectType, Map<DomainProperty, String>> getSampleProperties(HttpServletRequest request, @NotNull Set<ExpMaterial> parentMaterials) throws ExperimentException
+    public Map<ObjectType, Map<DomainProperty, String>> getSampleProperties(Map<String, Map<DomainProperty, String>> postedProperties, @NotNull Set<ExpMaterial> parentMaterials) throws ExperimentException
     {
-        Map<ObjectType, Map<DomainProperty, String>> result = new LinkedHashMap<>();
-        List<String> names = getSampleNames();
-        for (int i = 0; i < names.size(); i++)
+        Map<ObjectType, Map<DomainProperty, String>> result = new LinkedHashMap<>(postedProperties.size());
+        for (int i = 0; i < postedProperties.size(); i++)
         {
-            Map<DomainProperty, String> sampleProperties = new HashMap<>();
-            for (DomainProperty property : _domainProperties)
-            {
-                String inputName = UploadWizardAction.getInputName(property, names.get(i));
-                sampleProperties.put(property, request.getParameter(inputName));
-            }
+            Map<DomainProperty, String> sampleProperties = postedProperties.get(i);
             result.put(getObject(i, sampleProperties, parentMaterials), sampleProperties);
         }
         return result;

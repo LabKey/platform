@@ -115,72 +115,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
     @Override
     protected Lsid getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException
     {
-        Lsid lsid = _lsids.get(index);
-        if (lsid == null)
-        {
-            String name = determineMaterialName(sampleProperties, parentMaterials);
-            if (_sampleType == null)
-            {
-                XarContext context = new XarContext("DeriveSamples", _container, _user);
-                try
-                {
-                    String lsidStr = LsidUtils.resolveLsidFromTemplate("${FolderLSIDBase}:" + name, context, ExpMaterial.DEFAULT_CPAS_TYPE);
-                    lsid = Lsid.parse(lsidStr);
-                }
-                catch (XarFormatException e)
-                {
-                    // Shouldn't happen - our template is safe
-                    throw new RuntimeException(e);
-                }
-            }
-            else
-            {
-                lsid = _sampleType.generateSampleLSID().setObjectId(name).build();
-            }
-
-            if (_lsids.containsValue(lsid) || ExperimentService.get().getExpMaterial(lsid.toString()) != null)
-            {
-                // Default to not showing on a particular column
-                String colName = "main";
-                if (!getNamePDs().isEmpty() && getSampleNames().size() > index)
-                {
-                    colName = UploadWizardAction.getInputName(getNamePDs().get(0), getSampleNames().get(index));
-                }
-                throw new DuplicateMaterialException("Duplicate material name: " + name, colName);
-            }
-            _lsids.put(index, lsid);
-        }
-        return lsid;
-    }
-
-    public String determineMaterialName(Map<DomainProperty, String> sampleProperties, Set<ExpMaterial> parentSamples)
-    {
-        if (_sampleType != null)
-        {
-            if (_state == null)
-            {
-                _state = _nameGenerator.createState(true, true);
-            }
-
-            Map<String, Object> context = new CaseInsensitiveHashMap<>();
-            for (Map.Entry<DomainProperty, String> entry : sampleProperties.entrySet())
-            {
-                context.put(entry.getKey().getName(), entry.getValue());
-            }
-            try
-            {
-                return _nameGenerator.generateName(_state, context, null, parentSamples);
-            }
-            catch (NameGenerator.NameGenerationException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-        else
-        {
-            assert _domainProperties.get(0).getName().equals("Name");
-            return sampleProperties.get(_nameProperty);
-        }
+        throw new UnsupportedOperationException("use query importRows instead of generating names and LSIDs");
     }
 
     @Override

@@ -84,6 +84,7 @@ public abstract class UploadSamplesHelper
 {
     private static final Logger _log = LogManager.getLogger(UploadSamplesHelper.class);
     private static final String MATERIAL_LSID_SUFFIX = "ToBeReplaced";
+    public static final String PARENT = "parent";
 
 
     private static boolean isNameHeader(String name)
@@ -325,7 +326,7 @@ public abstract class UploadSamplesHelper
             String[] parts = parentColName.split("\\.|/");
             if (parts.length == 1)
             {
-                if (parts[0].equalsIgnoreCase("parent"))
+                if (parts[0].equalsIgnoreCase(PARENT))
                 {
                     if (!isEmptyParent)
                     {
