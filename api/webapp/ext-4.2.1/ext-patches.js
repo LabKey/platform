@@ -1061,7 +1061,10 @@ Ext4.override(Ext4.tree.Column, {
 });
 
 // issue : 40894 quick tips width being set too narrow
-// This is a backport of the fix implemented in Ext 5.1.0
+// This is a backport of the fix implemented in Ext 5.0.1 :
+//
+// EXTJS-12511 Narrow tooltips in Safari Mac
+// EXTJS-13334 Tooltip is horizontally squished in Safari
 //
 if (Ext4.isSafari || Ext4.isGecko) {
     Ext4.override(Ext4.tip.QuickTip, {
