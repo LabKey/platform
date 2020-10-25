@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.attachments.Attachment"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.CustomProperties" %>
 <%@ page import="org.labkey.experiment.CustomPropertiesView" %>
 <%@ page import="java.io.IOException" %>
@@ -56,3 +57,16 @@
     });
 %>
 </table>
+<% if (!form.getAttachments().isEmpty()) { %>
+<h5 style="text-align: center; border-bottom: 1px solid lightgray">Attached Files</h5>
+<table>
+    <% for (var att : form.getAttachments()) { %>
+    <tr>
+        <td>
+            <%=iconLink(Attachment.getFileIconFontCls(att.first), "Download attachment", att.second)%>
+            <%=link(att.first, att.second).tooltip("Download attachment")%>
+        </td>
+    </tr>
+    <% } %>
+</table>
+<% } %>

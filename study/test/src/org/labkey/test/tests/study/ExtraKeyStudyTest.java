@@ -120,7 +120,7 @@ public class ExtraKeyStudyTest extends StudyBaseTest
         assertTrue("PandaId/PandaId should be visible", _customizeViewsHelper.isColumnVisible("PandaId/PandaId"));
         assertFalse("PandaId/DataSet lookup should not be visible", _customizeViewsHelper.isColumnVisible("PandaId/DataSet"));
 
-        // ParticipantVisit columns should be visible, old "Paricipant Visit/<dataset>" lookups should be hidden.
+        // ParticipantVisit columns should be visible, old "Participant Visit/<dataset>" lookups should be hidden.
         assertTrue("Panda Visit/PandaId should be visible", _customizeViewsHelper.isColumnVisible("PandaVisit/PandaId"));
         assertTrue("Panda Visit/Visit should be visible", _customizeViewsHelper.isColumnVisible("PandaVisit/Visit"));
         assertFalse("Panda Visit/PV_One should not be visible", _customizeViewsHelper.isColumnVisible("PandaVisit/PV_One"));

@@ -2276,8 +2276,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         // filter out bootstrap scoped properties in the non-bootstrap startup case
         return props.stream()
-                .filter(prop -> prop.getModifier() != ConfigProperty.modifier.bootstrap || isNewInstall())
-                .collect(Collectors.toList());
+            .filter(prop -> prop.getModifier() != ConfigProperty.modifier.bootstrap || isNewInstall())
+            .collect(Collectors.toList());
     }
 
 
