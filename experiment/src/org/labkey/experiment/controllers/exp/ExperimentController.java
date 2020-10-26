@@ -51,6 +51,7 @@ import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ActionButton;
@@ -151,8 +152,6 @@ import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.DOM.LK;
 import org.labkey.api.util.ErrorRenderer;
-import org.labkey.api.util.ErrorView;
-import org.labkey.api.util.ErrorView;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -1309,11 +1308,38 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DataClassAttachmentDownloadAction extends BaseDownloadAction<DataClassAttachmentForm>
+    public class RunAttachmentDownloadAction extends BaseDownloadAction<AttachmentForm>
     {
         @Nullable
         @Override
-        public Pair<AttachmentParent, String> getAttachment(DataClassAttachmentForm form)
+        public Pair<AttachmentParent, String> getAttachment(AttachmentForm form)
+        {
+            if (form.getLsid() == null || form.getName() == null)
+                throw new NotFoundException("Error: missing required param 'lsid' or 'name'.");
+
+            ExpRun run = ExperimentService.get().getExpRun(form.getLsid());
+            if (run == null)
+                throw new NotFoundException("Run not found: " + form.getLsid());
+
+            if (!run.getContainer().equals(getContainer()))
+            {
+                if (run.getContainer().hasPermission(getUser(), ReadPermission.class))
+                    throw new RedirectException(getViewContext().cloneActionURL().setContainer(run.getContainer()));
+                else
+                    throw new NotFoundException("Run not found");
+            }
+
+            AttachmentParent parent = new ExpRunAttachmentParent(run);
+            return new Pair<>(parent, form.getName());
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class DataClassAttachmentDownloadAction extends BaseDownloadAction<AttachmentForm>
+    {
+        @Nullable
+        @Override
+        public Pair<AttachmentParent, String> getAttachment(AttachmentForm form)
         {
             if (form.getLsid() == null || form.getName() == null)
                 throw new NotFoundException("Error: missing required param 'lsid' or 'name'.");
@@ -1325,7 +1351,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class DataClassAttachmentForm extends LsidForm
+    public static class AttachmentForm extends LsidForm
     {
         private String _name;
 
@@ -1424,7 +1450,12 @@ public class ExperimentController extends SpringActionController
             JspView<ExpRun> detailsView = new JspView<ExpRun>("/org/labkey/experiment/ExperimentRunDetails.jsp", _experimentRun);
             detailsView.setTitle("Standard Properties");
 
-            CustomPropertiesView cpv = new CustomPropertiesView(_experimentRun.getLSID(), getContainer());
+            var attachmentParent = new ExpRunAttachmentParent(_experimentRun);
+            var attachments = AttachmentService.get().getAttachments(attachmentParent)
+                    .stream()
+                    .map(att -> Pair.of(att.getName(), new ActionURL(RunAttachmentDownloadAction.class, _experimentRun.getContainer()).addParameter("name", att.getName()).addParameter("lsid", _experimentRun.getLSID())))
+                    .collect(toList());
+            CustomPropertiesView cpv = new CustomPropertiesView(_experimentRun.getLSID(), getContainer(), attachments);
 
             vbox.addView(new StandardAndCustomPropertiesView(detailsView, cpv));
 
