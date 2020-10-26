@@ -163,6 +163,8 @@ public class SharedStudyController extends BaseStudyController
                 // validate all container ids are study containers under the project
                 for (GUID guid : form.getContainers())
                 {
+                    if (null == guid)
+                        continue;
                     Container c = ContainerManager.getForId(guid);
                     if (c == null)
                     {
