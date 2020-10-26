@@ -48,6 +48,8 @@ public class TsvProviderSchema extends AssayProviderSchema
         public PlateTemplateTable(TsvProviderSchema schema, ContainerFilter cf)
         {
             super(AssayDbSchema.getInstance().getTableInfoPlate(), schema, cf);
+            // Issue 40917
+            setName(PLATE_TEMPLATE_TABLE);
 
             var column = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Lsid")));
             column.setKeyField(true);
