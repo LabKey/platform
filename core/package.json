@@ -49,12 +49,12 @@
   },
   "dependencies": {
     "@labkey/api": "1.1.1",
-    "@labkey/build": "0.0.1-fb-labkeyBuildPackage.6",
     "@labkey/components": "0.97.0",
     "@labkey/eslint-config-react": "0.0.8",
     "@labkey/themes": "1.0.0"
   },
   "devDependencies": {
+    "@labkey/build": "0.0.1-fb-labkeyBuildPackage.7",
     "@hot-loader/react-dom": "16.13.0",
     "@labkey/eslint-config-base": "0.0.8",
     "@types/enzyme": "3.10.5",

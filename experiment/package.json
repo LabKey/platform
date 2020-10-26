@@ -12,10 +12,10 @@
     "clean": "rimraf resources/web/experiment/gen && rimraf resources/views/*.*"
   },
   "dependencies": {
-    "@labkey/build": "0.0.1-fb-labkeyBuildPackage.6",
     "@labkey/components": "0.97.0"
   },
   "devDependencies": {
+    "@labkey/build": "0.0.1-fb-labkeyBuildPackage.7",
     "@hot-loader/react-dom": "16.13.0",
     "@types/react": "16.9.44",
     "cross-env": "7.0.2",
