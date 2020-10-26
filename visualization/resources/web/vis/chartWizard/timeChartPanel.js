@@ -682,6 +682,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     this.chartTypeOptions.interval = firstMeasure.dateOptions.interval;
                     this.chartTypeOptions.zeroDateCol = firstMeasure.dateOptions.zeroDateCol;
                 }
+                if (this.chartTypeOptions.time == 'visit')
+                {
+                    this.chartTypeOptions.visitDisplayProperty = Ext4.isObject(firstMeasure.visitOptions)
+                            ? firstMeasure.visitOptions.visitDisplayProperty
+                            : 'displayOrder'; // default value
+                }
             }
             else
             {
@@ -1092,6 +1098,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 tempMeasure.dateOptions = {interval: currentMeasure.dateOptions.interval};
                 tempMeasure.dateOptions.dateCol = this.getSchemaQueryInfo(currentMeasure.dateOptions.dateCol);
                 tempMeasure.dateOptions.zeroDateCol = this.getSchemaQueryInfo(currentMeasure.dateOptions.zeroDateCol);
+            }
+            if (currentMeasure.visitOptions)
+            {
+                tempMeasure.visitOptions = {
+                    visitDisplayProperty: currentMeasure.visitOptions.visitDisplayProperty
+                };
             }
 
             simplified.measures.push(tempMeasure);
@@ -1569,12 +1581,16 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 props.measure.aggregate = yMeasureProps.dimensionAggregate;
             }
 
-            if (props.time == "date")
-            {
+            if (props.time == "date") {
                 props.dateOptions = {
                     dateCol: Ext4.clone(yMeasureProps.dateCol),
                     zeroDateCol: Ext4.clone(this.chartTypeOptions.zeroDateCol),
                     interval: this.chartTypeOptions.interval
+                };
+            }
+            if (props.time == "visit") {
+                props.visitOptions = {
+                    visitDisplayProperty: this.chartTypeOptions.visitDisplayProperty
                 };
             }
 
