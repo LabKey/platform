@@ -583,17 +583,17 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 downgradedModules.add("flow");
             }
 
-//            int count = downgradedModules.size();
-//            String message = "This server is running with " + StringUtilsLabKey.pluralize(count, "downgraded module") + ". The server will not operate properly and could corrupt your data. You should immediately stop the server and contact LabKey for assistance. Modules affected: " + downgradedModules.toString();
-//            _log.error(message);
-//            WarningService.get().register(new WarningProvider()
-//            {
-//                @Override
-//                public void addStaticWarnings(Warnings warnings)
-//                {
-//                    warnings.add(HtmlString.of(message));
-//                }
-//            });
+            int count = downgradedModules.size();
+            String message = "This server is running with " + StringUtilsLabKey.pluralize(count, "downgraded module") + ". The server will not operate properly and could corrupt your data. You should immediately stop the server and contact LabKey for assistance. Modules affected: " + downgradedModules.toString();
+            _log.error(message);
+            WarningService.get().register(new WarningProvider()
+            {
+                @Override
+                public void addStaticWarnings(Warnings warnings)
+                {
+                    warnings.add(HtmlString.of(message));
+                }
+            });
         }
 
         if (!modulesRequiringUpgrade.isEmpty())
