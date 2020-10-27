@@ -820,7 +820,7 @@ public class OntologyManager
     }
 
 
-    public static void deleteOntologyObjects(DbSchema schema, SQLFragment sub, Container c, boolean deleteOwnedObjects)
+    public static int deleteOntologyObjects(DbSchema schema, SQLFragment sub, Container c, boolean deleteOwnedObjects)
     {
         // we have different levels of optimization possible here deleteOwned=true/false, scope=/<>exp
 
@@ -848,7 +848,7 @@ public class OntologyManager
             sqlDeleteObjects.add(c.getId());
             sqlDeleteObjects.append(sub);
             sqlDeleteObjects.append(")");
-            new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);
+            return new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);
         }
     }
 
