@@ -1127,7 +1127,7 @@ public class ExperimentController extends SpringActionController
             if (!create)
                 _dataClass = form.getDataClass(getContainer());
 
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), "dataClassDesigner");
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), ModuleHtmlView.getGeneratedViewPath("dataClassDesigner"));
         }
 
         @Override
@@ -3567,7 +3567,7 @@ public class ExperimentController extends SpringActionController
             if (!create)
                 _sampleType = form.getSampleType(getContainer());
 
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), "sampleTypeDesigner");
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), ModuleHtmlView.getGeneratedViewPath("sampleTypeDesigner"));
         }
 
         @Override

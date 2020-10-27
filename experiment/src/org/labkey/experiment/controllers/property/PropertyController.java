@@ -211,7 +211,7 @@ public class PropertyController extends SpringActionController
                 }
             }
 
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), "domainDesigner");
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), ModuleHtmlView.getGeneratedViewPath("domainDesigner"));
         }
 
         @Override
