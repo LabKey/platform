@@ -45,15 +45,21 @@ import java.util.regex.Matcher;
 public class ModuleHtmlView extends HtmlView
 {
     public static final Path VIEWS_PATH = Path.parse("views");
+    public static final Path GENERATED_VIEWS_PATH = Path.parse("views/gen");
 
     private static final Logger LOG = LogManager.getLogger(ModuleHtmlView.class);
-    private static final ModuleResourceCache<Map<Path, ModuleHtmlViewDefinition>> MODULE_HTML_VIEW_DEFINITION_CACHE = ModuleResourceCaches.create("HTML view definitions", new ModuleHtmlViewCacheHandler(), ResourceRootProvider.getStandard(VIEWS_PATH), ResourceRootProvider.getAssayProviders(VIEWS_PATH));
+    private static final ModuleResourceCache<Map<Path, ModuleHtmlViewDefinition>> MODULE_HTML_VIEW_DEFINITION_CACHE = ModuleResourceCaches.create("HTML view definitions", new ModuleHtmlViewCacheHandler(), ResourceRootProvider.getStandard(VIEWS_PATH), ResourceRootProvider.getStandard(GENERATED_VIEWS_PATH), ResourceRootProvider.getAssayProviders(VIEWS_PATH));
 
     private final ModuleHtmlViewDefinition _viewdef;
 
     public static Path getStandardPath(String viewName)
     {
         return VIEWS_PATH.append(viewName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
+    }
+
+    public static Path getGeneratedViewPath(String viewName)
+    {
+        return GENERATED_VIEWS_PATH.append(viewName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
     }
 
     /**
