@@ -164,6 +164,15 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         return _columns;
     }
 
+    public ColumnDescriptor[] getActiveColumns() throws IOException
+    {
+        ArrayList<ColumnDescriptor> active = new ArrayList<>();
+        for (ColumnDescriptor column : getColumns())
+            if (column.load)
+                active.add(column);
+        return active.toArray(new ColumnDescriptor[active.size()]);
+    }
+
     protected void ensureInitialized(@NotNull Map<String, String> renamedColumns) throws IOException
     {
         if (!_initialized)
@@ -478,14 +487,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             _lineNum = lineNum;
 
             // Figure out the active columns (load = true).  This is the list of columns we care about throughout the iteration.
-            ColumnDescriptor[] allColumns = getColumns();
-            ArrayList<ColumnDescriptor> active = new ArrayList<>(allColumns.length);
-
-            for (ColumnDescriptor column : allColumns)
-                if (column.load)
-                    active.add(column);
-
-            _activeColumns = active.toArray(new ColumnDescriptor[active.size()]);
+            _activeColumns = getActiveColumns();
             ArrayListMap.FindMap<String> colMap = new ArrayListMap.FindMap<>(new CaseInsensitiveHashMap<>());
 
             for (int i = 0; i < _activeColumns.length; i++)
@@ -829,7 +831,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     /** Actually create an instance of DataIterator to use, which might be subclass-specific */
     protected DataIterator createDataIterator(DataIteratorContext context) throws IOException
     {
-        return new _DataIterator(context, getColumns(), isScrollable());
+        return new _DataIterator(context, getActiveColumns(), isScrollable());
     }
 
     protected class _DataIterator implements ScrollableDataIterator, MapDataIterator
@@ -912,6 +914,16 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 if (nextRow instanceof ArrayListMap)
                 {
                     _row = (ArrayListMap)nextRow;
+                    if (_rowNumber == 0)
+                    {
+                        // verify that map returned by iterator matches ColumnDescriptor list
+                        _findMap = _row.getFindMap();
+                        for (int i=0 ; i<_columns.length ; i++)
+                        {
+                            Integer I = _findMap.get(_columns[i].getColumnName());
+                            assert null != I && I==i;
+                        }
+                    }
                 }
                 else
                 {
