@@ -445,7 +445,8 @@ public abstract class SearchTest extends StudyBaseTest
         _searchHelper.enqueueSearchItem(_userHelper.getDisplayNameForEmail(USER1), Locator.linkContainingText(ISSUE_TITLE));
         _searchHelper.enqueueSearchItem("Area51", Locator.linkContainingText(ISSUE_TITLE));
         _searchHelper.enqueueSearchItem("UFO", Locator.linkContainingText(ISSUE_TITLE));
-        _searchHelper.enqueueSearchItem("Background", Locator.linkWithText(String.format("\"%s\" attached to issue \"%s\"", file.getName(), ISSUE_TITLE))); // some text from attached file
+        // TODO: 9583: Index issue attachments
+        //_searchHelper.enqueueSearchItem("Background", Locator.linkWithText(String.format("\"%s\" attached to issue \"%s\"", file.getName(), ISSUE_TITLE))); // some text from attached file
     }
 
     @LogMethod
