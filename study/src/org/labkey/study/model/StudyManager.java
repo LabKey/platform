@@ -4173,7 +4173,7 @@ public class StudyManager
     {
         ParticipantNotUniqueException(String ptid)
         {
-            super("Paricipant found in more than one study: " + ptid);
+            super("Participant found in more than one study: " + ptid);
         }
     }
 

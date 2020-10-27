@@ -10,4 +10,5 @@ export interface ErrorDetails {
     errorType: ErrorType;
     message?: string;
     stackTrace?: string;
+    hideViewDetails?: boolean;
 }

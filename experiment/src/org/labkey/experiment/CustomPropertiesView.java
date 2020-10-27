@@ -16,6 +16,11 @@
 
 package org.labkey.experiment;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.Action;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -25,13 +30,18 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+import static java.util.Collections.emptyList;
 
 /**
  * User: jeckels
@@ -64,11 +74,13 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
     {
         private final Map<String, ObjectProperty> _customProperties;
         private final Map<String, CustomPropertyRenderer> _renderers;
+        private final List<Pair<String, ActionURL>> _attachments;
 
-        public CustomPropertiesBean(Map<String, ObjectProperty> customProperties, Map<String, CustomPropertyRenderer> renderers)
+        public CustomPropertiesBean(Map<String, ObjectProperty> customProperties, Map<String, CustomPropertyRenderer> renderers, List<Pair<String, ActionURL>> attachments)
         {
             _customProperties = customProperties;
             _renderers = renderers;
+            _attachments = attachments;
         }
 
         public Map<String, ObjectProperty> getCustomProperties()
@@ -80,9 +92,19 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
         {
             return _renderers;
         }
+
+        public List<Pair<String, ActionURL>> getAttachments()
+        {
+            return _attachments;
+        }
     }
 
     public CustomPropertiesView(String parentLSID, Container c)
+    {
+        this(parentLSID, c, emptyList());
+    }
+
+    public CustomPropertiesView(String parentLSID, Container c, List<Pair<String, ActionURL>> attachments)
     {
         super("/org/labkey/experiment/CustomProperties.jsp");
         setTitle("Custom Properties");
@@ -96,7 +118,8 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
                 map.put(pd.getName(), entry.getValue());
             }
         }
-        setModelBean(new CustomPropertiesBean(map, _renderers));
+
+        setModelBean(new CustomPropertiesBean(map, _renderers, attachments));
     }
 
     public CustomPropertiesView(ExpMaterialImpl m, Container c)
@@ -132,11 +155,11 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
                 }
             }
         }
-        setModelBean(new CustomPropertiesBean(map, _renderers));
+        setModelBean(new CustomPropertiesBean(map, _renderers, emptyList()));
     }
 
     public boolean hasProperties()
     {
-        return !getModelBean()._customProperties.isEmpty();
+        return !(getModelBean()._customProperties.isEmpty() && getModelBean()._attachments.isEmpty());
     }
 }
