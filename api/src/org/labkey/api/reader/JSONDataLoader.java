@@ -782,7 +782,7 @@ public class JSONDataLoader extends DataLoader
     @Override
     protected DataIterator createDataIterator(DataIteratorContext context) throws IOException
     {
-        return new _DataIterator(context, getColumns(), false);
+        return new _DataIterator(context, getActiveColumns(), false);
     }
 
     private class Iter extends DataLoaderIterator
