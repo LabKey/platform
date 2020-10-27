@@ -15,6 +15,6 @@
     "@labkey/components": "0.97.0"
   },
   "devDependencies": {
-    "@labkey/build": "0.2.0-fb-webpackBuildDependencies.2"
+    "@labkey/build": "0.2.0-fb-webpackBuildDependencies.3"
   }
 }

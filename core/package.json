@@ -54,7 +54,7 @@
     "@labkey/themes": "1.0.0"
   },
   "devDependencies": {
-    "@labkey/build": "0.2.0-fb-webpackBuildDependencies.2",
+    "@labkey/build": "0.2.0-fb-webpackBuildDependencies.3",
     "@labkey/eslint-config-base": "0.0.8",
     "@types/enzyme": "3.10.5",
     "@types/enzyme-adapter-react-16": "1.0.6",
