@@ -80,6 +80,7 @@ import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.TableType;
@@ -90,6 +91,7 @@ import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantGroup;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -441,6 +443,20 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         }
 
         addFolderColumn();
+    }
+
+    @NotNull
+    @Override
+    public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
+    {
+        Map<String, Pair<IndexType, List<ColumnInfo>>> ret = new HashMap<>(super.getUniqueIndices());
+        String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
+
+        if (getColumn(subjectColName) != null)
+        {
+            ret.put("uq_dataset_subject", Pair.of(IndexType.Unique, Arrays.asList(getColumn(subjectColName))));
+        }
+        return Collections.unmodifiableMap(ret);
     }
 
     @Override
