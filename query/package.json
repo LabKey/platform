@@ -15,14 +15,6 @@
     "@labkey/components": "0.97.0"
   },
   "devDependencies": {
-    "@labkey/build": "0.2.0",
-    "@hot-loader/react-dom": "16.13.0",
-    "@types/react": "16.9.44",
-    "cross-env": "7.0.2",
-    "react-hot-loader": "4.12.21",
-    "rimraf": "3.0.2",
-    "webpack": "4.44.1",
-    "webpack-cli": "3.3.12",
-    "webpack-dev-server": "3.11.0"
+    "@labkey/build": "0.2.0-fb-webpackBuildDependencies.2"
   }
 }
