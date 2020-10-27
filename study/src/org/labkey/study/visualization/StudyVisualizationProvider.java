@@ -97,7 +97,9 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
                 Map<String, Object> visitInfo = new HashMap<>();
 
                 visitInfo.put("displayOrder", i++);
+                visitInfo.put("chronologicalOrder", visit.getChronologicalOrder());
                 visitInfo.put("displayName", visit.getDisplayString());
+                visitInfo.put("protocolDay", visit.getProtocolDay());
                 visitInfo.put("sequenceNumMin", visit.getSequenceNumMinDouble());
                 visitInfo.put("sequenceNumMax", visit.getSequenceNumMaxDouble());
                 visitInfo.put("description", visit.getDescription());

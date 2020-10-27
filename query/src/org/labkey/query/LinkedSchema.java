@@ -374,7 +374,17 @@ public class LinkedSchema extends ExternalSchema
     /** Build up LabKey SQL that targets the desired container and appends any WHERE clauses (but not URL-style filters) */
     private QueryDefinition createQueryDef(String name, TableInfo sourceTable, @Nullable LocalOrRefFiltersType xmlFilters, Collection<QueryService.ParameterDecl> parameterDecls)
     {
-        String sql = generateLabKeySQL(sourceTable, new XmlFilterWhereClauseSource(xmlFilters), parameterDecls);
+        // Issue 40442: LinkedSchema should throw handled exception with bad configuration
+        // IllegalArgumentException can be thrown when generating LabKey SQL for a filter over a column that doesn't exist.
+        String sql;
+        try
+        {
+            sql = generateLabKeySQL(sourceTable, new XmlFilterWhereClauseSource(xmlFilters), parameterDecls);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new QueryParseException("Error creating linked schema table '" + name + "': " + e.getMessage(), e, 0, 0);
+        }
 
         QueryDefinition queryDef = QueryServiceImpl.get().createQueryDef(_sourceSchema.getUser(), _sourceSchema.getContainer(), _sourceSchema, name);
         queryDef.setSql(sql);
@@ -439,9 +449,9 @@ public class LinkedSchema extends ExternalSchema
     public static String generateLabKeySQL(TableInfo sourceTable, SQLWhereClauseSource whereClauseSource, Collection<QueryService.ParameterDecl> parameterDecls)
     {
         if (null == sourceTable.getUserSchema())
-            throw new RuntimeValidationException("Source table '" + sourceTable.getName() + "' has no user schema");
+            throw new QueryException("Source table '" + sourceTable.getName() + "' has no user schema");
         if (null == sourceTable.getUserSchema().getContainer())
-            throw new RuntimeValidationException("Source table '" + sourceTable.getName() + "' has no container");
+            throw new QueryException("Source table '" + sourceTable.getName() + "' has no container");
 
         StringBuilder sql = new StringBuilder();
 
