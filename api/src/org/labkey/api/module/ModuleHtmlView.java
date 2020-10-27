@@ -62,6 +62,12 @@ public class ModuleHtmlView extends HtmlView
         return GENERATED_VIEWS_PATH.append(viewName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
     }
 
+    public static Path getViewPath(Module module, String viewName)
+    {
+        Path standardPath = getStandardPath(viewName);
+        return exists(module, standardPath) ? standardPath : getGeneratedViewPath(viewName);
+    }
+
     /**
      * Quick check for existence of an HTML view at this path
      */
@@ -75,12 +81,12 @@ public class ModuleHtmlView extends HtmlView
      */
     public static boolean exists(Module module, String viewName)
     {
-        return exists(module, getStandardPath(viewName));
+        return exists(module, getStandardPath(viewName)) || exists(module, getGeneratedViewPath(viewName));
     }
 
     public static @Nullable ModuleHtmlView get(@NotNull Module module, @NotNull String viewName)
     {
-        return get(module, getStandardPath(viewName));
+        return get(module, getViewPath(module, viewName));
     }
 
     public static @Nullable ModuleHtmlView get(@NotNull Module module, @NotNull Path path)
