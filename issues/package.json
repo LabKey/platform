@@ -15,7 +15,7 @@
     "@labkey/components": "0.97.0"
   },
   "devDependencies": {
-    "@labkey/build": "0.1.0-fb-webpackEnvVarForLink.0",
+    "@labkey/build": "0.2.0",
     "@hot-loader/react-dom": "16.13.0",
     "@types/react": "16.9.44",
     "cross-env": "7.0.2",
