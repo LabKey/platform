@@ -150,7 +150,7 @@ public abstract class SearchTest extends StudyBaseTest
         Connection connection = createDefaultConnection();
 
         Command<CommandResponse> command = new Command<>("search", "json");
-        command.setParameters(Map.of("q", q, "scope", "All"));
+        command.setParameters(new HashMap<>(Map.of("q", q, "scope", "All")));
         CommandResponse searchResponse = command.execute(connection, "/");
         List<Map<String, Object>> hits = searchResponse.getProperty("hits");
         Set<String> containerIds = new HashSet<>();
