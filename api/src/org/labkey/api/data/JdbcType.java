@@ -29,6 +29,7 @@ import org.labkey.api.util.DateUtil;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Collection;
@@ -197,16 +198,33 @@ public enum JdbcType
         }
     },
 
-    DATE(Types.DATE, java.sql.Date.class, null, "datefield"),
+    DATE(Types.DATE, java.sql.Date.class, null, "datefield")
+    {
+        @Override
+        protected Object _fromDate(Date d)
+        {
+            // presumably we would not be called if d instanceof Timestamp
+            assert !(d instanceof java.sql.Date);
+            return new java.sql.Date(d.getTime());
+        }
+    },
 
-    TIME(Types.TIME, java.sql.Time.class, null, "timefield"),
+    TIME(Types.TIME, java.sql.Time.class, null, "timefield")
+    {
+        @Override
+        protected Object _fromDate(Date d)
+        {
+            assert !(d instanceof Time);
+            return new Time(d.getTime());
+        }
+    },
 
     TIMESTAMP(Types.TIMESTAMP, java.sql.Timestamp.class, null, "datefield")
     {
         @Override
         protected Object _fromDate(Date d)
         {
-            // presumably we would be called if d instanceof Timestamp
+            // presumably we would not be called if d instanceof Timestamp
             assert !(d instanceof Timestamp);
             return new Timestamp(d.getTime());
         }
@@ -715,6 +733,35 @@ public enum JdbcType
             assertEquals(OTHER, valueOf(Types.DATALINK));
             assertEquals(OTHER, valueOf(Types.JAVA_OBJECT));
             assertEquals(OTHER, valueOf(Types.ROWID));
+        }
+
+        @Test
+        public void sqlDateTime()
+        {
+            java.sql.Time ta = (java.sql.Time)JdbcType.TIME.convert("13:14:15");
+            java.sql.Time tb = (java.sql.Time)JdbcType.TIME.convert(new Date(DateUtil.parseISODateTime("2001-02-03 13:14:15")));
+            assertEquals(ta.toString(),tb.toString());
+
+            try
+            {
+                // CONSIDER support this
+                JdbcType.TIME.convert("2001-02-03 13:14:15");
+                fail("expected ConversionException");
+            }
+            catch (ConversionException x)
+            {
+                /* pass */
+            }
+
+            java.sql.Date da = (java.sql.Date)JdbcType.DATE.convert("2001-02-03");
+            java.sql.Date db = (java.sql.Date)JdbcType.DATE.convert(new Date(DateUtil.parseISODateTime("2001-02-03 13:14:15")));
+            java.sql.Date dc = (java.sql.Date)JdbcType.DATE.convert("2001-02-03 13:14:15");
+            assertEquals(da.toString(),db.toString());
+            assertEquals(da.toString(),dc.toString());
+
+            java.sql.Timestamp tsa = (java.sql.Timestamp)JdbcType.TIMESTAMP.convert("2001-02-03 13:14:15");
+            java.sql.Timestamp tsb = (java.sql.Timestamp)JdbcType.TIMESTAMP.convert(new Date(DateUtil.parseISODateTime("2001-02-03 13:14:15")));
+            assertEquals(tsa, tsb);
         }
     }
 }
