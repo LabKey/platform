@@ -17,6 +17,9 @@
 package org.labkey.api.data;
 
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.util.Pair;
+
+import java.util.List;
 
 /**
  * A method on a table.
@@ -33,6 +36,13 @@ public interface MethodInfo
     BaseColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias);
 
     SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments);
+
+    // subclass can override this method for more control, the Boolean in the Pair<> represents whether the argument is a constant or not
+    default SQLFragment getSQL(SqlDialect dialect, List<Pair<SQLFragment,Boolean>> arguments)
+    {
+        SQLFragment[] arr = (SQLFragment[])arguments.stream().map(p -> p.first).toArray();
+        return getSQL(dialect, arr);
+    }
 
     // for table methods
     SQLFragment getSQL(String tableAlias, DbSchema schema, SQLFragment[] arguments);
