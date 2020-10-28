@@ -39,7 +39,9 @@ public enum EmailOption
     FILES_INDIVIDUAL(513),
     FILES_DAILY_DIGEST(514),
     SAMPLEMANAGER_NONE(701),
-    SAMPLEMANAGER_ALL(702);
+    SAMPLEMANAGER_ALL(702),
+    LABBOOK_NONE(801),
+    LABBOOK_ALL(802);
 
     private final int value;
 

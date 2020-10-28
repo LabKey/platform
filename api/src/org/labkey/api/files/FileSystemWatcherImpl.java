@@ -320,8 +320,6 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         if (null != plm)
         {
             plm.fireDirectoryDeleted(deletedDirectory);
-            if (Files.exists(deletedDirectory))
-                LOG.error("WatchKey is invalid but directory still exists: " + deletedDirectory);
         }
         return plm;
     }

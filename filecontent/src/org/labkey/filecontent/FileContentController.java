@@ -87,6 +87,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -489,6 +490,7 @@ public class FileContentController extends SpringActionController
             part.setFrame(WebPartView.FrameType.NONE);
             part.getModelBean().setAutoResize(true);
             part.getModelBean().setShowDetails(true);
+            getPageConfig().setHelpTopic(new HelpTopic("fileSharing"));
             return part;
         }
 

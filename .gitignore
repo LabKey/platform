@@ -30,59 +30,31 @@ core/resources/scripts/labkey/Utils.js
 # Auto-generated files
 core/resources/web/core/css
 core/resources/web/core/gen
-core/resources/views/authenticationConfiguration.html
-core/resources/views/authenticationConfiguration.view.xml
-core/resources/views/authenticationConfigurationDev.html
-core/resources/views/authenticationConfigurationDev.view.xml
-core/resources/views/components.html
-core/resources/views/components.view.xml
-core/resources/views/componentsDev.html
-core/resources/views/componentsDev.view.xml
+core/resources/views/gen
 
 experiment/resources/web/experiment/gen
-experiment/resources/views/dataClassDesigner.html
-experiment/resources/views/dataClassDesigner.view.xml
-experiment/resources/views/dataClassDesignerDev.html
-experiment/resources/views/dataClassDesignerDev.view.xml
-experiment/resources/views/domainDesigner.html
-experiment/resources/views/domainDesigner.view.xml
-experiment/resources/views/domainDesignerDev.html
-experiment/resources/views/domainDesignerDev.view.xml
-experiment/resources/views/sampleTypeDesigner.html
-experiment/resources/views/sampleTypeDesigner.view.xml
-experiment/resources/views/sampleTypeDesignerDev.html
-experiment/resources/views/sampleTypeDesignerDev.view.xml
+experiment/resources/views/gen
 
 assay/resources/web/assay/gen
-assay/resources/views/assayDataImport.html
-assay/resources/views/assayDataImport.view.xml
-assay/resources/views/assayDataImportDev.html
-assay/resources/views/assayDataImportDev.view.xml
-assay/resources/views/assayDesigner.html
-assay/resources/views/assayDesigner.view.xml
-assay/resources/views/assayDesignerDev.html
-assay/resources/views/assayDesignerDev.view.xml
+assay/resources/views/gen
 
 query/resources/web/query/gen
-query/resources/views/queryMetadataEditor.html
-query/resources/views/queryMetadataEditor.view.xml
-query/resources/views/queryMetadataEditorDev.html
-query/resources/views/queryMetadataEditorDev.view.xml
+query/resources/views/gen
 
 study/resources/web/study/gen
-study/resources/views/datasetDesigner.html
-study/resources/views/datasetDesigner.view.xml
-study/resources/views/datasetDesignerDev.html
-study/resources/views/datasetDesignerDev.view.xml
+study/resources/views/gen
 
 list/resources/web/list/gen
-list/resources/views/designer.html
-list/resources/views/designer.view.xml
-list/resources/views/designerDev.html
-list/resources/views/designerDev.view.xml
+list/resources/views/gen
 
 issues/resources/web/issues/gen
-issues/resources/views/designer.html
-issues/resources/views/designer.view.xml
-issues/resources/views/designerDev.html
-issues/resources/views/designerDev.view.xml
+issues/resources/views/gen
+
+# Gradle
+core/.gradle
+experiment/.gradle
+assay/.gradle
+query/.gradle
+study/.gradle
+list/.gradle
+issues/.gradle
