@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -1097,7 +1098,7 @@ public class Query
         private static final String[] months = new String[] {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
 
         private String[][] data;
-        private ArrayListMap<String, Object> templateRow = new ArrayListMap<>();
+        RowMapFactory _rowMapFactory;
 
 		// UNDONE: need some NULLS in here
         @SuppressWarnings({"UnusedAssignment"})
@@ -1105,8 +1106,11 @@ public class Query
         {
             data = new String[len+1][];
             data[0] = COLUMNS;
-            for (String c : data[0])
-                templateRow.put(propertyPrefix + "#" + c, c);
+            var m = new HashMap<String,Integer>();
+            for (int i=0 ; i<COLUMNS.length ; i++)
+                m.put(COLUMNS[i],i);
+            _rowMapFactory = new RowMapFactory(new ArrayListMap.FindMap(m));
+
             for (int i=1 ; i<=len ; i++)
             {
                 String[] row = data[i] = new String[COLUMNS.length];
@@ -1152,7 +1156,7 @@ public class Query
             @Override
             public Map<String, Object> next()
             {
-                return new ArrayListMap<>(templateRow, Arrays.asList((Object[])data[i++]));
+                return _rowMapFactory.getRowMap((Object[])data[i++]);
             }
 
             @Override

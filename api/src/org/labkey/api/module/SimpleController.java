@@ -49,7 +49,7 @@ public class SimpleController extends SpringActionController implements SpringAc
         String controllerName = getViewContext().getActionURL().getController();
         Module module = ModuleLoader.getInstance().getModuleForController(controllerName);
 
-        Path path = ModuleHtmlView.getStandardPath(actionName);
+        Path path = ModuleHtmlView.getViewPath(module, actionName);
         if (ModuleHtmlView.exists(module, path))
             return new SimpleAction(module, path);
 
@@ -69,7 +69,7 @@ public class SimpleController extends SpringActionController implements SpringAc
 
     public static ActionURL getBeginViewUrl(Module module, Container container)
     {
-        Path path = ModuleHtmlView.getStandardPath(BEGIN_VIEW_NAME);
+        Path path = ModuleHtmlView.getViewPath(module, BEGIN_VIEW_NAME);
         if (ModuleHtmlView.exists(module, path))
             return new ActionURL(module.getName(), BEGIN_VIEW_NAME, container);
 

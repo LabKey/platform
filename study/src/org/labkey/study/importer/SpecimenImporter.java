@@ -3115,7 +3115,10 @@ public class SpecimenImporter
 
         // Note: this duplicates the logic in SpecimenImportIterator (just below). Keep these code paths in sync.
         Map<String,T> importMap = (Map<String,T>)createImportMap(file.getTableType().getColumns());
-        List<T> availableColumns = Arrays.stream(tsvColumns).map(tsv -> importMap.get(tsv.getColumnName())).filter(Objects::nonNull)
+        final var seen = new HashSet<String>();
+        List<T> availableColumns = Arrays.stream(tsvColumns).map(tsv -> importMap.get(tsv.getColumnName()))
+                .filter(Objects::nonNull)
+                .filter(cd -> seen.add(cd.getPrimaryTsvColumnName()))
                 .collect(Collectors.toList());
         return new Pair<>(availableColumns, rowCount);
     }

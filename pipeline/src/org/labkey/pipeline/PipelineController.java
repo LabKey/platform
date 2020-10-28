@@ -409,6 +409,7 @@ public class PipelineController extends SpringActionController
             BrowseWebPart wp = new BrowseWebPart(path);
             wp.getModelBean().setAutoResize(true);
             wp.setFrame(WebPartView.FrameType.NONE);
+            getPageConfig().setHelpTopic(new HelpTopic("fileSharing"));
             return wp;
         }
 
