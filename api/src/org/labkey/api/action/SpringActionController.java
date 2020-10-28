@@ -840,9 +840,10 @@ public abstract class SpringActionController implements Controller, HasViewConte
             if (null == module)
                 return null;
 
-            Path path = ModuleHtmlView.getStandardPath(actionName);
+            Path path = ModuleHtmlView.getViewPath(module, actionName);
             if (!ModuleHtmlView.exists(module, path))
                 return null;
+
 
             HTMLFileActionDescriptor htmlDescriptor = createFileActionDescriptor(module, actionName);
             _nameToDescriptor.put(actionName, htmlDescriptor);
@@ -896,7 +897,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
             @Override
             public Controller createController(Controller actionController)
             {
-                return new SimpleAction(_module, ModuleHtmlView.getStandardPath(getPrimaryName()));
+                Path path = ModuleHtmlView.getViewPath(_module, getPrimaryName());
+                return new SimpleAction(_module, path);
             }
         }
 

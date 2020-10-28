@@ -62,7 +62,7 @@
            String script = AnalyticsService.getTrackingScript();
            if (StringUtils.isNotEmpty(script))
            {
-               if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
+               if (null != getContainer() && getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
                {
                     %><!-- see <%= text(new ActionURL("analytics", "begin", ContainerManager.getRoot()).getURIString())%> --><%
                }
