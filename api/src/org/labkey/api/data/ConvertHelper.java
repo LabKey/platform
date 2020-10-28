@@ -38,7 +38,7 @@ import org.apache.commons.beanutils.converters.LongArrayConverter;
 import org.apache.commons.beanutils.converters.LongConverter;
 import org.apache.commons.beanutils.converters.ShortArrayConverter;
 import org.apache.commons.beanutils.converters.ShortConverter;
-import org.apache.commons.beanutils.converters.SqlTimestampConverter;
+import org.apache.commons.beanutils.converters.SqlTimeConverter;
 import org.apache.commons.beanutils.converters.StringConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -156,7 +156,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new NullSafeConverter(new _IntegerConverter()), Integer.class);
         _register(new _IntegerConverter(), Integer.TYPE);
         _register(new NullSafeConverter(new LenientSqlDateConverter()), java.sql.Date.class);
-        _register(new NullSafeConverter(new SqlTimestampConverter()), java.sql.Time.class);
+        _register(new NullSafeConverter(new SqlTimeConverter()), java.sql.Time.class);
         _register(new LenientTimestampConverter(), java.sql.Timestamp.class);
         _register(new LenientDateConverter(), java.util.Date.class);
         _register(new NullSafeConverter(new LongConverter()), Long.class);
