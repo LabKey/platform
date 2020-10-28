@@ -9,7 +9,7 @@
     "start": "cross-env NODE_ENV=development LK_MODULE_CONTAINER=platform LK_MODULE=study webpack-dev-server --config node_modules/@labkey/build/webpack/watch.config.js",
     "build-dev": "npm run clean && cross-env NODE_ENV=development LK_MODULE_CONTAINER=platform LK_MODULE=study webpack --config node_modules/@labkey/build/webpack/dev.config.js --progress --profile --colors",
     "build-prod": "npm run clean && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map LK_MODULE_CONTAINER=platform LK_MODULE=study webpack --config node_modules/@labkey/build/webpack/prod.config.js --progress --profile --colors",
-    "clean": "rimraf resources/web/study/gen && rimraf resources/views/gen"
+    "clean": "rimraf resources/web/study/gen && rimraf resources/views/gen && rimraf resources/views/datasetDesigner*"
   },
   "dependencies": {
     "@labkey/components": "0.100.1"
