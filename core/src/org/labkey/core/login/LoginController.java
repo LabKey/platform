@@ -2398,7 +2398,7 @@ public class LoginController extends SpringActionController
         @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), "AuthenticationConfiguration");
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("AuthenticationConfiguration"));
         }
 
         @Override

@@ -1947,7 +1947,7 @@ public class QueryController extends SpringActionController
                 throw new NotFoundException("Must provide queryName.");
             }
 
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("query"), "queryMetadataEditor");
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("query"), ModuleHtmlView.getGeneratedViewPath("queryMetadataEditor"));
         }
 
         @Override
