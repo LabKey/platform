@@ -68,7 +68,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -1816,8 +1815,8 @@ public class SecurityManager
     /**
      * With groups-in-groups, a user/group can have multiple pathways of membership to another group
      * (i.e. a is a member of b which is a member of d, and a is a member of c which is a member of d)
-     * store each memberhip pathway as a list of groups and return the set of memberships
-     * @param principal The user/group to check memberhip
+     * store each membership pathway as a list of groups and return the set of memberships
+     * @param principal The user/group to check membership
      * @param group The root group to find membership pathways for the provided principal
      * @return Set of membership pathways (each as a list of groups)
      */
@@ -1835,7 +1834,7 @@ public class SecurityManager
     }
 
     /**
-     * Recursive function to check for memberhip pathways between two principals
+     * Recursive function to check for membership pathways between two principals
      * @param principal User/Group to check if it has a pathway to the given group
      * @param group Group to check if the user/group is a member
      * @param visited List of groups/users for the given pathway
@@ -1992,10 +1991,9 @@ public class SecurityManager
         // - users who have a direct role assignment in the policy for the specified folder
 
         Set<Integer> userIds = new HashSet<>();
-        Set<Group> groupsToExpand = new HashSet<>();
 
         // Add all project groups
-        groupsToExpand.addAll(getGroups(project, false));
+        Set<Group> groupsToExpand = new HashSet<>(getGroups(project, false));
 
         // Look for users and site groups that have direct assignment to the container
         for (RoleAssignment roleAssignment : c.getPolicy().getAssignments())
@@ -2654,9 +2652,7 @@ public class SecurityManager
             // set these test startup properties to be used by the entire server
             ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
         }
-
     }
-
 
     public static List<ValidEmail> normalizeEmails(String[] rawEmails, List<String> invalidEmails)
     {
@@ -3267,51 +3263,49 @@ public class SecurityManager
         // assign users to groups using values read from startup configuration as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: UserGroups.{email};{modifier}=SiteAdministrators,Developers
         Container rootContainer = ContainerManager.getRoot();
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_USER_GROUPS);
-        startupProps.stream()
-                .forEach(prop -> {
-                    User user = getExistingOrCreateUser(prop.getName(), rootContainer);
-                    String[] groups = prop.getValue().split(",");
-                    for (String groupName : groups)
+        ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_USER_GROUPS).forEach(prop -> {
+            User user = getExistingOrCreateUser(prop.getName(), rootContainer);
+            String[] groups = prop.getValue().split(",");
+            for (String groupName : groups)
+            {
+                groupName = StringUtils.trimToNull(groupName);
+                if (null != groupName)
+                {
+                    Group group = GroupManager.getGroup(rootContainer, groupName, GroupEnumType.SITE);
+                    if (null == group)
                     {
-                        groupName = StringUtils.trimToNull(groupName);
-                        if (null != groupName)
+                        try
                         {
-                            Group group = GroupManager.getGroup(rootContainer, groupName, GroupEnumType.SITE);
-                            if (null == group)
+                            group = SecurityManager.createGroup(rootContainer, groupName, PrincipalType.GROUP);
+                        }
+                        catch (IllegalArgumentException e)
+                        {
+                            throw new ConfigurationException("The group specified in startup properties scope UserGroups did not exist. User: " + prop.getName() + "Group: " + groupName, e);
+                        }
+                    }
+                    try
+                    {
+                        String canUserBeAddedToGroup = SecurityManager.getAddMemberError(group, user);
+                        if (null == canUserBeAddedToGroup)
+                        {
+                            SecurityManager.addMember(group, user);
+                        }
+                        else
+                        {
+                            // ok if the user is already a member of this group, but everything else throw an exception
+                            if (!"Principal is already a member of this group".equals(canUserBeAddedToGroup))
                             {
-                                try
-                                {
-                                    group = SecurityManager.createGroup(rootContainer, groupName, PrincipalType.GROUP);
-                                }
-                                catch (IllegalArgumentException e)
-                                {
-                                    throw new ConfigurationException("The group specified in startup properties scope UserGroups did not exist. User: " + prop.getName() + "Group: " + groupName, e);
-                                }
-                            }
-                            try
-                            {
-                                String canUserBeAddedToGroup = SecurityManager.getAddMemberError(group, user);
-                                if (null == canUserBeAddedToGroup)
-                                {
-                                    SecurityManager.addMember(group, user);
-                                }
-                                else
-                                {
-                                    // ok if the user is already a member of this group, but everything else throw an exception
-                                    if (!"Principal is already a member of this group".equals(canUserBeAddedToGroup))
-                                    {
-                                        throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName + " because: " + canUserBeAddedToGroup);
-                                    }
-                                }
-                            }
-                            catch (InvalidGroupMembershipException e)
-                            {
-                                throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName, e);
+                                throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName + " because: " + canUserBeAddedToGroup);
                             }
                         }
                     }
-                });
+                    catch (InvalidGroupMembershipException e)
+                    {
+                        throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName, e);
+                    }
+                }
+            }
+        });
     }
 
 
@@ -3320,71 +3314,66 @@ public class SecurityManager
         // create groups with specified roles using values read from startup properties as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: GroupRoles.{groupName};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
         Container rootContainer = ContainerManager.getRoot();
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_GROUP_ROLES);
-        startupProps.stream()
-                .forEach(prop -> {
-                    Group group = GroupManager.getGroup(rootContainer, prop.getName(), GroupEnumType.SITE);
-                    if (null == group)
+        ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_GROUP_ROLES).forEach(prop -> {
+            Group group = GroupManager.getGroup(rootContainer, prop.getName(), GroupEnumType.SITE);
+            if (null == group)
+            {
+                try
+                {
+                    group = SecurityManager.createGroup(rootContainer, prop.getName(), PrincipalType.GROUP);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new ConfigurationException("Could not add group specified in startup properties GroupRoles: " + prop.getName(), e);
+                }
+            }
+            String[] roles = prop.getValue().split(",");
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
+            for (String roleName : roles)
+            {
+                roleName = StringUtils.trimToNull(roleName);
+                if (null != roleName)
+                {
+                    Role role = RoleManager.getRole(roleName);
+                    if (null == role)
                     {
-                        try
-                        {
-                            group = SecurityManager.createGroup(rootContainer, prop.getName(), PrincipalType.GROUP);
-                        }
-                        catch (IllegalArgumentException e)
-                        {
-                            throw new ConfigurationException("Could not add group specified in startup properties GroupRoles: " + prop.getName(), e);
-                        }
+                        // Issue 36611: The provisioner startup properties break deployment of older products
+                        _log.error("Invalid role for group specified in startup properties GroupRoles: " + roleName);
+                        continue;
                     }
-                    String[] roles = prop.getValue().split(",");
-                    MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
-                    for (String roleName : roles)
-                    {
-                        roleName = StringUtils.trimToNull(roleName);
-                        if (null != roleName)
-                        {
-                            Role role = RoleManager.getRole(roleName);
-                            if (null == role)
-                            {
-                                // Issue 36611: The provisioner startup properties break deployment of older products
-                                _log.error("Invalid role for group specified in startup properties GroupRoles: " + roleName);
-                                continue;
-                            }
-                            policy.addRoleAssignment(group, role);
-                        }
-                    }
-                    SecurityPolicyManager.savePolicy(policy);
-                });
+                    policy.addRoleAssignment(group, role);
+                }
+            }
+            SecurityPolicyManager.savePolicy(policy);
+        });
     }
-
 
     public static void populateUserRolesWithStartupProps()
     {
         // create users with specified roles using values read from startup properties as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: UserRoles.{email};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
         Container rootContainer = ContainerManager.getRoot();
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_USER_ROLES);
-        startupProps.stream()
-                .forEach(prop -> {
-                    User user = getExistingOrCreateUser(prop.getName(), rootContainer);
-                    String[] roles = prop.getValue().split(",");
-                    MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(rootContainer));
-                    for (String roleName : roles)
+        ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_USER_ROLES).forEach(prop -> {
+            User user = getExistingOrCreateUser(prop.getName(), rootContainer);
+            String[] roles = prop.getValue().split(",");
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(rootContainer));
+            for (String roleName : roles)
+            {
+                roleName = StringUtils.trimToNull(roleName);
+                if (null != roleName)
+                {
+                    Role role = RoleManager.getRole(roleName);
+                    if (null == role)
                     {
-                        roleName = StringUtils.trimToNull(roleName);
-                        if (null != roleName)
-                        {
-                            Role role = RoleManager.getRole(roleName);
-                            if (null == role)
-                            {
-                                // Issue 36611: The provisioner startup properties break deployment of older products
-                                _log.error("Invalid role for user specified in startup properties UserRoles: " + roleName);
-                                continue;
-                            }
-                            policy.addRoleAssignment(user, role);
-                        }
+                        // Issue 36611: The provisioner startup properties break deployment of older products
+                        _log.error("Invalid role for user specified in startup properties UserRoles: " + roleName);
+                        continue;
                     }
-                    SecurityPolicyManager.savePolicy(policy);
-                });
+                    policy.addRoleAssignment(user, role);
+                }
+            }
+            SecurityPolicyManager.savePolicy(policy);
+        });
     }
 
     private static User getExistingOrCreateUser (String email, Container rootContainer)
