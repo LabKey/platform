@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/query/gen && rimraf resources/views/gen  && rimraf resources/views/queryMetadataEditor*"
   },
   "dependencies": {
-    "@labkey/components": "0.99.0-fb-fieldEditorExportImport-1.1"
+    "@labkey/components": "0.99.0-fb-fieldEditorExportImport-1.4"
   },
   "devDependencies": {
     "@labkey/build": "0.3.0",
