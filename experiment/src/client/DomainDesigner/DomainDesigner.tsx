@@ -248,6 +248,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                         onChange={this.onChangeHandler}
                         useTheme={true}
                         successBsStyle={'primary'}
+                        allowImportExport={true}
                     />
                 }
                 { message && <Alert bsStyle={'danger'}>{message}</Alert>}
