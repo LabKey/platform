@@ -98,6 +98,8 @@ public class ScriptTriggerFactory implements TriggerFactory
                     FileUtil.makeLegalName(title) + ".js");
 
             Collection<Trigger> titleTriggers = checkPaths(c, table, svc, pathLabel);
+            // Remove those that might be case-only differences with already resolved scripts
+            titleTriggers.removeAll(scripts);
             scripts.addAll(titleTriggers);
 
             if (!titleTriggers.isEmpty())

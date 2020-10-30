@@ -38,6 +38,10 @@ legend {
   margin-top: 8px;
 }
 
+a:hover {
+  cursor: pointer;
+}
+
 /* Expose the theme color for use with text and borders in labkey pages */
 .lk-text-theme-dark {
   color: $lk-theme-dark-accent;
