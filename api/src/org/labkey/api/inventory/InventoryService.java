@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.FieldKey;
@@ -50,4 +51,6 @@ public interface InventoryService
     List<Map<String, Object>> getSampleStorageLocationData(User user, Container container, int sampleId);
 
     List<FieldKey> addInventoryStatusColumns(@Nullable String sampleTypeMetricUnit, ExpMaterialTable table, Container container);
+
+    DataIteratorBuilder getPersistSampleDataIteratorBuilder(DataIteratorBuilder data, Container container, User user);
 }
