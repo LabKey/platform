@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/study/gen && rimraf resources/views/gen && rimraf resources/views/datasetDesigner*"
   },
   "dependencies": {
-    "@labkey/components": "0.103.1-fb-fieldEditorExportImport.5"
+    "@labkey/components": "0.103.1-fb-fieldEditorExportImport.6"
   },
   "devDependencies": {
     "@labkey/build": "0.4.0"
