@@ -59,6 +59,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.query.CustomViewUtil;
+import org.labkey.query.EditQueriesPermission;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
@@ -124,7 +125,8 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         resp.put("canEdit", canEdit);
         resp.put("canDelete", queryDef.canDelete(user));
         resp.put("canEditSharedViews", container.hasPermission(user, EditSharedViewPermission.class));
-        resp.put("isMetadataOverrideable", canEdit); //for now, this is the same as canEdit(), but in the future we can support this for non-editable queries
+        // CONSIDER: do we want to separate the 'canEditMetadata' property and 'isMetadataOverridable' properties to differentiate between cabability and the permission check?
+        resp.put("isMetadataOverrideable", queryDef.isMetadataEditable() && queryDef.canEditMetadata(user));
 
         if (isUserDefined)
             resp.put("moduleName", queryDef.getModuleName());
@@ -146,7 +148,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
                 return resp;
             }
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             resp.put("exception", e.getMessage());
             return resp;
@@ -165,8 +167,6 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
             }
         }
 
-        if (!isUserDefined && tinfo.isMetadataOverrideable())
-            resp.put("isMetadataOverrideable", true);
 
         ActionURL auditHistoryUrl = QueryService.get().getAuditHistoryURL(user, container, tinfo);
         if (auditHistoryUrl != null)

@@ -50,6 +50,7 @@
     }
 
     boolean canEdit = queryDef.canEdit(getUser());
+    boolean canEditMetadata = queryDef.canEditMetadata(getUser());
     boolean canDelete = queryDef.canDelete(getUser());
 %>
 <style type="text/css">
@@ -95,16 +96,17 @@
 
         // TODO: Replace the following object with an Ajax call
         var query = {
-            schema    : LABKEY.ActionURL.getParameter('schemaName'),
-            query     : LABKEY.ActionURL.getParameter('query.queryName'),
+            schema    : <%= q(queryDef.getSchemaPath().toString()) %>,
+            query     : <%= q(queryDef.getName()) %>,
             executeUrl: <%= q(exeUrl) %>,
             canEdit   : <%= canEdit %>,
             canDelete : <%= canDelete %>,
             canEditSql   : <%= canEdit && queryDef.isSqlEditable() %>,
-            canEditMetaData   : <%=canEdit && queryDef.isMetadataEditable() %>,
+            canEditMetadata   : <%=canEditMetadata && queryDef.isMetadataEditable() %>,
             builtIn   : <%= builtIn %>,
-            metadataEdit : <%=queryDef.isMetadataEditable()%>,
-            propEdit     : <%=queryDef.isMetadataEditable() && !builtIn%>,
+            sqlEditable  : <%=queryDef.isSqlEditable()%>,
+            metadataEditable : <%=queryDef.isMetadataEditable()%>,
+            propEdit     : <%=canEdit && !builtIn%>,
             queryText    : <%=q(action._form.ff_queryText)%>,
             metadataText : <%=q(action._form.ff_metadataText)%>,
             help         : <%=q(new HelpTopic(sqlHelpTopic).getHelpTopicHref())%>,

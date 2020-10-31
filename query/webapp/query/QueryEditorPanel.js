@@ -66,7 +66,20 @@ Ext4.define('LABKEY.query.SourceEditorPanel', {
             scope : this
         });
 
-        this.items = [
+        this.items = [];
+        if (!this.query.canEdit || !this.query.sqlEditable) {
+            this.items.push({
+                xtype: 'box',
+                cls: 'labkey-customview-message alert-warning',
+                style: { marginBottom: '6px' },
+                width: '100%',
+                html: this.query.sqlEditable ?
+                        'You do not have permission to edit this query' :
+                        'This query is not editable'
+            });
+        }
+
+        this.items = this.items.concat([
             this.initButtonBar(),
             this.editor,
             Ext4.create('Ext.panel.Panel', {
@@ -82,7 +95,7 @@ Ext4.define('LABKEY.query.SourceEditorPanel', {
                     frame: false
                 }]
             })
-        ];
+        ]);
 
         this.executeTask = new Ext4.util.DelayedTask(function(args){
             this.onExecuteQuery(args.force);
@@ -138,6 +151,7 @@ Ext4.define('LABKEY.query.SourceEditorPanel', {
                 text   : 'Edit Properties',
                 tooltip: 'Name, Description, Sharing',
                 cls    : 'query-button',
+                disabled: !this.query.canEdit,
                 handler: function(btn) {
                     var url = LABKEY.ActionURL.buildURL('query', 'propertiesQuery', null, {
                         schemaName : this.query.schema,
@@ -149,11 +163,12 @@ Ext4.define('LABKEY.query.SourceEditorPanel', {
             });
         }
 
-        if (this.query.metadataEdit) {
+        if (this.query.metadataEditable) {
             items.push({
                 xtype   : 'button',
                 text    : 'Edit Metadata',
                 cls     : 'query-button',
+                disabled: !this.query.canEditMetadata,
                 handler : function(btn) {
                     var url = LABKEY.ActionURL.buildURL('query', 'metadataQuery', null, {
                         schemaName : this.query.schema,
@@ -315,7 +330,7 @@ Ext4.define('LABKEY.query.MetadataXMLEditorPanel', {
     {
         var items = [];
 
-        if (this.query.canEdit)
+        if (this.query.canEditMetadata)
         {
             items.push({
                     xtype   : 'button',
@@ -330,6 +345,16 @@ Ext4.define('LABKEY.query.MetadataXMLEditorPanel', {
         else
         {
             items.push({
+                xtype: 'box',
+                cls: 'labkey-customview-message alert-warning',
+                style: { marginBottom: '6px' },
+                width: '100%',
+                html: this.query.metadataEditable ?
+                        'You do not have permission to edit the query metadata' :
+                        'This query metadata is not editable'
+            });
+
+            items.push({
                     xtype   : 'button',
                     text    : 'Done',
                     cls     : 'query-button',
@@ -343,7 +368,7 @@ Ext4.define('LABKEY.query.MetadataXMLEditorPanel', {
                 xtype   : 'button',
                 text    : 'Save',
                 cls     : 'query-button',
-                disabled: !this.query.canEdit,
+                disabled: !this.query.canEditMetadata,
                 handler : this.onSave,
                 scope   : this
             },{
@@ -362,7 +387,8 @@ Ext4.define('LABKEY.query.MetadataXMLEditorPanel', {
         
         this.editor = Ext4.create('Ext.panel.Panel', {
             padding : '10px 0 0 0',
-            border: true, frame : false,
+            border: true,
+            frame : false,
             autoHeight: true,
             items : [
                 {
@@ -385,6 +411,7 @@ Ext4.define('LABKEY.query.MetadataXMLEditorPanel', {
                             mode            : 'text/xml',
                             lineNumbers     : true,
                             lineWrapping    : true,
+                            readOnly        : !this.query.canEditMetadata,
                             indentUnit      : 2
                         });
 
@@ -490,8 +517,8 @@ Ext4.define('LABKEY.query.QueryEditorPanel', {
             this.query.canDelete = true;
         if (!Ext4.isDefined(this.query.canEditSql))
             this.query.canEditSql = this.query.canEdit;
-        if (!Ext4.isDefined(this.query.canEditMetaData))
-            this.query.canEditMetaData = this.canEdit;
+        if (!Ext4.isDefined(this.query.canEditMetadata))
+            this.query.canEditMetadata = true;
 
         this.callParent([config]);
     },
@@ -573,21 +600,23 @@ Ext4.define('LABKEY.query.QueryEditorPanel', {
 
     onSave : function(showView)
     {
-        if (!this.query.canEdit)
+        if (!this.query.canEdit && !this.query.canEditMetadata)
             return;
 
         this.fireEvent('beforesave', this);
 
         var json = {
             schemaName   : this.query.schema,
-            queryName    : this.query.query,
-            ff_metadataText : this.getMetadataEditor().getValue()
+            queryName    : this.query.query
         };
 
-        if (this.query.builtIn)
+        if (this.query.builtIn || !this.query.canEdit)
             json.ff_queryText = null;
         else
             json.ff_queryText = this.getSourceEditor().getValue();
+
+        if (this.query.canEditMetadata)
+            json.ff_metadataText = this.getMetadataEditor().getValue();
 
         Ext4.Ajax.request(
         {
