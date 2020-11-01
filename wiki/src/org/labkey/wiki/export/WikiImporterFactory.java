@@ -40,6 +40,7 @@ import org.labkey.wiki.WikiSelectManager;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -62,7 +63,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
         return new WikiImporter();
     }
 
-    private class WikiImporter implements FolderImporter<FolderDocument.Folder>
+    private static class WikiImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override
         public String getDataType()
@@ -87,7 +88,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
                     job.setStatus("IMPORT " + getDescription());
                 ctx.getLogger().info("Loading " + getDescription());
 
-                Set<String> importedWikiNames = new CaseInsensitiveHashSet();
+                Set<String> importedFolderNames = new CaseInsensitiveHashSet();
                 Map<Wiki, String> parentsToBeSet = new HashMap<>();
 
                 // since the WikiWriter saves the webdav tree, the files need to be accessed as InputStreams
@@ -107,32 +108,36 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
                         if (null == wikiSubDir)
                         {
                             ctx.getLogger().error("Could not find content subdirectory for wiki with name \"" + wikiXml.getName() + "\"");
+                            continue;
                         }
                         // ensure that older versions of exported wikis that do not have the shouldIndex bit set
                         // continue to be indexed by default
                         boolean shouldIndex = !wikiXml.isSetShouldIndex() || wikiXml.getShouldIndex();
-                        Wiki wiki = importWiki(wikiXml.getName(), wikiXml.getTitle(), shouldIndex, wikiXml.getShowAttachments(), wikiSubDir, ctx, displayOrder++);
+
+                        // TODO: We should add VirtualFile.getName()
+                        String folderName = new File(wikiSubDir.getLocation()).getName();
+                        Wiki wiki = importWiki(wikiXml.getName(), wikiXml.getTitle(), shouldIndex, wikiXml.getShowAttachments(), wikiSubDir, folderName, ctx, displayOrder++);
                         if (wikiXml.getParent() != null)
                         {
                             parentsToBeSet.put(wiki, wikiXml.getParent());
                         }
-                        importedWikiNames.add(wikiXml.getName());
+                        importedFolderNames.add(folderName);
                     }
 
                     // Import any wiki subdirectories that weren't present in the XML metadata using default metadata values
                     for (String wikiSubDirName : wikisDir.listDirs())
                     {
                         VirtualFile wikiSubDir = wikisDir.getDir(wikiSubDirName);
-                        if (null != wikiSubDir && !importedWikiNames.contains(wikiSubDirName))
+                        if (null != wikiSubDir && !importedFolderNames.contains(wikiSubDirName))
                         {
-                            importWiki(wikiSubDirName, null, true, true, wikiSubDir, ctx, displayOrder++);
-                            importedWikiNames.add(wikiSubDirName);
+                            importWiki(wikiSubDirName, null, true, true, wikiSubDir, wikiSubDirName, ctx, displayOrder++);
+                            importedFolderNames.add(wikiSubDirName);
                         }
                     }
 
                     setParents(ctx, parentsToBeSet);
 
-                    ctx.getLogger().info(importedWikiNames.size() + " wiki" + (1 == importedWikiNames.size() ? "" : "s") + " imported");
+                    ctx.getLogger().info(importedFolderNames.size() + " wiki" + (1 == importedFolderNames.size() ? "" : "s") + " imported");
                     ctx.getLogger().info("Done importing " + getDescription());
                 }
             }
@@ -158,7 +163,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
             }
         }
 
-        private Wiki importWiki(String name, String title, boolean shouldIndex, boolean showAttachments, VirtualFile wikiSubDir, ImportContext ctx, int displayOrder) throws IOException, ImportException
+        private Wiki importWiki(String name, String title, boolean shouldIndex, boolean showAttachments, VirtualFile wikiSubDir, String folderName, ImportContext ctx, int displayOrder) throws IOException, ImportException
         {
             Wiki existingWiki = WikiSelectManager.getWiki(ctx.getContainer(), name);
             List<String> existingAttachmentNames = new ArrayList<>();
@@ -182,7 +187,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
             wiki.setDisplayOrder(displayOrder);
 
             // since the WikiWriter saves the webdav tree, the files need to be accessed as InputStreams
-            Pair<String, InputStream> contentSteamPair = findContentStream(wikiSubDir, name);
+            Pair<String, InputStream> contentSteamPair = findContentStream(wikiSubDir, folderName);
             String contentFileName = contentSteamPair.first;
             InputStream contentSteam = contentSteamPair.second;
 
@@ -213,18 +218,20 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
             return wiki;
         }
 
-        private Pair<String, InputStream> findContentStream(VirtualFile dir, String wikiName) throws ImportException, IOException
+        // Currently, content filename is the same as the folder name, plus an extension that determines the type
+        // TODO: We should store the type and/or the content filename
+        private Pair<String, InputStream> findContentStream(VirtualFile dir, String contentName) throws ImportException, IOException
         {
             for (WikiRendererType wikiRendererType : WikiRendererType.values())
             {
-                InputStream is = dir.getInputStream(wikiRendererType.getDocumentName(wikiName));
+                InputStream is = dir.getInputStream(wikiRendererType.getDocumentName(contentName));
                 if (null != is)
                 {
-                    return new Pair<>(wikiRendererType.getDocumentName(wikiName), is);
+                    return new Pair<>(wikiRendererType.getDocumentName(contentName), is);
                 }
             }
 
-            throw new ImportException("Could not find a content file for wiki with name \"" + wikiName + "\"");
+            throw new ImportException("Could not find a content file for wiki with name \"" + contentName + "\"");
         }
 
         @NotNull
