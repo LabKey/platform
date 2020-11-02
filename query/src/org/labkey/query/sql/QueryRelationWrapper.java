@@ -65,6 +65,12 @@ public class QueryRelationWrapper<R extends QueryRelation> extends QueryRelation
         }
 
         @Override
+        String getPrincipalConceptCode()
+        {
+            return _wrapped.getPrincipalConceptCode();
+        }
+
+        @Override
         public @NotNull JdbcType getJdbcType()
         {
             return _wrapped.getJdbcType();

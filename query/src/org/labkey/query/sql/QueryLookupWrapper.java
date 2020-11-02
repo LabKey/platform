@@ -427,6 +427,12 @@ public class QueryLookupWrapper extends QueryRelation
         }
 
         @Override
+        String getPrincipalConceptCode()
+        {
+            return _wrapped.getPrincipalConceptCode();
+        }
+
+        @Override
         void copyColumnAttributesTo(BaseColumnInfo to)
         {
             _wrapped.copyColumnAttributesTo(to);
@@ -533,6 +539,12 @@ public class QueryLookupWrapper extends QueryRelation
         boolean isHidden()
         {
             return _lkCol.isHidden();
+        }
+
+        @Override
+        String getPrincipalConceptCode()
+        {
+            return _lkCol.getPrincipalConceptCode();
         }
 
         @Override

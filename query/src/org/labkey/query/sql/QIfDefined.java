@@ -17,8 +17,12 @@ package org.labkey.query.sql;
 
 import org.antlr.runtime.tree.CommonTree;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParseException;
 
 /**
  * User: matthewb
@@ -27,7 +31,8 @@ import org.labkey.api.query.FieldKey;
  */
 public class QIfDefined extends QExpr
 {
-    boolean isDefined = true;
+    protected QuerySelect select = null;
+    protected boolean isDefined = true;
 
     QIfDefined(CommonTree node)
     {
@@ -35,25 +40,22 @@ public class QIfDefined extends QExpr
         from(node);
     }
 
-    @Override
-    public FieldKey getFieldKey()
+    void setQuerySelect(QuerySelect select)
     {
-        return ((QExpr)getFirstChild()).getFieldKey();
+        this.select = select;
     }
 
     @Override
-    public void appendSql(SqlBuilder builder, Query query)
+    public FieldKey getFieldKey()
     {
-        if (isDefined)
-            ((QExpr)getFirstChild()).appendSql(builder, query);
-        else
-            builder.append("NULL");
+        assert null != select;
+        return ((QExpr)getFirstChild()).getFieldKey();
     }
 
     @Override
     public boolean isConstant()
     {
-        return ((QExpr)getFirstChild()).isConstant();
+        return false;
     }
 
     @Override
@@ -78,5 +80,48 @@ public class QIfDefined extends QExpr
             return ((QExpr)getFirstChild()).getJdbcType();
         else
             return JdbcType.OTHER;
+    }
+
+    @Override
+    public boolean isAggregate()
+    {
+        return false;
+    }
+
+
+    @Override
+    public void appendSql(SqlBuilder builder, Query query)
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public SQLFragment getSqlFragment(SqlDialect dialect, Query query)
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public String getValueString()
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public BaseColumnInfo createColumnInfo(SQLTableInfo table, String name, Query query)
+    {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public QueryParseException fieldCheck(QNode parent, SqlDialect d)
+    {
+        return null;
+    }
+
+    @Override
+    protected JdbcType getChildrenSqlType()
+    {
+        throw new IllegalStateException();
     }
 }

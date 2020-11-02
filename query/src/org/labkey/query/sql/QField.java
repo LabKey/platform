@@ -18,10 +18,12 @@ package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.AbstractMethodInfo;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
@@ -203,6 +205,29 @@ public class QField extends QInternalExpr
             {
                 return null;
             }
+        }
+
+        // special method on all tables
+        if ("column".equals(_name))
+        {
+            final var resolvedColumn = _table.getColumn("name");
+            return new AbstractMethodInfo(JdbcType.VARCHAR)
+            {
+                @Override
+                protected JdbcType getSqlType(ColumnInfo[] arguments)
+                {
+                    return null== resolvedColumn ? JdbcType.VARCHAR : resolvedColumn.getJdbcType();
+                }
+
+                @Override
+                public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+                {
+                    if (null == resolvedColumn)
+                        return new SQLFragment("'NAME COLUMN NOT FOUND'");
+                    else
+                        return new SQLFragment("'NAME COLUMN FOUND'");
+                }
+            };
         }
 
         return _table.getMethod(FieldKey.fromString(_name).getName());

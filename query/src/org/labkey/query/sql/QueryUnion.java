@@ -500,6 +500,12 @@ public class QueryUnion extends QueryRelation
         }
 
         @Override
+        String getPrincipalConceptCode()
+        {
+            return null;
+        }
+
+        @Override
         void copyColumnAttributesTo(BaseColumnInfo to)
         {
             _first.copyColumnAttributesTo(to);

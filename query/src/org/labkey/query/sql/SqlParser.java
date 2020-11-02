@@ -828,6 +828,19 @@ public class SqlParser
             case METHOD_CALL:
             {
                 QNode id = first(children), exprList = second(children);
+
+                // check for special case table method "column", this isn't a real method so it's easier if it has it's own node type
+                if (id instanceof QDot)
+                {
+                    FieldKey full = ((QDot) id).getFieldKey();
+                    if (full.size() == 2 && "column".equalsIgnoreCase(full.getName()))
+                    {
+                        QNode resolveMethod = new QResolveTableColumn(node);
+                        resolveMethod._replaceChildren(children);
+                        return resolveMethod;
+                    }
+                }
+
                 if (!(id instanceof QIdentifier))
                         break;
                 String name = ((QIdentifier)id).getIdentifier().toLowerCase();
