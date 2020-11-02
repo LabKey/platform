@@ -52,5 +52,5 @@ public interface InventoryService
 
     List<FieldKey> addInventoryStatusColumns(@Nullable String sampleTypeMetricUnit, ExpMaterialTable table, Container container);
 
-    DataIteratorBuilder getPersistSampleDataIteratorBuilder(DataIteratorBuilder data, Container container, User user);
+    DataIteratorBuilder getStorageDataIteratorBuilder(DataIteratorBuilder data, Container container, User user);
 }
