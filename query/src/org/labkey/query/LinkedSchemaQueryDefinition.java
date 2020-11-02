@@ -314,12 +314,12 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
         return false;
     }
 
-    // Linked query defs are not really table custom query defs, however we typically use
-    // "!isTableQueryDefinition()" to mean "isUserDefined", e.g. to show the edit metadata link in the schema browser.
+    // Linked query defs are similar to table custom query defs in that they are generated wrappers over the source
+    // schema's custom query so we will consider these as not user defined.
     @Override
-    public boolean isTableQueryDefinition()
+    public boolean isUserDefined()
     {
-        return true;
+        return false;
     }
 
     @Override

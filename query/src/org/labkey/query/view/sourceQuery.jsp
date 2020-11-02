@@ -36,7 +36,6 @@
 <%
     QueryController.SourceQueryAction action = (QueryController.SourceQueryAction)HttpView.currentModel();
     QueryDefinition queryDef = action._queryDef;
-    boolean builtIn = queryDef.isTableQueryDefinition();
     String sqlHelpTopic = "labkeySql";
     String metadataHelpTopic = "metadataSql";
     ActionURL exeUrl = null;
@@ -103,10 +102,10 @@
             canDelete : <%= canDelete %>,
             canEditSql   : <%= canEdit && queryDef.isSqlEditable() %>,
             canEditMetadata   : <%=canEditMetadata && queryDef.isMetadataEditable() %>,
-            builtIn   : <%= builtIn %>,
+            userDefined  : <%= queryDef.isUserDefined() %>,
             sqlEditable  : <%=queryDef.isSqlEditable()%>,
             metadataEditable : <%=queryDef.isMetadataEditable()%>,
-            propEdit     : <%=canEdit && !builtIn%>,
+            propEdit     : <%=queryDef.isSqlEditable() && canEdit%>,
             queryText    : <%=q(action._form.ff_queryText)%>,
             metadataText : <%=q(action._form.ff_metadataText)%>,
             help         : <%=q(new HelpTopic(sqlHelpTopic).getHelpTopicHref())%>,

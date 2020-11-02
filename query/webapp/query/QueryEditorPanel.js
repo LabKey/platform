@@ -52,7 +52,7 @@ Ext4.define('LABKEY.query.SourceEditorPanel', {
                             mode            : 'text/x-plsql',
                             lineNumbers     : true,
                             lineWrapping    : true,
-                            readOnly        : this.query.builtIn || !this.query.canEditSql,
+                            readOnly        : !this.query.userDefined || !this.query.canEditSql,
                             indentUnit      : 3
                         });
 
@@ -610,7 +610,7 @@ Ext4.define('LABKEY.query.QueryEditorPanel', {
             queryName    : this.query.query
         };
 
-        if (this.query.builtIn || !this.query.canEdit)
+        if (!this.query.userDefined || !this.query.canEdit)
             json.ff_queryText = null;
         else
             json.ff_queryText = this.getSourceEditor().getValue();
@@ -742,7 +742,7 @@ Ext4.define('LABKEY.query.QueryEditorPanel', {
     onExecuteQuery : function(force)
     {
         this._executing = true;
-        var sourceDirty = !this.query.builtIn && this.getSourceEditor().isQueryDirty(true);
+        var sourceDirty = this.query.userDefined && this.getSourceEditor().isQueryDirty(true);
         var metaDirty   = this.getMetadataEditor().isQueryDirty(true);
         var dirty = sourceDirty || metaDirty;
         if (!dirty && !force && this._dataLoaded) {
@@ -792,7 +792,7 @@ Ext4.define('LABKEY.query.QueryEditorPanel', {
         };
 
         // Choose queryName or SQL as source
-        if (this.query.builtIn)
+        if (!this.query.userDefined)
         {
             config.queryName = this.query.query;
         }

@@ -59,7 +59,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.query.CustomViewUtil;
-import org.labkey.query.EditQueriesPermission;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
@@ -112,7 +111,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         if (null == queryDef)
             throw new NotFoundException("Could not find the query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'!");
 
-        boolean isUserDefined = !queryDef.isTableQueryDefinition();
+        boolean isUserDefined = queryDef.isUserDefined();
 
         //a few basic props about the query
         //this needs to be populated before attempting to get the table info

@@ -163,9 +163,9 @@ public interface QueryDefinition
     void setSchema(@NotNull UserSchema schema);
 
     /**
-     * Returns whether this is a table-based query definition (versus a custom query).
+     * Return true if this user-defined custom query definition (as oppossed to a generated wrapper over a built-in table or linked schema query.)
      */
-    boolean isTableQueryDefinition();
+    boolean isUserDefined();
     Collection<String> getDependents(User user);
 
     /**

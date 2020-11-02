@@ -1004,12 +1004,6 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     }
 
     @Override
-    public boolean isTableQueryDefinition()
-    {
-        return false;
-    }
-
-    @Override
     public Collection<String> getDependents(User user)
     {
         return QueryManager.get().getQueryDependents(user, getContainer(), null, getSchemaPath(), Collections.singleton(getName()));

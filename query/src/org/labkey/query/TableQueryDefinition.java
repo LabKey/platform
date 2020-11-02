@@ -240,9 +240,9 @@ public class TableQueryDefinition extends QueryDefinitionImpl
 
 
     @Override
-    public boolean isTableQueryDefinition()
+    public boolean isUserDefined()
     {
-        return true;
+        return false;
     }
 
 

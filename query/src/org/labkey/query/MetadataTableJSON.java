@@ -591,15 +591,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             metadataColumnJSON.setPrincipalConceptCode(columnInfo.getPrincipalConceptCode());
         }
 
-        List<QueryDef> queryDefs = QueryServiceImpl.get().findMetadataOverrideImpl(schema, tableName, false, false, null);
-        if (queryDefs == null)
-        {
-            queryDefs = QueryServiceImpl.get().findMetadataOverrideImpl(schema, tableName, true, false, null);
-            if (queryDefs != null)
-            {
-                metadataTableJSON.setUserDefinedQuery(true);
-            }
-        }
+        metadataTableJSON.setUserDefinedQuery(queryDef.isUserDefined());
 
         if (queryDefs != null && !queryDefs.isEmpty())
         {
