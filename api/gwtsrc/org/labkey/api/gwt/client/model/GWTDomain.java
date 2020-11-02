@@ -37,6 +37,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private int domainId;
     private String name;
     private String domainURI;
+    private String domainKindName;
     private String description;
     private String container;
     private boolean allowFileLinkProperties;
@@ -77,6 +78,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.domainId = src.domainId;    
         this.name = src.name;
         this.domainURI = src.domainURI;
+        this.domainKindName = src.domainKindName;
         this.description = src.description;
         this.container = src.container;
         this.allowFileLinkProperties = src.allowFileLinkProperties;
@@ -203,6 +205,16 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     public void setDomainURI(String domainURI)
     {
         this.domainURI = domainURI;
+    }
+
+    public String getDomainKindName()
+    {
+        return domainKindName;
+    }
+
+    public void setDomainKindName(String domainKindName)
+    {
+        this.domainKindName = domainKindName;
     }
 
     public String getDescription()

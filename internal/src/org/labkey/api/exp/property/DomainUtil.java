@@ -284,6 +284,7 @@ public class DomainUtil
     public static GWTDomain<GWTPropertyDescriptor> getTemplateDomainForDomainKind(DomainKind kind)
     {
         GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<>();
+        gwtDomain.setDomainKindName(kind.getKindName());
         gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
         gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
         gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());

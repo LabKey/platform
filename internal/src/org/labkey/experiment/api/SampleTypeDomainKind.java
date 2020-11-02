@@ -45,6 +45,7 @@ import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -272,6 +273,18 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     public boolean canDeleteDefinition(User user, Domain domain)
     {
         return domain.getContainer().hasPermission(user, DesignSampleTypePermission.class);
+    }
+
+    @Override
+    public DefaultValueType getDefaultDefaultType(Domain domain)
+    {
+        return null;
+    }
+
+    @Override
+    public DefaultValueType[] getDefaultValueOptions(Domain domain)
+    {
+        return new DefaultValueType[0];
     }
 
     @Override
