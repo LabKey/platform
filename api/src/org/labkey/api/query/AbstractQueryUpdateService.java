@@ -95,9 +95,12 @@ import java.io.StringReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static org.labkey.api.audit.TransactionAuditProvider.DB_SEQUENCE_NAME;
@@ -383,7 +386,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         if (rows.size() > 0 && rows.get(0) instanceof ArrayListMap)
         {
-            colNames = ((ArrayListMap)rows.get(0)).getFindMap().keySet();
+            // Check first 100 rows for column names
+            colNames = rows.stream().limit(100).map(Map::keySet).flatMap(Collection::stream)
+                    .collect(Collectors.toCollection(HashSet::new));
         }
         else
         {
