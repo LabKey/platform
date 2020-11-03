@@ -247,7 +247,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     public static final CompareType WHERE = new CompareType("WHERE", "where", "WHERE", true /* dataValueRequired */, "sql", OperatorType.WHERE)
     {
         @Override
-        protected WhereClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public WhereClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             return new WhereClause((String) value);
         }

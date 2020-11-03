@@ -91,7 +91,7 @@ public abstract class CompareType
     public static final CompareType EQUAL = new CompareType("Equals", "eq", "EQUAL", true, " = ?", OperatorType.EQ)
     {
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             return new EqualsCompareClause(fieldKey, this, value);
         }
@@ -135,7 +135,7 @@ public abstract class CompareType
     public static final CompareType NEQ = new CompareType("Does Not Equal", "neq", "NOT_EQUAL", true, " <> ?", OperatorType.NEQ)
     {
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             return new NotEqualsCompareClause(fieldKey, this, value);
         }
@@ -383,7 +383,7 @@ public abstract class CompareType
     {
         // Each compare type uses CompareClause by default
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             if (value instanceof Collection)
             {
@@ -418,7 +418,7 @@ public abstract class CompareType
     {
         // Each compare type uses CompareClause by default
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             if (value instanceof Collection)
             {
@@ -450,7 +450,7 @@ public abstract class CompareType
     {
         // Each compare type uses CompareClause by default
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             if (value instanceof Collection)
             {
@@ -492,7 +492,7 @@ public abstract class CompareType
     {
         // Each compare type uses CompareClause by default
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             if (value instanceof Collection)
             {
@@ -534,7 +534,7 @@ public abstract class CompareType
     {
         // Each compare type uses CompareClause by default
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             String namedSet = null;
             if (value != null && StringUtils.isNotBlank(value.toString()))
@@ -553,7 +553,7 @@ public abstract class CompareType
     {
         // Each compare type uses CompareClause by default
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             String namedSet = null;
             if (value != null && StringUtils.isNotBlank(value.toString()))
@@ -571,7 +571,7 @@ public abstract class CompareType
     public static final CompareType BETWEEN = new CompareType("Between", "between", "BETWEEN", true, " BETWEEN ? AND ?", OperatorType.BETWEEN)
     {
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             if (value instanceof Collection)
             {
@@ -622,7 +622,7 @@ public abstract class CompareType
     public static final CompareType NOT_BETWEEN = new CompareType("Not Between", "notbetween", "NOT_BETWEEN", true, " NOT BETWEEN ? AND ?", OperatorType.NOTBETWEEN)
     {
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             if (value instanceof Collection)
             {
@@ -673,7 +673,7 @@ public abstract class CompareType
     public static final CompareType MEMBER_OF = new CompareType("Is Member Of", "memberof", "MEMBER_OF", true, " is member of", OperatorType.MEMBEROF)
     {
         @Override
-        protected MemberOfClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public MemberOfClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             return new MemberOfClause(fieldKey, value);
         }
@@ -736,7 +736,7 @@ public abstract class CompareType
     public static final CompareType MV_INDICATOR = new CompareType("Has An MV Indicator", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "MV_INDICATOR", OperatorType.HASMVVALUE)
     {
         @Override
-        protected MvClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public MvClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             return new MvClause(fieldKey, false);
         }
@@ -751,7 +751,7 @@ public abstract class CompareType
     public static final CompareType NO_MV_INDICATOR = new CompareType("Does Not Have An MV Indicator", new String[] { "nomvvalue", "noqcvalue" }, false, " does not have a missing value indicator", "NO_MV_INDICATOR", OperatorType.NOMVVALUE)
     {
         @Override
-        protected MvClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public MvClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             return new MvClause(fieldKey, true);
         }
@@ -771,7 +771,7 @@ public abstract class CompareType
     public static final CompareType Q = new CompareType("Search", "q", "Q", true /* dataValueRequired */, "sql", OperatorType.Q)
     {
         @Override
-        protected QClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public QClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             return new QClause((String) value);
         }
@@ -1073,7 +1073,7 @@ public abstract class CompareType
     }
 
     // Each compare type uses CompareClause by default
-    protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+    public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
     {
         return new CompareClause(fieldKey, this, value);
     }
@@ -1515,7 +1515,7 @@ public abstract class CompareType
         assert d.get(Calendar.SECOND) == 0;
         assert d.get(Calendar.MINUTE) == 0;
         assert d.get(Calendar.HOUR_OF_DAY) == 0;
-        
+
         Calendar cal = (Calendar)d.clone();
         cal.add(Calendar.DAY_OF_MONTH, 1);
         return cal;
@@ -1682,7 +1682,7 @@ public abstract class CompareType
             return dateValue.compareTo(param) >= 0;
         }
     }
-    
+
 
     static class DateGteCompareClause extends DateCompareClause
     {
@@ -1979,7 +1979,7 @@ public abstract class CompareType
         @Override
         String toWhereClause(SqlDialect dialect, String alias)
         {
-            return dialect.getColumnSelectName(alias) + " " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("'%'", "?", "'%'") + sqlEscape(); 
+            return dialect.getColumnSelectName(alias) + " " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("'%'", "?", "'%'") + sqlEscape();
         }
 
         @Override
@@ -2009,7 +2009,7 @@ public abstract class CompareType
         @Override
         String toWhereClause(SqlDialect dialect, String alias)
         {
-            return "(" + dialect.getColumnSelectName(alias) + " IS NULL OR " + dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("'%'", "?", "'%'") + sqlEscape() + ")"; 
+            return "(" + dialect.getColumnSelectName(alias) + " IS NULL OR " + dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("'%'", "?", "'%'") + sqlEscape() + ")";
         }
 
         @Override

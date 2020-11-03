@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCacheListener;
@@ -30,7 +31,6 @@ import org.labkey.data.xml.TablesDocument;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -46,7 +46,7 @@ public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<Str
     @Override
     public Map<String, TablesDocument> load(Stream<? extends Resource> resources, Module module)
     {
-        Map<String, TablesDocument> map = new HashMap<>();
+        Map<String, TablesDocument> map = new CaseInsensitiveHashMap<>();
 
         resources
             .filter(resource -> isSchemaXmlFile(resource.getName()))
