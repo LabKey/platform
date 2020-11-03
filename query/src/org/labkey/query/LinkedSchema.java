@@ -264,7 +264,7 @@ public class LinkedSchema extends ExternalSchema
                 {
                     // Apply any filters that might have been specified in the schema linking process
                     QueryDefinition filteredQueryDef = createWrapperQueryDef(key, table);
-                    assert filteredQueryDef.getMetadataXml() == null : "generated wrapped query def should't apply metadata xml";
+                    assert filteredQueryDef.getMetadataXml() == null : "generated wrapped query def shouldn't apply metadata xml";
 
                     // Get metadata override xml that may exist in the linked schema target container
                     String extraMetadata = null;
@@ -317,7 +317,7 @@ public class LinkedSchema extends ExternalSchema
             sourceTable.overlayMetadata(Collections.singletonList(metaData), _sourceSchema, errors);
 
         QueryDefinition queryDef = createWrapperQueryDef(name, sourceTable);
-        assert queryDef.getMetadataXml() == null : "generated wrapped query def should't apply metadata xml";
+        assert queryDef.getMetadataXml() == null : "generated wrapped query def shouldn't apply metadata xml";
         // Hand in entire metaDataMap (of tables) into queryDef. Then when Query.resolveTable binds to a table, apply the metadata if it exists.
         queryDef.setMetadataTableMap(_metaDataMap);
 
