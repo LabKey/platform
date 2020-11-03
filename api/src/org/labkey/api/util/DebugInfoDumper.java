@@ -39,6 +39,7 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Monitors the timestamp of the heapDumpRequest and threadDumpRequest files to see if an admin has requested
@@ -242,7 +243,7 @@ public class DebugInfoDumper
                 FileUtils.byteCountToDisplaySize(used) + " from a max of " +
                 FileUtils.byteCountToDisplaySize(max) + " (" + DecimalFormat.getInstance().format(used) + " / " + DecimalFormat.getInstance().format(max) + " bytes)");
         logWriter.debug("*********************************************");
-        Map<Thread,StackTraceElement[]> threads = Thread.getAllStackTraces();
+        Map<Thread,StackTraceElement[]> threads = new TreeMap<>(Thread.getAllStackTraces());
         for (Map.Entry<Thread, StackTraceElement[]> threadEntry : threads.entrySet())
         {
             logWriter.debug("");
