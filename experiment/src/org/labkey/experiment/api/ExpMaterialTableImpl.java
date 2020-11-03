@@ -792,7 +792,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             builder = LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap()));
             if (InventoryService.get() != null && ExperimentalFeatureService.get().isFeatureEnabled("experimental_freezerManagement"))
-                return LoggingDataIterator.wrap(InventoryService.get().getStorageDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser()));
+                return LoggingDataIterator.wrap(InventoryService.get().getStorageDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getMetricUnit()));
             else
                 return builder;
         }
