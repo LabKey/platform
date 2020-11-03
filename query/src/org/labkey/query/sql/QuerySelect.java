@@ -2224,7 +2224,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
             if (label != null)
                 to.setLabel(label);
 
-            if (_annotations.containsKey("concept"))
+            if (null != _annotations && _annotations.containsKey("concept"))
             {
                 Object c = _annotations.get("concept");
                 to.setPrincipalConceptCode(null==c ? null : StringUtils.trimToNull(c.toString()));

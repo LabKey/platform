@@ -45,7 +45,6 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
-import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.DateUtil;
@@ -91,6 +90,11 @@ import static org.labkey.query.sql.antlr.SqlBaseParser.*;
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored","ThrowableInstanceNeverThrown"})
 public class SqlParser
 {
+    // these are not a regular method and need special handling
+    public static final String FIND_COLUMN_METHOD_NAME = "findcolumn";
+    public static final String IFDEFINED_METHOD_NAME = "ifdefined";
+
+
     private static final Logger _log = LogManager.getLogger(SqlParser.class);
 
     ArrayList<Exception> _parseErrors;
@@ -829,11 +833,11 @@ public class SqlParser
             {
                 QNode id = first(children), exprList = second(children);
 
-                // check for special case table method "column", this isn't a real method so it's easier if it has it's own node type
+                // check for special case table method "findColumn", this isn't a real method so it's easier if it has it's own node type
                 if (id instanceof QDot)
                 {
                     FieldKey full = ((QDot) id).getFieldKey();
-                    if (full.size() == 2 && "column".equalsIgnoreCase(full.getName()))
+                    if (full.size() == 2 && FIND_COLUMN_METHOD_NAME.equalsIgnoreCase(full.getName()))
                     {
                         QNode resolveMethod = new QResolveTableColumn(node);
                         resolveMethod._replaceChildren(children);
