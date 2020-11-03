@@ -34,6 +34,7 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -591,7 +592,15 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             metadataColumnJSON.setPrincipalConceptCode(columnInfo.getPrincipalConceptCode());
         }
 
-        metadataTableJSON.setUserDefinedQuery(queryDef.isUserDefined());
+        List<QueryDef> queryDefs = QueryServiceImpl.get().findMetadataOverrideImpl(schema, tableName, false, false, null);
+        if (queryDefs == null)
+        {
+            queryDefs = QueryServiceImpl.get().findMetadataOverrideImpl(schema, tableName, true, false, null);
+            if (queryDefs != null)
+            {
+                metadataTableJSON.setUserDefinedQuery(true);
+            }
+        }
 
         if (queryDefs != null && !queryDefs.isEmpty())
         {
