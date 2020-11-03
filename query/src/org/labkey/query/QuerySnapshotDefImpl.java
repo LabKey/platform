@@ -64,7 +64,7 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
 
         // if this is a table based query view, we just need to save the table name, else create a copy of the query
         // definition for the snapshot to refer back to on updates.
-        if (queryDef.isTableQueryDefinition())
+        if (!queryDef.isUserDefined())
         {
             _snapshotDef.setQueryTableName(queryDef.getName());
             _snapshotDef.setQueryTableContainer(queryDef.getContainer().getId());
