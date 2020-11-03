@@ -53,6 +53,10 @@
             <name>submit</name>
             <type>java.lang.Boolean</type>
         </attribute>
+        <attribute>
+            <name>enabled</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
     </tag>
     <tag>
         <name>options</name>
@@ -163,14 +167,6 @@
         </attribute>
         <attribute>
             <name>enctype</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-        <attribute>
-            <name>labelMd</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-        <attribute>
-            <name>labelLg</name>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
         <attribute>

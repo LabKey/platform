@@ -224,7 +224,7 @@ public class VisualizationServiceImpl implements VisualizationService
 
     private static boolean isDemographicQueryDefinition(QueryDefinition q)
     {
-        if (!StringUtils.equalsIgnoreCase("study", q.getSchemaName()) || !q.isTableQueryDefinition())
+        if (!StringUtils.equalsIgnoreCase("study", q.getSchemaName()) || q.isUserDefined())
             return false;
 
         try
@@ -268,7 +268,7 @@ public class VisualizationServiceImpl implements VisualizationService
             props.put("queryName", getQueryName(query, false, _tableInfoMap));
             props.put("queryLabel", getQueryName(query, true, _tableInfoMap));
             props.put("queryDescription", getQueryDefinition(query, _tableInfoMap));
-            props.put("isUserDefined", !query.isTableQueryDefinition());
+            props.put("isUserDefined", query.isUserDefined());
             props.put("isDemographic", isDemographicQueryDefinition(query));
             props.put("phi", column.getPHI().name());
             props.put("hidden", column.isHidden() || (tableInfo != null && !tableInfo.getDefaultVisibleColumns().contains(column.getFieldKey())));
@@ -361,11 +361,11 @@ public class VisualizationServiceImpl implements VisualizationService
                 return VisualizationProvider.QueryType.datasets.toString();
         }
 
-        if (query.isTableQueryDefinition())
+        if (query.isUserDefined())
         {
-            return VisualizationProvider.QueryType.builtIn.toString();
+            return VisualizationProvider.QueryType.custom.toString();
         }
 
-        return VisualizationProvider.QueryType.custom.toString();
+        return VisualizationProvider.QueryType.builtIn.toString();
     }
 }

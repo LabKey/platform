@@ -40,7 +40,7 @@ import java.util.List;
  *
  * <p>
  *     The purpose of this is grant the application/user access to make changes to tables (or retrieve data
- *     from those tables) that they should't have permission for.  For instance, a service could use this to
+ *     from those tables) that they shouldn't have permission for.  For instance, a service could use this to
  *     allow a supervisor to edit their employee's records, without giving them access to edit any other rows
  *     in the table, or even see any other rows.  <strong>In other words, you move the security to the application,
  *     instead of the database.</strong>

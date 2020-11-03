@@ -335,7 +335,7 @@ public class QueryView extends WebPartView<Object>
     {
         out.write("<p class=\"labkey-error\">");
         out.print(PageFlowUtil.filter(message));
-        if (getQueryDef() != null && getQueryDef().canEdit(getUser()))
+        if (getQueryDef() != null && getQueryDef().canEdit(getUser()) && getQueryDef().isSqlEditable())
             out.write("&nbsp;<a href=\"" + getSchema().urlFor(QueryAction.sourceQuery, getQueryDef()) + "\">Edit Query</a>");
         out.write("</p>");
 
@@ -398,25 +398,22 @@ public class QueryView extends WebPartView<Object>
             String label = getCaption();
             menu.setId(getDataRegionName() + ".Menu." + label);
 
-            if (getQueryDef() != null && getQueryDef().canEdit(getUser()))
+            if (getQueryDef() != null)
             {
                 NavTree editQueryItem;
-                if (getQueryDef().isSqlEditable())
+                if (getQueryDef().isSqlEditable() && getQueryDef().canEdit(getUser()))
                     editQueryItem = new NavTree("Edit Source", getSchema().urlFor(QueryAction.sourceQuery, getQueryDef()));
                 else
                     editQueryItem = new NavTree("View Definition", getSchema().urlFor(QueryAction.schemaBrowser, getQueryDef()));
                 editQueryItem.setId(getDataRegionName() + ":Query:EditSource");
                 addMenuItem(editQueryItem);
-                if (getQueryDef().isMetadataEditable())
+
+                if (getQueryDef().isMetadataEditable() && getQueryDef().canEditMetadata(getUser()))
                 {
                     NavTree editMetadataItem = new NavTree("Edit Metadata", getSchema().urlFor(QueryAction.metadataQuery, getQueryDef()));
                     editMetadataItem.setId(getDataRegionName() + ":Query:EditMetadata");
                     addMenuItem(editMetadataItem);
                 }
-            }
-            else
-            {
-                addMenuItem("Edit Query", false, true);
             }
 
             addSeparator();

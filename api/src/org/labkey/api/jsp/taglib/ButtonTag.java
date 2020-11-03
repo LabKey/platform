@@ -32,6 +32,7 @@ public class ButtonTag extends SimpleTagBase
     private String _name;
     private String _id;
     private Boolean _submit = true;
+    private Boolean _enabled;
 
     @Override
     public void doTag() throws IOException
@@ -54,6 +55,9 @@ public class ButtonTag extends SimpleTagBase
 
             button.submit(_submit).onClick(onClickScript).name(_name);
         }
+
+        if (_enabled != null)
+            button.enabled(_enabled.booleanValue());
 
         getOut().print(button);
     }
@@ -97,5 +101,10 @@ public class ButtonTag extends SimpleTagBase
     public void setSubmit(Boolean submit)
     {
         _submit = submit;
+    }
+
+    public void setEnabled(Boolean enabled)
+    {
+        _enabled = enabled;
     }
 }

@@ -617,15 +617,20 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         }
 
         if (queryDetails.isUserDefined) {
-            if (queryDetails.canEdit && !queryDetails.isInherited) {
-                children.push(this.formatQueryLink("sourceQuery", params, "edit source"));
-                children.push(this.formatQueryLink("propertiesQuery", params, "edit properties"));
-                if (queryDetails.canDelete)
+            if (!queryDetails.isInherited) {
+                if (queryDetails.canEdit) {
+                    children.push(this.formatQueryLink("sourceQuery", params, "edit source"));
+                    children.push(this.formatQueryLink("propertiesQuery", params, "edit properties"));
+                }
+                else {
+                    children.push(this.formatQueryLink('viewQuerySource', params, 'view source'));
+                }
+                if (queryDetails.canDelete) {
                     children.push(this.formatQueryLink("deleteQuery", params, "delete query"));
-                children.push(this.formatQueryLink("metadataQuery", metadataParams, "edit metadata"));
-            }
-            else {
-                children.push(this.formatQueryLink('viewQuerySource', params, 'view source'));
+                }
+                if (queryDetails.isMetadataOverrideable) {
+                    children.push(this.formatQueryLink("metadataQuery", metadataParams, "edit metadata"));
+                }
             }
         }
         else {
