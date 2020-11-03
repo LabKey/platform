@@ -41,6 +41,7 @@ import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.DataClassUserSchema;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -152,6 +153,18 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
             return null;
 
         return dataClass.detailsURL();
+    }
+
+    @Override
+    public DefaultValueType[] getDefaultValueOptions(Domain domain)
+    {
+        return new DefaultValueType[0];
+    }
+
+    @Override
+    public DefaultValueType getDefaultDefaultType(Domain domain)
+    {
+        return null;
     }
 
     private ExpDataClass getDataClass(Domain domain)

@@ -845,7 +845,8 @@ public abstract class AssayProtocolSchema extends AssaySchema
                     continue; // No study in that folder
 
                 String studyColumnName;
-                if (sanitizeName(studyName).isEmpty())
+                String sanitizedStudyName = sanitizeName(studyName);
+                if (sanitizedStudyName.isEmpty() || "study".equalsIgnoreCase(sanitizedStudyName))
                 {
                     // issue 41472 include the prefix as part of the sanitization process
                     studyColumnName = sanitizeName("copied_to_" + studyName);

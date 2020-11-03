@@ -50,6 +50,12 @@ public class CustomQueryDefinitionImpl extends QueryDefinitionImpl
     }
 
     @Override
+    public boolean isUserDefined()
+    {
+        return true;
+    }
+
+    @Override
     public boolean isMetadataEditable()
     {
         return true;
