@@ -699,6 +699,12 @@ public abstract class JspBase extends JspContext implements HasViewContext
         }
     }
 
+    @Deprecated // Use <labkey:form> instead; it takes care of CSRF and other details.
+    protected HtmlString formAction(Class<? extends Controller> actionClass, Method method)
+    {
+        return HtmlString.unsafe("action=\"" + h(urlFor(actionClass)) + "\" method=\"" + method.getMethod() + "\"");
+    }
+
     // Provides a unique integer within the context of this request. Handy for generating element ids, etc. See UniqueID for caveats and warnings.
     protected int getRequestScopedUID()
     {
