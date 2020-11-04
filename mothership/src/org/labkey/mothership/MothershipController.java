@@ -52,7 +52,6 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MothershipReport;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -262,7 +261,7 @@ public class MothershipController extends SpringActionController
         {
             UpgradeMessageForm form = new UpgradeMessageForm();
 
-            form.setCurrentRevision(MothershipManager.get().getCurrentRevision(getContainer()));
+            form.setCurrentBuildDate(MothershipManager.get().getCurrentBuildDate(getContainer()));
             form.setMessage(MothershipManager.get().getUpgradeMessage(getContainer()));
             form.setCreateIssueURL(MothershipManager.get().getCreateIssueURL(getContainer()));
             form.setIssuesContainer(MothershipManager.get().getIssuesContainer(getContainer()));
@@ -289,7 +288,7 @@ public class MothershipController extends SpringActionController
         @Override
         public boolean handlePost(UpgradeMessageForm form, BindException errors)
         {
-            MothershipManager.get().setCurrentRevision(getContainer(), form.getCurrentRevision());
+            MothershipManager.get().setCurrentBuildDate(getContainer(), form.getCurrentBuildDate());
             MothershipManager.get().setUpgradeMessage(getContainer(), form.getMessage());
             MothershipManager.get().setCreateIssueURL(getContainer(), form.getCreateIssueURL());
             MothershipManager.get().setIssuesContainer(getContainer(), form.getIssuesContainer());
@@ -721,12 +720,10 @@ public class MothershipController extends SpringActionController
 
     private String getUpgradeMessage(@NotNull SoftwareRelease release)
     {
-        // We still key off the SVN revision to determine if a build is current, though we should soon
-        // migrate to looking at the version number we're assigning for maintenance releases or SNAPSHOT, etc
-        int currentRevision = MothershipManager.get().getCurrentRevision(getContainer());
-        Integer reportedRevision = release.getSVNRevision();
+        Date currentBuildDate = MothershipManager.get().getCurrentBuildDate(getContainer());
+        Date reportedBuildDate = release.getBuildTime();
 
-        if (reportedRevision != null && reportedRevision.intValue() < currentRevision)
+        if (reportedBuildDate != null && reportedBuildDate.before(currentBuildDate))
         {
             return MothershipManager.get().getUpgradeMessage(getContainer());
         }
@@ -1674,19 +1671,19 @@ public class MothershipController extends SpringActionController
 
     public static class UpgradeMessageForm
     {
-        private int _currentRevision;
+        private Date _currentBuildDate;
         private String _message;
         private String _createIssueURL;
         private String _issuesContainer;
 
-        public int getCurrentRevision()
+        public Date getCurrentBuildDate()
         {
-            return _currentRevision;
+            return _currentBuildDate;
         }
 
-        public void setCurrentRevision(int currentRevision)
+        public void setCurrentBuildDate(Date currentBuildDate)
         {
-            _currentRevision = currentRevision;
+            _currentBuildDate = currentBuildDate;
         }
 
         public String getMessage()

@@ -19,6 +19,9 @@
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.mothership.MothershipController.SaveUpgradeMessageAction"%>
 <%@ page import="org.labkey.mothership.MothershipController.UpgradeMessageForm" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="java.util.Date" %>
+<%@ page import="java.text.SimpleDateFormat" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -30,10 +33,15 @@
     <table>
         <tr>
             <td>
-                Current SVN revision:
+                Current build date:
             </td>
+            <%
+                Date buildDate = DateUtil.getDateOnly(form.getCurrentBuildDate());
+                SimpleDateFormat sdf = new SimpleDateFormat(DateUtil.getStandardDateFormatString()); // HTML5 input type date recognizes this format
+                String strDate = sdf.format(buildDate);
+            %>
             <td>
-                <input type="text" size="6" name="currentRevision" value="<%= form.getCurrentRevision() %>"/>
+                <input type="date" size="6" name="currentBuildDate" value="<%= h(strDate) %>"/>
             </td>
         </tr>
         <tr>
