@@ -16,6 +16,7 @@
 package org.labkey.api.compliance;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.data.Activity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PHI;
@@ -24,6 +25,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * Created by davebradlee on 7/27/17.
@@ -60,6 +64,13 @@ public interface ComplianceService
         return null;
     }
 
+    /**
+     * CRD operations for signed snapshots
+     */
+    Integer insertSignedSnapshot(Container container, User user, SignedSnapshot snapshot, ByteArrayAttachmentFile file) throws IOException;
+    SignedSnapshot getSignedSnapshot(Container container, int snapshotId);
+    Map<String, Object> deleteSignedSnapshot(Container container, User user, int snapshotId);
+
     class DefaultComplianceService implements ComplianceService
     {
         @Override
@@ -93,6 +104,24 @@ public interface ComplianceService
             return null;
         }
         public String getPHIBanner(ViewContext viewContext)
+        {
+            return null;
+        }
+
+        @Override
+        public Integer insertSignedSnapshot(Container container, User user, SignedSnapshot snapshot, ByteArrayAttachmentFile file) throws IOException
+        {
+            return null;
+        }
+
+        @Override
+        public SignedSnapshot getSignedSnapshot(Container container, int snapshotId)
+        {
+            return null;
+        }
+
+        @Override
+        public Map<String, Object> deleteSignedSnapshot(Container container, User user, int snapshotId)
         {
             return null;
         }

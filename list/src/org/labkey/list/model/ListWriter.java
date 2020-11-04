@@ -122,7 +122,8 @@ public class ListWriter
             ListsDocument.Lists listSettingsXml = listSettingsDoc.addNewLists();
 
             // Insert standard comment explaining where the data lives, who exported it, and when
-            XmlBeansUtil.addStandardExportComment(tablesXml, c, user);
+            if (ctx.isAddExportComment())
+                XmlBeansUtil.addStandardExportComment(tablesXml, c, user);
 
             ListQuerySchema schema = new ListQuerySchema(user, c);
 

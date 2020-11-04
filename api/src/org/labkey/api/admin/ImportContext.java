@@ -48,6 +48,7 @@ public interface ImportContext<XmlType extends XmlObject> extends ContainerUser
     boolean isFailForUndefinedVisits();
     boolean isDataTypeSelected(String dataType);
     Activity getActivity();
+    boolean isAddExportComment();
 
     // These methods let writers add and get module-specific context information
     <K extends ImportContext> void addContext(Class<K> contextClass, K context);
