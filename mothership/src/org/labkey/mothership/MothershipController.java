@@ -723,7 +723,7 @@ public class MothershipController extends SpringActionController
         Date currentBuildDate = MothershipManager.get().getCurrentBuildDate(getContainer());
         Date reportedBuildDate = release.getBuildTime();
 
-        if (reportedBuildDate != null && reportedBuildDate.before(currentBuildDate))
+        if (reportedBuildDate != null && currentBuildDate != null && reportedBuildDate.before(currentBuildDate))
         {
             return MothershipManager.get().getUpgradeMessage(getContainer());
         }
