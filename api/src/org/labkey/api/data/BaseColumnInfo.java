@@ -293,6 +293,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setRequired(col.isRequiredSet());
         setAutoIncrement(col.isAutoIncrement());
         setScale(col.getScale());
+        setPrecision(col.getPrecision());
         if (col instanceof BaseColumnInfo)
         {
             _sqlTypeName = ((BaseColumnInfo) col)._sqlTypeName;
@@ -1918,6 +1919,13 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         checkLocked();
         super.setScale(scale);
+    }
+
+    @Override
+    public void setPrecision(int precision)
+    {
+        checkLocked();
+        super.setPrecision(precision);
     }
 
 

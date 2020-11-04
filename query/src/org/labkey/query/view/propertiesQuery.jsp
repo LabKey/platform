@@ -20,23 +20,38 @@
 <%@ page import="org.labkey.query.controllers.PropertiesForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<% PropertiesForm form = (PropertiesForm) HttpView.currentModel(); %>
+<%
+    PropertiesForm form = (PropertiesForm) HttpView.currentModel();
+    // query properties are editable only if the SQL is editable, not the metadata
+    boolean isEditable = form.getQueryDef().isSqlEditable();
+    boolean hasPerms = form.getQueryDef().canEdit(getUser());
+    boolean noEdit = !isEditable || !hasPerms;
+%>
 
 <labkey:errors />
-<labkey:form method="POST" action="<%=form.urlFor(QueryAction.propertiesQuery)%>">
+<% if (!isEditable) { %>
+<div class="alert alert-info">
+    Query properties are not editable.
+</div>
+<% } else if (!hasPerms) { %>
+<div class="alert alert-info">
+    You do not have permission to edit the query properties.
+</div>
+<% } %>
+<labkey:form method="POST" action="<%=noEdit ? form.urlFor(QueryAction.propertiesQuery) : null%>" >
     <table class="lk-fields-table">
         <tr>
             <td class="labkey-form-label">Name:</td>
-            <td><input name="rename" value="<%=h(form.getQueryDef().getName())%>"></td>
+            <td><input name="rename" value="<%=h(form.getQueryDef().getName())%>" <%=disabled(noEdit)%>></td>
         </tr>
         <tr>
             <td class="labkey-form-label">Description:</td>
-            <td width="100%"><textarea style="width: 100%;" name="description" rows="5" cols="40"><%=h(form.description)%></textarea></td>
+            <td width="100%"><textarea style="width: 100%;" name="description" rows="5" cols="40" <%=disabled(noEdit)%>><%=h(form.description)%></textarea></td>
         </tr>
         <tr>
             <td class="labkey-form-label" nowrap="true">Available in child folders?</td>
             <td>
-                <select name="inheritable">
+                <select name="inheritable" <%=disabled(noEdit)%>>
                     <option value="true"<%=selected(form.inheritable)%>>Yes</option>
                     <option value="false"<%=selected(!form.inheritable)%>>No</option>
                 </select>
@@ -45,7 +60,7 @@
         <tr>
             <td class="labkey-form-label" nowrap="true">Hidden from the user?</td>
             <td>
-                <select name="hidden">
+                <select name="hidden" <%=disabled(noEdit)%>>
                     <option value="true"<%=selected(form.hidden)%>>Yes</option>
                     <option value="false"<%=selected(!form.hidden)%>>No</option>
                 </select>
@@ -53,7 +68,7 @@
         </tr>
         <tr>
             <td/>
-            <td><labkey:button text="Save" /></td>
+            <td><labkey:button text="Save" enabled="<%=!noEdit%>"/></td>
         </tr>
     </table>
 </labkey:form>

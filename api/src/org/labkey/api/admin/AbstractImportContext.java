@@ -52,6 +52,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     private boolean _failForUndefinedVisits;
     private boolean _includeSubfolders = true; // default to true, unless explicitly disabled (i.e. advanced import to multiple folders option)
     private Activity _activity;
+    private boolean _addExportComment = true;
 
     private transient XmlDocument _xmlDocument;
 
@@ -277,5 +278,16 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     public void setActivity(Activity activity)
     {
         _activity = activity;
+    }
+
+    @Override
+    public boolean isAddExportComment()
+    {
+        return _addExportComment;
+    }
+
+    public void setAddExportComment(boolean addExportComment)
+    {
+        _addExportComment = addExportComment;
     }
 }
