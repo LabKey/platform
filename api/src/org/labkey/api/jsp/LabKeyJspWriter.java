@@ -15,6 +15,7 @@
  */
 package org.labkey.api.jsp;
 
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.SafeToRender;
 
 import javax.servlet.jsp.JspWriter;
@@ -30,13 +31,13 @@ public class LabKeyJspWriter extends JspWriterWrapper
     @Override
     public void print(char[] s)
     {
-        throw new IllegalStateException("A JSP is attempting to render a character array!");
+        throwException("A JSP is attempting to render a character array!");
     }
 
     @Override
     public void print(String s) throws IOException
     {
-        throw new IllegalStateException("A JSP is attempting to render a string!");
+        throwException("A JSP is attempting to render a string!");
     }
 
     @Override
@@ -49,7 +50,12 @@ public class LabKeyJspWriter extends JspWriterWrapper
         }
         else
         {
-            throw new IllegalStateException("A JSP is attempting to render an object of class " + obj.getClass().getName() + "!");
+            throwException("A JSP is attempting to render an object of class " + obj.getClass().getName() + "!");
         }
+    }
+
+    private void throwException(String message)
+    {
+        throw new IllegalStateException(message + " For help rectifying this problem, review this page " + new HelpTopic("premServerEncoding").getHelpTopicHref() + " or contact your LabKey Account Manager.");
     }
 }
