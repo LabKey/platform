@@ -34,7 +34,7 @@ public class ChildOfCompareType extends CompareType
     }
 
     @Override
-    protected SimpleFilter.FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+    public SimpleFilter.FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
     {
         return new ChildOfClause(fieldKey, value);
     }
