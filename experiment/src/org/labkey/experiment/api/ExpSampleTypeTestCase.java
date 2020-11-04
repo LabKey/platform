@@ -21,7 +21,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
@@ -43,6 +42,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
@@ -54,9 +54,14 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.DerivedSamplePropertyHelper;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.validation.BindException;
 
 import java.io.StringBufferInputStream;
 import java.sql.SQLException;
@@ -438,7 +443,7 @@ public class ExpSampleTypeTestCase extends ExpProvisionedTableTestHelper
 
     // Issue 40297: fail to generate sample names from expression in legacy wizard UI
     @Test
-    public void testDeriveWithNameExpression() throws ExperimentException, SQLException, ValidationException
+    public void testDeriveWithNameExpression() throws Exception
     {
         final User user = TestContext.get().getUser();
 
@@ -454,9 +459,14 @@ public class ExpSampleTypeTestCase extends ExpProvisionedTableTestHelper
                 "Samples", null, props, Collections.emptyList(),
                 -1, -1, -1, -1, nameExpression, null);
 
+        var table = QueryService.get().getUserSchema(user, c, SamplesSchema.SCHEMA_NAME).getTable("Samples");
+        table.getUpdateService().insertRows(user, c, List.of(CaseInsensitiveHashMap.of("name", "the-parent")), new BatchValidationException(), null, null);
+
+        var theParent = st.getSample(c, "the-parent");
+
         final String expectedName1 = "bob";
-        final String expectedName2 = "S-red.11.002";
-        final String expectedName3 = "S-red.11.003";
+        final String expectedName2 = "S-red.11.003";
+        final String expectedName3 = "S-red.11.004";
         assertNull(st.getSample(c, expectedName1));
         assertNull(st.getSample(c, expectedName2));
         assertNull(st.getSample(c, expectedName3));
@@ -474,47 +484,52 @@ public class ExpSampleTypeTestCase extends ExpProvisionedTableTestHelper
                 "outputSample3_prop", "red",
                 "outputSample3_age", "11"));
 
-        // generate names from request properties and the name expression
-        var allProperties = helper.getSampleProperties(request);
+        var vc = new ViewContext(request, null, null);
+        vc.setContainer(c);
+        vc.setUser(user);
 
-        // persist
-        for (Map.Entry<Lsid, Map<DomainProperty, String>> entry : allProperties.entrySet())
-        {
-            Map<DomainProperty, String> propVals = entry.getValue();
-            Lsid lsid = entry.getKey();
-            String name = lsid.getObjectId();
-            assert name != null;
+        var controller = new ExperimentController();
+        controller.setViewContext(vc);
 
-            ExpMaterialImpl outputMaterial = ExperimentServiceImpl.get().createExpMaterial(c, entry.getKey().toString(), name);
-            outputMaterial.setCpasType(st.getLSID());
-            outputMaterial.save(user);
+        var action = controller.new DeriveSamplesAction();
+        action.setViewContext(vc);
 
-            Map<String, Object> pvs = new HashMap<>();
-            for (Map.Entry<DomainProperty, String> propertyEntry : entry.getValue().entrySet())
-                pvs.put(propertyEntry.getKey().getName(), propertyEntry.getValue());
-            outputMaterial.setProperties(user, pvs);
-        }
+        var form = new ExperimentController.DeriveMaterialForm();
+        form.setViewContext(vc);
+        form.setRowIds(new int[] { theParent.getRowId() });
+        form.setOutputCount(3);
+        form.setTargetSampleTypeId(st.getRowId());
+
+        var errors = new BindException(new Object(), "dummy");
+        boolean success = action.handlePost(form, errors);
+
+        if (errors.hasErrors())
+            throw errors;
+        assertTrue(success);
+
 
         // verify via query
-        UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
-        TableInfo table = schema.getTable("Samples");
         Collection<Map<String, Object>> inserted = new TableSelector(table, TableSelector.ALL_COLUMNS, null, new Sort("rowId")).getMapCollection();
 
         Iterator<Map<String, Object>> iter = inserted.iterator();
         Map<String, Object> row0 = iter.next();
-//        assertEquals(1, ((Number)row0.get("genId")).intValue());
-        assertEquals(expectedName1, row0.get("name"));
-        assertEquals("blue", row0.get("prop"));
+        assertEquals(1, ((Number)row0.get("genId")).intValue());
+        assertEquals("the-parent", row0.get("name"));
 
         Map<String, Object> row1 = iter.next();
-//        assertEquals(2, ((Number)row1.get("genId")).intValue());
-        assertEquals(expectedName2, row1.get("name"));
-        assertEquals("red", row1.get("prop"));
+        assertEquals(2, ((Number)row1.get("genId")).intValue());
+        assertEquals(expectedName1, row1.get("name"));
+        assertEquals("blue", row1.get("prop"));
 
         Map<String, Object> row2 = iter.next();
-//        assertEquals(3, ((Number)row2.get("genId")).intValue());
-        assertEquals(expectedName3, row2.get("name"));
+        assertEquals(3, ((Number)row2.get("genId")).intValue());
+        assertEquals(expectedName2, row2.get("name"));
         assertEquals("red", row2.get("prop"));
+
+        Map<String, Object> row3 = iter.next();
+        assertEquals(4, ((Number)row3.get("genId")).intValue());
+        assertEquals(expectedName3, row3.get("name"));
+        assertEquals("red", row3.get("prop"));
 
         assertFalse(iter.hasNext());
     }

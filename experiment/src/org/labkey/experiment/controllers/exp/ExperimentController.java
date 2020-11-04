@@ -4939,6 +4939,7 @@ public class ExperimentController extends SpringActionController
                 ExpMaterial m = materials.get(i);
                 ExpSampleType st = m.getSampleType();
                 // TODO: no way to specify input role when deriving via query insertRows
+                // TODO: fails SampleTypeLineageTest.testSampleTypeAndLineageInSubfolder
 //                String inputRole = form.determineLabel(i);
 //                if (inputRole == null || "".equals(inputRole))
 //                {
