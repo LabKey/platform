@@ -136,6 +136,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
             // the study couldn't find a good material, so we'll have to mock one up
             String lsid = new Lsid(ASSAY_RUN_MATERIAL_NAMESPACE, "Folder-" + _runContainer.getRowId(), name.toString()).toString();
             _material = ExperimentService.get().getExpMaterial(lsid);
+            // Issue 41364 - don't create a material if it doesn't already exist
             _attemptedMaterialResolution = true;
         }
         return _material;
