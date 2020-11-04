@@ -165,7 +165,10 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
                     continue;
                 }
             }
-            originalMaterials.put(key, originalMaterial);
+            if (originalMaterial != null)
+            {
+                originalMaterials.put(key, originalMaterial);
+            }
         }
         if (resolverErrors.length() > 0)
             throw new ExperimentException(resolverErrors.toString());
