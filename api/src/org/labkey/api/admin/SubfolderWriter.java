@@ -71,6 +71,7 @@ public class SubfolderWriter extends BaseFolderWriter
                 // need to create a new FolderExportContext for each child (different roots, folder.xml, etc.)
                 FolderExportContext childCtx = new FolderExportContext(ctx.getUser(), child, ctx.getDataTypes(), ctx.getFormat(),
                         ctx.isIncludeSubfolders(), ctx.getPhiLevel(), ctx.isShiftDates(), ctx.isAlternateIds(), ctx.isMaskClinic(), ctx.getLoggerGetter());
+                childCtx.setAddExportComment(ctx.isAddExportComment());
 
                 FolderWriterImpl childFolderWriter = new FolderWriterImpl();
                 childFolderWriter.write(child, childCtx, childDir);
@@ -80,7 +81,7 @@ public class SubfolderWriter extends BaseFolderWriter
         }
     }
 
-    public static void getChildrenToExport(ImportContext context, List<Container> potentialChildren, List<Container> childrenToExport)
+    public void getChildrenToExport(ImportContext context, List<Container> potentialChildren, List<Container> childrenToExport)
     {
         for (Container child : potentialChildren)
         {
@@ -108,14 +109,15 @@ public class SubfolderWriter extends BaseFolderWriter
 
             // test including all subfolders (except workbooks)
             fec.setIncludeSubfolders(true);
+            SubfolderWriter writer = new SubfolderWriter();
             List<Container> allSubfolders = new ArrayList<>();
-            getChildrenToExport(fec, childList, allSubfolders);
+            writer.getChildrenToExport(fec, childList, allSubfolders);
             assertEquals(childList.size() - 1, allSubfolders.size());
 
             // test not including subfolders (just container tabs by default)
             fec.setIncludeSubfolders(false);
             List<Container> noSubfolders = new ArrayList<>();
-            getChildrenToExport(fec, childList, noSubfolders);
+            writer.getChildrenToExport(fec, childList, noSubfolders);
             assertEquals("Expected one container tab subfolder", 1, noSubfolders.size());
             assertEquals("containertab", noSubfolders.get(0).getName());
         }
