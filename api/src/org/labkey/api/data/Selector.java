@@ -136,20 +136,8 @@ public interface Selector
      */
     void forEachMapBatch(int batchSize, ForEachBatchBlock<Map<String, Object>> batchBlock);
 
-    @Deprecated // Use variant above instead. This will be removed soon.
-    default void forEachMapBatch(ForEachBatchBlock<Map<String, Object>> batchBlock, int batchSize)
-    {
-        forEachMapBatch(batchSize, batchBlock);
-    }
-
     /** Stream objects from the database. Convert each result row into an object specified by clazz and invoke block.exec() on it. */
     <T> void forEach(Class<T> clazz, ForEachBlock<T> block);
-
-    @Deprecated // Use variant above instead. This will be removed soon.
-    default <T> void forEach(ForEachBlock<T> block, Class<T> clazz)
-    {
-        forEach(clazz, block);
-    }
 
     /**
      *  Stream objects from the database in batches. Convert rows to objects and pass them to batchBlock.exec() in batches
@@ -157,12 +145,6 @@ public interface Selector
      *  efficient than one-by-one. All batches are of size batchSize, except the last batch which is typically smaller.
      */
     <T> void forEachBatch(Class<T> clazz, int batchSize, ForEachBatchBlock<T> batchBlock);
-
-    @Deprecated // Use variant above instead. This will be removed soon.
-    default <T> void forEachBatch(ForEachBatchBlock<T> batchBlock, Class<T> clazz, int batchSize)
-    {
-        forEachBatch(clazz, batchSize, batchBlock);
-    }
 
     /** Return a new map from a two-column query; the first column is the key, the second column is the value. */
     @NotNull <K, V> Map<K, V> getValueMap();
