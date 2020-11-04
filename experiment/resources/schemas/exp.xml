@@ -459,6 +459,9 @@
       <column columnName="RedactedText"/>
       <column columnName="MvIndicatorStorageColumnName"/>
       <column columnName="TextExpression"/>
+      <column columnName="SourceOntology"/>
+      <column columnName="ConceptImportColumn"/>
+      <column columnName="ConceptLabelColumn"/>
       <column columnName="PrincipalConceptCode"/>
   </columns>
   </table>

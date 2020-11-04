@@ -30,6 +30,7 @@ import org.mule.providers.service.TransportFactory;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterRegistration;
+import javax.servlet.Registration;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
@@ -481,9 +482,32 @@ public class MuleListenerHelper implements ServletContext
         return null;
     }
 
-    @Override
     public String getVirtualServerName()
     {
         return null;
     }
+
+    String responseCharacterEncoding = "UTF-8";
+    String requestCharacterEncoding = "UTF-8";
+
+    public void setResponseCharacterEncoding(String s)
+    {
+        responseCharacterEncoding = s;
+    }
+    public String getResponseCharacterEncoding() {return responseCharacterEncoding; }
+
+    public void setRequestCharacterEncoding(String s)
+    {
+        requestCharacterEncoding = s;
+    }
+    public String getRequestCharacterEncoding() {return requestCharacterEncoding; }
+
+    public void setSessionTimeout(int i)
+    {
+    }
+    public int getSessionTimeout()
+    {
+        return 60*60*1000;
+    }
+    public ServletRegistration.Dynamic addJspFile(String a, String b) {return null;}
 }

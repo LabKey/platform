@@ -26,7 +26,7 @@ public class LineageCompareType extends CompareType
     }
 
     @Override
-    protected SimpleFilter.FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+    public SimpleFilter.FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
     {
         Object[] values;
         Object collection;
