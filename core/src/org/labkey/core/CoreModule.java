@@ -45,7 +45,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.external.tools.ExternalToolsViewService;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.jsp.LabKeyJspWriter;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.FolderType;
@@ -697,13 +696,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (moduleContext.getInstalledVersion() < 18.30)
         {
             new CoreUpgradeCode().purgeDeveloperRole();
-        }
-
-        // Force LabKeyJspWriter to throw exceptions for unsafe operations, dev mode only.
-        // We'll remove this after 20.11, along with the experimental feature.
-        if (moduleContext.getInstalledVersion() < 20.002)
-        {
-            LabKeyJspWriter.turnOnExperimentalFeature(moduleContext.getUpgradeUser());
         }
     }
 
