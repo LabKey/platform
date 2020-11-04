@@ -7,6 +7,8 @@ public interface Concept
 {
     OntologyProvider getProvider();
 
+    Ontology getOntology();
+
     String getCode();
 
     String getLabel();

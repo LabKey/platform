@@ -60,6 +60,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.assay.model.GWTPropertyDescriptorMixin;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -539,6 +540,8 @@ public class PropertyServiceImpl implements PropertyService
             prop.setDimension(xProp.getDimension());
         prop.setRecommendedVariable(xProp.getRecommendedVariable());
 
-        prop.setPrincipalConceptCode(xProp.getPrincipalConceptCode());
+        OntologyService os = OntologyService.get();
+        if (null != os)
+            os.parseXml(xProp,prop);
     }
 }

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.ontology.OntologyService;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DefaultScaleType;
 import org.labkey.data.xml.DefaultValueEnumType;
@@ -264,8 +265,9 @@ public class TableInfoWriter
         if (column.isStringType())
             columnXml.setScale(column.getScale());
 
-        if (!StringUtils.isBlank(column.getPrincipalConceptCode()))
-            columnXml.setPrincipalConceptCode(column.getPrincipalConceptCode());
+        var os = OntologyService.get();
+        if (null != os)
+            os.writeXml(column, columnXml);
     }
 
     protected String getConceptURI(ColumnInfo column)

@@ -1798,11 +1798,27 @@ public abstract class CompareType
         }
     }
 
+
+    static final private char[] charsToBeEscaped = new char[] { '%', '_', '[' };
+    /** Note that we've intentionally chosen something other than the default of backslash */
+    static final private char defaultEscapeChar = '!';
+
+    public static String escapeLikePattern(String value, char escapeChar)
+    {
+        String strEscape = new String(new char[] { escapeChar } );
+        value = StringUtils.replace(value, strEscape, strEscape + strEscape);
+        for (char ch : charsToBeEscaped)
+        {
+            if (ch == escapeChar)
+                continue;
+            String strCh = new String(new char[] { ch});
+            value = StringUtils.replace(value, strCh, strEscape + strCh);
+        }
+        return value;
+    }
+
     abstract private static class LikeClause extends CompareClause
     {
-        static final private char[] charsToBeEscaped = new char[] { '%', '_', '[' };
-        /** Note that we've intentionally chosen something other than the default of backslash */
-        static final private char escapeChar = '!';
 
         private final String _unescapedValue;
 
@@ -1815,21 +1831,12 @@ public abstract class CompareType
         /** Takes a string and replaces all special LIKE characters (such as %) with their escaped equivalents */
         public static String escapeLikePattern(String value)
         {
-            String strEscape = new String(new char[] { escapeChar } );
-            value = StringUtils.replace(value, strEscape, strEscape + strEscape);
-            for (char ch : charsToBeEscaped)
-            {
-                if (ch == escapeChar)
-                    continue;
-                String strCh = new String(new char[] { ch});
-                value = StringUtils.replace(value, strCh, strEscape + strCh);
-            }
-            return value;
+            return CompareType.escapeLikePattern(value, defaultEscapeChar);
         }
 
         public static String sqlEscape()
         {
-            return " ESCAPE '" + escapeChar + "'";
+            return " ESCAPE '" + defaultEscapeChar + "'";
         }
 
         @Override
