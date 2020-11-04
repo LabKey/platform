@@ -28,7 +28,7 @@ import javax.servlet.jsp.JspWriter;
  * Time: 4:05:51 PM
  */
 
-// Trivially simple base class for JSP templates that aren't rendering HTML (see JspTemplate)
+// Simple base class for JSP templates that aren't rendering HTML (see JspTemplate)
 public abstract class JspContext extends HttpJspBase
 {
     protected JspContext()
@@ -65,7 +65,7 @@ public abstract class JspContext extends HttpJspBase
      * would be the first line of code in a JSP that generates non-HTML content:<br><br>
      *     {@code out = getPermissiveJspWriter(out);}
      * @param out Current JspWriter
-     * @return A JspWriter that doesn't log warnings or throw exceptions when rendering Strings and unsafe Objects
+     * @return A JspWriter that doesn't throw exceptions when rendering Strings and unsafe Objects
      */
     protected JspWriter getUnsafeJspWriter(JspWriter out)
     {

@@ -15,53 +15,13 @@
  */
 package org.labkey.api.jsp;
 
-import com.google.common.collect.ConcurrentHashMultiset;
-import com.google.common.collect.Multiset;
-import com.google.common.collect.Multiset.Entry;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.labkey.api.security.User;
-import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.SafeToRender;
 
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class LabKeyJspWriter extends JspWriterWrapper
 {
-    private static final Multiset<String> CODE_POINT_COUNTING_SET = ConcurrentHashMultiset.create();
-    private static final Multiset<String> FILE_COUNTING_SET = ConcurrentHashMultiset.create();
-    private static final String EXPERIMENTAL_THROW_ON_WARNING = "labkeyJspWriterThrowOnWarning";
-    private static final Logger LOGSTRING = LogManager.getLogger(LabKeyJspWriter.class.getName() + ".string");
-
-    public static void registerExperimentalFeature()
-    {
-        // Don't bother adding the flag in production mode since LabKeyJspWriter is registered only in development mode
-        if (AppProps.getInstance().isDevMode())
-        {
-            AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_THROW_ON_WARNING,
-                "Throw exceptions for JSP warnings",
-                "Enables strict checking of JSP output. For example, calling print(String) results in an IllegalStateException.",
-                false);
-        }
-    }
-
-    public static void turnOnExperimentalFeature(User user)
-    {
-        // Don't bother setting the flag in production mode since LabKeyJspWriter is registered only in development mode
-        if (AppProps.getInstance().isDevMode())
-        {
-            ExperimentalFeatureService.get().setFeatureEnabled(EXPERIMENTAL_THROW_ON_WARNING, true, user);
-        }
-    }
-
     LabKeyJspWriter(JspWriter jspWriter)
     {
         super(jspWriter);
@@ -76,34 +36,7 @@ public class LabKeyJspWriter extends JspWriterWrapper
     @Override
     public void print(String s) throws IOException
     {
-        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-        StackTraceElement elementWeCareAbout = stackTrace[2];
-
-        if (0 == CODE_POINT_COUNTING_SET.add(elementWeCareAbout.toString(), 1))
-        {
-            // Shorten the stack trace to the first org.labkey.api.view.JspView.renderView()
-            StringBuilder shortStackTrace = new StringBuilder("\njava.lang.Throwable");
-            int i = 1;
-            StackTraceElement ste;
-
-            do
-            {
-                ste = stackTrace[i++];
-                String line = String.valueOf(ste);
-                shortStackTrace.append("\n\tat ");
-                shortStackTrace.append(line);
-            }
-            while (i < stackTrace.length && !("org.labkey.api.view.JspView".equals(ste.getClassName()) && "renderView".equals(ste.getMethodName())));
-
-            LOGSTRING.info("A JSP is printing a string!" + shortStackTrace.toString());
-        }
-
-        FILE_COUNTING_SET.add(elementWeCareAbout.getFileName(), 1);
-
-        if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_THROW_ON_WARNING))
-            throw new IllegalStateException("A JSP is printing a string!");
-
-        super.print(s);
+        throw new IllegalStateException("A JSP is attempting to render a string!");
     }
 
     @Override
@@ -117,37 +50,6 @@ public class LabKeyJspWriter extends JspWriterWrapper
         else
         {
             throw new IllegalStateException("A JSP is attempting to render an object of class " + obj.getClass().getName() + "!");
-        }
-    }
-
-    public static void logStatistics()
-    {
-        if (AppProps.getInstance().isDevMode())
-        {
-            Set<Entry<String>> entrySet = CODE_POINT_COUNTING_SET.entrySet();
-            LOGSTRING.info("Total print(String) occurrences: " + CODE_POINT_COUNTING_SET.size());
-            LOGSTRING.info("Unique code points that invoke print(String): " + entrySet.size());
-
-            if (!entrySet.isEmpty())
-            {
-                // Sorts entries first by count, then by key
-                Comparator<Entry<String>> comparator = Comparator.comparingInt(Entry::getCount);
-                comparator = comparator.reversed().thenComparing(Entry::getElement);
-
-                List<Entry<String>> entries = new ArrayList<>(entrySet);
-                entries.sort(comparator);
-                LOGSTRING.info("All print(String) code points:\n   " +
-                    entries.stream()
-                        .map(e -> e.getElement() + "\t" + e.getCount())
-                        .collect(Collectors.joining("\n   ")));
-
-                List<Entry<String>> files = new ArrayList<>(FILE_COUNTING_SET.entrySet());
-                files.sort(comparator);
-                LOGSTRING.info("Problematic files (" + files.size() + "):\n" +
-                    files.stream()
-                        .map(e -> e.getElement() + "\t" + e.getCount())
-                        .collect(Collectors.joining("\n")));
-            }
         }
     }
 }
