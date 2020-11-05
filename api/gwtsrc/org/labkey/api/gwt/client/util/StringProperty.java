@@ -58,4 +58,10 @@ public class StringProperty implements IPropertyWrapper, IsSerializable
     {
         return s;
     }
+
+    @Override
+    public int hashCode()
+    {
+        return null==s ? 0 : s.hashCode();
+    }
 }

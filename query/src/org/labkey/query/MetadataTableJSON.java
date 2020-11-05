@@ -96,7 +96,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         _definitionFolder = definitionFolder;
     }
 
-    public  MetadataTableJSON saveMetadata(String schemaName, User user, Container container) throws MetadataUnavailableException
+    public MetadataTableJSON saveMetadata(String schemaName, User user, Container container) throws MetadataUnavailableException
     {
         UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
         QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), this.getName(), this.isUserDefinedQuery());
@@ -425,10 +425,24 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 ConditionalFormat.convertToXML(metadataColumnJSON.getConditionalFormats(), xmlColumn);
             }
 
-            // Set the concept code
+            // Ontology metadata
+            if (shouldStoreValue(metadataColumnJSON.getSourceOntology(), rawColumnInfo.getSourceOntology()) ||
+                shouldStoreValue(metadataColumnJSON.getConceptImportColumn(), rawColumnInfo.getConceptImportColumn()) ||
+                shouldStoreValue(metadataColumnJSON.getConceptLabelColumn(), rawColumnInfo.getConceptLabelColumn()))
+            {
+                var ont = xmlColumn.getOntology();
+                if (null == ont)
+                    ont = xmlColumn.addNewOntology();
+                var concept = ont.getConcept();
+                if (null == concept)
+                    concept = ont.addNewConcept();
+                concept.setSource(metadataColumnJSON.getSourceOntology());
+                concept.setImportColumn(metadataColumnJSON.getConceptImportColumn());
+                concept.setLabelColumn(metadataColumnJSON.getConceptLabelColumn());
+            }
             if (shouldStoreValue(metadataColumnJSON.getPrincipalConceptCode(), rawColumnInfo.getPrincipalConceptCode()))
             {
-                xmlColumn.setPrincipalConceptCode(rawColumnInfo.getPrincipalConceptCode());
+                xmlColumn.setPrincipalConceptCode(metadataColumnJSON.getPrincipalConceptCode());
             }
             else if (xmlColumn.isSetPrincipalConceptCode())
             {
@@ -447,7 +461,6 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 }
             }
         }
-
 
         // Yank out the columns that were in the metadata that aren't in the list from the client
         for (ColumnType columnType : columnsToDelete.values())

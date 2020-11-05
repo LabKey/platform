@@ -33,6 +33,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
+import org.labkey.api.query.AbstractMethodInfo;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
@@ -270,10 +271,10 @@ public abstract class Method
             @Override
             public MethodInfo getMethodInfo()
             {
-                return new AbstractQueryMethodInfo(_jdbcType)
+                return new AbstractMethodInfo(_jdbcType)
                 {
                     @Override
-                    public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+                    public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
                     {
                         assert arguments.length == 2 || arguments.length == 3;
                         if (arguments.length == 2)
@@ -362,7 +363,7 @@ public abstract class Method
                 return new JdbcMethodInfoImpl(_name, _jdbcType)
                 {
                     @Override
-                    public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+                    public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
                     {
                         if (arguments.length == 2)
                         {
@@ -373,7 +374,7 @@ public abstract class Method
                             argumentsThree[2] = new SQLFragment(String.valueOf(Integer.MAX_VALUE/2));
                             arguments = argumentsThree;
                         }
-                        return super.getSQL(query, dialect, arguments);
+                        return super.getSQL(dialect, arguments);
                     }
                 };
             }
@@ -426,7 +427,6 @@ public abstract class Method
         // ========== Methods above this line have been documented ==========
         // Put new methods below this line and move above after they're documented, i.e.,
         // added to https://www.labkey.org/Documentation/wiki-page.view?name=labkeySql
-
     }
 
 
@@ -493,7 +493,7 @@ public abstract class Method
     }
 
 
-    static class JdbcMethodInfoImpl extends AbstractQueryMethodInfo
+    static class JdbcMethodInfoImpl extends AbstractMethodInfo
     {
         String _name;
 
@@ -504,7 +504,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             return dialect.formatJdbcFunction(_name, arguments);
         }
@@ -519,7 +519,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] argumentsIN)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] argumentsIN)
         {
             SQLFragment[] arguments = argumentsIN.clone();
             if (arguments.length >= 1)
@@ -528,7 +528,7 @@ public abstract class Method
                 if (i != null)
                     arguments[0] = new SQLFragment(i.name());
             }
-            return super.getSQL(query, dialect, arguments);
+            return super.getSQL(dialect, arguments);
         }
     }
 
@@ -565,7 +565,7 @@ public abstract class Method
     }
 
 
-    class ConvertInfo extends AbstractQueryMethodInfo
+    class ConvertInfo extends AbstractMethodInfo
     {
         public ConvertInfo()
         {
@@ -601,7 +601,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] fragments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] fragments)
         {
             JdbcType jdbcType = null;
             SQLFragment length = null;
@@ -683,7 +683,7 @@ public abstract class Method
         }
     }
 
-    static class PassthroughInfo extends AbstractQueryMethodInfo
+    static class PassthroughInfo extends AbstractMethodInfo
     {
         private final String _name;
         private final String _declaringSchemaName;
@@ -714,7 +714,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
             if (_declaringSchemaName != null)
@@ -746,16 +746,16 @@ public abstract class Method
         // Even though we are generating {fn ROUND()}, SQL Server requires 2 arguments
         // while Postgres requires 1 argument (for doubles)
 		@Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
 		{
             boolean supportsRoundDouble = dialect.supportsRoundDouble();
             boolean unitRound = arguments.length == 1 || (arguments.length==2 && arguments[1].getSQL().equals("0"));
             if (unitRound)
             {
                 if (supportsRoundDouble)
-                    return super.getSQL(query, dialect, new SQLFragment[] {arguments[0], new SQLFragment("0")});
+                    return super.getSQL(dialect, new SQLFragment[] {arguments[0], new SQLFragment("0")});
                 else
-                    return super.getSQL(query, dialect, new SQLFragment[] {arguments[0]});
+                    return super.getSQL(dialect, new SQLFragment[] {arguments[0]});
             }
 
             int i = Integer.MIN_VALUE;
@@ -769,14 +769,14 @@ public abstract class Method
             }
 
             if (supportsRoundDouble || i == Integer.MIN_VALUE)
-                return super.getSQL(query, dialect, arguments);
+                return super.getSQL(dialect, arguments);
 
             // fall back, only supports simple integer
             SQLFragment scaled = new SQLFragment();
             scaled.append("(");
             scaled.append(arguments[0]);
             scaled.append(")*").append(Math.pow(10,i));
-            SQLFragment ret = super.getSQL(query, dialect, new SQLFragment[] {scaled});
+            SQLFragment ret = super.getSQL(dialect, new SQLFragment[] {scaled});
             ret.append("/");
             ret.append(Math.pow(10,i));
             return ret;
@@ -784,7 +784,7 @@ public abstract class Method
 	}
 
 
-    class AgeMethodInfo extends AbstractQueryMethodInfo
+    class AgeMethodInfo extends AbstractMethodInfo
     {
         AgeMethodInfo()
         {
@@ -792,7 +792,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             if (arguments.length == 2)
                 return new AgeInYearsMethodInfo().getSQL(dialect, arguments);
@@ -809,7 +809,7 @@ public abstract class Method
     }
 
 
-    class AgeInYearsMethodInfo extends AbstractQueryMethodInfo
+    class AgeInYearsMethodInfo extends AbstractMethodInfo
     {
         AgeInYearsMethodInfo()
         {
@@ -817,7 +817,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             MethodInfo year = labkeyMethod.get("year").getMethodInfo();
             MethodInfo month = labkeyMethod.get("month").getMethodInfo();
@@ -845,7 +845,7 @@ public abstract class Method
     }
 
 
-    class AgeInMonthsMethodInfo extends AbstractQueryMethodInfo
+    class AgeInMonthsMethodInfo extends AbstractMethodInfo
     {
         AgeInMonthsMethodInfo()
         {
@@ -854,7 +854,7 @@ public abstract class Method
 
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             MethodInfo year = labkeyMethod.get("year").getMethodInfo();
             MethodInfo month = labkeyMethod.get("month").getMethodInfo();
@@ -884,7 +884,7 @@ public abstract class Method
     }
 
 
-    class StartsWithInfo extends AbstractQueryMethodInfo
+    class StartsWithInfo extends AbstractMethodInfo
     {
         StartsWithInfo()
         {
@@ -892,7 +892,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             // try to turn second argument into pattern
             SQLFragment pattern = escapeLikePattern(arguments[1], '!', null, "%");
@@ -923,7 +923,7 @@ public abstract class Method
 
 
 
-    class IsEqualInfo extends AbstractQueryMethodInfo
+    class IsEqualInfo extends AbstractMethodInfo
     {
         IsEqualInfo()
         {
@@ -931,7 +931,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
             SQLFragment a = arguments[0];
@@ -947,7 +947,7 @@ public abstract class Method
         }
     }
 
-    class VersionMethodInfo extends AbstractQueryMethodInfo
+    class VersionMethodInfo extends AbstractMethodInfo
     {
         VersionMethodInfo()
         {
@@ -955,13 +955,13 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             return new SQLFragment("CAST(" + (new DecimalFormat("0.000#")).format(AppProps.getInstance().getSchemaVersion()) + " AS NUMERIC(15,4))");
         }
     }
 
-    class UserIdInfo extends AbstractQueryMethodInfo
+    class UserIdInfo extends AbstractMethodInfo
     {
         UserIdInfo()
         {
@@ -969,7 +969,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
             ret.add(new Callable(){
@@ -996,7 +996,7 @@ public abstract class Method
         }
     }
 
-    class UserNameInfo extends AbstractQueryMethodInfo
+    class UserNameInfo extends AbstractMethodInfo
     {
         UserNameInfo()
         {
@@ -1004,7 +1004,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
             ret.add((Callable) () -> {
@@ -1018,7 +1018,7 @@ public abstract class Method
     }
 
 
-    class FolderInfo extends AbstractQueryMethodInfo
+    static class FolderInfo extends AbstractQueryMethodInfo
     {
         final boolean path;
 
@@ -1045,7 +1045,7 @@ public abstract class Method
     }
 
 
-    class ModulePropertyInfo extends AbstractQueryMethodInfo
+    static class ModulePropertyInfo extends AbstractQueryMethodInfo
     {
         ModulePropertyInfo()
         {
@@ -1081,8 +1081,7 @@ public abstract class Method
             return new SQLFragment("CAST(NULL AS VARCHAR)");
         }
     }
-
-    class JavaConstantInfo extends AbstractQueryMethodInfo
+    class JavaConstantInfo extends AbstractMethodInfo
     {
         JavaConstantInfo()
         {
@@ -1090,7 +1089,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             getProperty:
             {
@@ -1150,7 +1149,7 @@ public abstract class Method
     }
 
 
-    class ContextPathInfo extends AbstractQueryMethodInfo
+    class ContextPathInfo extends AbstractMethodInfo
     {
         ContextPathInfo()
         {
@@ -1158,7 +1157,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
             ret.add(AppProps.getInstance().getContextPath());
@@ -1167,7 +1166,7 @@ public abstract class Method
     }
 
 
-    class IsMemberInfo extends AbstractQueryMethodInfo
+    class IsMemberInfo extends AbstractMethodInfo
     {
         IsMemberInfo()
         {
@@ -1175,7 +1174,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment groupArg = arguments[0];
             SQLFragment userArg = arguments.length > 1 ? arguments[1] : null;
@@ -1270,7 +1269,7 @@ public abstract class Method
     }
 
 
-    class OverlapsMethodInfo extends AbstractQueryMethodInfo
+    class OverlapsMethodInfo extends AbstractMethodInfo
     {
         OverlapsMethodInfo()
         {
@@ -1278,7 +1277,7 @@ public abstract class Method
         }
         
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
             ret.append("(").append(arguments[0]).append(",").append(arguments[1]).append(")");
@@ -1296,14 +1295,17 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             if (dialect.supportsNativeGreatestAndLeast())
-                return super.getSQL(query, dialect, arguments);
+                return super.getSQL(dialect, arguments);
             else
                 return dialect.getGreatestAndLeastSQL(_name, arguments);
         }
     }
+
+
+
 
     public static SQLFragment escapeLikePattern(SQLFragment f, char escapeChar, @Nullable String prepend, @Nullable String append)
     {

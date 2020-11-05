@@ -80,4 +80,10 @@ public class IntegerProperty implements IPropertyWrapper, IsSerializable
     {
         return String.valueOf(i);
     }
+
+    @Override
+    public int hashCode()
+    {
+        return null==i ? 0 : i.hashCode();
+    }
 }
