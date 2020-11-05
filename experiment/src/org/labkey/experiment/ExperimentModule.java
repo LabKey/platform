@@ -112,6 +112,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
+import static org.labkey.experiment.api.ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE;
 
 /**
  * User: phussey (Peter Hussey)
@@ -175,14 +176,11 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         ExperimentService.get().registerExperimentDataHandler(new DefaultExperimentDataHandler());
         ExperimentService.get().registerProtocolInputCriteria(new FilterProtocolInputCriteria.Factory());
 
-        AdminConsole.addExperimentalFeatureFlag(ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE, "Legacy lineage query",
+        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_LEGACY_LINEAGE, "Legacy lineage query",
                 "This feature will restore the legacy lineage queries used on the Material and Data details pages", false);
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
-
-        //AdminConsole.addExperimentalFeatureFlag(ExperimentServiceImpl.EXPERIMENTAL_DOMAIN_DESIGNER, "UX Domain Designer",
-        //        "Directs UI to the new UX Domain Designer view for those domain kinds which are supported.", false);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
 
@@ -460,6 +458,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
                 results.put("dataClassCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.dataclass").getObject(Long.class));
                 results.put("dataClassRowCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.data WHERE classid IN (SELECT rowid FROM exp.dataclass)").getObject(Long.class));
+
+                results.put("legacyLineage", AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LEGACY_LINEAGE));
 
                 return results;
             });
