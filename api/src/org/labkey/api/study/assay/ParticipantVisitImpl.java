@@ -90,7 +90,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
     }
 
     @Override @Nullable
-    public ExpMaterial getMaterial()
+    public ExpMaterial getMaterial(boolean createIfNeeded)
     {
         if (_material == null && !_attemptedMaterialResolution)
         {
@@ -136,8 +136,13 @@ public class ParticipantVisitImpl implements ParticipantVisit
             // the study couldn't find a good material, so we'll have to mock one up
             String lsid = new Lsid(ASSAY_RUN_MATERIAL_NAMESPACE, "Folder-" + _runContainer.getRowId(), name.toString()).toString();
             _material = ExperimentService.get().getExpMaterial(lsid);
-            // Issue 41364 - don't create a material if it doesn't already exist
             _attemptedMaterialResolution = true;
+            // Issue 41364 - don't create a material if it doesn't already exist for most assays
+            if (_material == null && createIfNeeded)
+            {
+                _material = ExperimentService.get().createExpMaterial(_runContainer, lsid, name.toString());
+                _material.save(null);
+            }
         }
         return _material;
     }

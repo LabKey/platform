@@ -45,5 +45,5 @@ public interface ParticipantVisit
     Date getDate();
 
     @Nullable
-    ExpMaterial getMaterial();
+    ExpMaterial getMaterial(boolean createIfNeeded);
 }

@@ -145,7 +145,7 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
                 try
                 {
                     ParticipantVisit pv = resolver.resolve(specimenID, participantID, visitID, date, targetStudy);
-                    originalMaterial = pv.getMaterial();
+                    originalMaterial = pv.getMaterial(true);
                     Map<DomainProperty, String> wellgroupProperties = materialProperties.get(entry.getKey());
                     if (specimenIDProperty != null)
                         wellgroupProperties.put(specimenIDProperty, pv.getSpecimenID());
