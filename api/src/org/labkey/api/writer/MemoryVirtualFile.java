@@ -15,6 +15,7 @@
  */
 package org.labkey.api.writer;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.StringUtilsLabKey;
