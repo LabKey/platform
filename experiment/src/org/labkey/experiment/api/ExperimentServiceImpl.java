@@ -2050,8 +2050,8 @@ public class ExperimentServiceImpl implements ExperimentService
         errorMsg.append("\nMatching Data: ").append(expDataOverlap);
         errorMsg.append("\nMatching Materials: ").append(expMaterialOverlap);
         errorMsg.append("\n");
-        assert false : errorMsg.toString();
-        return false; // Unreachable
+        LOG.warn(errorMsg);
+        return true;
     }
 
     /**
