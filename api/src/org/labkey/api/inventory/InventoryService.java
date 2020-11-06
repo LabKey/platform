@@ -50,4 +50,7 @@ public interface InventoryService
     List<Map<String, Object>> getSampleStorageLocationData(User user, Container container, int sampleId);
 
     List<FieldKey> addInventoryStatusColumns(@Nullable String sampleTypeMetricUnit, ExpMaterialTable table, Container container);
+
+    @NotNull
+    String getWellLabel(int boxId, int row, Integer col);
 }
