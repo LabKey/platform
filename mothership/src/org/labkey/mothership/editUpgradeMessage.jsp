@@ -38,7 +38,7 @@
             <%
                 Date buildDate = DateUtil.getDateOnly(form.getCurrentBuildDate());
                 SimpleDateFormat sdf = new SimpleDateFormat(DateUtil.getStandardDateFormatString()); // HTML5 input type date recognizes this format
-                String strDate = sdf.format(buildDate);
+                String strDate = null != buildDate ? sdf.format(buildDate) : "";
             %>
             <td>
                 <input type="date" size="6" name="currentBuildDate" value="<%= h(strDate) %>"/>
