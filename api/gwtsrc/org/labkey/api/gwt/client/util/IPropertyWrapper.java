@@ -25,4 +25,5 @@ public interface IPropertyWrapper
 {
     public Object get();
     public void set(Object o);
+    public int hashCode();
 }
