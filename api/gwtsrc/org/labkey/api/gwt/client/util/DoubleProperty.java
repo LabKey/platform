@@ -74,4 +74,10 @@ public class DoubleProperty implements IPropertyWrapper, IsSerializable
     {
         return String.valueOf(d);
     }
+
+    @Override
+    public int hashCode()
+    {
+        return null==d ? 0 : d.hashCode();
+    }
 }

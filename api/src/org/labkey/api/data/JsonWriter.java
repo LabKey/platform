@@ -274,8 +274,18 @@ public class JsonWriter
         if (dc instanceof IMultiValuedDisplayColumn)
             props.put("multiValue", true);
 
-        if (null != cinfo && StringUtils.isNotBlank(cinfo.getPrincipalConceptCode()))
-            props.put("principalConceptCode", cinfo.getPrincipalConceptCode());
+        if (null != cinfo)
+        {
+            // CONSIDER: Is it better to serialize flat or nested as in the TableInfo.xsd document?
+            if (StringUtils.isNoneBlank(cinfo.getSourceOntology()))
+                props.put("sourceOntology", cinfo.getSourceOntology());
+            if (StringUtils.isNoneBlank(cinfo.getConceptImportColumn()))
+                props.put("conceptImportColumn", cinfo.getConceptImportColumn());
+            if (StringUtils.isNoneBlank(cinfo.getConceptLabelColumn()))
+                props.put("conceptLabelColumn", cinfo.getConceptLabelColumn());
+            if (StringUtils.isNotBlank(cinfo.getPrincipalConceptCode()))
+                props.put("principalConceptCode", cinfo.getPrincipalConceptCode());
+        }
 
         return props;
     }

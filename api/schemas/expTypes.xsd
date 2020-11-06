@@ -528,8 +528,55 @@
 					</xs:documentation>
 				</xs:annotation>
 			</xs:element>
+			<xs:element name="ontology" minOccurs="0" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>
+						This is a parent element for ontology related metadata.  This includes the description of what this column "measures", as well as
+						additional information specific to concept-valued columns.
+						TODO: principalConceptCode is still a higher level attribute.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:all>
+						<xs:element name="concept" type="dat:ConceptType" minOccurs="0" maxOccurs="1">
+						</xs:element>
+					</xs:all>
+				</xs:complexType>
+			</xs:element>
 		</xs:sequence>
     </xs:complexType>
+
+	<xs:complexType name="ConceptType">
+		<xs:all>
+			<xs:annotation>
+				<xs:documentation>
+					Only relevant to concept-valued columns (conceptURI=http://www.labkey.org/types#conceptCode).
+					These properties define how the column data is imported, and the target ontology.
+				</xs:documentation>
+			</xs:annotation>
+			<xs:element name="labelColumn" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+						Name of column to hold the label of the resolved concept.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="importColumn" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+						Name of column which holds the imported/provided/reported label for this concept.  The LabKey import
+						code will try to use the value provided in the named column to resolve a concept code defined in the source ontology.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:all>
+		<xs:attribute name="source" type="xs:string" use="optional">
+			<xs:annotation>
+				<xs:documentation>Short name of the target ontology for this column.  E.g. "SNOMED_CT" or "NCI"</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:anyAttribute processContents="lax" namespace="##any"/>
+	</xs:complexType>
 
     <xs:complexType name="PropertyValidatorType">
         <xs:sequence>
