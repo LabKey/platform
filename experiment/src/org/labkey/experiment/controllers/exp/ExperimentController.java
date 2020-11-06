@@ -2147,7 +2147,7 @@ public class ExperimentController extends SpringActionController
                 throw new ApiUsageException("Unable to parse file " + realContent + ", it is likely of an unsupported file type");
             }
             DataLoader tabLoader = dlf.createLoader(realContent, true);
-            tabLoader.setScanAheadLineCount(5000);
+            tabLoader.setScanAheadLineCount(10);
             ColumnDescriptor[] cols = tabLoader.getColumns();
 
             if (ignoreTypes)
