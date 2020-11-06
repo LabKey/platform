@@ -38,6 +38,11 @@ public interface ModuleEditorService
         return null;
     }
 
+    default boolean canEditSourceModule(Module module)
+    {
+        return false;
+    }
+
     @Nullable
     default ActionURL getModuleEditorURL(String module)
     {
