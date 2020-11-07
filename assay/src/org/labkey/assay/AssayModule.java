@@ -43,6 +43,8 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -78,6 +80,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.assay.DefaultDataTransformer.API_KEY_REPLACEMENT;
+import static org.labkey.api.assay.DefaultDataTransformer.LEGACY_SESSION_COOKIE_NAME_REPLACEMENT;
+import static org.labkey.api.assay.DefaultDataTransformer.LEGACY_SESSION_ID_REPLACEMENT;
 
 public class AssayModule extends SpringModule
 {
@@ -140,6 +146,9 @@ public class AssayModule extends SpringModule
         PropertyService.get().registerDomainKind(new AssayBatchDomainKind());
         PropertyService.get().registerDomainKind(new AssayRunDomainKind());
         PropertyService.get().registerDomainKind(new AssayResultDomainKind());
+
+        ParamReplacementSvc.get().registerDeprecated(LEGACY_SESSION_COOKIE_NAME_REPLACEMENT, ValidationException.SEVERITY.WARN, "Use '" + API_KEY_REPLACEMENT + "' instead");
+        ParamReplacementSvc.get().registerDeprecated(LEGACY_SESSION_ID_REPLACEMENT, ValidationException.SEVERITY.WARN, "Use '" + API_KEY_REPLACEMENT + "' instead");
 
         RoleManager.registerRole(new AssayDesignerRole());
     }

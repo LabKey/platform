@@ -152,19 +152,19 @@ public class RReportJob extends PipelineJob implements Serializable
             // Must be a background thread... push a fake ViewContext on the HttpView stack if so HttpView.currentContext() succeeds.
             try (ViewContext.StackResetter resetter = ViewContext.pushMockViewContext(getUser(), getContainer(), getActionURL()))
             {
-                String apikey = null;
+                String apiKey = null;
                 if (getUser() != null && !getUser().isGuest())
                 {
                     // Issue 26957 - since we're running in the background, we won't magically piggyback on the user's
                     // HTTP session, so set up a transform apikey
-                    apikey = SecurityManager.beginTransformSession(getUser());
+                    apiKey = SecurityManager.beginTransformSessionApiKey(getUser());
                     HttpServletRequest request = resetter.getContext().getRequest();
                     assert request instanceof MockHttpServletRequest : "Request should be a MockHttpServletRequest";
                     if (request instanceof MockHttpServletRequest)
                     {
                         // It's a bit clunky to push the apikey through as a cookie on the request, but this avoids lots of
                         // method signature changes
-                        ((MockHttpServletRequest) request).setCookies(new Cookie(TRANSFORM_SESSION_ID, apikey));
+                        ((MockHttpServletRequest) request).setCookies(new Cookie(TRANSFORM_SESSION_ID, apiKey));
                     }
                 }
                 try
@@ -173,10 +173,10 @@ public class RReportJob extends PipelineJob implements Serializable
                 }
                 finally
                 {
-                    if (apikey != null)
+                    if (apiKey != null)
                     {
                         // Stop the transform session to revoke the apikey
-                        SecurityManager.endTransformSession(apikey);
+                        SecurityManager.endTransformSessionApiKey(apiKey);
                     }
                     _jobIdentifier.remove();
                 }

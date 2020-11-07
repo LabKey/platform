@@ -597,6 +597,7 @@ public class SecurityManager
 
             if (null == apiKey)
             {
+                // CONSIDER: should we deprecate using TRANSFORM_SESSION_ID cookie?
                 // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
                 apiKey = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
                 if (null == apiKey)
@@ -628,12 +629,12 @@ public class SecurityManager
      * Callers should call {@see endTransformSession} when finished, typically in a finally block.
      * @return the apikey for the newly started session
      */
-    public static @NotNull String beginTransformSession(@NotNull User user)
+    public static @NotNull String beginTransformSessionApiKey(@NotNull User user)
     {
         return ApiKeyManager.get().createKey(user, SECONDS_PER_DAY);
     }
 
-    public static void endTransformSession(@NotNull String apikey)
+    public static void endTransformSessionApiKey(@NotNull String apikey)
     {
         ApiKeyManager.get().deleteKey(apikey);
     }
