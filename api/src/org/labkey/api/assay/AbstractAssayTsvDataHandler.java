@@ -1056,7 +1056,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             if (resolveMaterials)
             {
-                ExpMaterial material = participantVisit.getMaterial();
+                ExpMaterial material = participantVisit.getMaterial(false);
                 if (material != null)
                 {
                     materialInputs.putIfAbsent(material, null);
