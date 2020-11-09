@@ -1038,6 +1038,9 @@ public class UserController extends SpringActionController
             {
                 for (Map.Entry<String, Object> entry : form.getTypedColumns().entrySet())
                 {
+                    if (entry.getKey().equals("ExpirationDate") && !AuthenticationManager.canSetUserExpirationDate(getUser(), getContainer()))
+                        errors.reject(ERROR_MSG, "User does not have permission to edit the ExpirationDate field.");
+
                     if (entry.getValue() != null)
                     {
                         ColumnInfo col = table.getColumn(FieldKey.fromParts(entry.getKey()));

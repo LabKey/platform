@@ -63,7 +63,6 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
     final Container _c;
     final User _user;
     final CaseInsensitiveHashSet dontRequire = new CaseInsensitiveHashSet();
-    ValidatorIterator _it;
 
 
     public static StandardDataIteratorBuilder forInsert(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
@@ -120,9 +119,6 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
     @Override
     public DataIterator getDataIterator(DataIteratorContext context)
     {
-        if (null != _it)
-            return _it;
-
         Domain d = _target.getDomain();
 
         Map<String, DomainProperty> propertiesMap = new HashMap<>();
@@ -168,6 +164,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
          *
          * Anyway match up the columns and property descriptors and keep them in a set of TranslateHelpers
          */
+
         List<ColumnInfo> cols = _target.getColumns();
         Map<FieldKey, TranslateHelper> unusedCols = new HashMap<>(cols.size() * 2);
         Map<String, TranslateHelper> translateHelperMap = new CaseInsensitiveHashMap<>(cols.size()*4);
@@ -185,12 +182,18 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
 
 
         //
+        //  CONVERT data iterator
+        //
+        // set up a SimpleTranslator for conversion and missing-value handling
+        //
+
+        //
         // match up the columns, validate that there is no more than one source column that matches the target column
         //
         ValidationException setupError = new ValidationException();
         ArrayList<ColumnInfo> matches = DataIteratorUtil.matchColumns(input, _target, _useImportAliases, setupError, _c);
 
-        ArrayList<TranslateHelper> targetCols = new ArrayList<>(input.getColumnCount()+1);
+        ArrayList<TranslateHelper> convertTargetCols = new ArrayList<>(input.getColumnCount()+1);
         for (int i=1 ; i<=input.getColumnCount() ; i++)
         {
             ColumnInfo targetCol = matches.get(i);
@@ -206,14 +209,14 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
                 to.indexFrom = i;
                 Integer indexMv = null==to.target.getMvColumnName() ? null : sourceColumnsMap.get(to.target.getMvColumnName().getName());
                 to.indexMv = null==indexMv ? 0 : indexMv.intValue();
-                targetCols.add(to);
+                convertTargetCols.add(to);
             }
             else
             {
                 // pass through unrecognized columns (may be internal column like "_key")
                 to = new TranslateHelper(null, null);
                 to.indexFrom = i;
-                targetCols.add(to);
+                convertTargetCols.add(to);
             }
         }
 
@@ -226,38 +229,52 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
                 setupError.addGlobalError("Data does not contain required field: " + pair.target.getName());
         }
 
-
-        //
-        //  CONVERT and VALIDATE iterators
-        //
-        // set up a SimpleTranslator for conversion and missing-value handling
-        //
-
         SimpleTranslator convert = new SimpleTranslator(input, context);
         convert.setDebugName("StandardDIB convert");
         convert.setMvContainer(_c);
-        ValidatorIterator validate = new ValidatorIterator(LoggingDataIterator.wrap(convert), context, _c, _user);
-        validate.setDebugName("StandardDIB validate");
 
-        for (TranslateHelper pair : targetCols)
+        for (TranslateHelper pair : convertTargetCols)
         {
             PropertyType pt = null==pair.dp ? null : pair.dp.getPropertyDescriptor().getPropertyType();
             boolean isAttachment = pt == PropertyType.ATTACHMENT || pt == PropertyType.FILE_LINK;
             boolean supportsMV = (null != pair.target && null != pair.target.getMvColumnName()) || (null != pair.dp && pair.dp.isMvEnabled());
-            int indexConvert;
 
             if (null == pair.target || isAttachment)
-                indexConvert = convert.addColumn(pair.indexFrom);
+                convert.addColumn(pair.indexFrom);
             else if (null == pair.dp)
-                indexConvert = convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv, supportsMV);
+                convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv, supportsMV);
             else
-                indexConvert = convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv, pair.dp.getPropertyDescriptor(), pair.dp.getPropertyDescriptor().getPropertyType());
-
-            List<ColumnValidator> validators = ColumnValidators.create(pair.target, pair.dp, context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString));
-            validate.addValidators(indexConvert, validators);
+                convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv, pair.dp.getPropertyDescriptor(), pair.dp.getPropertyDescriptor().getPropertyType());
         }
 
-        DataIterator last = validate.hasValidators() ? validate : convert;
+
+        //
+        // CONCEPT mapping data iterator
+        //
+
+        DataIterator validateInput = convert;
+        if (null != OntologyService.get())
+            validateInput = OntologyService.get().getConceptLookupDataIteratorBuilder(DataIteratorBuilder.wrap(convert), _target).getDataIterator(context);
+
+
+        //
+        // VALIDATE data iterator
+        //
+
+        ValidatorIterator validate = new ValidatorIterator(LoggingDataIterator.wrap(validateInput), context, _c, _user);
+        validate.setDebugName("StandardDIB validate");
+
+        for (int index=1 ; index <= validateInput.getColumnCount() ; index++)
+        {
+            ColumnInfo col = validateInput.getColumnInfo(index);
+            TranslateHelper pair = translateHelperMap.get(getTranslateHelperKey(col));
+            if (null == pair)
+                continue;
+            List<ColumnValidator> validators = ColumnValidators.create(pair.target, pair.dp, context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString));
+            validate.addValidators(index, validators);
+        }
+
+        DataIterator last = validate.hasValidators() ? validate : validateInput;
         return LoggingDataIterator.wrap(ErrorIterator.wrap(last, context, false, setupError));
     }
 

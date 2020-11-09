@@ -20,6 +20,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.Pair;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * A method on a table.
@@ -40,7 +41,7 @@ public interface MethodInfo
     // subclass can override this method for more control, the Boolean in the Pair<> represents whether the argument is a constant or not
     default SQLFragment getSQL(SqlDialect dialect, List<Pair<SQLFragment,Boolean>> arguments)
     {
-        SQLFragment[] arr = (SQLFragment[])arguments.stream().map(p -> p.first).toArray();
+        SQLFragment[] arr = arguments.stream().map(p -> p.first).collect(Collectors.toList()).toArray(new SQLFragment[0]);
         return getSQL(dialect, arr);
     }
 

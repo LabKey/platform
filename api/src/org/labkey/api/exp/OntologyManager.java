@@ -2569,10 +2569,10 @@ public class OntologyManager
             assertNotNull(getTinfoPropertyDescriptor());
             assertNotNull(ExperimentService.get().getTinfoSampleType());
 
-            assertEquals(getTinfoPropertyDescriptor().getColumns("PropertyId,PropertyURI,RangeURI,Name,Description,SourceOntology,ConceptImportColumn,ConceptLabel,Column,PrincipalConceptCode").size(), 9);
-            assertEquals(getTinfoObject().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId").size(), 4);
-            assertEquals(getTinfoObjectPropertiesView().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId,Name,PropertyURI,RangeURI,TypeTag,StringValue,DateTimeValue,FloatValue").size(), 11);
-            assertEquals(ExperimentService.get().getTinfoSampleType().getColumns("RowId,Name,LSID,MaterialLSIDPrefix,Description,Created,CreatedBy,Modified,ModifiedBy,Container").size(), 10);
+            assertEquals(9, getTinfoPropertyDescriptor().getColumns("PropertyId,PropertyURI,RangeURI,Name,Description,SourceOntology,ConceptImportColumn,ConceptLabelColumn,PrincipalConceptCode").size());
+            assertEquals(4, getTinfoObject().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId").size());
+            assertEquals(11, getTinfoObjectPropertiesView().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId,Name,PropertyURI,RangeURI,TypeTag,StringValue,DateTimeValue,FloatValue").size());
+            assertEquals(10, ExperimentService.get().getTinfoSampleType().getColumns("RowId,Name,LSID,MaterialLSIDPrefix,Description,Created,CreatedBy,Modified,ModifiedBy,Container").size());
         }
 
 
