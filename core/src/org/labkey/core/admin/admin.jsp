@@ -34,6 +34,7 @@
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="org.labkey.api.moduleeditor.api.ModuleEditorService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -169,7 +170,7 @@
                         } %>
                         <table class="labkey-data-region-legacy labkey-show-borders">
                             <tr><td class="labkey-column-header">Property</td><td class="labkey-column-header">Value</td></tr><%
-                            boolean sourcePathMatched = module instanceof DefaultModule && ((DefaultModule)module).isSourcePathMatched();
+                            boolean sourcePathMatched = ModuleEditorService.get().canEditSourceModule(module);
                             boolean enlistmentIdMatched = module instanceof DefaultModule && ((DefaultModule)module).isSourceEnlistmentIdMatched();
 
                             Map<String, String> properties = module.getProperties();

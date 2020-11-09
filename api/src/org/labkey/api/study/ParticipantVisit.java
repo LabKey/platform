@@ -16,6 +16,7 @@
 
 package org.labkey.api.study;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpMaterial;
 
@@ -43,5 +44,6 @@ public interface ParticipantVisit
 
     Date getDate();
 
-    ExpMaterial getMaterial();
+    @Nullable
+    ExpMaterial getMaterial(boolean createIfNeeded);
 }
