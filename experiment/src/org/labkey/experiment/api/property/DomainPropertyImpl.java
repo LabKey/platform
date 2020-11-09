@@ -607,6 +607,45 @@ public class DomainPropertyImpl implements DomainProperty
     }
 
     @Override
+    public String getSourceOntology()
+    {
+        return _pd.getSourceOntology();
+    }
+
+    @Override
+    public void setSourceOntology(String sourceOntology)
+    {
+        if (!StringUtils.equals(sourceOntology, getSourceOntology()))
+            edit().setSourceOntology(sourceOntology);
+    }
+
+    @Override
+    public String getConceptImportColumn()
+    {
+        return _pd.getConceptImportColumn();
+    }
+
+    @Override
+    public void setConceptImportColumn(String conceptImportColumn)
+    {
+        if (!StringUtils.equals(conceptImportColumn, getConceptImportColumn()))
+            edit().setConceptImportColumn(conceptImportColumn);
+    }
+
+    @Override
+    public String getConceptLabelColumn()
+    {
+        return _pd.getConceptLabelColumn();
+    }
+
+    @Override
+    public void setConceptLabelColumn(String conceptLabelColumn)
+    {
+        if (!StringUtils.equals(conceptLabelColumn, getConceptLabelColumn()))
+            edit().setConceptLabelColumn(conceptLabelColumn);
+    }
+
+    @Override
     public void setPrincipalConceptCode(String code)
     {
         if (!StringUtils.equals(code, getPrincipalConceptCode()))
@@ -1068,4 +1107,6 @@ public class DomainPropertyImpl implements DomainProperty
             return pd;
         }
     }
+
+
 }

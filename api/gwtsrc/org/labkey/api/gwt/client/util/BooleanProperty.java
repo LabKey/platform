@@ -84,4 +84,10 @@ public class BooleanProperty implements IPropertyWrapper, IsSerializable
     {
         return String.valueOf(b);
     }
+
+    @Override
+    public int hashCode()
+    {
+        return null==b ? 0 : b.hashCode();
+    }
 }

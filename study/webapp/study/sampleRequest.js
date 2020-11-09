@@ -565,8 +565,27 @@ function createRequest()
     // delete any stored request.  when we return to this page, we want to see the newly created request,
     // which will be at the top of the list:
     setSelectedRequestId(undefined);
-    if (_requestWin.specOrVialIdArray)
-        document.location = CREATE_REQUEST_BASE_LINK + '&sampleIds=' + _requestWin.specOrVialIdArray.toString();
+    if (_requestWin.specOrVialIdArray) {
+        // Create a form so we can do a POST in case there are too many selected specimens for the GET URL limit. Issue 41454
+        var form = document.createElement("form");
+        form.method = "POST";
+        form.action = CREATE_REQUEST_BASE_LINK;
+
+        for (var i = 0; i < _requestWin.specOrVialIdArray.length; i++) {
+            var idsInput = document.createElement("input");
+            idsInput.value = _requestWin.specOrVialIdArray[i];
+            idsInput.name = "sampleRowIds";
+            form.appendChild(idsInput);
+        }
+
+        var csrfInput = document.createElement("input");
+        csrfInput.name = "X-LABKEY-CSRF";
+        csrfInput.value = LABKEY.CSRF;
+        form.appendChild(csrfInput);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
     else
         document.location = CREATE_REQUEST_BASE_LINK;
 }
