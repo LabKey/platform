@@ -920,7 +920,7 @@
       </column>
       <column columnName="DrawTimestamp">
           <description>The timestamp of specimen collection.</description>
-          <datatype>timestamp</datatype>
+          <datatype>datetime</datatype>
           <formatString>DateTime</formatString>
       </column>
       <column columnName="DrawDate">
@@ -935,7 +935,7 @@
       </column>
       <column columnName="SalReceiptDate">
           <description>The timestamp of specimen receipt at the site-affiliated laboratory.</description>
-          <datatype>timestamp</datatype>
+          <datatype>datetime</datatype>
       </column>
       <column columnName="SpecimenHash">
           <description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including subject, visit, and specimen type.</description>
@@ -1160,7 +1160,7 @@
       </column>
       <column columnName="DrawTimestamp">
           <description>The timestamp of specimen collection.</description>
-          <datatype>timestamp</datatype>
+          <datatype>datetime</datatype>
           <formatString>DateTime</formatString>
       </column>
       <column columnName="DrawDate">
@@ -1175,7 +1175,7 @@
       </column>
       <column columnName="SalReceiptDate">
           <description>The timestamp of specimen receipt at the site-affiliated laboratory.</description>
-          <datatype>timestamp</datatype>
+          <datatype>datetime</datatype>
       </column>
       <column columnName="SpecimenHash">
           <description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including subject, visit, and specimen type.</description>
