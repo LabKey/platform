@@ -480,7 +480,7 @@ public class MothershipManager
     {
         Map<String, String> props = getProperties(c);
         String buildDate = props.get(CURRENT_BUILD_DATE_PROP);
-        return  null == buildDate ? null : new Date(DateUtil.parseDateTime(c, buildDate));
+        return  null == buildDate || "null".equals(buildDate) ? null : new Date(DateUtil.parseDateTime(c, buildDate));
     }
 
     private String getStringProperty(Container c, String name)
