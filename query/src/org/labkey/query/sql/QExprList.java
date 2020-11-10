@@ -18,7 +18,9 @@ package org.labkey.query.sql;
 
 import org.apache.commons.lang3.StringUtils;
 
-public class QExprList extends QExpr
+import java.util.Map;
+
+public class QExprList extends QExpr implements SupportsAnnotations
 {
     public QExprList()
     {
@@ -75,5 +77,21 @@ public class QExprList extends QExpr
     public boolean isConstant()
     {
         return QOperator.hasConstantChildren(this);
+    }
+
+
+
+    Map<String,Object> _annotations = null;
+
+    @Override
+    public void setAnnotations(Map<String, Object> a)
+    {
+        _annotations = a;
+    }
+
+    @Override
+    public Map<String, Object> getAnnotations()
+    {
+        return _annotations;
     }
 }

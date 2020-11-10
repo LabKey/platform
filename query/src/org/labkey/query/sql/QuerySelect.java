@@ -58,6 +58,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -2192,8 +2193,9 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
 
         @Override
-        void copyColumnAttributesTo(BaseColumnInfo to)
+        void copyColumnAttributesTo(@NotNull BaseColumnInfo to)
         {
+            Objects.requireNonNull(to);
             QExpr expr = getResolvedField();
             if (expr instanceof QField)
             {

@@ -839,7 +839,7 @@ public class SqlParser
                     FieldKey full = ((QDot) id).getFieldKey();
                     if (full.size() == 2 && FIND_COLUMN_METHOD_NAME.equalsIgnoreCase(full.getName()))
                     {
-                        QNode resolveMethod = new QResolveTableColumn(node);
+                        var resolveMethod = new QResolveTableColumn(node);
                         resolveMethod._replaceChildren(children);
                         return resolveMethod;
                     }

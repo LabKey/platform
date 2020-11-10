@@ -271,7 +271,7 @@ public abstract class QueryRelation
             return new SQLFragment(tableName + "." + columnName);
         }
 
-        abstract void copyColumnAttributesTo(BaseColumnInfo to);
+        abstract void copyColumnAttributesTo(@NotNull BaseColumnInfo to);
 
         // the sql representing this column 'inside' its queryrelation (optional)
         SQLFragment getInternalSql()

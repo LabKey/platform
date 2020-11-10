@@ -3,17 +3,27 @@ package org.labkey.query.sql;
 import org.antlr.runtime.tree.CommonTree;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.FieldKey;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 public class QResolveTableColumn extends QIfDefined
 {
     FieldKey _fieldKey = null;
     QueryRelation.RelationColumn _column = null;
+    CaseInsensitiveHashMap<Object> _annotations = new CaseInsensitiveHashMap<Object>();
+
 
     public QResolveTableColumn(CommonTree node)
     {
         super(node);
+
+        // look for named parameters (annotations on the exprlist)
+        SupportsAnnotations exprList = (SupportsAnnotations)node.getChild(1);
+        if (null != exprList.getAnnotations())
+            _annotations.putAll(exprList.getAnnotations());
     }
 
     @Override
@@ -50,7 +60,7 @@ public class QResolveTableColumn extends QIfDefined
         }
         if (count > 1)
         {
-            table.reportWarning("Column is ambigious: " + concept, location);
+            table.reportWarning("Column is ambiguous: " + concept, location);
             return null;
         }
 
@@ -109,18 +119,20 @@ public class QResolveTableColumn extends QIfDefined
 
         // get columnName
         String columnName = null;
-        QExprList exprList = (QExprList)getLastChild();
-        QNode nameArg = null==exprList ? null : exprList.getLastChild();
-        if (nameArg instanceof QString)
-        {
-             columnName = ((QString)nameArg).getValue();
-        }
-        else
+        if (_annotations.get("name") instanceof String)
+            columnName = (String)_annotations.get("name");
+
+        String concept = null;
+        if (_annotations.get("concept") instanceof String)
+            concept = (String)_annotations.get("concept");
+
+        if (isBlank(columnName) && isBlank(concept))
         {
             isDefined = false;
             return null;
         }
-        QueryRelation.RelationColumn c = resolveColumn(table, columnName, null, null);
+
+        QueryRelation.RelationColumn c = resolveColumn(table, columnName, concept, null);
         if (null == c)
         {
             isDefined = false;
