@@ -50,6 +50,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Representation of zero or more filters to be used with a database query after being translated to a WHERE clause.
@@ -268,6 +269,12 @@ public class SimpleFilter implements Filter
         public abstract String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap);
 
         public abstract SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect);
+
+        // most filters don't need tableAlias to disambiguate columns, this can be overriden if you have nested select statements (need to override toSQLFragment(Map,SqlDialect) as well)
+        public SQLFragment toSQLFragment(String tableAlias, Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            return toSQLFragment(columnMap, dialect);
+        }
 
         @Override
         public boolean equals(Object o)
@@ -1286,28 +1293,45 @@ public class SimpleFilter implements Filter
         return false;
     }
 
-    @Override
-    public SQLFragment getSQLFragment(TableInfo tableInfo, @Nullable List<ColumnInfo> colInfos)
-    {
-        if (null == _clauses || 0 == _clauses.size())
-        {
-            return new SQLFragment();
-        }
-        return getSQLFragment(tableInfo.getSqlDialect(), Table.createColumnMap(tableInfo, colInfos));
-    }
 
     //
     // Filter
     //
 
-
     public SQLFragment getSQLFragment(SqlDialect dialect)
     {
-        return getSQLFragment(dialect, Collections.emptyMap());
+        return getSQLFragment(dialect, null, Collections.emptyMap());
     }
 
-    @Override
+    /* tableAlias can be null if all column can be accessed by col.getAlias().  When generating a SELECT with JOIN and WHERE
+     * columns may come from different tables so tableAlias should be null. e.g
+     *  SELECT ... FROM Table1 a JOIN Table2 b {SimpleFilter: WHERE}
+     * NOTE: SimpleFilter was created for getSelectSQL() which does not do this. So this is not really the intended usage, however,
+     * various subclasses of FilteredTable do this.
+     *
+     * When all columns are in the same virtual relation e.g.
+     *  SELECT ... FROM Table x {SimpleFilter: WHERE ...}
+     *  SELECT ... FROM (SELECT FROM JOIN ..) x {SimpleFilter: WHERE ...}
+     * Then pass in tableAlias="x", this removes some opportunities for column name ambiguity when generating the SQL clause.
+     */
+    public SQLFragment getSQLFragment(TableInfo t, @Nullable String tableAlias)
+    {
+        if (null == _clauses || 0 == _clauses.size())
+            return new SQLFragment();
+
+        return getSQLFragment(t.getSqlDialect(), tableAlias, Table.createColumnMap(t, t.getColumns()));
+    }
+
+    /* use getSQLFragment dialect, tableAlias, columnMap */
+    @Deprecated
     public SQLFragment getSQLFragment(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columnMap)
+    {
+        return getSQLFragment(dialect, null, columnMap);
+    }
+
+    /* See not for getSQLFragment(TableInfo, String) */
+    @Override
+    public SQLFragment getSQLFragment(SqlDialect dialect, @Nullable String tableAlias, Map<FieldKey, ? extends ColumnInfo> columnMap)
     {
         SQLFragment ret = new SQLFragment();
 
@@ -1322,7 +1346,7 @@ public class SimpleFilter implements Filter
             ret.append("(");
             try
             {
-                ret.append(fc.toSQLFragment(columnMap, dialect));
+                ret.append(fc.toSQLFragment(tableAlias, columnMap, dialect));
             }
             catch (RuntimeSQLException e)
             {
@@ -1346,16 +1370,9 @@ public class SimpleFilter implements Filter
 
     public List<Object> getWhereParams(TableInfo tableInfo)
     {
-        return getWhereParams(tableInfo, tableInfo.getColumns());
-    }
-
-
-    public List<Object> getWhereParams(TableInfo tableInfo, List<ColumnInfo> colInfos)
-    {
-        SQLFragment frag = getSQLFragment(tableInfo, colInfos);
+        SQLFragment frag = getSQLFragment(tableInfo, null);
         return frag.getParams();
     }
-
 
     @Override
     public Set<FieldKey> getWhereParamFieldKeys()

@@ -2631,7 +2631,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
 
 		if (filter != null)
 		{
-			filterFrag = filter.getSQLFragment(dialect, columnMap);
+			filterFrag = filter.getSQLFragment(dialect, "x", columnMap);
 		}
 
         String orderBy = null;

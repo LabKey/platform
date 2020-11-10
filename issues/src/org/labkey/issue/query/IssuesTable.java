@@ -361,7 +361,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
 
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
-        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), columnMap);
+        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), null, columnMap);
         sql.append("\n").append(filterFrag).append(") ").append(alias);
 
         return sql;

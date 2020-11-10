@@ -6073,7 +6073,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 protAppRowMap.put(rec._protApp.getLSID(), null);
 
             TableInfo pa = getTinfoProtocolApplication();
-            SQLFragment sqlfilter = new SimpleFilter(FieldKey.fromParts("LSID"), protAppRowMap.keySet(), IN).getSQLFragment(pa, pa.getColumns());
+            SQLFragment sqlfilter = new SimpleFilter(FieldKey.fromParts("LSID"), protAppRowMap.keySet(), IN).getSQLFragment(pa, "pa");
             new SqlSelector(pa.getSchema(), new SQLFragment("SELECT Lsid, RowId FROM " + pa /* + (pa.getSqlDialect().isSqlServer() ? " WITH (UPDLOCK, HOLDLOCK)" : "") */ + " ")
                     .append(sqlfilter)).forEach(rs ->
             {

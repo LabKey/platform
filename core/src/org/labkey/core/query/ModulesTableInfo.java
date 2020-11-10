@@ -193,8 +193,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         // CONSIDER: LEFT OUTER JOIN to include rows from core.modules for modules not currently installed
 
         // WHERE
-        Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
-        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), columnMap);
+        SQLFragment filterFrag = getFilter().getSQLFragment(getFromTable(), null);
         ret.append("\n").append(filterFrag).append(") ").append(alias);
 
         return ret;

@@ -872,7 +872,7 @@ public class Table
 
         if (null != filter)
         {
-            SQLFragment fragment = filter.getSQLFragment(table, null);
+            SQLFragment fragment = filter.getSQLFragment(table.getSqlDialect(), null, null);
             whereSQL.append(fragment.getSQL());
             parametersWhere.addAll(fragment.getParams());
             whereAND = " AND ";
@@ -1021,7 +1021,7 @@ public class Table
     {
         assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
 
-        SQLFragment where = filter.getSQLFragment(table, null);
+        SQLFragment where = filter.getSQLFragment(table.getSqlDialect(), null, null);
 
         String deleteSQL = "DELETE FROM " + table.getSelectName() + "\n\t" + where.getSQL();
         int result = new SqlExecutor(table.getSchema()).execute(deleteSQL, where.getParams().toArray());

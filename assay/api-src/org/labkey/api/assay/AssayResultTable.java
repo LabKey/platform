@@ -407,8 +407,8 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         if (!where.isEmpty())
         {
             Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
-            SQLFragment filterFrag = filter.getSQLFragment(_rootTable.getSqlDialect(), columnMap);
-            result.append("\n").append(filterFrag);
+            SQLFragment filterFrag = filter.getSQLFragment(_rootTable.getSqlDialect(), "innerResults", columnMap);
+        result.append("\n").append(filterFrag);
         }
         result.append(") ").append(alias);
         return result;
