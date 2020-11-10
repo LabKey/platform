@@ -151,6 +151,7 @@ public class SecurityManager
     static final String CIRCULAR_GROUP_ERROR_MESSAGE = "Can't add a group that results in a circular group relation";
 
     public static final String TRANSFORM_SESSION_ID = "LabKeyTransformSessionId";  // issue 19748
+    public static final String API_KEY = "apikey";
 
     private static final String USER_ID_KEY = User.class.getName() + "$userId";
     private static final String IMPERSONATION_CONTEXT_FACTORY_KEY = User.class.getName() + "$ImpersonationContextFactoryKey";
@@ -586,21 +587,24 @@ public class SecurityManager
         String apiKey;
 
         // Prefer Basic auth
-        if (null != basicCredentials && "apikey".equals(basicCredentials.getKey()))
+        if (null != basicCredentials && API_KEY.equals(basicCredentials.getKey()))
         {
             apiKey = basicCredentials.getValue();
         }
         else
         {
             // Support "apikey" header for backward compatibility. We might stop supporting this at some point.
-            apiKey = request.getHeader("apikey");
-
+            apiKey = request.getHeader(API_KEY);
             if (null == apiKey)
             {
-                // CONSIDER: should we deprecate using TRANSFORM_SESSION_ID cookie?
+                // Issue 40482: Deprecate using 'LabKeyTransformSessionId' in preference for 'apikey' authentication
                 // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
                 apiKey = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
-                if (null == apiKey)
+                if (null != apiKey)
+                {
+                    _log.warn("Using '" + TRANSFORM_SESSION_ID + "' cookie for authentication is deprecated; use 'apikey' instead");
+                }
+                else
                 {
                     // Support as a GET parameter as well, not just as a cookie, to support authentication
                     // through SSRS which can't be made to use BasicAuth, pass cookies, or other HTTP headers.

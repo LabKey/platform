@@ -66,7 +66,6 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
     public static final String R_SESSIONID_REPLACEMENT = "rLabkeySessionId";
     public static final String LEGACY_SESSION_ID_REPLACEMENT = "httpSessionId";
     public static final String LEGACY_SESSION_COOKIE_NAME_REPLACEMENT = "sessionCookieName";
-    public static final String API_KEY_REPLACEMENT = "apiKey";
     public static final String BASE_SERVER_URL_REPLACEMENT = "baseServerURL";
     public static final String CONTAINER_PATH = "containerPath";
 
@@ -219,7 +218,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
         paramMap.put(R_SESSIONID_REPLACEMENT, getSessionInfo(request, apiKey));
         paramMap.put(LEGACY_SESSION_COOKIE_NAME_REPLACEMENT, getSessionCookieName(request));
         paramMap.put(LEGACY_SESSION_ID_REPLACEMENT, getSessionId(request, apiKey));
-        paramMap.put(API_KEY_REPLACEMENT, apiKey);
+        paramMap.put(SecurityManager.API_KEY, apiKey);
         paramMap.put(BASE_SERVER_URL_REPLACEMENT, AppProps.getInstance().getBaseServerUrl()
                                                     + AppProps.getInstance().getContextPath());
         paramMap.put(CONTAINER_PATH, container.getPath());

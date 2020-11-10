@@ -418,9 +418,9 @@ public class RReport extends ExternalScriptEngineReport
                 labkey.append("labkey.remote.pipeline.root <- \"").append(remotePath).append("\"\n");
             }
 
-            // The ${apiKey} token will be replaced by the value in the map stashed in script context bindings ExternalScriptEngine.PARAM_REPLACEMENT_MAP
-            // CONSIDER: Should we use: labkey.setDefaults(apiKey=\"${apiKey}\")
-            labkey.append("labkey.apiKey <- \"${" + DefaultDataTransformer.API_KEY_REPLACEMENT + "}\"\n");
+            // The ${apikey} token will be replaced by the value in the map stashed in script context bindings ExternalScriptEngine.PARAM_REPLACEMENT_MAP
+            // CONSIDER: Should we use: labkey.setDefaults(apiKey=\"${apikey}\")
+            labkey.append("labkey.apiKey <- \"${" + SecurityManager.API_KEY + "}\"\n");
 
             // session information - deprecate for ${apiKey} or labkey.apiKey ?
             if (context.getRequest() != null)
