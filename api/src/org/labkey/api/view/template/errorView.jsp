@@ -28,7 +28,7 @@
     StringBuilder stackTrace = new StringBuilder();
     if (null != model.getException())
     {
-        stackTrace.append(model.getException().getMessage());
+        stackTrace.append(model.getException().toString());
         for (StackTraceElement stackTraceElement : model.getException().getStackTrace())
         {
             stackTrace.append("\n");
