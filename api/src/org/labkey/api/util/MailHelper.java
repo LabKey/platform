@@ -506,7 +506,7 @@ public class MailHelper
     public static class BulkEmailer extends Thread
     {
         private final Map<Collection<String>, MimeMessage> _messageMap = new HashMap<>(10);
-        private final Map<Collection<String>, Container> _containerMap = new HashMap<>(10);
+        private final Map<Collection<String>, String> _containerMap = new HashMap<>(10);
         private final User _user;
 
         // User is for audit purposes
@@ -519,7 +519,7 @@ public class MailHelper
         public void addMessage(Collection<String> emails, MimeMessage m, @Nullable Container c)
         {
             _messageMap.put(emails, m);
-            _containerMap.put(emails, c);
+            _containerMap.put(emails, c.getId());
         }
 
         // Send message to multiple recipients
@@ -547,7 +547,7 @@ public class MailHelper
             {
                 Collection<String> emails = entry.getKey();
                 MimeMessage m = entry.getValue();
-                Container c = _containerMap.get(emails);
+                Container c = ContainerManager.getForId(_containerMap.get(emails));
 
                 for (String email : emails)
                 {
