@@ -898,12 +898,16 @@ public class ExceptionUtil
 
             addDependenciesAndRender(responseStatus, pageConfig, errorView, ex, request, response);
         }
+        catch (ConfigurationException ce)
+        {
+            throw new ConfigurationException(ce.getMessage());
+        }
         catch (Exception e)
         {
-            // config exceptions that occur before jsps have been initialized
-            if (ex instanceof ConfigurationException || null != ModuleLoader.getInstance().getStartupFailure())
+            // non config exceptions like SqlScriptException that occur during startup
+            if (null != ModuleLoader.getInstance().getStartupFailure())
             {
-                throw new ConfigurationException(ex.getMessage());
+                throw new ConfigurationException(ex.getMessage(), ex);
             }
 
             // try to render just the react app
