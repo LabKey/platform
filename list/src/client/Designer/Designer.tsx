@@ -32,7 +32,6 @@ type State = {
     isLoadingModel: boolean,
     message?: string,
     model?: ListModel
-    fileImportError: string
 }
 
 export class App extends React.Component<{}, State> {
@@ -43,8 +42,7 @@ export class App extends React.Component<{}, State> {
         super(props);
 
         this.state = {
-            isLoadingModel: true,
-            fileImportError: undefined
+            isLoadingModel: true
         };
     }
 
@@ -85,13 +83,8 @@ export class App extends React.Component<{}, State> {
         this.navigate(ActionURL.buildURL('list', 'begin', getServerContext().container.path));
     };
 
-    onComplete = (model: ListModel, fileImportError?: string) => {
-        if (fileImportError) {
-            this.setState(() => ({fileImportError, model}));
-        }
-        else {
-            this.navigateOnComplete(model);
-        }
+    onComplete = (model: ListModel) => {
+        this.navigateOnComplete(model);
     };
 
     navigateOnComplete(model: ListModel) {
@@ -126,23 +119,8 @@ export class App extends React.Component<{}, State> {
         window.location.href = returnUrl || defaultUrl;
     }
 
-    renderFileImportErrorConfirm() {
-        return (
-            <ConfirmModal
-                title='Error Importing File'
-                msg={<>
-                    <p>There was an error while trying to import the selected file. Please review the error below and go to the newly created list's import data page to try again.</p>
-                    <ul><li>{this.state.fileImportError}</li></ul>
-                </>}
-                confirmVariant='primary'
-                onConfirm={() => this.navigateOnComplete(this.state.model)}
-                confirmButtonText='OK'
-            />
-        )
-    }
-
     render() {
-        const { isLoadingModel, hasDesignListPermission, message, model, fileImportError } = this.state;
+        const { isLoadingModel, hasDesignListPermission, message, model } = this.state;
 
         if (message) {
             return <Alert>{message}</Alert>
@@ -159,7 +137,6 @@ export class App extends React.Component<{}, State> {
 
         return (
             <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
-                {fileImportError && this.renderFileImportErrorConfirm()}
                 {hasDesignListPermission &&
                     <ListDesignerPanels
                         initModel={model}
