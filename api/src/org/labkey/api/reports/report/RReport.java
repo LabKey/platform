@@ -425,21 +425,8 @@ public class RReport extends ExternalScriptEngineReport
             // session information - deprecate for ${apiKey} or labkey.apiKey ?
             if (context.getRequest() != null)
             {
-                String session = PageFlowUtil.getCookieValue(context.getRequest().getCookies(), CSRFUtil.SESSION_COOKIE_NAME, null);
+                String session = PageFlowUtil.getCookieValue(context.getRequest().getCookies(), CSRFUtil.SESSION_COOKIE_NAME, "");
                 String sessionName = CSRFUtil.SESSION_COOKIE_NAME;
-                if (session == null)
-                {
-                    // Issue 26957 - R report running as pipeline job doesn't inherit user when making Rlabkey calls
-                    session = PageFlowUtil.getCookieValue(context.getRequest().getCookies(), SecurityManager.TRANSFORM_SESSION_ID, null);
-                    if (session != null)
-                    {
-                        sessionName = SecurityManager.TRANSFORM_SESSION_ID;
-                    }
-                    else
-                    {
-                        session = "";
-                    }
-                }
 
                 labkey.append("labkey.sessionCookieName = \"").append(sessionName).append("\"\n");
                 labkey.append("labkey.sessionCookieContents = \"");
