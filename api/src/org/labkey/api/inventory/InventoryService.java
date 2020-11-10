@@ -53,4 +53,7 @@ public interface InventoryService
     List<FieldKey> addInventoryStatusColumns(@Nullable String sampleTypeMetricUnit, ExpMaterialTable table, Container container);
 
     DataIteratorBuilder getPersistStorageItemDataIteratorBuilder(DataIteratorBuilder data, Container container, User user, String metricUnit);
+
+    @NotNull
+    String getWellLabel(int boxId, int row, Integer col);
 }
