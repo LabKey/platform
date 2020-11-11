@@ -480,7 +480,7 @@ public class MothershipManager
     {
         Map<String, String> props = getProperties(c);
         String buildDate = props.get(CURRENT_BUILD_DATE_PROP);
-        return  null == buildDate ? null : new Date(DateUtil.parseDateTime(c, buildDate));
+        return  null == buildDate ? null : new Date(DateUtil.parseISODateTime(buildDate));
     }
 
     private String getStringProperty(Container c, String name)
@@ -508,7 +508,7 @@ public class MothershipManager
 
     public void setCurrentBuildDate(Container c, Date buildDate)
     {
-        saveProperty(c, CURRENT_BUILD_DATE_PROP, String.valueOf(buildDate));
+        saveProperty(c, CURRENT_BUILD_DATE_PROP, DateUtil.formatDateTimeISO8601(buildDate));
     }
 
     public void setUpgradeMessage(Container c, String message)
