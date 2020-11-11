@@ -508,10 +508,7 @@ public class MothershipManager
 
     public void setCurrentBuildDate(Container c, Date buildDate)
     {
-        if (null != buildDate)
-        {
-            saveProperty(c, CURRENT_BUILD_DATE_PROP, DateUtil.formatDateTimeISO8601(buildDate));
-        }
+        saveProperty(c, CURRENT_BUILD_DATE_PROP, DateUtil.formatDateTimeISO8601(buildDate));
     }
 
     public void setUpgradeMessage(Container c, String message)
