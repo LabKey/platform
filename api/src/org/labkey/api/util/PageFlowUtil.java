@@ -2145,11 +2145,14 @@ public class PageFlowUtil
         // property instead of hard-coding formats on the client.
         json.put("extDateInputFormat", ExtUtil.toExtDateFormat(DateUtil.getStandardDateFormatString()));
 
-        SecurityLogger.indent("jsInitObject");
-        json.put("user", User.getUserProps(user, container));
-        if (user.isImpersonated())
-            json.put("impersonatingUser", User.getUserProps(user.getImpersonatingUser(), container));
-        SecurityLogger.outdent();
+        if (null != user)
+        {
+            SecurityLogger.indent("jsInitObject");
+            json.put("user", User.getUserProps(user, container));
+            if (user.isImpersonated())
+                json.put("impersonatingUser", User.getUserProps(user.getImpersonatingUser(), container));
+            SecurityLogger.outdent();
+        }
 
         if (null != container)
         {
