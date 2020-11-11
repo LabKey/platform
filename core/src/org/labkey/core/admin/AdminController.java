@@ -4135,7 +4135,7 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(RConfigForm rConfigForm, BindException errors) throws Exception
         {
-            LabKeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+            LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
             if (null != mgr)
             {
                 try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
@@ -9801,7 +9801,7 @@ public class AdminController extends SpringActionController
         HealthCheck.Result result = HealthCheckRegistry.get().checkHealth(Arrays.asList("all"));
         res.put("health", result);
 
-        LabKeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+        LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
         res.put("scriptEngines", mgr.getEngineDefinitions());
 
         return res;

@@ -134,7 +134,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
             // entire JSON object will get rewritten on update
             if (getRowId() != null)
             {
-                LabKeyScriptEngineManager svc = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+                LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
                 ExternalScriptEngineDefinition existingDef = svc.getEngineDefinition(getRowId(), getType());
 
                 if (existingDef != null)

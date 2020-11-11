@@ -67,7 +67,7 @@ public class MarkdownServiceImpl implements MarkdownService
             mdText = "";
 
         // NOTE If this is not fast enough, we may need to use ThreadLocal to cache ScriptEngine
-        LabKeyScriptEngineManager svc = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+        LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
         if (null == svc)
             throw new ConfigurationException("LabKeyScriptEngineManager service not found.");
         ScriptEngine engine = svc.getEngineByName("graal.js");

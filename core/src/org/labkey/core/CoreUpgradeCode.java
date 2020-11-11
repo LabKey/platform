@@ -115,7 +115,7 @@ public class CoreUpgradeCode implements UpgradeCode
     {
         if (!context.isNewInstall())
         {
-            LabKeyScriptEngineManager svc = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
             if (svc instanceof ScriptEngineManagerImpl)
             {
                 try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
@@ -178,7 +178,7 @@ public class CoreUpgradeCode implements UpgradeCode
     {
         if (!context.isNewInstall())
         {
-            LabKeyScriptEngineManager svc = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
             if (svc != null)
             {
                 List<ExternalScriptEngineDefinition> rDefs = svc.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R);
@@ -209,7 +209,7 @@ public class CoreUpgradeCode implements UpgradeCode
     {
         if (!context.isNewInstall())
         {
-            LabKeyScriptEngineManager svc = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
             if (svc != null)
             {
                 try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())

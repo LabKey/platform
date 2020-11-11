@@ -42,7 +42,7 @@
     JspView<AdminController.RConfigForm> me = (JspView<AdminController.RConfigForm>) HttpView.currentView();
     AdminController.RConfigForm form = me.getModelBean();
     Container container = getContainer();
-    LabKeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+    LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
     List<ExternalScriptEngineDefinition> engineDefinitions = new ArrayList<>(mgr.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R, true));
 
     boolean isFolderScoped = form.getOverrideDefault() || (mgr.getScopedEngine(container, "r", LabKeyScriptEngineManager.EngineContext.report, false) != null);
@@ -267,7 +267,7 @@
     {
         try
         {
-            LabKeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+            LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
             ExternalScriptEngineDefinition engine;
             if (reshowId != null)
             {

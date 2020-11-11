@@ -148,7 +148,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     public ScriptEngine getScriptEngine(Container c)
     {
         String extension = getDescriptor().getProperty(ScriptReportDescriptor.Prop.scriptExtension);
-        LabKeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+        LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
 
         return mgr.getEngineByExtension(c, extension);
     }

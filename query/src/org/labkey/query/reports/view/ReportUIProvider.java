@@ -137,7 +137,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
                     _getIconPath(RReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(RReport.TYPE)));
         }
 
-        LabKeyScriptEngineManager manager = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+        LabKeyScriptEngineManager manager = LabKeyScriptEngineManager.get();
         // this is fine for now but if we start supporting multiple engine configurations for all engine types then we will need
         // to coalesce the factory types so we don't see more than one option for a given language
         for (ScriptEngineFactory factory : manager.getEngineFactories())

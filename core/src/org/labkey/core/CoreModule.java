@@ -343,7 +343,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsoleService.setInstance(new AdminConsoleServiceImpl());
         WikiRenderingService.setInstance(new WikiRenderingServiceImpl());
         VcsService.setInstance(new VcsServiceImpl());
-        ServiceRegistry.get().registerService(LabKeyScriptEngineManager.class, new ScriptEngineManagerImpl());
+        LabKeyScriptEngineManager.setInstance(new ScriptEngineManagerImpl());
 
         try
         {
@@ -886,7 +886,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        LabKeyScriptEngineManager svc = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+        LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
         // populate script engine definitions values read from startup properties as appropriate for not bootstrap
         if (svc instanceof ScriptEngineManagerImpl)
             ((ScriptEngineManagerImpl)svc).populateScriptEngineDefinitionsWithStartupProps();

@@ -85,7 +85,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
     protected boolean runCommand(RecordedAction action, String apikey) throws IOException, PipelineJobException
     {
         // Get the script engine
-        LabKeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+        LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
         if (mgr == null)
             throw new PipelineJobException("Script engine manager not available");
 

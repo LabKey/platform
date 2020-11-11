@@ -179,7 +179,7 @@ public class ScriptTaskFactory extends SimpleTaskFactory
 
     private static void ensureEngine(String interpreter)
     {
-        LabKeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+        LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
         if (mgr == null)
             throw new IllegalStateException("Script engine manager not available");
 

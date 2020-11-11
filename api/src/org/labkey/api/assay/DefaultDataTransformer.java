@@ -107,7 +107,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                     throw new ValidationException(e.getMessage());
                 }
 
-                ScriptEngine engine = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class)
+                ScriptEngine engine = LabKeyScriptEngineManager.get()
                         .getEngineByExtension(context.getContainer(), FileUtil.getExtension(scriptFile), LabKeyScriptEngineManager.EngineContext.pipeline);
                 if (engine != null)
                 {

@@ -678,7 +678,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         @Test
         public void testStartupPropertiesForScriptEngineDefinition()
         {
-            LabKeyScriptEngineManager svc = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
 
             // ensure that the site wide ModuleLoader had test startup property values in the _configPropertyMap
             prepareTestStartupProperties();

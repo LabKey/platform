@@ -668,7 +668,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
             if (scriptDir != null && scriptDir.exists())
             {
-                final LabKeyScriptEngineManager manager = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+                final LabKeyScriptEngineManager manager = LabKeyScriptEngineManager.get();
 
                 Collection<? extends Resource> scripts = scriptDir.list();
                 List<File> moduleScriptFiles = new ArrayList<>(scripts.size());

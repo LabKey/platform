@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.premium.PremiumFeatureNotEnabledException;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -32,6 +33,16 @@ public interface LabKeyScriptEngineManager
     {
         report,                 // basic report rendering
         pipeline                // pipeline job or transform script
+    }
+
+    static LabKeyScriptEngineManager get()
+    {
+        return ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+    }
+
+    static void setInstance(LabKeyScriptEngineManager impl)
+    {
+        ServiceRegistry.get().registerService(LabKeyScriptEngineManager.class, impl);
     }
 
     ScriptEngine getEngineByName(@NotNull String name);

@@ -2196,7 +2196,7 @@ public class CoreController extends SpringActionController
         {
             List<Map<String, Object>> views = new ArrayList<>();
 
-            LabKeyScriptEngineManager manager = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+            LabKeyScriptEngineManager manager = LabKeyScriptEngineManager.get();
 
             for (ScriptEngineFactory factory : manager.getEngineFactories())
             {
@@ -2210,7 +2210,7 @@ public class CoreController extends SpringActionController
                 boolean isExternal = factory instanceof ExternalScriptEngineFactory;
                 record.put("external", String.valueOf(isExternal));
 
-                LabKeyScriptEngineManager svc = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+                LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
                 record.put("enabled", String.valueOf(svc.isFactoryEnabled(factory)));
 
                 if (isExternal)
@@ -2313,7 +2313,7 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors) throws Exception
         {
-            LabKeyScriptEngineManager svc = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
             if (def.isDocker())
                 def.saveDockerImageConfig(getUser());
             svc.saveDefinition(getUser(), def);
@@ -2384,7 +2384,7 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors)
         {
-            LabKeyScriptEngineManager svc = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
             svc.deleteDefinition(getUser(), def);
 
             return new ApiSimpleResponse("success", true);

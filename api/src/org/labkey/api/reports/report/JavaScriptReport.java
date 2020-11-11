@@ -125,7 +125,7 @@ public class JavaScriptReport extends ScriptReport
     @Override
     public ScriptEngine getScriptEngine(Container c)
     {
-        LabKeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+        LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
         return mgr.getEngineByExtension(c, "js");
     }
 

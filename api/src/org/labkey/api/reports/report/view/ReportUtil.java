@@ -421,7 +421,7 @@ public class ReportUtil
         {
             // trusted analysts can only create reports on sandboxed engine instances
             // TODO can this differ from the engine returned by the instantiated report?
-            LabKeyScriptEngineManager svc = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
+            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
             ScriptEngine engine = svc.getEngineByExtension(context.getContainer(), extension);
             return engine instanceof LabKeyScriptEngine && ((LabKeyScriptEngine)engine).isSandboxed();
         }
