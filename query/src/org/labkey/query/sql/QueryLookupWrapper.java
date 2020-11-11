@@ -433,6 +433,12 @@ public class QueryLookupWrapper extends QueryRelation
         }
 
         @Override
+        String getConceptURI()
+        {
+            return _wrapped.getConceptURI();
+        }
+
+        @Override
         void copyColumnAttributesTo(BaseColumnInfo to)
         {
             _wrapped.copyColumnAttributesTo(to);
@@ -545,6 +551,12 @@ public class QueryLookupWrapper extends QueryRelation
         String getPrincipalConceptCode()
         {
             return _lkCol.getPrincipalConceptCode();
+        }
+
+        @Override
+        String getConceptURI()
+        {
+            return _lkCol.getConceptURI();
         }
 
         @Override

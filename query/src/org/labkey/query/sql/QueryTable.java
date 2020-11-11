@@ -480,6 +480,12 @@ public class QueryTable extends QueryRelation
         }
 
         @Override
+        String getConceptURI()
+        {
+            return _col.getConceptURI();
+        }
+
+        @Override
         void copyColumnAttributesTo(BaseColumnInfo to)
         {
             to.copyAttributesFrom(_col);

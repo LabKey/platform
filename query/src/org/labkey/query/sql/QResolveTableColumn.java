@@ -1,20 +1,25 @@
 package org.labkey.query.sql;
 
 import org.antlr.runtime.tree.CommonTree;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.FieldKey;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class QResolveTableColumn extends QIfDefined
 {
     FieldKey _fieldKey = null;
     QueryRelation.RelationColumn _column = null;
-    CaseInsensitiveHashMap<Object> _annotations = new CaseInsensitiveHashMap<Object>();
-
+    CaseInsensitiveHashMap<Object> _namedParameters = new CaseInsensitiveHashMap<>();
 
     public QResolveTableColumn(CommonTree node)
     {
@@ -23,7 +28,7 @@ public class QResolveTableColumn extends QIfDefined
         // look for named parameters (annotations on the exprlist)
         SupportsAnnotations exprList = (SupportsAnnotations)node.getChild(1);
         if (null != exprList.getAnnotations())
-            _annotations.putAll(exprList.getAnnotations());
+            this._namedParameters.putAll(convertAnnotations(exprList.getAnnotations()));
     }
 
     @Override
@@ -35,37 +40,40 @@ public class QResolveTableColumn extends QIfDefined
     /**
      * Helper for finding a column in a particular Table
      */
-    private QueryRelation.RelationColumn resolveColumn(QueryRelation table, @Nullable String name, @Nullable String concept, QNode location)
+    private QueryRelation.RelationColumn resolveColumn(QueryRelation table, @Nullable String name, @Nullable String concept, @Nullable String conceptURI, QNode location)
     {
-        if (null == name && null == concept)
+        if (isBlank(name) && isBlank(concept) && isBlank(conceptURI))
             return null;
 
-        if (null != name)
+        List<QueryRelation.RelationColumn> list = null;
+        if (isNotBlank(name))
         {
             QueryRelation.RelationColumn col = table.getColumn(name);
-            if (null == col || null == concept)
-                return col;
-            return concept.equals(col.getPrincipalConceptCode()) ? col : null;
+            if (null == col)
+                return null;
+            list = List.of(col);
         }
 
-        QueryRelation.RelationColumn found = null;
-        int count = 0;
-        for (QueryRelation.RelationColumn col : table.getAllColumns().values())
+        if (null == list)
+            list = new ArrayList<>(table.getAllColumns().values());
+
+        if (isNotBlank(concept))
+            list = list.stream().filter(col -> (concept.equals(col.getPrincipalConceptCode()))).collect(Collectors.toList());
+
+        if (isNotBlank(conceptURI))
+            list = list.stream().filter(col -> (conceptURI.equals(col.getConceptURI()))).collect(Collectors.toList());
+
+        if (list.isEmpty())
+            return null;
+
+        if (list.size() > 1)
         {
-            if (concept.equals(col.getPrincipalConceptCode()))
-            {
-                count++;
-                found = col;
-            }
-        }
-        if (count > 1)
-        {
-            table.reportWarning("Column is ambiguous: " + concept, location);
+            table.reportWarning("findColumn() specification is ambiguous: " + StringUtils.defaultIfBlank(concept, conceptURI), location);
             return null;
         }
 
         /* have to call getColumn() so table knows column is in use */
-        return table.getColumn(found.getFieldKey().getName());
+        return table.getColumn(list.get(0).getFieldKey().getName());
     }
 
 
@@ -119,20 +127,24 @@ public class QResolveTableColumn extends QIfDefined
 
         // get columnName
         String columnName = null;
-        if (_annotations.get("name") instanceof String)
-            columnName = (String)_annotations.get("name");
+        if (_namedParameters.get("name") instanceof String)
+            columnName = (String)_namedParameters.get("name");
 
         String concept = null;
-        if (_annotations.get("concept") instanceof String)
-            concept = (String)_annotations.get("concept");
+        if (_namedParameters.get("concept") instanceof String)
+            concept = (String)_namedParameters.get("concept");
 
-        if (isBlank(columnName) && isBlank(concept))
+        String conceptURI = null;
+        if (_namedParameters.get("concepturi") instanceof String)
+            conceptURI = (String)_namedParameters.get("concepturi");
+
+        if (isBlank(columnName) && isBlank(concept) && isBlank(conceptURI))
         {
             isDefined = false;
             return null;
         }
 
-        QueryRelation.RelationColumn c = resolveColumn(table, columnName, concept, null);
+        QueryRelation.RelationColumn c = resolveColumn(table, columnName, concept, conceptURI, dot);
         if (null == c)
         {
             isDefined = false;

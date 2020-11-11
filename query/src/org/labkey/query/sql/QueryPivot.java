@@ -463,6 +463,12 @@ public class QueryPivot extends QueryRelation
         }
 
         @Override
+        String getConceptURI()
+        {
+            return _s.getConceptURI();
+        }
+
+        @Override
         void copyColumnAttributesTo(BaseColumnInfo to)
         {
             _s.copyColumnAttributesTo(to);
@@ -616,6 +622,12 @@ public class QueryPivot extends QueryRelation
             String getPrincipalConceptCode()
             {
                 return agg.getPrincipalConceptCode();
+            }
+
+            @Override
+            String getConceptURI()
+            {
+                return agg.getConceptURI();
             }
 
             @Override

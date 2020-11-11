@@ -502,7 +502,13 @@ public class QueryUnion extends QueryRelation
         @Override
         String getPrincipalConceptCode()
         {
-            return null;
+            return null; // CONSIDER: check that all match
+        }
+
+        @Override
+        String getConceptURI()
+        {
+            return null; // CONSIDER: check that all match
         }
 
         @Override

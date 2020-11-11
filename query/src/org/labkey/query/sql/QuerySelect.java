@@ -2191,6 +2191,16 @@ public class QuerySelect extends QueryRelation implements Cloneable
             return null;
         }
 
+        @Override
+        String getConceptURI()
+        {
+            QExpr expr = getResolvedField();
+            if (expr instanceof QField)
+            {
+                return ((QField)expr).getRelationColumn().getConceptURI();
+            }
+            return null;
+        }
 
         @Override
         void copyColumnAttributesTo(@NotNull BaseColumnInfo to)
@@ -2226,18 +2236,21 @@ public class QuerySelect extends QueryRelation implements Cloneable
             if (label != null)
                 to.setLabel(label);
 
-            if (null != _annotations && _annotations.containsKey("concept"))
+            if (null == _annotations)
+                _annotations = Collections.emptyMap();
+
+            if (_annotations.containsKey("concept"))
             {
                 Object c = _annotations.get("concept");
                 to.setPrincipalConceptCode(null==c ? null : StringUtils.trimToNull(c.toString()));
             }
 
-            boolean hidden = null != _annotations && _annotations.containsKey("hidden");
+            boolean hidden = _annotations.containsKey("hidden");
             if (hidden)
                 to.setHidden(hidden);
 
             // does not remove the FK, just changes display behaviour
-            boolean nolookup = null != _annotations && _annotations.containsKey("nolookup");
+            boolean nolookup = _annotations.containsKey("nolookup");
             if (nolookup)
                 to.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
 
@@ -2432,6 +2445,9 @@ public class QuerySelect extends QueryRelation implements Cloneable
         {
             QExpr expr = c.getResolvedField();
             if (!(expr instanceof QField))
+                return false;
+            // annotations don't affect the generated SQL, but we don't want to lose them
+            if (null != c._annotations && !c._annotations.isEmpty())
                 return false;
         }
 

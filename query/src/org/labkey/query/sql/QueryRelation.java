@@ -259,6 +259,7 @@ public abstract class QueryRelation
         abstract QueryRelation getTable();
         abstract boolean isHidden();
         abstract String getPrincipalConceptCode();    // used to implement Table.column() method
+        abstract String getConceptURI();
 
         @NotNull
         public abstract JdbcType getJdbcType();
