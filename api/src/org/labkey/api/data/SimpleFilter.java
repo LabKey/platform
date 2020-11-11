@@ -1322,12 +1322,6 @@ public class SimpleFilter implements Filter
         return getSQLFragment(t.getSqlDialect(), tableAlias, Table.createColumnMap(t, t.getColumns()));
     }
 
-    /* use getSQLFragment dialect, tableAlias, columnMap */
-    @Deprecated
-    public SQLFragment getSQLFragment(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columnMap)
-    {
-        return getSQLFragment(dialect, null, columnMap);
-    }
 
     /* See not for getSQLFragment(TableInfo, String) */
     @Override
