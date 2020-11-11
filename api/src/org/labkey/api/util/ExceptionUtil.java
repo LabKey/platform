@@ -900,7 +900,7 @@ public class ExceptionUtil
         }
         catch (ConfigurationException ce)
         {
-            throw new ConfigurationException(ce.getMessage());
+            throw ce;
         }
         catch (Exception e)
         {
