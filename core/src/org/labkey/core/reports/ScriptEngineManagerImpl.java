@@ -44,7 +44,7 @@ import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
-import org.labkey.api.reports.LKScriptEngineManager;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.RDockerScriptEngineFactory;
 import org.labkey.api.reports.RScriptEngineFactory;
 import org.labkey.api.reports.RemoteRNotEnabledException;
@@ -78,7 +78,7 @@ import static java.util.Collections.unmodifiableList;
 * Date: Dec 12, 2008
 * Time: 12:52:28 PM
 */
-public class ScriptEngineManagerImpl extends ScriptEngineManager implements LKScriptEngineManager
+public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabKeyScriptEngineManager
 {
     private static final Logger LOG = LogManager.getLogger(ScriptEngineManagerImpl.class);
 
@@ -678,7 +678,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LKSc
         @Test
         public void testStartupPropertiesForScriptEngineDefinition()
         {
-            LKScriptEngineManager svc = ServiceRegistry.get().getService(LKScriptEngineManager.class);
+            LabKeyScriptEngineManager svc = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
 
             // ensure that the site wide ModuleLoader had test startup property values in the _configPropertyMap
             prepareTestStartupProperties();

@@ -18,7 +18,7 @@ package org.labkey.core.wiki;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.reports.LKScriptEngineManager;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ConfigurationException;
@@ -67,9 +67,9 @@ public class MarkdownServiceImpl implements MarkdownService
             mdText = "";
 
         // NOTE If this is not fast enough, we may need to use ThreadLocal to cache ScriptEngine
-        LKScriptEngineManager svc = ServiceRegistry.get().getService(LKScriptEngineManager.class);
+        LabKeyScriptEngineManager svc = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
         if (null == svc)
-            throw new ConfigurationException("LabkeyScriptEngineManager service not found.");
+            throw new ConfigurationException("LabKeyScriptEngineManager service not found.");
         ScriptEngine engine = svc.getEngineByName("graal.js");
         if (null == engine)
             throw new ConfigurationException("Graal.js engine not found");

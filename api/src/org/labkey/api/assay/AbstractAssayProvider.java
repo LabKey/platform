@@ -81,7 +81,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.reports.LKScriptEngineManager;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -1208,7 +1208,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (scriptFile.isFile())
             {
                 String ext = FileUtil.getExtension(scriptFile);
-                ScriptEngine engine = ServiceRegistry.get().getService(LKScriptEngineManager.class).getEngineByExtension(protocol.getContainer(), ext, LKScriptEngineManager.EngineContext.pipeline);
+                ScriptEngine engine = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class).getEngineByExtension(protocol.getContainer(), ext, LabKeyScriptEngineManager.EngineContext.pipeline);
                 if (engine != null)
                 {
                     sb.append(separator);

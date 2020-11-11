@@ -25,7 +25,7 @@ import org.labkey.api.pipeline.cmd.JobParamToCommandArgs;
 import org.labkey.api.pipeline.cmd.TaskPath;
 import org.labkey.api.pipeline.cmd.TaskToCommandArgs;
 import org.labkey.api.pipeline.cmd.ValueInLine;
-import org.labkey.api.reports.LKScriptEngineManager;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.services.ServiceRegistry;
@@ -179,7 +179,7 @@ public class ScriptTaskFactory extends SimpleTaskFactory
 
     private static void ensureEngine(String interpreter)
     {
-        LKScriptEngineManager mgr = ServiceRegistry.get().getService(LKScriptEngineManager.class);
+        LabKeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
         if (mgr == null)
             throw new IllegalStateException("Script engine manager not available");
 
@@ -188,7 +188,7 @@ public class ScriptTaskFactory extends SimpleTaskFactory
         {
             // this will effectively return any engine registered which can run this extension, since
             // scoping is not yet important
-            engine = mgr.getEngineByExtension(ContainerManager.getSharedContainer(), interpreter, LKScriptEngineManager.EngineContext.pipeline);
+            engine = mgr.getEngineByExtension(ContainerManager.getSharedContainer(), interpreter, LabKeyScriptEngineManager.EngineContext.pipeline);
         }
         if (engine == null)
             throw new IllegalArgumentException("Script engine not found: " + interpreter);

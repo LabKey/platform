@@ -154,7 +154,7 @@ public class RDockerScriptEngine extends RScriptEngine
     @NotNull
     private static ExternalScriptEngineDefinition mockEngineDefinition()
     {
-        LKScriptEngineManager svc = ServiceRegistry.get().getService(LKScriptEngineManager.class);
+        LabKeyScriptEngineManager svc = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
 
         ExternalScriptEngineDefinition engineDef = svc.createEngineDefinition();
         engineDef.setExtensions(new String[]{"R", "r"});

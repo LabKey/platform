@@ -18,7 +18,7 @@
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.reports.ExternalScriptEngineDefinition" %>
-<%@ page import="org.labkey.api.reports.LKScriptEngineManager" %>
+<%@ page import="org.labkey.api.reports.LabKeyScriptEngineManager" %>
 <%@ page import="org.labkey.api.reports.RemoteRNotEnabledException" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
@@ -42,18 +42,18 @@
     JspView<AdminController.RConfigForm> me = (JspView<AdminController.RConfigForm>) HttpView.currentView();
     AdminController.RConfigForm form = me.getModelBean();
     Container container = getContainer();
-    LKScriptEngineManager mgr = ServiceRegistry.get().getService(LKScriptEngineManager.class);
+    LabKeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
     List<ExternalScriptEngineDefinition> engineDefinitions = new ArrayList<>(mgr.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R, true));
 
-    boolean isFolderScoped = form.getOverrideDefault() || (mgr.getScopedEngine(container, "r", LKScriptEngineManager.EngineContext.report, false) != null);
+    boolean isFolderScoped = form.getOverrideDefault() || (mgr.getScopedEngine(container, "r", LabKeyScriptEngineManager.EngineContext.report, false) != null);
     if (!isFolderScoped)
     {
-        isFolderScoped = (mgr.getScopedEngine(container, "r", LKScriptEngineManager.EngineContext.pipeline, false) != null);
+        isFolderScoped = (mgr.getScopedEngine(container, "r", LabKeyScriptEngineManager.EngineContext.pipeline, false) != null);
     }
 
     // specific engine context overrides
-    String currentReportEngine = getScopedEngineName(form.getReportEngine(), container, LKScriptEngineManager.EngineContext.report);
-    String currentPipelineEngine = getScopedEngineName(form.getPipelineEngine(), container, LKScriptEngineManager.EngineContext.pipeline);
+    String currentReportEngine = getScopedEngineName(form.getReportEngine(), container, LabKeyScriptEngineManager.EngineContext.report);
+    String currentPipelineEngine = getScopedEngineName(form.getPipelineEngine(), container, LabKeyScriptEngineManager.EngineContext.pipeline);
 
     Container parentContainer = container.getParent();
     if (parentContainer != null)
@@ -63,8 +63,8 @@
 
         try
         {
-            parentReportEngine = mgr.getEngineByExtension(parentContainer, "r", LKScriptEngineManager.EngineContext.report);
-            parentPipelineEngine = mgr.getEngineByExtension(parentContainer, "r", LKScriptEngineManager.EngineContext.pipeline);
+            parentReportEngine = mgr.getEngineByExtension(parentContainer, "r", LabKeyScriptEngineManager.EngineContext.report);
+            parentPipelineEngine = mgr.getEngineByExtension(parentContainer, "r", LabKeyScriptEngineManager.EngineContext.pipeline);
         }
         catch(RemoteRNotEnabledException e)
         {
@@ -263,11 +263,11 @@
 <%!
     // helper to return the name of the currently configured engine
     @Nullable
-    String getScopedEngineName(Integer reshowId, Container container, LKScriptEngineManager.EngineContext context)
+    String getScopedEngineName(Integer reshowId, Container container, LabKeyScriptEngineManager.EngineContext context)
     {
         try
         {
-            LKScriptEngineManager mgr = ServiceRegistry.get().getService(LKScriptEngineManager.class);
+            LabKeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabKeyScriptEngineManager.class);
             ExternalScriptEngineDefinition engine;
             if (reshowId != null)
             {
