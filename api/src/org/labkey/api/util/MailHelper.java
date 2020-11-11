@@ -553,7 +553,7 @@ public class MailHelper
                 Container c = null;
 
                 if (containerId != null)
-                    c = ContainerManager.getForId(_containerMap.get(emails));
+                    c = ContainerManager.getForId(containerId);
 
                 for (String email : emails)
                 {
