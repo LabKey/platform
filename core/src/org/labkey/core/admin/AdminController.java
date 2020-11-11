@@ -124,7 +124,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LKScriptEngineManager;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.*;
@@ -625,19 +625,6 @@ public class AdminController extends SpringActionController
                 root.addChild(childTitle, childURL);
             else
                 root.addChild(childTitle);
-        }
-
-        @Override
-        public NavTree appendAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL)
-        {
-            root.addChild("Admin Console", getAdminConsoleURL().setFragment("links") );
-
-            if (null != childURL)
-                root.addChild(childTitle, childURL);
-            else
-                root.addChild(childTitle);
-
-            return root;
         }
 
         @Override
@@ -4148,7 +4135,7 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(RConfigForm rConfigForm, BindException errors) throws Exception
         {
-            LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            LKScriptEngineManager mgr = ServiceRegistry.get().getService(LKScriptEngineManager.class);
             if (null != mgr)
             {
                 try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
@@ -4159,20 +4146,20 @@ public class AdminController extends SpringActionController
                         ExternalScriptEngineDefinition pipelineEngine = mgr.getEngineDefinition(rConfigForm.getPipelineEngine(), ExternalScriptEngineDefinition.Type.R);
 
                         if (reportEngine != null)
-                            mgr.setEngineScope(getContainer(), reportEngine, LabkeyScriptEngineManager.EngineContext.report);
+                            mgr.setEngineScope(getContainer(), reportEngine, LKScriptEngineManager.EngineContext.report);
                         if (pipelineEngine != null)
-                            mgr.setEngineScope(getContainer(), pipelineEngine, LabkeyScriptEngineManager.EngineContext.pipeline);
+                            mgr.setEngineScope(getContainer(), pipelineEngine, LKScriptEngineManager.EngineContext.pipeline);
                     }
                     else
                     {
                         // need to clear the current scope (if any)
-                        ExternalScriptEngineDefinition reportEngine = mgr.getScopedEngine(getContainer(), "r", LabkeyScriptEngineManager.EngineContext.report, false);
-                        ExternalScriptEngineDefinition pipelineEngine = mgr.getScopedEngine(getContainer(), "r", LabkeyScriptEngineManager.EngineContext.pipeline, false);
+                        ExternalScriptEngineDefinition reportEngine = mgr.getScopedEngine(getContainer(), "r", LKScriptEngineManager.EngineContext.report, false);
+                        ExternalScriptEngineDefinition pipelineEngine = mgr.getScopedEngine(getContainer(), "r", LKScriptEngineManager.EngineContext.pipeline, false);
 
                         if (reportEngine != null)
-                            mgr.removeEngineScope(getContainer(), reportEngine, LabkeyScriptEngineManager.EngineContext.report);
+                            mgr.removeEngineScope(getContainer(), reportEngine, LKScriptEngineManager.EngineContext.report);
                         if (pipelineEngine != null)
-                            mgr.removeEngineScope(getContainer(), pipelineEngine, LabkeyScriptEngineManager.EngineContext.pipeline);
+                            mgr.removeEngineScope(getContainer(), pipelineEngine, LKScriptEngineManager.EngineContext.pipeline);
                     }
                     transaction.commit();
                 }
@@ -9814,7 +9801,7 @@ public class AdminController extends SpringActionController
         HealthCheck.Result result = HealthCheckRegistry.get().checkHealth(Arrays.asList("all"));
         res.put("health", result);
 
-        LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+        LKScriptEngineManager mgr = ServiceRegistry.get().getService(LKScriptEngineManager.class);
         res.put("scriptEngines", mgr.getEngineDefinitions());
 
         return res;

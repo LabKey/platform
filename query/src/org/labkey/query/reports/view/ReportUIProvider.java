@@ -23,7 +23,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LKScriptEngineManager;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ExternalScriptEngineReport;
@@ -56,8 +56,8 @@ import java.util.Map;
  */
 public class ReportUIProvider extends DefaultReportUIProvider
 {
-    private static Map<String, String> _typeToIconMap = new HashMap<>();
-    private static Map<String, String> _typeToIconClsMap = new HashMap<>();
+    private static final Map<String, String> _typeToIconMap = new HashMap<>();
+    private static final Map<String, String> _typeToIconClsMap = new HashMap<>();
 
     static
     {
@@ -137,7 +137,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
                     _getIconPath(RReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(RReport.TYPE)));
         }
 
-        LabkeyScriptEngineManager manager = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+        LKScriptEngineManager manager = ServiceRegistry.get().getService(LKScriptEngineManager.class);
         // this is fine for now but if we start supporting multiple engine configurations for all engine types then we will need
         // to coalesce the factory types so we don't see more than one option for a given language
         for (ScriptEngineFactory factory : manager.getEngineFactories())
@@ -201,7 +201,6 @@ public class ReportUIProvider extends DefaultReportUIProvider
         {
             if (report instanceof AttachmentReport)
             {
-                Container c = ContainerManager.getForId(report.getContainerId());
                 AttachmentReport attachmentReport = (AttachmentReport)report;
                 String filename = attachmentReport.getFilePath();
 
@@ -251,7 +250,6 @@ public class ReportUIProvider extends DefaultReportUIProvider
         {
             if (report instanceof AttachmentReport)
             {
-                Container c = ContainerManager.getForId(report.getContainerId());
                 AttachmentReport attachmentReport = (AttachmentReport)report;
                 String filename = attachmentReport.getFilePath();
 
@@ -287,6 +285,4 @@ public class ReportUIProvider extends DefaultReportUIProvider
 
         return super.getIconCls(report);
     }
-
-
 }

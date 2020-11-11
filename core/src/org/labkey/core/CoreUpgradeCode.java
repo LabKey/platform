@@ -15,8 +15,6 @@
  */
 package org.labkey.core;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.SystemUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.Container;
@@ -35,7 +33,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LKScriptEngineManager;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Group;
@@ -117,7 +115,7 @@ public class CoreUpgradeCode implements UpgradeCode
     {
         if (!context.isNewInstall())
         {
-            LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            LKScriptEngineManager svc = ServiceRegistry.get().getService(LKScriptEngineManager.class);
             if (svc instanceof ScriptEngineManagerImpl)
             {
                 try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
@@ -180,7 +178,7 @@ public class CoreUpgradeCode implements UpgradeCode
     {
         if (!context.isNewInstall())
         {
-            LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            LKScriptEngineManager svc = ServiceRegistry.get().getService(LKScriptEngineManager.class);
             if (svc != null)
             {
                 List<ExternalScriptEngineDefinition> rDefs = svc.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R);
@@ -211,7 +209,7 @@ public class CoreUpgradeCode implements UpgradeCode
     {
         if (!context.isNewInstall())
         {
-            LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            LKScriptEngineManager svc = ServiceRegistry.get().getService(LKScriptEngineManager.class);
             if (svc != null)
             {
                 try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())

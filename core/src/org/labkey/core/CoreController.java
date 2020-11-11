@@ -100,7 +100,7 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LKScriptEngineManager;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresLogin;
@@ -2196,7 +2196,7 @@ public class CoreController extends SpringActionController
         {
             List<Map<String, Object>> views = new ArrayList<>();
 
-            LabkeyScriptEngineManager manager = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            LKScriptEngineManager manager = ServiceRegistry.get().getService(LKScriptEngineManager.class);
 
             for (ScriptEngineFactory factory : manager.getEngineFactories())
             {
@@ -2210,7 +2210,7 @@ public class CoreController extends SpringActionController
                 boolean isExternal = factory instanceof ExternalScriptEngineFactory;
                 record.put("external", String.valueOf(isExternal));
 
-                LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+                LKScriptEngineManager svc = ServiceRegistry.get().getService(LKScriptEngineManager.class);
                 record.put("enabled", String.valueOf(svc.isFactoryEnabled(factory)));
 
                 if (isExternal)
@@ -2313,7 +2313,7 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors) throws Exception
         {
-            LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            LKScriptEngineManager svc = ServiceRegistry.get().getService(LKScriptEngineManager.class);
             if (def.isDocker())
                 def.saveDockerImageConfig(getUser());
             svc.saveDefinition(getUser(), def);
@@ -2384,7 +2384,7 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors)
         {
-            LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            LKScriptEngineManager svc = ServiceRegistry.get().getService(LKScriptEngineManager.class);
             svc.deleteDefinition(getUser(), def);
 
             return new ApiSimpleResponse("success", true);

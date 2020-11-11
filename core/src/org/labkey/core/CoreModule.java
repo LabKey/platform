@@ -74,7 +74,7 @@ import org.labkey.api.reader.FastaDataLoader;
 import org.labkey.api.reader.HTMLDataLoader;
 import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LKScriptEngineManager;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.script.RhinoService;
 import org.labkey.api.search.SearchService;
@@ -343,7 +343,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsoleService.setInstance(new AdminConsoleServiceImpl());
         WikiRenderingService.setInstance(new WikiRenderingServiceImpl());
         VcsService.setInstance(new VcsServiceImpl());
-        ServiceRegistry.get().registerService(LabkeyScriptEngineManager.class, new ScriptEngineManagerImpl());
+        ServiceRegistry.get().registerService(LKScriptEngineManager.class, new ScriptEngineManagerImpl());
 
         try
         {
@@ -886,7 +886,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+        LKScriptEngineManager svc = ServiceRegistry.get().getService(LKScriptEngineManager.class);
         // populate script engine definitions values read from startup properties as appropriate for not bootstrap
         if (svc instanceof ScriptEngineManagerImpl)
             ((ScriptEngineManagerImpl)svc).populateScriptEngineDefinitionsWithStartupProps();

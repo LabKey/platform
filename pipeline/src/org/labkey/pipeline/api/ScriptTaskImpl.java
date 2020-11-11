@@ -31,7 +31,7 @@ import org.labkey.api.pipeline.cmd.TaskPath;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LKScriptEngineManager;
 import org.labkey.api.reports.RScriptEngine;
 import org.labkey.api.reports.RserveScriptEngine;
 import org.labkey.api.services.ServiceRegistry;
@@ -69,12 +69,12 @@ public class ScriptTaskImpl extends CommandTaskImpl
         _writeTaskInfoFile = true;
     }
 
-    private ScriptEngine getScriptEngine(Container c, LabkeyScriptEngineManager mgr, String extension)
+    private ScriptEngine getScriptEngine(Container c, LKScriptEngineManager mgr, String extension)
     {
         ScriptEngine engine = mgr.getEngineByName(extension);
         if (engine == null)
         {
-            engine = mgr.getEngineByExtension(c, extension, LabkeyScriptEngineManager.EngineContext.pipeline);
+            engine = mgr.getEngineByExtension(c, extension, LKScriptEngineManager.EngineContext.pipeline);
         }
         return engine;
     }
@@ -85,7 +85,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
     protected boolean runCommand(RecordedAction action, String apikey) throws IOException, PipelineJobException
     {
         // Get the script engine
-        LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+        LKScriptEngineManager mgr = ServiceRegistry.get().getService(LKScriptEngineManager.class);
         if (mgr == null)
             throw new PipelineJobException("Script engine manager not available");
 
