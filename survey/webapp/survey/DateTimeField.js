@@ -290,7 +290,7 @@ Ext4.define('Ext.ux.form.field.DateTime', {
         var formats = [];
         if (format)
             formats.push(format);
-        formats = formats.concat(DATEFORMATS);
+        formats = formats.concat(LABKEY.Utils.getDateAltFormats().split('|'));
 
         var val;
         for (var i=0; i < formats.length && !val; ++i) {

@@ -21,8 +21,7 @@ import {
     DatasetModel,
     fetchDatasetDesign,
     LoadingSpinner,
-    BeforeUnload,
-    ConfirmModal
+    BeforeUnload
 } from "@labkey/components";
 import { ActionURL, Domain, getServerContext } from "@labkey/api";
 
@@ -31,8 +30,7 @@ import "./DatasetDesigner.scss"
 interface State {
     model: DatasetModel,
     isLoadingModel: boolean,
-    message?: string,
-    fileImportError: string
+    message?: string
 }
 
 export class App extends PureComponent<any, State> {
@@ -44,8 +42,7 @@ export class App extends PureComponent<any, State> {
 
         this.state = {
             model: undefined,
-            isLoadingModel: true,
-            fileImportError: undefined
+            isLoadingModel: true
         };
     }
 
@@ -95,13 +92,8 @@ export class App extends PureComponent<any, State> {
         }
     }
 
-    onComplete = (model: DatasetModel, fileImportError?: string) => {
-        if (fileImportError) {
-            this.setState(() => ({fileImportError, model}));
-        }
-        else {
-            this.navigateOnComplete(model);
-        }
+    onComplete = (model: DatasetModel) => {
+        this.navigateOnComplete(model);
     };
 
     onCancel = () => {
@@ -112,23 +104,8 @@ export class App extends PureComponent<any, State> {
         this._dirty = true;
     };
 
-    renderFileImportErrorConfirm() {
-        return (
-            <ConfirmModal
-                title='Error Importing File'
-                msg={<>
-                    <p>There was an error while trying to import the selected file. Please review the error below and go to the newly created datasets' import data page to try again.</p>
-                    <ul><li>{this.state.fileImportError}</li></ul>
-                </>}
-                confirmVariant='primary'
-                onConfirm={() => this.navigateOnComplete(this.state.model)}
-                confirmButtonText='OK'
-            />
-        )
-    }
-
     render() {
-        const { isLoadingModel, message, model, fileImportError } = this.state;
+        const { isLoadingModel, message, model } = this.state;
 
         if (message) {
             return <Alert>{message}</Alert>
@@ -145,7 +122,6 @@ export class App extends PureComponent<any, State> {
                         This dataset was created by copying assay data from <a href={model.sourceAssayUrl}>{model.sourceAssayName}</a>.
                     </p>
                 }
-                {fileImportError && this.renderFileImportErrorConfirm()}
                 <DatasetDesignerPanels
                     initModel={model}
                     onCancel={this.onCancel}

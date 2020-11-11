@@ -307,7 +307,10 @@ public class ExceptionUtil
                     {
                         ViewContext viewContext = HttpView.currentContext();
                         logMessage += "\nCurrent URL: " + viewContext.getActionURL();
-                        logMessage += "\nCurrent user: " + (viewContext.getUser().isGuest() ? "Guest" : viewContext.getUser().getEmail());
+                        if (null != viewContext.getUser())
+                        {
+                            logMessage += "\nCurrent user: " + (viewContext.getUser().isGuest() ? "Guest" : viewContext.getUser().getEmail());
+                        }
                     }
                     LOG.error(logMessage);
                 }
@@ -846,7 +849,6 @@ public class ExceptionUtil
 
     private static void renderErrorPage(Throwable ex, int responseStatus, String message, HttpServletRequest request, HttpServletResponse response, PageConfig pageConfig, ErrorRenderer.ErrorType errorType, User user, Logger log, boolean startupFailure)
     {
-        // 7629: Error page redesign -- development in-progress. This path shows the new error view.
         ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, false, startupFailure);
 
         if (ex instanceof UnauthorizedException)
@@ -896,12 +898,16 @@ public class ExceptionUtil
 
             addDependenciesAndRender(responseStatus, pageConfig, errorView, ex, request, response);
         }
+        catch (ConfigurationException ce)
+        {
+            throw ce;
+        }
         catch (Exception e)
         {
-            // config exceptions that occur before jsps have been initialized
-            if (ex instanceof ConfigurationException && null != ModuleLoader.getInstance().getStartupFailure())
+            // non config exceptions like SqlScriptException that occur during startup
+            if (null != ModuleLoader.getInstance().getStartupFailure())
             {
-                throw new ConfigurationException(ex.getMessage());
+                throw new ConfigurationException(ex.getMessage(), ex);
             }
 
             // try to render just the react app
@@ -943,7 +949,14 @@ public class ExceptionUtil
         var title = responseStatus + ": " + ErrorView.ERROR_PAGE_TITLE;
         if (null != ex)
         {
-            title += " -- " + ex.getMessage();
+            if (null != ex.getMessage())
+            {
+                title += " -- " + ex.getMessage();
+            }
+            else
+            {
+                title += " -- " + ex.toString();
+            }
         }
         pageConfig.setTitle(title, false);
         response.setStatus(responseStatus);
