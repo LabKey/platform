@@ -57,7 +57,6 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
     public static final String COLUMN_NAME_DATASET_ID = "DatasetId";
     public static final String COLUMN_NAME_HAS_DETAILS = "HasDetails";
     public static final String COLUMN_NAME_LSID = "Lsid";
-    public static final String COLUMN_NAME_PARTICIPANT_ID = "ParticipantID";
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
@@ -69,7 +68,6 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROJECT_ID));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_DATASET_ID));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PARTICIPANT_ID));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
@@ -193,7 +191,6 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
         private String _lsid;
         private String _oldRecordMap;
         private String _newRecordMap;
-        private String _participantId;
 
         public DatasetAuditEvent()
         {
@@ -233,16 +230,6 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
         public void setLsid(String lsid)
         {
             _lsid = lsid;
-        }
-
-        public String getParticipantId()
-        {
-            return _participantId;
-        }
-
-        public void setParticipantId(String participantId)
-        {
-            _participantId = participantId;
         }
 
         public String getOldRecordMap()
@@ -291,7 +278,6 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
 
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
             fields.add(createPropertyDescriptor(COLUMN_NAME_DATASET_ID, PropertyType.INTEGER));
-            fields.add(createPropertyDescriptor(COLUMN_NAME_PARTICIPANT_ID, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_HAS_DETAILS, PropertyType.BOOLEAN));
             fields.add(createPropertyDescriptor(COLUMN_NAME_LSID, PropertyType.STRING));
             fields.add(createPropertyDescriptor(OLD_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
