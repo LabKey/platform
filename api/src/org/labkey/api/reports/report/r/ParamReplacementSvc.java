@@ -20,11 +20,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.view.HrefOutput;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.writer.PrintWriters;
 
 import java.io.BufferedReader;
@@ -53,6 +59,9 @@ public class ParamReplacementSvc
     private static final Logger _log = LogManager.getLogger(ParamReplacementSvc.class);
     private static final ParamReplacementSvc _instance = new ParamReplacementSvc();
     private static final Map<String, String> _outputSubstitutions = new HashMap<>();
+
+    // Map of deprecated replacements to severity and error message
+    private static final Map<String, Pair<ValidationException.SEVERITY, String>> _deprecatedParams = new CaseInsensitiveHashMap<>();
 
     /* Inline substitution parameters "${}" are deprecated, use comment substitution "#${}" instead. */
     // the default inline param replacement pattern : ${}
@@ -190,6 +199,11 @@ public class ParamReplacementSvc
         _outputSubstitutions.put(rout.getId(), rout.getClass().getName());
     }
 
+    public void registerDeprecated(String deprecatedParam, ValidationException.SEVERITY severity, String message)
+    {
+        _deprecatedParams.put(deprecatedParam, Pair.of(severity, message));
+    }
+
     public boolean isScriptWithValidReplacements(String text, List<String> errors)
     {
         return isScriptWithValidReplacements(text, errors, SubstitutionSyntax.COMMENT) && isScriptWithValidReplacements(text, errors, SubstitutionSyntax.INLINE);
@@ -210,6 +224,36 @@ public class ParamReplacementSvc
             }
         }
         return true;
+    }
+
+    /**
+     * Add warnings or errors when one of the deprecated parameter replacements is used.
+     */
+    public ValidationException validateDeprecatedReplacements(String text, @Nullable String sourceName)
+    {
+        ValidationException errors = new ValidationException();
+        Set<String> replacements = this.tokens(text);
+        for (String replacement : replacements)
+        {
+            var deprecated = _deprecatedParams.get(replacement);
+            if (deprecated != null)
+            {
+                var severity = deprecated.first;
+                var message = deprecated.second;
+                errors.addError(new SimpleValidationError(formatDeprecatedMessage(replacement, message, sourceName), replacement, severity, new HelpTopic("transformationSubstitutionSyntax")));
+            }
+        }
+
+        return errors;
+    }
+
+    private String formatDeprecatedMessage(String paramName, String message, @Nullable String sourceName)
+    {
+        StringBuilder sb = new StringBuilder("Deprecated replacement '" + paramName + "'");
+        if (sourceName != null)
+            sb.append(" in " + sourceName);
+        sb.append(": " + message);
+        return sb.toString();
     }
 
     protected boolean isValidReplacement(String value)
@@ -339,28 +383,30 @@ public class ParamReplacementSvc
 
     public String processInputReplacement(String script, String replacementParam, String value)
     {
-        return processInputReplacement(script, replacementParam, value, false);
-    }
-    /**
-     * Replaces an input replacement symbol with the full path name of the specified input file.
-     */
-    public String processInputReplacement(String script, String replacementParam, String replacementValue, boolean isRStudio)
-    {
-        if (isRStudio && replacementValue == null)
-            replacementValue = DATA_INPUT;
-        String commentProcessedScript = processInputReplacement(script, replacementParam, replacementValue, SubstitutionSyntax.COMMENT);
-        if (isRStudio)
-            return commentProcessedScript; // script has already been transformed from inline to comment, if any
-        return processInputReplacement(commentProcessedScript, replacementParam, replacementValue, SubstitutionSyntax.INLINE);
+        return processInputReplacement(script, replacementParam, value, false, null);
     }
 
     /**
      * Replaces an input replacement symbol with the full path name of the specified input file.
      */
-    public String processInputReplacement(String script, String replacementParam, String replacementValue, SubstitutionSyntax pattern)
+    public String processInputReplacement(String script, String replacementParam, String replacementValue, boolean isRStudio, @Nullable String sourceName)
     {
+        if (isRStudio && replacementValue == null)
+            replacementValue = DATA_INPUT;
+        String commentProcessedScript = processInputReplacement(script, replacementParam, replacementValue, SubstitutionSyntax.COMMENT, sourceName);
+        if (isRStudio)
+            return commentProcessedScript; // script has already been transformed from inline to comment, if any
+        return processInputReplacement(commentProcessedScript, replacementParam, replacementValue, SubstitutionSyntax.INLINE, sourceName);
+    }
+
+    /**
+     * Replaces an input replacement symbol with the full path name of the specified input file.
+     */
+    private String processInputReplacement(String script, String replacementParam, String replacementValue, SubstitutionSyntax pattern, @Nullable String sourceName)
+    {
+        boolean found = false;
         Matcher m = pattern.getMatchPattern().matcher(script);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder(script.length());
 
         while (m.find())
         {
@@ -368,6 +414,7 @@ public class ParamReplacementSvc
             if (replacementParam.equals(matchedStr))
             {
                 appendReplacement(m, sb, replacementValue, matchedStr);
+                found = true;
             }
             else
             {
@@ -380,20 +427,30 @@ public class ParamReplacementSvc
                     {
                         String replacementStr = pattern.getReplacementStr(replacementValue, m.group(0), name);
                         appendReplacement(m, sb, replacementStr, matchedStr);
+                        found = true;
                     }
                 }
             }
         }
         m.appendTail(sb);
+
+        var deprecated = _deprecatedParams.get(replacementParam);
+        if (found && deprecated != null)
+        {
+            var severity = deprecated.first;
+            var message = deprecated.second;
+            _log.log(severity.getLevel(), formatDeprecatedMessage(replacementParam, message, sourceName));
+        }
+
         return sb.toString();
     }
 
-    private void appendReplacement(Matcher m, StringBuffer sb, String replacementStr) throws IllegalArgumentException
+    private void appendReplacement(Matcher m, StringBuilder sb, String replacementStr) throws IllegalArgumentException
     {
         appendReplacement(m, sb, replacementStr, null);
     }
 
-    private void appendReplacement(Matcher m, StringBuffer sb, String replacementStr, String token) throws IllegalArgumentException
+    private void appendReplacement(Matcher m, StringBuilder sb, String replacementStr, String token) throws IllegalArgumentException
     {
         try
         {
@@ -444,7 +501,7 @@ public class ParamReplacementSvc
     public String processParamReplacement(String script, File parentDirectory, String remoteParentDirectoryPath, List<ParamReplacement> outputReplacements, SubstitutionSyntax pattern) throws Exception
     {
         Matcher m = pattern.getMatchPattern().matcher(script);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         while (m.find())
         {
@@ -502,7 +559,7 @@ public class ParamReplacementSvc
     public String processHrefParamReplacement(Report report, String script, File parentDirectory, SubstitutionSyntax pattern)
     {
         Matcher m = pattern.getEscapedMatchPattern().matcher(script);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         while (m.find())
         {
@@ -548,7 +605,7 @@ public class ParamReplacementSvc
     public String processRelativeHrefReplacement(Report report, String script, File parentDirectory)
     {
         Matcher m = Pattern.compile("(href|src)=\"([^\"]*)\"").matcher(script);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         while (m.find())
         {
@@ -634,7 +691,7 @@ public class ParamReplacementSvc
 
     public String transformInlineReplacements(@NotNull String script, InlineTransformation transformation) throws IllegalArgumentException
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         Matcher m = transformation.getMatchPattern().matcher(script);
 
         int inputIndex = 0;
