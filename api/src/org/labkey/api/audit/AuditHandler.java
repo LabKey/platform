@@ -107,32 +107,11 @@ public abstract class AuditHandler
                             }
                             case UPDATE:
                             {
+                                Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(row, updatedRow, table.getExtraDetailedUpdateAuditFields());
                                 // record modified fields
-                                Map<String, Object> originalRow = new HashMap<>();
-                                Map<String, Object> modifiedRow = new HashMap<>();
+                                Map<String, Object> originalRow = rowPair.first;
+                                Map<String, Object> modifiedRow = rowPair.second;
 
-                                Set<String> extraFieldsToInclude = table.getExtraDetailedUpdateAuditFields();
-
-                                for (Map.Entry<String, Object> entry : row.entrySet())
-                                {
-                                    boolean isExtraAuditField = extraFieldsToInclude != null && extraFieldsToInclude.contains(entry.getKey());
-                                    if (updatedRow.containsKey(entry.getKey()))
-                                    {
-                                        Object newValue = updatedRow.get(entry.getKey());
-                                        if (!Objects.equals(entry.getValue(), newValue) || isExtraAuditField)
-                                        {
-                                            originalRow.put(entry.getKey(), entry.getValue());
-                                            modifiedRow.put(entry.getKey(), newValue);
-                                        }
-                                    }
-                                    else if (isExtraAuditField)
-                                    {
-                                        // persist extra fields desired for audit details even if no change is made, so that extra field values is available after record is deleted
-                                        // for example, a display label/id is desired in audit log for the record updated.
-                                        originalRow.put(entry.getKey(), entry.getValue());
-                                        modifiedRow.put(entry.getKey(), entry.getValue());
-                                    }
-                                }
                                 // allow for adding fields that may be present in the updated row but not represented in the original row
                                 addDetailedModifiedFields(row, modifiedRow, updatedRow);
 
