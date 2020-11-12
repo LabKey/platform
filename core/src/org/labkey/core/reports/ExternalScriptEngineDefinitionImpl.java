@@ -25,7 +25,7 @@ import org.labkey.api.docker.DockerService;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -134,7 +134,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
             // entire JSON object will get rewritten on update
             if (getRowId() != null)
             {
-                LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+                LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
                 ExternalScriptEngineDefinition existingDef = svc.getEngineDefinition(getRowId(), getType());
 
                 if (existingDef != null)
