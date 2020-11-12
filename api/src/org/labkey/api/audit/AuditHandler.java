@@ -146,7 +146,8 @@ public abstract class AuditHandler
             {
                 Object newValue = updatedRow.get(entry.getKey());
                 // compare dates using string values to allow for both Date and Timestamp types
-                if (newValue instanceof Date && entry.getValue() != null) {
+                if (newValue instanceof Date && entry.getValue() != null)
+                {
                     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
                     String newString = formatter.format((java.util.Date) newValue);
                     Object oldValue = entry.getValue();
@@ -157,8 +158,7 @@ public abstract class AuditHandler
                         modifiedRow.put(entry.getKey(), newValue);
                     }
                 }
-                else
-                    if (!Objects.equals(entry.getValue(), newValue) || isExtraAuditField)
+                else if (!Objects.equals(entry.getValue(), newValue) || isExtraAuditField)
                 {
                     originalRow.put(entry.getKey(), entry.getValue());
                     modifiedRow.put(entry.getKey(), newValue);
