@@ -44,6 +44,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.Report;
@@ -650,7 +651,9 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     protected String processScript(ScriptEngine engine, ViewContext context, String script, File inputFile, List<ParamReplacement> outputSubst, Map<String, Object> inputParameters, boolean includeProlog) throws Exception
     {
         return processScript(engine, context, script, inputFile, outputSubst, inputParameters, includeProlog, false);
-    }    /**
+    }
+
+    /**
      * Takes a script source, adds a prolog, processes any input and output replacement parameters
      * @param script
      * @param inputFile
@@ -690,7 +693,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     protected String processInputReplacement(ScriptEngine engine, String script, @Nullable File inputFile, boolean isRStudio)
     {
-        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, inputFile == null ? null : inputFile.getAbsolutePath().replaceAll("\\\\", "/"), isRStudio);
+        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, inputFile == null ? null : inputFile.getAbsolutePath().replaceAll("\\\\", "/"), isRStudio, null);
     }
 
     protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements, @NotNull ContainerUser context, boolean isRStudio) throws Exception

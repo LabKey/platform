@@ -82,6 +82,11 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.ValidationException.SEVERITY;
+import org.labkey.api.reports.ExternalScriptEngine;
+import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -98,6 +103,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.NavTree;
@@ -111,6 +117,7 @@ import javax.script.ScriptEngine;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -1196,11 +1203,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
     private static final String SCRIPT_PATH_DELIMITER = "|";
 
     @Override
-    public void setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<File> scripts) throws ExperimentException
+    public ValidationException setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<File> scripts) throws ExperimentException
     {
         Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
         String propertyURI = ScriptType.TRANSFORM.getPropertyURI(protocol);
 
+        ValidationException validationErrors = new ValidationException();
         StringBuilder sb = new StringBuilder();
         String separator = "";
         for (File scriptFile : scripts)
@@ -1211,17 +1219,41 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 ScriptEngine engine = LabKeyScriptEngineManager.get().getEngineByExtension(protocol.getContainer(), ext, LabKeyScriptEngineManager.EngineContext.pipeline);
                 if (engine != null)
                 {
+                    // check for deprecated tokens in text scripts
+                    if (!(engine instanceof ExternalScriptEngine && ((ExternalScriptEngine) engine).isBinary(scriptFile)))
+                    {
+                        String scriptText;
+                        try
+                        {
+                            scriptText = Files.readString(scriptFile.toPath(), StringUtilsLabKey.DEFAULT_CHARSET);
+                        }
+                        catch (IOException e)
+                        {
+                            throw new ExperimentException("Failed to read script: " + e.getMessage(), e);
+                        }
+
+                        validationErrors.addErrors(ParamReplacementSvc.get().validateDeprecatedReplacements(scriptText, scriptFile.getName()));
+                    }
+
                     sb.append(separator);
                     sb.append(scriptFile.getAbsolutePath());
                     separator = SCRIPT_PATH_DELIMITER;
                 }
                 else
-                    throw new ExperimentException("Script engine for the extension : " + ext + " has not been registered.\nFor documentation about how to configure a " +
-                            "scripting engine, paste this link into your browser: \"" + new HelpTopic("configureScripting") + "\".");
+                {
+                    validationErrors.addError(new SimpleValidationError("Script engine for the extension : " + ext + " has not been registered.", null, SEVERITY.ERROR, new HelpTopic("configureScripting")));
+                }
             }
             else
-                throw new ExperimentException("The transform script '" + scriptFile.getPath() + "' is invalid or does not exist");
+            {
+                validationErrors.addError(new SimpleValidationError("The transform script '" + scriptFile.getPath() + "' is invalid or does not exist", null, SEVERITY.ERROR));
+            }
         }
+
+        // don't persist if any validation error has severity=ERROR
+        if (validationErrors.getErrors().stream().anyMatch(e -> SEVERITY.ERROR == e.getSeverity()))
+            return validationErrors;
+
         if (sb.length() > 0)
         {
             ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(),
@@ -1232,10 +1264,13 @@ public abstract class AbstractAssayProvider implements AssayProvider
         {
             props.remove(propertyURI);
         }
+
         // Be sure to strip out any validation scripts that were stored with the legacy propertyURI. We merge and save
         // them as a single list in the TRANSFORM 
         props.remove(ScriptType.VALIDATION.getPropertyURI(protocol));
         protocol.setObjectProperties(props);
+
+        return validationErrors;
     }
 
     /** For migrating legacy assay designs that have separate transform and validation script properties */

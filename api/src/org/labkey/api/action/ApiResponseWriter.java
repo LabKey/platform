@@ -26,9 +26,9 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ExpectedException;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.HttpStatusException;
-import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
@@ -379,6 +379,10 @@ public abstract class ApiResponseWriter implements AutoCloseable
         if (error instanceof PropertyValidationError)
             key = ((PropertyValidationError) error).getProperty();
 
+        String help = null;
+        if (error.getHelp() != null)
+            help = error.getHelp().getHelpTopicHref();
+
         JSONObject jsonError = new JSONObject();
 
         // these are the Ext expected property names
@@ -387,6 +391,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
         // TODO deprecate these with a new API version
         jsonError.putOpt("field", key);
         jsonError.put("message", msg);
+        jsonError.putOpt("help", help);
 
         parent.put(jsonError);
     }
@@ -453,6 +458,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
             String key = error.getObjectName();
             String propertyId = (null != error.getCodes() && error.getCodes().length > 0 ? error.getCodes()[0] : key);
             String severity = ValidationException.SEVERITY.ERROR.toString();
+            String help = null;
 
             if (error instanceof FieldError)
             {
@@ -466,6 +472,8 @@ public abstract class ApiResponseWriter implements AutoCloseable
                 severity = fieldWarning.getSeverity();
                 key = fieldWarning.getField();
                 propertyId = fieldWarning.getObjectName();
+                if (fieldWarning.getHelp() != null)
+                    help = fieldWarning.getHelp().getHelpTopicHref();
             }
 
             JSONObject jsonError = new JSONObject();
@@ -476,6 +484,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
             jsonError.put("field", key);
             jsonError.put("message", msg);
             jsonError.put("severity", severity);
+            jsonError.putOpt("help", help);
 
             if (null == exceptionMessage)
                 exceptionMessage = msg;

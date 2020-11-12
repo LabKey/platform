@@ -82,7 +82,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
     // TODO: Rhino engine.  A non-ExternalScriptEngine won't use the PARAM_REPLACEMENT_MAP binding.
     // CONSIDER: Use ScriptEngineReport to generate a script prolog
     @Override
-    protected boolean runCommand(RecordedAction action, String apikey) throws IOException, PipelineJobException
+    protected boolean runCommand(RecordedAction action, String apiKey) throws IOException, PipelineJobException
     {
         // Get the script engine
         LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
@@ -160,7 +160,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
             if (_factory.getTimeout() != null && _factory.getTimeout() > 0)
                 bindings.put(ExternalScriptEngine.TIMEOUT, _factory.getTimeout());
 
-            Map<String, String> replacements = createReplacements(scriptFile, apikey);
+            Map<String, String> replacements = createReplacements(scriptFile, apiKey);
             bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, replacements);
 
             // Write task properties file into the work directory

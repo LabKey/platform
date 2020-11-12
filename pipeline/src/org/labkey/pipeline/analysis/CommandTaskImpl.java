@@ -585,7 +585,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
      * to replace tokens the script or the command line before executing it.
      * The replaced paths will be resolved to paths in the work directory.
      */
-    protected Map<String, String> createReplacements(@Nullable File scriptFile, String transformSessionId) throws IOException
+    protected Map<String, String> createReplacements(@Nullable File scriptFile, String apiKey) throws IOException
     {
         Map<String, String> replacements = new HashMap<>();
 
@@ -659,7 +659,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             replacements.put(PipelineJob.PIPELINE_TASK_OUTPUT_PARAMS_PARAM, taskOutputParamsRelativePath);
         }
 
-        DefaultDataTransformer.addStandardParameters(null, getJob().getContainer(), scriptFile, transformSessionId, replacements);
+        DefaultDataTransformer.addStandardParameters(null, getJob().getContainer(), scriptFile, apiKey, replacements);
 
         return replacements;
     }
@@ -674,7 +674,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
     @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
-        final String apikey = SecurityManager.beginTransformSession(getJob().getUser());
+        final String apikey = SecurityManager.beginTransformSessionApiKey(getJob().getUser());
 
         try
         {
@@ -733,7 +733,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         }
         finally
         {
-            SecurityManager.endTransformSession(apikey);
+            SecurityManager.endTransformSessionApiKey(apikey);
             _wd = null;
         }
     }
@@ -741,14 +741,15 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
     /**
      * Run the command line task.
      * @param action The recorded action.
+     * @param apiKey API key to use for the duration of the command execution
      * @return true if the task was run, false otherwise.
      * @throws IOException
      * @throws PipelineJobException
      */
     // TODO: Add task and job version information to the recorded action.
-    protected boolean runCommand(RecordedAction action, String apikey) throws IOException, PipelineJobException
+    protected boolean runCommand(RecordedAction action, String apiKey) throws IOException, PipelineJobException
     {
-        Map<String, String> replacements = createReplacements(null, apikey);
+        Map<String, String> replacements = createReplacements(null, apiKey);
 
         ProcessBuilder pb = new ProcessBuilder(_factory.toArgs(this, replacements));
         applyEnvironment(pb);

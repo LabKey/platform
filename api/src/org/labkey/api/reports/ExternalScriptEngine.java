@@ -91,7 +91,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
         return new ExternalScriptEngineFactory(_def);
     }
 
-    private boolean isBinary(File file)
+    public boolean isBinary(File file)
     {
         String ext = FileUtil.getExtension(file);
 
@@ -237,7 +237,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
             }
         }
 
-        try {
+        try
+        {
             // see if the command contains parameter substitutions
             if (cmd != null)
             {
@@ -433,7 +434,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
                 {
                     for (Map.Entry<String, String> param : ((Map<String, String>)bindings.get(PARAM_REPLACEMENT_MAP)).entrySet())
                     {
-                        script = ParamReplacementSvc.get().processInputReplacement(script, param.getKey(), param.getValue());
+                        script = ParamReplacementSvc.get().processInputReplacement(script, param.getKey(), param.getValue(), false, scriptFile.getName());
                     }
                 }
 
@@ -443,7 +444,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
                 }
             }
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             ExceptionUtil.logExceptionToMothership(null, e);
         }
@@ -461,7 +462,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
 
         // if additional console output is written to a file, append it to the output string.
         BufferedReader br = null;
-        try {
+        try
+        {
             String fileName = _def.getOutputFileName();
             if (fileName != null)
             {
