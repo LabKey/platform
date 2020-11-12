@@ -30,6 +30,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.GroupAuditProvider;
@@ -635,12 +636,19 @@ public class SecurityManager
      */
     public static @NotNull String beginTransformSessionApiKey(@NotNull User user)
     {
-        return ApiKeyManager.get().createKey(user, SECONDS_PER_DAY);
+        // Issue 40482: now that we create a temporary apikey when executing R reports, we need to ignore SQL updates
+        try (var ignore = SpringActionController.ignoreSqlUpdates())
+        {
+            return ApiKeyManager.get().createKey(user, SECONDS_PER_DAY);
+        }
     }
 
     public static void endTransformSessionApiKey(@NotNull String apikey)
     {
-        ApiKeyManager.get().deleteKey(apikey);
+        try (var ignore = SpringActionController.ignoreSqlUpdates())
+        {
+            ApiKeyManager.get().deleteKey(apikey);
+        }
     }
 
 
