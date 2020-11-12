@@ -69,8 +69,8 @@ import java.util.Set;
 public class DatasetUpdateService extends AbstractQueryUpdateService
 {
     private final DatasetDefinition _dataset;
-    private Set<String> _potentiallyNewParticipants = new HashSet<>();
-    private Set<String> _potentiallyDeletedParticipants = new HashSet<>();
+    private final Set<String> _potentiallyNewParticipants = new HashSet<>();
+    private final Set<String> _potentiallyDeletedParticipants = new HashSet<>();
     private boolean _participantVisitResyncRequired = false;
 
     /** Mapping for MV column names */
@@ -85,6 +85,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             _columnMapping = createMVMapping(domain);
     }
 
+    @Override
     protected boolean hasPermission(User user, Class<? extends Permission> acl)
     {
         if (StudySecurityEscalator.isEscalated()) {
@@ -226,29 +227,6 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         }
     }
 
-
-    @Override
-    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-    {
-        throw new IllegalStateException();
-//        List<String> errors = new ArrayList<String>();
-//        String newLsid = StudyService.get().insertDatasetRow(user, container, _dataset.getDatasetId(), row, errors);
-//
-//        if(errors.size() > 0)
-//        {
-//            ValidationException e = new ValidationException();
-//            for(String err : errors)
-//                e.addError(new SimpleValidationError(err));
-//            throw e;
-//        }
-//
-//        //update the lsid
-//        row.put("lsid", newLsid);
-//        _potentiallyNewParticipants.add(getParticipant(row, user, container));
-//        _participantVisitResyncRequired = true;
-//
-//        return row;
-    }
 
     private @NotNull String getParticipant(Map<String, Object> row, User user, Container container) throws ValidationException, QueryUpdateServiceException
     {

@@ -146,7 +146,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException
+    public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         int ret = super.loadRows(user, container, rows, context, extraScriptContext);
         if (ret > 0 && !context.getErrors().hasErrors())
@@ -459,12 +459,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 //    {
 //        throw new IllegalStateException();
 //    }
-
-    @Override
-    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-    {
-        throw new IllegalStateException();
-    }
 
 //    @Override
 //    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
