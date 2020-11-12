@@ -6243,6 +6243,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(EnabledSpecimenImportForm form, boolean reshow, BindException errors) throws Exception
         {
+            setHelpTopic(new HelpTopic("externalSpecimens"));
             return new JspView<>("/org/labkey/study/view/chooseImporter.jsp", form, errors);
         }
 
