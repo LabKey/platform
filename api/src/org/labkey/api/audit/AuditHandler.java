@@ -1,5 +1,6 @@
 package org.labkey.api.audit;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.Container;
@@ -7,13 +8,16 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.Date;
 
 public abstract class AuditHandler
 {
@@ -148,6 +152,48 @@ public abstract class AuditHandler
                 }
             }
         }
+    }
+
+    public static Pair<Map<String, Object>, Map<String, Object>> getOldAndNewRecordForMerge(@NotNull Map<String, Object> row, @NotNull Map<String, Object> updatedRow, @NotNull Set<String> extraFieldsToInclude)
+    {
+        // record modified fields
+        Map<String, Object> originalRow = new HashMap<>();
+        Map<String, Object> modifiedRow = new HashMap<>();
+
+        for (Map.Entry<String, Object> entry : row.entrySet())
+        {
+            boolean isExtraAuditField = extraFieldsToInclude.contains(entry.getKey());
+            if (updatedRow.containsKey(entry.getKey()))
+            {
+                Object newValue = updatedRow.get(entry.getKey());
+                // compare dates using string values to allow for both Date and Timestamp types
+                if (newValue instanceof Date && entry.getValue() != null) {
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+                    String newString = formatter.format((java.util.Date) newValue);
+                    Object oldValue = entry.getValue();
+                    String oldString = oldValue instanceof Date ? formatter.format((Date) oldValue) : oldValue.toString();
+                    if (!newString.equals(oldString) || isExtraAuditField)
+                    {
+                        originalRow.put(entry.getKey(), oldValue);
+                        modifiedRow.put(entry.getKey(), newValue);
+                    }
+                }
+                else
+                    if (!Objects.equals(entry.getValue(), newValue) || isExtraAuditField)
+                {
+                    originalRow.put(entry.getKey(), entry.getValue());
+                    modifiedRow.put(entry.getKey(), newValue);
+                }
+            }
+            else if (isExtraAuditField)
+            {
+                // persist extra fields desired for audit details even if no change is made, so that extra field values is available after record is deleted
+                // for example, a display label/id is desired in audit log for the record updated.
+                originalRow.put(entry.getKey(), entry.getValue());
+                modifiedRow.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return new Pair<>(originalRow, modifiedRow);
     }
 
 }

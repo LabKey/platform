@@ -617,10 +617,10 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     }
 
     /* fields to include in detailed UPDATE audit log, even if no change is made to field value */
-    @Nullable
+    @NotNull
     default Set<String> getExtraDetailedUpdateAuditFields()
     {
-        return null;
+        return Collections.emptySet();
     }
 
     /**
