@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import org.apache.logging.log4j.Level;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.RuntimeSQLException;
 import org.springframework.validation.BindException;
@@ -79,14 +80,22 @@ public class ValidationException extends Exception implements Iterable<Validatio
 
     public enum SEVERITY
     {
-        ERROR("Error"),
-        WARN("Warning"),
-        INFO("Info");
+        ERROR("Error", Level.ERROR),
+        WARN("Warning", Level.WARN),
+        INFO("Info", Level.INFO);
 
         String _sevName;
-        SEVERITY(String sevName)
+        Level _level;
+
+        SEVERITY(String sevName, Level level)
         {
             _sevName = sevName;
+            _level = level;
+        }
+
+        public Level getLevel()
+        {
+            return _level;
         }
 
         public String toString()
