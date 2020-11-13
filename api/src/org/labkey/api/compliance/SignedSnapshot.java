@@ -6,6 +6,7 @@ package org.labkey.api.compliance;
 
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
@@ -48,6 +49,13 @@ public class SignedSnapshot
         _signed = date;
         _rows = rows;
         _reason = reason;
+    }
+
+    // factory method
+    public static SignedSnapshot fromMap(Map<String, Object> map)
+    {
+        ObjectFactory<SignedSnapshot> factory = ObjectFactory.Registry.getFactory(SignedSnapshot.class);
+        return factory.fromMap(map);
     }
 
     public int getRowId()

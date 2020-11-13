@@ -30,6 +30,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.GroupAuditProvider;
@@ -110,6 +111,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.Closeable;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -151,6 +154,7 @@ public class SecurityManager
     static final String CIRCULAR_GROUP_ERROR_MESSAGE = "Can't add a group that results in a circular group relation";
 
     public static final String TRANSFORM_SESSION_ID = "LabKeyTransformSessionId";  // issue 19748
+    public static final String API_KEY = "apikey";
 
     private static final String USER_ID_KEY = User.class.getName() + "$userId";
     private static final String IMPERSONATION_CONTEXT_FACTORY_KEY = User.class.getName() + "$ImpersonationContextFactoryKey";
@@ -586,20 +590,24 @@ public class SecurityManager
         String apiKey;
 
         // Prefer Basic auth
-        if (null != basicCredentials && "apikey".equals(basicCredentials.getKey()))
+        if (null != basicCredentials && API_KEY.equals(basicCredentials.getKey()))
         {
             apiKey = basicCredentials.getValue();
         }
         else
         {
             // Support "apikey" header for backward compatibility. We might stop supporting this at some point.
-            apiKey = request.getHeader("apikey");
-
+            apiKey = request.getHeader(API_KEY);
             if (null == apiKey)
             {
+                // Issue 40482: Deprecate using 'LabKeyTransformSessionId' in preference for 'apikey' authentication
                 // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
                 apiKey = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
-                if (null == apiKey)
+                if (null != apiKey)
+                {
+                    _log.warn("Using '" + TRANSFORM_SESSION_ID + "' cookie for authentication is deprecated; use 'apikey' instead");
+                }
+                else
                 {
                     // Support as a GET parameter as well, not just as a cookie, to support authentication
                     // through SSRS which can't be made to use BasicAuth, pass cookies, or other HTTP headers.
@@ -623,21 +631,45 @@ public class SecurityManager
 
     public static final int SECONDS_PER_DAY = 60*60*24;
 
+    public static class TransformSession implements Closeable
+    {
+        private final String _apikey;
+
+        public TransformSession(@NotNull User user)
+        {
+            // TODO: Once we fix Issue 41813, we should remove this ignoreSqlUpdates() block
+            // Issue 40482: now that we create a temporary apikey when executing R reports, we need to ignore SQL updates
+            try (var ignore = SpringActionController.ignoreSqlUpdates())
+            {
+                _apikey = ApiKeyManager.get().createKey(user, SECONDS_PER_DAY);
+            }
+        }
+
+        public String getApiKey()
+        {
+            return _apikey;
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            // TODO: Once we fix Issue 41813, we should remove this ignoreSqlUpdates() block
+            try (var ignore = SpringActionController.ignoreSqlUpdates())
+            {
+                ApiKeyManager.get().deleteKey(_apikey);
+            }
+        }
+    }
+
     /**
      * Works like a standard HTTP session but intended for transform scripts and other API-style usage.
-     * Callers should call {@see endTransformSession} when finished, typically in a finally block.
-     * @return the apikey for the newly started session
+     * Callers must call this in a try-with-resources block to ensure the session is closed (e.g., API key is deleted).
+     * @return a TransformSession representing the newly created session
      */
-    public static @NotNull String beginTransformSession(@NotNull User user)
+    public static @NotNull TransformSession createTransformSession(@NotNull User user)
     {
-        return ApiKeyManager.get().createKey(user, SECONDS_PER_DAY);
+        return new TransformSession(user);
     }
-
-    public static void endTransformSession(@NotNull String apikey)
-    {
-        ApiKeyManager.get().deleteKey(apikey);
-    }
-
 
     public static HttpSession setAuthenticatedUser(HttpServletRequest request, @Nullable PrimaryAuthenticationConfiguration<?> configuration, User user, boolean invalidate)
     {

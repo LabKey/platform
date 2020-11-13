@@ -18,6 +18,7 @@ package org.labkey.api.reports.report;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.DefaultDataTransformer;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.pipeline.PipeRoot;
@@ -34,6 +35,8 @@ import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityManager.TransformSession;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -353,10 +356,14 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     protected Object runScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
         RConnectionHolder rh = null;
-        try
+        try (TransformSession session = SecurityManager.createTransformSession(context.getUser()))
         {
             Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir(context.getContainer().getId()).getAbsolutePath());
+
+            Map<String, String> paramMap = new HashMap<>();
+            DefaultDataTransformer.addStandardParameters(null, context.getContainer(), null, session.getApiKey(), paramMap);
+            bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
 
             if (engine instanceof RserveScriptEngine)
             {
@@ -401,7 +408,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
             return engine.eval(createScript(engine, context, outputSubst, inputDataTsv, inputParameters));
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             throw new ScriptException(e);
         }

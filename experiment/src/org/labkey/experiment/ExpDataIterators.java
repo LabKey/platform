@@ -151,7 +151,7 @@ public class ExpDataIterators
                     }
                 }
 
-                // add a sequence column for each for each of the attached columns
+                // add a sequence column for each of the attached columns
                 for (String columnName : attachedColumnNames)
                 {
                     Integer i = columnNameMap.get(columnName);
