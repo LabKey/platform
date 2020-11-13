@@ -36,6 +36,7 @@ import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityManager.TransformSession;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -354,16 +355,14 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
     protected Object runScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
-        final String apiKey = SecurityManager.beginTransformSessionApiKey(context.getUser());
-
         RConnectionHolder rh = null;
-        try
+        try (TransformSession session = SecurityManager.createTransformSession(context.getUser()))
         {
             Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir(context.getContainer().getId()).getAbsolutePath());
 
             Map<String, String> paramMap = new HashMap<>();
-            DefaultDataTransformer.addStandardParameters(null, context.getContainer(), null, apiKey, paramMap);
+            DefaultDataTransformer.addStandardParameters(null, context.getContainer(), null, session.getApiKey(), paramMap);
             bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
 
             if (engine instanceof RserveScriptEngine)
@@ -417,8 +416,6 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         {
             if (rh != null)
                 rh.release();
-
-            SecurityManager.endTransformSessionApiKey(apiKey);
         }
     }
 
