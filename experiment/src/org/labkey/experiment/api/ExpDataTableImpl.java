@@ -121,7 +121,8 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         addColumn(Column.RowId).setHidden(true);
         addColumn(Column.Name);
         addColumn(Column.Description);
-        addColumn(Column.Alias);
+        var aliasCol = addColumn(Column.Alias);
+        aliasCol.setHidden(true);
         addColumn(Column.DataClass);
         ExpSchema schema = getExpSchema();
         addColumn(Column.Run).setFk(schema.getRunIdForeignKey(getContainerFilter()));
