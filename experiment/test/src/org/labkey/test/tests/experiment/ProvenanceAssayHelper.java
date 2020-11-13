@@ -1,5 +1,6 @@
 package org.labkey.test.tests.experiment;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.domain.CreateDomainCommand;
@@ -40,13 +41,12 @@ public abstract class ProvenanceAssayHelper extends BaseWebDriverTest
         return dataTableRow.get("LSID").toString();
     }
 
-    protected void createSimpleAssay(String assayName)
+    protected void createSampleType(String typeName)
     {
         log("Creating an input sample type");
         goToModule("Experiment");
         SampleTypeHelper sampleHelper = new SampleTypeHelper(this);
-        String sampleTypeName = assayName + "SampleType";
-        sampleHelper.createSampleType(new SampleTypeDefinition(sampleTypeName).setFields(
+        sampleHelper.createSampleType(new SampleTypeDefinition(typeName).setFields(
                 List.of(new FieldDefinition("Field1", FieldDefinition.ColumnType.String))),
                 "Name\tField1\n" +
                         "Sample1\tsome value\n" +
@@ -54,14 +54,20 @@ public abstract class ProvenanceAssayHelper extends BaseWebDriverTest
                         "Sample3\tvalueness\n" +
                         "Sample4\tinvaluable\n");
 
+    }
+
+    protected void createSimpleAssay(String assayName, @Nullable String sampleTypeName)
+    {
         log("Creating a simple assay.");
-        goToProjectHome(getProjectName());
         ReactAssayDesignerPage assayDesignerPage = _assayHelper.createAssayDesign("General", assayName);
 
         assayDesignerPage.setEditableResults(true);
         assayDesignerPage.setEditableRuns(true);
 
-        assayDesignerPage.goToResultsFields().addField(new FieldDefinition("inputSample", new FieldDefinition.LookupInfo(null, "samples", sampleTypeName)));
+        if (sampleTypeName != null)
+        {
+            assayDesignerPage.goToResultsFields().addField(new FieldDefinition("inputSample", new FieldDefinition.LookupInfo(null, "samples", sampleTypeName)));
+        }
 
         assayDesignerPage.clickFinish();
     }
@@ -99,9 +105,11 @@ public abstract class ProvenanceAssayHelper extends BaseWebDriverTest
 
         String assayName = "Provenance Assay";
         String runName = "ProvenanceAssayRun";
+        String sampleTypeName = "ProvenanceSampleType";
 
+        createSampleType(sampleTypeName);
         goToProjectHome(getProjectName());
-        createSimpleAssay(assayName);
+        createSimpleAssay(assayName, sampleTypeName);
         goToProjectHome(getProjectName());
         populateAssay(assayName, runName, runData);
     }
