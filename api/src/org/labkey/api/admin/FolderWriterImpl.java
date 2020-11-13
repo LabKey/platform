@@ -55,6 +55,11 @@ public class FolderWriterImpl extends BaseFolderWriter
         return null;
     }
 
+    protected BaseFolderWriter createSubfolderWriter()
+    {
+        return new SubfolderWriter();
+    }
+
     public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
         LOG.info("Exporting folder to " + vf.getLocation());
@@ -79,7 +84,7 @@ public class FolderWriterImpl extends BaseFolderWriter
         // include container tab children in the folder export (and optionally all other subfolders if the user chooses, except workbooks)
         if (c.hasChildren())
         {
-            SubfolderWriter subfolderWriter = new SubfolderWriter();
+            BaseFolderWriter subfolderWriter = createSubfolderWriter();
             subfolderWriter.write(c, ctx, vf);
         }
 
@@ -94,7 +99,8 @@ public class FolderWriterImpl extends BaseFolderWriter
         FolderDocument.Folder folderXml = ctx.getXml();
 
         // Insert standard comment explaining where the data lives, who exported it, and when
-        XmlBeansUtil.addStandardExportComment(folderXml, ctx.getContainer(), ctx.getUser());
+        if (ctx.isAddExportComment())
+            XmlBeansUtil.addStandardExportComment(folderXml, ctx.getContainer(), ctx.getUser());
 
         folderXml.setArchiveVersion(AppProps.getInstance().getSchemaVersion());
         folderXml.setLabel(c.getName());

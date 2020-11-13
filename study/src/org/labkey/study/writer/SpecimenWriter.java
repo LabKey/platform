@@ -82,8 +82,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         TableInfo tableInfoSpecimenEvent = schema.getTableInfoSpecimenEvent(c);
         TableInfo queryTableSpecimenDetail = querySchema.getTable("SpecimenDetail");
         TableInfo queryTableSpecimenEvent = querySchema.getTable("SpecimenEvent");
-        if (null == tableInfoSpecimenDetail || null == tableInfoSpecimenEvent ||
-                null == queryTableSpecimenDetail || null == queryTableSpecimenEvent)
+        if (null == tableInfoSpecimenDetail || null == queryTableSpecimenDetail || null == queryTableSpecimenEvent)
             throw new IllegalStateException("TableInfos not found.");
 
         SqlDialect dialect = schema.getSqlDialect();
@@ -101,7 +100,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             }
             DataColumn dc = new DataColumn(ci);
             selectColumns.add(dc.getDisplayColumn());
-            dc.setCaption(column.getTsvColumnName());
+            dc.setCaption(column.getPrimaryTsvColumnName());
             displayColumns.add(dc);
             SQLFragment col;
 
@@ -259,8 +258,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
     {
         if (!column.isKeyColumn())
         {
-            if ((queryColumn != null) && !(queryColumn.getPHI().isExportLevelAllowed(exportPhiLevel)))
-                return true;
+            return (queryColumn != null) && !(queryColumn.getPHI().isExportLevelAllowed(exportPhiLevel));
         }
 
         return false;

@@ -37,7 +37,6 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.LimitedUser;
@@ -52,6 +51,8 @@ import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.data.xml.queryCustomView.LocalOrRefFiltersType;
 import org.labkey.data.xml.queryCustomView.NamedFiltersType;
 import org.labkey.query.persist.LinkedSchemaDef;
+import org.labkey.query.persist.QueryDef;
+import org.labkey.query.persist.QueryManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -206,6 +207,12 @@ public class LinkedSchema extends ExternalSchema
     }
 
     @Override
+    public LinkedTableInfo createTable(String name, ContainerFilter cf)
+    {
+        return (LinkedTableInfo)super.createTable(name, cf);
+    }
+
+    @Override
     public @Nullable QueryDefinition getQueryDef(@NotNull String queryName)
     {
         return getQueryDefs(queryName).get(queryName);
@@ -257,9 +264,19 @@ public class LinkedSchema extends ExternalSchema
                 {
                     // Apply any filters that might have been specified in the schema linking process
                     QueryDefinition filteredQueryDef = createWrapperQueryDef(key, table);
+                    assert filteredQueryDef.getMetadataXml() == null : "generated wrapped query def shouldn't apply metadata xml";
+
+                    // Get metadata override xml that may exist in the linked schema target container
+                    String extraMetadata = null;
+                    QueryDef extraMetadataQueryDef = QueryManager.get().getQueryDef(getContainer(), this.getSchemaName(), filteredQueryDef.getName(), false);
+                    if (extraMetadataQueryDef != null)
+                    {
+                        assert extraMetadataQueryDef.getSql() == null : "metadata only querydef should not have sql";
+                        extraMetadata = extraMetadataQueryDef.getMetaData();
+                    }
 
                     // Create a wrapper that knows how to apply the rest of the metadata correctly
-                    LinkedSchemaQueryDefinition wrappedQueryDef = new LinkedSchemaQueryDefinition(this, filteredQueryDef);
+                    LinkedSchemaQueryDefinition wrappedQueryDef = new LinkedSchemaQueryDefinition(this, filteredQueryDef, extraMetadata);
                     ret.put(key, wrappedQueryDef);
                 }
             }
@@ -292,7 +309,7 @@ public class LinkedSchema extends ExternalSchema
     }
 
     @Override
-    protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable, ContainerFilter cf)
+    protected LinkedTableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable, ContainerFilter cf)
     {
         TableType metaData = getXbTable(name);
         ArrayList<QueryException> errors = new ArrayList<>();
@@ -300,6 +317,7 @@ public class LinkedSchema extends ExternalSchema
             sourceTable.overlayMetadata(Collections.singletonList(metaData), _sourceSchema, errors);
 
         QueryDefinition queryDef = createWrapperQueryDef(name, sourceTable);
+        assert queryDef.getMetadataXml() == null : "generated wrapped query def shouldn't apply metadata xml";
         // Hand in entire metaDataMap (of tables) into queryDef. Then when Query.resolveTable binds to a table, apply the metadata if it exists.
         queryDef.setMetadataTableMap(_metaDataMap);
 
@@ -374,7 +392,17 @@ public class LinkedSchema extends ExternalSchema
     /** Build up LabKey SQL that targets the desired container and appends any WHERE clauses (but not URL-style filters) */
     private QueryDefinition createQueryDef(String name, TableInfo sourceTable, @Nullable LocalOrRefFiltersType xmlFilters, Collection<QueryService.ParameterDecl> parameterDecls)
     {
-        String sql = generateLabKeySQL(sourceTable, new XmlFilterWhereClauseSource(xmlFilters), parameterDecls);
+        // Issue 40442: LinkedSchema should throw handled exception with bad configuration
+        // IllegalArgumentException can be thrown when generating LabKey SQL for a filter over a column that doesn't exist.
+        String sql;
+        try
+        {
+            sql = generateLabKeySQL(sourceTable, new XmlFilterWhereClauseSource(xmlFilters), parameterDecls);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new QueryParseException("Error creating linked schema table '" + name + "': " + e.getMessage(), e, 0, 0);
+        }
 
         QueryDefinition queryDef = QueryServiceImpl.get().createQueryDef(_sourceSchema.getUser(), _sourceSchema.getContainer(), _sourceSchema, name);
         queryDef.setSql(sql);
@@ -439,9 +467,9 @@ public class LinkedSchema extends ExternalSchema
     public static String generateLabKeySQL(TableInfo sourceTable, SQLWhereClauseSource whereClauseSource, Collection<QueryService.ParameterDecl> parameterDecls)
     {
         if (null == sourceTable.getUserSchema())
-            throw new RuntimeValidationException("Source table '" + sourceTable.getName() + "' has no user schema");
+            throw new QueryException("Source table '" + sourceTable.getName() + "' has no user schema");
         if (null == sourceTable.getUserSchema().getContainer())
-            throw new RuntimeValidationException("Source table '" + sourceTable.getName() + "' has no container");
+            throw new QueryException("Source table '" + sourceTable.getName() + "' has no container");
 
         StringBuilder sql = new StringBuilder();
 

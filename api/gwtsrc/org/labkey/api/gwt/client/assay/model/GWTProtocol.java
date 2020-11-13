@@ -37,6 +37,7 @@ public class GWTProtocol implements IsSerializable
     private String _name;
     private String _description;
     private String _providerName;
+    private String domainKindName;
 
     private Map<String, String> _protocolParameters;
 
@@ -136,6 +137,16 @@ public class GWTProtocol implements IsSerializable
     public void setProviderName(String providerName)
     {
         _providerName = providerName;
+    }
+
+    public String getDomainKindName()
+    {
+        return domainKindName;
+    }
+
+    public void setDomainKindName(String domainKindName)
+    {
+        this.domainKindName = domainKindName;
     }
 
     public List<String> getAvailablePlateTemplates()

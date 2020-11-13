@@ -15,6 +15,7 @@
  */
 package org.labkey.api.writer;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -122,15 +123,10 @@ public class MemoryVirtualFile extends AbstractVirtualFile
         return FileUtil.makeLegalName(name);
     }
 
-    @Override
+    @Override // Note: Unlike other VF implementations, this is just the current directory name, not a path
     public String getLocation()
     {
-        return "memoryVirtualFile";
-    }
-
-    public XmlObject getDoc(String filename)
-    {
-        return _docMap.get(makeLegalName(filename));
+        return !StringUtils.isEmpty(_root) ? _root : "MemoryVirtualFile";
     }
 
     @Override

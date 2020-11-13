@@ -412,8 +412,9 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return true;
     }
 
+    // TODO: rename to createQueryDefForTable
     public QueryDefinition getQueryDefForTable(String name)
-    {                                                
+    {
         return QueryService.get().createQueryDefForTable(this, name);
     }
 

@@ -72,7 +72,7 @@ public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<Map<St
         return module.getName() + ":/" + name;
     }
 
-    public static CacheId parseOlapCacheKey(String schemaId)
+    public static @Nullable CacheId parseOlapCacheKey(String schemaId)
     {
         return ModuleResourceCaches.parseCacheKey(schemaId, CONFIG_ID_PATTERN);
     }

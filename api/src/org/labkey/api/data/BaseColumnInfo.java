@@ -38,6 +38,7 @@ import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
@@ -292,6 +293,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setRequired(col.isRequiredSet());
         setAutoIncrement(col.isAutoIncrement());
         setScale(col.getScale());
+        setPrecision(col.getPrecision());
         if (col instanceof BaseColumnInfo)
         {
             _sqlTypeName = ((BaseColumnInfo) col)._sqlTypeName;
@@ -395,6 +397,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
         setCalculated(col.isCalculated());
 
+        setSourceOntology(col.getSourceOntology());
+        setConceptImportColumn(col.getConceptImportColumn());
+        setConceptLabelColumn(col.getConceptLabelColumn());
         setPrincipalConceptCode(col.getPrincipalConceptCode());
     }
 
@@ -469,6 +474,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
         setCalculated(col.isCalculated());
 
+        setSourceOntology(col.getSourceOntology());
+        setConceptImportColumn(col.getConceptImportColumn());
+        setConceptLabelColumn(col.getConceptLabelColumn());
         setPrincipalConceptCode(col.getPrincipalConceptCode());
     }
 
@@ -1243,8 +1251,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                 LOG.error("Can't instantiate DisplayColumnFactory: " + displayColumnClassName, e);
             }
         }
-        if (xmlCol.isSetPrincipalConceptCode())
-            setPrincipalConceptCode(xmlCol.getPrincipalConceptCode());
+
+        var os = OntologyService.get();
+        if (null != os)
+        {
+            os.parseXml(xmlCol, this);
+        }
     }
 
     @Override
@@ -1907,6 +1919,13 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         checkLocked();
         super.setScale(scale);
+    }
+
+    @Override
+    public void setPrecision(int precision)
+    {
+        checkLocked();
+        super.setPrecision(precision);
     }
 
 

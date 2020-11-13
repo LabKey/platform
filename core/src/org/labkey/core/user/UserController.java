@@ -541,8 +541,8 @@ public class UserController extends SpringActionController
     @RequiresAllOf({UpdateUserPermission.class, DeleteUserPermission.class})
     public class UpdateUsersStateApiAction extends MutatingApiAction<UpdateUserStateForm>
     {
-        private List<Integer> validUserIds = new ArrayList<>();
-        private List<Integer> invalidUserIds = new ArrayList<>();
+        private final List<Integer> validUserIds = new ArrayList<>();
+        private final List<Integer> invalidUserIds = new ArrayList<>();
 
         @Override
         public void validateForm(UpdateUserStateForm form, Errors errors)
@@ -1038,6 +1038,9 @@ public class UserController extends SpringActionController
             {
                 for (Map.Entry<String, Object> entry : form.getTypedColumns().entrySet())
                 {
+                    if (entry.getKey().equals("ExpirationDate") && !AuthenticationManager.canSetUserExpirationDate(getUser(), getContainer()))
+                        errors.reject(ERROR_MSG, "User does not have permission to edit the ExpirationDate field.");
+
                     if (entry.getValue() != null)
                     {
                         ColumnInfo col = table.getColumn(FieldKey.fromParts(entry.getKey()));

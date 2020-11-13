@@ -820,7 +820,7 @@ public class OntologyManager
     }
 
 
-    public static void deleteOntologyObjects(DbSchema schema, SQLFragment sub, Container c, boolean deleteOwnedObjects)
+    public static int deleteOntologyObjects(DbSchema schema, SQLFragment sub, Container c, boolean deleteOwnedObjects)
     {
         // we have different levels of optimization possible here deleteOwned=true/false, scope=/<>exp
 
@@ -848,7 +848,7 @@ public class OntologyManager
             sqlDeleteObjects.add(c.getId());
             sqlDeleteObjects.append(sub);
             sqlDeleteObjects.append(")");
-            new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);
+            return new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);
         }
     }
 
@@ -1579,7 +1579,8 @@ public class OntologyManager
                 "format, container, project, lookupcontainer, lookupschema, lookupquery, defaultvaluetype, hidden, " +
                 "mvenabled, importaliases, url, shownininsertview, showninupdateview, shownindetailsview, dimension, " +
                 "measure, scale, recommendedvariable, defaultscale, createdby, created, modifiedby, modified, facetingbehaviortype, " +
-                "phi, redactedText, excludefromshifting, mvindicatorstoragecolumnname, principalconceptcode)\n");
+                "phi, redactedText, excludefromshifting, mvindicatorstoragecolumnname, " +
+                "sourceontology, conceptimportcolumn, conceptlabelcolumn, principalconceptcode)\n");
         sql.append("SELECT " +
                 "? as propertyuri, " +
                 "? as name, " +
@@ -1616,6 +1617,9 @@ public class OntologyManager
                 "? as redactedText, " +
                 "? as excludefromshifting, " +
                 "? as mvindicatorstoragecolumnname, " +
+                "? as sourceontology," +
+                "? as conceptimportcolumn," +
+                "? as conceptlabelcolumn," +
                 "? as principalconceptcode\n");
         sql.append("WHERE NOT EXISTS (SELECT propertyid FROM exp.propertydescriptor WHERE propertyuri=? AND container=?);\n");
 
@@ -1654,6 +1658,10 @@ public class OntologyManager
         sql.add(pd.getRedactedText());
         sql.add(pd.isExcludeFromShifting());
         sql.add(pd.getMvIndicatorStorageColumnName());
+        // ontology metadata
+        sql.add(pd.getSourceOntology());
+        sql.add(pd.getConceptImportColumn());
+        sql.add(pd.getConceptLabelColumn());
         sql.add(pd.getPrincipalConceptCode());
         // WHERE
         sql.add(pd.getPropertyURI());
@@ -1713,6 +1721,15 @@ public class OntologyManager
 
         if (!Objects.equals(pdIn.getLookupQuery(), pd.getLookupQuery()))
             colDiffs.add("LookupQuery");
+
+        if (!Objects.equals(pdIn.getSourceOntology(), pd.getSourceOntology()))
+            colDiffs.add("SourceOntology");
+
+        if (!Objects.equals(pdIn.getConceptImportColumn(), pd.getConceptImportColumn()))
+            colDiffs.add("ConceptImportColumn");
+
+        if (!Objects.equals(pdIn.getConceptLabelColumn(), pd.getConceptLabelColumn()))
+            colDiffs.add("ConceptLabelColumn");
 
         if (!Objects.equals(pdIn.getPrincipalConceptCode(), pd.getPrincipalConceptCode()))
             colDiffs.add("PrincipalConceptCode");
@@ -2301,14 +2318,16 @@ public class OntologyManager
 
     static final String parameters = "propertyuri,name,description,rangeuri,concepturi,label," +
             "format,container,project,lookupcontainer,lookupschema,lookupquery,defaultvaluetype,hidden," +
-            "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale,principalconceptcode,recommendedvariable";
+            "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale," +
+            "sourceontology, conceptimportcolumn, conceptlabelcolumn, principalconceptcode," +
+            "recommendedvariable";
     static final String[] parametersArray = parameters.split(",");
     static final String insertSql;
     static final String updateSql;
 
     static
     {
-        insertSql = "INSERT INTO exp.propertydescriptor (" + parameters + ")\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        insertSql = "INSERT INTO exp.propertydescriptor (" + parameters + ")\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         StringBuilder sb = new StringBuilder("UPDATE exp.propertydescriptor SET");
         String comma = " ";
         for (String p : parametersArray)
@@ -2550,10 +2569,10 @@ public class OntologyManager
             assertNotNull(getTinfoPropertyDescriptor());
             assertNotNull(ExperimentService.get().getTinfoSampleType());
 
-            assertEquals(getTinfoPropertyDescriptor().getColumns("PropertyId,PropertyURI,RangeURI,Name,Description,PrincipalConceptCode").size(), 6);
-            assertEquals(getTinfoObject().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId").size(), 4);
-            assertEquals(getTinfoObjectPropertiesView().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId,Name,PropertyURI,RangeURI,TypeTag,StringValue,DateTimeValue,FloatValue").size(), 11);
-            assertEquals(ExperimentService.get().getTinfoSampleType().getColumns("RowId,Name,LSID,MaterialLSIDPrefix,Description,Created,CreatedBy,Modified,ModifiedBy,Container").size(), 10);
+            assertEquals(9, getTinfoPropertyDescriptor().getColumns("PropertyId,PropertyURI,RangeURI,Name,Description,SourceOntology,ConceptImportColumn,ConceptLabelColumn,PrincipalConceptCode").size());
+            assertEquals(4, getTinfoObject().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId").size());
+            assertEquals(11, getTinfoObjectPropertiesView().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId,Name,PropertyURI,RangeURI,TypeTag,StringValue,DateTimeValue,FloatValue").size());
+            assertEquals(10, ExperimentService.get().getTinfoSampleType().getColumns("RowId,Name,LSID,MaterialLSIDPrefix,Description,Created,CreatedBy,Modified,ModifiedBy,Container").size());
         }
 
 
@@ -3395,54 +3414,5 @@ public class OntologyManager
     static public boolean checkObjectExistence(String lsid)
     {
         return new TableSelector(getTinfoObject(), new SimpleFilter(FieldKey.fromParts("ObjectURI"), lsid), null).exists();
-    }
-
-
-    static public void indexConcepts(SearchService.IndexTask task)
-    {
-        if (1 == 1)
-            return;
-        if (null == task)
-        {
-            SearchService ss = SearchService.get();
-            task = null == ss ? null : ss.createTask("Index Concepts");
-            if (null == task)
-                return;
-        }
-
-        final SearchService.IndexTask t = task;
-        task.addRunnable(() -> _indexConcepts(t), SearchService.PRIORITY.bulk);
-    }
-
-
-    final public static SearchService.SearchCategory conceptCategory = new SearchService.SearchCategory("concept", "Concepts and Property Descriptors");
-
-    private static void _indexConcepts(final SearchService.IndexTask task)
-    {
-        new SqlSelector(getExpSchema(), "SELECT * FROM exp.PropertyDescriptor WHERE Container=? AND rangeuri='xsd:nil'",
-                _sharedContainer.getId()).forEachMap(m ->
-        {
-            String propertyURI = (String) m.get("propertyUri");
-            m.put(PROPERTY.title.toString(), propertyURI);
-
-            String desc = (String) m.get("description");
-            String label = (String) m.get("label");
-            String name = (String) m.get("name");
-            String body = StringUtils.trimToEmpty(name) + " " +
-                    StringUtils.trimToEmpty(label) + " " +
-                    StringUtils.trimToEmpty(desc);
-
-            ActionURL url = new ActionURL("experiment-types", "findConcepts", _sharedContainer);
-            url.addParameter("concept", propertyURI);
-            WebdavResource r = new SimpleDocumentResource(
-                    new Path(propertyURI),
-                    "concept:" + propertyURI,
-                    _sharedContainer.getId(),
-                    "text/plain", body,
-                    url,
-                    m
-            );
-            task.addResource(r, SearchService.PRIORITY.item);
-        });
     }
 }

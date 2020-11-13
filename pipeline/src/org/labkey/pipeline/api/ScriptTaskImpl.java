@@ -31,7 +31,7 @@ import org.labkey.api.pipeline.cmd.TaskPath;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.RScriptEngine;
 import org.labkey.api.reports.RserveScriptEngine;
 import org.labkey.api.services.ServiceRegistry;
@@ -69,12 +69,12 @@ public class ScriptTaskImpl extends CommandTaskImpl
         _writeTaskInfoFile = true;
     }
 
-    private ScriptEngine getScriptEngine(Container c, LabkeyScriptEngineManager mgr, String extension)
+    private ScriptEngine getScriptEngine(Container c, LabKeyScriptEngineManager mgr, String extension)
     {
         ScriptEngine engine = mgr.getEngineByName(extension);
         if (engine == null)
         {
-            engine = mgr.getEngineByExtension(c, extension, LabkeyScriptEngineManager.EngineContext.pipeline);
+            engine = mgr.getEngineByExtension(c, extension, LabKeyScriptEngineManager.EngineContext.pipeline);
         }
         return engine;
     }
@@ -82,10 +82,10 @@ public class ScriptTaskImpl extends CommandTaskImpl
     // TODO: Rhino engine.  A non-ExternalScriptEngine won't use the PARAM_REPLACEMENT_MAP binding.
     // CONSIDER: Use ScriptEngineReport to generate a script prolog
     @Override
-    protected boolean runCommand(RecordedAction action, String apikey) throws IOException, PipelineJobException
+    protected boolean runCommand(RecordedAction action, String apiKey) throws IOException, PipelineJobException
     {
         // Get the script engine
-        LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+        LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
         if (mgr == null)
             throw new PipelineJobException("Script engine manager not available");
 
@@ -160,7 +160,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
             if (_factory.getTimeout() != null && _factory.getTimeout() > 0)
                 bindings.put(ExternalScriptEngine.TIMEOUT, _factory.getTimeout());
 
-            Map<String, String> replacements = createReplacements(scriptFile, apikey);
+            Map<String, String> replacements = createReplacements(scriptFile, apiKey);
             bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, replacements);
 
             // Write task properties file into the work directory

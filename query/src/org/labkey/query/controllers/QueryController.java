@@ -35,7 +35,35 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.*;
+import org.labkey.api.action.Action;
+import org.labkey.api.action.ActionType;
+import org.labkey.api.action.ApiJsonWriter;
+import org.labkey.api.action.ApiQueryResponse;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiResponseWriter;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.ApiVersion;
+import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.ExportException;
+import org.labkey.api.action.ExtendedApiQueryResponse;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasBindParameters;
+import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReportingApiQueryResponse;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleApiJsonForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.TransactionAuditProvider;
@@ -185,6 +213,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.zip.GZIPOutputStream;
@@ -905,7 +934,7 @@ public class QueryController extends SpringActionController
     public class SourceQueryAction extends SimpleViewAction<SourceForm>
     {
         public SourceForm _form;
-        public QuerySchema _baseSchema;
+        public UserSchema _schema;
         public QueryDefinition _queryDef;
 
 
@@ -918,20 +947,23 @@ public class QueryController extends SpringActionController
             if (StringUtils.isEmpty(target.getQueryName()))
                 throw new NotFoundException("query name not specified");
 
-            _baseSchema = DefaultSchema.get(getUser(), getContainer(), _form.getSchemaKey());
-            if (null == _baseSchema)
+            QuerySchema querySchema = DefaultSchema.get(getUser(), getContainer(), _form.getSchemaKey());
+            if (null == querySchema)
                 throw new NotFoundException("schema not found: " + _form.getSchemaKey().toDisplayString());
+            if (!(querySchema instanceof UserSchema))
+                throw new NotFoundException("Could not find the schema '" + _form.getSchemaName() + "' in the folder '" + getContainer().getPath() + "'");
+            _schema = (UserSchema)querySchema;
         }
 
 
         @Override
         public ModelAndView getView(SourceForm form, BindException errors)
         {
-            _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
+            _queryDef = _schema.getQueryDef(form.getQueryName());
             if (null == _queryDef)
-                _queryDef = ((UserSchema)_baseSchema).getQueryDefForTable(form.getQueryName());
+                _queryDef = _schema.getQueryDefForTable(form.getQueryName());
             if (null == _queryDef)
-                throw new NotFoundException("Query not found: " + form.getQueryName());
+                throw new NotFoundException("Could not find the query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'");
 
             try
             {
@@ -943,7 +975,7 @@ public class QueryController extends SpringActionController
                         form.ff_metadataText = form.getDefaultMetadataText();
                 }
 
-                for (QueryException qpe : _queryDef.getParseErrors(_baseSchema))
+                for (QueryException qpe : _queryDef.getParseErrors(_schema))
                 {
                     errors.reject(ERROR_MSG, StringUtils.defaultString(qpe.getMessage(),qpe.toString()));
                 }
@@ -1004,19 +1036,22 @@ public class QueryController extends SpringActionController
     @Action(ActionType.Configure.class)
     public static class SaveSourceQueryAction extends MutatingApiAction<SourceForm>
     {
-        private QuerySchema _baseSchema;
+        private UserSchema _schema;
 
         @Override
-        public void validateForm(SourceForm target, Errors errors)
+        public void validateForm(SourceForm form, Errors errors)
         {
-            if (StringUtils.isEmpty(target.getSchemaName()))
+            if (StringUtils.isEmpty(form.getSchemaName()))
                 throw new NotFoundException("Query definition not found, schemaName and queryName are required.");
-            if (StringUtils.isEmpty(target.getQueryName()))
+            if (StringUtils.isEmpty(form.getQueryName()))
                 throw new NotFoundException("Query definition not found, schemaName and queryName are required.");
 
-            _baseSchema = DefaultSchema.get(getUser(), getContainer(), target.getSchemaKey());
-            if (null == _baseSchema)
-                throw new NotFoundException("Schema not found: " + target.getSchemaKey().toDisplayString());
+            QuerySchema querySchema = DefaultSchema.get(getUser(), getContainer(), form.getSchemaKey());
+            if (null == querySchema)
+                throw new NotFoundException("schema not found: " + form.getSchemaKey().toDisplayString());
+            if (!(querySchema instanceof UserSchema))
+                throw new NotFoundException("Could not find the schema '" + form.getSchemaName() + "' in the folder '" + getContainer().getPath() + "'");
+            _schema = (UserSchema)querySchema;
 
             XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
             List<XmlValidationError> xmlErrors = new ArrayList<>();
@@ -1024,9 +1059,9 @@ public class QueryController extends SpringActionController
             try
             {
                 // had a couple of real-world failures due to null pointers in this code, so it's time to be paranoid
-                if(target.ff_metadataText != null)
+                if (form.ff_metadataText != null)
                 {
-                    TablesDocument tablesDoc = TablesDocument.Factory.parse(target.ff_metadataText, options);
+                    TablesDocument tablesDoc = TablesDocument.Factory.parse(form.ff_metadataText, options);
                     if (tablesDoc != null)
                     {
                         tablesDoc.validate(options);
@@ -1123,59 +1158,66 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(SourceForm form, BindException errors)
         {
-            var queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
+            var queryDef = _schema.getQueryDef(form.getQueryName());
             if (null == queryDef)
-                queryDef = ((UserSchema)_baseSchema).getQueryDefForTable(form.getQueryName());
+                queryDef = _schema.getQueryDefForTable(form.getQueryName());
             if (null == queryDef)
-                throw new NotFoundException("Query not found: " + form.getQueryName());
-
-            if (!queryDef.canEdit(getUser()))
-                throw new UnauthorizedException("Edit permissions are required.");
+                throw new NotFoundException("Could not find the query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'");
 
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             try
             {
-                queryDef.setSql(form.ff_queryText);
-
-                if (queryDef.isTableQueryDefinition() && StringUtils.trimToNull(form.ff_metadataText) == null)
+                if (form.ff_queryText != null)
                 {
-                    if (QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), form.getQueryName(), false) != null)
-                    {
-                        // delete the query in order to reset the metadata over a built-in query, but don't
-                        // fire the listener because we haven't actually deleted the table. See issue 40365
-                        queryDef.delete(getUser(), false);
-                    }
+                    if (!queryDef.isSqlEditable())
+                        throw new UnauthorizedException("Query SQL is not editable.");
+
+                    if (!queryDef.canEdit(getUser()))
+                        throw new UnauthorizedException("Edit permissions are required.");
+
+                    queryDef.setSql(form.ff_queryText);
+                }
+
+                String metadataText = StringUtils.trimToNull(form.ff_metadataText);
+                if (queryDef.isMetadataEditable())
+                {
+                    if (!Objects.equals(metadataText, queryDef.getMetadataXml()) && !queryDef.canEditMetadata(getUser()))
+                        throw new UnauthorizedException("Edit metadata permissions are required.");
+
+                    queryDef.setMetadataXml(metadataText);
                 }
                 else
                 {
-                    queryDef.setMetadataXml(form.ff_metadataText);
-                    queryDef.save(getUser(), getContainer());
+                    if (metadataText != null)
+                        throw new UnsupportedOperationException("Query metadata is not editable.");
+                }
 
-                    // the query was successfully saved, validate the query but return any errors in the success response
-                    List<QueryParseException> parseErrors = new ArrayList<>();
-                    List<QueryParseException> parseWarnings = new ArrayList<>();
-                    queryDef.validateQuery(_baseSchema, parseErrors, parseWarnings);
-                    if (!parseErrors.isEmpty())
+                queryDef.save(getUser(), getContainer());
+
+                // the query was successfully saved, validate the query but return any errors in the success response
+                List<QueryParseException> parseErrors = new ArrayList<>();
+                List<QueryParseException> parseWarnings = new ArrayList<>();
+                queryDef.validateQuery(_schema, parseErrors, parseWarnings);
+                if (!parseErrors.isEmpty())
+                {
+                    JSONArray errorArray = new JSONArray();
+
+                    for (QueryException e : parseErrors)
                     {
-                        JSONArray errorArray = new JSONArray();
-
-                        for (QueryException e : parseErrors)
-                        {
-                            errorArray.put(e.toJSON(form.ff_queryText));
-                        }
-                        response.put("parseErrors", errorArray);
+                        errorArray.put(e.toJSON(form.ff_queryText));
                     }
-                    else if (!parseWarnings.isEmpty())
+                    response.put("parseErrors", errorArray);
+                }
+                else if (!parseWarnings.isEmpty())
+                {
+                    JSONArray errorArray = new JSONArray();
+
+                    for (QueryException e : parseWarnings)
                     {
-                        JSONArray errorArray = new JSONArray();
-
-                        for (QueryException e : parseWarnings)
-                        {
-                            errorArray.put(e.toJSON(form.ff_queryText));
-                        }
-                        response.put("parseWarnings", errorArray);
+                        errorArray.put(e.toJSON(form.ff_queryText));
                     }
+                    response.put("parseWarnings", errorArray);
                 }
             }
             catch (SQLException e)
@@ -1947,7 +1989,13 @@ public class QueryController extends SpringActionController
                 throw new NotFoundException("Must provide queryName.");
             }
 
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("query"), "queryMetadataEditor");
+            if (!queryForm.getQueryDef().isMetadataEditable())
+                throw new UnauthorizedException("Query metadata is not editable");
+
+            if (!queryForm.canEditMetadata())
+                throw new UnauthorizedException("You do not have permission to edit the query metadata");
+
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("query"), ModuleHtmlView.getGeneratedViewPath("queryMetadataEditor"));
         }
 
         @Override
@@ -5751,7 +5799,8 @@ public class QueryController extends SpringActionController
             boolean canEdit = qdef.canEdit(getUser());
             qinfo.put("canEdit", canEdit);
             qinfo.put("canEditSharedViews", getContainer().hasPermission(getUser(), EditSharedViewPermission.class));
-            qinfo.put("isMetadataOverrideable", canEdit); //for now, this is the same as canEdit(), but in the future we can support this for non-editable queries
+            // CONSIDER: do we want to separate the 'canEditMetadata' property and 'isMetadataOverridable' properties to differentiate between cabability and the permission check?
+            qinfo.put("isMetadataOverrideable", qdef.isMetadataEditable() && qdef.canEditMetadata(getUser()));
 
             if (isUserDefined)
                 qinfo.put("moduleName", qdef.getModuleName());

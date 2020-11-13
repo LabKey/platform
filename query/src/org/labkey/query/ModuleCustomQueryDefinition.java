@@ -106,6 +106,12 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
     }
 
     @Override
+    public boolean canEditMetadata(User user)
+    {
+        return super.canEditMetadata(user) && user.hasRootPermission(EditModuleResourcesPermission.class) && isMetadataEditable();
+    }
+
+    @Override
     public boolean canDelete(User user)
     {
         // NYI

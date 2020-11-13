@@ -16,7 +16,6 @@
 
 package org.labkey.query;
 
-import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -81,6 +80,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 @SuppressWarnings({"ThrowableInstanceNeverThrown"})
 public abstract class QueryDefinitionImpl implements QueryDefinition
@@ -167,7 +167,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     @Override
     public void delete(User user, boolean fireChangeEvent)
     {
-        if (!canEdit(user))
+        if (!canDelete(user))
         {
             throw new IllegalArgumentException("Access denied");
         }
@@ -187,7 +187,19 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     {
         if (!getDefinitionContainer().equals(getContainer()))
             return false;
-        return getDefinitionContainer().hasPermissions(user, ImmutableSet.of(EditQueriesPermission.class, UpdatePermission.class));
+        return getDefinitionContainer().hasPermissions(user, Set.of(EditQueriesPermission.class, UpdatePermission.class));
+    }
+
+    @Override
+    public boolean canEditMetadata(User user)
+    {
+        return canEdit(user);
+    }
+
+    @Override
+    public boolean canDelete(User user)
+    {
+        return canEdit(user);
     }
 
     @Override
@@ -989,12 +1001,6 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _changes = new ArrayList<>();
         _dirty = true;
         return _queryDef;
-    }
-
-    @Override
-    public boolean isTableQueryDefinition()
-    {
-        return false;
     }
 
     @Override

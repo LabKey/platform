@@ -45,7 +45,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.external.tools.ExternalToolsViewService;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.jsp.LabKeyJspWriter;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.FolderType;
@@ -75,7 +74,7 @@ import org.labkey.api.reader.FastaDataLoader;
 import org.labkey.api.reader.HTMLDataLoader;
 import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.script.RhinoService;
 import org.labkey.api.search.SearchService;
@@ -344,7 +343,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsoleService.setInstance(new AdminConsoleServiceImpl());
         WikiRenderingService.setInstance(new WikiRenderingServiceImpl());
         VcsService.setInstance(new VcsServiceImpl());
-        ServiceRegistry.get().registerService(LabkeyScriptEngineManager.class, new ScriptEngineManagerImpl());
+        LabKeyScriptEngineManager.setInstance(new ScriptEngineManagerImpl());
 
         try
         {
@@ -698,13 +697,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             new CoreUpgradeCode().purgeDeveloperRole();
         }
-
-        // Force LabKeyJspWriter to throw exceptions for unsafe operations, dev mode only.
-        // We'll remove this after 20.11, along with the experimental feature.
-        if (moduleContext.getInstalledVersion() < 20.002)
-        {
-            LabKeyJspWriter.turnOnExperimentalFeature(moduleContext.getUpgradeUser());
-        }
     }
 
 
@@ -894,7 +886,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+        LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
         // populate script engine definitions values read from startup properties as appropriate for not bootstrap
         if (svc instanceof ScriptEngineManagerImpl)
             ((ScriptEngineManagerImpl)svc).populateScriptEngineDefinitionsWithStartupProps();

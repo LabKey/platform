@@ -109,15 +109,14 @@ public class AssayTest extends AbstractAssayTest
         ReactAssayDesignerPage assayDesignerPage = _assayHelper.createAssayDesign("General", SAMPLE_FIELD_TEST_ASSAY)
                 .setDescription(TEST_ASSAY_DESC);
 
-        String sampleFieldName = "SampleField";
         assayDesignerPage.goToBatchFields().removeAllFields(false); //remove preset batch fields
 
         DomainFormPanel resultsPanel = assayDesignerPage.goToResultsFields().removeAllFields(false); //remove preset result fields
-        click(Locator.tag("span").withText("manually define fields"));
-        resultsPanel.addField(sampleFieldName)
+
+        String sampleFieldName = "SampleField";
+        resultsPanel.manuallyDefineFields(sampleFieldName)
                 .setType(FieldDefinition.ColumnType.Sample)
                 .setSampleType(DomainFieldRow.ALL_SAMPLES_OPTION_TEXT);
-        resultsPanel.removeField(""); //remove field added by manual definition link
 
         log("Save initial assay design with sample field set to 'All Samples'");
         assayDesignerPage.clickFinish();

@@ -36,7 +36,10 @@ import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -242,11 +245,13 @@ public class DebugInfoDumper
                 FileUtils.byteCountToDisplaySize(used) + " from a max of " +
                 FileUtils.byteCountToDisplaySize(max) + " (" + DecimalFormat.getInstance().format(used) + " / " + DecimalFormat.getInstance().format(max) + " bytes)");
         logWriter.debug("*********************************************");
-        Map<Thread,StackTraceElement[]> threads = Thread.getAllStackTraces();
-        for (Map.Entry<Thread, StackTraceElement[]> threadEntry : threads.entrySet())
+        Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
+        List<Thread> threads = new ArrayList<>(stackTraces.keySet());
+        threads.sort(Comparator.comparing(Thread::getName, String.CASE_INSENSITIVE_ORDER));
+
+        for (Thread thread : threads)
         {
             logWriter.debug("");
-            Thread thread = threadEntry.getKey();
             StringBuilder threadInfo = new StringBuilder(thread.getName());
             threadInfo.append(" (");
             threadInfo.append(thread.getState());
@@ -262,7 +267,7 @@ public class DebugInfoDumper
             String uri = ViewServlet.getRequestURL(thread);
             if (null != uri)
                 logWriter.debug(uri);
-            for (StackTraceElement stackTraceElement : threadEntry.getValue())
+            for (StackTraceElement stackTraceElement : stackTraces.get(thread))
             {
                 logWriter.debug("\t" + stackTraceElement.toString());
             }

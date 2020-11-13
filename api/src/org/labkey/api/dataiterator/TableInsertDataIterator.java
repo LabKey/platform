@@ -48,18 +48,17 @@ import java.util.stream.Collectors;
 // TODO: convert usages to TableInsertDataIteratorBuilder and stop extending DataIteratorBuilder
 public class TableInsertDataIterator extends StatementDataIterator implements DataIteratorBuilder
 {
-    private DbScope _scope = null;
-    private Connection _conn = null;
-
     private final TableInfo _table;
     private final Container _c;
-    private boolean _selectIds;
+    private final boolean _selectIds;
     private final InsertOption _insertOption;
     private final Set<String> _skipColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _dontUpdate = new CaseInsensitiveHashSet();
     private final Set<String> _keyColumns = new CaseInsensitiveHashSet();
-    private Set<DomainProperty> _adhocPropColumns = new LinkedHashSet<>();
 
+    private DbScope _scope = null;
+    private Connection _conn = null;
+    private Set<DomainProperty> _adhocPropColumns = new LinkedHashSet<>();
 
     @Deprecated // use TableInsertDataIteratorBuilder
     public static TableInsertDataIterator create(DataIterator data, TableInfo table, DataIteratorContext context)

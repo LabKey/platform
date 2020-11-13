@@ -62,7 +62,6 @@ import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdateUserPermission;
-import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.DateUtil;
