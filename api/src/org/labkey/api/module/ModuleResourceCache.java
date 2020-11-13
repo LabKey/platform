@@ -94,7 +94,7 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
         {
             return get();
         }
-        synchronized V getValue()
+        V getValue()
         {
             return null == get() ? null : second;
         }
