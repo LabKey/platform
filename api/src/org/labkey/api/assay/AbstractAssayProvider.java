@@ -81,11 +81,11 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.ValidationException.SEVERITY;
 import org.labkey.api.reports.ExternalScriptEngine;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -1216,7 +1216,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (scriptFile.isFile())
             {
                 String ext = FileUtil.getExtension(scriptFile);
-                ScriptEngine engine = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class).getEngineByExtension(protocol.getContainer(), ext, LabkeyScriptEngineManager.EngineContext.pipeline);
+                ScriptEngine engine = LabKeyScriptEngineManager.get().getEngineByExtension(protocol.getContainer(), ext, LabKeyScriptEngineManager.EngineContext.pipeline);
                 if (engine != null)
                 {
                     // check for deprecated tokens in text scripts

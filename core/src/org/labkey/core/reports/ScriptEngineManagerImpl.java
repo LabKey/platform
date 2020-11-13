@@ -44,7 +44,7 @@ import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.RDockerScriptEngineFactory;
 import org.labkey.api.reports.RScriptEngineFactory;
 import org.labkey.api.reports.RemoteRNotEnabledException;
@@ -78,7 +78,7 @@ import static java.util.Collections.unmodifiableList;
 * Date: Dec 12, 2008
 * Time: 12:52:28 PM
 */
-public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabkeyScriptEngineManager
+public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabKeyScriptEngineManager
 {
     private static final Logger LOG = LogManager.getLogger(ScriptEngineManagerImpl.class);
 
@@ -166,7 +166,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     }
 
     @Override
-    public ScriptEngine getEngineByName(String name)
+    public ScriptEngine getEngineByName(@NotNull String name)
     {
         ScriptEngine engine = super.getEngineByName(name);
         assert engine == null || !engine.getClass().getSimpleName().equals("com.sun.script.javascript.RhinoScriptEngine") : "Should not use jdk bundled script engine";
@@ -497,33 +497,28 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     @Override
     public ExternalScriptEngineDefinition saveDefinition(@NotNull User user, @NotNull ExternalScriptEngineDefinition def)
     {
-        if (def instanceof ExternalScriptEngineDefinition)
+        if (def.isExternal())
         {
-            if (def.isExternal())
+            try (DbScope.Transaction tx = CoreSchema.getInstance().getScope().ensureTransaction())
             {
-                try (DbScope.Transaction tx = CoreSchema.getInstance().getScope().ensureTransaction())
-                {
-                    tx.addCommitTask(ENGINE_DEFINITION_CACHE::clear, DbScope.CommitTaskOption.POSTCOMMIT);
+                tx.addCommitTask(ENGINE_DEFINITION_CACHE::clear, DbScope.CommitTaskOption.POSTCOMMIT);
 
-                    if (def.getRowId() != null)
-                        Table.update(user, CoreSchema.getInstance().getTableInfoReportEngines(), def, def.getRowId());
-                    else
-                        Table.insert(user, CoreSchema.getInstance().getTableInfoReportEngines(), def);
+                if (def.getRowId() != null)
+                    Table.update(user, CoreSchema.getInstance().getTableInfoReportEngines(), def, def.getRowId());
+                else
+                    Table.insert(user, CoreSchema.getInstance().getTableInfoReportEngines(), def);
 
-                    tx.commit();
-                }
-            }
-            else
-            {
-                // jdk 1.6 script engine implementation, create an engine meta data map but don't add an entry
-                // to the external script engine table.
-                String key = makeKey(def.getExtensions());
-
-                setProp(Props.disabled.name(), String.valueOf(!def.isEnabled()), key);
+                tx.commit();
             }
         }
         else
-            throw new IllegalArgumentException("Engine definition must be an instance of LabkeyScriptEngineManager.EngineDefinition");
+        {
+            // jdk 1.6 script engine implementation, create an engine meta data map but don't add an entry
+            // to the external script engine table.
+            String key = makeKey(def.getExtensions());
+
+            setProp(Props.disabled.name(), String.valueOf(!def.isEnabled()), key);
+        }
 
         // Issue 22354: It's a little heavy handed, but clear all caches so any file-based pipeline tasks that may require a script engine will be re-loaded
         CacheManager.clearAllKnownCaches();
@@ -648,18 +643,9 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
                 String engineName = scriptEngineNameAndParamSplit[0];
                 String engineParam = scriptEngineNameAndParamSplit[1];
                 String paramValue = prop.getValue();
-                if (enginePropertyMap.containsKey(engineName))
-                {
-                    Map<String, String> propertyMap = enginePropertyMap.get(engineName);
-                    propertyMap.put(engineParam, paramValue);
-                    enginePropertyMap.put(engineName, propertyMap);
-                }
-                else
-                {
-                    Map<String, String> propertyMap = new HashMap<>();
-                    propertyMap.put(engineParam, paramValue);
-                    enginePropertyMap.put(engineName, propertyMap);
-                }
+                Map<String, String> propertyMap = enginePropertyMap.containsKey(engineName) ? enginePropertyMap.get(engineName) : new HashMap<>();
+                propertyMap.put(engineParam, paramValue);
+                enginePropertyMap.put(engineName, propertyMap);
             }
             else
             {
@@ -692,7 +678,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
         @Test
         public void testStartupPropertiesForScriptEngineDefinition()
         {
-            LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
 
             // ensure that the site wide ModuleLoader had test startup property values in the _configPropertyMap
             prepareTestStartupProperties();

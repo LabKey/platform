@@ -1,19 +1,18 @@
 <%
-    /*
-     * Copyright (c) 2013-2016 LabKey Corporation. All rights reserved. No portion of this work may be reproduced in
-     * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
-     */
+/*
+ * Copyright (c) 2013-2016 LabKey Corporation. All rights reserved. No portion of this work may be reproduced in
+ * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
+ */
 %>
-<%@ page import="org.labkey.api.study.SpecimenService" %>
-<%@ page import="org.labkey.api.util.Button" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.study.SpecimenTransform" %>
-<%@ page import="java.util.Collection" %>
-
 <%@ page import="com.google.common.collect.Iterables" %>
-<%@ page import="org.labkey.api.util.URLHelper" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.study.SpecimenService" %>
+<%@ page import="org.labkey.api.study.SpecimenTransform" %>
+<%@ page import="org.labkey.api.util.Button" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
