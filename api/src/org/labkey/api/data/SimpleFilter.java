@@ -1324,7 +1324,8 @@ public class SimpleFilter implements Filter
     }
 
 
-    /* See not for getSQLFragment(TableInfo, String) */
+    /* See note for getSQLFragment(TableInfo, String) */
+
     @Override
     public SQLFragment getSQLFragment(SqlDialect dialect, @Nullable String tableAlias, Map<FieldKey, ? extends ColumnInfo> columnMap)
     {
