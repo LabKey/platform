@@ -391,6 +391,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
+    public ExpSampleType getSampleType()
+    {
+        return _ss;
+    }
+
     @Override
     public void setMaterials(Set<ExpMaterial> materials)
     {
@@ -790,11 +795,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         }
                     }));
 
-            builder = LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap()));
-            if (InventoryService.get() != null && ExperimentalFeatureService.get().isFeatureEnabled("experimental_freezerManagement"))
-                return LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getMetricUnit()));
-            else
-                return builder;
+            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap()));
         }
         catch (IOException e)
         {
