@@ -833,7 +833,8 @@ public class SqlParser
             {
                 QNode id = first(children), exprList = second(children);
 
-                // check for special case table method "findColumn", this isn't a real method so it's easier if it has it's own node type
+                // check for special case table method "findColumn", this isn't a real method so it's easier if it has its own node type
+
                 if (id instanceof QDot)
                 {
                     FieldKey full = ((QDot) id).getFieldKey();
