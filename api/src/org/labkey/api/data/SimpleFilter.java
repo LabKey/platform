@@ -1303,7 +1303,8 @@ public class SimpleFilter implements Filter
         return getSQLFragment(dialect, null, Collections.emptyMap());
     }
 
-    /* tableAlias can be null if all column can be accessed by col.getAlias().  When generating a SELECT with JOIN and WHERE
+    /* tableAlias can be null if all column can be accessed by col.getAlias().  When generating a SELECT with JOIN and WHERE,
+
      * columns may come from different tables so tableAlias should be null. e.g
      *  SELECT ... FROM Table1 a JOIN Table2 b {SimpleFilter: WHERE}
      * NOTE: SimpleFilter was created for getSelectSQL() which does not do this. So this is not really the intended usage, however,
