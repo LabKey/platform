@@ -130,7 +130,7 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
 
     protected class UpdateService extends SimpleQueryUpdateService
     {
-        private ValuesManager _vm;
+        private final ValuesManager _vm;
 
         public UpdateService(SimpleUserSchema.SimpleTable ti)
         {
@@ -198,7 +198,7 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
 
     protected class ValuesManager
     {
-        private Set<String> _distinctValues;
+        private final Set<String> _distinctValues;
 
         public ValuesManager()
         {

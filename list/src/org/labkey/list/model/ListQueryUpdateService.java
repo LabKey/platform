@@ -137,13 +137,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
 
     @Override
-    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-    {
-        throw new IllegalStateException("Method not used by ListQueryUpdateService");
-    }
-
-
-    @Override
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors,
                                                 @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {

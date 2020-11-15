@@ -455,12 +455,6 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         }
 
         @Override
-        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
-        {
-            throw new UnsupportedOperationException("Insert not supported.");
-        }
-
-        @Override
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
         {
             throw new UnsupportedOperationException("Delete not supported.");

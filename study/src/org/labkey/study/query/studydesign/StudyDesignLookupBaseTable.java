@@ -108,7 +108,7 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
         }
 
         @Override
-        public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException
+        public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
         {
             return importRows(user, container, rows, context.getErrors(), context.getConfigParameters(), extraScriptContext);
         }

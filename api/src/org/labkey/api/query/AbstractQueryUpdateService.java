@@ -206,7 +206,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      * DataIterator should/must use same error collection as passed in
      */
     @Deprecated
-    protected int _importRowsUsingInsertRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
+    protected int _importRowsUsingInsertRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
     {
         MapDataIterator mapIterator = DataIteratorUtil.wrapMap(rows, true);
         List<Map<String, Object>> list = new ArrayList<>();
@@ -328,20 +328,20 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
 
     @Override
-    public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException
+    public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         return _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
     }
 
     @Override
-    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws SQLException
+    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
     {
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
-        return _importRowsUsingInsertRows(user,container,rows.getDataIterator(context),errors,configParameters,extraScriptContext);
+        return _importRowsUsingInsertRows(user, container, rows.getDataIterator(context), errors, extraScriptContext);
     }
 
     @Override
-    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
+    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
         throw new UnsupportedOperationException("merge is not supported for all tables");
     }
@@ -352,8 +352,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
 
-    protected abstract Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-        throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException;
+    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
+        throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    {
+        throw new UnsupportedOperationException("Not implemented by this QueryUpdateService");
+    }
 
 
     protected @Nullable List<Map<String, Object>> _insertRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows,

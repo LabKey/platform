@@ -82,7 +82,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
                 _logger = (Logger)o;
         }
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
-        return _importRowsUsingInsertRows(user,container,rows.getDataIterator(context),errors,configParameters,extraScriptContext);
+        return _importRowsUsingInsertRows(user, container, rows.getDataIterator(context), errors, extraScriptContext);
     }
 
 
