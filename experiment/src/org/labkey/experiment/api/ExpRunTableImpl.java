@@ -868,12 +868,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
 
         @Override
-        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws ValidationException, QueryUpdateServiceException
         {
             ExpRunImpl run = getRun(oldRow);
