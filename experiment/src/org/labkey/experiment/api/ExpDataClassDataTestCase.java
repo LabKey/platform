@@ -421,11 +421,10 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
     private void verifyAliasesViaSelectRows(String schemaName, String queryName, int expDataRowId, Set<String> expectedAliases)
             throws Exception
     {
-        String apiKey = SecurityManager.beginTransformSessionApiKey(TestContext.get().getUser());
-        try
+        try (var session = SecurityManager.createTransformSession(TestContext.get().getUser()))
         {
             String baseURL = AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath();
-            Connection conn = new Connection(baseURL, new ApiKeyCredentialsProvider(apiKey));
+            Connection conn = new Connection(baseURL, new ApiKeyCredentialsProvider(session.getApiKey()));
             SelectRowsCommand cmd = new SelectRowsCommand(schemaName, queryName);
             cmd.setRequiredVersion(17.1);
             cmd.setColumns(List.of("RowId", "Name", ExpDataTable.Column.Alias.name()));
@@ -454,10 +453,6 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
             List<Map<String, Object>> row0aliases = (List<Map<String, Object>>)row0data.get(ExpDataTable.Column.Alias.name());
             Set<String> aliases = row0aliases.stream().map(m -> (String)m.get("displayValue")).collect(Collectors.toSet());
             assertEquals(aliases, expectedAliases);
-        }
-        finally
-        {
-            SecurityManager.endTransformSessionApiKey(apiKey);
         }
     }
 
