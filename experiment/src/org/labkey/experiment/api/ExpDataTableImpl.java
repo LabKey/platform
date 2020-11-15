@@ -54,6 +54,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -120,6 +121,8 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         addColumn(Column.RowId).setHidden(true);
         addColumn(Column.Name);
         addColumn(Column.Description);
+        var aliasCol = addColumn(Column.Alias);
+        aliasCol.setHidden(true);
         addColumn(Column.DataClass);
         ExpSchema schema = getExpSchema();
         addColumn(Column.Run).setFk(schema.getRunIdForeignKey(getContainerFilter()));
@@ -331,6 +334,8 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 return runId;
             case Flag:
                 return createFlagColumn(alias);
+            case Alias:
+                return createAliasColumn(alias, ExperimentService.get()::getTinfoDataAliasMap);
             case DownloadLink:
             {
                 var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
