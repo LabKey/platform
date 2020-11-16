@@ -32,9 +32,10 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceWrapper;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ModuleChangeListener;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Set;
@@ -70,25 +71,68 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
 {
     private static final Logger LOG = LogManager.getLogger(ModuleResourceCache.class);
 
-    private final BlockingCache<String, Pair<Module,V>> _cache;
+    private final BlockingCache<String, CachePair> _cache;
     private final ModuleResourceCacheHandler<V> _handler;
     private final FileSystemWatcher _watcher = FileSystemWatchers.get();
     private final Set<String> _pathsWithListeners = new ConcurrentHashSet<>();
-    private final CacheLoader<String, Pair<Module,V>> _loader;
+    private final CacheLoader<String, CachePair> _loader;
+
+    ReferenceQueue<Module> q = new ReferenceQueue<>();
+    class CachePair extends WeakReference<Module>
+    {
+        final String moduleName;
+        final private V second;
+
+        CachePair(Module m, V second)
+        {
+            super(m, q);
+            this.moduleName = m.getName();
+            this.second = second;
+        }
+
+        Module getModule()
+        {
+            return get();
+        }
+        V getValue()
+        {
+            return null == get() ? null : second;
+        }
+    }
+
+    void processQueue()
+    {
+        if (null == q.poll()) // fast common case
+            return;
+        CachePair pair = null;
+        try { pair = (CachePair) q.remove(1); } catch (InterruptedException x) { /* pass */}
+        if (null == pair)
+            return;
+        // Unfortunately we don't know whether this Pair is still in the cache or not, and don't want to
+        // kick out potentially newly loaded resources, so load new resources instead to kick out this entry
+        Module m = ModuleLoader.getInstance().getModule(pair.moduleName);
+        if (null != m)
+            m.getModuleResource("/");
+        else
+            _cache.remove(pair.moduleName);
+    }
+
 
     @Override
     public void onModuleChanged(Module module)
     {
         if (null != module)
             getListener(module).moduleChanged(module);
+        processQueue();
     }
+
 
     ModuleResourceCache(String description, ModuleResourceCacheHandler<V> handler, ResourceRootProvider provider, ResourceRootProvider... extraProviders)
     {
         _loader = new CacheLoader<>()
         {
             @Override
-            public Pair<Module,V> load(@NotNull String moduleName, Object argument)
+            public CachePair load(@NotNull String moduleName, Object argument)
             {
                 @SuppressWarnings("unchecked")
                 Module module = (Module)argument;
@@ -100,7 +144,7 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
                     .flatMap(root -> root.list().stream())
                     .filter(Resource::isFile);
 
-                return new Pair<>(module, handler.load(resources,module));
+                return new CachePair(module, handler.load(resources,module));
             }
 
             private @NotNull Stream<Resource> getResourceRoots(@NotNull Resource rootResource, ResourceRootProvider provider, ResourceRootProvider... extraProviders)
@@ -128,17 +172,21 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
         ContextListener.addModuleChangeListener(this);
     }
 
-    private V cacheGet(Module module)
+    private @NotNull V cacheGet(Module module)
     {
-        Pair<Module,V> ret = _cache.get(module.getName(), module);
+        processQueue();
+
+        CachePair ret = _cache.get(module.getName(), module);
 
         // handle common case first
-        if (null == ret || ret.first == module)
-            return ret==null ? null : ret.second;
+        Module cachedModule = ret.getModule();
+        V cachedValue = ret.getValue();
+        if (cachedModule == module)
+            return cachedValue;
 
         // remove stale entries from cache (should be handled by listeners, but we're here so check again)
         Module current = ModuleLoader.getInstance().getModule(module.getName());
-        if (null != ret && ret.first != current)
+        if (cachedModule != current)
             _cache.remove(module.getName());
 
         // We sometimes load resources for the non-current module.  Don't use cache in that case.
@@ -148,7 +196,7 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
         else
             ret = _loader.load(module.getName(), module);
 
-        return null==ret ? null : ret.second;
+        return ret.second;
     }
 
     public @NotNull V getResourceMap(Module module)

@@ -240,7 +240,7 @@ if (form.getWizardStep() == WizardStep.CONFIRM)
 You are about to create a study folder with the following settings:
 <ul>
    <li><b>Folder Name: </b><%=h(form.getFolderName())%> </li>
-    <li><b>Start Date: </b><%=h(formatDate(form.getBeginDate()))%></li>
+    <li><b>Start Date: </b><%=formatDate(form.getBeginDate())%></li>
     <li><b>Subjects: </b><%=DesignerController.getParticipants().size()%> <%
         if (nParticipants != DesignerController.getParticipants().size()) { %>
             <span class="labkey-error">Warning: Study design called for <%=nParticipants%> subjects.</span>

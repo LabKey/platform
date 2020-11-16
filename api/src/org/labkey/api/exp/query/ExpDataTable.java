@@ -44,6 +44,7 @@ public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
         ModifiedBy,
         Folder,
         Flag,
+        Alias,
         DownloadLink,
         ContentLink,
         ViewFileLink,
