@@ -19,8 +19,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -36,8 +36,8 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static org.labkey.api.data.UpdateableTableInfo.ObjectUriType.schemaColumn;
 
@@ -46,6 +46,34 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
     protected ExpRunItemTableImpl(String name, TableInfo rootTable, UserSchema schema, @Nullable ExpObjectImpl objectType, ContainerFilter cf)
     {
         super(name, rootTable, schema, objectType, cf);
+    }
+
+    protected MutableColumnInfo createAliasColumn(String alias, Supplier<TableInfo> aliasMapTable)
+    {
+        var aliasCol = wrapColumn("Alias", getRealTable().getColumn("LSID"));
+        aliasCol.setDescription("Contains the list of aliases for this data object");
+        aliasCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("LSID")
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return aliasMapTable.get();
+            }
+        }, "Alias")
+        {
+            @Override
+            public boolean isMultiSelectInput()
+            {
+                return false;
+            }
+        });
+        aliasCol.setCalculated(false);
+        aliasCol.setNullable(true);
+        aliasCol.setRequired(false);
+        aliasCol.setDisplayColumnFactory(new AliasDisplayColumnFactory());
+        aliasCol.setConceptURI("http://www.labkey.org/exp/xml#alias");
+        aliasCol.setPropertyURI("http://www.labkey.org/exp/xml#alias");
+        return aliasCol;
     }
 
     /**
