@@ -18,12 +18,10 @@ package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.query.AbstractMethodInfo;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
@@ -34,7 +32,7 @@ import java.util.HashSet;
 
 public class QField extends QInternalExpr
 {
-    static HashSet<Class> _legalReferants = new HashSet<Class>(Arrays.asList(
+    static HashSet<Class> _legalReferants = new HashSet<>(Arrays.asList(
             QuerySelect.SelectColumn.class, QJoin.class, QWhere.class, QOrder.class, QGroupBy.class));
 
     QueryRelation _table;
