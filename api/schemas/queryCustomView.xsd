@@ -123,8 +123,6 @@
             <xsd:enumeration value="containsoneof"/>
             <xsd:enumeration value="containsnoneof"/>
             <xsd:enumeration value="memberof"/>
-            <xsd:enumeration value="issubclassof"/>
-            <xsd:enumeration value="isinsubtreeof"/>
             <xsd:enumeration value="exp:childof"/>
             <xsd:enumeration value="exp:lineageof"/>
             <xsd:enumeration value="exp:parentof"/>
