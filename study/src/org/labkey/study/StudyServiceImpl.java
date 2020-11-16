@@ -24,6 +24,7 @@ import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
+import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -75,6 +76,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.UnionTable;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -336,8 +338,10 @@ public class StudyServiceImpl implements StudyService
         }
         else
         {
-            oldRecordString = DatasetAuditProvider.encodeForDataMap(c, oldRecord);
-            newRecordString = DatasetAuditProvider.encodeForDataMap(c, newRecord);
+            Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(oldRecord, newRecord, Collections.emptySet());
+
+            oldRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.first);
+            newRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.second);
             lsid = newRecord.get("lsid");
         }
         event.setLsid(lsid == null ? null : lsid.toString());

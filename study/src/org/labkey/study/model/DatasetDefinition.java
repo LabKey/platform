@@ -2554,7 +2554,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             resetCreatedColumnsSQL.add(oldData.get(DatasetDomainKind.CREATED_BY));
             resetCreatedColumnsSQL.add(newLSID);
             new SqlExecutor(getStorageTableInfo().getSchema()).execute(resetCreatedColumnsSQL);
-
+            
             StudyServiceImpl.addDatasetAuditEvent(u, this, oldData, mergeData);
 
             // Successfully updated
