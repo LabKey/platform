@@ -99,7 +99,6 @@ import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConfigProperty;
@@ -183,8 +182,8 @@ import org.labkey.core.admin.writer.SecurityGroupWriterFactory;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
-import org.labkey.core.dialect.PostgreSql92Dialect;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
+import org.labkey.core.dialect.PostgreSqlInClauseTest;
 import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
@@ -1079,7 +1078,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ModulePropertiesTestCase.class,
             NotificationServiceImpl.TestCase.class,
             PortalJUnitTest.class,
-            PostgreSql92Dialect.TestCase.class,
+            PostgreSqlInClauseTest.class,
             ProductRegistry.TestCase.class,
             RadeoxRenderer.RadeoxRenderTest.class,
             SchemaXMLTestCase.class,
