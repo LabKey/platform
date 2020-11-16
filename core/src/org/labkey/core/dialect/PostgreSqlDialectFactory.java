@@ -92,7 +92,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         if (PostgreSqlVersion.POSTGRESQL_UNSUPPORTED == psv)
             throw new DatabaseNotSupportedException(PRODUCT_NAME + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation; " + RECOMMENDED);
 
-        PostgreSql94Dialect dialect = psv.getDialect();
+        PostgreSql95Dialect dialect = psv.getDialect();
 
         if (logWarnings)
         {
