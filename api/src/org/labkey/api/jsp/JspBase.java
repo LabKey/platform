@@ -120,12 +120,24 @@ public abstract class JspBase extends JspContext implements HasViewContext
      * Returns an encoded URL to a resource in the webapp directory by prefixing a resource path with the context path
      * and encoding it.
      *
-     * @param path Relative path to a resource in the webapp directory. Supports both "/"-prefixed and not prefixed paths.
-     * @return Properly encoded URL in an HtmlString
+     * @param path Relative path to a resource in the webapp directory. Supports both "/"-prefixed and non-prefixed paths.
+     * @return HtmlString containing a properly encoded URL
      */
     public HtmlString getWebappURL(String path)
     {
         return HtmlString.of(PageFlowUtil.staticResourceUrl(path));
+    }
+
+    /**
+     * Returns a well-formed, single-line JavaScript include tag, of the form:<br><br>
+     * {@code <script src="/<contextpath>/<path>" type="text/javascript"></script>}
+     *
+     * @param path Relative path to a resource in the webapp directory. Supports both "/"-prefixed and non-prefixed paths.
+     * @return HtmlString containing a well-formed {@code <script>} include tag
+     */
+    public static HtmlString getScriptTag(String path)
+    {
+        return PageFlowUtil.getScriptTag(path);
     }
 
     /**
