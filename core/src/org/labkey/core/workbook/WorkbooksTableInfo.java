@@ -29,7 +29,6 @@ import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -193,12 +192,6 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
         {
             return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
-        }
-
-        @Override
-        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-        {
-            throw new UnsupportedOperationException();
         }
 
         @Override

@@ -297,28 +297,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case ModifiedBy:
                 return createUserColumn(alias, _rootTable.getColumn("ModifiedBy"));
             case Alias:
-                var aliasCol = wrapColumn("Alias", getRealTable().getColumn("LSID"));
-                aliasCol.setDescription("Contains the list of aliases for this data object");
-                aliasCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("LSID") {
-                    @Override
-                    public TableInfo getLookupTableInfo()
-                    {
-                        return ExperimentService.get().getTinfoMaterialAliasMap();
-                    }
-                    }, "Alias")
-                {
-                    @Override
-                    public boolean isMultiSelectInput()
-                    {
-                        return false;
-                    }
-                });
-                aliasCol.setCalculated(false);
-                aliasCol.setNullable(true);
-                aliasCol.setRequired(false);
-                aliasCol.setDisplayColumnFactory(new ExpDataClassDataTableImpl.AliasDisplayColumnFactory());
-
-                return aliasCol;
+                return createAliasColumn(alias, ExperimentService.get()::getTinfoMaterialAliasMap);
 
             case Inputs:
                 return createLineageColumn(this, alias, true);
@@ -389,6 +368,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getImportSamplesURL(getContainer(), _ss.getName());
             setImportURL(new DetailsURL(url));
         }
+    }
+
+    public ExpSampleType getSampleType()
+    {
+        return _ss;
     }
 
     @Override
@@ -790,11 +774,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         }
                     }));
 
-            builder = LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap()));
-            if (InventoryService.get() != null && ExperimentalFeatureService.get().isFeatureEnabled("experimental_freezerManagement"))
-                return LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getMetricUnit()));
-            else
-                return builder;
+            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap()));
         }
         catch (IOException e)
         {

@@ -16,7 +16,6 @@
 
 package org.labkey.api.assay;
 
-import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -32,9 +31,8 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
-import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.security.SecurityManager.TransformSession;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.FileUtil;
@@ -118,10 +116,8 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                     // issue 13643: ensure script dir is initially empty
                     FileUtil.deleteDirectoryContents(scriptDir);
 
-                    // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
-                    final String apiKey = SecurityManager.beginTransformSessionApiKey(context.getUser());
-
-                    try
+                    // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage (i.e., TransformSession)
+                    try (TransformSession session = SecurityManager.createTransformSession(context.getUser()))
                     {
                         Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
                         String script = sb.toString();
@@ -135,7 +131,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
 
                         paramMap.put(RUN_INFO_REPLACEMENT, runInfo.getAbsolutePath().replaceAll("\\\\", "/"));
 
-                        addStandardParameters(context.getRequest(), context.getContainer(), scriptFile, apiKey, paramMap);
+                        addStandardParameters(context.getRequest(), context.getContainer(), scriptFile, session.getApiKey(), paramMap);
 
                         bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
 
@@ -187,8 +183,6 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                                     parent.delete();
                             }
                         }
-
-                        SecurityManager.endTransformSessionApiKey(apiKey);
                     }
                 }
                 else

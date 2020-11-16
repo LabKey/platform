@@ -111,6 +111,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.Closeable;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -629,28 +631,45 @@ public class SecurityManager
 
     public static final int SECONDS_PER_DAY = 60*60*24;
 
+    public static class TransformSession implements Closeable
+    {
+        private final String _apikey;
+
+        public TransformSession(@NotNull User user)
+        {
+            // TODO: Once we fix Issue 41813, we should remove this ignoreSqlUpdates() block
+            // Issue 40482: now that we create a temporary apikey when executing R reports, we need to ignore SQL updates
+            try (var ignore = SpringActionController.ignoreSqlUpdates())
+            {
+                _apikey = ApiKeyManager.get().createKey(user, SECONDS_PER_DAY);
+            }
+        }
+
+        public String getApiKey()
+        {
+            return _apikey;
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            // TODO: Once we fix Issue 41813, we should remove this ignoreSqlUpdates() block
+            try (var ignore = SpringActionController.ignoreSqlUpdates())
+            {
+                ApiKeyManager.get().deleteKey(_apikey);
+            }
+        }
+    }
+
     /**
      * Works like a standard HTTP session but intended for transform scripts and other API-style usage.
-     * Callers should call {@see endTransformSession} when finished, typically in a finally block.
-     * @return the apikey for the newly started session
+     * Callers must call this in a try-with-resources block to ensure the session is closed (e.g., API key is deleted).
+     * @return a TransformSession representing the newly created session
      */
-    public static @NotNull String beginTransformSessionApiKey(@NotNull User user)
+    public static @NotNull TransformSession createTransformSession(@NotNull User user)
     {
-        // Issue 40482: now that we create a temporary apikey when executing R reports, we need to ignore SQL updates
-        try (var ignore = SpringActionController.ignoreSqlUpdates())
-        {
-            return ApiKeyManager.get().createKey(user, SECONDS_PER_DAY);
-        }
+        return new TransformSession(user);
     }
-
-    public static void endTransformSessionApiKey(@NotNull String apikey)
-    {
-        try (var ignore = SpringActionController.ignoreSqlUpdates())
-        {
-            ApiKeyManager.get().deleteKey(apikey);
-        }
-    }
-
 
     public static HttpSession setAuthenticatedUser(HttpServletRequest request, @Nullable PrimaryAuthenticationConfiguration<?> configuration, User user, boolean invalidate)
     {

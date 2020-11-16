@@ -224,23 +224,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 return c;
             }
             case Alias:
-                var aliasCol = wrapColumn("Alias", getRealTable().getColumn("LSID"));
-                aliasCol.setDescription("Contains the list of aliases for this data object");
-                aliasCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("LSID")
-                {
-                    @Override
-                    public TableInfo getLookupTableInfo()
-                    {
-                        return ExperimentService.get().getTinfoDataAliasMap();
-                    }
-                }, "Alias"));
-                aliasCol.setCalculated(false);
-                aliasCol.setNullable(true);
-                aliasCol.setRequired(false);
-                aliasCol.setDisplayColumnFactory(new AliasDisplayColumnFactory());
-                aliasCol.setConceptURI("http://www.labkey.org/exp/xml#alias");
-                aliasCol.setPropertyURI("http://www.labkey.org/exp/xml#alias");
-                return aliasCol;
+                return createAliasColumn(alias, ExperimentService.get()::getTinfoDataAliasMap);
 
             case Inputs:
                 return createLineageColumn(this, alias, true);
@@ -613,7 +597,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
 
         @Override
-        public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException
+        public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
         {
             return super.loadRows(user, container, rows, context, extraScriptContext);
         }
@@ -814,42 +798,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     }
                 }
             }
-        }
-    }
-
-    static class AliasDisplayColumnFactory implements DisplayColumnFactory
-    {
-        @Override
-        public DisplayColumn createRenderer(ColumnInfo colInfo)
-        {
-            DataColumn dataColumn = new DataColumn(colInfo);
-            dataColumn.setInputType("text");
-
-            return new MultiValuedDisplayColumn(dataColumn, true)
-            {
-                @Override
-                public Object getInputValue(RenderContext ctx)
-                {
-                    Object value =  super.getInputValue(ctx);
-                    StringBuilder sb = new StringBuilder();
-                    if (value instanceof List)
-                    {
-                        String delim = "";
-                        for (Object item : (List)value)
-                        {
-                            if (item != null)
-                            {
-                                String name = new TableSelector(ExperimentService.get().getTinfoAlias(), Collections.singleton("Name")).getObject(item, String.class);
-
-                                sb.append(delim);
-                                sb.append(name);
-                                delim = ",";
-                            }
-                        }
-                    }
-                    return sb.toString();
-                }
-            };
         }
     }
 

@@ -57,6 +57,7 @@ import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -69,11 +70,19 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.MapLoader;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.remoteapi.ApiKeyCredentialsProvider;
+import org.labkey.remoteapi.Connection;
+import org.labkey.remoteapi.query.Filter;
+import org.labkey.remoteapi.query.SelectRowsCommand;
+import org.labkey.remoteapi.query.SelectRowsResponse;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -84,11 +93,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * User: kevink
@@ -334,7 +345,10 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
         int count = table.getUpdateService().loadRows(user, c, mapLoader, new DataIteratorContext(), null);
         assertEquals(2, count);
         assertEquals(2, dataClass.getDatas().size());
-        verifyAliases(new ArrayList<>(Arrays.asList("a", "b", "c")));
+
+        int rowId = new TableSelector(table, Set.of("rowId"), new SimpleFilter("aa", 50).addCondition("bb", "zz"), null).getObject(Integer.class);
+
+        verifyAliases(table, rowId, Set.of("a", "b", "c"));
     }
 
     private void testDeleteExpData(ExpDataClassImpl dataClass, User user, int expectedCount)
@@ -374,23 +388,71 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
         Map<String, Object> row = new CaseInsensitiveHashMap<>();
         row.put("aa", 20);
         row.put("bb", "bye");
-        row.put("alias", "aa");
+        row.put("alias", "aa,bb");
         rows.add(row);
 
+        int insertedRowId = -1;
         try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
         {
             List<Map<String, Object>> ret = insertRows(c, rows, table.getName());
-            verifyAliases(new ArrayList<>(Arrays.asList("aa")));
+            insertedRowId = (Integer)ret.get(0).get("rowId");
             tx.commit();
         }
+
+        verifyAliases(table, insertedRowId, Set.of("aa","bb"));
     }
 
-    private void verifyAliases(Collection<String> aliasNames)
+    private void verifyAliases(TableInfo table, int expDataRowId, Set<String> expectedAliases) throws Exception
     {
-        for (String name : aliasNames)
+        for (String name : expectedAliases)
         {
             assertEquals(new TableSelector(ExperimentService.get().getTinfoAlias(),
                     new SimpleFilter(FieldKey.fromParts("name"), name), null).getRowCount(), 1);
+        }
+
+        ExpData data = ExperimentService.get().getExpData(expDataRowId);
+        Collection<String> actualAliases = data.getAliases();
+        assertEquals(new HashSet<>(actualAliases), expectedAliases);
+
+        verifyAliasesViaSelectRows("exp", "Data", expDataRowId, expectedAliases);
+        verifyAliasesViaSelectRows("exp.data", table.getPublicName(), expDataRowId, expectedAliases);
+    }
+
+    private void verifyAliasesViaSelectRows(String schemaName, String queryName, int expDataRowId, Set<String> expectedAliases)
+            throws Exception
+    {
+        try (var session = SecurityManager.createTransformSession(TestContext.get().getUser()))
+        {
+            String baseURL = AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath();
+            Connection conn = new Connection(baseURL, new ApiKeyCredentialsProvider(session.getApiKey()));
+            SelectRowsCommand cmd = new SelectRowsCommand(schemaName, queryName);
+            cmd.setRequiredVersion(17.1);
+            cmd.setColumns(List.of("RowId", "Name", ExpDataTable.Column.Alias.name()));
+            cmd.setFilters(List.of(new Filter("rowId", expDataRowId, Filter.Operator.EQUAL)));
+            SelectRowsResponse resp = cmd.execute(conn, c.getPath());
+
+            assertEquals(1, resp.getRowCount().intValue());
+            Map<String, Object> row0 = resp.getRows().get(0);
+            Map<String, Object> row0data = (Map<String, Object>)row0.get("data");
+            // expected 17.1 format for the row's data:
+            // {
+            //    "RowId": {
+            //        "value": 88080, "url": "..."
+            //    },
+            //    "Name": {
+            //        "value": "JUNIT-5-50", "url": "..."
+            //    },
+            //    "Alias": [{
+            //        "displayValue": "a", "value": 4
+            //    },{
+            //        "displayValue": "c", "value": 6
+            //    },{
+            //        "displayValue": "b", "value": 989
+            //    }]
+            //}
+            List<Map<String, Object>> row0aliases = (List<Map<String, Object>>)row0data.get(ExpDataTable.Column.Alias.name());
+            Set<String> aliases = row0aliases.stream().map(m -> (String)m.get("displayValue")).collect(Collectors.toSet());
+            assertEquals(aliases, expectedAliases);
         }
     }
 
@@ -447,9 +509,9 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
         assertEquals("testingFromTemplate", t.getTableName());
 
         DomainKind kind = domain.getDomainKind();
-        Assert.assertTrue(kind instanceof DataClassDomainKind);
+        assertTrue(kind instanceof DataClassDomainKind);
         Set<String> mandatory = kind.getMandatoryPropertyNames(domain);
-        Assert.assertTrue("Expected template to set 'aa' as mandatory: " + mandatory, mandatory.contains("aa"));
+        assertTrue("Expected template to set 'aa' as mandatory: " + mandatory, mandatory.contains("aa"));
 
         ExpDataClassImpl dataClass = (ExpDataClassImpl)ExperimentService.get().getDataClass(c, domainName);
         Assert.assertNotNull(dataClass);
@@ -597,7 +659,7 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
         ExpData data = ExperimentServiceImpl.get().getExpData(dataClass, "TODO-1");
 
         Collection<String> aliases = data.getAliases();
-        Assert.assertTrue("Expected aliases to contain 'xsd' and 'domain templates', got: " + aliases, aliases.containsAll(Arrays.asList("xsd", "domain templates")));
+        assertTrue("Expected aliases to contain 'xsd' and 'domain templates', got: " + aliases, aliases.containsAll(Arrays.asList("xsd", "domain templates")));
     }
 
 
@@ -707,10 +769,10 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
             // sqlserver only error
             String msg = ex.getMessage();
             String expected = "Error creating index over 'aa, bb'";
-            Assert.assertTrue("Expected \"" + expected + "\", got \"" + msg + "\"", msg.contains(expected));
+            assertTrue("Expected \"" + expected + "\", got \"" + msg + "\"", msg.contains(expected));
 
             expected = "Index over large columns currently only supported for a single string column";
-            Assert.assertTrue("Expected \"" + expected + "\", got \"" + msg + "\"", msg.contains(expected));
+            assertTrue("Expected \"" + expected + "\", got \"" + msg + "\"", msg.contains(expected));
         }
     }
 
@@ -766,12 +828,12 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
             if (sqlServer)
             {
                 // Check error message from trigger script is propagated up on SqlServer
-                Assert.assertTrue("Expected error to start with '" + SqlDialect.CUSTOM_UNIQUE_ERROR_MESSAGE + "', got '" + e.getMessage() + "'",
+                assertTrue("Expected error to start with '" + SqlDialect.CUSTOM_UNIQUE_ERROR_MESSAGE + "', got '" + e.getMessage() + "'",
                         e.getMessage().startsWith(SqlDialect.CUSTOM_UNIQUE_ERROR_MESSAGE));
             }
             Throwable t = e.getLastRowError().getGlobalError(0).getCause();
-            Assert.assertTrue("Expected a SQLException", t instanceof SQLException);
-            Assert.assertTrue("Expected a constraint violation", RuntimeSQLException.isConstraintException((SQLException)t));
+            assertTrue("Expected a SQLException", t instanceof SQLException);
+            assertTrue("Expected a constraint violation", RuntimeSQLException.isConstraintException((SQLException)t));
         }
     }
 

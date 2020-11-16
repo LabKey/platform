@@ -36,20 +36,15 @@ public class AssayGWTView extends GWTView
 
     public AssayGWTView(Class<? extends EntryPoint> clss, Map<String, String> properties)
     {
-        this(clss.getName(), properties);
-    }
-
-    public AssayGWTView(String clss, Map<String, String> properties)
-    {
         super("gwt.AssayApplication", properties);
         for (AssayApplication.GWTModule m : AssayApplication.GWTModule.values())
         {
-            if (m.className.equals(clss))
+            if (m.className.equals(clss.getName()))
             {
                 getModelBean().getProperties().put("GWTModule", m.getClass().getSimpleName());
                 return;
             }
         }
-        throw new IllegalArgumentException(clss);
+        throw new IllegalArgumentException(clss.getName());
     }
 }

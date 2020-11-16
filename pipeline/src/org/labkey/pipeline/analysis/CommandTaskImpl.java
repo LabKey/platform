@@ -46,6 +46,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityManager.TransformSession;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
@@ -674,9 +675,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
     @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
-        final String apikey = SecurityManager.beginTransformSessionApiKey(getJob().getUser());
-
-        try
+        try (TransformSession session = SecurityManager.createTransformSession(getJob().getUser()))
         {
             RecordedAction action = new RecordedAction(_factory.getProtocolActionName());
             
@@ -703,7 +702,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             if (getJobSupport().getParametersFile() != null)
                 _wd.inputFile(getJobSupport().getParametersFile(), true);
 
-            if (!runCommand(action, apikey))
+            if (!runCommand(action, session.getApiKey()))
                 return new RecordedActionSet();
 
             // Read output parameters file, record output parameters, and discard it.
@@ -733,7 +732,6 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         }
         finally
         {
-            SecurityManager.endTransformSessionApiKey(apikey);
             _wd = null;
         }
     }

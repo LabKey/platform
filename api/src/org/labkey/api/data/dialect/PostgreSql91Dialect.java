@@ -72,7 +72,7 @@ import java.util.stream.Collectors;
 // track changes we've implemented for each version over time.
 public abstract class PostgreSql91Dialect extends SqlDialect
 {
-    protected static final int TEMPTABLE_GENERATOR_MINSIZE = 1000;
+    public static final int TEMPTABLE_GENERATOR_MINSIZE = 1000;
 
     private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<>();
     private final AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);

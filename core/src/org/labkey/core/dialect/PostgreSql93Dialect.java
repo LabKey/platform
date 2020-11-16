@@ -27,7 +27,7 @@ import java.util.Set;
  * Date: Jun 14, 2013
  * Time: 8:50:00 AM
  */
-public abstract class PostgreSql93Dialect extends PostgreSql92Dialect
+abstract class PostgreSql93Dialect extends PostgreSql92Dialect
 {
     public PostgreSql93Dialect()
     {
