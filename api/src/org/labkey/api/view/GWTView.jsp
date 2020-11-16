@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.GWTView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -35,10 +34,9 @@
 <div id="<%= h(bean.getModuleName()) %>-Root" class="<%=h(bean.getLoadingStyleName())%>"></div>
 <%
 String jsPath = bean.getModuleName() + "/" + bean.getModuleName() + ".nocache.js";
-String hashedPath = "/" + jsPath + "?" + PageFlowUtil.getServerSessionHash();
 %>
 <script id="__gwt_marker_<%=h(bean.getModuleName())%>"></script>
-<%=getScriptTag(hashedPath)%>
+<%=getScriptTag(jsPath)%>
 <script type="text/javascript">
     <!-- Pass through name/value property map to GWT app so it can initialize itself appropriately -->
 <%= text(GWTView.PROPERTIES_OBJECT_NAME) %> = {<%
