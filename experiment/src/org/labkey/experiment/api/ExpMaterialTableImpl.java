@@ -661,8 +661,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             sql.append(" INNER JOIN ").append(provisioned, "ss").append(" ON m.lsid = ss.lsid");
 
         // WHERE
-        Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
-        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), columnMap);
+        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
         sql.append("\n").append(filterFrag).append(") ").append(alias);
 
         return sql;

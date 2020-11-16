@@ -17,7 +17,6 @@ package org.labkey.api.exp;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -47,7 +46,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.test.TestTimeout;
@@ -55,13 +53,9 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.webdav.SimpleDocumentResource;
-import org.labkey.api.webdav.WebdavResource;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -84,7 +78,6 @@ import java.util.stream.Collectors;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
-import static org.labkey.api.search.SearchService.PROPERTY;
 
 /**
  * Lots of static methods for dealing with domains and property descriptors. Tends to operate primarily on the bean-style

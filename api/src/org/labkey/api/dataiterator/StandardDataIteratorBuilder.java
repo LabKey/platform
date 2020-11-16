@@ -128,7 +128,13 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
                 propertiesMap.put(dp.getPropertyURI(), dp);
         }
 
-        DataIterator input = _inputBuilder.getDataIterator(context);
+        DataIteratorBuilder dib = _inputBuilder;
+
+        // Add translator/validator for ontology import features
+        if (null != OntologyService.get())
+            dib = OntologyService.get().getConceptLookupDataIteratorBuilder(_inputBuilder, _target);
+
+        DataIterator input = dib.getDataIterator(context);
 
         if (null == input)
         {

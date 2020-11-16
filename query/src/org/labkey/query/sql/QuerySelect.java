@@ -58,6 +58,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -112,11 +113,12 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
         // subqueryTable is only for expr.createColumnInfo()
         // should refactor so tableinfo is not necessary, maybe expr.setColumnAttributes(target)
-        _sti = new SQLTableInfo(_schema.getDbSchema(), alias) {
+        _sti = new SQLTableInfo(_schema.getDbSchema(), alias)
+        {
             @Override
             public UserSchema getUserSchema()
             {
-                return (UserSchema)QuerySelect.this.getSchema();
+                return (UserSchema) QuerySelect.this.getSchema();
             }
         };
 
@@ -126,7 +128,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
         for (QParameter p : query._parameters)
             parametersInScope.add(new FieldKey(null, p.getName()));
-        
+
         MemTracker.getInstance().put(this);
     }
 
@@ -144,9 +146,9 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
 
     QuerySelect(@NotNull Query query, QQuery root, boolean inFromClause)
-	{
-		this(query, root, null, inFromClause);
-	}
+    {
+        this(query, root, null, inFromClause);
+    }
 
 
     // create a simple QuerySelect over a QRelation
@@ -159,7 +161,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
         _orderBy = order;
         _limit = limit;
-        
+
         QTable t = new QTable(from, alias);
         _parsedJoins = new ArrayList<>();
         _parsedJoins.add(t);
@@ -200,15 +202,15 @@ public class QuerySelect extends QueryRelation implements Cloneable
      * find each group by field in the select list
      * add a new column if we can't find it
      */
-    Map<String,SelectColumn> getGroupByColumns()
+    Map<String, SelectColumn> getGroupByColumns()
     {
         // CONSIDER: find selected group keys if they are already in the select list
-        Map<String,SelectColumn> ret = new HashMap<>();
+        Map<String, SelectColumn> ret = new HashMap<>();
         int index = 0;
 
         if (null != _groupBy)
         {
-groupByLoop:
+            groupByLoop:
             for (QNode gb : _groupBy.childList())
             {
                 index++;
@@ -284,7 +286,7 @@ groupByLoop:
 
                 if (relation instanceof QueryWith.QueryTableWith)
                 {
-                    QueryWith.QueryTableWith queryTableWith = (QueryWith.QueryTableWith)relation;
+                    QueryWith.QueryTableWith queryTableWith = (QueryWith.QueryTableWith) relation;
                     if (queryTableWith.isParsingWith())
                     {
                         if (queryTableWith.isSeenRecursiveReference())
@@ -368,13 +370,13 @@ groupByLoop:
             while (!process.isEmpty())
             {
                 QNode node = process.removeFirst();
-                
+
                 if (node instanceof QDistinct)
                 {
                     if (!columnList.isEmpty())
                         parseError("DISTINCT not expected", node);
                     else
-                        _distinct = (QDistinct)node;
+                        _distinct = (QDistinct) node;
                     continue;
                 }
 
@@ -390,9 +392,9 @@ groupByLoop:
                 }
 
                 // look for table.*
-                if (node instanceof QFieldKey || (node instanceof QAs && node.childList().size()==1 && node.getFirstChild() instanceof QFieldKey))
+                if (node instanceof QFieldKey || (node instanceof QAs && node.childList().size() == 1 && node.getFirstChild() instanceof QFieldKey))
                 {
-                    FieldKey key = ((QFieldKey)(node instanceof QAs ? node.getFirstChild() : node)).getFieldKey();
+                    FieldKey key = ((QFieldKey) (node instanceof QAs ? node.getFirstChild() : node)).getFieldKey();
 
                     if (null != key && key.getName().equals("*"))
                     {
@@ -408,9 +410,9 @@ groupByLoop:
                             parseError("Can't resolve column: " + node.getSourceText(), node);
                             continue;
                         }
-                        for (String name :  r.getAllColumns().keySet())
+                        for (String name : r.getAllColumns().keySet())
                         {
-                            SelectColumn col = new SelectColumn(new FieldKey(parent,name));
+                            SelectColumn col = new SelectColumn(new FieldKey(parent, name));
                             // UNDONE: Remember columns expanded by "SELECT *" so we can copy the hiddenness of a column.
                             // UNDONE: Unfortunately, since .selectRows() and .executeSql() use QueryView, the default column list won't include these hidden columns.
                             // UNDONE: See issue 17316 and 17332.
@@ -433,14 +435,14 @@ groupByLoop:
         // two passes to maintain ordering and avoid the odd name collision
         // create unique aliases where missing
         int expressionUniq = 0;
-        Map<FieldKey,FieldKey> fieldKeys = new HashMap<>();
+        Map<FieldKey, FieldKey> fieldKeys = new HashMap<>();
         for (SelectColumn column : columnList)
         {
             String name = column.getName();
             if (null == name)
                 continue;
             if (null == column._key)
-                column._key = new FieldKey(null,name);
+                column._key = new FieldKey(null, name);
             if (fieldKeys.containsKey(column._key))
             {
                 if (_query.isAllowDuplicateColumns())
@@ -469,12 +471,12 @@ groupByLoop:
             String name = column.getName();
             if (null != name)
                 continue;
-            while (fieldKeys.containsKey(new FieldKey(null,"Expression" + ++expressionUniq)))
+            while (fieldKeys.containsKey(new FieldKey(null, "Expression" + ++expressionUniq)))
                 ;
             name = "Expression" + expressionUniq;
             reportWarning("Automatically creating alias for expression column: " + name, column._node);
             if (null == column._key)
-                column._key = new FieldKey(null,name);
+                column._key = new FieldKey(null, name);
             fieldKeys.put(column._key, column._key);
         }
         for (SelectColumn column : columnList)
@@ -484,7 +486,6 @@ groupByLoop:
             _columns.put(column._key, column);
         }
     }
-
 
 
     private SqlDialect getSqlDialect()
@@ -581,7 +582,7 @@ groupByLoop:
         final Map<FieldKey, QTable> _tables;
         final List<QJoinOrTable> _joins;        // root joins, these may be trees
         final List<QExpr> _ons;                 // on expressions for declareFields
-        
+
         FromParser(QFrom from)
         {
             _tables = new LinkedHashMap<>();
@@ -644,7 +645,7 @@ groupByLoop:
         private QTable parseRange(QNode node)
         {
             int countChildren = node.childList().size();
-            if (countChildren  < 1 || 2 < countChildren || !(node.childList().get(0) instanceof QExpr))
+            if (countChildren < 1 || 2 < countChildren || !(node.childList().get(0) instanceof QExpr))
             {
                 parseError("Syntax error in JOIN clause", node);
                 return null;
@@ -657,7 +658,7 @@ groupByLoop:
                 alias = (QIdentifier) children.get(1);
 
             ContainerFilter.Type cfType = null;
-            Map<String,Object> annotations = ((QUnknownNode)node).getAnnotations();
+            Map<String, Object> annotations = ((QUnknownNode) node).getAnnotations();
             if (null != annotations)
             {
                 for (var entry : annotations.entrySet())
@@ -671,7 +672,7 @@ groupByLoop:
                                 _query.getParseErrors().add(new QueryParseException("ContainerFilter annotation requires a string value", null, node.getLine(), node.getColumn()));
                                 continue;
                             }
-                            cfType = ContainerFilter.getType((String)value);
+                            cfType = ContainerFilter.getType((String) value);
                             if (null == cfType)
                                 _query.getParseErrors().add(new QueryParseException("Unrecognized container filter type: " + value, null, node.getLine(), node.getColumn()));
                             break;
@@ -686,7 +687,7 @@ groupByLoop:
             FieldKey aliasKey = table.getAlias();
             if (null == aliasKey)
             {
-                table.setAlias(new QIdentifier("_auto_alias_"+_tables.size() + "_"));
+                table.setAlias(new QIdentifier("_auto_alias_" + _tables.size() + "_"));
                 aliasKey = table.getAlias();
                 reportWarning("Subquery in FROM clause does not have an alias", expr);
             }
@@ -705,7 +706,7 @@ groupByLoop:
         private QJoin parseJoin(QNode join)
         {
             List<QNode> children = join.childList();
-            if (children.size() < 3 || children.size() >  4)
+            if (children.size() < 3 || children.size() > 4)
             {
                 parseError("Error in JOIN clause", join);
                 return null;
@@ -754,20 +755,20 @@ groupByLoop:
                     parseError("Error in ON expression", on);
                     return null;
                 }
-                _ons.add((QExpr)on.childList().get(0));
+                _ons.add((QExpr) on.childList().get(0));
             }
 
             if (joinType == JoinType.cross && null != on)
                 parseError("ON unexpected in a CROSS JOIN", on);
             else if (joinType != JoinType.cross && null == on)
                 parseError("ON expected", rightNode);
-            QJoin qjoin = new QJoin(left, right, joinType, null==on ? null : (QExpr)on.childList().get(0));
+            QJoin qjoin = new QJoin(left, right, joinType, null == on ? null : (QExpr) on.childList().get(0));
             return qjoin;
         }
     }
 
 
-    private QueryRelation getTable(FieldKey key)
+    QueryRelation getTable(FieldKey key)
     {
         QueryRelation ret = _tables.get(key);
         return ret;
@@ -977,6 +978,11 @@ groupByLoop:
 
     private void declareFields(QExpr expr)
     {
+        if (expr instanceof QIfDefined)
+        {
+            ((QIfDefined)expr).setQuerySelect(this);
+        }
+
         if (expr instanceof QMethodCall)
         {
 			assert expr.childList().size() == 1 || expr.childList().size() == 2;
@@ -1021,9 +1027,13 @@ groupByLoop:
             assert null!=column || expr instanceof QIfDefined || getParseErrors().size() > 0;
             return;
         }
-        for (QNode child : expr.children())
+
+        if (!(expr instanceof QResolveTableColumn))  // treat as terminal node even though it has children
         {
-            declareFields((QExpr)child);
+            for (QNode child : expr.children())
+            {
+                declareFields((QExpr) child);
+            }
         }
     }
 
@@ -1726,7 +1736,7 @@ groupByLoop:
         return true;
     }
 
-	private void parseError(String message, QNode node)
+	void parseError(String message, QNode node)
 	{
 		Query.parseError(getParseErrors(), message, node);
 	}
@@ -2021,6 +2031,8 @@ groupByLoop:
             if (node instanceof QAs && node.childList().size() > 1)
             {
                 _field = ((QAs) node).getExpression();
+                if (_field instanceof QIfDefined)
+                    ((QIfDefined)_field).setQuerySelect(QuerySelect.this);
                 FieldKey key = _field.getFieldKey();
                 if (null != key && key.getName().equals("*"))
                     parseError("* expression can not be aliased", node);
@@ -2030,6 +2042,8 @@ groupByLoop:
             {
                 if (node instanceof QAs)
                     node = node.getFirstChild();
+                if (node instanceof QIfDefined)
+                    ((QIfDefined)node).setQuerySelect(QuerySelect.this);
                 _field = (QExpr) node;
                 FieldKey fk = _field.getFieldKey();
                 if (null != fk && !fk.getName().startsWith("@@"))
@@ -2166,10 +2180,32 @@ groupByLoop:
             return false;
         }
 
+        @Override
+        String getPrincipalConceptCode()
+        {
+            QExpr expr = getResolvedField();
+            if (expr instanceof QField)
+            {
+                return ((QField)expr).getRelationColumn().getPrincipalConceptCode();
+            }
+            return null;
+        }
 
         @Override
-        void copyColumnAttributesTo(BaseColumnInfo to)
+        String getConceptURI()
         {
+            QExpr expr = getResolvedField();
+            if (expr instanceof QField)
+            {
+                return ((QField)expr).getRelationColumn().getConceptURI();
+            }
+            return null;
+        }
+
+        @Override
+        void copyColumnAttributesTo(@NotNull BaseColumnInfo to)
+        {
+            Objects.requireNonNull(to);
             QExpr expr = getResolvedField();
             if (expr instanceof QField)
             {
@@ -2200,12 +2236,21 @@ groupByLoop:
             if (label != null)
                 to.setLabel(label);
 
-            boolean hidden = null != _annotations && _annotations.containsKey("hidden");
+            if (null == _annotations)
+                _annotations = Collections.emptyMap();
+
+            if (_annotations.containsKey("concept"))
+            {
+                Object c = _annotations.get("concept");
+                to.setPrincipalConceptCode(null==c ? null : StringUtils.trimToNull(c.toString()));
+            }
+
+            boolean hidden = _annotations.containsKey("hidden");
             if (hidden)
                 to.setHidden(hidden);
 
             // does not remove the FK, just changes display behaviour
-            boolean nolookup = null != _annotations && _annotations.containsKey("nolookup");
+            boolean nolookup = _annotations.containsKey("nolookup");
             if (nolookup)
                 to.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
 
@@ -2400,6 +2445,9 @@ groupByLoop:
         {
             QExpr expr = c.getResolvedField();
             if (!(expr instanceof QField))
+                return false;
+            // annotations don't affect the generated SQL, but we don't want to lose them
+            if (null != c._annotations && !c._annotations.isEmpty())
                 return false;
         }
 

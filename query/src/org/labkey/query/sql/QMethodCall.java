@@ -71,7 +71,7 @@ public class QMethodCall extends QExpr
         if (first instanceof QField && null != ((QField)first).getTable())
         {
             // table.method()
-            builder.append(method.getSQL(((QField)first).getRelationColumn().getTable().getAlias(), builder.getDbSchema(), arguments.toArray(new SQLFragment[arguments.size()])));
+            builder.append(method.getSQL(((QField)first).getTable().getAlias(), builder.getDbSchema(), arguments.toArray(new SQLFragment[arguments.size()])));
         }
         else if (method instanceof AbstractQueryMethodInfo)
         {
