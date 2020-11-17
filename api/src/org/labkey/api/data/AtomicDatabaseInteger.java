@@ -86,25 +86,12 @@ public class AtomicDatabaseInteger
     public boolean compareAndSet(int expect, int update)
     {
         String targetColumnName = _targetColumn.getSelectName();
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(targetColumnName), expect);
-
-        if (null != _container)
-            filter.addCondition(FieldKey.fromParts("Container"), _container);
-
-        Map<String, Object> in = new HashMap<>();
-        in.put(_targetColumn.getSelectName(), update);
-
-        try
-        {
-            // Optimistic concurrency exceptions are possible... don't log them as errors
-            Map<String, Object> out = Table.update(_user, _table, in, _rowId, filter, Level.ERROR);
-            assert out.get(targetColumnName).equals(update);
-            return true;
-        }
-        catch (OptimisticConflictException e)
-        {
-            return false;
-        }
+        // NOTE: we're not really using _ts column for optimistic concurrency, don't need to update
+        int rowsAffected = new SqlExecutor(_table.getSchema()).execute(new SQLFragment(
+                "UPDATE " + _table.getSelectName() +
+                "    SET " + targetColumnName + "=?\n" +
+                "    WHERE (" + targetColumnName + "=?) AND (container=?) AND (rowid=?)", update, expect, _container.getEntityId(), _rowId));
+        return rowsAffected == 1;
     }
 
     public int incrementAndGet()
