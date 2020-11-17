@@ -108,7 +108,6 @@ public abstract class AuditHandler
                             case UPDATE:
                             {
                                 Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(row, updatedRow, table.getExtraDetailedUpdateAuditFields());
-                                // record modified fields
                                 Map<String, Object> originalRow = rowPair.first;
                                 Map<String, Object> modifiedRow = rowPair.second;
 
@@ -133,7 +132,7 @@ public abstract class AuditHandler
         }
     }
 
-    public static Pair<Map<String, Object>, Map<String, Object>> getOldAndNewRecordForMerge(@NotNull Map<String, Object> row, @NotNull Map<String, Object> updatedRow, @NotNull Set<String> extraFieldsToInclude)
+    public static Pair<Map<String, Object>, Map<String, Object>> getOldAndNewRecordForMerge(@NotNull Map<String, Object> row, @NotNull Map<String, Object> updatedRow, Set<String> extraFieldsToInclude)
     {
         // record modified fields
         Map<String, Object> originalRow = new HashMap<>();
@@ -141,7 +140,7 @@ public abstract class AuditHandler
 
         for (Map.Entry<String, Object> entry : row.entrySet())
         {
-            boolean isExtraAuditField = extraFieldsToInclude.contains(entry.getKey());
+            boolean isExtraAuditField = extraFieldsToInclude != null && extraFieldsToInclude.contains(entry.getKey());
             if (updatedRow.containsKey(entry.getKey()))
             {
                 Object newValue = updatedRow.get(entry.getKey());
