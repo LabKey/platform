@@ -15,14 +15,11 @@
  */
 package org.labkey.api.data;
 
-import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.exceptions.OptimisticConflictException;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
@@ -41,14 +38,13 @@ public class AtomicDatabaseInteger
 {
     private final TableInfo _table;
     private final ColumnInfo _targetColumn;
-    private final User _user;
     private final Container _container;
     private final Object _rowId;
 
     // Acts like an AtomicInteger, but uses the database for synchronization. This is convenient for scenarios where
     // multiple threads (eventually, even different servers) might attempt an update but only one should succeed.
     // Currently only implements compareAndSet(), but could add other methods from AtomicInteger.
-    public AtomicDatabaseInteger(ColumnInfo targetColumn, User user, @Nullable Container container, Object rowId)
+    public AtomicDatabaseInteger(ColumnInfo targetColumn, @Nullable Container container, Object rowId)
     {
         if (targetColumn.getJavaObjectClass() != Integer.class)
             throw new IllegalArgumentException("Target column must be type integer");
@@ -60,7 +56,6 @@ public class AtomicDatabaseInteger
             throw new IllegalArgumentException("Target table must have a single primary key column");
 
         _targetColumn = targetColumn;
-        _user = user;
         _container = container;
         _rowId = rowId;
     }
@@ -86,25 +81,15 @@ public class AtomicDatabaseInteger
     public boolean compareAndSet(int expect, int update)
     {
         String targetColumnName = _targetColumn.getSelectName();
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(targetColumnName), expect);
-
+        // NOTE: we're not really using _ts column for optimistic concurrency, don't need to update
+        SQLFragment sqlf = new SQLFragment(
+                "UPDATE " + _table.getSelectName() +
+                        "    SET " + targetColumnName + "=?\n" +
+                        "    WHERE (" + targetColumnName + "=?) AND (rowid=?)", update, expect, _rowId);
         if (null != _container)
-            filter.addCondition(FieldKey.fromParts("Container"), _container);
-
-        Map<String, Object> in = new HashMap<>();
-        in.put(_targetColumn.getSelectName(), update);
-
-        try
-        {
-            // Optimistic concurrency exceptions are possible... don't log them as errors
-            Map<String, Object> out = Table.update(_user, _table, in, _rowId, filter, Level.ERROR);
-            assert out.get(targetColumnName).equals(update);
-            return true;
-        }
-        catch (OptimisticConflictException e)
-        {
-            return false;
-        }
+            sqlf.append(" AND (container=?)").add(_container.getEntityId());
+        int rowsAffected = new SqlExecutor(_table.getSchema()).execute(sqlf);
+        return rowsAffected == 1;
     }
 
     public int incrementAndGet()
@@ -161,7 +146,7 @@ public class AtomicDatabaseInteger
             map = Table.insert(user, table, map);
 
             _rowId = (Integer)map.get("RowId");
-            _adi = new AtomicDatabaseInteger(table.getColumn("IntNotNull"), user, c, _rowId);
+            _adi = new AtomicDatabaseInteger(table.getColumn("IntNotNull"), c, _rowId);
         }
 
         @Test
