@@ -331,6 +331,10 @@ public class DomainUtil
         gwtProp.setURL(url == null ? null : url.toString());
         gwtProp.setScale(prop.getScale());
         gwtProp.setRedactedText(prop.getRedactedText());
+        gwtProp.setPrincipalConceptCode(prop.getPrincipalConceptCode());
+        gwtProp.setSourceOntology(prop.getSourceOntology());
+        gwtProp.setConceptImportColumn(prop.getConceptImportColumn());
+        gwtProp.setConceptLabelColumn(prop.getConceptLabelColumn());
 
         List<GWTPropertyValidator> validators = new ArrayList<>();
         for (IPropertyValidator pv : prop.getValidators())
