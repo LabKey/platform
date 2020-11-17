@@ -872,7 +872,7 @@ public class Table
 
         if (null != filter)
         {
-            SQLFragment fragment = filter.getSQLFragment(table.getSqlDialect(), null, null);
+            SQLFragment fragment = filter.getSQLFragment(table.getSqlDialect(), null, createColumnMap(table,null));
             whereSQL.append(fragment.getSQL());
             parametersWhere.addAll(fragment.getParams());
             whereAND = " AND ";
