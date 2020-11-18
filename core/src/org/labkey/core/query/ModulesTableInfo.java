@@ -27,6 +27,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -135,10 +136,21 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         return (ModulesTableInfo) super.init();
     }
 
+    private void appendStringLiteral(DialectStringHandler h, SQLFragment sql, String sep, String s)
+    {
+        sql.append(sep);
+        s = StringUtils.trimToNull(s);
+        if (null == s)
+            sql.append("NULL");
+        else
+            sql.append(h.quoteStringLiteral(s));
+    }
+
     @NotNull
     @Override
     public SQLFragment getFromSQL(String alias)
     {
+        var h = getSqlDialect().getStringHandler();
         SQLFragment ret = new SQLFragment();
 
         // select in-memory modules
@@ -150,21 +162,20 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         {
             cte.append(sep);
             sep = ",\n";
-            cte.append("(");
-            cte.append("?").add(module.getName());
-            cte.append(",?").add(StringUtils.trimToNull(module.getReleaseVersion()));
-            cte.append(",?").add(StringUtils.trimToNull(module.getLabel()));
-            cte.append(",?").add(StringUtils.trimToNull(module.getDescription()));
-            cte.append(",?").add(StringUtils.trimToNull(module.getUrl()));
-            cte.append(",?").add(StringUtils.trimToNull(module.getAuthor()));
-            cte.append(",?").add(StringUtils.trimToNull(module.getMaintainer()));
-            cte.append(",?").add(StringUtils.trimToNull(module.getOrganization()));
-            cte.append(",?").add(StringUtils.trimToNull(module.getOrganizationUrl()));
-            cte.append(",?").add(StringUtils.trimToNull(module.getLicense()));
-            cte.append(",?").add(StringUtils.trimToNull(module.getLicenseUrl()));
-            cte.append(",?").add(StringUtils.trimToNull(module.getVcsRevision()));
-            cte.append(",?").add(StringUtils.trimToNull(module.getVcsUrl()));
-            cte.append(",?").add(StringUtils.join(module.getModuleDependenciesAsSet(), ", "));
+            appendStringLiteral(h, cte,"(",module.getName());
+            appendStringLiteral(h, cte,",",module.getReleaseVersion());
+            appendStringLiteral(h, cte,",",module.getLabel());
+            appendStringLiteral(h, cte,",",module.getDescription());
+            appendStringLiteral(h, cte,",",module.getUrl());
+            appendStringLiteral(h, cte,",",module.getAuthor());
+            appendStringLiteral(h, cte,",",module.getMaintainer());
+            appendStringLiteral(h, cte,",",module.getOrganization());
+            appendStringLiteral(h, cte,",",module.getOrganizationUrl());
+            appendStringLiteral(h, cte,",",module.getLicense());
+            appendStringLiteral(h, cte,",",module.getLicenseUrl());
+            appendStringLiteral(h, cte,",",module.getVcsRevision());
+            appendStringLiteral(h, cte,",",module.getVcsUrl());
+            appendStringLiteral(h, cte,",",StringUtils.join(module.getModuleDependenciesAsSet(), ", "));
             cte.append(")");
         }
         cte.append(") AS T (");
