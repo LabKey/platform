@@ -12,6 +12,26 @@ function getHelpDiv()
 {
     if (!_helpDiv)
     {
+        LABKEY.addMarkup(
+                '<div id="helpDiv" onMouseOver="mouseEnteredHelpDiv()" onMouseOut="mouseExitedHelpDiv()"' +
+                '   style="display:none;">'+
+                '  <table id="helpDivTable">'+
+                '    <tr class="labkey-wp-header" width="100%">'+
+                '      <td title="Help" class="labkey-wp-title-left" nowrap>'+
+                '        <div><span id="helpDivTitle" class="labkey-wp-title">Title</span></div>'+
+                '      </td>'+
+                '      <td class="labkey-wp-title-right" align="right" style="border-left:0; padding-bottom: 0;">'+
+                '      <img alt="close" src="' + LABKEY.imagePath + '/partdelete.png" onclick="hideHelpDiv(true)">'+
+                '      </td>'+
+                '     </tr>'+
+                '    <tr>'+
+                '      <td colspan=2 style="padding:5px;">'+
+                '        <span id="helpDivBody">Body</span>'+
+                '      </td>'+
+                '    </tr>'+
+                '  </table>'+
+                '</div>'
+        );
         _helpDiv = document.getElementById("helpDiv");
         document.addEventListener('keyup', helpDivHideHandler);
         document.addEventListener('click', helpDivHideHandler);
@@ -256,27 +276,6 @@ function verifySelected(form, url, method, pluralNoun, pluralConfirmText, singul
         return false;
     }
 }
-
-LABKEY.addMarkup(
-'<div id="helpDiv" onMouseOver="mouseEnteredHelpDiv()" onMouseOut="mouseExitedHelpDiv()"' +
-'   style="display:none;">'+
-'  <table id="helpDivTable">'+
-'    <tr class="labkey-wp-header" width="100%">'+
-'      <td title="Help" class="labkey-wp-title-left" nowrap>'+
-'        <div><span id="helpDivTitle" class="labkey-wp-title">Title</span></div>'+
-'      </td>'+
-'      <td class="labkey-wp-title-right" align="right" style="border-left:0; padding-bottom: 0;">'+
-'      <img alt="close" src="' + LABKEY.imagePath + '/partdelete.png" onclick="hideHelpDiv(true)">'+
-'      </td>'+
-'     </tr>'+
-'    <tr>'+
-'      <td colspan=2 style="padding:5px;">'+
-'        <span id="helpDivBody">Body</span>'+
-'      </td>'+
-'    </tr>'+
-'  </table>'+
-'</div>'
-);
 
 if (!LABKEY.internal)
     LABKEY.internal = {};

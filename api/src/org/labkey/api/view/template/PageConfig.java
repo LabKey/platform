@@ -25,6 +25,8 @@ import org.json.JSONObject;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.Module;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -340,31 +342,44 @@ public class PageConfig
         return null == u ? null : u.getURIString();
     }
 
+    public HtmlString getPreloadTags()
+    {
+        final List<String> fonts = List.of(
+                "/fonts/Roboto/Roboto-Regular.ttf",
+                "/fonts/TitilliumWeb/TitilliumWeb-Regular.ttf",
+                "/fonts/TitilliumWeb/TitilliumWeb-Bold.ttf",
+                "/fonts/Roboto/Roboto-Bold.ttf");
+        HtmlStringBuilder sb = HtmlStringBuilder.of();
+        fonts.stream().map(PageFlowUtil::staticResourceUrl).forEach(url->
+                sb.append(HtmlString.unsafe("<link rel=\"preload\" as=\"font\" type=\"font/ttf\" crossorigin href=\"")).append(url).append(HtmlString.unsafe("\">")));
+        return sb.getHtmlString();
+    }
 
-    public String getMetaTags(URLHelper url)
+    public HtmlString getMetaTags(URLHelper url)
     {
         // We want search engines to index our regular pages (with navigation) not the print versions
         if (_template == Template.Print)
             setNoIndex();
 
-        StringBuilder sb = new StringBuilder();
+        HtmlStringBuilder sb = HtmlStringBuilder.of();
 
         String canonical = getCanonicalLink(url);
         if (null != canonical)
         {
-            sb.append("<link rel=\"canonical\" href=\"").append(PageFlowUtil.filter(canonical)).append("\">\n");
+            sb.append(HtmlString.unsafe("<link rel=\"canonical\" href=\""))
+                    .append(canonical).append(HtmlString.unsafe("\">\n"));
         }
 
         if (!_meta.isEmpty())
         {
             for (Map.Entry<String, Collection<String>>  e : _meta.asMap().entrySet())
             {
-                sb.append("    <meta name=\"").append(PageFlowUtil.filter(e.getKey())).append("\" content=\"");
-                sb.append(PageFlowUtil.filter(StringUtils.join(e.getValue(), ", ")));
-                sb.append("\">\n");
+                sb.append(HtmlString.unsafe("<meta name=\"")).append(e.getKey())
+                        .append(HtmlString.unsafe("\" content=\"")).append(StringUtils.join(e.getValue(), ", "))
+                        .append(HtmlString.unsafe("\">\n"));
             }
         }
-        return sb.toString();
+        return sb.getHtmlString();
     }
 
     public enum FrameOption

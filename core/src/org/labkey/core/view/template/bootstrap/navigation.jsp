@@ -36,12 +36,6 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-    @Override
-    public void addClientDependencies(ClientDependencies dependencies)
-    {
-        dependencies.add("internal/jQuery");
-    }
-
     private String getSafeName(Portal.WebPart menu)
     {
         return (menu.getName() + menu.getIndex()).replaceAll("\\s+", "");
