@@ -519,7 +519,9 @@ public class MailHelper
         public void addMessage(Collection<String> emails, MimeMessage m, @Nullable Container c)
         {
             _messageMap.put(emails, m);
-            _containerMap.put(emails, c.getId());
+
+            if (c != null)
+                _containerMap.put(emails, c.getId());
         }
 
         // Send message to multiple recipients
@@ -547,7 +549,11 @@ public class MailHelper
             {
                 Collection<String> emails = entry.getKey();
                 MimeMessage m = entry.getValue();
-                Container c = ContainerManager.getForId(_containerMap.get(emails));
+                String containerId = _containerMap.get(emails);
+                Container c = null;
+
+                if (containerId != null)
+                    c = ContainerManager.getForId(containerId);
 
                 for (String email : emails)
                 {
