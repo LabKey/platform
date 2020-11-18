@@ -290,7 +290,6 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             }
 
             /* NOTE: explicitly not supporting this metadata via this pathway, do not uncomment
-
             if (!StringUtils.equals(gwtColumnInfo.getPHI(), rawColumnInfo.getPHI().name()))
             {
                 xmlColumn.setPhi(PHIType.Enum.forString(gwtColumnInfo.getPHI()));
@@ -423,6 +422,16 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             if (shouldStoreValue(metadataColumnJSON.getConditionalFormats(), convertToGWT(rawColumnInfo.getConditionalFormats())))
             {
                 ConditionalFormat.convertToXML(metadataColumnJSON.getConditionalFormats(), xmlColumn);
+            }
+
+            // Set conceptURI
+            if (shouldStoreValue(metadataColumnJSON.getConceptURI(), rawColumnInfo.getConceptURI()))
+            {
+                xmlColumn.setConceptURI(metadataColumnJSON.getConceptURI());
+            }
+            else if (xmlColumn.isSetConceptURI())
+            {
+                xmlColumn.unsetConceptURI();
             }
 
             // Ontology metadata
@@ -602,7 +611,12 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
 
             List<GWTConditionalFormat> formats = convertToGWT(columnInfo.getConditionalFormats());
             metadataColumnJSON.setConditionalFormats(formats);
+
+            metadataColumnJSON.setConceptURI(columnInfo.getConceptURI());
             metadataColumnJSON.setPrincipalConceptCode(columnInfo.getPrincipalConceptCode());
+            metadataColumnJSON.setSourceOntology(columnInfo.getSourceOntology());
+            metadataColumnJSON.setConceptImportColumn(columnInfo.getConceptImportColumn());
+            metadataColumnJSON.setConceptLabelColumn(columnInfo.getConceptLabelColumn());
         }
 
         List<QueryDef> queryDefs = QueryServiceImpl.get().findMetadataOverrideImpl(schema, tableName, false, false, null);

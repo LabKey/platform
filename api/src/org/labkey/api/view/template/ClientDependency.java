@@ -27,6 +27,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ExperimentalFeatureService;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
@@ -70,6 +71,7 @@ public abstract class ClientDependency
     static
     {
         ExperimentalFeatureService.get().addFeatureListener(AppProps.EXPERIMENTAL_JAVASCRIPT_API, (feature, enabled) -> CACHE.clear());
+        ContextListener.addModuleChangeListener(m -> CACHE.clear());
     }
 
     public enum TYPE

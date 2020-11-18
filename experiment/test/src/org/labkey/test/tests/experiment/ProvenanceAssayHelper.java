@@ -1,5 +1,6 @@
 package org.labkey.test.tests.experiment;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.domain.CreateDomainCommand;
@@ -8,10 +9,14 @@ import org.labkey.remoteapi.domain.GetDomainCommand;
 import org.labkey.remoteapi.domain.PropertyDescriptor;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
+import org.labkey.remoteapi.query.Sort;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.pages.ReactAssayDesignerPage;
+import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.params.experiment.SampleTypeDefinition;
+import org.labkey.test.util.SampleTypeHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,13 +41,33 @@ public abstract class ProvenanceAssayHelper extends BaseWebDriverTest
         return dataTableRow.get("LSID").toString();
     }
 
-    protected void createSimpleAssay(String assayName)
+    protected void createSampleType(String typeName)
+    {
+        log("Creating an input sample type");
+        goToModule("Experiment");
+        SampleTypeHelper sampleHelper = new SampleTypeHelper(this);
+        sampleHelper.createSampleType(new SampleTypeDefinition(typeName).setFields(
+                List.of(new FieldDefinition("Field1", FieldDefinition.ColumnType.String))),
+                "Name\tField1\n" +
+                        "Sample1\tsome value\n" +
+                        "Sample2\tsome other value\n" +
+                        "Sample3\tvalueness\n" +
+                        "Sample4\tinvaluable\n");
+
+    }
+
+    protected void createSimpleAssay(String assayName, @Nullable String sampleTypeName)
     {
         log("Creating a simple assay.");
         ReactAssayDesignerPage assayDesignerPage = _assayHelper.createAssayDesign("General", assayName);
 
         assayDesignerPage.setEditableResults(true);
         assayDesignerPage.setEditableRuns(true);
+
+        if (sampleTypeName != null)
+        {
+            assayDesignerPage.goToResultsFields().addField(new FieldDefinition("inputSample", new FieldDefinition.LookupInfo(null, "samples", sampleTypeName)));
+        }
 
         assayDesignerPage.clickFinish();
     }
@@ -75,14 +100,16 @@ public abstract class ProvenanceAssayHelper extends BaseWebDriverTest
 
     protected void createAndUploadAssayData() throws IOException, CommandException
     {
-        String runData = "participantID\tprov:objectInputs" + "\n" +
-                "P100\t" + uploadFile(PROVENANCE_DATA_FILE);
+        String runData = "participantID\tinputSample\tprov:objectInputs" + "\n" +
+                "P100\tSample1\t" + uploadFile(PROVENANCE_DATA_FILE);
 
         String assayName = "Provenance Assay";
         String runName = "ProvenanceAssayRun";
+        String sampleTypeName = "ProvenanceSampleType";
 
+        createSampleType(sampleTypeName);
         goToProjectHome(getProjectName());
-        createSimpleAssay(assayName);
+        createSimpleAssay(assayName, sampleTypeName);
         goToProjectHome(getProjectName());
         populateAssay(assayName, runName, runData);
     }
@@ -91,6 +118,7 @@ public abstract class ProvenanceAssayHelper extends BaseWebDriverTest
     {
         SelectRowsCommand selectCmd = new SelectRowsCommand("exp", "Materials");
         selectCmd.setColumns(List.of("LSID"));
+        selectCmd.setSorts(List.of(new Sort("LSID")));
         SelectRowsResponse selResp = selectCmd.execute(cn, getProjectName());
         List<String> resultLsids = new ArrayList<>();
 

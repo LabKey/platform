@@ -138,14 +138,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     }
 
     @Override
-    @Nullable
+    @NotNull
     public Set<String> getExtraDetailedUpdateAuditFields()
     {
         ExpSchema.DataClassCategoryType categoryType = ExpSchema.DataClassCategoryType.fromString(_dataClass.getCategory());
         if (categoryType != null)
             return categoryType.additionalAuditFields;
 
-        return null;
+        return Collections.emptySet();
     }
 
     @Override

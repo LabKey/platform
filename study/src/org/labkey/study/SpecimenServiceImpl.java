@@ -164,8 +164,8 @@ public class SpecimenServiceImpl implements SpecimenService
             throw new UnsupportedOperationException("Not Implemented for StudyParticipantVisit");
         }
 
-        @Override
-        public ExpMaterial getMaterial()
+        @Override @Nullable
+        public ExpMaterial getMaterial(boolean createIfNeeded)
         {
             if (_material == null)
             {
@@ -173,7 +173,7 @@ public class SpecimenServiceImpl implements SpecimenService
                 {
                     Lsid lsid = getSpecimenMaterialLsid(_studyContainer, _specimenID);
                     _material = ExperimentService.get().getExpMaterial(lsid.toString());
-                    if (_material == null)
+                    if (_material == null && createIfNeeded)
                     {
                         _material = ExperimentService.get().createExpMaterial(_studyContainer, lsid.toString(), _specimenID);
                         _material.save(null);
@@ -183,7 +183,7 @@ public class SpecimenServiceImpl implements SpecimenService
                 {
                     String lsid = new Lsid(ParticipantVisit.ASSAY_RUN_MATERIAL_NAMESPACE, "Folder-" + _studyContainer.getRowId(), "Unknown").toString();
                     _material = ExperimentService.get().getExpMaterial(lsid);
-                    if (_material == null)
+                    if (_material == null && createIfNeeded)
                     {
                         _material = ExperimentService.get().createExpMaterial(_studyContainer, lsid, "Unknown");
                         _material.save(null);

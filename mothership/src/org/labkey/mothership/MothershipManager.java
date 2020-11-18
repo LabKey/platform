@@ -66,7 +66,7 @@ public class MothershipManager
     private static final MothershipManager INSTANCE = new MothershipManager();
     private static final String SCHEMA_NAME = "mothership";
     private static final String UPGRADE_MESSAGE_PROPERTY_CATEGORY = "upgradeMessage";
-    private static final String CURRENT_REVISION_PROP = "currentRevision";
+    private static final String CURRENT_BUILD_DATE_PROP = "currentBuildDate";
     private static final String UPGRADE_MESSAGE_PROP = "upgradeMessage";
     private static final String CREATE_ISSUE_URL_PROP = "createIssueURL";
     private static final String ISSUES_CONTAINER_PROP = "issuesContainer";
@@ -476,15 +476,11 @@ public class MothershipManager
         return PropertyManager.getProperties(c, UPGRADE_MESSAGE_PROPERTY_CATEGORY);
     }
 
-    public int getCurrentRevision(Container c)
+    public Date getCurrentBuildDate(Container c)
     {
         Map<String, String> props = getProperties(c);
-        String rev = props.get(CURRENT_REVISION_PROP);
-        if (rev == null)
-        {
-            return 0;
-        }
-        return Integer.parseInt(rev);
+        String buildDate = props.get(CURRENT_BUILD_DATE_PROP);
+        return  null == buildDate ? null : new Date(DateUtil.parseISODateTime(buildDate));
     }
 
     private String getStringProperty(Container c, String name)
@@ -510,9 +506,9 @@ public class MothershipManager
         props.save();
     }
 
-    public void setCurrentRevision(Container c, int revision)
+    public void setCurrentBuildDate(Container c, Date buildDate)
     {
-        saveProperty(c, CURRENT_REVISION_PROP, String.valueOf(revision));
+        saveProperty(c, CURRENT_BUILD_DATE_PROP, DateUtil.formatDateTimeISO8601(buildDate));
     }
 
     public void setUpgradeMessage(Container c, String message)

@@ -137,6 +137,10 @@ public class GWTPropertyDescriptor implements IsSerializable
         setIsPrimaryKey(s.getIsPrimaryKey());
         setLockType(s.getLockType());
         setTypeEditable(s.isTypeEditable());
+        setPrincipalConceptCode(s.getPrincipalConceptCode());
+        setSourceOntology(s.getSourceOntology());
+        setConceptImportColumn(s.getConceptImportColumn());
+        setConceptLabelColumn(s.getConceptLabelColumn());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {

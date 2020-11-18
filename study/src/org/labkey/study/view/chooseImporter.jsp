@@ -12,6 +12,8 @@
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -130,10 +132,10 @@
             <h3>Specimen Import is not available with your current edition of LabKey Server.</h3>
             <hr>
             <p>Professional/Enterprise edition subscribers have the ability to import from an external specimen repository like FreezerPro or a specimen data mart.</p>
-            <p><a class="alert-link" href="" target="_blank" rel="noopener noreferrer">Learn more <i class="fa fa-external-link"></i></a></p>
+            <p><a class="alert-link" target="_blank" rel="noopener noreferrer" href="<%=h(new HelpTopic("externalSpecimens").toString())%>">Learn more <i class="fa fa-external-link"></i></a></p>
             <p>In addition to this feature, Professional/Enterprise editions of LabKey Server provide professional support and advanced functionality to help teams maximize the value of the platform.</p>
             <br>
-            <p><a class="alert-link" href="https://www.labkey.com/platform/go-premium/" target="_blank" rel="noopener noreferrer">Learn more about Professional/Enterprise editions <i class="fa fa-external-link"></i></a></p>
+            <p><a class="alert-link" href="https://www.labkey.com/products-services/labkey-server/labkey-server-editions-feature-comparison/" target="_blank" rel="noopener noreferrer">Learn more about Professional/Enterprise editions <i class="fa fa-external-link"></i></a></p>
         </div>
     <%
         }
