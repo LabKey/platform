@@ -42,7 +42,12 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
 
         public static String getActionCommentDetailed(@NotNull QueryService.AuditAction action, boolean isUpdate)
         {
-            SampleTimelineEventType type = getTypeFromAction(action == QueryService.AuditAction.MERGE && isUpdate ? QueryService.AuditAction.UPDATE : action);
+
+            SampleTimelineEventType type;
+            if (action == QueryService.AuditAction.MERGE)
+                type = getTypeFromAction(isUpdate ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT);
+            else
+                type = getTypeFromAction(action);
             return type == null ? null : type.getComment();
         }
 
