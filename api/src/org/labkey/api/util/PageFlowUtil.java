@@ -1576,6 +1576,7 @@ public class PageFlowUtil
                 resources.add(ClientDependency.fromPath("Ext3"));
 
             // TODO: Turn this into a lib.xml
+            // core/css/core.js requires jQuery
             resources.add(ClientDependency.fromPath("internal/jQuery"));
             resources.add(ClientDependency.fromPath("core/css/core.js"));
 
@@ -1869,7 +1870,7 @@ public class PageFlowUtil
         {
             return staticResourcePrefix + slash + resourcePath;
         }
-        if (resourcePath.contains(".cache."))        // CONSIDER: move DavController.alwaysCache() somewhere we can call it
+        if (resourcePath.contains(".cache.") || resourcePath.endsWith(".ttf") || resourcePath.endsWith(".woff2"))        // CONSIDER: move DavController.alwaysCache() somewhere we can call it
             return AppProps.getInstance().getContextPath() + slash + resourcePath;
         else
             return AppProps.getInstance().getContextPath() + slash + resourcePath + "?" + getServerSessionHash();
