@@ -91,11 +91,24 @@ public abstract class AuditHandler
                         switch (action)
                         {
                             case INSERT:
-                            case MERGE:
                             {
                                 String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, row);
                                 if (newRecord != null)
                                     event.setNewRecordMap(newRecord);
+                                break;
+                            }
+                            case MERGE:
+                            {
+                                if (updatedRow.isEmpty())
+                                {
+                                    String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, row);
+                                    if (newRecord != null)
+                                        event.setNewRecordMap(newRecord);
+                                }
+                                else
+                                {
+                                    setOldAndNewMapsForUpdate(event, c, row, updatedRow, table);
+                                }
                                 break;
                             }
                             case DELETE:
@@ -130,6 +143,25 @@ public abstract class AuditHandler
                 }
             }
         }
+    }
+
+    private void setOldAndNewMapsForUpdate(DetailedAuditTypeEvent event, Container c, Map<String, Object> row, Map<String, Object> updatedRow, TableInfo table)
+    {
+        Pair<Map<String, Object>, Map<String, Object>> rowPair = getOldAndNewRecordForMerge(row, updatedRow, table.getExtraDetailedUpdateAuditFields());
+
+        Map<String, Object> originalRow = rowPair.first;
+        Map<String, Object> modifiedRow = rowPair.second;
+
+        // allow for adding fields that may be present in the updated row but not represented in the original row
+        addDetailedModifiedFields(row, modifiedRow, updatedRow);
+
+        String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(c, originalRow);
+        if (oldRecord != null)
+            event.setOldRecordMap(oldRecord);
+
+        String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, modifiedRow);
+        if (newRecord != null)
+            event.setNewRecordMap(newRecord);
     }
 
     public static Pair<Map<String, Object>, Map<String, Object>> getOldAndNewRecordForMerge(@NotNull Map<String, Object> row, @NotNull Map<String, Object> updatedRow, Set<String> extraFieldsToInclude)

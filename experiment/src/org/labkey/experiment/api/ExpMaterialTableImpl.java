@@ -30,12 +30,10 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -74,7 +72,6 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -145,7 +142,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // Special case sample auditing to help build a useful timeline view
         if (getUserSchema().getName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
         {
-            Map<String, Object> params = new CaseInsensitiveHashMap<>(parameters);
+            Map<String, Object> newRow = new CaseInsensitiveHashMap<>(parameters);
+            Map<String, Object> existingRow = null;
+            Object rowId = null;
             if (auditAction.equals(QueryService.AuditAction.MERGE))
             {
                 AuditBehaviorType sampleAuditType = auditBehavior;
@@ -156,15 +155,34 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 {
                     // material.rowid is a dbsequence column that auto increments during merge, even if rowId is not updated
                     // need to reselect rowId
-                    if (params.containsKey(LSID))
+                    if (newRow.containsKey(LSID))
                     {
-                        ExpMaterial sample = ExperimentService.get().getExpMaterial((String) params.get(LSID));
-                        if (sample != null)
-                            params.put(ROW_ID, sample.getRowId());
+                        try
+                        {
+                            QueryUpdateService qus = getUpdateService();
+                            if (qus != null) {
+                                List<Map<String, Object>> existingRows = qus.getRows(user, container, Collections.singletonList(Map.of("LSID", newRow.get(LSID))));
+                                if (existingRows != null && !existingRows.isEmpty()) {
+                                    existingRow = existingRows.get(0);
+                                    rowId = existingRow.get("RowId");
+                                }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            ExpMaterial sample = ExperimentService.get().getExpMaterial((String) newRow.get(LSID));
+                            rowId = sample.getRowId();
+                        }
+
+                        if (rowId != null)
+                            newRow.put(ROW_ID, rowId);
                     }
                 }
             }
-            SampleTypeService.get().addAuditEvent(user, container, this, auditBehavior, userComment, auditAction, Collections.singletonList(params));
+            if (existingRow != null)
+                SampleTypeService.get().addAuditEvent(user, container, this, auditBehavior, userComment, auditAction, Collections.singletonList(existingRow), Collections.singletonList(newRow));
+            else
+                SampleTypeService.get().addAuditEvent(user, container, this, auditBehavior, userComment, auditAction, Collections.singletonList(newRow));
         }
         else
         {

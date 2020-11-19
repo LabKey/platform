@@ -40,9 +40,9 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
             return _actionLabel;
         }
 
-        public static String getActionCommentDetailed(@NotNull QueryService.AuditAction action)
+        public static String getActionCommentDetailed(@NotNull QueryService.AuditAction action, boolean isUpdate)
         {
-            SampleTimelineEventType type = getTypeFromAction(action);
+            SampleTimelineEventType type = getTypeFromAction(action == QueryService.AuditAction.MERGE && isUpdate ? QueryService.AuditAction.UPDATE : action);
             return type == null ? null : type.getComment();
         }
 
