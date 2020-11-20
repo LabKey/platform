@@ -847,6 +847,8 @@ public class ExpDataIterators
 
             CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet();
             dontUpdate.add("lsid");
+            dontUpdate.add("created");
+            dontUpdate.add("createdBy");
             CaseInsensitiveHashSet keyColumns = new CaseInsensitiveHashSet();
             if (isSample || !context.getInsertOption().mergeRows)
                 keyColumns.add("lsid");

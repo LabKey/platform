@@ -92,6 +92,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.CREATED;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.CREATED_BY;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
 
@@ -165,6 +167,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                                 if (existingRows != null && !existingRows.isEmpty()) {
                                     existingRow = existingRows.get(0);
                                     rowId = existingRow.get("RowId");
+                                    existingRow.remove(CREATED); // These fields won't be updated
+                                    existingRow.remove(CREATED_BY);
                                 }
                             }
                         }
@@ -175,7 +179,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         }
 
                         if (rowId != null)
+                        {
                             newRow.put(ROW_ID, rowId);
+                            newRow.remove(CREATED);
+                            newRow.remove(CREATED_BY);
+                        }
                     }
                 }
             }
