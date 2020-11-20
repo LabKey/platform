@@ -120,20 +120,7 @@ public abstract class AuditHandler
                             }
                             case UPDATE:
                             {
-                                Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(row, updatedRow, table.getExtraDetailedUpdateAuditFields());
-                                Map<String, Object> originalRow = rowPair.first;
-                                Map<String, Object> modifiedRow = rowPair.second;
-
-                                // allow for adding fields that may be present in the updated row but not represented in the original row
-                                addDetailedModifiedFields(row, modifiedRow, updatedRow);
-
-                                String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(c, originalRow);
-                                if (oldRecord != null)
-                                    event.setOldRecordMap(oldRecord);
-
-                                String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, modifiedRow);
-                                if (newRecord != null)
-                                    event.setNewRecordMap(newRecord);
+                                setOldAndNewMapsForUpdate(event, c, row, updatedRow, table);
                                 break;
                             }
                         }
