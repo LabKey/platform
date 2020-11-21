@@ -849,6 +849,7 @@ public class ExpDataIterators
             dontUpdate.add("lsid");
             dontUpdate.add("created");
             dontUpdate.add("createdBy");
+            dontUpdate.add("genId");
             CaseInsensitiveHashSet keyColumns = new CaseInsensitiveHashSet();
             if (isSample || !context.getInsertOption().mergeRows)
                 keyColumns.add("lsid");

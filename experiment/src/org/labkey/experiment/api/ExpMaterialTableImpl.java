@@ -161,14 +161,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     {
                         try
                         {
-                            QueryUpdateService qus = getUpdateService();
+                            SampleTypeUpdateServiceDI qus = (SampleTypeUpdateServiceDI) getUpdateService();
                             if (qus != null) {
-                                List<Map<String, Object>> existingRows = qus.getRows(user, container, Collections.singletonList(Map.of("LSID", newRow.get(LSID))));
+                                List<Map<String, Object>> existingRows = qus.getRows(user, container, Collections.singletonList(Map.of("LSID", newRow.get(LSID))), true);
                                 if (existingRows != null && !existingRows.isEmpty()) {
                                     existingRow = existingRows.get(0);
                                     rowId = existingRow.get("RowId");
                                     existingRow.remove(CREATED); // These fields won't be updated
                                     existingRow.remove(CREATED_BY);
+                                    existingRow.remove("genId");
                                 }
                             }
                         }
@@ -183,6 +184,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                             newRow.put(ROW_ID, rowId);
                             newRow.remove(CREATED);
                             newRow.remove(CREATED_BY);
+                            newRow.remove("genId");
                         }
                     }
                 }
