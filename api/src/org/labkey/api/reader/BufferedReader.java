@@ -96,7 +96,7 @@ public class BufferedReader extends Reader {
     public BufferedReader(Reader in, int size) {
         super(in);
         if (size <= 0) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Buffer size must be positive!");
         }
         this.in = in;
         buf = new char[size];
