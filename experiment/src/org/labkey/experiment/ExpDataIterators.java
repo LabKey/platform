@@ -87,6 +87,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.CREATED;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.CREATED_BY;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
 
 public class ExpDataIterators
 {
@@ -776,6 +779,8 @@ public class ExpDataIterators
         }
     }
 
+    public static final Set<String> NOT_FOR_UPDATE = Sets.newCaseInsensitiveHashSet(LSID, CREATED, CREATED_BY, "genId");
+
     public static class PersistDataIteratorBuilder implements DataIteratorBuilder
     {
         private final DataIteratorBuilder _in;
@@ -846,13 +851,10 @@ public class ExpDataIterators
                 step0.addColumn(AliasDataIterator.ALIASCOLUMNALIAS, colNameMap.get("alias")); // see AliasDataIteratorBuilder
 
             CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet();
-            dontUpdate.add("lsid");
-            dontUpdate.add("created");
-            dontUpdate.add("createdBy");
-            dontUpdate.add("genId");
+            dontUpdate.addAll(NOT_FOR_UPDATE);
             CaseInsensitiveHashSet keyColumns = new CaseInsensitiveHashSet();
             if (isSample || !context.getInsertOption().mergeRows)
-                keyColumns.add("lsid");
+                keyColumns.add(LSID);
             else
             {
                 keyColumns.add("classid");

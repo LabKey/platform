@@ -96,6 +96,7 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.CREATED;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.CREATED_BY;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
+import static org.labkey.experiment.ExpDataIterators.NOT_FOR_UPDATE;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -163,13 +164,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         {
                             SampleTypeUpdateServiceDI qus = (SampleTypeUpdateServiceDI) getUpdateService();
                             if (qus != null) {
+
                                 List<Map<String, Object>> existingRows = qus.getRows(user, container, Collections.singletonList(Map.of("LSID", newRow.get(LSID))), true);
                                 if (existingRows != null && !existingRows.isEmpty()) {
+                                    NOT_FOR_UPDATE.forEach(name -> existingRows.get(0).remove(name));
                                     existingRow = existingRows.get(0);
-                                    rowId = existingRow.get("RowId");
-                                    existingRow.remove(CREATED); // These fields won't be updated
-                                    existingRow.remove(CREATED_BY);
-                                    existingRow.remove("genId");
+                                    rowId = existingRow.get(ROW_ID);
                                 }
                             }
                         }
@@ -182,9 +182,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         if (rowId != null)
                         {
                             newRow.put(ROW_ID, rowId);
-                            newRow.remove(CREATED);
-                            newRow.remove(CREATED_BY);
-                            newRow.remove("genId");
+                            NOT_FOR_UPDATE.forEach(newRow::remove);
                         }
                     }
                 }
