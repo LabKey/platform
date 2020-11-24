@@ -63,6 +63,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
@@ -92,10 +93,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
-import static org.labkey.api.exp.api.ExperimentJSONConverter.CREATED;
-import static org.labkey.api.exp.api.ExperimentJSONConverter.CREATED_BY;
-import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
-import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
 import static org.labkey.experiment.ExpDataIterators.NOT_FOR_UPDATE;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
@@ -158,30 +155,31 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 {
                     // material.rowid is a dbsequence column that auto increments during merge, even if rowId is not updated
                     // need to reselect rowId
-                    if (newRow.containsKey(LSID))
+                    if (newRow.containsKey(ExpDataTable.Column.LSID.toString()))
                     {
                         try
                         {
                             SampleTypeUpdateServiceDI qus = (SampleTypeUpdateServiceDI) getUpdateService();
                             if (qus != null) {
 
-                                List<Map<String, Object>> existingRows = qus.getRows(user, container, Collections.singletonList(Map.of("LSID", newRow.get(LSID))), true);
-                                if (existingRows != null && !existingRows.isEmpty()) {
+                                List<Map<String, Object>> existingRows = qus.getRows(user, container, Collections.singletonList(Map.of("LSID", newRow.get(ExpDataTable.Column.LSID.toString()))), true);
+                                if (existingRows != null && !existingRows.isEmpty())
+                                {
                                     NOT_FOR_UPDATE.forEach(name -> existingRows.get(0).remove(name));
                                     existingRow = existingRows.get(0);
-                                    rowId = existingRow.get(ROW_ID);
+                                    rowId = existingRow.get(ExpDataTable.Column.RowId.toString());
                                 }
                             }
                         }
-                        catch (Exception e)
+                        catch (QueryUpdateServiceException e)
                         {
-                            ExpMaterial sample = ExperimentService.get().getExpMaterial((String) newRow.get(LSID));
+                            ExpMaterial sample = ExperimentService.get().getExpMaterial((String) newRow.get(ExpDataTable.Column.LSID.toString()));
                             rowId = sample.getRowId();
                         }
 
                         if (rowId != null)
                         {
-                            newRow.put(ROW_ID, rowId);
+                            newRow.put(ExpDataTable.Column.RowId.toString(), rowId);
                             NOT_FOR_UPDATE.forEach(newRow::remove);
                         }
                     }

@@ -51,6 +51,7 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateService;
@@ -87,9 +88,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
-import static org.labkey.api.exp.api.ExperimentJSONConverter.CREATED;
-import static org.labkey.api.exp.api.ExperimentJSONConverter.CREATED_BY;
-import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
+
 
 public class ExpDataIterators
 {
@@ -779,7 +778,7 @@ public class ExpDataIterators
         }
     }
 
-    public static final Set<String> NOT_FOR_UPDATE = Sets.newCaseInsensitiveHashSet(LSID, CREATED, CREATED_BY, "genId");
+    public static final Set<String> NOT_FOR_UPDATE = Sets.newCaseInsensitiveHashSet(ExpDataTable.Column.LSID.toString(), ExpDataTable.Column.Created.toString(), ExpDataTable.Column.CreatedBy.toString(), "genId");
 
     public static class PersistDataIteratorBuilder implements DataIteratorBuilder
     {
@@ -854,7 +853,7 @@ public class ExpDataIterators
             dontUpdate.addAll(NOT_FOR_UPDATE);
             CaseInsensitiveHashSet keyColumns = new CaseInsensitiveHashSet();
             if (isSample || !context.getInsertOption().mergeRows)
-                keyColumns.add(LSID);
+                keyColumns.add(ExpDataTable.Column.LSID.toString());
             else
             {
                 keyColumns.add("classid");
