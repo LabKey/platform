@@ -160,8 +160,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         try
                         {
                             SampleTypeUpdateServiceDI qus = (SampleTypeUpdateServiceDI) getUpdateService();
-                            if (qus != null) {
-
+                            if (qus != null)
+                            {
                                 List<Map<String, Object>> existingRows = qus.getRows(user, container, Collections.singletonList(Map.of("LSID", newRow.get(ExpDataTable.Column.LSID.toString()))), true);
                                 if (existingRows != null && !existingRows.isEmpty())
                                 {
