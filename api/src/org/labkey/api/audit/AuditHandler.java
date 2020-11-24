@@ -2,6 +2,7 @@ package org.labkey.api.audit;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -12,15 +13,20 @@ import org.labkey.api.util.Pair;
 
 import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.Date;
 
 public abstract class AuditHandler
 {
+    // we exclude these from the detailed record because they are already on the audit record itself and
+    // depending on the data iterator behavior (e.g., for ExpDataIteraotrs.getDataIterator), these values
+    // time of creating the audit log may actually already have been updated so the difference shown will be incorrect.
+    protected static final Set<String> excludedFromDetailDiff = CaseInsensitiveHashSet.of("Modified", "ModifiedBy");
+
     protected abstract AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row);
 
     protected abstract DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow);
@@ -160,7 +166,7 @@ public abstract class AuditHandler
         for (Map.Entry<String, Object> entry : row.entrySet())
         {
             boolean isExtraAuditField = extraFieldsToInclude != null && extraFieldsToInclude.contains(entry.getKey());
-            if (updatedRow.containsKey(entry.getKey()))
+            if (!excludedFromDetailDiff.contains(entry.getKey()) && updatedRow.containsKey(entry.getKey()))
             {
                 Object newValue = updatedRow.get(entry.getKey());
                 // compare dates using string values to allow for both Date and Timestamp types
