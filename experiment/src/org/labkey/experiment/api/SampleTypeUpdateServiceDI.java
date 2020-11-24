@@ -466,7 +466,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
         for (Map<String, Object> k : keys)
         {
-            result.add(getMaterialMap(getMaterialRowId(k), getMaterialLsid(k), user, container, addInputs/*skip addInputs for insertRows*/));
+            result.add(getMaterialMap(getMaterialRowId(k), getMaterialLsid(k), user, container, addInputs));
         }
         return result;
     }
