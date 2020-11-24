@@ -181,6 +181,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         {
                             newRow.put(ExpDataTable.Column.RowId.toString(), rowId);
                             NOT_FOR_UPDATE.forEach(newRow::remove);
+                            // We don't want the inventory columns to show up in the sample timeline audit record;
+                            // they are captured in their own audit record.
+                            InventoryService.INVENTORY_STATUS_COLUMN_NAMES.forEach(newRow::remove);
                         }
                     }
                 }

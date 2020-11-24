@@ -17,6 +17,7 @@ package org.labkey.api.inventory;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -29,6 +30,7 @@ import org.labkey.api.services.ServiceRegistry;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: kevink
@@ -37,6 +39,18 @@ import java.util.Map;
 public interface InventoryService
 {
     String PRODUCT_ID = "freezerManager";
+
+    public static Set<String> INVENTORY_STATUS_COLUMN_NAMES = new CaseInsensitiveHashSet(
+            "FreezeThawCount",
+            "CheckedOutBy",
+            "CheckedOut",
+            "DisplayUnit", // this is the name of the column, not the display name of "Units"
+            "StorageRow",
+            "StorageCol",
+            "StorageLocation",
+            "StoredAmount",
+            "EnteredStorage"
+    );
 
     static void setInstance(InventoryService impl)
     {
