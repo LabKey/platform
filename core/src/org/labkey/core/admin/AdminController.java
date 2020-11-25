@@ -5988,7 +5988,7 @@ public class AdminController extends SpringActionController
                     aliases.add(alias);
                 }
             }
-            ContainerManager.saveAliasesForContainer(getContainer(), aliases);
+            ContainerManager.saveAliasesForContainer(getContainer(), aliases, getUser());
 
             return true;
         }
@@ -6467,10 +6467,9 @@ public class AdminController extends SpringActionController
                     ContainerManager.rename(c, getUser(), folderName);
                     if (form.isAddAlias())
                     {
-                        String[] originalAliases = ContainerManager.getAliasesForContainer(c);
-                        List<String> newAliases = new ArrayList<>(Arrays.asList(originalAliases));
+                        List<String> newAliases = new ArrayList<>(ContainerManager.getAliasesForContainer(c));
                         newAliases.add(c.getPath());
-                        ContainerManager.saveAliasesForContainer(c, newAliases);
+                        ContainerManager.saveAliasesForContainer(c, newAliases, getUser());
                     }
                     c = ContainerManager.getForId(c.getId());     // Reload container to populate new name
                     _returnURL = new AdminUrlsImpl().getManageFoldersURL(c);
@@ -6605,10 +6604,9 @@ public class AdminController extends SpringActionController
 
             if (form.isAddAlias())
             {
-                String[] originalAliases = ContainerManager.getAliasesForContainer(c);
-                List<String> newAliases = new ArrayList<>(Arrays.asList(originalAliases));
+                List<String> newAliases = new ArrayList<>(ContainerManager.getAliasesForContainer(c));
                 newAliases.add(c.getPath());
-                ContainerManager.saveAliasesForContainer(c, newAliases);
+                ContainerManager.saveAliasesForContainer(c, newAliases, getUser());
             }
             return true;
         }

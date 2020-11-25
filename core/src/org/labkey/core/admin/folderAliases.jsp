@@ -18,10 +18,11 @@
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.core.admin.AdminController.FolderAliasesAction" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    String[] pathAliases = ContainerManager.getAliasesForContainer(getContainer());
+    List<String> pathAliases = ContainerManager.getAliasesForContainer(getContainer());
 %>
 <table width="500">
     <tr>
@@ -35,13 +36,13 @@
         </td>
     </tr>
     <tr>
-        <td>Enter one alias per line. Each alias should start with a '/'. Aliases that are
-            paths to real folders in the system will be ignored.</td>
+        <td><label for="aliasesTextArea">Enter one alias per line. Each alias should start with a '/'. Aliases that are
+            paths to real folders in the system will be ignored.</label></td>
     </tr>
     <tr>
         <td>
         <labkey:form action="<%=urlFor(FolderAliasesAction.class)%>" method="post">
-            <textarea rows="4" cols="40" name="aliases"><%
+            <textarea rows="4" cols="40" id="aliasesTextArea" name="aliases"><%
                 StringBuilder sb = new StringBuilder();
                 String separator = "";
                 for (String path : pathAliases)
