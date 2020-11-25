@@ -556,6 +556,8 @@ public class XarExporter
 
     public void addSampleType(ExpSampleType sampleType)
     {
+        final String PLACEHOLDER_SUFFIX = "sfx";
+
         if (sampleType == null)
         {
             return;
@@ -566,7 +568,12 @@ public class XarExporter
         }
         SampleSetType xSampleSet = _archive.getSampleSets().addNewSampleSet();
         xSampleSet.setAbout(_relativizedLSIDs.relativize(sampleType.getLSID()));
-        xSampleSet.setMaterialLSIDPrefix(_relativizedLSIDs.relativize(sampleType.getMaterialLSIDPrefix()));
+
+        // we need to temporarily fake up a full Lsid in order to relativize properly
+        String materialPrefix = _relativizedLSIDs.relativize(sampleType.getMaterialLSIDPrefix() + PLACEHOLDER_SUFFIX);
+        if (materialPrefix.endsWith(PLACEHOLDER_SUFFIX))
+            materialPrefix = materialPrefix.substring(0, materialPrefix.length() - PLACEHOLDER_SUFFIX.length());
+        xSampleSet.setMaterialLSIDPrefix(materialPrefix);
         xSampleSet.setName(sampleType.getName());
         if (sampleType.getDescription() != null)
         {
