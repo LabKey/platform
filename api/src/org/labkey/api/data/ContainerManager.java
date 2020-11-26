@@ -1046,8 +1046,16 @@ public class ContainerManager
     }
 
 
-    public static void saveAliasesForContainer(Container container, List<String> aliases)
+    public static void saveAliasesForContainer(Container container, List<String> aliases, User user)
     {
+        Set<String> originalAliases = new CaseInsensitiveHashSet(getAliasesForContainer(container));
+        Set<String> newAliases = new CaseInsensitiveHashSet(aliases);
+
+        if (originalAliases.equals(newAliases))
+        {
+            return;
+        }
+
         try (DbScope.Transaction transaction = CORE.getSchema().getScope().ensureTransaction())
         {
             SQLFragment deleteSQL = new SQLFragment();
@@ -1070,9 +1078,7 @@ public class ContainerManager
             }
             new SqlExecutor(CORE.getSchema()).execute(deleteSQL);
 
-            Set<String> caseInsensitiveAliases = new CaseInsensitiveHashSet(aliases);
-
-            for (String alias : caseInsensitiveAliases)
+            for (String alias : newAliases)
             {
                 SQLFragment insertSQL = new SQLFragment();
                 insertSQL.append("INSERT INTO ");
@@ -1082,6 +1088,11 @@ public class ContainerManager
                 insertSQL.add(container.getId());
                 new SqlExecutor(CORE.getSchema()).execute(insertSQL);
             }
+
+            addAuditEvent(user, container,
+                    "Changed folder aliases from \"" +
+                            StringUtils.join(originalAliases, ", ") + "\" to \"" +
+                            StringUtils.join(newAliases, ", ") + "\"");
 
             transaction.commit();
         }
@@ -2231,9 +2242,11 @@ public class ContainerManager
         return getForPath(DEFAULT_SUPPORT_PROJECT_PATH);
     }
 
-    public static String[] getAliasesForContainer(Container c)
+    public static List<String> getAliasesForContainer(Container c)
     {
-        return new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT Path FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerId = ? ORDER BY LOWER(Path)", c.getId())).getArray(String.class);
+        return Collections.unmodifiableList(new SqlSelector(CORE.getSchema(),
+                new SQLFragment("SELECT Path FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerId = ? ORDER BY LOWER(Path)",
+                        c.getId())).getArrayList(String.class));
     }
 
     @Nullable

@@ -922,7 +922,7 @@ public class CoreController extends SpringActionController
             Boolean addAlias = (Boolean) object.get("addAlias");
             
             List<String> aliasList = new ArrayList<>();
-            aliasList.addAll(Arrays.asList(ContainerManager.getAliasesForContainer(target)));
+            aliasList.addAll(ContainerManager.getAliasesForContainer(target));
             aliasList.add(target.getPath());
             
             // Perform move
@@ -933,7 +933,7 @@ public class CoreController extends SpringActionController
             {
                 // Save aliases
                 if (addAlias)
-                    ContainerManager.saveAliasesForContainer(afterMoveTarget, aliasList);
+                    ContainerManager.saveAliasesForContainer(afterMoveTarget, aliasList, getUser());
 
                 // Prepare response
                 Map<String, Object> response = new HashMap<>();
