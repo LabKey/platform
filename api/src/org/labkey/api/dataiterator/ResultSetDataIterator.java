@@ -16,6 +16,7 @@
 
 package org.labkey.api.dataiterator;
 
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.BaseColumnInfo;
@@ -29,6 +30,7 @@ import org.labkey.api.util.ResultSetUtil;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.Collection;
 
 /**
  * {@link DataIterator} implementation backed by a JDBC {@link ResultSet}
@@ -48,10 +50,10 @@ public class ResultSetDataIterator extends AbstractDataIterator implements Scrol
             return ((DataIteratorBuilder)rs).getDataIterator(context);
         }
 
-        return new ResultSetDataIterator(rs, context);
+        return new ResultSetDataIterator(rs, context, null);
     }
 
-    protected ResultSetDataIterator(ResultSet rs,  DataIteratorContext context)
+    protected ResultSetDataIterator(ResultSet rs,  DataIteratorContext context, @Nullable Collection<ColumnInfo> selectCols)
     {
         super(context);
 
@@ -62,7 +64,24 @@ public class ResultSetDataIterator extends AbstractDataIterator implements Scrol
             _columns = new ColumnInfo[rsmd.getColumnCount()+1];
             _columns[0] = new BaseColumnInfo("_row", JdbcType.INTEGER);
             for (int i=1 ; i<=rsmd.getColumnCount() ; i++)
-                _columns[i] = new BaseColumnInfo(rsmd, i);
+            {
+                ColumnInfo ci = null;
+                if (null != selectCols)
+                {
+                    for (ColumnInfo selectCol : selectCols)
+                    {
+                        if (rsmd.getColumnName(i).equals(selectCol.getColumnName())
+                                || rsmd.getColumnName(i).equals(selectCol.getAlias()))
+                        {
+                            ci = new BaseColumnInfo(selectCol);
+                            break;
+                        }
+
+                    }
+                }
+
+                _columns[i] = ci == null ? new BaseColumnInfo(rsmd, i) : ci;
+            }
         }
         catch (SQLException x)
         {
