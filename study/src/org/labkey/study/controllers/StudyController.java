@@ -734,32 +734,6 @@ public class StudyController extends BaseStudyController
         return newUrl.addParameters(context.getActionURL().getParameters());
     }
 
-    @RequiresPermission(AdminPermission.class)
-    public class DeleteDatasetReportAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            String viewName = (String) getViewContext().get(DATASET_REPORT_ID_PARAMETER_NAME);
-            int datasetId = NumberUtils.toInt((String)getViewContext().get(DatasetDefinition.DATASETKEY));
-
-            if (NumberUtils.isDigits(viewName))
-            {
-                Report report = ReportService.get().getReport(getContainer(), NumberUtils.toInt(viewName));
-                if (report != null)
-                    ReportService.get().deleteReport(getViewContext(), report);
-            }
-            throw new RedirectException(new ActionURL(DatasetAction.class, getContainer()).
-                        addParameter(DatasetDefinition.DATASETKEY, datasetId));
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-        }
-    }
-
-
     private static boolean canWrite(DatasetDefinition def, User user)
     {
         return def.canWrite(user) && def.getContainer().hasPermission(user, ReadPermission.class);
