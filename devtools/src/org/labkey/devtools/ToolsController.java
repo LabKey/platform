@@ -1,22 +1,30 @@
 package org.labkey.devtools;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.BaseScanner.Handler;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.VBox;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -27,12 +35,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
@@ -40,6 +52,7 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 public class ToolsController extends SpringActionController
 {
     private static final ActionResolver RESOLVER = new DefaultActionResolver(ToolsController.class);
+
     public static final String NAME = "tools";
 
     public ToolsController()
@@ -363,6 +376,170 @@ public class ToolsController extends SpringActionController
         {
             addBeginNavTrail(root);
             root.addChild("JSP Finder");
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class CheckCrawlerActionsAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws IOException
+        {
+            String sourcePath = ModuleLoader.getInstance().getModule(DevtoolsModule.NAME).getSourcePath();
+
+            if (null == sourcePath)
+            {
+                errors.reject(ERROR_MSG, "Source path is null!");
+                return new SimpleErrorView(errors);
+            }
+
+            List<ControllerActionId> actionIds = new LinkedList<>();
+
+            // As of now, Crawler.java and the study tests are the only classes that specify crawler actions
+            for (String path : List.of(
+                sourcePath + "/../../../testAutomation/src/org/labkey/test/util/Crawler.java",
+                sourcePath + "/../study/test/src/org/labkey/test/tests/study")
+            )
+            {
+                File file = new File(path);
+                if (!file.exists())
+                {
+                    errors.reject(ERROR_MSG, FileUtil.getAbsoluteCaseSensitiveFile(file).getAbsolutePath() + ": path not found!");
+                    return new SimpleErrorView(errors);
+                }
+                addActionIds(actionIds, file);
+            }
+
+            List<ControllerActionId> missingModules = new ArrayList<>();
+            List<ControllerActionId> missingActions = new ArrayList<>();
+
+            for (ControllerActionId actionId : actionIds)
+            {
+                Module module = ModuleLoader.getInstance().getModuleForController(actionId.getController().toLowerCase());
+
+                if (null == module)
+                {
+                    missingModules.add(actionId);
+                }
+                else
+                {
+                    SpringActionController controller = (SpringActionController) module.getController(null, actionId.getController());
+                    Controller actionController = controller.resolveAction(actionId.getAction());
+
+                    if (null == actionController)
+                    {
+                        missingActions.add(actionId);
+                    }
+                }
+            }
+
+            HtmlStringBuilder builder = HtmlStringBuilder.of();
+
+            if (!missingModules.isEmpty())
+            {
+                missingModules.sort(null);
+                builder
+                    .append("The following actions could not be resolved to a module running in this deployment:")
+                    .append(HtmlString.unsafe("<br><br>\n"));
+                missingModules.forEach(id->builder.append(id.toString()).append(HtmlString.unsafe("<br>\n")));
+                builder.append(HtmlString.unsafe("<br>\n"));
+            }
+
+            if (!missingActions.isEmpty())
+            {
+                missingActions.sort(null);
+                builder
+                    .append("The following actions do not exist:")
+                    .append(HtmlString.unsafe("<br><br>\n"));
+                missingActions.forEach(id->builder.append(id.toString()).append(HtmlString.unsafe("<br>\n")));
+            }
+
+            return new HtmlView(builder);
+        }
+
+        private void addActionIds(List<ControllerActionId> actionIds, File file) throws IOException
+        {
+            if (file.isDirectory())
+            {
+                // Crawl all the files in this directory
+                for (File f : file.listFiles(File::isFile))
+                {
+                    addActionIds(actionIds, f);
+                }
+            }
+            else
+            {
+                Pattern pattern = Pattern.compile("ControllerActionId\\(\"(.+?)\", \"(.+?)\"\\)");
+                Matcher matcher = pattern.matcher("");
+
+                String line;
+
+                try (BufferedReader br = Readers.getReader(file))
+                {
+                    while ((line = br.readLine()) != null)
+                    {
+                        matcher.reset(line);
+                        if (matcher.find())
+                            actionIds.add(new ControllerActionId(matcher.group(1), matcher.group(2)));
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addBeginNavTrail(root);
+            root.addChild("Check Crawler Actions");
+        }
+
+        private class ControllerActionId implements Comparable<ControllerActionId>
+        {
+            private final String _controller;
+            private final String _action;
+
+            public ControllerActionId(String controller, String action)
+            {
+                _controller = controller;
+                _action = action;
+            }
+
+            public String getController()
+            {
+                return _controller;
+            }
+
+            public String getAction()
+            {
+                return _action;
+            }
+
+            @Override
+            public String toString()
+            {
+                return "/" + _controller + "/" + _action;
+            }
+
+            @Override
+            public boolean equals(Object o)
+            {
+                if (this == o) return true;
+                if (o == null || getClass() != o.getClass()) return false;
+                ControllerActionId that = (ControllerActionId) o;
+                return _controller.equals(that._controller) && _action.equals(that._action);
+            }
+
+            @Override
+            public int hashCode()
+            {
+                return Objects.hash(_controller, _action);
+            }
+
+            @Override
+            public int compareTo(@NotNull ControllerActionId o)
+            {
+                return toString().compareTo(o.toString());
+            }
         }
     }
 }
