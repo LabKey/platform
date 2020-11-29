@@ -66,10 +66,13 @@ public class ResultSetDataIterator extends AbstractDataIterator implements Scrol
             for (int i=1 ; i<=rsmd.getColumnCount() ; i++)
             {
                 ColumnInfo ci = null;
+
+                // Check if selectCols provided to pass metadata to result set column infos
                 if (null != selectCols)
                 {
                     for (ColumnInfo selectCol : selectCols)
                     {
+                        // If column name or alias matches then copy metadata
                         if (rsmd.getColumnName(i).equals(selectCol.getColumnName())
                                 || rsmd.getColumnName(i).equals(selectCol.getAlias()))
                         {
