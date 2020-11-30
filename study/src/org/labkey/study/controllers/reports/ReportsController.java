@@ -39,8 +39,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewService;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -155,39 +153,6 @@ public class ReportsController extends BaseStudyController
                 root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
             else
                 root.addChild("Views");
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class DeleteCustomQueryAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            String viewName = getRequest().getParameter("reportView");
-            String defName = getRequest().getParameter("defName");
-            if (viewName != null && defName != null)
-            {
-                final ViewContext context = getViewContext();
-                final UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
-                final Study study = getStudyRedirectIfNull(context.getContainer());
-                QueryDefinition qd = QueryService.get().getQueryDef(context.getUser(), study.getContainer(), "study", defName);
-                if (qd == null)
-                    qd = schema.getQueryDefForTable(defName);
-
-                if (qd != null)
-                {
-                    CustomView view = qd.getCustomView(context.getUser(), context.getRequest(), viewName);
-                    if (view != null)
-                        view.delete(context.getUser(), context.getRequest());
-                }
-            }
-            return HttpView.redirect(PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
         }
     }
 

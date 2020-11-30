@@ -36,7 +36,7 @@ import java.util.List;
 
 public class DevtoolsModule extends CodeOnlyModule
 {
-    private static final String NAME = "DeveloperTools";
+    static final String NAME = "DeveloperTools";
 
     @Override
     public String getName()
