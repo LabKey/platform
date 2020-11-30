@@ -35,7 +35,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -410,8 +409,8 @@ public class ToolsController extends SpringActionController
                 addActionIds(actionIds, file);
             }
 
-            List<ControllerActionId> missingModules = new ArrayList<>();
-            List<ControllerActionId> missingActions = new ArrayList<>();
+            Set<ControllerActionId> missingModules = new TreeSet<>();
+            Set<ControllerActionId> missingActions = new TreeSet<>();
 
             for (ControllerActionId actionId : actionIds)
             {
@@ -437,7 +436,6 @@ public class ToolsController extends SpringActionController
 
             if (!missingModules.isEmpty())
             {
-                missingModules.sort(null);
                 builder
                     .append("The following actions could not be resolved to a module running in this deployment:")
                     .append(HtmlString.unsafe("<br><br>\n"));
@@ -447,7 +445,6 @@ public class ToolsController extends SpringActionController
 
             if (!missingActions.isEmpty())
             {
-                missingActions.sort(null);
                 builder
                     .append("The following actions do not exist:")
                     .append(HtmlString.unsafe("<br><br>\n"));
@@ -517,7 +514,7 @@ public class ToolsController extends SpringActionController
             @Override
             public String toString()
             {
-                return "/" + _controller + "/" + _action;
+                return "/" + _controller + "-" + _action;
             }
 
             @Override
