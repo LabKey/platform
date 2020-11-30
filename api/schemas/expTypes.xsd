@@ -426,11 +426,25 @@
             <xs:element name="NameExpression" type="string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="LabelColor" type="string" minOccurs="0" maxOccurs="1"/>
 			<xs:element name="MetricUnit" type="string" minOccurs="0" maxOccurs="1"/>
-        </xs:sequence>
+			<xs:element name="ParentImportAlias" minOccurs="0" maxOccurs="1">
+				<xs:complexType>
+					<xs:choice minOccurs="0" maxOccurs="unbounded">
+						<xs:element name="alias" type="exp:ImportAlias"/>
+					</xs:choice>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
         <xs:attribute ref="rdf:about" use="required"/>
     </xs:complexType>
 
-    <xs:complexType name="DomainDescriptorType">
+	<xs:complexType name="ImportAlias">
+		<xs:sequence>
+			<xs:element name="name" type="xs:string" minOccurs="1" maxOccurs="1"/>
+			<xs:element name="value" type="xs:string" minOccurs="1" maxOccurs="1"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="DomainDescriptorType">
         <xs:sequence>
             <xs:element name="Name" type="string" minOccurs="0"/>
             <xs:element name="DomainURI" type="string" minOccurs="0"/>

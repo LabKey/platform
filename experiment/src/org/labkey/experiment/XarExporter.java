@@ -543,7 +543,7 @@ public class XarExporter
         }
     }
 
-    private void addSampleType(String cpasType)
+    private void addSampleType(String cpasType) throws ExperimentException
     {
         if (_sampleSetLSIDs.contains(cpasType))
         {
@@ -554,7 +554,7 @@ public class XarExporter
         addSampleType(sampleType);
     }
 
-    public void addSampleType(ExpSampleType sampleType)
+    public void addSampleType(ExpSampleType sampleType) throws ExperimentException
     {
         final String PLACEHOLDER_SUFFIX = "sfx";
 
@@ -607,6 +607,25 @@ public class XarExporter
         if (sampleType.getMetricUnit() != null)
         {
             xSampleSet.setMetricUnit(sampleType.getMetricUnit());
+        }
+
+        try
+        {
+            Map<String, String> aliasMap = sampleType.getImportAliasMap();
+            if (!aliasMap.isEmpty())
+            {
+                SampleSetType.ParentImportAlias parentImportAlias = xSampleSet.addNewParentImportAlias();
+                for (Map.Entry<String, String> entry : aliasMap.entrySet())
+                {
+                    ImportAlias importAlias = parentImportAlias.addNewAlias();
+                    importAlias.setName(entry.getKey());
+                    importAlias.setValue(entry.getValue());
+                }
+            }
+        }
+        catch (IOException e)
+        {
+            throw new ExperimentException(e);
         }
 
         Domain domain = sampleType.getDomain();
