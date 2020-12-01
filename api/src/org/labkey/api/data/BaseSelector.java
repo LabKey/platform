@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -604,5 +605,21 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
     public @NotNull <K, V> MultiValuedMap<K, V> getMultiValuedMap()
     {
         return fillMultiValuedMap(new ArrayListValuedHashMap<>());
+    }
+
+    @Override
+    public @NotNull <K> Set<K> fillSet(@NotNull final Set<K> fillSet)
+    {
+        getStandardResultSetFactory().handleResultSet((rs, conn) -> {
+            ResultSetIterator iter = new ResultSetIterator(rs);
+            while (iter.hasNext())
+            {
+                RowMap rowMap = (RowMap)iter.next();
+                //noinspection unchecked
+                fillSet.add((K)rowMap.get(1));
+            }
+            return null;
+        });
+        return fillSet;
     }
 }

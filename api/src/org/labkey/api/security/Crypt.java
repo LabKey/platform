@@ -18,6 +18,7 @@ package org.labkey.api.security;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.util.ConfigurationException;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -316,5 +317,70 @@ public enum Crypt
         return (char) (0 == (i & 0x0001)
                 ? 'A' + (i >> 1)
                 : 'a' + (i >> 1));
+    }
+
+
+    public static class StringMessageDigest
+    {
+        final MessageDigest digest;
+        byte[] buf = new byte[1000];
+        byte[] nul = new byte[] {0};
+
+        public StringMessageDigest()
+        {
+            try
+            {
+                digest = MessageDigest.getInstance("MD5");
+            }
+            catch (NoSuchAlgorithmException x)
+            {
+                throw new ConfigurationException("MD5 algorithm not found",x);
+            }
+        }
+
+        public StringMessageDigest(MessageDigest digest)
+        {
+            this.digest = digest;
+        }
+
+        public void update(String s)
+        {
+            if (null == s || s.length()==0)
+            {
+                digest.update(nul);
+                return;
+            }
+            //String.getBytes() is kinda expensive, and generates lots of memory allocation, try to be more efficient?
+            if (s.length()*2 > buf.length)
+            {
+                byte[] bytes = s.getBytes(StandardCharsets.UTF_16);
+                assert ((byte)0xff)==bytes[0] && ((byte)0xfd)==bytes[1];
+                digest.update(bytes,2,bytes.length-2);  // skip byte-order indicators
+                return;
+            }
+            int len=0;
+            for (int i=0 ; i<s.length() ; i++)
+            {
+                char c = s.charAt(i);
+                buf[len++] = (byte) (c >> 8);
+                buf[len++] = ((byte) (c & 0xff));
+            }
+            digest.update(buf,0,len);
+        }
+
+        public void reset()
+        {
+            digest.reset();
+        }
+
+        public byte[] digest()
+        {
+            return digest.digest();
+        }
+
+        public String base64Digest()
+        {
+            return encodeBase64(digest.digest());
+        }
     }
 }

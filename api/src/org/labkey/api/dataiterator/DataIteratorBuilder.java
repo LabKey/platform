@@ -26,11 +26,10 @@ public interface DataIteratorBuilder
 {
     DataIterator getDataIterator(DataIteratorContext context);
 
+    /* Deprecated, finally made DataIterator simply extend DataIteratorBuilder */
     static DataIteratorBuilder wrap(DataIterator di)
     {
-        if (di instanceof DataIteratorBuilder)
-            return (DataIteratorBuilder)di;
-        return new Wrapper(di);
+        return di;
     }
 
     class Wrapper implements DataIteratorBuilder

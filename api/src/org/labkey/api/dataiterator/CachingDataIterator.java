@@ -25,6 +25,7 @@ import org.labkey.api.util.GUID;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.function.Supplier;
 
 /**
  * User: matthewb
@@ -35,8 +36,21 @@ public class CachingDataIterator extends AbstractDataIterator implements Scrolla
 {
     DataIterator _in;
     int _columnCount;
-    int _currentRow = -1;
-    ArrayList<Object[]> _data = new ArrayList<>(100);
+
+    int _currentPosition = -1;      // the zero-based position of the current row
+    int _markPosition = 0;          // the zero-based position of the first row in arraylist _data
+    int _inputPosition = -1;        // the zero-based position of input
+    Object[] _currentRowArray = null;
+
+    protected class _ArrayList<T> extends ArrayList<T>
+    {
+        @Override
+        public void removeRange(int fromIndex, int toIndex)
+        {
+            super.removeRange(fromIndex, toIndex);
+        }
+    }
+    protected _ArrayList<Object[]> _data = new _ArrayList<>();
     boolean atEndOfInput = false;
 
 
@@ -45,6 +59,13 @@ public class CachingDataIterator extends AbstractDataIterator implements Scrolla
         if (in instanceof ScrollableDataIterator && ((ScrollableDataIterator)in).isScrollable())
             return (ScrollableDataIterator)in;
         return new CachingDataIterator(in);
+    }
+
+    public static ScrollableDataIterator wrap(DataIterator in, boolean overflowToDisk)
+    {
+        if (in instanceof ScrollableDataIterator && ((ScrollableDataIterator)in).isScrollable())
+            return (ScrollableDataIterator)in;
+        return new DiskCachingDataIterator(in);
     }
 
 
@@ -64,7 +85,23 @@ public class CachingDataIterator extends AbstractDataIterator implements Scrolla
     @Override
     public void beforeFirst()
     {
-        _currentRow = -1;
+        _currentPosition = -1;
+    }
+
+    protected void mark()
+    {
+        int markPos = _currentPosition +1;   // index of first row that must be cached
+        if (markPos == _markPosition)
+            return;
+        int index = markPos-_markPosition;
+        _data.removeRange(0, index);
+        _markPosition = markPos;
+    }
+
+    /* scroll back to row before mark (caller must immediately call next()), same as beforeFirst() if mark() has not been called */
+    protected void reset()
+    {
+        _currentPosition = _markPosition-1;
     }
 
     @Override
@@ -82,26 +119,45 @@ public class CachingDataIterator extends AbstractDataIterator implements Scrolla
     @Override
     public boolean next() throws BatchValidationException
     {
-        ++_currentRow;
-        if (_currentRow < _data.size())
-            return true;
+        ++_currentPosition;
+        int index = _currentPosition - _markPosition;
+        if (index >= _data.size())
+        {
+            populateRows();
+            index = _currentPosition - _markPosition;
+            if (index >= _data.size())
+                return false;
+        }
+        _currentRowArray = _data.get(index);
+        return true;
+    }
+
+    /* add one or more rows to _data array to satisfy next() request */
+    protected void populateRows() throws BatchValidationException
+    {
         if (atEndOfInput || !_in.next())
         {
+            _currentRowArray = null;
             atEndOfInput = true;
-            return false;
+            return;
         }
-
+        _inputPosition++;
         Object[] row = new Object[_columnCount +1];
         for (int i=0 ; i<= _columnCount; ++i)
             row[i] = _in.get(i);
         _data.add(row);
-        return true;
     }
 
     @Override
     public Object get(int i)
     {
-        return _data.get(_currentRow)[i];
+        return _currentRowArray[i];
+    }
+
+    @Override
+    public Supplier<Object> getSupplier(int i)
+    {
+        return ()->_currentRowArray[i];
     }
 
     @Override
@@ -158,6 +214,28 @@ public class CachingDataIterator extends AbstractDataIterator implements Scrolla
             assertEquals("3", scrollable.get(1));
             assertEquals("3", scrollable.get(4));
             assertFalse(scrollable.next());
+        }
+
+        @Test
+        public void markTest() throws Exception
+        {
+            simpleData.setScrollable(false);
+
+            CachingDataIterator scrollable = (CachingDataIterator)CachingDataIterator.wrap(simpleData);
+            assertTrue(scrollable.next());
+            assertEquals("1", scrollable.get(1));
+
+            scrollable.mark();
+
+            assertTrue(scrollable.next());
+            assertEquals("2", scrollable.get(1));
+
+            scrollable.reset();
+
+            assertTrue(scrollable.next());
+            assertEquals("2", scrollable.get(1));
+            assertTrue(scrollable.next());
+            assertEquals("3", scrollable.get(1));
         }
     }
 }
