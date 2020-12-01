@@ -16,7 +16,6 @@
 
 package org.labkey.api.dataiterator;
 
-import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.BaseColumnInfo;
@@ -24,13 +23,13 @@ import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.util.ResultSetUtil;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.Collection;
 
 /**
  * {@link DataIterator} implementation backed by a JDBC {@link ResultSet}
@@ -50,10 +49,10 @@ public class ResultSetDataIterator extends AbstractDataIterator implements Scrol
             return ((DataIteratorBuilder)rs).getDataIterator(context);
         }
 
-        return new ResultSetDataIterator(rs, context, null);
+        return new ResultSetDataIterator(rs, context);
     }
 
-    protected ResultSetDataIterator(ResultSet rs,  DataIteratorContext context, @Nullable Collection<ColumnInfo> selectCols)
+    protected ResultSetDataIterator(ResultSet rs,  DataIteratorContext context)
     {
         super(context);
 
@@ -65,25 +64,14 @@ public class ResultSetDataIterator extends AbstractDataIterator implements Scrol
             _columns[0] = new BaseColumnInfo("_row", JdbcType.INTEGER);
             for (int i=1 ; i<=rsmd.getColumnCount() ; i++)
             {
-                ColumnInfo ci = null;
-
-                // Check if selectCols provided to pass metadata to result set column infos
-                if (null != selectCols)
+                if (rs instanceof Results)
                 {
-                    for (ColumnInfo selectCol : selectCols)
-                    {
-                        // If column name or alias matches then copy metadata
-                        if (rsmd.getColumnName(i).equals(selectCol.getColumnName())
-                                || rsmd.getColumnName(i).equals(selectCol.getAlias()))
-                        {
-                            ci = new BaseColumnInfo(selectCol);
-                            break;
-                        }
-
-                    }
+                    _columns[i] = ((Results) rs).getColumn(i);
                 }
-
-                _columns[i] = ci == null ? new BaseColumnInfo(rsmd, i) : ci;
+                else
+                {
+                    _columns[i] = new BaseColumnInfo(rsmd, i);
+                }
             }
         }
         catch (SQLException x)
