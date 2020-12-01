@@ -877,20 +877,24 @@
 
     function handleFailure(resp, opt) {
         var jsonResp = Ext4.decode(resp.responseText);
-        if (jsonResp && jsonResp.errors)
-        {
+        if (jsonResp) {
             var errorHTML = '';
-            for (var p in jsonResp.errors)
-            {
-                if (jsonResp.errors.hasOwnProperty(p))
-                {
-                    errorHTML += jsonResp.errors[p] + '\n';
+            if (jsonResp.errors) {
+                for (let i = 0; i < jsonResp.errors.length; i++) {
+                    let error = jsonResp.errors[i];
+                    if (error.msg) {
+                        errorHTML += error.msg + '\n';
+                    }
                 }
+            }
+            else if (jsonResp.exception) {
+                errorHTML = jsonResp.exception;
             }
             Ext4.Msg.alert('Error', errorHTML);
         }
-        else
+        else {
             LABKEY.Utils.displayAjaxErrorResponse(resp, opt);
+        }
     }
 
     Ext4.onReady(function()
