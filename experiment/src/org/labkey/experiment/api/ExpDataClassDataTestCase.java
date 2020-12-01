@@ -421,7 +421,7 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
     private void verifyAliasesViaSelectRows(String schemaName, String queryName, int expDataRowId, Set<String> expectedAliases)
             throws Exception
     {
-        try (var session = SecurityManager.createTransformSession(TestContext.get().getUser()))
+        try (var session = SecurityManager.createTransformSession(TestContext.get().getRequest(), TestContext.get().getRequest().getSession()))
         {
             String baseURL = AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath();
             Connection conn = new Connection(baseURL, new ApiKeyCredentialsProvider(session.getApiKey()));
