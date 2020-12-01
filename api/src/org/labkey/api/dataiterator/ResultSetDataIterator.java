@@ -64,14 +64,19 @@ public class ResultSetDataIterator extends AbstractDataIterator implements Scrol
             _columns[0] = new BaseColumnInfo("_row", JdbcType.INTEGER);
             for (int i=1 ; i<=rsmd.getColumnCount() ; i++)
             {
+                ColumnInfo ci = null;
                 if (rs instanceof Results)
                 {
-                    _columns[i] = ((Results) rs).getColumn(i);
+                    for (ColumnInfo col : ((Results) rs).getFieldMap().values())
+                    {
+                        if (col.getName().equals(rsmd.getColumnName(i)) || col.getAlias().equals(rsmd.getColumnName(i)))
+                        {
+                            ci = col;
+                        }
+                    }
                 }
-                else
-                {
-                    _columns[i] = new BaseColumnInfo(rsmd, i);
-                }
+                
+                _columns[i] = ci == null ? new BaseColumnInfo(rsmd, i) : ci;
             }
         }
         catch (SQLException x)
