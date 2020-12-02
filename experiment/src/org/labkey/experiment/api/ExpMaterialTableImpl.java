@@ -30,12 +30,10 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -65,6 +63,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
@@ -74,7 +73,6 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -95,8 +93,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
-import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
-import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
+import static org.labkey.experiment.ExpDataIterators.NOT_FOR_UPDATE;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -145,7 +142,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // Special case sample auditing to help build a useful timeline view
         if (getUserSchema().getName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
         {
-            Map<String, Object> params = new CaseInsensitiveHashMap<>(parameters);
+            Map<String, Object> newRow = new CaseInsensitiveHashMap<>(parameters);
+            Map<String, Object> existingRow = null;
+            Object rowId = null;
             if (auditAction.equals(QueryService.AuditAction.MERGE))
             {
                 AuditBehaviorType sampleAuditType = auditBehavior;
@@ -156,15 +155,43 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 {
                     // material.rowid is a dbsequence column that auto increments during merge, even if rowId is not updated
                     // need to reselect rowId
-                    if (params.containsKey(LSID))
+                    if (newRow.containsKey(ExpDataTable.Column.LSID.toString()))
                     {
-                        ExpMaterial sample = ExperimentService.get().getExpMaterial((String) params.get(LSID));
-                        if (sample != null)
-                            params.put(ROW_ID, sample.getRowId());
+                        try
+                        {
+                            SampleTypeUpdateServiceDI qus = (SampleTypeUpdateServiceDI) getUpdateService();
+                            if (qus != null)
+                            {
+                                List<Map<String, Object>> existingRows = qus.getRows(user, container, Collections.singletonList(Map.of("LSID", newRow.get(ExpDataTable.Column.LSID.toString()))), true);
+                                if (existingRows != null && !existingRows.isEmpty())
+                                {
+                                    NOT_FOR_UPDATE.forEach(name -> existingRows.get(0).remove(name));
+                                    existingRow = existingRows.get(0);
+                                    rowId = existingRow.get(ExpDataTable.Column.RowId.toString());
+                                }
+                            }
+                        }
+                        catch (QueryUpdateServiceException e)
+                        {
+                            ExpMaterial sample = ExperimentService.get().getExpMaterial((String) newRow.get(ExpDataTable.Column.LSID.toString()));
+                            rowId = sample.getRowId();
+                        }
+
+                        if (rowId != null)
+                        {
+                            newRow.put(ExpDataTable.Column.RowId.toString(), rowId);
+                            NOT_FOR_UPDATE.forEach(newRow::remove);
+                            // We don't want the inventory columns to show up in the sample timeline audit record;
+                            // they are captured in their own audit record.
+                            InventoryService.INVENTORY_STATUS_COLUMN_NAMES.forEach(newRow::remove);
+                        }
                     }
                 }
             }
-            SampleTypeService.get().addAuditEvent(user, container, this, auditBehavior, userComment, auditAction, Collections.singletonList(params));
+            if (existingRow != null)
+                SampleTypeService.get().addAuditEvent(user, container, this, auditBehavior, userComment, auditAction, Collections.singletonList(existingRow), Collections.singletonList(newRow));
+            else
+                SampleTypeService.get().addAuditEvent(user, container, this, auditBehavior, userComment, auditAction, Collections.singletonList(newRow));
         }
         else
         {

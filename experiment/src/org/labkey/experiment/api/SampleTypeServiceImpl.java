@@ -900,9 +900,9 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         return true;
     }
 
-    protected String getCommentDetailed(QueryService.AuditAction action)
+    protected String getCommentDetailed(QueryService.AuditAction action, boolean isUpdate)
     {
-        String comment = SampleTimelineAuditEvent.SampleTimelineEventType.getActionCommentDetailed(action);
+        String comment = SampleTimelineAuditEvent.SampleTimelineEventType.getActionCommentDetailed(action, isUpdate);
         return StringUtils.isEmpty(comment) ? action.getCommentDetailed() : comment;
     }
 
@@ -910,7 +910,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
     public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
     {
         // not doing anything with userComment at the moment
-        return createAuditRecord(c, getCommentDetailed(action), row, updatedRow, action);
+        return createAuditRecord(c, getCommentDetailed(action, !updatedRow.isEmpty()), row, updatedRow, action);
     }
 
     @Override

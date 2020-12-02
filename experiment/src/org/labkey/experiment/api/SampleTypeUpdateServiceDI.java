@@ -457,10 +457,18 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
             throws QueryUpdateServiceException
     {
+        return getRows(user, container, keys, false /*skip addInputs for insertRows*/);
+    }
+
+    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys, boolean addInputs)
+            throws QueryUpdateServiceException
+    {
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
         for (Map<String, Object> k : keys)
         {
-            result.add(getMaterialMap(getMaterialRowId(k), getMaterialLsid(k), user, container, false/*skip addInputs for insertRows*/));
+            Map<String, Object> materialMap = getMaterialMap(getMaterialRowId(k), getMaterialLsid(k), user, container, addInputs);
+            if (materialMap != null)
+                result.add(materialMap);
         }
         return result;
     }
