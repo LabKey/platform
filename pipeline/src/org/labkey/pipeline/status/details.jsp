@@ -22,6 +22,10 @@
 <%@ page import="org.labkey.pipeline.status.StatusController" %>
 <%@ page import="org.labkey.pipeline.status.StatusDetailsBean" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.time.Duration" %>
+<%@ page import="java.time.LocalDateTime" %>
+<%@ page import="org.labkey.api.settings.FolderSettingsCache" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -342,8 +346,13 @@
     scrollLog(false);
 </script>
 
-<%-- fetch updates if the job is active or there was an error reading the log file on first render. --%>
-<% if (status.active || status.log == null || !status.log.success) { %>
+<%-- fetch updates if the job is active, there was an error reading the log file on first render, or the job has
+ended very recently. --%>
+<%
+    LocalDateTime modifiedTime = LocalDateTime.parse(status.modified,
+            DateTimeFormatter.ofPattern(FolderSettingsCache.getDefaultDateTimeFormat(getContainer())));
+    if (status.active || status.log == null || !status.log.success
+        || (Duration.between(LocalDateTime.now(), modifiedTime).toMinutes() < 1)) { %>
 <script type="application/javascript">
     (function () {
 
@@ -352,7 +361,7 @@
         let fetchCount = 0;
 
         let offsetUnchangedCount = 0;
-        const MAX_UNCHANGED_COUNT = 4;
+        const MAX_UNCHANGED_COUNT = 3;
 
         function updateField(el, text) {
             if (text !== null && text !== undefined)
