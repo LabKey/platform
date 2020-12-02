@@ -5177,7 +5177,7 @@ public class QueryController extends SpringActionController
                 // dirty the view then save the deleted session view back in session state
                 view.setName(view.getName());
                 view.save(getUser(), getViewContext().getRequest());
-                
+
                 throw e;
             }
         }
@@ -5555,6 +5555,31 @@ public class QueryController extends SpringActionController
             int count = DataRegionSelection.setSelected(
                     getViewContext(), form.getKey(),
                     selection, true);
+            return new DataRegionSelection.SelectionResponse(count);
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class SetSnapshotSelectionAction extends MutatingApiAction<SetCheckForm>
+    {
+        @Override
+        public ApiResponse execute(final SetCheckForm form, BindException errors)
+        {
+            String[] ids = form.getId(getViewContext().getRequest());
+            List<String> selection = new ArrayList<>();
+            if (ids != null)
+            {
+                for (String id : ids)
+                {
+                    if (StringUtils.isNotBlank(id))
+                        selection.add(id);
+                }
+            }
+
+            DataRegionSelection.clearAll(getViewContext(), form.getKey(), true);
+            int count = DataRegionSelection.setSelected(
+                getViewContext(), form.getKey(),
+                selection, true, true);
             return new DataRegionSelection.SelectionResponse(count);
         }
     }
@@ -6435,7 +6460,7 @@ public class QueryController extends SpringActionController
             // null as the success URL; returning null here causes the base action to stop pestering the action.
             if (reshow && !errors.hasErrors())
                 return null;
-            
+
             return new JspView<>("/org/labkey/query/view/exportTables.jsp", form, errors);
         }
 
@@ -6581,7 +6606,7 @@ public class QueryController extends SpringActionController
         String sourceDataSource;
         String targetSchema;
         String pathInScript;
-        String outputDir; 
+        String outputDir;
 
         public String getSourceSchema()
         {
