@@ -536,6 +536,11 @@ public class XarExporter
         xMaterial.setName(material.getName());
 
         Map<String, ObjectProperty> objectProperties = material.getObjectProperties();
+        Collection<String> aliases = material.getAliases();
+        if (!aliases.isEmpty())
+        {
+            xMaterial.setAlias(String.join(",", aliases));
+        }
         PropertyCollectionType materialProperties = getProperties(objectProperties, material.getContainer());
         if (materialProperties != null)
         {

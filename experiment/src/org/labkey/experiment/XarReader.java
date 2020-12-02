@@ -1157,6 +1157,12 @@ public class XarReader extends AbstractXarImporter
                 ExpMaterialImpl mi = new ExpMaterialImpl(m);
                 mi.save(getUser());
                 mi.setProperties(getUser(), props);
+
+                if (xbMaterial.isSetAlias())
+                {
+                    AliasInsertHelper.handleInsertUpdate(getContainer(), getUser(), mi.getLSID(),
+                            ExperimentService.get().getTinfoMaterialAliasMap(), xbMaterial.getAlias());
+                }
             }
             catch (ValidationException vex)
             {

@@ -10,13 +10,19 @@ import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
@@ -32,6 +38,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
+import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.labkey.folder.xml.FolderDocument;
@@ -193,14 +200,38 @@ public class SampleTypeFolderWriter extends BaseFolderWriter
                 // substitute the comment value for the lsid lookup value
                 FieldKey flagFieldKey = FieldKey.fromParts(ExpMaterialTable.Column.Flag.name(), "Comment");
                 Map<FieldKey, ColumnInfo> select = QueryService.get().getColumns(tinfo, Collections.singletonList(flagFieldKey));
-                ColumnInfo flagAlias = new AliasedColumn(tinfo, ExpMaterialTable.Column.Flag.name(), select.get(flagFieldKey));   // Change the caption to QCStateLabel
+                ColumnInfo flagAlias = new AliasedColumn(tinfo, ExpMaterialTable.Column.Flag.name(), select.get(flagFieldKey));
 
                 columns.add(flagAlias);
             }
             else if (ExpMaterialTable.Column.Alias.name().equalsIgnoreCase(col.getName()))
             {
-                // ignore alias for now, will need to import the MVFK values
-                continue;
+                MutableColumnInfo aliasCol = WrappedColumnInfo.wrap(col);
+
+                aliasCol.setDisplayColumnFactory(new DisplayColumnFactory()
+                {
+                    @Override
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        return new DataColumn(aliasCol)
+                        {
+                            @Override
+                            public Object getValue(RenderContext ctx)
+                            {
+                                Object val = super.getValue(ctx);
+
+                                if (val != null)
+                                {
+                                    Collection<String> aliases = AliasInsertHelper.getAliases(String.valueOf(val));
+                                    if (!aliases.isEmpty())
+                                        return String.join(",", aliases);
+                                }
+                                return "";
+                            }
+                        };
+                    }
+                });
+                columns.add(aliasCol);
             }
             else if ((col.isUserEditable() && !col.isHidden() && !col.isReadOnly()) || col.isKeyField())
             {

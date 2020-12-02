@@ -189,6 +189,7 @@
             <!-- Deprecated, no longer used but kept to allow importing of old .xar files -->
 			<xs:element name="SourceProtocolLSID" type="string" minOccurs="0"/>
 			<xs:element name="Properties" type="exp:PropertyCollectionType" minOccurs="0"/>
+			<xs:element name="Alias" type="string" minOccurs="0" maxOccurs="1"/>
 		</xs:sequence>
 		<xs:attribute ref="rdf:about" use="required"/>
 	</xs:complexType>
