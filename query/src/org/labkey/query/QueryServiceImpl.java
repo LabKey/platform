@@ -3094,6 +3094,15 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     }
 
     @Override
+    public List<String> getRolapConfigIds(Container c)
+    {
+        return ServerManager.getDescriptors(c).stream()
+            .filter(d->!d.usesMondrian())
+            .map(OlapSchemaDescriptor::getId)
+            .collect(Collectors.toList());
+    }
+
+    @Override
     public Collection<Pair<String, String>> getOlapHierarchies(String configId, Container c, String cubeName, String dimension)
     {
         OlapSchemaDescriptor descriptor = ServerManager.getDescriptor(c, configId);
