@@ -471,6 +471,7 @@ public interface QueryService
     void cubeDataChanged(Set<Container> containers);
     String warmCube(User user, Set<Container> containers, String schemaName, String configId, String cubeName);
     String cubeDataChangedAndRewarmCube(User user, Set<Container> containers, String schemaName, String configId, String cubeName);
+    List<String> getRolapConfigIds(Container c);
 
     /**
      * Returns a minimal amount of information about the specified cube dimension's hierarchies
