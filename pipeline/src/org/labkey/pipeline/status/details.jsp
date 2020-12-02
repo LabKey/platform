@@ -352,7 +352,7 @@
         let fetchCount = 0;
 
         let offsetUnchangedCount = 0;
-        const MAX_UNCHANGED_COUNT = 3;
+        const MAX_UNCHANGED_COUNT = 4;
 
         function updateField(el, text) {
             if (text !== null && text !== undefined)
