@@ -1,3 +1,7 @@
+plugins {
+    id 'org.labkey.module'
+}
+
 ext.luceneVersion="8.0.0"
 ext.mime4jVersion="0.8.1"
 

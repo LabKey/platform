@@ -1,3 +1,7 @@
+plugins {
+    id 'org.labkey.module'
+}
+
 dependencies {
     external "net.sourceforge.jtds:jtds:${jtdsVersion}" // MS SQLServer JDBC Driver
     external ("mysql:mysql-connector-java:${mysqlDriverVersion}")
