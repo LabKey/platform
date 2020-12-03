@@ -26,6 +26,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -136,6 +137,8 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
             // Create the basic run
             _run = AssayService.get().createExperimentRun(_context.getName(), getContainer(), _context.getProtocol(), _primaryFile);
             _run.setComments(_context.getComments());
+            // remember which job created the run so we can show this run on the job details page
+            _run.setJobId(PipelineService.get().getJobId(getUser(), getContainer(), getJobGUID()));
 
             // Find a batch for the run
             ExpExperiment batch = ExperimentService.get().getExpExperiment(_batchId);
