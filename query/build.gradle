@@ -1,6 +1,6 @@
 
 plugins {
-    id 'org.labkey.module'
+    id 'org.labkey.build.module'
 }
 
 configurations {

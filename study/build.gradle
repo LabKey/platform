@@ -1,6 +1,6 @@
 import org.labkey.gradle.util.BuildUtils
 plugins {
-    id 'org.labkey.module'
+    id 'org.labkey.build.module'
 }
 
 sourceSets {

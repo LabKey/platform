@@ -1,5 +1,5 @@
 plugins {
-    id 'org.labkey.module'
+    id 'org.labkey.build.module'
 }
 
 ext.luceneVersion="8.0.0"
