@@ -23,7 +23,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.PropertyType;
@@ -64,12 +63,25 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
     final User _user;
     final CaseInsensitiveHashSet dontRequire = new CaseInsensitiveHashSet();
 
+    // major components of standard processing, default we do all of these
+    boolean _convertTypes = true;
+    boolean _builtInColumns = true;
+    boolean _validate = true;
+
 
     public static StandardDataIteratorBuilder forInsert(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
     {
         return new StandardDataIteratorBuilder(target, in, c, user, context);
     }
 
+    /* do the standard column matching logic, but no coercion or validation */
+    public static DataIteratorBuilder forColumnMatching(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
+    {
+        StandardDataIteratorBuilder ret = new StandardDataIteratorBuilder(target, in, c, user, context);
+        ret._convertTypes = ret._validate = ret._builtInColumns = false;
+        ret._useImportAliases = true;
+        return ret;
+    }
 
     public static StandardDataIteratorBuilder forUpdate(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
     {
@@ -79,8 +91,6 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
 
     protected StandardDataIteratorBuilder(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
     {
-        if (!(target instanceof UpdateableTableInfo))
-            throw new IllegalArgumentException("Must implement UpdateableTableInfo: " + target.getName() + " (" + target.getClass().getSimpleName() + ")");
         _inputBuilder = in;
         _target = target;
         _c = c;
@@ -152,7 +162,8 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
         // NOTE: although some columns may be matched by propertyURI, I assume that create/modified etc are bound by name
         //
 
-        input = SimpleTranslator.wrapBuiltInColumns(input, context, _c, _user, _target);
+        if (_builtInColumns)
+            input = SimpleTranslator.wrapBuiltInColumns(input, context, _c, _user, _target);
 
         Map<String,Integer> sourceColumnsMap = DataIteratorUtil.createColumnAndPropertyMap(input);
 
@@ -201,7 +212,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
             if (null != targetCol)
                 to = translateHelperMap.get(getTranslateHelperKey(targetCol));
 
-            if (null != to)
+            if (null != to && _convertTypes)
             {
                 if (!unusedCols.containsKey(to.target.getFieldKey()))
                     setupError.addGlobalError("Two columns mapped to target column: " + to.target.getName());
@@ -223,10 +234,13 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
         //
         // check for unbound columns that are required
         //
-        for (TranslateHelper pair : unusedCols.values())
+        if (_validate)
         {
-            if (isRequiredForInsert(pair.target, pair.dp))
-                setupError.addGlobalError("Data does not contain required field: " + pair.target.getName());
+            for (TranslateHelper pair : unusedCols.values())
+            {
+                if (isRequiredForInsert(pair.target, pair.dp))
+                    setupError.addGlobalError("Data does not contain required field: " + pair.target.getName());
+            }
         }
 
         SimpleTranslator convert = new SimpleTranslator(input, context);
@@ -261,20 +275,26 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
         // VALIDATE data iterator
         //
 
-        ValidatorIterator validate = new ValidatorIterator(LoggingDataIterator.wrap(validateInput), context, _c, _user);
-        validate.setDebugName("StandardDIB validate");
+        DataIterator last = validateInput;
 
-        for (int index=1 ; index <= validateInput.getColumnCount() ; index++)
+        if (_validate)
         {
-            ColumnInfo col = validateInput.getColumnInfo(index);
-            TranslateHelper pair = translateHelperMap.get(getTranslateHelperKey(col));
-            if (null == pair)
-                continue;
-            List<ColumnValidator> validators = ColumnValidators.create(pair.target, pair.dp, context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString));
-            validate.addValidators(index, validators);
+            ValidatorIterator validate = new ValidatorIterator(LoggingDataIterator.wrap(validateInput), context, _c, _user);
+            validate.setDebugName("StandardDIB validate");
+
+            for (int index = 1; index <= validateInput.getColumnCount(); index++)
+            {
+                ColumnInfo col = validateInput.getColumnInfo(index);
+                TranslateHelper pair = translateHelperMap.get(getTranslateHelperKey(col));
+                if (null == pair)
+                    continue;
+                List<ColumnValidator> validators = ColumnValidators.create(pair.target, pair.dp, context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString));
+                validate.addValidators(index, validators);
+            }
+            if (validate.hasValidators())
+                last = validate;
         }
 
-        DataIterator last = validate.hasValidators() ? validate : validateInput;
         return LoggingDataIterator.wrap(ErrorIterator.wrap(last, context, false, setupError));
     }
 

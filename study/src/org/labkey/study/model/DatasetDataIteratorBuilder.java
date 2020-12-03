@@ -60,7 +60,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
-class DatasetDataIteratorBuilder implements DataIteratorBuilder
+public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 {
     private DatasetDefinition _datasetDefinition;
     User user;
@@ -79,7 +79,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
     ValidationException setupError = null;
 
-    DatasetDataIteratorBuilder(DatasetDefinition datasetDefinition, User user, boolean qc, QCState defaultQC, StudyImportContext studyImportContext)
+    public DatasetDataIteratorBuilder(DatasetDefinition datasetDefinition, User user, boolean qc, QCState defaultQC, StudyImportContext studyImportContext)
     {
         _datasetDefinition = datasetDefinition;
         this.user = user;
@@ -110,12 +110,12 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
         checkDuplicates = check;
     }
 
-    void setInput(DataIteratorBuilder b)
+    public void setInput(DataIteratorBuilder b)
     {
         builder = b;
     }
 
-    void setInput(DataIterator it)
+    public void setInput(DataIterator it)
     {
         input = it;
     }

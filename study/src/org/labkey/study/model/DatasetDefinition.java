@@ -2108,7 +2108,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         b.setKeyList(lsids);
 
         Container target = getDataSharingEnum() == DataSharing.NONE ? getContainer() : getDefinitionContainer();
-        StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
+        DataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
         return ((UpdateableTableInfo)table).persistRows(etl, context);
     }
 
