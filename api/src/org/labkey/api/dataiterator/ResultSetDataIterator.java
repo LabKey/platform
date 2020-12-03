@@ -67,12 +67,10 @@ public class ResultSetDataIterator extends AbstractDataIterator implements Scrol
                 ColumnInfo ci = null;
                 if (rs instanceof Results)
                 {
-                    for (ColumnInfo col : ((Results) rs).getFieldMap().values())
+                    // Use field map to get size of columnInfos which is field map size + 1
+                    if (i <= ((Results) rs).getFieldMap().size())
                     {
-                        if (col.getName().equals(rsmd.getColumnName(i)) || col.getAlias().equals(rsmd.getColumnName(i)))
-                        {
-                            ci = col;
-                        }
+                        ci = ((Results) rs).getColumn(i);
                     }
                 }
                 
