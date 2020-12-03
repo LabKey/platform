@@ -45,6 +45,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -470,21 +471,27 @@ public interface QueryService
     void cubeDataChanged(Set<Container> containers);
     String warmCube(User user, Set<Container> containers, String schemaName, String configId, String cubeName);
     String cubeDataChangedAndRewarmCube(User user, Set<Container> containers, String schemaName, String configId, String cubeName);
+    List<String> getRolapConfigIds(Container c);
 
+    /**
+     * Returns a minimal amount of information about the specified cube dimension's hierarchies
+     * @return A Collection of Pair objects containing each hierarchy's name and primary table
+     */
+    Collection<Pair<String, String>> getOlapHierarchies(String configId, Container c, String cubeName, String dimension);
 
     void saveNamedSet(String setName, List<String> setList);
     void deleteNamedSet(String setName);
     List<String> getNamedSet(String setName);
 
     /**
-     * Add a passthrough method to the whitelist for the primary LabKey database type. This enables modules to create
+     * Add a pass-through method to the allow list for the primary LabKey database type. This enables modules to create
      * and enable custom database functions, for example.
      */
     void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments);
 
     /**
-     * Add a passthrough method to the whitelist for a particular database type. This enables modules to create
-     * and enable custom database functions, for example.
+     * Add a pass-through method to the allow list for a particular database type. This enables modules to create and
+     * enable custom database functions, for example.
      */
     void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect);
 
