@@ -20,7 +20,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
@@ -30,7 +29,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -185,10 +183,4 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
         }
     }
 
-    @Override
-    public void deleteData(ExpData data, Container container, User user)
-    {
-        // clean up plate metadata values if any
-        OntologyManager.deleteOntologyObject(data.getLSID(), container, true);
-    }
 }
