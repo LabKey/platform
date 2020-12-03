@@ -41,6 +41,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringBufferInputStream;
+import java.io.StringReader;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -808,6 +809,47 @@ public class TabLoader extends DataLoader
             csv.delete();
         }
 
+        // Test that TabLoader can handle empty and nearly empty content, Issue 41897
+        @Test
+        public void testEmptyTabLoader() throws IOException
+        {
+            testEmptyTabLoader("", 0);
+            testEmptyTabLoader("X", 1);
+            testEmptyTabLoader("X\n", 1);
+        }
+
+        private void testEmptyTabLoader(String content, int expectedColumnCount) throws IOException
+        {
+            try (TabLoader l = new TabLoader(content, true))
+            {
+                testEmptyTabLoader(l, expectedColumnCount);
+            }
+            try (Reader r = new StringReader(content); TabLoader l = new TabLoader(r, true))
+            {
+                testEmptyTabLoader(l, expectedColumnCount);
+            }
+            File tsv = _createTempFile(content, ".tsv");
+            try (TabLoader l = new TabLoader(tsv, true))
+            {
+                testEmptyTabLoader(l, expectedColumnCount);
+            }
+            try (Reader r = Readers.getReader(tsv); TabLoader l = new TabLoader(r, true))
+            {
+                testEmptyTabLoader(l, expectedColumnCount);
+            }
+            try (Reader r = Readers.getUnbufferedReader(tsv); TabLoader l = new TabLoader(r, true))
+            {
+                testEmptyTabLoader(l, expectedColumnCount);
+            }
+            assertTrue(tsv.delete());
+        }
+
+        private void testEmptyTabLoader(TabLoader l, int expectedColumnCount) throws IOException
+        {
+            List<Map<String, Object>> maps = l.load();
+            assertEquals(expectedColumnCount, l.getColumns().length);
+            assertEquals(0, maps.size());
+        }
 
         @Test
         public void testCSVFile() throws IOException
