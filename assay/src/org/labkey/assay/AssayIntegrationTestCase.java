@@ -104,7 +104,7 @@ public class AssayIntegrationTestCase
         GWTDomain<GWTPropertyDescriptor> batchDomain = domains.stream().filter(d -> "Batch Fields".equals(d.getName())).findFirst().orElseThrow();
         batchDomain.getFields().clear();
 
-        // clear the batch domain fields
+        // clear the run domain fields
         GWTDomain<GWTPropertyDescriptor> runDomain = domains.stream().filter(d -> "Run Fields".equals(d.getName())).findFirst().orElseThrow();
         runDomain.getFields().clear();
 
