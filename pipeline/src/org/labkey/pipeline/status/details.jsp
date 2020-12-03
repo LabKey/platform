@@ -16,16 +16,11 @@
  */
 %>
 <%@ page import="org.labkey.api.pipeline.PipelineJob.TaskStatus" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.pipeline.status.LogFileParser" %>
 <%@ page import="org.labkey.pipeline.status.StatusController" %>
 <%@ page import="org.labkey.pipeline.status.StatusDetailsBean" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="java.time.Duration" %>
-<%@ page import="java.time.LocalDateTime" %>
-<%@ page import="org.labkey.api.settings.FolderSettingsCache" %>
-<%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="java.util.Date" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
