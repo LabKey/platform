@@ -26,6 +26,7 @@
 <%@ page import="java.time.LocalDateTime" %>
 <%@ page import="org.labkey.api.settings.FolderSettingsCache" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
+<%@ page import="java.util.Date" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -39,6 +40,7 @@
     ActionURL showListURL = bean.showListUrl;
     ActionURL showFolderURL = bean.showFolderUrl;
     ActionURL showDataURL = bean.dataUrl;
+    Date modified = bean.modified;
 %>
 <%!
     // keep in sync with JavaScript logTextClass function
@@ -349,10 +351,10 @@
 <%-- fetch updates if the job is active, there was an error reading the log file on first render, or the job has
 ended very recently. --%>
 <%
-    LocalDateTime modifiedTime = LocalDateTime.parse(status.modified,
-            DateTimeFormatter.ofPattern(FolderSettingsCache.getDefaultDateTimeFormat(getContainer())));
-    if (status.active || status.log == null || !status.log.success
-        || (Duration.between(LocalDateTime.now(), modifiedTime).toMinutes() < 1)) { %>
+    long diffTime = new Date().getTime() - modified.getTime();
+    long diffMin = diffTime / (60 * 1000);
+
+    if (status.active || status.log == null || !status.log.success || diffMin < 1) { %>
 <script type="application/javascript">
     (function () {
 
