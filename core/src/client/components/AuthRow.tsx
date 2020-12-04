@@ -166,7 +166,7 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
 
         return (
             <div>
-                <div className={classNames("domain-field-row domain-row-border-default", { "dragging": isDragging })}>
+                <div className={classNames("auth-row domain-field-row domain-row-border-default", { "dragging": isDragging })}>
                     <div className="domain-row-container">
                         <div className="domain-row-handle">{handle}</div>
 
