@@ -830,11 +830,9 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
               </span>
             </div>
             <div>
-              <div
-                className="row-container"
-              >
+              <div>
                 <div
-                  className="auth-row"
+                  className="domain-field-row domain-row-border-default"
                 >
                   <div
                     className="domain-row-container"
@@ -927,11 +925,9 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                   </div>
                 </div>
               </div>
-              <div
-                className="row-container"
-              >
+              <div>
                 <div
-                  className="auth-row"
+                  className="domain-field-row domain-row-border-default"
                 >
                   <div
                     className="domain-row-container"
@@ -1058,11 +1054,9 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
               </span>
             </div>
             <div>
-              <div
-                className="row-container"
-              >
+              <div>
                 <div
-                  className="auth-row"
+                  className="domain-field-row domain-row-border-default"
                 >
                   <div
                     className="domain-row-container"
@@ -1155,11 +1149,9 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                   </div>
                 </div>
               </div>
-              <div
-                className="row-container"
-              >
+              <div>
                 <div
-                  className="auth-row"
+                  className="domain-field-row domain-row-border-default"
                 >
                   <div
                     className="domain-row-container"
@@ -1252,11 +1244,9 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                   </div>
                 </div>
               </div>
-              <div
-                className="row-container"
-              >
+              <div>
                 <div
-                  className="auth-row"
+                  className="domain-field-row domain-row-border-default"
                 >
                   <div
                     className="domain-row-container"
@@ -1363,11 +1353,9 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
             className="configurations__auth-tab"
           >
             <div>
-              <div
-                className="row-container"
-              >
+              <div>
                 <div
-                  className="auth-row"
+                  className="domain-field-row domain-row-border-default"
                 >
                   <div
                     className="domain-row-container"
@@ -1460,11 +1448,9 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
                   </div>
                 </div>
               </div>
-              <div
-                className="row-container"
-              >
+              <div>
                 <div
-                  className="auth-row"
+                  className="domain-field-row domain-row-border-default"
                 >
                   <div
                     className="domain-row-container"
