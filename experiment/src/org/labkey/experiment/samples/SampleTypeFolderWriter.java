@@ -35,6 +35,7 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
@@ -45,10 +46,10 @@ import org.labkey.folder.xml.FolderDocument;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -184,7 +185,7 @@ public class SampleTypeFolderWriter extends BaseFolderWriter
 
     private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo)
     {
-        List<ColumnInfo> columns = new ArrayList<>();
+        Set<ColumnInfo> columns = new LinkedHashSet<>();
         Set<PropertyStorageSpec> baseProps = tinfo.getDomainKind().getBaseProperties(tinfo.getDomain());
         Set<String> basePropNames = baseProps.stream()
                 .map(PropertyStorageSpec::getName)
@@ -235,10 +236,36 @@ public class SampleTypeFolderWriter extends BaseFolderWriter
             }
             else if ((col.isUserEditable() && !col.isHidden() && !col.isReadOnly()) || col.isKeyField())
             {
-                columns.add(col);
+                MutableColumnInfo wrappedCol = WrappedColumnInfo.wrap(col);
+                wrappedCol.setDisplayColumnFactory(colInfo -> new ExportDataColumn(colInfo));
+                columns.add(wrappedCol);
+
+                // If the column is MV enabled, export the data in the indicator column as well
+                if (col.isMvEnabled())
+                {
+                    ColumnInfo mvIndicator = tinfo.getColumn(col.getMvColumnName());
+                    if (null == mvIndicator)
+                        ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("MV indicator column not found: " + tinfo.getName() + "|" + col.getMvColumnName()));
+                    else
+                        columns.add(mvIndicator);
+                }
             }
         }
         return columns;
+    }
+
+    private static class ExportDataColumn extends DataColumn
+    {
+        private ExportDataColumn(ColumnInfo col)
+        {
+            super(col);
+        }
+
+        @Override
+        public Object getDisplayValue(RenderContext ctx)
+        {
+            return getValue(ctx);
+        }
     }
 
     public static class Factory implements FolderWriterFactory

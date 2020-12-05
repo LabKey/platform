@@ -12,9 +12,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.CompressedXarSource;
 import org.labkey.api.exp.XarSource;
-import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
@@ -102,7 +100,7 @@ public class SampleTypeFolderImporter implements FolderImporter
                     reader.parseAndLoad(false);
                 }
                 else
-                    ctx.getLogger().error("Could not find a xar file in the xar directory.");
+                    ctx.getLogger().info("No xar file to process.");
 
                 // process any sample type data files
                 UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), SamplesSchema.SCHEMA_NAME);

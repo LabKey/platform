@@ -29,6 +29,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
@@ -39,6 +40,7 @@ import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -47,6 +49,7 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataTable;
@@ -56,6 +59,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -91,6 +95,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static org.labkey.experiment.ExpDataIterators.NOT_FOR_UPDATE;
@@ -618,6 +623,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // NOTE: If not explicitly set, the first domain property will be chosen as the ID column.
         final List<DomainProperty> idCols = st.hasNameExpression() ? Collections.emptyList() : st.getIdCols();
 
+        Set<FieldKey> mvColumns = domain.getProperties().stream()
+                .filter(ImportAliasable::isMvEnabled)
+                .map(dp -> FieldKey.fromParts(dp.getPropertyDescriptor().getMvIndicatorStorageColumnName()))
+                .collect(Collectors.toSet());
+
         for (ColumnInfo dbColumn : dbTable.getColumns())
         {
             if (lsidColumn.getFieldKey().equals(dbColumn.getFieldKey()))
@@ -652,8 +662,28 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 {
                     visibleColumns.add(propColumn.getFieldKey());
                 }
+
+                if (propColumn.isMvEnabled())
+                {
+                    // The column in the physical table has a "_MVIndicator" suffix, but we want to expose
+                    // it with a "MVIndicator" suffix (no underscore)
+                    var mvColumn = new AliasedColumn(this, dp.getName() + MvColumn.MV_INDICATOR_SUFFIX,
+                            StorageProvisioner.getMvIndicatorColumn(dbTable, dp.getPropertyDescriptor(), "No MV column found for '" + dp.getName() + "' in sample type '" + getName() + "'"));
+                    mvColumn.setLabel(dp.getLabel() + " MV Indicator");
+                    mvColumn.setSqlTypeName("VARCHAR");
+                    mvColumn.setPropertyURI(dp.getPropertyURI());
+                    mvColumn.setNullable(true);
+                    mvColumn.setUserEditable(false);
+                    mvColumn.setHidden(true);
+                    mvColumn.setMvIndicatorColumn(true);
+
+                    addColumn(mvColumn);
+                    propColumn.setMvColumnName(FieldKey.fromParts(dp.getName() + MvColumn.MV_INDICATOR_SUFFIX));
+                }
             }
-            addColumn(propColumn);
+
+            if (!mvColumns.contains(propColumn.getFieldKey()))
+                addColumn(propColumn);
         }
 
         setDefaultVisibleColumns(visibleColumns);
