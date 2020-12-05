@@ -17,12 +17,15 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.IdentifiableBase;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.security.User;
+
+import java.util.Objects;
 
 /**
  * User: jeckels
@@ -31,6 +34,7 @@ import org.labkey.api.security.User;
 public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> extends ExpObjectImpl
 {
     protected Type _object;
+    protected String _prevLsid = null;
 
     // For serialization
     protected ExpIdentifiableBaseImpl() {}
@@ -64,6 +68,10 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
     public void setLSID(String lsid)
     {
         ensureUnlocked();
+        if (!Objects.equals(_object.getLSID(), lsid))
+        {
+            _prevLsid = _object.getLSID();
+        }
         _object.setLSID(lsid);
     }
 
@@ -127,8 +135,28 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
         }
         else
         {
-            _object = Table.update(user, table, _object, getRowId());
+            try (DbScope.Transaction tx = table.getSchema().getScope().ensureTransaction())
+            {
+                // Create a new exp.object if the LSID changed
+                if (_prevLsid != null && ensureObject)
+                {
+                    assert !Objects.equals(_prevLsid, getLSID());
+                    _objectId = OntologyManager.ensureObject(getContainer(), getLSID(), getParentObjectId());
+                    _object.DANGEROUS_setObjectId(_objectId);
+                }
+
+                _object = Table.update(user, table, _object, getRowId());
+
+                if (_prevLsid != null && ensureObject)
+                {
+                    OntologyManager.deleteOntologyObject(_prevLsid, getContainer(), true);
+                }
+
+                tx.commit();
+            }
         }
+
+        _prevLsid = null;
     }
 
     @Override
