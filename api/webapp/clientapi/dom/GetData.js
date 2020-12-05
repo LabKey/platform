@@ -3,11 +3,24 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-
+/**
+ * @namespace GetData static class to access javascript APIs related to our GetData API.
+ */
 LABKEY.Query.GetData = new function(impl) {
 
     /**
-     * Documentation specified in core/GetData.js -- search for "@name renderQueryWebPart"
+     * Used to render a queryWebPart around a response from GetData.
+     *
+     * @memberOf LABKEY.Query.GetData
+     * @function
+     * @static
+     * @name renderQueryWebPart
+     * @param {Object} config The config object for renderQueryWebpart is nearly identical to {@link LABKEY.Query.GetData.getRawData},
+     * except it has an additional parameter <strong><em>webPartConfig</em></strong>, which is a config object for
+     * {@link LABKEY.QueryWebPart}. Note that the Query returned from GetData is a read-only temporary query, so some
+     * features of QueryWebPart may be ignored (i.e. <em>showInsertButton</em>, <em>deleteURL</em>, etc.).
+     * @see LABKEY.QueryWebPart
+     * @see LABKEY.Query.GetData.getRawData
      */
     impl.renderQueryWebPart = function(config) {
         var jsonData = validateGetDataConfig(config);
