@@ -810,13 +810,12 @@
             }
 
             if (l.filterGroups) {
-                const scope = this;
-                let filterArray = [];
+                var filterArray = [];
                 Ext4.each(l.filterGroups, function (filterGroup) {
                     Ext4.each(filterGroup.filters, function (filter) {
-                        let columnName = filter.column;
-                        let value = filter.value;
-                        let operand = scope.getFilterType(filter.operator)
+                        var columnName = filter.column;
+                        var value = filter.value;
+                        var operand = LABKEY.Filter.getFilterTypeForURLSuffix(filter.operator)
 
                         filterArray.push(LABKEY.Filter.create(columnName, value, operand));
                     });
@@ -1043,108 +1042,6 @@
         resizeToViewport: function(extContainer, width, height, paddingX, paddingY, offsetX, offsetY)
         {
             LABKEY.ext4.Util.resizeToContainer.apply(this, arguments);
-        },
-
-        getFilterType: function (filterType) {
-            let filter;
-            switch (filterType) {
-                case 'eq':
-                    filter = LABKEY.Filter.Types.EQUAL;
-                    break;
-                case 'dateeq':
-                    filter = LABKEY.Filter.Types.DATE_EQUAL;
-                    break;
-                case 'dateneq':
-                    filter = LABKEY.Filter.Types.DATE_NOT_EQUAL;
-                    break;
-                case 'datelt':
-                    filter = LABKEY.Filter.Types.DATE_LESS_THAN;
-                    break;
-                case 'datelte':
-                    filter = LABKEY.Filter.Types.DATE_LESS_THAN_OR_EQUAL;
-                    break;
-                case 'dategt':
-                    filter = LABKEY.Filter.Types.DATE_GREATER_THAN;
-                    break;
-                case 'dategte':
-                    filter = LABKEY.Filter.Types.DATE_GREATER_THAN_OR_EQUAL;
-                    break;
-                case 'neqornull':
-                    filter = LABKEY.Filter.Types.NEQ_OR_NULL;
-                    break;
-                case 'isblank':
-                    filter = LABKEY.Filter.Types.ISBLANK;
-                    break;
-                case 'isnonblank':
-                    filter = LABKEY.Filter.Types.NONBLANK;
-                    break;
-                case 'gt':
-                    filter = LABKEY.Filter.Types.GT;
-                    break;
-                case 'lt':
-                    filter = LABKEY.Filter.Types.LT;
-                    break;
-                case 'gte':
-                    filter = LABKEY.Filter.Types.GREATER_THAN_OR_EQUAL;
-                    break;
-                case 'lte':
-                    filter = LABKEY.Filter.Types.LESS_THAN_OR_EQUAL;
-                    break;
-                case 'between':
-                    filter = LABKEY.Filter.Types.BETWEEN;
-                    break;
-                case 'notbetween':
-                    filter = LABKEY.Filter.Types.NOT_BETWEEN;
-                    break;
-                case 'contains':
-                    filter = LABKEY.Filter.Types.CONTAINS;
-                    break;
-                case 'doesnotcontain':
-                    filter = LABKEY.Filter.Types.DOES_NOT_CONTAIN;
-                    break;
-                case 'doesnotstartwith':
-                    filter = LABKEY.Filter.Types.DOES_NOT_START_WITH;
-                    break;
-                case 'startswith':
-                    filter = LABKEY.Filter.Types.STARTS_WITH;
-                    break;
-                case 'in':
-                    filter = LABKEY.Filter.Types.IN;
-                    break;
-                case 'hasmvvalue':
-                    filter = LABKEY.Filter.Types.HAS_MISSING_VALUE;
-                    break;
-                case 'nomvvalue':
-                    filter = LABKEY.Filter.Types.DOES_NOT_HAVE_MISSING_VALUE;
-                    break;
-                case 'notin':
-                    filter = LABKEY.Filter.Types.NOT_IN;
-                    break;
-                case 'notinornull':
-                    filter = LABKEY.Filter.Types.EQUAL;
-                    break;
-                case 'containsoneof':
-                    filter = LABKEY.Filter.Types.EQUALS_ONE_OF;
-                    break;
-                case 'containsnoneof':
-                    filter = LABKEY.Filter.Types.EQUALS_NONE_OF;
-                    break;
-                case 'memberof':
-                    filter = LABKEY.Filter.Types.MEMBER_OF;
-                    break;
-                case 'exp:childof':
-                    filter = LABKEY.Filter.Types.EXP_CHILD_OF;
-                    break;
-                case 'exp:parentof':
-                    filter = LABKEY.Filter.Types.EXP_PARENT_OF;
-                    break;
-                case 'q':
-                    filter = LABKEY.Filter.Types.Q;
-                    break;
-                default:
-                    filter = '';
-            }
-            return filter;
         }
     });
 }());
