@@ -820,7 +820,12 @@
                         filterArray.push(LABKEY.Filter.create(columnName, value, operand));
                     });
                 });
-                config.filterArray = filterArray;
+                if (config.filterArray) {
+                    config.filterArray.concat(filterArray)
+                }
+                else {
+                    config.filterArray = filterArray;
+                }
             }
 
             if (l.columns) {
