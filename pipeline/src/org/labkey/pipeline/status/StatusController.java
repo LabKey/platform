@@ -95,6 +95,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -476,6 +477,7 @@ public class StatusController extends SpringActionController
         public ActionURL showListUrl;
         public ActionURL showFolderUrl;
         public ActionURL dataUrl;
+        public Date modified;
         public StatusDetailsBean status;
     }
 
@@ -520,6 +522,7 @@ public class StatusController extends SpringActionController
             if (_statusFile.getJobStore() != null && (getUser().hasRootAdminPermission() || c.hasPermission(getUser(), UpdatePermission.class)))
                 bean.retryUrl = urlRetry(_statusFile);
 
+            bean.modified = _statusFile.getModified();
             bean.status = StatusDetailsBean.create(getContainer(), _statusFile, 0, 0);
 
             return new JspView<DetailsBean>("/org/labkey/pipeline/status/details.jsp", bean, errors);
