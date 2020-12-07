@@ -25,13 +25,14 @@ export default class DragAndDropPane extends PureComponent<Props> {
                 draggableId={authConfig.configuration.toString()}
                 index={index}
                 isDragDisabled={this.props.isDragDisabled}>
-                {provided => (
+                {(provided, snapshot) => (
                     <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
                         <AuthRow
                             index={index.toString()}
                             authConfig={authConfig}
                             canEdit={this.props.canEdit}
                             draggable={true}
+                            isDragging={snapshot.isDragging}
                             modalType={providers ? providers[authConfig.provider] : null }
                             configType={configType}
                             onDelete={() => onDelete(authConfig.configuration, configType)}

@@ -1,11 +1,6 @@
 @import "~@labkey/components/dist/assets/scss/theme";
 @import './restoreBootstrapInCore.scss';
 
-body {
-  margin: 0;
-  padding: 0;
-}
-
 .bold-text {
   font-weight: bold;
 }
@@ -63,38 +58,22 @@ body {
   margin-bottom: 18px;
 }
 
-.row-container {
-  padding-bottom: 20px;
-}
-
-.auth-row {
-  border: 1px solid #CCC;
-  margin: 0px;
-  box-shadow: inset 0 1px 3px 2px #F3F3F4;
-}
-
-.auth-row:hover .domain-row-handle {
-  color: #2980B9;
-}
-
-.auth-row:hover .deleteIcon {
-  color: #d9534f;
-}
-
-.auth-row:hover .editOrViewIcon {
-  color: #0176AC;
-}
-
 .deleteIcon {
   color: #999999;
+  &:hover {
+    color: #d9534f;
+  }
 }
 
 .editOrViewIcon {
   color: #999999;
+  &:hover {
+    color: #0176AC;
+  }
 }
 
-.auth-row__field {
-  margin-top: 5px;
+.domain-row-base-fields {
+  padding-top: 15px;
 }
 
 .auth-row__delete-modal {
