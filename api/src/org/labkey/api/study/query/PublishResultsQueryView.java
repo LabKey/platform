@@ -33,6 +33,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleDisplayColumn;
@@ -86,6 +87,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -1000,6 +1002,16 @@ public class PublishResultsQueryView extends ResultsQueryView
         ColumnInfo runIdCol = colInfos.get(runIdFieldKey);
         ColumnInfo assayVisitIDCol = colInfos.get(assayVisitIDFieldKey);
         ColumnInfo assayDateCol = colInfos.get(assayDateFieldKey);
+        if (assayDateCol == null)
+        {
+            // issue 41982 : look for an alternate date column if the standard assay date field does not exist
+            List<ColumnInfo> dateCols = selectColumns.stream()
+                    .filter(c -> JdbcType.TIMESTAMP.equals(c.getJdbcType()))
+                    .collect(Collectors.toList());
+
+            if (dateCols.size() == 1)
+                assayDateCol = dateCols.get(0);
+        }
         ColumnInfo specimenIDCol = colInfos.get(specimenIDFieldKey);
         ColumnInfo matchCol = colInfos.get(matchFieldKey);
         ColumnInfo specimenPTIDCol = colInfos.get(specimenPTIDFieldKey);
