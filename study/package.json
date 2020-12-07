@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/study/gen && rimraf resources/views/gen && rimraf resources/views/datasetDesigner*"
   },
   "dependencies": {
-    "@labkey/components": "1.2.0"
+    "@labkey/components": "1.7.0"
   },
   "devDependencies": {
     "@labkey/build": "0.4.0"

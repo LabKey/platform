@@ -28,6 +28,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HasHttpRequest;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
@@ -49,7 +50,7 @@ import static java.util.Collections.emptyMap;
  * User: brittp
  * Date: Jul 11, 2007
 */
-public interface AssayRunUploadContext<ProviderType extends AssayProvider> extends ContainerUser
+public interface AssayRunUploadContext<ProviderType extends AssayProvider> extends ContainerUser, HasHttpRequest
 {
     @NotNull
     ExpProtocol getProtocol();
