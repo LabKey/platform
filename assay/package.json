@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/views/*.*"
   },
   "dependencies": {
-    "@labkey/components": "1.5.1-fb-fieldEditorRowStyling.2"
+    "@labkey/components": "1.6.0-fb-fieldEditorRowStyling.0"
   },
   "devDependencies": {
     "@labkey/build": "0.4.0"
