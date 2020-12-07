@@ -142,7 +142,7 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
                 {
                     assert !Objects.equals(_prevLsid, getLSID());
                     _objectId = OntologyManager.ensureObject(getContainer(), getLSID(), getParentObjectId());
-                    _object.DANGEROUS_setObjectId(_objectId);
+                    _object.replaceExistingObjectId(_objectId);
                 }
 
                 _object = Table.update(user, table, _object, getRowId());
