@@ -3,7 +3,7 @@
 exports[`<AuthRow/> Editable 1`] = `
 <div>
   <div
-    className="domain-field-row domain-row-border-default"
+    className="auth-row domain-field-row domain-row-border-default"
   >
     <div
       className="domain-row-container"
@@ -142,7 +142,7 @@ exports[`<AuthRow/> Editable 1`] = `
 exports[`<AuthRow/> Non-draggable 1`] = `
 <div>
   <div
-    className="domain-field-row domain-row-border-default"
+    className="auth-row domain-field-row domain-row-border-default"
   >
     <div
       className="domain-row-container"
@@ -281,7 +281,7 @@ exports[`<AuthRow/> Non-draggable 1`] = `
 exports[`<AuthRow/> View-only 1`] = `
 <div>
   <div
-    className="domain-field-row domain-row-border-default"
+    className="auth-row domain-field-row domain-row-border-default"
   >
     <div
       className="domain-row-container"

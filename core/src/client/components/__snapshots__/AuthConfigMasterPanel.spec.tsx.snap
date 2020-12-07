@@ -832,7 +832,7 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
             <div>
               <div>
                 <div
-                  className="domain-field-row domain-row-border-default"
+                  className="auth-row domain-field-row domain-row-border-default"
                 >
                   <div
                     className="domain-row-container"
@@ -927,7 +927,7 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
               </div>
               <div>
                 <div
-                  className="domain-field-row domain-row-border-default"
+                  className="auth-row domain-field-row domain-row-border-default"
                 >
                   <div
                     className="domain-row-container"
@@ -1056,7 +1056,7 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
             <div>
               <div>
                 <div
-                  className="domain-field-row domain-row-border-default"
+                  className="auth-row domain-field-row domain-row-border-default"
                 >
                   <div
                     className="domain-row-container"
@@ -1151,7 +1151,7 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
               </div>
               <div>
                 <div
-                  className="domain-field-row domain-row-border-default"
+                  className="auth-row domain-field-row domain-row-border-default"
                 >
                   <div
                     className="domain-row-container"
@@ -1246,7 +1246,7 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
               </div>
               <div>
                 <div
-                  className="domain-field-row domain-row-border-default"
+                  className="auth-row domain-field-row domain-row-border-default"
                 >
                   <div
                     className="domain-row-container"
@@ -1355,7 +1355,7 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
             <div>
               <div>
                 <div
-                  className="domain-field-row domain-row-border-default"
+                  className="auth-row domain-field-row domain-row-border-default"
                 >
                   <div
                     className="domain-row-container"
@@ -1450,7 +1450,7 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
               </div>
               <div>
                 <div
-                  className="domain-field-row domain-row-border-default"
+                  className="auth-row domain-field-row domain-row-border-default"
                 >
                   <div
                     className="domain-row-container"
