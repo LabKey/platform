@@ -17,25 +17,11 @@
 package org.labkey.issue.query;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.ssl.SSLContextBuilder;
-import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheLoader;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObject;
@@ -95,10 +81,6 @@ import org.labkey.issue.model.IssuePage;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -886,12 +868,11 @@ class NotifyListDisplayColumn extends DataColumn
 }
 
 /**
- * Split the text block into parts and attempt to resolve the GitHub PR title based upon the link.
+ * Split the text block into parts and render a link to the pull request.
  */
 class PullRequestsDisplayColumn extends DataColumn
 {
     private static final Pattern GITHUB_HTTP_PR_URL = Pattern.compile("https://github.com/(?<org>[^/]*)/(?<project>[^/]*)/pull/(?<pullId>\\d*)");
-    private static final Cache<String, String> PUBLIC_PR_CACHE = CacheManager.getBlockingStringKeyCache(2000, 60*60*12, "GitHub Public PRs", new GitHubPublicPullRequestLoader());
 
     public PullRequestsDisplayColumn(ColumnInfo col)
     {
@@ -916,7 +897,7 @@ class PullRequestsDisplayColumn extends DataColumn
                 String url = split[i];
                 if (StringUtilsLabKey.startsWithURL(url))
                 {
-                    // get the pull request title if possible, fallback to just the URL
+                    // parse the pull request URL if possible, fallback to just the URL
                     String linkText = url;
                     String title = null;
                     if (url.startsWith("https://github.com/"))
@@ -931,7 +912,7 @@ class PullRequestsDisplayColumn extends DataColumn
                                 linkText = project + "#" + pullId;
                             else
                                 linkText = org + "/" + project + "#" + pullId;
-                            title = PUBLIC_PR_CACHE.get(url, parts, null);
+                            title = url;
                         }
                     }
 
@@ -958,10 +939,9 @@ class PullRequestsDisplayColumn extends DataColumn
         {
             String organization = m.group("org");
             String project = m.group("project");
-            int pullRequestId = -1;
             try
             {
-                pullRequestId = Integer.parseInt(m.group("pullId"));
+                int pullRequestId = Integer.parseInt(m.group("pullId"));
                 return Tuple3.of(organization, project, pullRequestId);
             }
             catch (NumberFormatException e)
@@ -974,98 +954,3 @@ class PullRequestsDisplayColumn extends DataColumn
     }
 }
 
-class GitHubPublicPullRequestLoader implements CacheLoader<String, String>
-{
-
-    // Attempt to fetch the pull request title given the pull request URL.
-    // If the URL fails to load, returns the URL itself to avoid reloading.
-    //
-    // CONSIDER: Use GitHubManager from harvest with per-user credentials to fetch private repo information
-    // CONSIDER: Use the github graphql API:
-    // query {
-    //  repository(owner: "LabKey", name: "platform") {
-    //    pullRequest(number: 1759) { id, title, bodyHTML }
-    //  }
-    //}
-    @Override
-    public String load(@NotNull String url, @Nullable Object arg)
-    {
-        assert url.startsWith("https://github.com");
-        Tuple3<String,String,Integer> parts = (Tuple3<String, String, Integer>)arg;
-
-        String organization = parts.first;
-        String project = parts.second;
-        int pullRequestId = parts.third;
-
-        HttpGet request = buildRequest(url, organization, project, pullRequestId);
-        if (request == null)
-            return url;
-
-        try
-        {
-            HttpClient client = buildClient();
-            HttpResponse response = client.execute(request);
-
-            int code = response.getStatusLine().getStatusCode();
-            if (code == HttpStatus.SC_OK)
-            {
-                String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-                var json = new JSONObject(body);
-                String title = json.optString("title", url);
-                IssuesTable.LOG.info("Fetched pull request title for '" + url + "': " + title);
-
-                // success!
-                return title;
-            }
-            else if (code == HttpStatus.SC_NOT_FOUND)
-            {
-                IssuesTable.LOG.warn("No permission or pull request for '" + url + "' not found");
-            }
-        }
-        catch (IOException e)
-        {
-            IssuesTable.LOG.warn("Failed to fetch pull request for '" + url + "': " + e.getMessage());
-        }
-        catch (JSONException e)
-        {
-            IssuesTable.LOG.warn("Failed to parse pull request JSON for '" + url + "': " + e.getMessage());
-        }
-
-        // fallback to just the URL so we don't attempt to fetch again
-        return url;
-    }
-
-    private HttpGet buildRequest(String url, String organization, String project, int pullRequestId)
-    {
-        try
-        {
-            URIBuilder uri = new URIBuilder("https://github.com/" + organization + "/" + project + "/issues/" + pullRequestId);
-            HttpGet request = new HttpGet(uri.build());
-            request.setHeader("Accept", "application/json");
-            request.setHeader("User-Agent", "LabKey Reporting");
-            return request;
-        }
-        catch (URISyntaxException e)
-        {
-            IssuesTable.LOG.warn("Failed to construct GitHub pull request URL for '" + url + "': " + e.getMessage());
-            return null;
-        }
-    }
-
-    private HttpClient buildClient()
-    {
-        HttpClientBuilder builder = HttpClientBuilder.create();
-        try
-        {
-            SSLContextBuilder sslContextBuilder = new SSLContextBuilder();
-            SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContextBuilder.build());
-            builder.setSSLSocketFactory(sslConnectionSocketFactory);
-        }
-        catch (NoSuchAlgorithmException | KeyManagementException e)
-        {
-            throw new RuntimeException(e);
-        }
-        return builder.build();
-    }
-
-}
