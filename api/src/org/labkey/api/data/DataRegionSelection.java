@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -57,14 +58,24 @@ public class DataRegionSelection
     public static final String DATA_REGION_SELECTION_KEY = "dataRegionSelectionKey";
     private static final Object lock = new Object();
 
+    // set/updated using query-setSnapshotSelection
+    // can be used to hold an arbitrary set of selections in session
+    // example usage: set an filtered set of selected values in session
+    public static final String SNAPSHOT_SELECTED_VALUES = ".snapshotSelectValues";
+
     private static Set<String> getSet(ViewContext context, @Nullable String key, boolean create)
+    {
+        return getSet(context, key, create, false);
+    }
+
+    private static Set<String> getSet(ViewContext context, @Nullable String key, boolean create, boolean useSnapshot)
     {
         if (key == null)
             key = getSelectionKeyFromRequest(context);
 
         if (key != null)
         {
-            key = context.getContainer().getPath() + key + SELECTED_VALUES;
+            key = context.getContainer().getPath() + key + (useSnapshot ? SNAPSHOT_SELECTED_VALUES : SELECTED_VALUES);
             HttpSession session = context.getRequest().getSession(false);
             if (session != null)
             {
@@ -175,6 +186,12 @@ public class DataRegionSelection
         return asInts(getSelected(context, key, clearSession));
     }
 
+    public static @NotNull Set<Integer> getSnapshotSelectedIntegers(ViewContext context, @Nullable String key)
+    {
+        Set<String> selected = getSet(context, key, false, true);
+        return asInts(selected == null ? new HashSet<>() : selected);
+    }
+
     private static @NotNull Set<Integer> asInts(Set<String> ids)
     {
         Set<Integer> result = new LinkedHashSet<>();
@@ -193,14 +210,18 @@ public class DataRegionSelection
         return result;
     }
 
-    /**
-     * Sets the checked state for the given ids in the session state.
-     */
     public static int setSelected(ViewContext context, String key, Collection<String> selection, boolean checked)
+    {
+        return setSelected(context, key, selection, checked, false);
+    }
+        /**
+         * Sets the checked state for the given ids in the session state.
+         */
+    public static int setSelected(ViewContext context, String key, Collection<String> selection, boolean checked, boolean useSnapshot)
     {
         synchronized (lock)
         {
-            Set<String> selectedValues = getSet(context, key, true);
+            Set<String> selectedValues = getSet(context, key, true, useSnapshot);
 
             if (checked)
                 selectedValues.addAll(selection);
@@ -212,12 +233,17 @@ public class DataRegionSelection
 
     private static void clearAll(HttpSession session, String path, String key)
     {
+        clearAll(session, path, key, false);
+    }
+
+    private static void clearAll(HttpSession session, String path, String key, boolean isSnapshot)
+    {
         assert key != null : "DataRegion selection key required";
         if (session == null)
             return;
         synchronized (lock)
         {
-            session.removeAttribute(path + key + SELECTED_VALUES);
+            session.removeAttribute(path + key + (isSnapshot ? SNAPSHOT_SELECTED_VALUES : SELECTED_VALUES));
         }
     }
 
@@ -237,13 +263,17 @@ public class DataRegionSelection
      */
     public static void clearAll(ViewContext context, @Nullable String key)
     {
+        clearAll(context, key, false);
+    }
+
+    public static void clearAll(ViewContext context, @Nullable String key, boolean isSnapshot)
+    {
         if (key == null)
             key = getSelectionKeyFromRequest(context);
         if (key != null)
             clearAll(context.getRequest().getSession(false),
-                context.getContainer().getPath(), key);
+                context.getContainer().getPath(), key, isSnapshot);
     }
-
 
     /**
      * Removes all selection state from the session for the key given by request parameter DATA_REGION_SELECTION_KEY.
