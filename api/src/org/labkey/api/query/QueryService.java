@@ -45,7 +45,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -473,11 +472,18 @@ public interface QueryService
     String cubeDataChangedAndRewarmCube(User user, Set<Container> containers, String schemaName, String configId, String cubeName);
     List<String> getRolapConfigIds(Container c);
 
+    interface Hierarchy
+    {
+        String getName();
+        String getTableName();
+        Map<String, String> getAnnotations();
+    }
+
     /**
-     * Returns a minimal amount of information about the specified cube dimension's hierarchies
-     * @return A Collection of Pair objects containing each hierarchy's name and primary table
+     * Returns information about the specified cube dimension's hierarchies
+     * @return A Collection of Hierarchy objects containing basic information about each hierarchy
      */
-    Collection<Pair<String, String>> getOlapHierarchies(String configId, Container c, String cubeName, String dimension);
+    Collection<Hierarchy> getOlapHierarchies(String configId, Container c, String cubeName, String dimension);
 
     void saveNamedSet(String setName, List<String> setList);
     void deleteNamedSet(String setName);
