@@ -1,4 +1,7 @@
-import org.labkey.gradle.util.BuildUtils
+
+plugins {
+    id 'org.labkey.build.module'
+}
 
 configurations {
    antlr
@@ -23,7 +26,6 @@ dependencies {
     implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
 }
 
-// TODO move resources files into resources directory to avoid this overlap
 sourceSets {
     main {
         resources {
