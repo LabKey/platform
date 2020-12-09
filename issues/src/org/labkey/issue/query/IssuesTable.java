@@ -902,7 +902,7 @@ class PullRequestsDisplayColumn extends DataColumn
                     String title = null;
                     if (url.startsWith("https://github.com/"))
                     {
-                        var parts = parseGithubUrl(url);
+                        var parts = parseGithubUrl(ctx, url);
                         if (parts != null)
                         {
                             String org = parts.first;
@@ -932,7 +932,7 @@ class PullRequestsDisplayColumn extends DataColumn
         }
     }
 
-    static @Nullable Tuple3<String,String,Integer> parseGithubUrl(String url)
+    static @Nullable Tuple3<String,String,Integer> parseGithubUrl(RenderContext ctx, String url)
     {
         Matcher m = GITHUB_HTTP_PR_URL.matcher(url);
         if (m.matches())
@@ -946,7 +946,13 @@ class PullRequestsDisplayColumn extends DataColumn
             }
             catch (NumberFormatException e)
             {
-                IssuesTable.LOG.warn("Failed to parse pull request ID: " + url);
+                // The issueId value can be null if it the column isn't included in the select for a custom query
+                @Nullable Integer issueId = ctx.get(FieldKey.fromParts("IssueId"), Integer.class);
+
+                StringBuilder sb = new StringBuilder("Failed to parse pull request url '" + url + "'");
+                if (issueId != null)
+                    sb.append(" for issue ").append(issueId);
+                IssuesTable.LOG.warn(sb.toString());
             }
         }
 
