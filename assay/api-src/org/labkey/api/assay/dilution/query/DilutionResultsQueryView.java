@@ -16,27 +16,24 @@
 package org.labkey.api.assay.dilution.query;
 
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
+import org.labkey.api.assay.query.ResultsQueryView;
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.MenuButton;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.assay.query.ResultsQueryView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -56,7 +53,7 @@ public abstract class DilutionResultsQueryView extends ResultsQueryView
     }
 
     public abstract ActionURL getGraphSelectedURL();
-    public abstract ActionURL getRunDetailsURL(Object runId);
+    public abstract ActionURL getRunDetailsURL();
 
     protected String getChartTitle(String propLabel)
     {
@@ -133,31 +130,12 @@ public abstract class DilutionResultsQueryView extends ResultsQueryView
         graphSelectedButton.setRequiresSelection(true);
         bbar.add(graphSelectedButton);
 
-        rgn.addDisplayColumn(0, new SimpleDisplayColumn()
-        {
-            @Override
-            public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-            {
-                Object runId = ctx.getRow().get(DilutionProviderSchema.RUN_ID_COLUMN_NAME);
-                if (runId != null)
-                {
-                    ActionURL url = getRunDetailsURL(runId);
-                    if (!_extraDetailsUrlParams.isEmpty())
-                        url.addParameters(_extraDetailsUrlParams);
+        ActionURL url = getRunDetailsURL();
+        if (!_extraDetailsUrlParams.isEmpty())
+            url.addParameters(_extraDetailsUrlParams);
+        DetailsURL detailsURL = new DetailsURL(url, Collections.singletonMap("rowId", "runId"));
+        rgn.addDisplayColumn(new DetailsColumn(detailsURL, view.getTable()));
 
-                    out.write(PageFlowUtil.link("run details").href(url).title("View run details").toString());
-                }
-            }
-
-            @Override
-            public void addQueryFieldKeys(Set<FieldKey> set)
-            {
-                super.addQueryFieldKeys(set);
-                ColumnInfo runIdColumn = getTable().getColumn(DilutionProviderSchema.RUN_ID_COLUMN_NAME);
-                if (runIdColumn != null)
-                    set.add(runIdColumn.getFieldKey());
-            }
-        });
         return view;
     }
 
