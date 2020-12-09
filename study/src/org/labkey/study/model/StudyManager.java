@@ -2824,7 +2824,7 @@ public class StudyManager
         if (!ds.canDeleteDefinition(user))
             throw new IllegalStateException("Can't delete dataset: " + ds.getName());
 
-        StorageProvisioner.drop(ds.getDomain());
+        StorageProvisioner.get().drop(ds.getDomain());
 
         if (ds.getTypeURI() != null)
         {
@@ -3905,7 +3905,7 @@ public class StudyManager
             }
             Domain domain = domainsMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI());
             domain.setPropertyIndices(datasetImportInfo.indices);
-            StorageProvisioner.addMissingRequiredIndices(domain);
+            StorageProvisioner.get().addMissingRequiredIndices(domain);
         }
     }
 
@@ -3920,7 +3920,7 @@ public class StudyManager
             }
             Domain domain = domainsMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI());
             domain.setPropertyIndices(datasetImportInfo.indices);
-            StorageProvisioner.dropNotRequiredIndices(domain);
+            StorageProvisioner.get().dropNotRequiredIndices(domain);
         }
     }
 

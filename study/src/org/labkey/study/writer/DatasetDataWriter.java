@@ -360,7 +360,7 @@ public class DatasetDataWriter implements InternalStudyWriter
         if (tinfo == null)
             return Collections.emptyList();
 
-        SchemaTableInfo schemaTableInfo = StorageProvisioner.getSchemaTableInfo(tinfo.getDomain());
+        SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(tinfo.getDomain());
         Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> allIndices = schemaTableInfo.getAllIndices();
         Collection<IndexInfo> outIndices = new LinkedHashSet<>(allIndices.size());
 

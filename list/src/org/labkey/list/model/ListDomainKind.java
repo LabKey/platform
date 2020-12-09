@@ -33,6 +33,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
+import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
@@ -103,7 +104,9 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 new PropertyStorageSpec("modified", JdbcType.TIMESTAMP),
                 new PropertyStorageSpec("modifiedBy", JdbcType.INTEGER),
                 new PropertyStorageSpec("lastIndexed", JdbcType.TIMESTAMP),
-                new PropertyStorageSpec("container", JdbcType.GUID).setNullable(false));
+                new PropertyStorageSpec("container", JdbcType.GUID).setNullable(false),
+                new PropertyStorageSpec(DataIntegrationService.Columns.TransformImportHash.getColumnName(), JdbcType.VARCHAR)
+                        .setNullable(true));
     }
 
     public void setListDefinition(ListDefinitionImpl list)
@@ -689,4 +692,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         return type.equals(getDefaultKeyType().getPropertyType());
     }
 
+    public void ensureBaseProperties(Domain d)
+    {
+        var props = getBaseProperties(d);
+    }
 }

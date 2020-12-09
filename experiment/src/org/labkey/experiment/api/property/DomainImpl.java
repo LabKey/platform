@@ -337,7 +337,7 @@ public class DomainImpl implements Domain
         {
             DefaultValueService.get().clearDefaultValues(getContainer(), this);
             OntologyManager.deleteDomain(getTypeURI(), getContainer());
-            StorageProvisioner.drop(this);
+            StorageProvisioner.get().drop(this);
             addAuditEvent(user, String.format("The domain %s was deleted", _dd.getName()));
             transaction.commit();
         }
@@ -592,7 +592,7 @@ public class DomainImpl implements Domain
             {
                 if (!propsDropped.isEmpty())
                 {
-                    StorageProvisioner.dropProperties(this, propsDropped);
+                    StorageProvisionerImpl.get().dropProperties(this, propsDropped);
                 }
             }
 
@@ -723,7 +723,7 @@ public class DomainImpl implements Domain
                 {
                     if (!propsAdded.isEmpty())
                     {
-                        StorageProvisioner.addProperties(this, propsAdded, allowAddBaseProperty);
+                        StorageProvisionerImpl.get().addProperties(this, propsAdded, allowAddBaseProperty);
                     }
                 }
 
@@ -731,7 +731,7 @@ public class DomainImpl implements Domain
                 // The domain may not have any non-base properties -- e.g. the "Study Specimens" SampleSets
                 if (!baseProperties.isEmpty())
                 {
-                    StorageProvisioner.ensureStorageTable(this, kind, exp.getSchema().getScope());
+                    StorageProvisioner.get().ensureStorageTable(this, kind, exp.getSchema().getScope());
                 }
             }
 

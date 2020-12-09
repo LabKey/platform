@@ -3,6 +3,7 @@ package org.labkey.api.dataiterator;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.Crypt;
 
@@ -17,8 +18,7 @@ public class HashDataIterator extends SimpleTranslator
 {
     // The row_number is special because of its index==0.  We don't have room for second special index so we'll use a special name.
     // We could use a crazy name like "/*~~DataLoader.InputRowHash~~" + GUID.makeHash()+"*/, but using TransformInputHash is easier
-    // NOTE: We don't have visibility to symbol DataIntegrationService.Columns.TransformImportHash
-    public static final String HASH_COLUMN_NAME = "diImportHash"; //"DataIntegrationService.Columns.TransformImportHash.getColumnName()";
+    public static final String HASH_COLUMN_NAME = DataIntegrationService.Columns.TransformImportHash.getColumnName();
     public enum Option { generateInputHash }
 
     final Supplier<Object> inputHashColumn;

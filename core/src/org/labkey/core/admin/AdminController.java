@@ -3895,7 +3895,7 @@ public class AdminController extends SpringActionController
 
                     LOG.info("Checking consistency of provisioned storage"); // Debugging test timeout
                     contentBuilder.append("\n<br/><br/>Checking Consistency of Provisioned Storage...\n");
-                    StorageProvisioner.ProvisioningReport pr = StorageProvisioner.getProvisioningReport();
+                    StorageProvisioner.ProvisioningReport pr = StorageProvisioner.get().getProvisioningReport();
                     contentBuilder.append(String.format("%d domains use Storage Provisioner", pr.getProvisionedDomains().size()));
                     for (StorageProvisioner.ProvisioningReport.DomainReport dr : pr.getProvisionedDomains())
                     {

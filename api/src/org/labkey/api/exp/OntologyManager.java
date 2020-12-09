@@ -1132,7 +1132,7 @@ public class OntologyManager
             Collection<DomainDescriptor> dds = new SqlSelector(getExpSchema(), selectSQL, c).getCollection(DomainDescriptor.class);
             for (DomainDescriptor dd : dds)
             {
-                StorageProvisioner.drop(PropertyService.get().getDomain(dd.getDomainId()));
+                StorageProvisioner.get().drop(PropertyService.get().getDomain(dd.getDomainId()));
             }
 
             String deletePropDomSqlPD = "DELETE FROM " + getTinfoPropertyDomain() + " WHERE PropertyId IN (SELECT PropertyId FROM " + getTinfoPropertyDescriptor() + " WHERE Container = ?)";

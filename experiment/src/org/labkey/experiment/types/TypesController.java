@@ -138,7 +138,7 @@ public class TypesController extends SpringActionController
         public ModelAndView getView(RepairForm form, boolean reshow, BindException errors)
         {
             validateCommand(form, errors);
-            StorageProvisioner.ProvisioningReport report = StorageProvisioner.getProvisioningReport(form.getDomainUri());
+            StorageProvisioner.ProvisioningReport report = StorageProvisioner.get().getProvisioningReport(form.getDomainUri());
             if (report.getProvisionedDomains().size() == 1)
                 form.report = report.getProvisionedDomains().iterator().next();
             return new JspView<>("/org/labkey/experiment/types/repair.jsp", form, errors);
@@ -157,7 +157,7 @@ public class TypesController extends SpringActionController
         @Override
         public boolean handlePost(RepairForm form, BindException errors)
         {
-            return StorageProvisioner.repairDomain(form.domain.getContainer(), form.getDomainUri(), errors);
+            return StorageProvisioner.get().repairDomain(form.domain.getContainer(), form.getDomainUri(), errors);
         }
 
         @Override

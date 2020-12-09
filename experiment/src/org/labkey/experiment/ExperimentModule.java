@@ -46,6 +46,7 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.FilterProtocolInputCriteria;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.ExperimentProperty;
@@ -91,6 +92,7 @@ import org.labkey.experiment.api.property.LookupValidator;
 import org.labkey.experiment.api.property.PropertyServiceImpl;
 import org.labkey.experiment.api.property.RangeValidator;
 import org.labkey.experiment.api.property.RegExValidator;
+import org.labkey.experiment.api.property.StorageProvisionerImpl;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.defaults.DefaultValueServiceImpl;
@@ -154,6 +156,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         SampleTypeService.setInstance(new SampleTypeServiceImpl());
         PropertyService.setInstance(new PropertyServiceImpl());
         DefaultValueService.setInstance(new DefaultValueServiceImpl());
+        StorageProvisioner.setInstance(StorageProvisionerImpl.get());
 
         ExperimentProperty.register();
         SamplesSchema.register(this);
@@ -524,6 +527,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             LineagePerfTest.class,
             LineageTest.class,
             OntologyManager.TestCase.class,
+            StorageProvisionerImpl.TestCase.class,
             UniqueValueCounterTestCase.class
         );
     }

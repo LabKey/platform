@@ -259,7 +259,6 @@ public class ApiModule extends CodeOnlyModule
             StandardDialectStringHandler.TestCase.class,
             StatementDataIterator.TestCase.class,
             StatementUtils.TestCase.class,
-            StorageProvisioner.TestCase.class,
             Table.DataIteratorTestCase.class,
             Table.TestCase.class,
             TableSelectorTestCase.class,

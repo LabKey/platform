@@ -1404,7 +1404,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
                 if (p.isMvEnabled())
                 {
-                    var baseColumn = StorageProvisioner.getMvIndicatorColumn(_storage, pd,
+                    var baseColumn = StorageProvisioner.get().getMvIndicatorColumn(_storage, pd,
                                                 "No MV column found for '" + col.getName() + "' in dataset '" + getName() + "'");
                     var mvColumn = newDatasetColumnInfo(this, baseColumn, p.getPropertyDescriptor().getPropertyURI());
                     mvColumn.setName(p.getName() + MvColumn.MV_INDICATOR_SUFFIX);
