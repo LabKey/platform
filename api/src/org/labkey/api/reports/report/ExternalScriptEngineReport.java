@@ -356,7 +356,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     protected Object runScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
         RConnectionHolder rh = null;
-        try (TransformSession session = SecurityManager.createTransformSession(context.getUser()))
+        try (TransformSession session = SecurityManager.createTransformSession(context))
         {
             Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir(context.getContainer().getId()).getAbsolutePath());

@@ -1,21 +1,17 @@
-/**
- * @fileOverview
- * @author <a href="https://www.labkey.org">LabKey</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
- * @license Copyright (c) 2012-2019 LabKey Corporation
- * <p/>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p/>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * <p/>
+/*
+ * Copyright (c) 2011-2020 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+var LABKEY = require("./init");
+LABKEY.ActionURL = require("./ActionURL").ActionURL;
+LABKEY.ExtAdapter = require("ExtAdapter").Adapter;
+
+LABKEY.ext = {
+    FormHelper: {
+        validate: function () { throw Error("Not yet implemented"); }
+    }
+};
 
  /**
   * @class LABKEY.Filter
@@ -766,62 +762,4 @@ LABKEY.Filter = new function()
     return ret;
 };
 
-/**
-* @name LABKEY.Filter.FilterDefinition
-* @description Static class that defines the functions that describe how a particular
-*            type of filter is identified and operates.  See {@link LABKEY.Filter}.
- *            <p>Additional Documentation:
- *              <ul>
- *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=filteringData">Filter via the LabKey UI</a></li>
- *              </ul>
- *           </p>
-* @class  Static class that defines the functions that describe how a particular
-*            type of filter is identified and operates.  See {@link LABKEY.Filter}.
- *            <p>Additional Documentation:
- *              <ul>
- *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=filteringData">Filter via the LabKey UI</a></li>
- *              </ul>
- *           </p>
-*/
-
-/**#@+
- * @methodOf LABKEY.Filter.FilterDefinition#
-*/
-
-/**
-* Get the string displayed for this filter.
-* @name getDisplayText
-* @type String
-*/
-
-/**
-* Get the more descriptive string displayed for this filter.  This is used in filter dialogs.
-* @name getLongDisplayText
-* @type String
-*/
-
-/**
-* Get the URL suffix used to identify this filter.
-* @name getURLSuffix
-* @type String
-*/
-
-/**
-* Get the Boolean that indicates whether a data value is required.
-* @name isDataValueRequired
-* @type Boolean
-*/
-
-/**
-* Get the Boolean that indicates whether the filter supports a string with multiple filter values (ie. contains one of, not in, etc).
-* @name isMultiValued
-* @type Boolean
-*/
-
-/**
-* Get the LABKEY.Filter.FilterDefinition the represents the opposite of this filter type.
-* @name getOpposite
-* @type LABKEY.Filter.FilterDefinition
-*/
-
-/**#@-*/
+exports.Filter = LABKEY.Filter;
