@@ -16,10 +16,120 @@
  * limitations under the License.
  * <p/>
  */
+
+/**
+ * @namespace Assay static class to retrieve read-only assay definitions.
+ * @see LABKEY.Experiment
+ */
 LABKEY.Assay = new function(impl) {
 
     /**
-     * Documentation specified in core/Assay.js -- search for "@name importRun"
+     * Create an assay run and import results.
+     * @memberOf LABKEY.Assay
+     * @function
+     * @name importRun
+     * @param {Object} config An object which contains the following configuration properties.
+     * @param {Number} config.assayId The assay protocol id.
+     * @param {String} [config.containerPath] The path to the container in which the assay run will be imported,
+     *       if different than the current container. If not supplied, the current container's path will be used.
+     * @param {String} [config.name] The name of a run to create. If not provided, the run will be given the same name as the uploaded file or "[Untitled]".
+     * @param {String} [config.comment] Run comments.
+     * @param {Object} [config.properties] JSON formatted run properties.
+     * @param {Number} [config.batchId] The id of an existing {LABKEY.Exp.RunGroup} to add this run into.
+     * @param {Object} [config.batchProperties] JSON formatted batch properties.
+     * Only used if batchId is not provided when creating a new batch.
+     * @param {String} [config.runFilePath] Absolute or relative path to assay data file to be imported.
+     * The file must exist under the file or pipeline root of the container.  Only one of 'files', 'runFilePath', or 'dataRows' can be provided.
+     * @param {Array} [config.files] Array of <a href='https://developer.mozilla.org/en-US/docs/DOM/File'><code>File</code></a> objects
+     * or form file input elements to import.  Only one of 'files', 'runFilePath', or 'dataRows' can be provided.
+     * @param {Array} [config.dataRows] Array of assay results to import.  Only one of 'files', 'runFilePath', or 'dataRows' can be provided.
+     * @param {Object} [config.plateMetadata] JSON formatted plate metadata contains properties to associate with well groups in the plate template run property.
+     * @param {Function} config.success The success callback function will be called with the following arguments:
+     * <ul>
+     *     <li><b>json</b>: The success response object contains two properties:
+     *         <ul>
+     *             <li><b>success</b>: true</li>
+     *             <li><b>successurl</b>: The url to browse the newly imported assay run.</li>
+     *             <li><b>assayId</b>: The assay id.</li>
+     *             <li><b>batchId</b>: The previously existing or newly created batch id.</li>
+     *             <li><b>runId</b>: The newly created run id.</li>
+     *         </ul>
+     *     </li>
+     *     <li><b>response</b>: The XMLHttpResponseObject used to submit the request.</li>
+     * </ul>
+     * @param {Function} config.failure The error callback function will be called with the following arguments:
+     * <ul>
+     *     <li><b>errorInfo:</b> an object describing the error with the following fields:
+     *         <ul>
+     *             <li><b>exception:</b> the exception message</li>
+     *             <li><b>exceptionClass:</b> the Java class of the exception thrown on the server</li>
+     *             <li><b>stackTrace:</b> the Java stack trace at the point when the exception occurred</li>
+     *         </ul>
+     *     </li>
+     * <li><b>response:</b> the XMLHttpResponseObject used to submit the request.</li>
+     *
+     * @example Import a file that has been previously uploaded to the server:
+     *         LABKEY.Assay.importRun({
+     *             assayId: 3,
+     *             name: "new run",
+     *             runFilePath: "assaydata/2017-05-10/datafile.tsv",
+     *             success: function (json, response) {
+     *                 window.location = json.successurl;
+     *             },
+     *             failure: error (json, response) {
+     *             }
+     *         });
+     *
+     * @example Import JSON array of data rows:
+     *         LABKEY.Assay.importRun({
+     *             assayId: 3,
+     *             name: "new run",
+     *             dataRows: [{
+     *                  sampleId: "S-1",
+     *                  dataField: 100
+     *             },{
+     *                  sampleId: "S-2",
+     *                  dataField: 200
+     *             }]
+     *             success: function (json, response) {
+     *                 window.location = json.successurl;
+     *             },
+     *             failure: error (json, response) {
+     *             }
+     *         });
+     *
+     * @example Here is an example of retrieving one or more File objects from a form <code>&lt;input&gt;</code>
+     * element and submitting them together to create a new run.
+     * &lt;input id='myfiles' type='file' multiple>
+     * &lt;a href='#' onclick='doSubmit()'>Submit&lt;/a>
+     * &lt;script>
+     *     function doSubmit() {
+     *         LABKEY.Assay.importRun({
+     *             assayId: 3,
+     *             name: "new run",
+     *             properties: {
+     *                 "Run Field": "value"
+     *             },
+     *             batchProperties: {
+     *                 "Batch Field": "value"
+     *             },
+     *             files: [ document.getElementById('myfiles') ],
+     *             success: function (json, response) {
+     *                 window.location = json.successurl;
+     *             },
+     *             failure: error (json, response) {
+     *             }
+     *         });
+     *     }
+     * &lt;/script>
+     *
+     * @example Alternatively, you may use an HTML form to submit the multipart/form-data without using the JavaScript API.
+     * &lt;form action='./assay.importRun.api' method='POST' enctype='multipart/form-data'>
+     *     &lt;input name='assayId' type='text' />
+     *     &lt;input name='name' type='text' />
+     *     &lt;input name='file' type='file' />
+     *     &lt;input name='submit' type='submit' />
+     * &lt;/form>
      */
     impl.importRun = function(config) {
         if (!window.FormData)

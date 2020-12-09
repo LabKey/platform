@@ -1,9 +1,10 @@
 import org.labkey.gradle.util.BuildUtils
 
-apply plugin: 'java'
-apply plugin: 'java-library'
-apply plugin: 'org.labkey.javaModule'
-apply plugin: 'org.labkey.xmlBeans'
+plugins {
+    id 'java-library'
+    id 'org.labkey.build.javaModule'
+    id 'org.labkey.build.xmlBeans'
+}
 
 List spring = [
         "org.springframework:spring-beans:${springVersion}",
@@ -149,8 +150,7 @@ dependencies {
     // always include labkey-client-api in the dependencies.txt file, whether that project is being built locally or not.
     creditable "org.labkey.api:labkey-client-api:${project.labkeyClientApiVersion}"
     creditable runtime
-    // TODO this would be best as a runtimeOnly dependency but currently those don't get copied to explodedModule/lib
-    external runtime
+    runtimeOnly runtime
 
     BuildUtils.addTomcatBuildDependencies(project, "implementation")
     // the following two libraries are required for compilation but we don't want extra ones in the classpath, so we exclude

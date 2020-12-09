@@ -66,8 +66,12 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.Link;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.Tuple3;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.Issue;
@@ -88,11 +92,13 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements UpdateableTableInfo
 {
-    private static final Logger LOG = LogManager.getLogger(IssuesTable.class);
+    static final Logger LOG = LogManager.getLogger(IssuesTable.class);
 
     private Set<Class<? extends Permission>> _allowablePermissions = new HashSet<>();
     private IssueListDef _issueDef;
@@ -274,6 +280,10 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
             {
                 extensionCol.setDisplayColumnFactory(colInfo -> new NotifyListDisplayColumn(colInfo, getUserSchema().getUser()));
             }
+            else if (colName.equalsIgnoreCase("PullRequests"))
+            {
+                extensionCol.setDisplayColumnFactory(PullRequestsDisplayColumn::new);
+            }
             cols.add(extensionCol);
 
             if (!baseProps.contains(colName))
@@ -302,7 +312,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
                         }
                     }
 
-                    if (pd.getPropertyType() == PropertyType.MULTI_LINE)
+                    if (pd.getPropertyType() == PropertyType.MULTI_LINE && col.getDisplayColumnFactory() == null)
                     {
                         ((BaseColumnInfo)col).setDisplayColumnFactory(colInfo -> {
                             DataColumn dc = new DataColumn(colInfo);
@@ -856,3 +866,97 @@ class NotifyListDisplayColumn extends DataColumn
         return null;
     }
 }
+
+/**
+ * Split the text block into parts and render a link to the pull request.
+ */
+class PullRequestsDisplayColumn extends DataColumn
+{
+    private static final Pattern GITHUB_HTTP_PR_URL = Pattern.compile("https://github.com/(?<org>[^/]*)/(?<project>[^/]*)/pull/(?<pullId>\\d*)");
+
+    public PullRequestsDisplayColumn(ColumnInfo col)
+    {
+        super(col);
+    }
+
+    @Override
+    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    {
+        Object o = getValue(ctx);
+        if (o != null)
+        {
+            String text = o.toString().trim();
+            String[] split = text.split("\\r\\n|\\s");
+            for (int i = 0, splitLength = split.length; i < splitLength; i++)
+            {
+                if (i > 0)
+                {
+                    out.write("<br>");
+                }
+
+                String url = split[i];
+                if (StringUtilsLabKey.startsWithURL(url))
+                {
+                    // parse the pull request URL if possible, fallback to just the URL
+                    String linkText = url;
+                    String title = null;
+                    if (url.startsWith("https://github.com/"))
+                    {
+                        var parts = parseGithubUrl(ctx, url);
+                        if (parts != null)
+                        {
+                            String org = parts.first;
+                            String project = parts.second;
+                            Integer pullId = parts.third;
+                            if (org.equalsIgnoreCase("LabKey"))
+                                linkText = project + "#" + pullId;
+                            else
+                                linkText = org + "/" + project + "#" + pullId;
+                            title = url;
+                        }
+                    }
+
+                    Link.LinkBuilder link = new Link.LinkBuilder(linkText)
+                            .href(url)
+                            .title(title)
+                            .clearClasses()
+                            .target("_blank")
+                            .rel("noopener noreferrer");
+                    link.build().appendTo(out);
+                }
+                else
+                {
+                    out.write(PageFlowUtil.filter(url));
+                }
+            }
+        }
+    }
+
+    static @Nullable Tuple3<String,String,Integer> parseGithubUrl(RenderContext ctx, String url)
+    {
+        Matcher m = GITHUB_HTTP_PR_URL.matcher(url);
+        if (m.matches())
+        {
+            String organization = m.group("org");
+            String project = m.group("project");
+            try
+            {
+                int pullRequestId = Integer.parseInt(m.group("pullId"));
+                return Tuple3.of(organization, project, pullRequestId);
+            }
+            catch (NumberFormatException e)
+            {
+                // The issueId value can be null if it the column isn't included in the select for a custom query
+                @Nullable Integer issueId = ctx.get(FieldKey.fromParts("IssueId"), Integer.class);
+
+                StringBuilder sb = new StringBuilder("Failed to parse pull request url '" + url + "'");
+                if (issueId != null)
+                    sb.append(" for issue ").append(issueId);
+                IssuesTable.LOG.warn(sb.toString());
+            }
+        }
+
+        return null;
+    }
+}
+

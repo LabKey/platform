@@ -1,21 +1,10 @@
-/**
- * @fileOverview
- * @author <a href="https://www.labkey.org">LabKey</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
- * @license Copyright (c) 2012-2016 LabKey Corporation
- * <p/>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p/>
- *     http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * <p/>
+/*
+ * Copyright (c) 2013-2020 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+var console = require("console");
+var LABKEY = require("./init");
 
 /**
  * @private
@@ -353,84 +342,4 @@ LABKEY.FieldKey.fromParts = function()
     return ret;
 };
 
-/** docs for inherited methods defined in private class QueryKey */
-
-/**
- * Get the unencoded QueryKey name.
- * @memberOf LABKEY.SchemaKey
- * @function
- * @name getName
- * @returns {string}
- */
-
-/**
- * Compares QueryKeys for equality.
- * @memberOf LABKEY.SchemaKey
- * @function
- * @name equals
- * @param {QueryKey} other
- * @returns {boolean} true if this QueryKey and the other are the same.
- */
-
-/**
- * Returns an Array of unencoded QueryKey parts.
- * @memberOf LABKEY.SchemaKey
- * @function
- * @name getParts
- * @returns {Array} Array of unencoded QueryKey parts.
- */
-
-/**
- * Returns the encoded QueryKey string as the JSON representation of a QueryKey.
- * Called by JSON.stringify().
- * @memberOf LABKEY.SchemaKey
- * @function
- * @name toJSON
- */
-
-/**
- * Returns a string suitable for display to the user.
- * @memberOf LABKEY.SchemaKey
- * @function
- * @name toDisplayString
- */
-
-/**
- * Get the unencoded QueryKey name.
- * @memberOf LABKEY.FieldKey
- * @function
- * @name getName
- * @returns {string}
- */
-
-/**
- * Compares QueryKeys for equality.
- * @memberOf LABKEY.FieldKey
- * @function
- * @name equals
- * @param {QueryKey} other
- * @returns {boolean} true if this QueryKey and the other are the same.
- */
-
-/**
- * Returns an Array of unencoded QueryKey parts.
- * @memberOf LABKEY.FieldKey
- * @function
- * @name getParts
- * @returns {Array} Array of unencoded QueryKey parts.
- */
-
-/**
- * Returns the encoded QueryKey string as the JSON representation of a QueryKey.
- * Called by JSON.stringify().
- * @memberOf LABKEY.FieldKey
- * @function
- * @name toJSON
- */
-
-/**
- * Returns a string suitable for display to the user.
- * @memberOf LABKEY.FieldKey
- * @function
- * @name toDisplayString
- */
+exports.FieldKey = LABKEY.FieldKey;
