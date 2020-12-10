@@ -1,0 +1,910 @@
+/*
+ * Copyright (c) 2011-2020 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
+var LABKEY = require("./init");
+LABKEY.ActionURL = require("./ActionURL").ActionURL;
+LABKEY.ExtAdapter = require("ExtAdapter").Adapter;
+
+var console = console || {warn : function(){}};
+
+/**
+ * @namespace Utils static class to provide miscellaneous utility functions.
+ */
+LABKEY.Utils = new function()
+{
+    // Private array of chars to use for UUID generation
+    var CHARS = '0123456789abcdefghijklmnopqrstuvwxyz'.split('');
+    var idSeed = 100;
+
+    //When using Ext dateFields you can use DATEALTFORMATS for the altFormat: config option.
+    var DATEALTFORMATS_Either =
+            'j-M-y g:i a|j-M-Y g:i a|j-M-y G:i|j-M-Y G:i|' +
+            'j-M-y|j-M-Y|' +
+            'Y-n-d H:i:s|Y-n-d|' +
+            'Y/n/d H:i:s|Y/n/d|' +
+            'j M Y G:i:s O|' +  // 10 Sep 2009 11:24:12 -0700
+            'j M Y H:i:s|c';
+    var DATEALTFORMATS_MonthDay =
+            'n/j/y g:i:s a|n/j/Y g:i:s a|n/j/y G:i:s|n/j/Y G:i:s|' +
+            'n-j-y g:i:s a|n-j-Y g:i:s a|n-j-y G:i:s|n-j-Y G:i:s|' +
+            'n/j/y g:i a|n/j/Y g:i a|n/j/y G:i|n/j/Y G:i|' +
+            'n-j-y g:i a|n-j-Y g:i a|n-j-y G:i|n-j-Y G:i|' +
+            'n/j/y|n/j/Y|' +
+            'n-j-y|n-j-Y|' + DATEALTFORMATS_Either;
+    var DATEALTFORMATS_DayMonth =
+            'j/n/y g:i:s a|j/n/Y g:i:s a|j/n/y G:i:s|j/n/Y G:i:s|' +
+            'j-n-y g:i:s a|j-n-Y g:i:s a|j-n-y G:i:s|j-n-Y G:i:s|' +
+            'j/n/y g:i a|j/n/Y g:i a|j/n/y G:i|j/n/Y G:i|' +
+            'j-n-y g:i a|j-n-Y g:i a|j-n-y G:i|j-n-Y G:i|' +
+            'j/n/y|j/n/Y|' +
+            'j-n-y|j-n-Y|' +
+            'j-M-y|j-M-Y|' + DATEALTFORMATS_Either;
+
+    var DATETIMEFORMAT_WithMS = 'Y-m-d H:i:s.u'; //24 hr format with milliseconds
+
+    function isObject(v)
+    {
+        return typeof v == "object" && Object.prototype.toString.call(v) === '[object Object]';
+    }
+
+
+    function _copy(o, depth)
+    {
+        if (depth==0 || !isObject(o))
+            return o;
+        var copy = {};
+        for (var key in o)
+            copy[key] = _copy(o[key], depth-1);
+        return copy;
+    }
+
+
+    // like a general version of Ext.apply() or mootools.merge()
+    function _merge(to, from, overwrite, depth)
+    {
+        for (var key in from)
+        {
+            if (from.hasOwnProperty(key))
+            {
+                if (isObject(to[key]) && isObject(from[key]))
+                {
+                    _merge(to[key], from[key], overwrite, depth-1);
+                }
+                else if (undefined === to[key] || overwrite)
+                {
+                    to[key] = _copy(from[key], depth-1);
+                }
+            }
+        }
+    }
+
+    var isIE11 = !!window.MSInputMethodContext && !!document.documentMode;
+
+    /**
+     * Parses a date string returned from LabKey Server which should be in the format of: "yyyy-MM-dd HH:mm:ss.SSS"
+     * On IE 11 does not support this syntax view new Date(), while all other browsers that we support do (as of April
+     * 2019). This requires us to manually parse the date string and use the alternate Date constructor.
+     *
+     * @param dateString {String} a string in the format of: "yyyy-MM-dd HH:mm:ss.SSS"
+     * @returns {Date}
+     */
+    var parseDateStringIE11 = function (dateString) {
+        var parts = dateString.split(' ');
+        var dateParts = parts[0].split('-');
+        var year = parseInt(dateParts[0], 10);
+        var month = parseInt(dateParts[1], 10) - 1; // Months start at 0.
+        var day = parseInt(dateParts[2], 10);
+        var timeParts = parts[1].split(':');
+        var hour = parseInt(timeParts[0], 10);
+        var minute = parseInt(timeParts[1], 10);
+        var secondParts = timeParts[2].split('.');
+        var second = parseInt(secondParts[0], 10);
+        var millisecond = parseInt(secondParts[1], 10);
+        var values = [year, month, day, hour, minute, second, millisecond];
+
+        if (values.some(isNaN)) {
+            throw "Invalid date string";
+        }
+
+        return new Date(year, month, day, hour, minute, second, millisecond);
+    };
+
+    /** @scope LABKEY.Utils */
+    return {
+        /**
+        * Encodes the html passed in and converts it to a String so that it will not be interpreted as HTML
+        * by the browser. For example, if your input string was "&lt;p&gt;Hello&lt;/p&gt;" the output would be
+        * "&amp;lt;p&amp;gt;Hello&amp;lt;/p&amp;gt;". If you set an element's innerHTML property
+        * to this string, the HTML markup will be displayed as literal text rather than being
+        * interpreted as HTML. By default this function will return an empty string if a value
+        * of undefined or null is passed it. To prevent this default, you can pass in a second
+        * optional parameter value of true to retain the empty value's type.
+        *
+        * @param {String} html The HTML to encode and return as a String value. If the value of this parameter is null or undefined, an empty string will be returned by default.
+        * @param {boolean} retainEmptyValueTypes An optional boolean parameter indicating that the empty values (null and undefined) should be returned as is from this function.
+		* @return {String} The encoded HTML
+		*/
+        encodeHtml : function(html, retainEmptyValueTypes)
+        {
+            // Issue 39628: default to returning an empty string when this function is called with a value of undefined or null
+            if (html === undefined || html === null) {
+                return retainEmptyValueTypes ? html : '';
+            }
+
+            // https://stackoverflow.com/a/7124052
+            return String(html)
+                    .replace(/&/g, '&amp;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/\//g, '&#x2F;');
+        },
+
+        isArray: function(value) {
+            // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/isArray
+            return Object.prototype.toString.call(value) === "[object Array]";
+        },
+
+        isDate: function(value) {
+            return Object.prototype.toString.call(value) === '[object Date]';
+        },
+
+        isNumber: function(value) {
+            return typeof value === 'number' && isFinite(value);
+        },
+
+        isDefined: function(value) {
+            return typeof value !== 'undefined';
+        },
+
+        isFunction: function(value) {
+            // http://stackoverflow.com/questions/5999998/how-can-i-check-if-a-javascript-variable-is-function-type
+            var getType = {};
+            return value !== null && value !== undefined && getType.toString.call(value) === '[object Function]';
+        },
+
+        isObject: isObject,
+
+        /**
+         * Returns date formats for use in an Ext.form.DateField. Useful when using a DateField in an Ext object,
+         * it contains a very large set of date formats, which helps make a DateField more robust. For example, a
+         * user would be allowed to enter dates like 6/1/2011, 06/01/2011, 6/1/11, etc.
+         */
+        getDateAltFormats : function()
+        {
+            return LABKEY.useMDYDateParsing ? DATEALTFORMATS_MonthDay : DATEALTFORMATS_DayMonth;
+        },
+
+        /**
+         * Returns date format with timestamp including milliseconds. Useful for parsing the date in "yyyy-MM-dd HH:mm:ss.SSS" format
+         * as returned by DateUtil.getJsonDateTimeFormatString().
+         * ex. Ext4.Date.parse("2019-02-15 17:15:10.123", 'Y-m-d H:i:s.u')
+         */
+        getDateTimeFormatWithMS : function()
+        {
+            return DATETIMEFORMAT_WithMS;
+        },
+
+        displayAjaxErrorResponse: function() {
+            console.warn('displayAjaxErrorResponse: This is just a stub implementation, request the dom version of the client API : clientapi_dom.lib.xml to get the concrete implementation');
+        },
+
+        /**
+         * Generates a display string from the response to an error from an AJAX request
+         * @private
+         * @ignore
+         * @param {XMLHttpRequest} responseObj The XMLHttpRequest object containing the response data.
+         * @param {Error} [exceptionObj] A JavaScript Error object caught by the calling code.
+         * @param {Object} [config] An object with additional configuration properties.  It supports the following:
+         * <li>msgPrefix: A string that will be used as a prefix in the error message.  Default to: 'An error occurred trying to load'</li>
+         * <li>showExceptionClass: A boolean flag to display the java class of the exception.</li>
+         */
+        getMsgFromError: function(responseObj, exceptionObj, config){
+            config = config || {};
+            var error;
+            var prefix = config.msgPrefix || 'An error occurred trying to load:\n';
+
+            if (responseObj && responseObj.responseText && responseObj.getResponseHeader('Content-Type'))
+            {
+                var contentType = responseObj.getResponseHeader('Content-Type');
+                if (contentType.indexOf('application/json') >= 0)
+                {
+                    var jsonResponse = LABKEY.Utils.decode(responseObj.responseText);
+                    if (jsonResponse && jsonResponse.exception) {
+                        error = prefix + jsonResponse.exception;
+                        if (config.showExceptionClass)
+                            error += "\n(" + (jsonResponse.exceptionClass ? jsonResponse.exceptionClass : "Exception class unknown") + ")";
+                    }
+                }
+                else if (contentType.indexOf('text/html') >= 0 && jQuery)
+                {
+                    var html = jQuery(responseObj.responseText);
+                    var el = html.find('.exception-message');
+                    if (el && el.length === 1)
+                        error = prefix + el.text().trim();
+                }
+            }
+            if (!error)
+                error = prefix + "Status: " + responseObj.statusText + " (" + responseObj.status + ")";
+            if (exceptionObj && exceptionObj.message)
+                error += "\n" + exceptionObj.name + ": " + exceptionObj.message;
+
+            return error;
+        },
+
+        /**
+         * This method has been migrated to specific instances for both Ext 3.4.1 and Ext 4.2.1.
+         * For Ext 3.4.1 see LABKEY.ext.Utils.resizeToViewport
+         * For Ext 4.2.1 see LABKEY.ext4.Util.resizeToViewport
+         */
+        resizeToViewport : function()
+        {
+            console.warn('LABKEY.Utils.resizeToViewport has been migrated. See JavaScript API documentation for details.');
+        },
+
+        /**
+         * Returns a URL to the appropriate file icon image based on the specified file name.
+         * Note that file name can be a full path or just the file name and extension.
+         * If the file name does not include an extension, the URL for a generic image will be returned
+         * @param {String} fileName The file name.
+         * @return {String} The URL suitable for use in the src attribute of an img element.
+         */
+        getFileIconUrl : function(fileName) {
+            var idx = fileName.lastIndexOf(".");
+            var extension = (idx >= 0) ? fileName.substring(idx + 1) : "_generic";
+            return LABKEY.ActionURL.buildURL("core", "getAttachmentIcon", "", {extension: extension});
+        },
+
+        /**
+         * This is used internally by other class methods to automatically parse returned JSON
+         * and call another success function passing that parsed JSON.
+         * @param fn The callback function to wrap
+         * @param scope The scope for the callback function
+         * @param {boolean} [isErrorCallback=false] Set to true if the function is an error callback.  If true, and you do not provide a separate callback, alert will popup showing the error message
+         * @param {function} [responseTransformer] function to be invoked to transform the response object before invoking the primary callback function
+         */
+        getCallbackWrapper : function(fn, scope, isErrorCallback, responseTransformer) {
+            return function(response, options)
+            {
+                var json = response.responseJSON;
+                if (!json)
+                {
+                    //ensure response is JSON before trying to decode
+                    if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
+                            && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0){
+                        try {
+                            json = LABKEY.Utils.decode(response.responseText);
+                        }
+                        catch (error){
+                            //we still want to proceed even if we cannot decode the JSON
+                        }
+
+                    }
+
+                    response.responseJSON = json;
+                }
+
+                if (!json && isErrorCallback)
+                {
+                    json = {};
+                }
+
+                if (json && !json.exception && isErrorCallback)
+                {
+                    // Try to make sure we don't show an empty error message
+                    json.exception = (response && response.statusText ? response.statusText : "Communication failure.");
+                }
+
+                if (responseTransformer)
+                    json = responseTransformer.call(scope || this, json);
+
+                if (fn)
+                    fn.call(scope || this, json, response, options);
+                else if (isErrorCallback && response.status !== 0)
+                {
+                    // Don't show an error dialog if the user cancelled the request in the browser, like navigating
+                    // to another page
+                    LABKEY.Utils.alert("Error", json.exception);
+                }
+            };
+        },
+
+        /**
+         * Applies properties from the source object to the target object, translating
+         * the property names based on the translation map. The translation map should
+         * have an entry per property that you wish to rename when it is applied on
+         * the target object. The key should be the name of the property on the source object
+         * and the value should be the desired name on the target object. The value may
+         * also be set to null or false to prohibit that property from being applied.
+         * By default, this function will also apply all other properties on the source
+         * object that are not listed in the translation map, but you can override this
+         * by supplying false for the applyOthers parameter.
+         * @param target The target object
+         * @param source The source object
+         * @param translationMap A map listing property name translations
+         * @param applyOthers Set to false to prohibit application of properties
+         * not explicitly mentioned in the translation map.
+         * @param applyFunctions Set to false to prohibit application of properties
+         * that are functions
+         */
+        applyTranslated : function(target, source, translationMap, applyOthers, applyFunctions)
+        {
+            if (undefined === target)
+                target = {};
+            if (undefined === applyOthers)
+                applyOthers = true;
+            if (undefined == applyFunctions && applyOthers)
+                applyFunctions = true;
+            var targetPropName;
+            for (var prop in source)
+            {
+                //special case: Ext adds a "constructor" property to every object, which we don't want to apply
+                if (prop == "constructor" || LABKEY.Utils.isFunction(prop))
+                    continue;
+                
+                targetPropName = translationMap[prop];
+                if (targetPropName)
+                    target[translationMap[prop]] = source[prop];
+                else if (undefined === targetPropName && applyOthers && (applyFunctions || !LABKEY.Utils.isFunction(source[prop])))
+                    target[prop] = source[prop];
+            }
+        },
+
+        /**
+         * Sets a client-side cookie.  Useful for saving non-essential state to provide a better
+         * user experience.  Note that some browser settings may prevent cookies from being saved,
+         * and users can clear browser cookies at any time, so cookies are not a substitute for
+         * database persistence.
+         * @param {String} name The name of the cookie to be saved.
+         * @param {String} value The value of the cookie to be saved.
+         * @param {Boolean} pageonly Whether this cookie should be scoped to the entire site, or just this page.
+         * Page scoping considers the entire URL without parameters; all URL contents after the '?' are ignored.
+         * @param {int} days The number of days the cookie should be saved on the client.
+         */
+        setCookie : function(name, value, pageonly, days) {
+            var expires;
+            if (days)
+            {
+                var date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toGMTString();
+            }
+            else
+                expires = "";
+            var path = "/";
+            if (pageonly)
+                path = location.pathname.substring(0, location.pathname.lastIndexOf('/'));
+            document.cookie = name + "=" + value + expires + "; path=" + path;
+
+            if (name === "email" && window.location.href.toLowerCase().startsWith("https")) {
+                document.cookie = name + "=" + value + "; secure";
+            }
+        },
+
+        /**
+         * Retrieves a cookie.  Useful for retrieving non-essential state to provide a better
+         * user experience.  Note that some browser settings may prevent cookies from being saved,
+         * and users can clear browser cookies at any time, so previously saved cookies should not be assumed
+         * to be available.
+         * @param {String} name The name of the cookie to be retrieved.
+         * @param {String} defaultvalue The value to be returned if no cookie with the specified name is found on the client.
+         */
+        getCookie : function(name, defaultvalue) {
+            var nameEQ = name + "=";
+            var ca = document.cookie.split(';');
+            for (var i=0; i < ca.length; i++)
+            {
+                var c = ca[i];
+                while (c.charAt(0) == ' ')
+                    c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) == 0)
+                    return c.substring(nameEQ.length, c.length);
+            }
+            return defaultvalue;
+        },
+
+        /**
+         * Retrieves the current LabKey Server session ID. Note that this may only be made available when the
+         * session ID cookie is marked as httpOnly = false.
+         * @returns {String} sessionid The current session id. Defaults to ''.
+         * @see {@link https://www.owasp.org/index.php/HttpOnly|OWASP HttpOnly}
+         * @see {@link https://tomcat.apache.org/tomcat-7.0-doc/config/context.html#Common_Attributes|Tomcat Attributes}
+         */
+        getSessionID : function()
+        {
+            return LABKEY.Utils.getCookie('JSESSIONID', '');
+        },
+
+        /**
+         * Deletes a cookie.  Note that 'name' and 'pageonly' should be exactly the same as when the cookie
+         * was set.
+         * @param {String} name The name of the cookie to be deleted.
+         * @param {Boolean} pageonly Whether the cookie is scoped to the entire site, or just this page.
+         * Deleting a site-level cookie has no impact on page-level cookies, and deleting page-level cookies
+         * has no impact on site-level cookies, even if the cookies have the same name.
+         */
+        deleteCookie : function (name, pageonly)
+        {
+            LABKEY.Utils.setCookie(name, "", pageonly, -1);
+        },
+
+        /**
+         * Loads JavaScript file(s) from the server.
+         * @function
+         * @param {(string|string[])} file - A file or Array of files to load.
+         * @param {Function} [callback] - Callback for when all dependencies are loaded.
+         * @param {Object} [scope] - Scope of callback.
+         * @param {boolean} [inOrder=false] - True to load the scripts in the order they are passed in. Default is false.
+         * @example
+         &lt;script type="text/javascript"&gt;
+         LABKEY.requiresScript("myModule/myScript.js", true, function() {
+                    // your script is loaded
+                });
+         &lt;/script&gt;
+         */
+        requiresScript : function(file, callback, scope, inOrder)
+        {
+            LABKEY.requiresScript.apply(this, arguments);
+        },
+
+        /**
+         * Includes a Cascading Style Sheet (CSS) file into the page. If the file was already included by some other code, this
+         * function will simply ignore the call. This may be used to include CSS files defined in your module's web/ directory.
+         * @param {String} filePath The path to the script file to include. This path should be relative to the web application
+         * root. So for example, if you wanted to include a file in your module's web/mymodule/styles/ directory,
+         * the path would be "mymodule/styles/mystyles.css"
+         */
+        requiresCSS : function(filePath)
+        {
+            LABKEY.requiresCss(filePath);
+        },
+
+        /**
+         * Returns true if value ends with ending
+         * @param value the value to examine
+         * @param ending the ending to look for
+         */
+        endsWith : function(value, ending)
+        {
+            if (!value || !ending)
+                return false;
+            if (value.length < ending.length)
+                return false;
+            return value.substring(value.length - ending.length) == ending;
+        },
+
+        pluralBasic : function(count, singular)
+        {
+            return LABKEY.Utils.pluralize(count, singular, singular + 's');
+        },
+
+        pluralize : function(count, singular, plural)
+        {
+            return count.toLocaleString() + " " + (1 == count ? singular : plural);
+        },
+
+        /**
+         * Iteratively calls a tester function you provide, calling another callback function once the
+         * tester function returns true. This function is useful for advanced JavaScript scenarios, such
+         * as cases where you are including common script files dynamically using the requiresScript()
+         * method, and need to wait until classes defined in those files are parsed and ready for use.
+         *  
+         * @param {Object} config a configuration object with the following properties:
+         * @param {Function} config.testCallback A function that returns true or false. This will be called every
+         * ten milliseconds until it returns true or the maximum number of tests have been made.
+         * @param {Array} [config.testArguments] A array of arguments to pass to the testCallback function
+         * @param {Function} config.success The function to call when the testCallback returns true.
+         * @param {Array} [config.successArguments] A array of arguments to pass to the successCallback function
+         * @param {Object} [config.failure] A function to call when the testCallback throws an exception, or when
+         * the maximum number of tests have been made.
+         * @param {Array} [config.errorArguments] A array of arguments to pass to the errorCallback function
+         * @param {Object} [config.scope] A scope to use when calling any of the callback methods (defaults to this)
+         * @param {int} [config.maxTests] Maximum number of tests before the errorCallback is called (defaults to 1000).
+         *
+         * @example
+&lt;script&gt;
+    LABKEY.Utils.requiresScript("FileUploadField.js");
+    LABKEY.Utils.requiresCSS("FileUploadField.css");
+&lt;/script&gt;
+
+&lt;script&gt;
+    function tester()
+    {
+        return undefined != Ext.form.FileUploadField;
+    }
+
+    function onTrue(msg)
+    {
+        //this alert is merely to demonstrate the successArguments config property
+        alert(msg);
+
+        //use the file upload field...
+    }
+
+    function onFailure(msg)
+    {
+        alert("ERROR: " + msg);
+    }
+
+    LABKEY.Utils.onTrue({
+        testCallback: tester,
+        success: onTrue,
+        successArguments: ['FileUploadField is ready to use!'],
+        failure: onFailure,
+        maxTests: 100
+    });
+&lt;/script&gt;
+         */
+        onTrue : function(config) {
+            config.maxTests = config.maxTests || 1000;
+            try
+            {
+                if (config.testCallback.apply(config.scope || this, config.testArguments || []))
+                    LABKEY.Utils.getOnSuccess(config).apply(config.scope || this, config.successArguments || []);
+                else
+                {
+                    if (config.maxTests <= 0)
+                    {
+                        throw "Maximum number of tests reached!";
+                    }
+                    else
+                    {
+                        --config.maxTests;
+                        LABKEY.Utils.onTrue.defer(10, this, [config]);
+                    }
+                }
+            }
+            catch(e)
+            {
+                if (LABKEY.Utils.getOnFailure(config))
+                {
+                    LABKEY.Utils.getOnFailure(config).apply(config.scope || this, [e,config.errorArguments]);
+                }
+            }
+        },
+
+        ensureBoxVisible : function() {
+            console.warn('LABKEY.Utils.ensureBoxVisible has been migrated to the appropriate Ext scope. Consider LABKEY.ext.Utils.ensureBoxVisible or LABKEY.ext4.Util.ensureBoxVisible');
+        },
+
+        /**
+         * Will generate a unique id. If you provide a prefix, consider making it DOM safe so it can be used as
+         * an element id.
+         * @param {string} [prefix=lk-gen] - Optional prefix to start the identifier.
+         * @returns {*}
+         */
+        id : function(prefix) {
+            return (prefix || "lk-gen") + (++idSeed);
+        },
+
+        /**
+          * Returns a universally unique identifier, of the general form: "92329D39-6F5C-4520-ABFC-AAB64544E172"
+          * NOTE: Do not use this for DOM id's as it does not meet the requirements for DOM id specification.
+          * Based on original Math.uuid.js (v1.4)
+          * http://www.broofa.com
+          * mailto:robert@broofa.com
+          * Copyright (c) 2010 Robert Kieffer
+          * Dual licensed under the MIT and GPL licenses.
+        */
+        generateUUID : function() {
+            // First see if there are any server-generated UUIDs available to return
+            if (LABKEY && LABKEY.uuids && LABKEY.uuids.length > 0)
+            {
+                return LABKEY.uuids.pop();
+            }
+            // From the original Math.uuidFast implementation
+            var chars = CHARS, uuid = new Array(36), rnd = 0, r;
+            for (var i = 0; i < 36; i++)
+            {
+                if (i == 8 || i == 13 || i == 18 || i == 23)
+                {
+                    uuid[i] = '-';
+                }
+                else if (i == 14)
+                {
+                    uuid[i] = '4';
+                }
+                else
+                {
+                    if (rnd <= 0x02) rnd = 0x2000000 + (Math.random() * 0x1000000) | 0;
+                    r = rnd & 0xf;
+                    rnd = rnd >> 4;
+                    uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
+                }
+            }
+            return uuid.join('');
+        },
+
+        /**
+         * Returns a string containing a well-formed html anchor that will apply theme specific styling. The configuration
+         * takes any property value pair and places them on the anchor.
+         * @param {Object} config a configuration object that models html anchor properties:
+         * @param {String} config.href (required if config.onClick not specified) the reference the anchor will use.
+         * @param {String} config.onClick (required if config.href not specified) script called when the onClick event is fired by
+         * the anchor.
+         * @param {String} config.text text that is rendered inside the anchor element.
+         */
+        textLink : function(config)
+        {
+            if (config.href === undefined && !config.onClick === undefined)
+            {
+                throw "href AND/OR onClick required in call to LABKEY.Utils.textLink()";
+            }
+            var attrs = " ";
+            if (config)
+            {
+                for (var i in config)
+                {
+                    if (config.hasOwnProperty(i))
+                    {
+                        if (i.toString() != "text" && i.toString() != "class")
+                        {
+                            attrs += i.toString() + '=\"' + config[i] + '\" ';
+                        }
+                    }
+                }
+
+                return '<a class="labkey-text-link"' + attrs + '>' + (config.text != null ? config.text : "") + '</a>';
+            }
+            throw "Config object not found for textLink.";
+        },
+
+        /**
+         *
+         * Standard documented name for error callback arguments is "failure" but various other names have been employed in past.
+         * This function provides reverse compatibility by picking the failure callback argument out of a config object
+         * be it named failure, failureCallback or errorCallback.
+         *
+         * @param config
+         */
+        getOnFailure : function(config)
+        {
+            return config.failure || config.errorCallback || config.failureCallback;
+            // maybe it be desirable for this fall all the way back to returning LABKEY.Utils.displayAjaxErrorResponse?
+        },
+
+        /**
+         *
+         * Standard documented name for success callback arguments is "success" but various names have been employed in past.
+         * This function provides reverse compatibility by picking the success callback argument out of a config object,
+         * be it named success or successCallback.
+         *
+         * @param config
+         */
+        getOnSuccess : function(config)
+        {
+            return config.success || config.successCallback
+        },
+
+
+        /**
+         * Apply properties from b, c, ...  to a.  Properties of each subsequent
+         * object overwrites the previous.
+         *
+         * The first object is modified.
+         *
+         * Use merge({}, o) to create a deep copy of o.
+         */
+        merge : function(a, b, c)
+        {
+            var o = a;
+            for (var i=1 ; i<arguments.length ; i++)
+                _merge(o, arguments[i], true, 50);
+            return o;
+        },
+
+
+        /**
+         * Apply properties from b, c, ... to a.  Properties are not overwritten.
+         *
+         * The first object is modified.
+         */
+        mergeIf : function(a, b, c)
+        {
+            var o = arguments[0];
+            for (var i=1 ; i<arguments.length ; i++)
+                _merge(o, arguments[i], false, 50);
+            return o;
+        },
+
+        onError : function(error){
+            console.warn('onError: This is just a stub implementation, request the dom version of the client API : clientapi_dom.lib.xml to get the concrete implementation');
+        },
+
+        /**
+         * Returns true if the passed object is empty (ie. {}) and false if not.
+         *
+         * @param {Object} ob The object to test
+         * @return {Boolean} the result of the test
+        */
+        isEmptyObj : function(ob){
+           for (var i in ob){ return false;}
+           return true;
+        },
+
+        /**
+         * Rounds the passed number to the specified number of decimals
+         *
+         * @param {Number} input The number to round
+         * @param {Number} dec The number of decimal places to use
+         * @return {Number} The rounded number
+        */
+        roundNumber : function(input, dec){
+            return Math.round(input*Math.pow(10,dec))/Math.pow(10,dec);
+        },
+
+        /**
+         * Will pad the input string with zeros to the desired length.
+         *
+         * @param {Number/String} input The input string / number
+         * @param {Integer} length The desired length
+         * @param {String} padChar The character to use for padding.
+         * @return {String} The padded string
+        **/
+        padString : function(input, length, padChar){
+            if (typeof input != 'string')
+                input = input.toString();
+
+            var pd = '';
+            if (length > input.length){
+                for (var i=0; i < (length-input.length); i++){
+                    pd += padChar;
+                }
+            }
+            return pd + input;
+        },
+
+        /**
+         * Returns true if the arguments are case-insensitive equal.  Note: the method converts arguments to strings for the purposes of comparing numbers, which means that it will return odd behaviors with objects (ie. LABKEY.Utils.caseInsensitiveEquals({t: 3}, '[object Object]') returns true)
+         *
+         * @param {String/Number} a The first item to test
+         * @param {String/Number} b The second item to test
+         * @return {boolean} True if arguments are case-insensitive equal, false if not
+        */
+        caseInsensitiveEquals: function(a, b) {
+            return String(a).toLowerCase() == String(b).toLowerCase();
+        },
+
+        /**
+         * Tests whether the passed value can be used as boolean, using a loose definition.  Acceptable values for true are: 'true', 'yes', 1, 'on' or 't'.  Acceptable values for false are: 'false', 'no', 0, 'off' or 'f'.  Values are case-insensitive.
+         * @param value The value to test
+         */
+        isBoolean: function(value){
+            var upperVal = value.toString().toUpperCase();
+            if (upperVal == "TRUE" || value == "1" || upperVal == "Y" || upperVal == "YES" || upperVal == "ON" || upperVal == "T"
+                    || upperVal == "FALSE" || value == "0" || upperVal == "N" || upperVal == "NO" || upperVal == "OFF" || upperVal == "F"){
+                return true;
+            }
+        },
+
+        /**
+         * Returns true if the passed value is a string.
+         * @param {Object} value The value to test
+         * @return {Boolean}
+         */
+        isString: function(value) {
+            return typeof value === 'string';
+        },
+
+        /**
+         * Returns the string value with the first char capitalized.
+         * @param {String} value The string value to capitalize
+         * @return {String}
+         */
+        capitalize: function(value) {
+            if (value && LABKEY.Utils.isString(value) && value.length > 0) {
+                return value.charAt(0).toUpperCase() + value.substr(1);
+            }
+            return value;
+        },
+
+        onReady: function(config) {
+            console.warn('onReady: This is just a stub implementation, request the dom version of the client API : clientapi_dom.lib.xml to get the concrete implementation');
+            if (typeof config === "function") {
+                config();
+            }
+        },
+
+        /**
+         * Decodes (parses) a JSON string to an object.
+         *
+         * @param {String} data The JSON string
+         * @return {Object} The resulting object
+         */
+        decode : function(data) {
+            return JSON.parse(data + "");
+        },
+
+        /**
+         * Encodes an Object to a string.
+         *
+         * @param {Object} data the variable to encode.
+         * @return {String} The JSON string.
+         */
+        encode : function(data) {
+            return JSON.stringify(data);
+        },
+
+        /**
+         * Applies config properties to the specified object.
+         * @param object
+         * @param config
+         * @returns {*}
+         */
+        apply : function(object, config) {
+            var enumerables = ['hasOwnProperty', 'valueOf', 'isPrototypeOf', 'propertyIsEnumerable',
+                'toLocaleString', 'toString', 'constructor'];
+
+            if (object && config && typeof config === 'object') {
+                var i, j, k;
+
+                for (i in config) {
+                    object[i] = config[i];
+                }
+
+                if (enumerables) {
+                    for (j = enumerables.length; j--;) {
+                        k = enumerables[j];
+                        if (config.hasOwnProperty(k)) {
+                            object[k] = config[k];
+                        }
+                    }
+                }
+            }
+            return object;
+        },
+
+        /**
+         * Display an error dialog
+         * @param title
+         * @param msg
+         */
+        alert : function(title, msg) {
+            console.warn('alert: This is just a stub implementation, request the dom version of the client API : clientapi_dom.lib.xml to get the concrete implementation');
+            console.warn(title + ":", msg);
+        },
+
+
+        escapeRe : function(s) {
+            return s.replace(/([-.*+?\^${}()|\[\]\/\\])/g, "\\$1");
+        },
+
+        getMeasureAlias : function(measure, override) {
+            if (measure.alias && !override) {
+                return measure.alias;
+            }
+            else {
+                var alias = measure.schemaName + '_' + measure.queryName + '_' + measure.name;
+                return alias.replace(/\//g, '_');
+            }
+        },
+
+        /**
+         * Parses a date string returned from LabKey Server.
+         *
+         * @param dateString {String} a string in the format of: "yyyy-MM-dd HH:mm:ss.SSS"
+         * @returns {Date}
+         */
+        parseDateString: function (dateString) {
+            try {
+                if (isIE11) {
+                    // This method call can throw exceptions, either due to string split on undefined or if any of the
+                    // date or time parts are NaN after parseInt.
+                    return parseDateStringIE11(dateString);
+                } else {
+                    // Note: This is not actually the best way to parse a date in JS, browser vendors recommend using a
+                    // date parsing library of sorts. See more information at MDN:
+                    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/parse
+                    return new Date(dateString);
+                }
+            } catch (e) {
+                throw "Date string not in expected format. Expecting yyyy-MM-dd HH:mm:ss.SSS";
+            }
+        },
+    };
+};
+
+exports.Utils = LABKEY.Utils;

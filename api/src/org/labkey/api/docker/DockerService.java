@@ -161,6 +161,8 @@ public interface DockerService
         public final String user;       // initial command user
         public final String appArmorProfile;
 
+        public final List<String> capAdds;
+        public final List<String> capDrops;
         public final Map<String,String> environment;
         public final Map<String,String> hosts;
         public final Map<String,String> readOnlyVolumes; // image->host
@@ -177,14 +179,15 @@ public interface DockerService
                            @Nullable String commandUser, @Nullable String appArmor,
                            Map<String,String> roVolumes)
         {
-            this(name, port, mount, env, hosts, commandUser, appArmor, roVolumes, Collections.emptyMap());
+            this(name, port, mount, env, hosts, commandUser, appArmor, roVolumes, Collections.emptyMap(), Collections.emptyList(), Collections.emptyList());
         }
 
         public ImageConfig(String name, int port, String mount,
                    Map<String,String> env,
                    Map<String,String> hosts,
                    @Nullable String commandUser, @Nullable String appArmor,
-                   Map<String,String> roVolumes, Map<String,String> rwVolumes)
+                   Map<String,String> roVolumes, Map<String,String> rwVolumes,
+                   List<String> capAdds, List<String> capDrops)
         {
             this.imageName = name;
             this.httpPort = port;
@@ -195,6 +198,8 @@ public interface DockerService
             this.appArmorProfile = appArmor;
             this.readOnlyVolumes = Collections.unmodifiableMap(new HashMap<>(roVolumes));
             this.writableVolumes = Collections.unmodifiableMap(new HashMap<>(rwVolumes));
+            this.capAdds = List.copyOf(capAdds);
+            this.capDrops = List.copyOf(capDrops);
         }
 
         @Override
@@ -273,6 +278,10 @@ public interface DockerService
         {
             return null;
         }
+
+        ImageConfigBuilder setCapAdds(String... capAdds);
+
+        ImageConfigBuilder setCapDrops(String... capDrops);
 
         ImageConfig build();
     }

@@ -17,15 +17,6 @@ issues/node_modules
 # These files are copied to this location
 core/resources/scripts/Ext.js
 core/resources/scripts/Ext4.js
-core/resources/scripts/labkey/ActionURL.js
-core/resources/scripts/labkey/Ajax.js
-core/resources/scripts/labkey/FieldKey.js
-core/resources/scripts/labkey/Filter.js
-core/resources/scripts/labkey/Message.js
-core/resources/scripts/labkey/Query.js
-core/resources/scripts/labkey/Report.js
-core/resources/scripts/labkey/Security.js
-core/resources/scripts/labkey/Utils.js
 
 # Auto-generated files
 core/resources/web/core/css

@@ -17,7 +17,7 @@
         <script path="clientapi/dom/DataRegion.js"/>
     </library>
     <dependencies>
-        <dependency path="clientapi_core"/>
+        <dependency path="labkey_api_js"/>
         <dependency path="internal/jQuery"/>
     </dependencies>
 </libraries>

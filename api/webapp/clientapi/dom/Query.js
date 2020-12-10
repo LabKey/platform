@@ -20,7 +20,26 @@ LABKEY.Query = new function(impl, $) {
 
 
     /**
-     * Documentation specified in core/Query.js -- search for "@name exportSql"
+     * Execute arbitrary LabKey SQL and export the results to Excel or TSV. After this method is
+     * called, the user will be prompted to accept a file from the server, and most browsers will allow
+     * the user to either save it or open it in an appropriate application.
+     * For more information, see the
+     * <a href="https://www.labkey.org/Documentation/wiki-page.view?name=labkeySql">
+     * LabKey SQL Reference</a>.
+     *
+     * @memberOf LABKEY.Query
+     * @function
+     * @static
+     * @name exportSql
+     * @param config An object which contains the following configuration properties.
+     * @param {String} config.schemaName name of the schema to query.
+     * @param {String} config.sql The LabKey SQL to execute.
+     * @param {String} [config.format] The desired export format. May be either 'excel' or 'tsv'. Defaults to 'excel'.
+     * @param {String} [config.containerPath] The path to the container in which the schema and query are defined,
+     *       if different than the current container. If not supplied, the current container's path will be used.
+     * @param {String} [config.containerFilter] One of the values of {@link LABKEY.Query.containerFilter} that sets
+     *       the scope of this query. Defaults to containerFilter.current, and is interpreted relative to
+     *       config.containerPath.
      */
     impl.exportSql = function(config) {
 
@@ -311,7 +330,15 @@ LABKEY.Query = new function(impl, $) {
     }
 
     /**
-     * Documentation specified in core/Query.js -- search for "@name schemaSelectInput"
+     * Load the set of user visible schemas from the given container into a standard &lt;select&gt; input element.
+     *
+     * @memberOf LABKEY.Query
+     * @function
+     * @static
+     * @name schemaSelectInput
+     * @param config An object which contains the following configuration properties.
+     * @param {String} config.renderTo the id of the &lt;select&gt; input to load the LabKey queries into.
+     * @param {String} config.initValue the initial value to try and set the &lt;select&gt; element value after it loads.
      */
     impl.schemaSelectInput = function(config) {
         var SCHEMA_SELECT;
@@ -342,7 +369,19 @@ LABKEY.Query = new function(impl, $) {
     };
 
     /**
-     * Documentation specified in core/Query.js -- search for "@name querySelectInput"
+     * Load the set of queries from this container for a given schema into a standard &lt;select&gt; input. The config object
+     * must define which &lt;select&gt; input is for the schemas and which &lt;select&gt; input is for the queries. This function
+     * also then associates the two &lt;select&gt; inputs so that a selection change in the schema input will update the
+     * query input accordingly.
+     *
+     * @memberOf LABKEY.Query
+     * @function
+     * @static
+     * @name querySelectInput
+     * @param config An object which contains the following configuration properties.
+     * @param {String} config.renderTo the id of the &lt;select&gt; input to load the LabKey queries into.
+     * @param {String} config.schemaInputId the id of the &lt;select&gt; input to load the LabKey schemas into.
+     * @param {String} config.initValue the initial value to try and set the &lt;select&gt; element value after it loads.
      */
     impl.querySelectInput = function(config) {
         var SCHEMA_SELECT, QUERY_SELECT;
@@ -377,7 +416,20 @@ LABKEY.Query = new function(impl, $) {
     };
 
     /**
-     * Documentation specified in core/Query.js -- search for "@name columnSelectInput"
+     * Load the set of columns for a given schema/query into a standard &lt;select&gt; input. The config object
+     * must define the schemaName and queryName to be used to source the column listing.
+     *
+     * @memberOf LABKEY.Query
+     * @function
+     * @static
+     * @name columnSelectInput
+     * @param config An object which contains the following configuration properties.
+     * @param {String} config.renderTo the id of the &lt;select&gt; input to load the LabKey queries into. Required.
+     * @param {String} config.schemaName the name of the schema. Required.
+     * @param {String} config.queryName the name of the query. Required.
+     * @param {String} config.initValue the initial value to try and set the &lt;select&gt; element value after it loads. Optional.
+     * @param {String} config.filterFn a function to call to filter the column set (ex. by data type). Optional.
+     * @param {String} config.sortFn a function to call to sort the column set. Optional.
      */
     impl.columnSelectInput = function(config) {
         var COLUMN_SELECT;
@@ -452,7 +504,54 @@ LABKEY.Query = new function(impl, $) {
     };
 
     /**
-     * Documentation specified in core/Query.js -- search for "@name importData"
+     * Bulk import data rows into a table.
+     * One of 'text', 'path', 'moduleResource', or 'file' is required and cannot be combined.
+     *
+     * @memberOf LABKEY.Query
+     * @function
+     * @static
+     * @name importData
+     * @param {Object} config An object which contains the following configuration properties.
+     * @param {String} config.schemaName Name of a schema defined within the current container.
+     * @param {String} config.queryName Name of a query table associated with the chosen schema.
+     * @param {File} [config.file] A <a href='https://developer.mozilla.org/en-US/docs/DOM/File'><code>File</code></a> object or a file input element to upload to the server.
+     * @param {String} [config.text] Text to import.
+     * @param {String} [config.path] Path to resource under webdav tree. E.g. "/_webdav/MyProject/@files/data.tsv"
+     * @param {String} [config.module] Module name to use when resolving a module resource.
+     * @param {String} [config.moduleResource] A file resource within the module to import.
+     * @param {String} [config.importIdentity] When true, auto-increment key columns may be imported from the data.
+     * @param {String} [config.importLookupByAlternateKey] When true, lookup columns can be imported by their alternate keys instead of the primary key.
+     *          For example, if a column is a lookup to a SampleSet, the imported value can be the Sample's name since names must be unique within a SampleSet.
+     * @param {String} [config.insertOption] If IMPORT, rows will be inserted and an error will be given is existing rows are present in the table.
+     *          If MERGE, new rows will be inserted and existing rows will be merged.
+     * @param {Function} [config.success] Function called when the "importData" function executes successfully.
+     Will be called with the following arguments:
+     An object containing success and rowCount properties.
+     * @param {Function} [config.failure]  Function called importing data fails.
+     * @param {String} [config.containerPath] The container path in which the schema and query name are defined.
+     * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
+     *       generating a timeout error (defaults to 30000).
+     * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
+     * @returns {Mixed} In client-side scripts, this method will return a transaction id
+     * for the async request that can be used to cancel the request
+     * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+     * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
+     * @example Example, importing tsv data from a module: <pre name="code" class="javascript">
+     LABKEY.Query.importData({
+             schemaName: 'lists',
+             queryName: 'People',
+             // reference to &lt;input type='file' id='file'&gt;
+             file: document.getElementById('file')
+         },
+     });</pre>
+     * @example Example, importing tsv data from a module: <pre name="code" class="javascript">
+     LABKEY.Query.importData({
+             schemaName: 'lists',
+             queryName: 'People',
+             module: 'mymodule',
+             moduleResource: '/data/lists/People.tsv'
+         },
+     });</pre>
      */
     impl.importData = function(config) {
         if (!window.FormData) {
