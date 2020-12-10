@@ -30,6 +30,7 @@ import org.apache.logging.log4j.util.PropertiesUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.gwt.client.util.PropertyUtil;
@@ -204,7 +205,7 @@ abstract public class PipelineJob extends Job implements Serializable
             return getClass().getName() + "." + name();
         }
     }
-    
+
     /**
      * Implements a runnable to complete a part of the
      * processing associated with a particular <code>PipelineJob</code>. This is often the execution of an external tool,
@@ -279,7 +280,7 @@ abstract public class PipelineJob extends Job implements Serializable
     }
 
     /** Although having a null provider is legal, it is recommended that one be used
-     * so that it can respond to events as needed */ 
+     * so that it can respond to events as needed */
     public PipelineJob(@Nullable String provider, ViewBackgroundInfo info, @NotNull PipeRoot root)
     {
         _info = info;
@@ -340,7 +341,7 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         if (errors > 0)
             _activeTaskStatus = TaskStatus.error;
-        
+
         _errors = errors;
     }
 
@@ -379,7 +380,7 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         return setActiveTaskId(activeTaskId, true);
     }
-    
+
     public boolean setActiveTaskId(@Nullable TaskId activeTaskId, boolean updateStatus)
     {
         if (activeTaskId == null || !activeTaskId.equals(_activeTaskId))
@@ -412,7 +413,7 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         if (getActiveTaskId() == null)
             return null;
-        
+
         return PipelineJobService.get().getTaskFactory(getActiveTaskId());
     }
 
@@ -453,6 +454,25 @@ abstract public class PipelineJob extends Job implements Serializable
 
         return FileUtil.hasCloudScheme(_logFilePathName) ? FileUtil.stringToPath(getContainer(), _logFilePathName) : new File(FileUtil.createUri(_logFilePathName)).toPath();
     }
+
+    /** Finds a file name that hasn't been used yet, appending ".2", ".3", etc as needed */
+    public static File findUniqueLogFile(File primaryFile, String baseName)
+    {
+        // need to look in both the assay data and archived dirs for any unused log file names (issue 20987)
+        File fileLog = FT_LOG.newFile(primaryFile.getParentFile(), baseName);
+        File archivedDir = new File(primaryFile.getParentFile(), AssayFileWriter.ARCHIVED_DIR_NAME);
+        File fileLogArchived = FT_LOG.newFile(archivedDir, baseName);
+
+        int index = 1;
+        while (NetworkDrive.exists(fileLog) || NetworkDrive.exists(fileLogArchived))
+        {
+            fileLog = FT_LOG.newFile(primaryFile.getParentFile(), baseName + "." + (index));
+            fileLogArchived = FT_LOG.newFile(archivedDir, baseName + "." + (index++));
+        }
+
+        return fileLog;
+    }
+
 
     public LocalDirectory getLocalDirectory()
     {
@@ -574,7 +594,7 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         if (_settingStatus)
             return true;
-        
+
         _settingStatus = true;
         try
         {
@@ -651,7 +671,7 @@ abstract public class PipelineJob extends Job implements Serializable
     public boolean setQueue(PipelineQueue queue, String initialState)
     {
         restoreQueue(queue);
-        
+
         // Initialize the task pipeline
         TaskPipeline taskPipeline = getTaskPipeline();
         if (taskPipeline != null)
@@ -724,7 +744,7 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         if (inter.isInstance(this))
             return (T) this;
-        
+
         throw new UnsupportedOperationException("Job type " + getClass().getName() +
                 " does not implement " + inter.getName());
     }
@@ -868,7 +888,7 @@ abstract public class PipelineJob extends Job implements Serializable
             if (i == -1)
             {
                 error("Active task " + _activeTaskId + " not found in task pipeline.");
-                return false;                
+                return false;
             }
         }
 
@@ -881,7 +901,7 @@ abstract public class PipelineJob extends Job implements Serializable
                 // See if the job has already completed.
                 if (_activeTaskId == null)
                     return false;
-                
+
                 return findRunnableTask(progression, i + 1);
 
             case error:
@@ -900,7 +920,7 @@ abstract public class PipelineJob extends Job implements Serializable
                 // Run auto-retry, and retry if appropriate.
                 autoRetry();
                 return false;
-            
+
             case running:
             case cancelled:
             case cancelling:
@@ -1150,7 +1170,7 @@ abstract public class PipelineJob extends Job implements Serializable
             error(e.getMessage(), e);
         }
     }
-    
+
     private void join()
     {
         try
@@ -1181,7 +1201,7 @@ abstract public class PipelineJob extends Job implements Serializable
             throw new PipelineJobException("Could not create the " + outputFile + " file.", e);
         }
     }
-    
+
     public void runSubProcess(ProcessBuilder pb, File dirWork) throws PipelineJobException
     {
         runSubProcess(pb, dirWork, null, 0, false);
@@ -1668,7 +1688,7 @@ abstract public class PipelineJob extends Job implements Serializable
     /////////////////////////////////////////////////////////////////////////
     // Scheduling interface
     //      TODO: Figure out how these apply to the Enterprise Pipeline
-    
+
     protected boolean canInterrupt()
     {
         return false;
@@ -1717,7 +1737,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     /////////////////////////////////////////////////////////////////////////
     // JobRunner.Job interface
-    
+
     @Override
     public Object get() throws InterruptedException, ExecutionException
     {
