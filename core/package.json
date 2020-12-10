@@ -48,8 +48,8 @@
     }
   },
   "dependencies": {
-    "@labkey/api": "1.1.3-fb-better-docs.0",
-    "@labkey/components": "1.7.1-fb-better-docs.0",
+    "@labkey/api": "1.1.3",
+    "@labkey/components": "1.7.1",
     "@labkey/eslint-config-react": "0.0.8",
     "@labkey/themes": "1.0.1"
   },

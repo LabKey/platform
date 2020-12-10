@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/issues/gen && rimraf resources/views/gen && rimraf resources/views/*.*"
   },
   "dependencies": {
-    "@labkey/components": "1.7.1-fb-better-docs.0"
+    "@labkey/components": "1.7.1"
   },
   "devDependencies": {
     "@labkey/build": "0.4.0"
