@@ -234,15 +234,24 @@ public class NotificationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class GetUserNotificationsAction extends ReadOnlyApiAction<Object>
+    public class GetUserNotificationsAction extends ReadOnlyApiAction<NotificationsForm>
     {
         @Override
-        public ApiResponse execute(Object form, BindException errors)
+        public ApiResponse execute(NotificationsForm form, BindException errors)
         {
             NotificationService service = NotificationService.get();
 
             List<Map<String, Object>> notificationList = new ArrayList<>();
-            for (Notification notification : service.getNotificationsByUser(null, getUser().getUserId(), false))
+            Container container = form.getContainer() == null ? null : ContainerManager.getForId(form.getContainer());
+            List<Notification> notifications;
+            if (form.getType() == null)
+                notifications = service.getNotificationsByUser(container, getUser().getUserId(), false);
+            else
+            {
+                notifications = service.getNotificationsByTypeLabel(container, form.getType(), getUser().getUserId(), false);
+            }
+
+            for (Notification notification : notifications)
             {
                 Map<String, Object> notifPropMap = notification.asPropMap();
                 notifPropMap.put("CreatedBy", UserManager.getDisplayName((Integer)notifPropMap.get("CreatedBy"), getUser()));
@@ -255,6 +264,32 @@ public class NotificationController extends SpringActionController
             response.put("notifications", notificationList);
             response.put("success", true);
             return response;
+        }
+    }
+
+    public static class NotificationsForm
+    {
+        private String _container;
+        private String _type;
+
+        public String getContainer()
+        {
+            return _container;
+        }
+
+        public void setContainer(String container)
+        {
+            _container = container;
+        }
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        public void setType(String type)
+        {
+            _type = type;
         }
     }
 
