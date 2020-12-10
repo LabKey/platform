@@ -55,6 +55,7 @@ import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.SessionHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -659,16 +660,17 @@ public class ParticipantGroupManager
         return participantIdMap;
     }
 
-    public void setSessionParticipantGroup(Container c, User user, HttpServletRequest request, Integer groupRowId)
+    public void setSessionParticipantGroup(Container c, User user, HttpServletRequest request, Integer groupRowId, boolean showDataRegionMessage)
     {
         HttpSession session = request.getSession(true);
         if (session == null)
             return;
 
         session.setAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getRowId(), groupRowId);
+        session.setAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getRowId() + ".showMessage", showDataRegionMessage);
     }
 
-    public ParticipantGroup setSessionParticipantGroup(Container c, User user, HttpServletRequest request, ParticipantGroup group)
+    public ParticipantGroup setSessionParticipantGroup(Container c, User user, HttpServletRequest request, ParticipantGroup group, boolean showDataRegionMessage)
     {
         assert group.isSession();
         HttpSession session = request.getSession(true);
@@ -676,9 +678,16 @@ public class ParticipantGroupManager
             return null;
 
         session.setAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getRowId(), group);
+        session.setAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getRowId() + "showMessage", showDataRegionMessage);
         // don't MemTrack track this one, since it's going in session
         MemTracker.get().remove(group);
         return group;
+    }
+
+    public boolean getSessionParticipantGroupShowMessage(Container c, HttpServletRequest request)
+    {
+        Boolean b = (Boolean)SessionHelper.getAttribute(request, PARTICIPANT_GROUP_SESSION_KEY + c.getRowId() + "showMessage", false);
+        return b == Boolean.TRUE;
     }
 
     public ParticipantGroup getSessionParticipantGroup(Container c, User user, HttpServletRequest request)
@@ -703,6 +712,7 @@ public class ParticipantGroupManager
             return;
 
         session.removeAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getRowId());
+        session.removeAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getRowId() + ".showMessage");
     }
 
 
