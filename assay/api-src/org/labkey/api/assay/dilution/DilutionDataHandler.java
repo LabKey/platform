@@ -643,7 +643,8 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     @Override
     public void deleteData(ExpData data, Container container, User user)
     {
-        OntologyManager.deleteOntologyObject(data.getLSID(), container, true);
+        // delete owned objects and the object's properties, but leave the exp.object
+        OntologyManager.deleteOntologyObjects(container, true, true, false, data.getObjectId());
     }
 
     public String getPropertyName(String prefix, int cutoff, StatsService.CurveFitType type)

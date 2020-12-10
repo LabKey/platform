@@ -71,7 +71,7 @@
     properties.putAll(me.getModelBean().getPropertyMap());
 
     String containerTypes = properties.get("containerTypes");
-    String noun = !isBlank(containerTypes) && !"project".equals(containerTypes) ? "Subfolder" : "Project";
+    String noun = !isBlank(containerTypes) && !"project".equalsIgnoreCase(containerTypes) ? "Subfolder" : "Project";
     String containerPath = properties.get("containerPath");
 
     Container target;
@@ -79,7 +79,7 @@
     {
         hasPermission = true;
         target = getContainer();
-        if ("project".equals(containerTypes))
+        if ("project".equalsIgnoreCase(containerTypes))
             target = target.isRoot() ? ContainerManager.getHomeContainer() : target.getProject();
     }
     else
