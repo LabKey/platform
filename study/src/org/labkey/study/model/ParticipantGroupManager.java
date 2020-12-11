@@ -678,7 +678,8 @@ public class ParticipantGroupManager
             return null;
 
         session.setAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getRowId(), group);
-        session.setAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getRowId() + "showMessage", showDataRegionMessage);
+        session.setAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getRowId() + ".showMessage", showDataRegionMessage);
+
         // don't MemTrack track this one, since it's going in session
         MemTracker.get().remove(group);
         return group;
