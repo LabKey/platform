@@ -194,9 +194,13 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     }
 
     @Override
-    public List<Notification> getNotificationsByTypeLabel(Container container, @NotNull String typeLabel, int notifyUserId, boolean unreadOnly)
+    public List<Notification> getNotificationsByTypeLabel(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly)
     {
-        return getNotificationsByUserOrType(container, _labelTypesMap.get(typeLabel), notifyUserId, unreadOnly);
+        List<String> types = new ArrayList<>();
+        typeLabels.forEach(label -> {
+            types.addAll(_labelTypesMap.get(label));
+        });
+        return getNotificationsByUserOrType(container, types, notifyUserId, unreadOnly);
     }
 
     private List<Notification> getNotificationsByUserOrType(Container container, @Nullable List<String> types, int notifyUserId, boolean unreadOnly)
