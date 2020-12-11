@@ -3928,7 +3928,7 @@ public class ExperimentServiceImpl implements ExperimentService
             transaction.commit();
         }
 
-        if (null != assayService)
+        if (assayService != null)
             assayService.unindexAssays(Collections.unmodifiableCollection(expProtocols));
     }
 
