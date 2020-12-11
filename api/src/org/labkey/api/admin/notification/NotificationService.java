@@ -74,9 +74,9 @@ public interface NotificationService
     List<Notification> getNotificationsByType(Container container, @NotNull String type, int notifyUserId, boolean unreadOnly);
 
     /*
-     * Returns a list of notifications for a specific user based on the specified type label (e.g, 'Pipeline').
+     * Returns a list of notifications for a specific user based on the specified type labels (e.g, 'Pipeline').
      */
-    List<Notification> getNotificationsByTypeLabel(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly);
+    List<Notification> getNotificationsByTypeLabels(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly);
 
     /*
      * Returns a notification based on the notification's RowId.

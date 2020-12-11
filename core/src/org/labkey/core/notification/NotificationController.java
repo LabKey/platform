@@ -279,7 +279,7 @@ public class NotificationController extends SpringActionController
             if (form.getTypeLabels() == null || form.getTypeLabels().isEmpty())
                 notifications = service.getNotificationsByUser(container, getUser().getUserId(), false);
             else
-                notifications = service.getNotificationsByTypeLabel(container, form.getTypeLabels(), getUser().getUserId(), false);
+                notifications = service.getNotificationsByTypeLabels(container, form.getTypeLabels(), getUser().getUserId(), false);
 
             int i = 0;
             int unreadCount = 0;
