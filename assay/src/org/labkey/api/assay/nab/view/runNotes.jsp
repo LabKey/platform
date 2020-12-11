@@ -77,7 +77,7 @@
                 ActionURL deleteUrl = urlProvider(NabUrls.class).urlDeleteRun(c);
                 deleteUrl.addParameter("rowId", bean.getRunId());
     %>
-    <%= button("Delete Run").href(deleteUrl).onClick("return confirm('Permanently delete this run?')") %>
+    <%= button("Delete Run").href(deleteUrl).usePost("Permanently delete this run?") %>
     <%= button("Delete and Re-Import").href(rerunURL) %>
     <%
             }

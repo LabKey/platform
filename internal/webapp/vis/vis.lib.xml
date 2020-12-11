@@ -11,7 +11,7 @@
         <script path="/vis/src/plot.js"/>
     </library>
     <dependencies>
-        <dependency path="clientapi_core"/> <!-- MeasureStore.js requires LABKEY.Query -->
+        <dependency path="labkey_api_js"/> <!-- MeasureStore.js requires LABKEY.Query -->
         <dependency path="/vis/visDependencies"/>
     </dependencies>
 </libraries>

@@ -1,7 +1,9 @@
 import React, { PureComponent } from 'react';
+import classNames from 'classnames';
 import { Col, Modal, Button } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPencilAlt, faInfoCircle, faTimesCircle, faGripVertical, faCircle } from '@fortawesome/free-solid-svg-icons';
+import { faPencilAlt, faInfoCircle, faTimesCircle, faCircle } from '@fortawesome/free-solid-svg-icons';
+import { DragDropHandle } from "@labkey/components";
 
 import DynamicConfigurationModal from './DynamicConfigurationModal';
 import DatabaseConfigurationModal from './DatabaseConfigurationModal';
@@ -17,6 +19,7 @@ interface Props {
     onDelete?: Function;
     toggleModalOpen?: Function;
     updateAuthRowsAfterSave?: Function;
+    isDragging?: boolean;
 }
 
 interface State {
@@ -49,10 +52,13 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
             toggleModalOpen,
             updateAuthRowsAfterSave,
             onDelete,
+            isDragging,
         } = this.props;
         const isDatabaseAuth = authConfig.provider == 'Database';
 
-        const handle = draggable && canEdit ? <LightupHandle /> : null;
+        const handle = draggable && canEdit
+            ? <DragDropHandle highlighted={isDragging ? true : undefined /* use undefined instead of false to allow for css to handle the highlight color for hover*/}/>
+            : null;
 
         const enabledField = authConfig.enabled ? (
             <>
@@ -159,8 +165,8 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
         );
 
         return (
-            <div className="row-container">
-                <div className="auth-row">
+            <div>
+                <div className={classNames("auth-row domain-field-row domain-row-border-default", { "dragging": isDragging })}>
                     <div className="domain-row-container">
                         <div className="domain-row-handle">{handle}</div>
 
@@ -198,16 +204,6 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
                         </div>
                     </div>
                 </div>
-            </div>
-        );
-    }
-}
-
-class LightupHandle extends PureComponent {
-    render() {
-        return (
-            <div>
-                <FontAwesomeIcon size="lg" icon={faGripVertical} />
             </div>
         );
     }

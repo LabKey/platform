@@ -17,6 +17,7 @@ package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.HasPermission;
@@ -58,7 +59,7 @@ import java.util.Set;
  * User: matthewb
  * Date: Mar 20, 2005
  */
-public class ViewContext implements MessageSource, ContainerContext, ContainerUser, ApplicationContextAware, HasPermission
+public class ViewContext implements MessageSource, ContainerContext, ContainerUser, ApplicationContextAware, HasPermission, HasHttpRequest
 {
     private ApplicationContext _applicationContext;
     private HttpServletRequest _request;
@@ -211,6 +212,10 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
 
     // ===========================================
 
+    /**
+     * @return null if we're operating in a background thread, divorced from an in-process HTTP request
+     */
+    @Nullable
     public HttpServletRequest getRequest()
     {
         return _request;

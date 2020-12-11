@@ -38,6 +38,7 @@ import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.ViewServlet;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -117,7 +118,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                     FileUtil.deleteDirectoryContents(scriptDir);
 
                     // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage (i.e., TransformSession)
-                    try (TransformSession session = SecurityManager.createTransformSession(context.getUser()))
+                    try (TransformSession session = SecurityManager.createTransformSession(context))
                     {
                         Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
                         String script = sb.toString();
