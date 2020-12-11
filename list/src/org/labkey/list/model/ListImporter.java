@@ -16,6 +16,7 @@
 
 package org.labkey.list.model;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
@@ -196,6 +197,10 @@ public class ListImporter
                         var b = DataIntegrationService.get().createReimportBuilder(user, c, ti);
                         b.setSource(loader);
                         b.validate(batchErrors);
+                        if (deleteFromTarget)
+                            b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.DELETE,DataIntegrationService.ReimportOperations.UPDATE, DataIntegrationService.ReimportOperations.INSERT));
+                        else
+                            b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.UPDATE, DataIntegrationService.ReimportOperations.INSERT));
                         if (batchErrors.hasErrors())
                         {
                             batchErrors.clear();
@@ -204,6 +209,19 @@ public class ListImporter
                         else
                         {
                             b.execute(batchErrors);
+                            if (!batchErrors.hasErrors())
+                            {
+                                if (0 < b.getDeleted())
+                                    log.info("Deleted " + b.getDeleted() + " row(s) from list: " + def.getName());
+                                if (0 < b.getMerged())
+                                    log.info("Merged " + b.getMerged() + " row(s) into list: " + def.getName());
+                                if (0 < b.getUpdated())
+                                    log.info("Updated " + b.getUpdated() + " row(s) into list: " + def.getName());
+                                if (0 < b.getInserted())
+                                    log.info("Inserted " + b.getInserted() + " row(s) into list: " + def.getName());
+                                if (0>=b.getDeleted() && 0>=b.getMerged() && 0>=b.getUpdated() && 0>=b.getInserted())
+                                    log.info("No rows changed from list: " + def.getName());
+                            }
                         }
                     }
 
