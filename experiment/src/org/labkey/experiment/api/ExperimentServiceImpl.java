@@ -3827,6 +3827,8 @@ public class ExperimentServiceImpl implements ExperimentService
         Integer[] actionIds = new SqlSelector(getExpSchema(), sql).getArray(Integer.class);
         List<ExpProtocolImpl> expProtocols = Arrays.stream(protocols).map(ExpProtocolImpl::new).collect(toList());
 
+        AssayService assayService = AssayService.get();
+
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             for (ExperimentListener listener : _listeners)
@@ -3863,7 +3865,6 @@ public class ExperimentServiceImpl implements ExperimentService
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
 
-            AssayService assayService = AssayService.get();
             if (actionIds.length > 0)
             {
                 if (assayService != null)
@@ -3872,7 +3873,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     {
                         ExpProtocol protocolToDelete = new ExpProtocolImpl(protocol);
 
-                        AssayProvider provider = AssayService.get().getProvider(protocolToDelete);
+                        AssayProvider provider = assayService.getProvider(protocolToDelete);
                         if (provider != null)
                             provider.deleteProtocol(protocolToDelete, user);
                     }
@@ -3927,7 +3928,8 @@ public class ExperimentServiceImpl implements ExperimentService
             transaction.commit();
         }
 
-        AssayService.get().unindexAssays(Collections.unmodifiableCollection(expProtocols));
+        if (null != assayService)
+            assayService.unindexAssays(Collections.unmodifiableCollection(expProtocols));
     }
 
     private void deleteProtocolInputs(Container c, String protocolIdsInClause)
