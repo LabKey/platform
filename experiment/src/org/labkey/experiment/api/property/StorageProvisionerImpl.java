@@ -58,10 +58,12 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.BindException;
@@ -1045,6 +1047,30 @@ public class StorageProvisionerImpl implements StorageProvisioner
         }
     }
 
+
+    @Override
+    public void ensureBaseProperties(Domain domain)
+    {
+        DomainKind<?> kind = domain.getDomainKind();
+        DbScope scope = kind.getScope();
+
+        String tableName = ensureStorageTable(domain, kind, scope);
+        TableInfo storageTable = DbSchema.get(domain.getDomainKind().getStorageSchemaName(), DbSchemaType.Provisioned).getTable(tableName);
+        TableChange change = new TableChange(domain, ChangeType.AddColumns);
+
+        for (PropertyStorageSpec prop : kind.getBaseProperties(domain))
+        {
+            if (prop.getName() == null || prop.getName().length() == 0)
+                throw new IllegalArgumentException("Can't add property with no name.");
+
+            if (null == storageTable.getColumn(prop.getName()))
+                change.addColumn(prop);
+        }
+
+        if (0 < change.getColumns().size())
+            change.execute();
+    }
+
     public void fixupProvisionedDomain(SchemaTableInfo ti, DomainKind<?> kind, Domain domain, String tableName)
     {
         assert !ti.isLocked();
@@ -1657,34 +1683,51 @@ renaming a property AND toggling mvindicator on in the same change.
 
 
         @Test
-        public void testEnsureBaseProperties()
+        public void testEnsureBaseProperties() throws Exception
         {
-            final Set<PropertyStorageSpec> set = new LinkedHashSet<>();
-            set.add(new PropertyStorageSpec("first", JdbcType.INTEGER));
+            final Set<PropertyStorageSpec> baseProperties = new LinkedHashSet<>();
             DomainKind k = new AbstractDomainKind()
             {
                 @Override
+                public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
+                {
+                    return baseProperties;
+                }
+
+                @Override
+                public String getStorageSchemaName()
+                {
+                    return "temp";
+                }
+
+                @Override
+                public DbScope getScope()
+                {
+                    return CoreSchema.getInstance().getScope();
+                }
+
+                @Override
                 public String getKindName()
                 {
-                    return null;
+                    return "test";
                 }
 
                 @Override
                 public Class getTypeClass()
                 {
-                    return null;
+                    return this.getClass();
                 }
 
                 @Override
                 public String getTypeLabel(Domain domain)
                 {
-                    return null;
+                    return "test";
                 }
 
                 @Override
                 public SQLFragment sqlObjectIdsInDomain(Domain domain)
                 {
-                    return null;
+                    return new SQLFragment("NULL");
                 }
 
                 @Override
@@ -1702,7 +1745,7 @@ renaming a property AND toggling mvindicator on in the same change.
                 @Override
                 public Set<String> getReservedPropertyNames(Domain domain)
                 {
-                    return null;
+                    return Set.of();
                 }
 
                 @Override
@@ -1711,6 +1754,46 @@ renaming a property AND toggling mvindicator on in the same change.
                     return null;
                 }
             };
+
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+
+            // create and save a domain with one base property
+            baseProperties.add(new PropertyStorageSpec("first", JdbcType.INTEGER));
+            String uri = "StorageProvisionImpl/" + GUID.makeGUID();
+            DomainImpl d = null;
+            try
+            {
+                d = new DomainImpl(c, uri, "test")
+                {
+                    @Override
+                    public DomainKind<?> getDomainKind()
+                    {
+                        return k;
+                    }
+                };
+                d.save(user, false);
+                StorageProvisioner.get().ensureStorageTable(d, k, k.getScope());
+
+                // check that prop exists
+                d = (DomainImpl)PropertyService.get().getDomain(c, uri);
+                d._dd.setDomainKind(k); // needed for d.delete() otherwise it will try to lookup the DomainKind
+                TableInfo t = StorageProvisioner.get().getSchemaTableInfo(d);
+                assertNotNull(t.getColumn("first"));
+
+                // add a base property
+                baseProperties.add(new PropertyStorageSpec("second", JdbcType.VARCHAR));
+                StorageProvisioner.get().ensureBaseProperties(d);
+
+                // check that new property exists
+                t = StorageProvisioner.get().getSchemaTableInfo(d);
+                assertNotNull(t.getColumn("second"));
+            }
+            finally
+            {
+                if (null != d)
+                    d.delete(user);
+            }
         }
 
 

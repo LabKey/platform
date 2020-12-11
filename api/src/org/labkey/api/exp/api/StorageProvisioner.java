@@ -112,6 +112,12 @@ public interface StorageProvisioner
     void addOrDropTableIndices(Domain domain, Set<PropertyStorageSpec.Index> indices, boolean doAdd, TableChange.IndexSizeMode sizeMode);
 
     /**
+     * This helper can be used to update domain type if columns are added to DomainKind.getBaseProperties().
+     * Only handles adding new properties.
+     */
+    void ensureBaseProperties(Domain domain);
+
+    /**
      * We are mostly making the storage table match the existing property descriptors, because that is easiest.
      * Sometimes it would be better or more conservative to update the property descriptors instead
      */
