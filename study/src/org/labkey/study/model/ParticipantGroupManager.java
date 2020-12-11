@@ -687,7 +687,8 @@ public class ParticipantGroupManager
 
     public boolean getSessionParticipantGroupShowMessage(Container c, HttpServletRequest request)
     {
-        Boolean b = (Boolean)SessionHelper.getAttribute(request, PARTICIPANT_GROUP_SESSION_KEY + c.getRowId() + "showMessage", false);
+        Boolean b = (Boolean)SessionHelper.getAttribute(request, PARTICIPANT_GROUP_SESSION_KEY + c.getRowId() + ".showMessage", false);
+
         return b == Boolean.TRUE;
     }
 
