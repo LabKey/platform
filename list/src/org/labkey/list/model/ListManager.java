@@ -45,12 +45,14 @@ import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptor;
 import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
@@ -1222,6 +1224,29 @@ public class ListManager implements SearchService.DocumentProvider
         validatorImporters.add(new ValidatorImporter(domain.getTypeId(), pds.properties, user));
 
         return true;
+    }
+
+    public static class ListUpgradeCode implements UpgradeCode
+    {
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void addImportHashColumn(final ModuleContext context)
+        {
+            if (null!=context && context.isNewInstall())
+                return;
+
+            StorageProvisioner sp = StorageProvisioner.get();
+            ListManager lm = ListManager.get();
+            ArrayList<ListDef> all = new TableSelector(lm.getListMetadataTable(), null, null).getArrayList(ListDef.class);
+
+            for (var l : all)
+            {
+                Container c = ContainerManager.getForId(l.getContainerId());
+                int domainId = l.getDomainId();
+                Domain d = PropertyService.get().getDomain(domainId);
+                if (null != d && null != d.getStorageTableName())
+                    sp.ensureBaseProperties(d);
+            }
+        }
     }
 
     public static class TestCase extends Assert

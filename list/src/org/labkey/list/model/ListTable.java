@@ -40,6 +40,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.dataiterator.ValidatorIterator;
+import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -182,6 +183,15 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                     c.setUserEditable(false);
                     c.setShownInInsertView(false);
                     c.setShownInUpdateView(false);
+                    addColumn(c);
+                }
+                else if (name.equalsIgnoreCase(DataIntegrationService.Columns.TransformImportHash.getColumnName()))
+                {
+                    var c = wrapColumn(baseColumn);
+                    c.setUserEditable(false);
+                    c.setShownInInsertView(false);
+                    c.setShownInUpdateView(false);
+                    c.setHidden(true);
                     addColumn(c);
                 }
                 else if (name.equalsIgnoreCase("LastIndexed"))
