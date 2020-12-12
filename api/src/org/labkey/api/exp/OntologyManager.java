@@ -105,9 +105,7 @@ public class OntologyManager
                 proj = c;
 
             String sql = " SELECT * FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyURI = ? AND Project IN (?,?)";
-            List<PropertyDescriptor> pdArray = new SqlSelector(getExpSchema(), sql, propertyURI,
-                    proj,
-                    _sharedContainer.getId()).getArrayList(PropertyDescriptor.class);
+            List<PropertyDescriptor> pdArray = new SqlSelector(getExpSchema(), sql, propertyURI, proj, _sharedContainer.getId()).getArrayList(PropertyDescriptor.class);
             if (!pdArray.isEmpty())
             {
                 PropertyDescriptor pd = pdArray.get(0);
@@ -2718,7 +2716,6 @@ public class OntologyManager
             proj2 = ContainerManager.ensureContainer("/");
             doMoveTest(proj1, proj2);
             deleteMoveTestContainers();
-
         }
 
         private void doMoveTest(Container proj1, Container proj2) throws Exception
@@ -2993,7 +2990,7 @@ public class OntologyManager
             insertProperties(c, ownerObjectLsid, intProp);
             insertProperties(c, ownerObjectLsid, longProp);
 
-            Map m = getProperties(c, oChild.getObjectURI());
+            Map<String, Object> m = getProperties(c, oChild.getObjectURI());
             assertNotNull(m);
             assertEquals(m.size(), 3);
             assertEquals(m.get(strPropURI), "String value");
@@ -3042,12 +3039,10 @@ public class OntologyManager
         }
     }
 
-
     private static long getObjectCount(Container c)
     {
         return new TableSelector(getTinfoObject(), SimpleFilter.createContainerFilter(c), null).getRowCount();
     }
-
 
     /**
      * v.first value IN/OUT parameter
@@ -3080,7 +3075,6 @@ public class OntologyManager
             v.first = pt.convert(v.first);
     }
 
-
     public static class PropertyRow
     {
         protected int objectId;
@@ -3105,42 +3099,7 @@ public class OntologyManager
             convertValuePair(pd, pt, p);
             mvIndicator = p.second;
 
-            switch (pt)
-            {
-                case STRING:
-                case MULTI_LINE:
-                case ATTACHMENT:
-                case FILE_LINK:
-                case RESOURCE:
-                    this.stringValue = (String) p.first;
-                    break;
-                case DATE:
-                    // remove time portion of the java.util.Date
-                    this.dateTimeValue = new java.sql.Date( ((java.util.Date) p.first).getTime() );
-                    break;
-                case TIME:
-                    // remove date portion of the java.util.Date
-                    this.dateTimeValue = new java.sql.Time( ((java.util.Date) p.first).getTime() );
-                    break;
-                case DATE_TIME:
-                    this.dateTimeValue = (java.util.Date) p.first;
-                    break;
-                case BIGINT:
-                case INTEGER:
-                case DOUBLE:
-                case DECIMAL:
-                case FLOAT:
-                    Number n = (Number) p.first;
-                    if (null != n)
-                        this.floatValue = n.doubleValue();
-                    break;
-                case BOOLEAN:
-                    Boolean b = (Boolean) p.first;
-                    this.floatValue = b == Boolean.TRUE ? 1.0 : 0.0;
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown property type '" + pt + "' for property: " + pd.toString());
-            }
+            pt.init(this, p.first);
         }
 
         public int getObjectId()
@@ -3327,14 +3286,16 @@ public class OntologyManager
                 if (bFix)
                 {
                     fixProjectColumn(descriptorTable, uriColumn, idColumn, container, projectId, newProjectId);
-                    msgBuilder.append("<br/>&nbsp;&nbsp;&nbsp;Fixed inconsistent project ids found for ")
-                            .append(descriptorTable).append(" in folder ")
-                            .append(ContainerManager.getForId(containerId).getPath());
+                    msgBuilder
+                        .append("<br/>&nbsp;&nbsp;&nbsp;Fixed inconsistent project ids found for ")
+                        .append(descriptorTable).append(" in folder ")
+                        .append(ContainerManager.getForId(containerId).getPath());
 
                 }
                 else
-                    msgBuilder.append("<br/>&nbsp;&nbsp;&nbsp;ERROR: Inconsistent project ids found for ")
-                            .append(descriptorTable).append(" in folder ").append(container.getPath());
+                    msgBuilder
+                        .append("<br/>&nbsp;&nbsp;&nbsp;ERROR: Inconsistent project ids found for ")
+                        .append(descriptorTable).append(" in folder ").append(container.getPath());
             }
         });
     }
@@ -3385,6 +3346,7 @@ public class OntologyManager
         {
             throw new ChangePropertyDescriptorException("Field name cannot end with the suffix 'mvIndicator': " + pd.getName());
         }
+
         if (null != name)
         {
             for (char ch : name.toCharArray())
