@@ -28,6 +28,7 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -902,7 +903,7 @@ public class SqlScriptController extends SpringActionController
 
                 FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
                 Collection<DbSchema> schemas = provider.getSchemas();
-                Set<String> allFiles = new HashSet<>();
+                Set<String> allFiles = new CaseInsensitiveHashSet();
 
                 // If module advertises no schemas then still look in the labkey dialect directory for spurious scripts
                 if (schemas.isEmpty())
