@@ -2103,15 +2103,15 @@ public class OntologyManager
     {
         List<? extends Domain> domainsInContainer = PropertyService.get().getDomains(container);
         return domainsInContainer
-                .stream()
-                .filter(d -> null != d.getPropertyByURI(pd.getPropertyURI()))
-                .collect(Collectors.toList());
+            .stream()
+            .filter(d -> null != d.getPropertyByURI(pd.getPropertyURI()))
+            .collect(Collectors.toList());
     }
 
     private static class DomainDescriptorLoader implements CacheLoader<Integer, DomainDescriptor>
     {
         @Override
-        public DomainDescriptor load(Integer key, @Nullable Object argument)
+        public DomainDescriptor load(@NotNull Integer key, @Nullable Object argument)
         {
             return new TableSelector(getTinfoDomainDescriptor()).getObject(key, DomainDescriptor.class);
         }
@@ -2566,7 +2566,6 @@ public class OntologyManager
             assertEquals(10, ExperimentService.get().getTinfoSampleType().getColumns("RowId,Name,LSID,MaterialLSIDPrefix,Description,Created,CreatedBy,Modified,ModifiedBy,Container").size());
         }
 
-
         @Test
         public void testBasicPropertiesObject() throws ValidationException
         {
@@ -2601,13 +2600,13 @@ public class OntologyManager
             String dateProp = new Lsid("Junit", "OntologyManager", "dateProp").toString();
             insertProperties(c, parentObjectLsid, new ObjectProperty(childObjectLsid, c, dateProp, cal.getTime()));
 
-            Map m = getProperties(c, oChild.getObjectURI());
+            Map<String, Object> m = getProperties(c, oChild.getObjectURI());
             assertNotNull(m);
-            assertEquals(m.size(), 4);
-            assertEquals(m.get(strProp), "The String");
-            assertEquals(m.get(intProp), 5);
-            assertEquals(m.get(longProp), 6L);
-            assertEquals(m.get(dateProp), cal.getTime());
+            assertEquals(4, m.size());
+            assertEquals("The String", m.get(strProp));
+            assertEquals(5, m.get(intProp));
+            assertEquals(6L, m.get(longProp));
+            assertEquals(cal.getTime(), m.get(dateProp));
 
 
             deleteOntologyObjects(c, parentObjectLsid);
@@ -2817,20 +2816,20 @@ public class OntologyManager
             defineCrossFolderProperties(fldr1aaa, fldr1b);
 
             deleteContainers(TestContext.get().getUser(), "/_ontMgrTestP1/Fb",
-                    "/_ontMgrTestP1/Fa/Faa/Faaa", "/_ontMgrTestP1/Fa/Faa", "/_ontMgrTestP1/Fa", "/_ontMgrTestP1");
+                "/_ontMgrTestP1/Fa/Faa/Faaa", "/_ontMgrTestP1/Fa/Faa", "/_ontMgrTestP1/Fa", "/_ontMgrTestP1");
         }
 
         private void deleteMoveTestContainers()
         {
             deleteContainers(TestContext.get().getUser(),
-                    "/_ontMgrTestP2/Fc", "/_ontMgrTestP1/Fb",
-                    "/_ontMgrTestP1/Fa/Faa/Faaa", "/_ontMgrTestP2/Fa/Faa/Faaa",
-                    "/_ontMgrTestP1/Fa/Faa", "/_ontMgrTestP2/Fa/Faa",
-                    "/_ontMgrTestP1/Fa", "/_ontMgrTestP2/Fa",
-                    "/_ontMgrTestP2/_ontMgrDemotePromoteFa/Faa/Faaa", "/_ontMgrTestP2/_ontMgrDemotePromoteFa/Faa", "/_ontMgrTestP2/_ontMgrDemotePromoteFa",
-                    "/_ontMgrTestP2", "/_ontMgrTestP1",
-                    "/_ontMgrDemotePromoteFc", "/_ontMgrDemotePromoteFb", "/_ontMgrDemotePromoteFa/Faa/Faaa", "/_ontMgrDemotePromoteFa/Faa", "/_ontMgrDemotePromoteFa",
-                    "/Fa/Faa/Faaa", "/Fa/Faa", "/Fa"
+                "/_ontMgrTestP2/Fc", "/_ontMgrTestP1/Fb",
+                "/_ontMgrTestP1/Fa/Faa/Faaa", "/_ontMgrTestP2/Fa/Faa/Faaa",
+                "/_ontMgrTestP1/Fa/Faa", "/_ontMgrTestP2/Fa/Faa",
+                "/_ontMgrTestP1/Fa", "/_ontMgrTestP2/Fa",
+                "/_ontMgrTestP2/_ontMgrDemotePromoteFa/Faa/Faaa", "/_ontMgrTestP2/_ontMgrDemotePromoteFa/Faa", "/_ontMgrTestP2/_ontMgrDemotePromoteFa",
+                "/_ontMgrTestP2", "/_ontMgrTestP1",
+                "/_ontMgrDemotePromoteFc", "/_ontMgrDemotePromoteFb", "/_ontMgrDemotePromoteFa/Faa/Faaa", "/_ontMgrDemotePromoteFa/Faa", "/_ontMgrDemotePromoteFa",
+                "/Fa/Faa/Faaa", "/Fa/Faa", "/Fa"
             );
         }
 
@@ -2992,32 +2991,35 @@ public class OntologyManager
 
             Map<String, Object> m = getProperties(c, oChild.getObjectURI());
             assertNotNull(m);
-            assertEquals(m.size(), 3);
-            assertEquals(m.get(strPropURI), "String value");
-            assertEquals(m.get(intPropURI), 42);
-            assertEquals(m.get(longPropURI), 52L);
-
+            assertEquals(3, m.size());
+            assertEquals("String value", m.get(strPropURI));
+            assertEquals(42, m.get(intPropURI));
+            assertEquals(52L, m.get(longPropURI));
 
             // test insertTabDelimited
             List<Map<String, Object>> rows = List.of(
-                    Map.of("lsid", child2ObjectLsid,
-                            strPropURI, "Second value",
-                            intPropURI, 62,
-                            longPropURI, 72L)
+                Map.of(
+                    "lsid", child2ObjectLsid,
+                    strPropURI, "Second value",
+                    intPropURI, 62,
+                    longPropURI, 72L
+                )
             );
             ImportHelper helper = new ImportHelper()
             {
                 @Override
-                public String beforeImportObject(Map<String, Object> map) throws SQLException
+                public String beforeImportObject(Map<String, Object> map)
                 {
                     return (String)map.get("lsid");
                 }
 
                 @Override
-                public void afterBatchInsert(int currentRow) throws SQLException { }
+                public void afterBatchInsert(int currentRow)
+                { }
 
                 @Override
-                public void updateStatistics(int currentRow) throws SQLException { }
+                public void updateStatistics(int currentRow)
+                { }
             };
             try (Transaction tx = getExpSchema().getScope().ensureTransaction())
             {
@@ -3027,11 +3029,10 @@ public class OntologyManager
 
             m = getProperties(c, child2ObjectLsid);
             assertNotNull(m);
-            assertEquals(m.size(), 3);
-            assertEquals(m.get(strPropURI), "Second value");
-            assertEquals(m.get(intPropURI), 62);
-            assertEquals(m.get(longPropURI), 72L);
-
+            assertEquals(3, m.size());
+            assertEquals("Second value", m.get(strPropURI));
+            assertEquals(62, m.get(intPropURI));
+            assertEquals(72L, m.get(longPropURI));
 
             deleteType(domURIa, c);
             assertEquals(0L, getObjectCount(c));

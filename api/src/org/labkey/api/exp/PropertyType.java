@@ -882,9 +882,9 @@ public enum PropertyType
         return getFromURI(concept, datatype, RESOURCE);
     }
 
-    abstract public void init(PropertyRow row, Object value);
-    abstract public void setValue(ObjectProperty property, Object value);
-    abstract public Object getValue(ObjectProperty property);
+    abstract protected void init(PropertyRow row, Object value);
+    abstract protected void setValue(ObjectProperty property, Object value);
+    abstract protected Object getValue(ObjectProperty property);
 
     static
     {
