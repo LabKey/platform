@@ -882,6 +882,7 @@ public enum PropertyType
         return getFromURI(concept, datatype, RESOURCE);
     }
 
+    @Deprecated // Eliminate this along with PropertyRow? Or at least combine with setValue() below.
     abstract protected void init(PropertyRow row, Object value);
     abstract protected void setValue(ObjectProperty property, Object value);
     abstract protected Object getValue(ObjectProperty property);

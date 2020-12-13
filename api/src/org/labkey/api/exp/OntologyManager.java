@@ -2608,7 +2608,6 @@ public class OntologyManager
             assertEquals(6L, m.get(longProp));
             assertEquals(cal.getTime(), m.get(dateProp));
 
-
             deleteOntologyObjects(c, parentObjectLsid);
             assertNull(getOntologyObject(c, parentObjectLsid));
             assertNull(getOntologyObject(c, childObjectLsid));
@@ -3076,6 +3075,7 @@ public class OntologyManager
             v.first = pt.convert(v.first);
     }
 
+    @Deprecated // Fold into ObjectProperty? Eliminate insertTabDelimited() methods, the only usage of PropertyRow.
     public static class PropertyRow
     {
         protected int objectId;
