@@ -75,14 +75,14 @@ public enum PropertyType
         }
 
         @Override
-        public void init(PropertyRow row, Object value)
+        protected void init(PropertyRow row, Object value)
         {
             Boolean b = (Boolean)value;
             row.floatValue = b == Boolean.TRUE ? 1.0 : 0.0;
         }
 
         @Override
-        public void setValue(ObjectProperty property, Object value)
+        protected void setValue(ObjectProperty property, Object value)
         {
             Boolean boolValue = null;
             if (value instanceof Boolean)
@@ -93,7 +93,7 @@ public enum PropertyType
         }
 
         @Override
-        public Object getValue(ObjectProperty property)
+        protected Object getValue(ObjectProperty property)
         {
             return property.floatValue == null ? null : property.floatValue.intValue() != 0 ? Boolean.TRUE : Boolean.FALSE;
         }
@@ -122,19 +122,19 @@ public enum PropertyType
         }
 
         @Override
-        public void init(PropertyRow row, Object value)
+        protected void init(PropertyRow row, Object value)
         {
             row.stringValue = (String)value;
         }
 
         @Override
-        public void setValue(ObjectProperty property, Object value)
+        protected void setValue(ObjectProperty property, Object value)
         {
             property.stringValue = value == null ? null : value.toString();
         }
 
         @Override
-        public Object getValue(ObjectProperty property)
+        protected Object getValue(ObjectProperty property)
         {
             return property.getStringValue();
         }
@@ -163,19 +163,19 @@ public enum PropertyType
         }
 
         @Override
-        public void init(PropertyRow row, Object value)
+        protected void init(PropertyRow row, Object value)
         {
             row.stringValue = (String)value;
         }
 
         @Override
-        public void setValue(ObjectProperty property, Object value)
+        protected void setValue(ObjectProperty property, Object value)
         {
             property.stringValue = value == null ? null : value.toString();
         }
 
         @Override
-        public Object getValue(ObjectProperty property)
+        protected Object getValue(ObjectProperty property)
         {
             return property.getStringValue();
         }
@@ -206,13 +206,13 @@ public enum PropertyType
         }
 
         @Override
-        public void init(PropertyRow row, Object value)
+        protected void init(PropertyRow row, Object value)
         {
             row.stringValue = (String)value;
         }
 
         @Override
-        public void setValue(ObjectProperty property, Object value)
+        protected void setValue(ObjectProperty property, Object value)
         {
             if (value instanceof Identifiable)
             {
@@ -224,7 +224,7 @@ public enum PropertyType
         }
 
         @Override
-        public Object getValue(ObjectProperty property)
+        protected Object getValue(ObjectProperty property)
         {
             if (null != property.objectValue)
                 return property.objectValue;
@@ -258,7 +258,7 @@ public enum PropertyType
         }
 
         @Override
-        public void init(PropertyRow row, Object value)
+        protected void init(PropertyRow row, Object value)
         {
             Number n = (Number) value;
             if (null != n)
@@ -266,7 +266,7 @@ public enum PropertyType
         }
 
         @Override
-        public void setValue(ObjectProperty property, Object value)
+        protected void setValue(ObjectProperty property, Object value)
         {
             if (value instanceof Integer)
                 property.floatValue = ((Integer) value).doubleValue();
@@ -275,7 +275,7 @@ public enum PropertyType
         }
 
         @Override
-        public Object getValue(ObjectProperty property)
+        protected Object getValue(ObjectProperty property)
         {
             return property.floatValue == null ? null : property.floatValue.intValue();
         }
@@ -306,7 +306,7 @@ public enum PropertyType
         }
 
         @Override
-        public void init(PropertyRow row, Object value)
+        protected void init(PropertyRow row, Object value)
         {
             Number n = (Number) value;
             if (null != n)
@@ -314,7 +314,7 @@ public enum PropertyType
         }
 
         @Override
-        public void setValue(ObjectProperty property, Object value)
+        protected void setValue(ObjectProperty property, Object value)
         {
             if (value instanceof Long)
                 property.floatValue = ((Long) value).doubleValue();
@@ -323,7 +323,7 @@ public enum PropertyType
         }
 
         @Override
-        public Object getValue(ObjectProperty property)
+        protected Object getValue(ObjectProperty property)
         {
             return property.floatValue == null ? null : property.floatValue.longValue();
         }
@@ -354,20 +354,20 @@ public enum PropertyType
         }
 
         @Override
-        public void init(PropertyRow row, Object value)
+        protected void init(PropertyRow row, Object value)
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void setValue(ObjectProperty property, Object value)
+        protected void setValue(ObjectProperty property, Object value)
         {
             if (null != value)
                 property.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
         }
 
         @Override
-        public Object getValue(ObjectProperty property)
+        protected Object getValue(ObjectProperty property)
         {
             throw new UnsupportedOperationException();
         }
@@ -399,13 +399,13 @@ public enum PropertyType
         }
 
         @Override
-        public void init(PropertyRow row, Object value)
+        protected void init(PropertyRow row, Object value)
         {
             row.stringValue = (String)value;
         }
 
         @Override
-        public void setValue(ObjectProperty property, Object value)
+        protected void setValue(ObjectProperty property, Object value)
         {
             if (value instanceof File)
                 property.stringValue = ((File) value).getPath();
@@ -414,7 +414,7 @@ public enum PropertyType
         }
 
         @Override
-        public Object getValue(ObjectProperty property)
+        protected Object getValue(ObjectProperty property)
         {
             String value = property.getStringValue();
             return value == null ? null : new File(value);
@@ -447,13 +447,13 @@ public enum PropertyType
         }
 
         @Override
-        public void init(PropertyRow row, Object value)
+        protected void init(PropertyRow row, Object value)
         {
             row.stringValue = (String)value;
         }
 
         @Override
-        public void setValue(ObjectProperty property, Object value)
+        protected void setValue(ObjectProperty property, Object value)
         {
             if (value instanceof AttachmentFile)
             {
@@ -464,7 +464,7 @@ public enum PropertyType
         }
 
         @Override
-        public Object getValue(ObjectProperty property)
+        protected Object getValue(ObjectProperty property)
         {
             return property.getStringValue();
         }
@@ -517,13 +517,13 @@ public enum PropertyType
         }
 
         @Override
-        public void init(PropertyRow row, Object value)
+        protected void init(PropertyRow row, Object value)
         {
             row.dateTimeValue = new java.sql.Time(((java.util.Date)value).getTime());
         }
 
         @Override
-        public void setValue(ObjectProperty property, Object value)
+        protected void setValue(ObjectProperty property, Object value)
         {
             if (value instanceof Date)
                 property.dateTimeValue = (Date) value;
@@ -532,7 +532,7 @@ public enum PropertyType
         }
 
         @Override
-        public Object getValue(ObjectProperty property)
+        protected Object getValue(ObjectProperty property)
         {
             return property.dateTimeValue;
         }
@@ -558,13 +558,13 @@ public enum PropertyType
         }
 
         @Override
-        public void init(PropertyRow row, Object value)
+        protected void init(PropertyRow row, Object value)
         {
             row.dateTimeValue = new java.sql.Date(((java.util.Date)value).getTime());
         }
 
         @Override
-        public void setValue(ObjectProperty property, Object value)
+        protected void setValue(ObjectProperty property, Object value)
         {
             if (value instanceof Date)
                 property.dateTimeValue = (Date) value;
@@ -573,7 +573,7 @@ public enum PropertyType
         }
 
         @Override
-        public Object getValue(ObjectProperty property)
+        protected Object getValue(ObjectProperty property)
         {
             return property.dateTimeValue;
         }
@@ -599,19 +599,19 @@ public enum PropertyType
         }
 
         @Override
-        public void init(PropertyRow row, Object value)
+        protected void init(PropertyRow row, Object value)
         {
             row.dateTimeValue = new java.sql.Time(((java.util.Date)value).getTime());
         }
 
         @Override
-        public void setValue(ObjectProperty property, Object value)
+        protected void setValue(ObjectProperty property, Object value)
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public Object getValue(ObjectProperty property)
+        protected Object getValue(ObjectProperty property)
         {
             return property.dateTimeValue;
         }
@@ -642,7 +642,7 @@ public enum PropertyType
         }
 
         @Override
-        public void init(PropertyRow row, Object value)
+        protected void init(PropertyRow row, Object value)
         {
             Number n = (Number) value;
             if (null != n)
@@ -650,7 +650,7 @@ public enum PropertyType
         }
 
         @Override
-        public void setValue(ObjectProperty property, Object value)
+        protected void setValue(ObjectProperty property, Object value)
         {
             if (value instanceof Double)
                 property.floatValue = (Double) value;
@@ -659,7 +659,7 @@ public enum PropertyType
         }
 
         @Override
-        public Object getValue(ObjectProperty property)
+        protected Object getValue(ObjectProperty property)
         {
             return property.floatValue;
         }
@@ -690,7 +690,7 @@ public enum PropertyType
         }
 
         @Override
-        public void init(PropertyRow row, Object value)
+        protected void init(PropertyRow row, Object value)
         {
             Number n = (Number) value;
             if (null != n)
@@ -698,7 +698,7 @@ public enum PropertyType
         }
 
         @Override
-        public void setValue(ObjectProperty property, Object value)
+        protected void setValue(ObjectProperty property, Object value)
         {
             if (value instanceof Double)
                 property.floatValue = (Double) value;
@@ -707,7 +707,7 @@ public enum PropertyType
         }
 
         @Override
-        public Object getValue(ObjectProperty property)
+        protected Object getValue(ObjectProperty property)
         {
             return property.floatValue;
         }
@@ -738,7 +738,7 @@ public enum PropertyType
         }
 
         @Override
-        public void init(PropertyRow row, Object value)
+        protected void init(PropertyRow row, Object value)
         {
             Number n = (Number) value;
             if (null != n)
@@ -746,14 +746,14 @@ public enum PropertyType
         }
 
         @Override
-        public void setValue(ObjectProperty property, Object value)
+        protected void setValue(ObjectProperty property, Object value)
         {
             if (null != value)
                 property.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
         }
 
         @Override
-        public Object getValue(ObjectProperty property)
+        protected Object getValue(ObjectProperty property)
         {
             return property.floatValue;
         }
@@ -782,19 +782,19 @@ public enum PropertyType
         }
 
         @Override
-        public void init(PropertyRow row, Object value)
+        protected void init(PropertyRow row, Object value)
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void setValue(ObjectProperty property, Object value)
+        protected void setValue(ObjectProperty property, Object value)
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public Object getValue(ObjectProperty property)
+        protected Object getValue(ObjectProperty property)
         {
             return property.getStringValue();
         }
