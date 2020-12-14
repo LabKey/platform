@@ -105,6 +105,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -486,6 +487,17 @@ public class XarReader extends AbstractXarImporter
         if (sampleSet.isSetMetricUnit())
         {
             materialSource.setMetricUnit(sampleSet.getMetricUnit());
+        }
+
+        SampleSetType.ParentImportAlias parentImportAlias = sampleSet.getParentImportAlias();
+        if (parentImportAlias != null)
+        {
+            Map<String, String> aliasMap = new LinkedHashMap<>();
+            for (ImportAlias importAlias : parentImportAlias.getAliasArray())
+            {
+                aliasMap.put(importAlias.getName(), importAlias.getValue());
+            }
+            materialSource.setImportAliasMap(aliasMap);
         }
 
         if (existingMaterialSource != null)
@@ -1145,6 +1157,12 @@ public class XarReader extends AbstractXarImporter
                 ExpMaterialImpl mi = new ExpMaterialImpl(m);
                 mi.save(getUser());
                 mi.setProperties(getUser(), props);
+
+                if (xbMaterial.isSetAlias())
+                {
+                    AliasInsertHelper.handleInsertUpdate(getContainer(), getUser(), mi.getLSID(),
+                            ExperimentService.get().getTinfoMaterialAliasMap(), xbMaterial.getAlias());
+                }
             }
             catch (ValidationException vex)
             {
