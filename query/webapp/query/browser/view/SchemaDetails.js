@@ -106,6 +106,16 @@ Ext4.define('LABKEY.query.browser.view.SchemaDetails', {
                 rows.push(this.formatQueryList(queries));
             }
 
+            if (rows.length === 0) {
+                items.push({
+                    xtype: 'box',
+                    autoEl: {
+                        tag: 'div',
+                        html: 'No queries, tables, or child schemas to show'
+                    }
+                });
+            }
+
             items.push({
                 xtype: 'box',
                 autoEl: {
