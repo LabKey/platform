@@ -253,14 +253,14 @@ Ext4.define('LABKEY.query.browser.Browser', {
             schemaNode = this.getSchemaNode(tree, schemaName);
 
         if (schemaNode) {
-            schemaNode.expand(false, function (schemaNode) {
+            schemaNode.expand(false, function (x) {
                 if (Ext4.isFunction(callback)) {
-                    callback.call((scope || this), true, schemaNode);
+                    callback.call((scope || this), true, x);
+                }
+                if (selectInTree) {
+                    tree.getSelectionModel().select(schemaNode, false, true);
                 }
             });
-            if (selectInTree) {
-                tree.getSelectionModel().select(schemaNode, false, true);
-            }
         }
         else {
             // Attempt to expand along the schemaName path.

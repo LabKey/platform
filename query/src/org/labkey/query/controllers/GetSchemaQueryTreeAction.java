@@ -15,7 +15,6 @@
  */
 package org.labkey.query.controllers;
 
-import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.Action;
@@ -39,7 +38,6 @@ import org.springframework.validation.BindException;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -161,7 +159,7 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
                             label = tinfo.getTitle();           // Display title defaults to name, but uses label if set
 
                         // If there's an error, still include the table in the tree
-                        addQueryToList(schemaPath, qname, label, tinfo == null ? null : tinfo.getDescription(), false, queries, true, true);
+                        addQueryToList(schemaPath, qname, label, tinfo == null ? null : tinfo.getDescription(), false, queries, true);
                     }
 
                     //get user-defined queries
@@ -176,7 +174,7 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
                             if (qdef.isHidden() && !form.isShowHidden())
                                 continue;
 
-                            addQueryToList(schemaPath, qname, qname, qdef.getDescription(), qdef.isHidden(), queries, false, StringUtils.trimToNull(qdef.getModuleName()) != null);
+                            addQueryToList(schemaPath, qname, qname, qdef.getDescription(), qdef.isHidden(), queries, false);
                         }
                     }
 
@@ -207,7 +205,7 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
         return schemaProps;
     }
 
-    protected void addQueryToList(SchemaKey schemaName, String qname, String label, String description, boolean hidden, Map<String, JSONObject> list, boolean table, boolean moduleSupplied)
+    protected void addQueryToList(SchemaKey schemaName, String qname, String label, String description, boolean hidden, Map<String, JSONObject> list, boolean table)
     {
         JSONObject qprops = new JSONObject();
         qprops.put("schemaName", schemaName);
@@ -218,6 +216,7 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
             text += " (" + label + ")";
         qprops.put("text", text);
         qprops.put("leaf", true);
+        qprops.put("table", table);
         if (null != description)
         {
             qprops.put("description", description);
