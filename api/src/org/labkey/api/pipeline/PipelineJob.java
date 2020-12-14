@@ -458,7 +458,7 @@ abstract public class PipelineJob extends Job implements Serializable
     /** Finds a file name that hasn't been used yet, appending ".2", ".3", etc as needed */
     public static File findUniqueLogFile(File primaryFile, String baseName)
     {
-        // need to look in both the assay data and archived dirs for any unused log file names (issue 20987)
+        // need to look in current and archived dirs for any unused log file names (issue 20987)
         File fileLog = FT_LOG.newFile(primaryFile.getParentFile(), baseName);
         File archivedDir = new File(primaryFile.getParentFile(), AssayFileWriter.ARCHIVED_DIR_NAME);
         File fileLogArchived = FT_LOG.newFile(archivedDir, baseName);

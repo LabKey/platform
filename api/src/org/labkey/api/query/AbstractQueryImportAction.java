@@ -290,7 +290,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         String moduleName = getViewContext().getRequest().getParameter("module");
         String moduleResource = getViewContext().getRequest().getParameter("moduleResource");
 
-        String saveToPipeline = getViewContext().getRequest().getParameter("saveToPipeline");
+        String saveToPipeline = getViewContext().getRequest().getParameter("saveToPipeline"); // saveToPipeline saves import file to pipeline root, but doesn't necessarily do import in a background job
+
+        if (getViewContext().getRequest().getParameter("useAsync") != null) // useAsync will save import file to pipeline root as well as run import in a background job
+            _useAsync = Boolean.valueOf(getViewContext().getRequest().getParameter(ASYNC_QUERY_IMPORT_PARAM));
+
 
         // TODO: once importData() is refactored to accept DataIteratorContext, change importIdentity into local variable
         if (getViewContext().getRequest().getParameter("importIdentity") != null)
@@ -298,9 +302,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
         if (getViewContext().getRequest().getParameter("importLookupByAlternateKey") != null)
             _importLookupByAlternateKey = Boolean.valueOf(getViewContext().getRequest().getParameter("importLookupByAlternateKey"));
-
-        if (getViewContext().getRequest().getParameter("useAsync") != null)
-            _useAsync = Boolean.valueOf(getViewContext().getRequest().getParameter(ASYNC_QUERY_IMPORT_PARAM));
 
         // Check first if the audit behavior has been defined for the table either in code or through XML.
         // If not defined there, check for the audit behavior defined in the action form (getAuditBehaviorType()).
@@ -423,9 +424,22 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                             String schemaName = schema.getSchemaName();
                             String queryName = _target.getName();
 
-                            QueryImportPipelineJob job = new QueryImportPipelineJob(getQueryImportProviderName(), info, root, dataFile, _hasColumnHeaders, multipartfile.getContentType(),
-                                schemaName, queryName, getRenamedColumns(),
-                                _insertOption, behaviorType, _importLookupByAlternateKey, _importIdentity, hasLineageColumns(), getQueryImportDescription());
+                            QueryImportPipelineJob.QueryImportAsyncContextBuilder importContextBuilder = new QueryImportPipelineJob.QueryImportAsyncContextBuilder();
+                            importContextBuilder
+                                .setPrimaryFile(dataFile)
+                                .setHasColumnHeaders(_hasColumnHeaders)
+                                .setFileContentType(multipartfile.getContentType())
+                                .setSchemaName(schemaName)
+                                .setQueryName(queryName)
+                                .setRenamedColumns(getRenamedColumns())
+                                .setInsertOption(_insertOption)
+                                .setAuditBehaviorType(behaviorType)
+                                .setImportLookupByAlternateKey(_importLookupByAlternateKey)
+                                .setImportIdentity(_importIdentity)
+                                .setHasLineageColumns(hasLineageColumns())
+                                .setJobDescription(getQueryImportDescription());
+
+                            QueryImportPipelineJob job = new QueryImportPipelineJob(getQueryImportProviderName(), info, root, importContextBuilder);
                             PipelineService.get().queueJob(job);
 
                             JSONObject response = new JSONObject();
@@ -483,10 +497,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     protected void configureLoader(DataLoader loader) throws IOException
     {
-        configureLoaderImpl(loader, _target, getRenamedColumns(), hasLineageColumns());
+        configureLoader(loader, _target, getRenamedColumns(), hasLineageColumns());
     }
 
-    public static void configureLoaderImpl(DataLoader loader, @Nullable TableInfo target, @Nullable Map<String, String> renamedColumns, boolean includeLineageColumns) throws IOException
+    public static void configureLoader(DataLoader loader, @Nullable TableInfo target, @Nullable Map<String, String> renamedColumns, boolean includeLineageColumns) throws IOException
     {
         //apply known columns so loader can do better type conversion
         if (loader != null && target != null)
@@ -618,10 +632,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     /* TODO change prototype to take DataIteratorBuilder, and DataIteratorContext */
     protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
     {
-        return importDataImpl(dl, _target, _updateService, _insertOption, _importLookupByAlternateKey, _importIdentity, errors, auditBehaviorType, auditEvent, getUser(), getContainer());
+        return importData(dl, _target, _updateService, _insertOption, _importLookupByAlternateKey, _importIdentity, errors, auditBehaviorType, auditEvent, getUser(), getContainer());
     }
 
-    public static int importDataImpl(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, boolean importLookupByAlternateKey, boolean importIdentity, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException
+    public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, boolean importLookupByAlternateKey, boolean importIdentity, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException
     {
         if (target != null)
         {
