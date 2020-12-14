@@ -135,6 +135,9 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> implements Cloneable, Dataset<DatasetDefinition>, InitializingBean
 {
+    // DatasetQueryUpdateService
+
+
     // standard string to use in URLs etc.
     public static final String DATASETKEY = "datasetId";
 //    static final Object MANAGED_KEY_LOCK = new Object();
@@ -2088,9 +2091,19 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
      * Iterator is running.  This is asserted in the code, but it would be nice to move the
      * locking into the iterator itself.
      */
+    public DataIteratorBuilder getInsertDataIterator(User user, DataIteratorBuilder in, DataIteratorContext context)
+    {
+        return getInsertDataIterator(user, in, null, null, null, null, null, false);
+    }
+
+    /**
+     * NOTE Currently the caller is still responsible for locking MANAGED_KEY_LOCK while this
+     * Iterator is running.  This is asserted in the code, but it would be nice to move the
+     * locking into the iterator itself.
+     */
     public DataIteratorBuilder getInsertDataIterator(User user, DataIteratorBuilder in,
         @Nullable List<String> lsids,
-        CheckForDuplicates checkDuplicates, DataIteratorContext context, QCState defaultQCState,
+        @Nullable CheckForDuplicates checkDuplicates, DataIteratorContext context, QCState defaultQCState,
         @Nullable StudyImportContext studyImportContext, boolean forUpdate)
     {
         TableInfo table = getTableInfo(user, false);
@@ -2102,13 +2115,15 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 defaultQCState,
                 studyImportContext);
         b.setInput(in);
-        b.setCheckDuplicates(checkDuplicates);
+
+        if (null != checkDuplicates)
+            b.setCheckDuplicates(checkDuplicates);
         b.setForUpdate(forUpdate);
         b.setUseImportAliases(!forUpdate);
         b.setKeyList(lsids);
 
         Container target = getDataSharingEnum() == DataSharing.NONE ? getContainer() : getDefinitionContainer();
-        DataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
+        DataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(table, b, target, user);
         return ((UpdateableTableInfo)table).persistRows(etl, context);
     }
 

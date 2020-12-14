@@ -3607,7 +3607,7 @@ public class StudyManager
     }
 
 
-    private void batchValidateExceptionToList(BatchValidationException errors, List<String> errorStrs)
+    public void batchValidateExceptionToList(BatchValidationException errors, List<String> errorStrs)
     {
         for (ValidationException rowError : errors.getRowErrors())
         {
@@ -3619,26 +3619,6 @@ public class StudyManager
         }
     }
 
-    /** @deprecated pass in a BatchValidationException, not List<String>  */
-    @Deprecated
-    public List<String> importDatasetData(User user, DatasetDefinition def, DataLoader loader, Map<String, String> columnMap,
-                                          List<String> errors, DatasetDefinition.CheckForDuplicates checkDuplicates,
-                                          QCState defaultQCState, StudyImportContext studyImportContext, Logger logger)
-            throws IOException
-    {
-        parseData(user, def, loader, columnMap);
-
-        Map<Enum, Object> options = new HashMap<>();
-        options.put(QueryUpdateService.ConfigParameters.Logger, logger);
-
-        DataIteratorContext context = new DataIteratorContext();
-        context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
-        context.setConfigParameters(options);
-
-        List<String> lsids = def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, studyImportContext, logger, false);
-        batchValidateExceptionToList(context.getErrors(), errors);
-        return lsids;
-    }
 
     public List<String> importDatasetData(User user, DatasetDefinition def, DataLoader loader, Map<String, String> columnMap,
                                           BatchValidationException errors, DatasetDefinition.CheckForDuplicates checkDuplicates,
@@ -3665,9 +3645,7 @@ public class StudyManager
             throws IOException
     {
         parseData(user, def, loader, columnMap);
-        Logger logger = null != context.getConfigParameters()
-                ? (Logger)context.getConfigParameters().get(QueryUpdateService.ConfigParameters.Logger)
-                : null;
+        Logger logger = (Logger)context.getConfigParameters().get(QueryUpdateService.ConfigParameters.Logger);
         return def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, studyImportContext, logger, false);
     }
 

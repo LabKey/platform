@@ -29,7 +29,6 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.ontology.OntologyService;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
@@ -58,7 +57,6 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
     final DataIteratorBuilder _inputBuilder;
     final TableInfo _target;
     boolean _useImportAliases = false;
-    DataIteratorContext _context;
     final Container _c;
     final User _user;
     final CaseInsensitiveHashSet dontRequire = new CaseInsensitiveHashSet();
@@ -69,34 +67,32 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
     boolean _validate = true;
 
 
-    public static StandardDataIteratorBuilder forInsert(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
+
+    public static StandardDataIteratorBuilder forInsert(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext unused)
     {
-        return new StandardDataIteratorBuilder(target, in, c, user, context);
+        return new StandardDataIteratorBuilder(target, in, c, user);
+    }
+
+    public static StandardDataIteratorBuilder forInsert(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user)
+    {
+        return new StandardDataIteratorBuilder(target, in, c, user);
     }
 
     /* do the standard column matching logic, but no coercion or validation */
-    public static DataIteratorBuilder forColumnMatching(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
+    public static DataIteratorBuilder forColumnMatching(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user)
     {
-        StandardDataIteratorBuilder ret = new StandardDataIteratorBuilder(target, in, c, user, context);
+        StandardDataIteratorBuilder ret = new StandardDataIteratorBuilder(target, in, c, user);
         ret._convertTypes = ret._validate = ret._builtInColumns = false;
         ret._useImportAliases = true;
         return ret;
     }
 
-    public static StandardDataIteratorBuilder forUpdate(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-
-    protected StandardDataIteratorBuilder(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
+    protected StandardDataIteratorBuilder(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user)
     {
         _inputBuilder = in;
         _target = target;
         _c = c;
         _user = user;
-        _context = context;
-        _useImportAliases = context.getInsertOption().useImportAliases;
     }
 
     /*
@@ -106,11 +102,6 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
     public void addDoNotRequireColumn(String name)
     {
         dontRequire.add(name);
-    }
-
-    public BatchValidationException getErrors()
-    {
-        return _context.getErrors();
     }
 
     private static class TranslateHelper
@@ -129,6 +120,8 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
     @Override
     public DataIterator getDataIterator(DataIteratorContext context)
     {
+        _useImportAliases = context.getInsertOption().useImportAliases;
+
         Domain d = _target.getDomain();
 
         Map<String, DomainProperty> propertiesMap = new HashMap<>();

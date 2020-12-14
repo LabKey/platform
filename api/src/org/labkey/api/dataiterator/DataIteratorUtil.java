@@ -329,7 +329,7 @@ public class DataIteratorUtil
     // this is just a point-to-point copy _without_ triggers
     public static int copy(DataIteratorContext context, DataIteratorBuilder from, TableInfo to, Container c, User user)
     {
-        StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(to, from, c, user, context);
+        StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(to, from, c, user);
         DataIteratorBuilder insert = ((UpdateableTableInfo)to).persistRows(etl, context);
         Pump pump = new Pump(insert, context);
         pump.run();

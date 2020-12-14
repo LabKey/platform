@@ -20,12 +20,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderService;
@@ -34,17 +40,20 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.Filter;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.DatasetUpdateService;
 
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -52,9 +61,9 @@ public class DatasetImportRunnable implements Runnable
 {
     private static final Logger LOG = PipelineJob.getJobLogger(DatasetImportRunnable.class);
 
-    protected AbstractDatasetImportTask.Action _action = null;
-    protected boolean _deleteAfterImport = false;
-    protected Date _replaceCutoff = null;
+    protected AbstractDatasetImportTask.Action _action;
+    protected boolean _deleteAfterImport;
+    protected Date _replaceCutoff;
     protected String visitDatePropertyURI = null;
     protected String visitDatePropertyName = null;
 
@@ -116,7 +125,7 @@ public class DatasetImportRunnable implements Runnable
     {
         try (InputStream is = _root.getInputStream(_fileName))
         {
-            DataLoader loader = DataLoaderService.get().createLoader(_fileName, null, is, true, _studyImportContext.getContainer(), TabLoader.TSV_FILE_TYPE);
+            DataLoader loader = DataLoaderService.get().createLoader(_fileName, null, is, true, _study.getContainer(), TabLoader.TSV_FILE_TYPE);
             return loader.getColumns();
         }
         catch (Exception x)
@@ -137,19 +146,20 @@ public class DatasetImportRunnable implements Runnable
         DbSchema schema  = StudySchema.getInstance().getSchema();
         DbScope scope = schema.getScope();
         QCState defaultQCState = _study.getDefaultPipelineQCState() != null ?
-                QCStateManager.getInstance().getQCStateForRowId(_studyImportContext.getContainer(), _study.getDefaultPipelineQCState().intValue()) : null;
+                QCStateManager.getInstance().getQCStateForRowId(_study.getContainer(), _study.getDefaultPipelineQCState().intValue()) : null;
 
-        List<String> errors = new ArrayList<>();
-        validate(errors);
+        List<String> validateErrors = new ArrayList<>();
+        validate(validateErrors);
 
-        if (!errors.isEmpty())
+        if (!validateErrors.isEmpty())
         {
-            for (String e : errors)
+            for (String e : validateErrors)
                 _logger.error(_fileName + " -- " + e);
             return;
         }
 
         DataLoader loader = null;
+        BatchValidationException batchErrors = new BatchValidationException();
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
@@ -201,19 +211,23 @@ public class DatasetImportRunnable implements Runnable
 
                     assert cpuImport.start();
                     _logger.info(_datasetDefinition.getLabel() + ": Starting import from " + _fileName);
-                    List<String> imported = StudyManager.getInstance().importDatasetData(
-                            _studyImportContext.getUser(),
-                            _datasetDefinition,
-                            loader,
-                            _columnMap,
-                            errors,
-                            DatasetDefinition.CheckForDuplicates.sourceOnly,
-                            //Set to TRUE if MERGEing
-                            defaultQCState,
-                            _studyImportContext,
-                            _logger
-                    );
-                    if (errors.size() == 0)
+
+                    User user = _studyImportContext.getUser();
+                    Container c = _studyImportContext.getContainer();
+                    QuerySchema qs = DefaultSchema.get(user,c).getSchema("study");
+                    TableInfo datasetTable = null==qs ? null : qs.getTable(_datasetDefinition.getName());
+                    QueryUpdateService qus = null == datasetTable ? null : datasetTable.getUpdateService();
+                    if (null == qus)
+                        throw UnexpectedException.wrap(new NullPointerException(),"Table not found for table: " + _datasetDefinition.getName());
+                    Map<Enum,Object> config = new HashMap<>();
+                    config.put(DatasetUpdateService.Config.CheckForDuplicates, DatasetDefinition.CheckForDuplicates.sourceOnly);
+                    config.put(DatasetUpdateService.Config.StudyImportMaps, _studyImportContext.getTableIdMapMap());
+                    if (null != defaultQCState)
+                        config.put(DatasetUpdateService.Config.DefaultQCState, defaultQCState);
+                    config.put(QueryUpdateService.ConfigParameters.Logger, _logger);
+
+                    int count = qus.importRows(user, c, loader, batchErrors, config, null);
+                    if (!batchErrors.hasErrors())
                     {
                         // optional check if new visits exist before committing, visit based timepoint studies only
                         boolean shouldCommit = true;
@@ -232,7 +246,7 @@ public class DatasetImportRunnable implements Runnable
                         {
                             assert cpuCommit.start();
                             transaction.commit();
-                            String msg = _datasetDefinition.getLabel() + ": Successfully imported " + imported.size() + " rows from " + _fileName;
+                            String msg = _datasetDefinition.getLabel() + ": Successfully imported " + count + " rows from " + _fileName;
                             if (useCutoff && skippedRowCount[0] > 0)
                                 msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
                             _logger.info(msg);
@@ -249,8 +263,8 @@ public class DatasetImportRunnable implements Runnable
         }
         finally
         {
-            for (String err : errors)
-                _logger.error(_fileName + " -- " + err);
+            for (ValidationException err : batchErrors.getRowErrors())
+                _logger.error(_fileName + " -- " + err.getMessage());
 
             if (_deleteAfterImport)
             {
