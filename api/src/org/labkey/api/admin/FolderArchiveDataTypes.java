@@ -42,4 +42,5 @@ public class FolderArchiveDataTypes
     public static final String STUDY = "Study";
     public static final String FILES = "Files";
     public static final String ETLS = "ETL Definitions";
+    public static final String SAMPLE_TYPES = "Sample Types";
 }

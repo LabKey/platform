@@ -16,8 +16,6 @@
 
 package org.labkey.api.exp;
 
-import org.apache.commons.beanutils.ConvertUtils;
-import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MvUtil;
@@ -49,10 +47,8 @@ public class ObjectProperty extends OntologyManager.PropertyRow
     private String format;
 
     // ObjectProperty
-    private Identifiable objectValue;
+    protected Identifiable objectValue;
     private Map<String, ObjectProperty> _childProperties;
-
-    private AttachmentFile attachmentFile;
 
     // Don't delete this -- it's accessed via introspection
     public ObjectProperty()
@@ -149,82 +145,8 @@ public class ObjectProperty extends OntologyManager.PropertyRow
             this.mvIndicator = wrapper.getMvIndicator();
             value = wrapper.getValue();
         }
-        switch (propertyType)
-        {
-            case STRING:
-            case MULTI_LINE:
-                this.stringValue = value == null ? null : value.toString();
-                break;
-            case ATTACHMENT:
-                if (value instanceof AttachmentFile)
-                {
-                    attachmentFile = (AttachmentFile)value;
-                    this.stringValue = attachmentFile.getFilename();
-                }
-                else
-                    this.stringValue = value == null ? null : value.toString();
-                break;
-            case FILE_LINK:
-                if (value instanceof File)
-                    this.stringValue = ((File) value).getPath();
-                else
-                    this.stringValue = value == null ? null : value.toString();
-                break;
-            case DATE:
-            case DATE_TIME:
-                if (value instanceof Date)
-                    this.dateTimeValue = (Date) value;
-                else if (null != value)
-                    this.dateTimeValue = (Date) ConvertUtils.convert(value.toString(), Date.class);
-                break;
-            case INTEGER:
-                if (value instanceof Integer)
-                    this.floatValue = ((Integer) value).doubleValue();
-                else if (null != value)
-                    this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
-                break;
-            case DOUBLE:
-            case FLOAT:
-                if (value instanceof Double)
-                    this.floatValue = (Double) value;
-                else if (null != value)
-                    this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
-                break;
-            case BOOLEAN:
-                Boolean boolValue = null;
-                if (value instanceof Boolean)
-                    boolValue = (Boolean)value;
-                else if (null != value)
-                    boolValue = (Boolean) ConvertUtils.convert(value.toString(), Boolean.class);
-                this.floatValue = boolValue == null ? null : boolValue == Boolean.TRUE ? 1.0 : 0.0;
-                break;
-            case RESOURCE:
-                if (value instanceof Identifiable)
-                {
-                    this.stringValue = ((Identifiable) value).getLSID();
-                    this.objectValue = (Identifiable) value;
-                }
-                else if (null != value)
-                    this.stringValue = value.toString();
 
-                break;
-            case BIGINT:
-                if (value instanceof Long)
-                    this.floatValue = ((Long) value).doubleValue();
-                else if (null != value)
-                    this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
-                break;
-            case DECIMAL:
-                if (null != value)
-                    this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
-                break;
-            case BINARY:
-                if (null != value)
-                    this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown property type: " + propertyType);
-        }
+        propertyType.setValue(this, value);
     }
 
     public Object getValueMvAware()
@@ -237,49 +159,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
 
     public Object value()
     {
-        switch (getPropertyType())
-        {
-            case STRING:
-            case MULTI_LINE:
-                return getStringValue();
-
-            case XML_TEXT:
-                return getStringValue();
-
-            case DATE:
-            case TIME:
-            case DATE_TIME:
-                return dateTimeValue;
-
-            case ATTACHMENT:
-                return getStringValue();
-
-            case FILE_LINK:
-                String value = getStringValue();
-                return value == null ? null : new File(value);
-
-            case INTEGER:
-                return floatValue == null ? null : floatValue.intValue();
-
-            case BIGINT:
-                return floatValue == null ? null : floatValue.longValue();
-
-            case BOOLEAN:
-                return floatValue == null ? null : floatValue.intValue() != 0 ? Boolean.TRUE : Boolean.FALSE;
-
-            case DECIMAL:
-            case FLOAT:
-            case DOUBLE:
-                return floatValue;
-
-            case RESOURCE:
-                if (null != objectValue)
-                    return objectValue;
-                else
-                    return getStringValue();
-        }
-
-        throw new IllegalStateException("Unknown data type '" + rangeURI + "' for property '" + propertyURI + "' on object '" + objectURI + "'");
+        return getPropertyType().getValue(this);
     }
 
     public PropertyType getPropertyType()
@@ -378,7 +258,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
     {
         if (0 == hashCode)
         {
-            String hashString = objectURI + propertyURI + String.valueOf(value());
+            String hashString = objectURI + propertyURI + value();
             hashCode = hashString.hashCode();
         }
 
@@ -414,11 +294,6 @@ public class ObjectProperty extends OntologyManager.PropertyRow
             }
         }
         return _childProperties;
-    }
-
-    public AttachmentFile getAttachmentFile()
-    {
-        return attachmentFile;
     }
 
     public static class ObjectPropertyObjectFactory extends BeanObjectFactory<ObjectProperty>
