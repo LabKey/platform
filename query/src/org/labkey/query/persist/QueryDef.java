@@ -109,7 +109,7 @@ public class QueryDef extends Entity implements Cloneable
 
     public String getSchema()
     {
-        return _schema.toString();
+        return _schema == null ? null : _schema.toString();
     }
 
     public void setSchema(String schema)
