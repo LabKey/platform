@@ -19,9 +19,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
@@ -155,5 +158,16 @@ public class AliasInsertHelper
     private static Collection<Integer> ensureAliases(User user, Set<String> aliasNames)
     {
         return ExperimentServiceImpl.get().ensureAliases(user, aliasNames);
+    }
+
+    public static Collection<String> getAliases(String lsid)
+    {
+        SQLFragment sql = new SQLFragment("SELECT AL.name FROM ").append(ExperimentService.get().getTinfoAlias(), "AL")
+                .append(" JOIN ").append(ExperimentService.get().getTinfoMaterialAliasMap(), "MM")
+                .append(" ON AL.rowId = MM.alias")
+                .append(" WHERE MM.lsid = ?")
+                .add(lsid);
+
+        return new SqlSelector(ExperimentService.get().getSchema(), sql).getCollection(String.class);
     }
 }

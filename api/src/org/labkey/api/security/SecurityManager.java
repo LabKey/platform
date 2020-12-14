@@ -93,12 +93,14 @@ import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HasHttpRequest;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.permissions.SeeFilePathsPermission;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.security.xml.GroupEnumType;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
@@ -631,44 +633,96 @@ public class SecurityManager
 
     public static final int SECONDS_PER_DAY = 60*60*24;
 
-    public static class TransformSession implements Closeable
+    public static abstract class TransformSession implements Closeable
     {
         private final String _apikey;
 
-        public TransformSession(@NotNull User user)
+        protected TransformSession(String apiKey)
         {
-            // TODO: Once we fix Issue 41813, we should remove this ignoreSqlUpdates() block
-            // Issue 40482: now that we create a temporary apikey when executing R reports, we need to ignore SQL updates
-            try (var ignore = SpringActionController.ignoreSqlUpdates())
-            {
-                _apikey = ApiKeyManager.get().createKey(user, SECONDS_PER_DAY);
-            }
+            _apikey = apiKey;
         }
 
         public String getApiKey()
         {
             return _apikey;
         }
+    }
+
+    private static final class HttpSessionTransformSession extends TransformSession
+    {
+        /** Creates http session apiKey */
+        private HttpSessionTransformSession(@NotNull HttpServletRequest req, @NotNull HttpSession session)
+        {
+            super(SessionApiKeyManager.get().createKey(req, session));
+        }
 
         @Override
         public void close() throws IOException
         {
-            // TODO: Once we fix Issue 41813, we should remove this ignoreSqlUpdates() block
-            try (var ignore = SpringActionController.ignoreSqlUpdates())
-            {
-                ApiKeyManager.get().deleteKey(_apikey);
-            }
+            SessionApiKeyManager.get().invalidateKey(getApiKey());
+        }
+    }
+
+    private static final class DatabaseTransformSession extends TransformSession
+    {
+        /** Creates database apiKey */
+        private DatabaseTransformSession(@NotNull User user)
+        {
+            super(ApiKeyManager.get().createKey(user, SECONDS_PER_DAY));
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            ApiKeyManager.get().deleteKey(getApiKey());
         }
     }
 
     /**
      * Works like a standard HTTP session but intended for transform scripts and other API-style usage.
      * Callers must call this in a try-with-resources block to ensure the session is closed (e.g., API key is deleted).
+     *
+     * This form is intended for background jobs. Prefer using the other form of this method that accepts an
+     * HttpSession instead to avoid these limitations:
+     * <ul>
+     *     <li>inserts the apikey into the database so requires a {@link MutatingApiAction} or
+     *     {@link SpringActionController#ignoreSqlUpdates()}</li>
+     *     <li>can't be used when impersonating -- see Issue 34580</li>
+     * </ul>
+     *
      * @return a TransformSession representing the newly created session
      */
     public static @NotNull TransformSession createTransformSession(@NotNull User user)
     {
-        return new TransformSession(user);
+        return new DatabaseTransformSession(user);
+    }
+
+    /**
+     * Works like a standard HTTP session but intended for transform scripts and other API-style usage.
+     * Callers must call this in a try-with-resources block to ensure the session is closed (e.g., API key is deleted).
+     *
+     * This form creates a apiKey tied to the user's http session.
+     *
+     * @return a TransformSession representing the newly created session
+     */
+    public static @NotNull TransformSession createTransformSession(@NotNull HttpServletRequest req, @NotNull HttpSession session)
+    {
+        return new HttpSessionTransformSession(req, session);
+    }
+
+    /**
+     * Works like a standard HTTP session but intended for transform scripts and other API-style usage.
+     * Callers must call this in a try-with-resources block to ensure the session is closed (e.g., API key is deleted).
+     * @param context A ViewContext or AssayRunUploadContext
+     * @return a TransformSession representing the newly created session
+     */
+    public static @NotNull <T extends ContainerUser & HasHttpRequest> TransformSession createTransformSession(@NotNull T context)
+    {
+        HttpServletRequest request = context.getRequest();
+        if (request != null && !ViewServlet.isMockRequest(request) && request.getSession() != null)
+            return createTransformSession(request, request.getSession());
+        else
+            return createTransformSession(context.getUser());
     }
 
     public static HttpSession setAuthenticatedUser(HttpServletRequest request, @Nullable PrimaryAuthenticationConfiguration<?> configuration, User user, boolean invalidate)

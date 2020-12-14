@@ -1648,7 +1648,6 @@ api/webapp/clientapi/ext4/data/Proxy.js -text
 api/webapp/clientapi/ext4/data/Reader.js -text
 api/webapp/clientapi/ext4/data/Store.js -text
 api/webapp/clientapi/ext4/Util.js -text
-api/webapp/clientapi_core.lib.xml -text
 api/webapp/ext-4.2.1/ext-patches.js -text
 api/webapp/ext-theme/blue/ext-all-debug.css -text
 api/webapp/ext-theme/brown/ext-all-debug.css -text

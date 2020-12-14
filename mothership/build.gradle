@@ -1,5 +1,9 @@
 import org.labkey.gradle.util.BuildUtils
 
+plugins {
+   id 'org.labkey.build.module'
+}
+
 dependencies
 {
    external 'com.jayway.jsonpath:json-path:2.4.0'

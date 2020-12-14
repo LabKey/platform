@@ -536,6 +536,11 @@ public class XarExporter
         xMaterial.setName(material.getName());
 
         Map<String, ObjectProperty> objectProperties = material.getObjectProperties();
+        Collection<String> aliases = material.getAliases();
+        if (!aliases.isEmpty())
+        {
+            xMaterial.setAlias(String.join(",", aliases));
+        }
         PropertyCollectionType materialProperties = getProperties(objectProperties, material.getContainer());
         if (materialProperties != null)
         {
@@ -543,7 +548,7 @@ public class XarExporter
         }
     }
 
-    private void addSampleType(String cpasType)
+    private void addSampleType(String cpasType) throws ExperimentException
     {
         if (_sampleSetLSIDs.contains(cpasType))
         {
@@ -554,8 +559,10 @@ public class XarExporter
         addSampleType(sampleType);
     }
 
-    public void addSampleType(ExpSampleType sampleType)
+    public void addSampleType(ExpSampleType sampleType) throws ExperimentException
     {
+        final String PLACEHOLDER_SUFFIX = "sfx";
+
         if (sampleType == null)
         {
             return;
@@ -566,7 +573,12 @@ public class XarExporter
         }
         SampleSetType xSampleSet = _archive.getSampleSets().addNewSampleSet();
         xSampleSet.setAbout(_relativizedLSIDs.relativize(sampleType.getLSID()));
-        xSampleSet.setMaterialLSIDPrefix(_relativizedLSIDs.relativize(sampleType.getMaterialLSIDPrefix()));
+
+        // we need to temporarily fake up a full Lsid in order to relativize properly
+        String materialPrefix = _relativizedLSIDs.relativize(sampleType.getMaterialLSIDPrefix() + PLACEHOLDER_SUFFIX);
+        if (materialPrefix.endsWith(PLACEHOLDER_SUFFIX))
+            materialPrefix = materialPrefix.substring(0, materialPrefix.length() - PLACEHOLDER_SUFFIX.length());
+        xSampleSet.setMaterialLSIDPrefix(materialPrefix);
         xSampleSet.setName(sampleType.getName());
         if (sampleType.getDescription() != null)
         {
@@ -600,6 +612,25 @@ public class XarExporter
         if (sampleType.getMetricUnit() != null)
         {
             xSampleSet.setMetricUnit(sampleType.getMetricUnit());
+        }
+
+        try
+        {
+            Map<String, String> aliasMap = sampleType.getImportAliasMap();
+            if (!aliasMap.isEmpty())
+            {
+                SampleSetType.ParentImportAlias parentImportAlias = xSampleSet.addNewParentImportAlias();
+                for (Map.Entry<String, String> entry : aliasMap.entrySet())
+                {
+                    ImportAlias importAlias = parentImportAlias.addNewAlias();
+                    importAlias.setName(entry.getKey());
+                    importAlias.setValue(entry.getValue());
+                }
+            }
+        }
+        catch (IOException e)
+        {
+            throw new ExperimentException(e);
         }
 
         Domain domain = sampleType.getDomain();

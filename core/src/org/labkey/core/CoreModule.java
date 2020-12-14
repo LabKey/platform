@@ -930,10 +930,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 .forEach(ss::addDocumentParser);
         }
 
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_API,
-                "Use clientapi_core.lib.xml instead of @labkey/api on the client-side",
-                "As of LabKey Server v20.5 @labkey/api as the default client-side implementation of JavaScript API.",
-                false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP,
                 "Client-side Exception Logging To Mothership",
                 "Report unhandled JavaScript exceptions to mothership.",

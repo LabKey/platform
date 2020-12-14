@@ -262,7 +262,7 @@ public class PageFlowUtil
                 case 'm':
                     if (encodeLinks)
                     {
-                        CharSequence sub = s.subSequence(i, s.length() - 1);
+                        CharSequence sub = s.subSequence(i, s.length());
                         if (StringUtilsLabKey.startsWithURL(sub))
                         {
                             Matcher m = urlPatternStart.matcher(sub);
@@ -2610,6 +2610,24 @@ public class PageFlowUtil
         private boolean isLegalId(String id)
         {
             return !id.isEmpty() && Character.isLetter(id.charAt(0)) && id.replaceAll("[0-9A-Za-z\\-_:.]", "").isEmpty();
+        }
+
+        @Test
+        public void testFilterURL()
+        {
+            String html;
+
+            html = filter("click here http://this/is/a/test.view.", true, true);
+            assertTrue(html.contains("href=\"http:"));
+            assertTrue(html.contains("view</a>."));
+
+            html = filter("click here http://this/is/a/test.view ", true, true);
+            assertTrue(html.contains("href=\"http:"));
+            assertTrue(html.contains("view</a>"));
+
+            html = filter("click here http://this/is/a/test.view", true, true);
+            assertTrue(html.contains("href=\"http:"));
+            assertTrue(html.contains("view</a>"));
         }
     }
 
