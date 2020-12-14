@@ -96,7 +96,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     public SampleTypeUpdateServiceDI(ExpMaterialTableImpl table, ExpSampleTypeImpl sampleType)
     {
-        super(table, table.getRealTable());
+        super(table, table.getRealTable(), createMVMapping(sampleType.getDomain()));
         _sampleType = sampleType;
         _schema = table.getUserSchema();
         _samplesTable = sampleType.getTinfo();

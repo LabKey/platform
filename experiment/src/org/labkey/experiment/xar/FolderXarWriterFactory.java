@@ -34,6 +34,7 @@ import org.labkey.folder.xml.FolderDocument;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: vsharma
@@ -67,13 +68,21 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             Set<Container> containers = ContainerManager.getAllChildren(c);
             for(Container container: containers)
             {
-                if(ExperimentService.get().getExpRuns(container, null, null).size() > 0)
+                if(getRuns(container).size() > 0)
                 {
                     return true;
                 }
             }
 
             return false;
+        }
+
+        private List<ExpRun> getRuns(Container c)
+        {
+            // don't include the sample derivation runs, we now have a separate exporter explicitly for sample types
+            return ExperimentService.get().getExpRuns(c, null, null).stream()
+                    .filter(run -> !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID))
+                    .collect(Collectors.toList());
         }
 
         @Override
@@ -98,8 +107,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
                 selection.addExperimentIds(exp.getRowId());
             }
 
-            List<? extends ExpRun> expRuns = ExperimentService.get().getExpRuns(ctx.getContainer(), null, null);
-            selection.addRuns(expRuns);
+            selection.addRuns(getRuns(ctx.getContainer()));
 
             ctx.getXml().addNewXar().setDir(XAR_DIRECTORY);
             VirtualFile xarDir = vf.getDir(XAR_DIRECTORY);
