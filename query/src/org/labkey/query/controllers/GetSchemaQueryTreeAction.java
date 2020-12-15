@@ -174,7 +174,9 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
                             if (qdef.isHidden() && !form.isShowHidden())
                                 continue;
 
-                            addQueryToList(schemaPath, qname, qname, qdef.getDescription(), qdef.isHidden(), queries, false);
+                            // LinkedSchemaQueryDefinitions should be considered to be tables, and we can distinguish them
+                            // based on how the report isUserDefined()
+                            addQueryToList(schemaPath, qname, qname, qdef.getDescription(), qdef.isHidden(), queries, !qdef.isUserDefined());
                         }
                     }
 
