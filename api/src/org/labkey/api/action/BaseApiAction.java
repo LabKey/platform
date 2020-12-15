@@ -106,6 +106,20 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     }
 
     @Override
+    public void checkPermissions() throws UnauthorizedException
+    {
+        // Set the preferred response format here so we can use it for 401s
+        setResponseFormat();
+
+        super.checkPermissions();
+    }
+
+    private void setResponseFormat()
+    {
+        ApiResponseWriter.setResponseFormat(getViewContext().getRequest(), ApiResponseWriter.Format.getFormatByName(getViewContext().getRequest().getParameter("respFormat"), ApiResponseWriter.Format.JSON));
+    }
+
+    @Override
     protected String getCommandClassMethodName()
     {
         return "execute";
@@ -114,6 +128,9 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     @Override
     public ModelAndView handleRequest() throws Exception
     {
+        // Likely a dupe with what's been done in checkPermissions(), but ensuring that future code path variants will pass through
+        setResponseFormat();
+
         switch (getViewContext().getMethod())
         {
             case POST:
@@ -156,8 +173,6 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 
             FORM form = pair.first;
             BindException errors = pair.second;
-
-            ApiResponseWriter.setResponseFormat(getViewContext().getRequest(), ApiResponseWriter.Format.getFormatByName(getViewContext().getRequest().getParameter("respFormat"), ApiResponseWriter.Format.JSON));
 
             if (form != null)
             {
