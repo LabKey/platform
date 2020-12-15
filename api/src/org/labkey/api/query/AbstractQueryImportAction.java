@@ -444,6 +444,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
                             JSONObject response = new JSONObject();
                             response.put("success", true);
+                            response.put("jobId", PipelineService.get().getJobId(user, getContainer(), job.getJobGUID()));
                             return new ApiSimpleResponse(response);
                         }
 
