@@ -36,6 +36,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -57,6 +59,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.springframework.validation.BindException;
@@ -84,6 +87,8 @@ import static org.labkey.api.query.AbstractQueryUpdateService.createTransactionA
  */
 public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM>
 {
+    public static final String ASYNC_QUERY_IMPORT_PARAM = "useAsync";
+
     public static class ImportViewBean
     {
         public String urlCancel = null;
@@ -116,6 +121,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     protected boolean _importLookupByAlternateKey = false;
     protected QueryUpdateService.InsertOption _insertOption= QueryUpdateService.InsertOption.INSERT;
     protected AuditBehaviorType _auditBehaviorType = null;
+    public boolean _useAsync = false; // if true, do import using a background thread
 
     protected void setTarget(TableInfo t) throws ServletException
     {
@@ -284,7 +290,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         String moduleName = getViewContext().getRequest().getParameter("module");
         String moduleResource = getViewContext().getRequest().getParameter("moduleResource");
 
-        String saveToPipeline = getViewContext().getRequest().getParameter("saveToPipeline");
+        String saveToPipeline = getViewContext().getRequest().getParameter("saveToPipeline"); // saveToPipeline saves import file to pipeline root, but doesn't necessarily do import in a background job
+
+        if (getViewContext().getRequest().getParameter("useAsync") != null) // useAsync will save import file to pipeline root as well as run import in a background job
+            _useAsync = Boolean.valueOf(getViewContext().getRequest().getParameter(ASYNC_QUERY_IMPORT_PARAM));
+
 
         // TODO: once importData() is refactored to accept DataIteratorContext, change importIdentity into local variable
         if (getViewContext().getRequest().getParameter("importIdentity") != null)
@@ -292,6 +302,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
         if (getViewContext().getRequest().getParameter("importLookupByAlternateKey") != null)
             _importLookupByAlternateKey = Boolean.valueOf(getViewContext().getRequest().getParameter("importLookupByAlternateKey"));
+
+        // Check first if the audit behavior has been defined for the table either in code or through XML.
+        // If not defined there, check for the audit behavior defined in the action form (getAuditBehaviorType()).
+        AuditBehaviorType behaviorType = (_target != null) ? _target.getAuditBehavior(getAuditBehaviorType()) : getAuditBehaviorType();
 
         try
         {
@@ -376,7 +390,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     // can't read the multipart file twice so create temp file (12800)
                     dataFile = File.createTempFile("~upload", multipartfile.getOriginalFilename());
                     PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-                    if (null != root && Boolean.parseBoolean(saveToPipeline))
+                    if (null != root && (Boolean.parseBoolean(saveToPipeline) || _useAsync))
                     {
                         File dataFileDir = new File(root.getRootPath().getAbsolutePath() + File.separator + "QueryImportFiles");
                         if (dataFileDir.isFile())
@@ -393,10 +407,49 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                         + " for uploaded query import file " + multipartfile.getOriginalFilename());
                         }
 
-
                         dataFile = AssayFileWriter.findUniqueFileName(multipartfile.getOriginalFilename(), dataFileDir);
+
                     }
                     multipartfile.transferTo(dataFile);
+                    if (_useAsync)
+                    {
+                        if (!isBackgroundImportSupported())
+                            throw new RuntimeException("Importing in background currently is not supported for this table");
+
+                        ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getUser(), new ActionURL());
+
+                        UserSchema schema = _target.getUserSchema();
+                        if (schema != null)
+                        {
+                            String schemaName = schema.getSchemaName();
+                            String queryName = _target.getName();
+
+                            QueryImportPipelineJob.QueryImportAsyncContextBuilder importContextBuilder = new QueryImportPipelineJob.QueryImportAsyncContextBuilder();
+                            importContextBuilder
+                                .setPrimaryFile(dataFile)
+                                .setHasColumnHeaders(_hasColumnHeaders)
+                                .setFileContentType(multipartfile.getContentType())
+                                .setSchemaName(schemaName)
+                                .setQueryName(queryName)
+                                .setRenamedColumns(getRenamedColumns())
+                                .setInsertOption(_insertOption)
+                                .setAuditBehaviorType(behaviorType)
+                                .setImportLookupByAlternateKey(_importLookupByAlternateKey)
+                                .setImportIdentity(_importIdentity)
+                                .setHasLineageColumns(hasLineageColumns())
+                                .setJobDescription(getQueryImportDescription());
+
+                            QueryImportPipelineJob job = new QueryImportPipelineJob(getQueryImportProviderName(), info, root, importContextBuilder);
+                            PipelineService.get().queueJob(job);
+
+                            JSONObject response = new JSONObject();
+                            response.put("success", true);
+                            response.put("jobId", PipelineService.get().getJobId(user, getContainer(), job.getJobGUID()));
+                            return new ApiSimpleResponse(response);
+                        }
+
+                    }
+
                     loader = DataLoader.get().createLoader(dataFile, multipartfile.getContentType(), _hasColumnHeaders, null, null);
                     file = new FileAttachmentFile(dataFile, multipartfile.getOriginalFilename());
                 }
@@ -414,12 +467,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             configureLoader(loader);
 
             TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
-            // Check first if the audit behavior has been defined for the table either in code or through XML.
-            // If not defined there, check for the audit behavior defined in the action form (getAuditBehaviorType()).
-            AuditBehaviorType behaviorType = (_target != null) ? _target.getAuditBehavior(getAuditBehaviorType()) : getAuditBehaviorType();
             if (behaviorType != null && behaviorType != AuditBehaviorType.NONE)
                 auditEvent = createTransactionAuditEvent(getContainer(), QueryService.AuditAction.INSERT);
-            int rowCount = importData(loader, file, originalName, ve, getAuditBehaviorType(), auditEvent);
+
+            int rowCount = importData(loader, file, originalName, ve, behaviorType, auditEvent);
 
             if (ve.hasErrors())
                 throw ve;
@@ -428,6 +479,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             if (auditEvent != null)
                 response.put("transactionAuditId", auditEvent.getRowId());
             return new ApiSimpleResponse(response);
+
         }
         catch (IOException e)
         {
@@ -438,18 +490,23 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         {
             if (null != file)
                 file.closeInputStream();
-            if (null != dataFile && !Boolean.parseBoolean(saveToPipeline))
+            if (null != dataFile && !Boolean.parseBoolean(saveToPipeline) && !_useAsync)
                 dataFile.delete();
         }
+
     }
 
     protected void configureLoader(DataLoader loader) throws IOException
     {
-        //apply known columns so loader can do better type conversion
-        if (loader != null && _target != null)
-            loader.setKnownColumns(_target.getColumns());
+        configureLoader(loader, _target, getRenamedColumns(), hasLineageColumns());
+    }
 
-        Map<String, String> renamedColumns = getRenamedColumns();
+    public static void configureLoader(DataLoader loader, @Nullable TableInfo target, @Nullable Map<String, String> renamedColumns, boolean includeLineageColumns) throws IOException
+    {
+        //apply known columns so loader can do better type conversion
+        if (loader != null && target != null)
+            loader.setKnownColumns(target.getColumns());
+
         if (loader != null && renamedColumns != null)
         {
             ColumnDescriptor[]  columnDescriptors = loader.getColumns(renamedColumns);
@@ -461,11 +518,51 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 }
             }
         }
+
+        // Issue 40302: Unable to use samples or data class with integer like names as material or data input
+        // treat lineage columns as string values
+        if (includeLineageColumns)
+        {
+            ColumnDescriptor[] cols = loader.getColumns();
+            for (ColumnDescriptor col : cols)
+            {
+                String name = col.name.toLowerCase();
+                if (name.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase() + "/") ||
+                    name.startsWith(ExpMaterial.MATERIAL_OUTPUT_CHILD.toLowerCase() + "/") ||
+                    name.startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase() + "/") ||
+                    name.startsWith(ExpData.DATA_OUTPUT_CHILD.toLowerCase() + "/"))
+                {
+                    col.clazz = String.class;
+                    col.converter = TabLoader.noopConverter;
+                }
+            }
+        }
+
+    }
+
+    protected boolean hasLineageColumns()
+    {
+        return false;
     }
 
     protected Map<String, String> getRenamedColumns()
     {
         return null;
+    }
+
+    protected String getQueryImportProviderName()
+    {
+        return null;
+    }
+
+    protected String getQueryImportDescription()
+    {
+        return null;
+    }
+
+    protected boolean isBackgroundImportSupported()
+    {
+        return false;
     }
 
     protected JSONObject createSuccessResponse(int rowCount)
@@ -536,28 +633,33 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     /* TODO change prototype to take DataIteratorBuilder, and DataIteratorContext */
     protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
     {
-        if (_target != null)
+        return importData(dl, _target, _updateService, _insertOption, _importLookupByAlternateKey, _importIdentity, errors, auditBehaviorType, auditEvent, getUser(), getContainer());
+    }
+
+    public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, boolean importLookupByAlternateKey, boolean importIdentity, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException
+    {
+        if (target != null)
         {
             DataIteratorContext context = new DataIteratorContext(errors);
-            context.setInsertOption(_insertOption);
-            context.setAllowImportLookupByAlternateKey(_importLookupByAlternateKey);
+            context.setInsertOption(insertOption);
+            context.setAllowImportLookupByAlternateKey(importLookupByAlternateKey);
             if (auditBehaviorType != null)
             {
                 Map<Enum, Object> configParameters = new HashMap<>();
                 configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
                 context.setConfigParameters(configParameters);
             }
-            if (_importIdentity)
+            if (importIdentity)
             {
                 context.setInsertOption(QueryUpdateService.InsertOption.IMPORT_IDENTITY);
                 context.setSupportAutoIncrementKey(true);
             }
 
-            try (DbScope.Transaction transaction = _target.getSchema().getScope().ensureTransaction())
+            try (DbScope.Transaction transaction = target.getSchema().getScope().ensureTransaction())
             {
                 if (auditEvent != null)
-                    addTransactionAuditEvent(transaction,  getUser(), auditEvent);
-                int count = _updateService.loadRows(getUser(), getContainer(), dl, context, new HashMap<>());
+                    addTransactionAuditEvent(transaction,  user, auditEvent);
+                int count = updateService.loadRows(user, container, dl, context, new HashMap<>());
                 if (errors.hasErrors())
                     return 0;
                 if (auditEvent != null)
