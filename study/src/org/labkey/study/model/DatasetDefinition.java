@@ -141,7 +141,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     // standard string to use in URLs etc.
     public static final String DATASETKEY = "datasetId";
 //    static final Object MANAGED_KEY_LOCK = new Object();
-    private static Logger _log = LogManager.getLogger(DatasetDefinition.class);
+    private static final Logger _log = LogManager.getLogger(DatasetDefinition.class);
 
     private final ReentrantLock _lock = new ReentrantLock();
 
