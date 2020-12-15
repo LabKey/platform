@@ -46,7 +46,7 @@ import java.util.Map;
 
 public class BeanObjectFactory<K> implements ObjectFactory<K> // implements ResultSetHandler
 {
-    private static Logger _log = LogManager.getLogger(BeanObjectFactory.class);
+    private static final Logger _log = LogManager.getLogger(BeanObjectFactory.class);
 
     private Class<K> _class;
 
