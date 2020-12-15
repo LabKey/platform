@@ -152,7 +152,13 @@ public class NotificationController extends SpringActionController
                 NotificationService service = NotificationService.get();
                 Container container = form.getContainer() == null ? null : ContainerManager.getForId(form.getContainer());
 
-                for (Notification notification : service.getNotificationsByUser(container, getUser().getUserId(), true))
+                List<Notification> notifications;
+                if (form.getTypeLabels() == null || form.getTypeLabels().isEmpty())
+                    notifications = service.getNotificationsByUser(container, getUser().getUserId(), true);
+                else
+                    notifications = service.getNotificationsByTypeLabels(container, form.getTypeLabels(), getUser().getUserId(), true);
+
+                for (Notification notification : notifications)
                 {
                     Container c = ContainerManager.getForId(notification.getContainer());
                     int numUpdated = NotificationService.get().markAsRead(c, getUser(), notification.getObjectId(),
