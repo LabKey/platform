@@ -61,6 +61,7 @@ import java.util.Map;
  */
 public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 {
+    public static final String RESPONSE_FORMAT_PARAMETER_NAME = "respFormat";
     private final Marshaller _marshaller;
 
     private ApiResponseWriter.Format _reqFormat = null;
@@ -116,7 +117,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 
     private void setResponseFormat()
     {
-        ApiResponseWriter.setResponseFormat(getViewContext().getRequest(), ApiResponseWriter.Format.getFormatByName(getViewContext().getRequest().getParameter("respFormat"), ApiResponseWriter.Format.JSON));
+        ApiResponseWriter.setResponseFormat(getViewContext().getRequest(), ApiResponseWriter.Format.getFormatByName(getViewContext().getRequest().getParameter(RESPONSE_FORMAT_PARAMETER_NAME), ApiResponseWriter.Format.JSON));
     }
 
     @Override
