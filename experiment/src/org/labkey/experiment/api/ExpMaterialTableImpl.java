@@ -668,7 +668,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     // The column in the physical table has a "_MVIndicator" suffix, but we want to expose
                     // it with a "MVIndicator" suffix (no underscore)
                     var mvColumn = new AliasedColumn(this, dp.getName() + MvColumn.MV_INDICATOR_SUFFIX,
-                            StorageProvisioner.getMvIndicatorColumn(dbTable, dp.getPropertyDescriptor(), "No MV column found for '" + dp.getName() + "' in sample type '" + getName() + "'"));
+                            StorageProvisioner.get().getMvIndicatorColumn(dbTable, dp.getPropertyDescriptor(), "No MV column found for '" + dp.getName() + "' in sample type '" + getName() + "'"));
                     mvColumn.setLabel(dp.getLabel() + " MV Indicator");
                     mvColumn.setSqlTypeName("VARCHAR");
                     mvColumn.setPropertyURI(dp.getPropertyURI());
