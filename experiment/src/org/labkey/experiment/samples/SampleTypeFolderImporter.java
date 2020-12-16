@@ -51,7 +51,7 @@ public class SampleTypeFolderImporter implements FolderImporter
     @Override
     public String getDescription()
     {
-        return null;
+        return "Sample Types Importer";
     }
 
     @Override
@@ -63,7 +63,7 @@ public class SampleTypeFolderImporter implements FolderImporter
         {
             File xarFile = null;
             Set<String> dataFiles = new HashSet<>();
-            Logger log = job.getLogger();
+            Logger log = ctx.getLogger();
 
             log.info("Starting Sample Type import");
             for (String file: xarDir.list())
@@ -73,7 +73,7 @@ public class SampleTypeFolderImporter implements FolderImporter
                     if (xarFile == null)
                         xarFile = new File(xarDir.getLocation(), file);
                     else
-                        ctx.getLogger().error("More than one XAR file found in the sample type directory: ", file);
+                        log.error("More than one XAR file found in the sample type directory: ", file);
                 }
                 else if (file.toLowerCase().endsWith(".tsv"))
                 {
@@ -92,7 +92,7 @@ public class SampleTypeFolderImporter implements FolderImporter
                     }
                     catch (Exception e)
                     {
-                        ctx.getLogger().error("Failed to initialize XAR source", e);
+                        log.error("Failed to initialize XAR source", e);
                         throw(e);
                     }
                     log.info("Importing XAR file: " + xarFile.getName());
@@ -100,7 +100,7 @@ public class SampleTypeFolderImporter implements FolderImporter
                     reader.parseAndLoad(false);
                 }
                 else
-                    ctx.getLogger().info("No xar file to process.");
+                    log.info("No xar file to process.");
 
                 // process any sample type data files
                 UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), SamplesSchema.SCHEMA_NAME);
