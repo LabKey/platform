@@ -70,11 +70,13 @@ import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.QCState;
@@ -4834,6 +4836,25 @@ public class StudyManager
     public Study getStudyForVisitTag(@NotNull Study study)
     {
         return getSharedStudyOrCurrent(study);
+    }
+
+
+    public static class StudyUpgradeCode implements UpgradeCode
+    {
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void addImportHashColumn(final ModuleContext context)
+        {
+            if (null!=context && context.isNewInstall())
+                return;
+            StorageProvisioner sp = StorageProvisioner.get();
+            List<DatasetDefinition> all = new TableSelector(StudySchema.getInstance().getTableInfoDataset()).getArrayList(DatasetDefinition.class);
+            for (var ds : all)
+            {
+                Domain d = ds.getDomain();
+                if (null != d && null != d.getStorageTableName())
+                    sp.ensureBaseProperties(d);
+            }
+        }
     }
 
 

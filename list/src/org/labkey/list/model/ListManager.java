@@ -1240,7 +1240,6 @@ public class ListManager implements SearchService.DocumentProvider
 
             for (var l : all)
             {
-                Container c = ContainerManager.getForId(l.getContainerId());
                 int domainId = l.getDomainId();
                 Domain d = PropertyService.get().getDomain(domainId);
                 if (null != d && null != d.getStorageTableName())

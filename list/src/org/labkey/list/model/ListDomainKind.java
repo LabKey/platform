@@ -105,8 +105,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 new PropertyStorageSpec("modifiedBy", JdbcType.INTEGER),
                 new PropertyStorageSpec("lastIndexed", JdbcType.TIMESTAMP),
                 new PropertyStorageSpec("container", JdbcType.GUID).setNullable(false),
-                new PropertyStorageSpec(DataIntegrationService.Columns.TransformImportHash.getColumnName(), JdbcType.VARCHAR)
-                        .setNullable(true));
+                new PropertyStorageSpec(DataIntegrationService.Columns.TransformImportHash.getColumnName(), JdbcType.VARCHAR,  256));
     }
 
     public void setListDefinition(ListDefinitionImpl list)

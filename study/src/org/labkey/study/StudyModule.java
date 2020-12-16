@@ -21,6 +21,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,6 +38,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExperimentService;
@@ -221,7 +223,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public Double getSchemaVersion()
     {
-        return 20.000;
+        return 20.001;
     }
 
     @Override
@@ -782,6 +784,14 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         return ret;
     }
+
+
+    @Override
+    public @Nullable UpgradeCode getUpgradeCode()
+    {
+        return new StudyManager.StudyUpgradeCode();
+    }
+
 
     public static class TestCase extends Assert
     {
