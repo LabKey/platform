@@ -489,6 +489,10 @@ public class ExpDataIterators
                             Collection<?> c = ((Collection)o);
                             parentNames = c.stream().map(String::valueOf).collect(Collectors.toSet());
                         }
+                        else if (o instanceof Number)
+                        {
+                            parentNames = Arrays.asList(((Number) o).toString());
+                        }
                         else
                         {
                             getErrors().addRowError(new ValidationException("Expected comma separated list or a JSONArray of parent names: " + o, _parentCols.get(parentCol)));
