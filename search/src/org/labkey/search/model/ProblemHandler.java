@@ -15,18 +15,23 @@
  */
 package org.labkey.search.model;
 
-import org.apache.logging.log4j.LogManager;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.tika.config.InitializableProblemHandler;
 
 public class ProblemHandler implements InitializableProblemHandler
 {
-    private final Logger LOG = LogManager.getLogger(LuceneSearchServiceImpl.class);
+    private final Logger _log;
+
+    public ProblemHandler(Logger log)
+    {
+        _log = log;
+    }
 
     @Override
     public void handleInitializableProblem(String className, String message)
     {
-        if (!message.contains("jai-image-io"))
-            LOG.warn(message);
+        if (!StringUtils.containsAny(message, "jai-image-io", "sqlite-jdbc"))
+            _log.warn(message);
     }
 }

@@ -341,6 +341,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     GWTPropertyDescriptor plateTemplate = new GWTPropertyDescriptor(AssayRunDomainKind.PLATE_TEMPLATE_COLUMN_NAME, PropertyType.STRING.getTypeUri());
                     plateTemplate.setLookupSchema(AssaySchema.NAME + "." + getResourceName());
                     plateTemplate.setLookupQuery(TsvProviderSchema.PLATE_TEMPLATE_TABLE);
+                    plateTemplate.setLookupContainer(protocol.getContainer().getId());
                     plateTemplate.setRequired(true);
                     plateTemplate.setShownInUpdateView(false);
 
