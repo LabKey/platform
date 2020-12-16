@@ -2965,6 +2965,13 @@ public class ExperimentServiceImpl implements ExperimentService
                 else
                     toDataLsids.add(row);
             });
+            if (LOG.isDebugEnabled())
+            {
+                if (!fromDataLsids.isEmpty())
+                    LOG.debug("  fromDataLsids:\n  " + StringUtils.join(fromDataLsids, "\n  "));
+                if (!toDataLsids.isEmpty())
+                    LOG.debug("  toDataLsids:\n  " + StringUtils.join(toDataLsids, "\n  "));
+            }
 
             SQLFragment materials = new SQLFragment()
                     .append("SELECT m.Container, m.LSID, m.CpasType, m.ObjectId, pa.CpasType AS pa_cpas_type FROM exp.material m\n")
@@ -3002,8 +3009,8 @@ public class ExperimentServiceImpl implements ExperimentService
                 removeEdgesForRun(runId);
 
             int edgeCount = fromDataLsids.size() + fromMaterialLsids.size() + toDataLsids.size() + toMaterialLsids.size() + provenanceStartingInputs.size() + provenanceFinalOutputs.size();
-            LOG.debug(String.format("  edge counts: input data=%d, input materials=%d, output data=%d, output materials=%d, total=%d",
-                    fromDataLsids.size(), fromMaterialLsids.size(), toDataLsids.size(), toMaterialLsids.size(), edgeCount));
+            LOG.debug(String.format("  edge counts: input data=%d, input materials=%d, output data=%d, output materials=%d, input prov=%d, output prov=%d, total=%d",
+                    fromDataLsids.size(), fromMaterialLsids.size(), toDataLsids.size(), toMaterialLsids.size(), provenanceStartingInputs.size(), provenanceFinalOutputs.size(), edgeCount));
 
             if (edgeCount > 0)
             {
@@ -3234,9 +3241,6 @@ public class ExperimentServiceImpl implements ExperimentService
 
         run.deleteProtocolApplications(datasToDelete, user);
 
-        //delete run properties and all children
-        OntologyManager.deleteOntologyObject(run.getLSID(), run.getContainer(), true);
-
         SQLFragment sql = new SQLFragment("DELETE FROM exp.RunList WHERE ExperimentRunId = ?;\n");
         sql.add(run.getRowId());
         sql.append("UPDATE exp.ExperimentRun SET ReplacedByRunId = NULL WHERE ReplacedByRunId = ?;\n");
@@ -3247,6 +3251,9 @@ public class ExperimentServiceImpl implements ExperimentService
         sql.add(run.getRowId());
 
         new SqlExecutor(getExpSchema()).execute(sql);
+
+        // delete run properties and all children
+        OntologyManager.deleteOntologyObject(run.getLSID(), run.getContainer(), true);
 
         ExpProtocolImpl protocol = run.getProtocol();
         if (protocol == null)
@@ -4041,14 +4048,6 @@ public class ExperimentServiceImpl implements ExperimentService
                 executor.execute(deleteEdgeSql);
             }
 
-            // delete exp.objects
-            try (Timing ignored = MiniProfiler.step("exp.object"))
-            {
-                SQLFragment lsidFragFrag = new SQLFragment("SELECT o.ObjectUri FROM ").append(getTinfoObject(), "o").append(" WHERE o.ObjectURI ");
-                lsidFragFrag.append(lsidInFrag);
-                OntologyManager.deleteOntologyObjects(getSchema(), lsidFragFrag, container, false);
-            }
-
             // Delete MaterialInput exp.object and properties
             try (Timing ignored = MiniProfiler.step("MI exp.object"))
             {
@@ -4089,6 +4088,14 @@ public class ExperimentServiceImpl implements ExperimentService
                 SQLFragment materialSQL = new SQLFragment("DELETE FROM exp.Material WHERE RowId ");
                 materialSQL.append(rowIdInFrag);
                 executor.execute(materialSQL);
+            }
+
+            // delete exp.objects
+            try (Timing ignored = MiniProfiler.step("exp.object"))
+            {
+                SQLFragment lsidFragFrag = new SQLFragment("SELECT o.ObjectUri FROM ").append(getTinfoObject(), "o").append(" WHERE o.ObjectURI ");
+                lsidFragFrag.append(lsidInFrag);
+                OntologyManager.deleteOntologyObjects(getSchema(), lsidFragFrag, container, false);
             }
 
             // On successful commit, start task to remove items from search index
@@ -4288,6 +4295,7 @@ public class ExperimentServiceImpl implements ExperimentService
             SimpleFilter rowIdFilter = new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), selectedDataIds);
             List<Data> datas = new TableSelector(getTinfoData(), rowIdFilter, null).getArrayList(Data.class);
 
+            List<String> allLsids = new ArrayList<>(datas.size());
             Map<Integer, List<String>> lsidsByClass = new LinkedHashMap<>();
 
             for (Data data : datas)
@@ -4318,13 +4326,12 @@ public class ExperimentServiceImpl implements ExperimentService
                     .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE toObjectId = (select objectid from exp.object where objecturi = ?);").add(data.getLSID());
                 new SqlExecutor(getExpSchema()).execute(deleteSql);
 
-                OntologyManager.deleteOntologyObjects(container, data.getLSID());
-
                 if (data.getClassId() != null)
                 {
                     List<String> byClass = lsidsByClass.computeIfAbsent(data.getClassId(), k -> new ArrayList<>(10));
                     byClass.add(data.getLSID());
                 }
+                allLsids.add(data.getLSID());
             }
 
             SqlDialect dialect = getExpSchema().getSqlDialect();
@@ -4363,6 +4370,11 @@ public class ExperimentServiceImpl implements ExperimentService
             SQLFragment dataSQL = new SQLFragment("DELETE FROM ").append(getTinfoData()).append(" WHERE RowId ");
             dialect.appendInClauseSql(dataSQL, selectedDataIds);
             executor.execute(dataSQL);
+
+            // generate in clause for the Material LSIDs
+            SQLFragment lsidInFrag = new SQLFragment("SELECT o.ObjectUri FROM ").append(getTinfoObject(), "o").append(" WHERE o.ObjectURI ");
+            dialect.appendInClauseSql(lsidInFrag, allLsids);
+            OntologyManager.deleteOntologyObjects(getSchema(), lsidInFrag, container, false);
 
             afterDeleteData(user, container, expDatas);
 

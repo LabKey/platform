@@ -3103,7 +3103,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     }
 
     @Override
-    public Collection<Pair<String, String>> getOlapHierarchies(String configId, Container c, String cubeName, String dimension)
+    public Collection<QueryService.Hierarchy> getOlapHierarchies(String configId, Container c, String cubeName, String dimension)
     {
         OlapSchemaDescriptor descriptor = ServerManager.getDescriptor(c, configId);
 
@@ -3120,9 +3120,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         if (null == def)
             throw new IllegalArgumentException("Unable to find dimension " + dimension);
 
-        return def.getHierarchies().stream()
-            .map(h->Pair.of(h.getName(), h.getLevels().get(0).getTableName()))
-            .collect(Collectors.toList());
+        return new ArrayList<>(def.getHierarchies());
     }
 
     /*

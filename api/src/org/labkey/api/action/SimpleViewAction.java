@@ -27,9 +27,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletResponse;
-
 /**
  * Base class for actions that want to display a single page in response to a GET, including
  * form parameters. Not intended for actions that may separately receive a POST.
@@ -81,8 +78,7 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
         return v;
     }
 
-
-    private static void validateUnicodePropertyValues(PropertyValues pvs) throws ServletException
+    private static void validateUnicodePropertyValues(PropertyValues pvs)
     {
         for (PropertyValue pv : pvs.getPropertyValues())
         {
@@ -111,7 +107,6 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
             }
         }
     }
-
 
     @Override
     protected String getCommandClassMethodName()

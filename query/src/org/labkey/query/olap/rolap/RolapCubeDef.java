@@ -25,6 +25,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Path;
 import org.labkey.query.olap.metadata.CachedCube;
@@ -574,7 +575,7 @@ public class RolapCubeDef
 
 
 
-    static public class HierarchyDef
+    static public class HierarchyDef implements QueryService.Hierarchy
     {
         protected RolapCubeDef cube;
         protected DimensionDef dimension;
@@ -586,7 +587,9 @@ public class RolapCubeDef
         protected JoinOrTable join;
         protected boolean hasAll;
         protected ArrayList<LevelDef> levels = new ArrayList<>();
+        protected final Map<String, String> annotations = new TreeMap<>();
 
+        @Override
         public String getName()
         {
             return name;
@@ -669,6 +672,18 @@ public class RolapCubeDef
                 factTableAliases.put(dimension.foreignKey,dimension.foreignKey);
             }
             joins.add(j);
+        }
+
+        @Override
+        public Map<String,String> getAnnotations()
+        {
+            return annotations;
+        }
+
+        @Override
+        public String getTableName()
+        {
+            return getLevels().get(0).getTableName();
         }
     }
 
