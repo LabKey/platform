@@ -560,11 +560,18 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             }]
         }];
 
-        if (queryDetails.isUserDefined && queryDetails.moduleName) {
+        if (queryDetails.isUserDefined) {
             children.push({
                 tag: 'span',
                 style: 'cursor: default;',
-                html: 'Defined in ' + Ext4.htmlEncode(queryDetails.moduleName) + ' module'
+                html: 'LabKey SQL query' + (queryDetails.moduleName ? ' defined in ' + Ext4.htmlEncode(queryDetails.moduleName) + ' module' : '')
+            });
+        }
+        else {
+            children.push({
+                tag: 'span',
+                style: 'cursor: default;',
+                html: 'Built-in table'
             });
         }
 
