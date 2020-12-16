@@ -776,17 +776,6 @@ public class ExceptionUtil
         }
 
         ApiResponseWriter.Format responseFormat = ApiResponseWriter.getResponseFormat(request, null);
-        if (responseFormat == null && request.getContentType() != null)
-        {
-            if (request.getContentType().contains(ApiJsonWriter.CONTENT_TYPE_JSON))
-            {
-                responseFormat = ApiResponseWriter.Format.JSON;
-            }
-            else if (request.getContentType().contains(ApiXmlWriter.CONTENT_TYPE))
-            {
-                responseFormat = ApiResponseWriter.Format.XML;
-            }
-        }
 
         if (response.isCommitted())
         {
