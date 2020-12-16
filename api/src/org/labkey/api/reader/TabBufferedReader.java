@@ -51,12 +51,14 @@ class TabBufferedReader extends org.labkey.api.reader.BufferedReader
 
     private static int getInitialBufferSize(long exactCharacterCount)
     {
-        return (int)Math.min(exactCharacterCount, INITIAL_BUFFER_SIZE);
+        // Buffer size must always be > 0, even for empty content (exactCharacterCount == 0), Issue 41897
+        return (int)Math.min(exactCharacterCount + 1, INITIAL_BUFFER_SIZE);
     }
 
     private static int getMaxBufferSize(long exactCharacterCount)
     {
-        return (int)Math.min(exactCharacterCount, ABSOLUTE_MAX_BUFFER_SIZE);
+        // Buffer size must always be > 0, even for empty content (exactCharacterCount == 0), Issue 41897
+        return (int)Math.min(exactCharacterCount + 1, ABSOLUTE_MAX_BUFFER_SIZE);
     }
 
     /*

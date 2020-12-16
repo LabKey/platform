@@ -885,6 +885,8 @@ public class ExceptionUtil
         try
         {
             renderer.setErrorType(errorType);
+            // Issue 41891: do not add google analytics on error pages.
+            pageConfig.setAllowTrackingScript(PageConfig.TrueFalse.False);
 
             if (HttpView.hasCurrentView())
             {
