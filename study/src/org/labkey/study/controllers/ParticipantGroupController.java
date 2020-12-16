@@ -1128,6 +1128,7 @@ public class ParticipantGroupController extends BaseStudyController
         private String[] _participantIds;
         private String[] _ensureParticipantIds;
         private String[] _deleteParticipantIds;
+        private boolean _showDataRegionMessage = true;
 
         public int getRowId()
         {
@@ -1197,6 +1198,16 @@ public class ParticipantGroupController extends BaseStudyController
         public void setDeleteParticipantIds(String[] deleteParticipantIds)
         {
             _deleteParticipantIds = deleteParticipantIds;
+        }
+
+        public boolean isShowDataRegionMessage()
+        {
+            return _showDataRegionMessage;
+        }
+
+        public void setShowDataRegionMessage(boolean showDataRegionMessage)
+        {
+            _showDataRegionMessage = showDataRegionMessage;
         }
     }
 
@@ -1425,7 +1436,7 @@ public class ParticipantGroupController extends BaseStudyController
                     if (existing == null)
                         throw new NotFoundException("Could not find participant group with rowId " + form.getRowId());
 
-                    ParticipantGroupManager.getInstance().setSessionParticipantGroup(getContainer(), getUser(), getViewContext().getRequest(), existing.getRowId());
+                    ParticipantGroupManager.getInstance().setSessionParticipantGroup(getContainer(), getUser(), getViewContext().getRequest(), existing.getRowId(), form.isShowDataRegionMessage());
                     return success(existing);
                 }
                 else
@@ -1453,7 +1464,7 @@ public class ParticipantGroupController extends BaseStudyController
                         copy.setModified(copy.getModified());
                         copy.setModifiedBy(copy.getModifiedBy());
                         group = copy;
-                        ParticipantGroupManager.getInstance().setSessionParticipantGroup(getContainer(), getUser(), getViewContext().getRequest(), group);
+                        ParticipantGroupManager.getInstance().setSessionParticipantGroup(getContainer(), getUser(), getViewContext().getRequest(), group, form.isShowDataRegionMessage());
                     }
 
                     Set<String> participantIds = new HashSet<>(Arrays.asList(form.getParticipantIds() == null ? group.getParticipantIds() : form.getParticipantIds()));
@@ -1473,7 +1484,7 @@ public class ParticipantGroupController extends BaseStudyController
                     if (form.getFilters() != null)
                         group.setFilters(form.getFilters());
 
-                    group = ParticipantGroupManager.getInstance().setSessionParticipantGroup(getContainer(), getUser(), getViewContext().getRequest(), group);
+                    group = ParticipantGroupManager.getInstance().setSessionParticipantGroup(getContainer(), getUser(), getViewContext().getRequest(), group, form.isShowDataRegionMessage());
                     return success(group);
                 }
             }

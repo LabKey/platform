@@ -83,7 +83,9 @@ public interface ExperimentDataHandler extends Handler<ExpData>
     void beforeDeleteData(List<ExpData> datas, User user) throws ExperimentException;
 
     /**
-     * Completely delete all database rows attached to this data object.
+     * Completely delete all database rows attached to this data object but not the ExpData itself.
+     * When an experiment run is deleted, the ExpData is detached from the run since they usually represent an uploaded file.
+     * Some run types (e.g., Flow and TargetedMS) will also delete the ExpData.
      */
     void deleteData(ExpData data, Container container, User user);
 

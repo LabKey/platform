@@ -886,10 +886,10 @@ public class SqlScriptController extends SpringActionController
 
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class OrphanedScriptsAction extends SimpleViewAction<Void>
+    public class OrphanedScriptsAction extends SimpleViewAction<Object>
     {
         @Override
-        public ModelAndView getView(Void form, BindException errors) throws IOException
+        public ModelAndView getView(Object form, BindException errors) throws IOException
         {
             Set<SqlScript> orphanedScripts = new TreeSet<>();
             Set<String> unclaimedFiles = new TreeSet<>();

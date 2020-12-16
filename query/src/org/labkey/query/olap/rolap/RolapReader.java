@@ -303,6 +303,9 @@ public class RolapReader
                 case "Join":
                     _currentHier.join = parseJoinOrTable(node);
                     break;
+                case "Annotations":
+                    parseAnnotations(node, _currentHier.annotations);
+                    break;
             }
         }
         RolapCubeDef.LevelDef lowest = _currentHier.levels.get(_currentHier.levels.size()-1);
