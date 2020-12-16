@@ -2107,7 +2107,8 @@ public class QueryView extends WebPartView<Object>
 
         if (_customView != null && _customView.getErrors() != null)
         {
-            rgn.addMessageSupplier(dataRegion -> _customView.getErrors().stream().map(e -> new DataRegion.Message(PageFlowUtil.filter(e), DataRegion.MessageType.ERROR, DataRegion.MessagePart.view))
+            rgn.addMessageSupplier(dataRegion -> _customView.getErrors().stream()
+                    .map(e -> new DataRegion.Message(e, DataRegion.MessageType.ERROR, DataRegion.MessagePart.view))
                     .collect(Collectors.toList()));
         }
 
