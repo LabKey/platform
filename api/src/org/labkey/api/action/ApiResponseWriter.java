@@ -67,9 +67,9 @@ public abstract class ApiResponseWriter implements AutoCloseable
     /**
      * @return either the response format that has already been associated with the request, or the default if it's unset
      */
-    public static Format getResponseFormat(HttpServletRequest request, ApiResponseWriter.Format defaultFormat)
+    public static Format getResponseFormat(@Nullable HttpServletRequest request, ApiResponseWriter.Format defaultFormat)
     {
-        ApiResponseWriter.Format result = (ApiResponseWriter.Format) request.getAttribute(RESPONSE_FORMAT_ATTRIBUTE);
+        ApiResponseWriter.Format result = request == null ? null : (ApiResponseWriter.Format) request.getAttribute(RESPONSE_FORMAT_ATTRIBUTE);
         return result == null ? defaultFormat : result;
     }
 
