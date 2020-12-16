@@ -94,7 +94,15 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
         List<DisplayColumn> dataColumns = new LinkedList<>();
 
         for (ColumnInfo col : cols)
-            dataColumns.add(col.getDisplayColumnFactory().createRenderer(col));
+        {
+            DisplayColumnFactory df = col.getDisplayColumnFactory();
+            if (col.getFk() != null)
+            {
+                df = ColumnInfo.NOLOOKUP_FACTORY;
+            }
+
+            dataColumns.add(df.createRenderer(col));
+        }
 
         return init(dataColumns);
     }
