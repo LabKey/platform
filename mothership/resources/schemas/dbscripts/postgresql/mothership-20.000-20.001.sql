@@ -1,0 +1,1 @@
+ALTER TABLE mothership.ServerSession ALTER COLUMN JsonMetrics TYPE JSONB USING JsonMetrics::JSONB;
