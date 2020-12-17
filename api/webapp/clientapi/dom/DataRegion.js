@@ -2309,9 +2309,9 @@ if (!LABKEY.DataRegions) {
             this.addMessage({
                 html: [
                     '<span class="labkey-strong">Name:</span>',
-                    this.report.name,
+                    LABKEY.Utils.encodeHtml(this.report.name),
                     '<span class="labkey-strong" style="padding-left: 30px;">Source:</span>',
-                    this.report.source
+                    LABKEY.Utils.encodeHtml(this.report.source)
                 ].join('&nbsp;'),
                 part: 'report',
             });
