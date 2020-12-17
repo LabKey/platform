@@ -183,7 +183,8 @@ public class DataRegion extends DisplayElement
 
     /**
      * Messages that are displayed to the user and included in Query API responses.
-     * These messages should NOT be HTML encoded as the responsibility for encoding is left to the caller.
+     * These messages' content should NOT be HTML encoded as the responsibility
+     * for encoding is left to the caller.
      * See https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=42017
      */
     public static class Message
@@ -209,6 +210,7 @@ public class DataRegion extends DisplayElement
             return _area;
         }
 
+        /** Caller is responsible for HTML encoding. */
         public String getContent()
         {
             return _content;
