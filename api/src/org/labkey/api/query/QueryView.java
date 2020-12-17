@@ -3245,7 +3245,7 @@ public class QueryView extends WebPartView<Object>
                 {
                     if (null != getContainerFilter())
                         queryDef.setContainerFilter(getContainerFilter());
-                    ti = queryDef.getTable(getSchema(), errors, true, false, false);
+                    ti = queryDef.getTable(getSchema(), errors, true, false, true);
                 }
             }
 

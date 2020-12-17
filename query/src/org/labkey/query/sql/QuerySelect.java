@@ -443,6 +443,7 @@ groupByLoop:
                 column._key = new FieldKey(null,name);
             if (fieldKeys.containsKey(column._key))
             {
+                assert _query.isAllowDuplicateColumns();
                 if (_query.isAllowDuplicateColumns())
                 {
                     // Fabricate a unique name for this duplicate column

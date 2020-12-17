@@ -161,7 +161,7 @@ public class Query
     private Map<String, TableType> _metadataTableMap = null;
     private QueryRelation _withFirstTerm = null;
     private boolean _parsingWith = false;
-    private boolean _allowDuplicateColumns = false;
+    private boolean _allowDuplicateColumns = true;
 
     public Query(@NotNull QuerySchema schema)
     {
@@ -1735,7 +1735,15 @@ public class Query
         new SqlTest("SELECT 1 AS ONE", 1, 1),
         new SqlTest("SELECT 1 AS ONE,", 1, 1),
         new SqlTest("SELECT 1 AS ONE;", 1, 1),
-        new SqlTest("SELECT 1 AS ONE,;", 1, 1)
+        new SqlTest("SELECT 1 AS ONE,;", 1, 1),
+
+        // We allow duplicate column names, #42081
+        new SqlTest("SELECT * FROM R r1 INNER JOIN R r2 ON r1.RowId = r2.RowId"),
+        new SqlTest("SELECT r1.*, r2.* FROM R r1 INNER JOIN R r2 ON r1.RowId = r2.RowId"),
+        new SqlTest("SELECT r1.guid, r1.month, r1.d, r1.seven, r1.date, r2.guid, r2.month, r2.d, r2.seven, r2.date  FROM R r1 INNER JOIN R r2 ON r1.RowId = r2.RowId"),
+        new SqlTest("SELECT d, seven, d, seven FROM R"),
+        new SqlTest("SELECT * FROM R A inner join R B ON 1=1"),
+        new SqlTest("SELECT A.*, B.* FROM R A inner join R B on 1=1")
     };
 
 
@@ -1776,16 +1784,13 @@ public class Query
 
 	static SqlTest[] negative = new SqlTest[]
 	{
-        new FailTest("SELECT d, seven, d, seven FROM R"),        // Duplicate column names aren't supported by default
         new FailTest("SELECT lists.R.d, lists.R.seven FROM R"),  // Schema-qualified column names work only if FROM specifies schema
 		new FailTest("SELECT S.d, S.seven FROM S"),
 		new FailTest("SELECT S.d, S.seven FROM Folder.S"),
 		new FailTest("SELECT S.d, S.seven FROM Folder.qtest.S"),
 		new FailTest("SELECT S.d, S.seven FROM Folder.qtest.list.S"),
-        new FailTest("SELECT * FROM R A inner join R B ON 1=1"),            // ambiguous columns
         new FailTest("SELECT SUM(*) FROM R"),
         new FailTest("SELECT d FROM R A inner join R B on 1=1"),            // ambiguous
-        new FailTest("SELECT A.*, B.* FROM R A inner join R B on 1=1"),     // ambiguous
         new FailTest("SELECT R.d, seven FROM lists.R A"),                    // R is hidden
         new FailTest("SELECT A.d, B.d FROM lists.R A INNER JOIN lists.R B"),     // ON expected
         new FailTest("SELECT A.d, B.d FROM lists.R A CROSS JOIN lists.R B ON A.d = B.d"),     // ON unexpected
@@ -2095,7 +2100,7 @@ public class Query
             testDuplicateColumns(user, c);
         }
 
-        // Duplicate column names are supported, but only when using a special flag, #36424
+        // Duplicate column names are supported. Introduced as an option for #35424; made the default behavior for #42081.
         private void testDuplicateColumns(User user, Container c) throws SQLException
         {
             String sql = "SELECT d, seven, d, seven FROM R";
@@ -2302,7 +2307,7 @@ public class Query
         }
 
 
-        static SqlTest containerTests[] = new SqlTest[]
+        static SqlTest[] containerTests = new SqlTest[]
         {
             new SqlTest("SELECT name FROM core.containers", 1, 1),
             new SqlTest("SELECT name FROM core.containers[ContainerFilter='Current']", 1, 1),

@@ -453,7 +453,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public final Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata)
     {
-        return getQuery(schema, errors, parent, includeMetadata, false, false);
+        return getQuery(schema, errors, parent, includeMetadata, false, true);
     }
     /*
      * I find it very strange that only the xml errors get added to the "errors" list, while
@@ -527,7 +527,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     @Override
     public TableInfo getTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata)
     {
-        return getTable(schema, errors, includeMetadata, false, false);
+        return getTable(schema, errors, includeMetadata, false, true);
     }
 
     @Nullable
@@ -575,7 +575,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     @Nullable
     public TableInfo createTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, @Nullable Query query)
     {
-        return createTable(schema, errors, includeMetadata, query, false, false);
+        return createTable(schema, errors, includeMetadata, query, false, true);
     }
 
     /**
