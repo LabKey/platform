@@ -32,6 +32,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService.InsertOption;
@@ -112,7 +113,14 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
                     .collect(Collectors.toCollection(CaseInsensitiveHashSet::new));
             for (int i = 1; i <= di.getColumnCount(); i++) // Note DataIterator column index is 1-based
             {
-                targetOnlyColumnNames.remove(di.getColumnInfo(i).getName());
+                var col = di.getColumnInfo(i);
+                targetOnlyColumnNames.remove(col.getName());
+
+                if (col.getName().toLowerCase().endsWith(MvColumn.MV_INDICATOR_SUFFIX.toLowerCase()))
+                {
+                    String name = col.getName().substring(0, col.getName().length() - MvColumn.MV_INDICATOR_SUFFIX.length());
+                    targetOnlyColumnNames.remove(name + "_" + MvColumn.MV_INDICATOR_SUFFIX);
+                }
             }
             // ... except for the Modified and ModifiedBy columns, which should still be updated.
             targetOnlyColumnNames.removeAll(Arrays.stream(SimpleTranslator.SpecialColumn.values())
