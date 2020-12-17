@@ -181,6 +181,11 @@ public class DataRegion extends DisplayElement
     }
     private List<GroupTable> _groupTables = new ArrayList<>();
 
+    /**
+     * Messages that are displayed to the user and included in Query API responses.
+     * These messages should NOT be HTML encoded as the responsibility for encoding is left to the caller.
+     * See https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=42017
+     */
     public static class Message
     {
         private String _area;
