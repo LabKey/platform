@@ -15,9 +15,15 @@
  */
 package org.labkey.experiment;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jmock.Expectations;
+import org.jmock.Mockery;
+import org.jmock.lib.legacy.ClassImposteriser;
 import org.json.JSONArray;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -37,6 +43,7 @@ import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.dataiterator.StringTestIterator;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.ExperimentException;
@@ -49,6 +56,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataTable;
@@ -59,6 +67,7 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -223,8 +232,8 @@ public class ExpDataIterators
             _context = context;
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
-            _lsidCol = map.get("lsid")==null ? null : di.getSupplier(map.get("lsid"));
-            _aliasCol = map.get(ALIASCOLUMNALIAS)==null ? null : di.getSupplier(map.get(ALIASCOLUMNALIAS));
+            _lsidCol = map.get("lsid") == null ? null : di.getSupplier(map.get("lsid"));
+            _aliasCol = map.get(ALIASCOLUMNALIAS) == null ? null : di.getSupplier(map.get(ALIASCOLUMNALIAS));
 
             _container = container;
             _user = user;
@@ -344,7 +353,7 @@ public class ExpDataIterators
 
                 if (lsidValue instanceof String)
                 {
-                    String lsid = (String)lsidValue;
+                    String lsid = (String) lsidValue;
                     String flag = Objects.toString(flagValue, null);
 
                     try
@@ -417,7 +426,9 @@ public class ExpDataIterators
         final Map<Integer, String> _parentCols;
         // Map from Data LSID to Set of (parentColName, parentName)
         final Map<String, Set<Pair<String, String>>> _parentNames;
-        /** Cache sample type lookups because even though we do caching in SampleTypeService, it's still a lot of overhead to check permissions for the user */
+        /**
+         * Cache sample type lookups because even though we do caching in SampleTypeService, it's still a lot of overhead to check permissions for the user
+         */
         final Map<String, ExpSampleType> _sampleTypes = new HashMap<>();
         final Map<String, ExpDataClass> _dataClasses = new HashMap<>();
 
@@ -441,7 +452,7 @@ public class ExpDataIterators
             for (Map.Entry<String, Integer> entry : map.entrySet())
             {
                 String name = entry.getKey();
-                if (UploadSamplesHelper.isInputOutputHeader(name) || _isSample && equalsIgnoreCase("parent",name))
+                if (UploadSamplesHelper.isInputOutputHeader(name) || _isSample && equalsIgnoreCase("parent", name))
                 {
                     _parentCols.put(entry.getValue(), entry.getKey());
                 }
@@ -466,53 +477,10 @@ public class ExpDataIterators
             if (hasNext && !_parentCols.isEmpty())
             {
                 String lsid = (String) get(_lsidCol);
-                Set<Pair<String, String>> allParts = new HashSet<>();
-                for (Integer parentCol : _parentCols.keySet())
-                {
-                    Object o = get(parentCol);
-                    if (o != null)
-                    {
-                        Collection<String> parentNames;
-                        if (o instanceof String)
-                        {
-                            parentNames = Arrays.asList(((String) o).split(","));
-                        }
-                        else if (o instanceof JSONArray)
-                        {
-                            parentNames = Arrays.stream(((JSONArray) o).toArray()).map(String::valueOf).collect(Collectors.toSet());
-                        }
-                        else if (o instanceof Collection)
-                        {
-                            //noinspection rawtypes
-                            Collection<?> c = ((Collection)o);
-                            parentNames = c.stream().map(String::valueOf).collect(Collectors.toSet());
-                        }
-                        else if (o instanceof Number)
-                        {
-                            parentNames = Arrays.asList(o.toString());
-                        }
-                        else
-                        {
-                            getErrors().addRowError(new ValidationException("Expected comma separated list or a JSONArray of parent names: " + o, _parentCols.get(parentCol)));
-                            continue;
-                        }
+                Set<Pair<String, String>> parsedParents = processParentColumns();
 
-                        String parentColName = _parentCols.get(parentCol);
-                        Set<Pair<String, String>> parts = parentNames.stream()
-                                .map(String::trim)
-                                .map(s -> Pair.of(parentColName, s))
-                                .collect(Collectors.toSet());
-
-                        allParts.addAll(parts);
-                    }
-                    else // we have parent columns but the parent value is empty, indicating that the parents should be cleared
-                    {
-                        allParts.add(new Pair<>(_parentCols.get(parentCol), null));
-                    }
-                }
-
-                if (!allParts.isEmpty())
-                    _parentNames.put(lsid, allParts);
+                if (!parsedParents.isEmpty())
+                    _parentNames.put(lsid, parsedParents);
             }
 
             if (getErrors().hasErrors())
@@ -579,7 +547,7 @@ public class ExpDataIterators
                         else
                         {
                             Map<ExpMaterial, String> currentMaterialMap = Collections.emptyMap();
-                            
+
                             Map<ExpData, String> currentDataMap = Collections.emptyMap();
                             if (_isSample)
                             {
@@ -639,6 +607,66 @@ public class ExpDataIterators
                 }
             }
             return hasNext;
+        }
+
+        protected Set<Pair<String, String>> processParentColumns()
+        {
+            Set<Pair<String, String>> allParts = new HashSet<>();
+            for (Integer parentCol : _parentCols.keySet())
+            {
+                String parentColName = _parentCols.get(parentCol);
+                Object colValue = get(parentCol);
+                if (colValue == null)
+                {
+                    // we have parent columns but the parent value is empty, indicating that the parents should be cleared
+                    allParts.add(new Pair<>(parentColName, null));
+                    continue;
+                }
+
+                try
+                {
+                    Set<Pair<String, String>> parts = processParentColumn(colValue, parentColName).stream()
+                            .map(String::trim)
+                            .map(s -> Pair.of(parentColName, s))
+                            .collect(Collectors.toSet());
+
+                    allParts.addAll(parts);
+                }
+                catch (ValidationException e)
+                {
+                    getErrors().addRowError(e);
+                }
+            }
+
+            return allParts;
+        }
+
+        protected Collection<String> processParentColumn(Object o, String parentCol) throws ValidationException
+        {
+            Collection<String> parentNames;
+            if (o instanceof String)
+            {
+                parentNames = Arrays.asList(((String) o).split(","));
+            }
+            else if (o instanceof JSONArray)
+            {
+                parentNames = Arrays.stream(((JSONArray) o).toArray()).map(String::valueOf).collect(Collectors.toSet());
+            }
+            else if (o instanceof Collection)
+            {
+                Collection<?> c = ((Collection<?>)o);
+                parentNames = c.stream().map(String::valueOf).collect(Collectors.toSet());
+            }
+            else if (o instanceof Number)
+            {
+                parentNames = Arrays.asList(o.toString());
+            }
+            else
+            {
+                throw new ValidationException("Expected comma separated list, a JSONArray of parent names, or a string/numeric Id: " + o, parentCol);
+            }
+
+            return parentNames;
         }
     }
 
@@ -743,8 +771,8 @@ public class ExpDataIterators
                             {
                                 Object file = AbstractQueryUpdateService.saveFile(c, col.getName(), value, file_link_dir_name);
                                 assert file instanceof File;
-                                value = ((File)file).getPath();
-                                savedFileName[index] = (String)value;
+                                value = ((File) file).getPath();
+                                savedFileName[index] = (String) value;
                             }
                             catch (QueryUpdateServiceException ex)
                             {
@@ -864,9 +892,8 @@ public class ExpDataIterators
             DataIteratorBuilder step2 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(DataIteratorBuilder.wrap(step0), _expTable, _container)
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
-                    .setAddlSkipColumns(Set.of("generated","runId","sourceapplicationid"))     // generated has database DEFAULT 0
-                    .setCommitRowsBeforeContinuing(true))
-                    ;
+                    .setAddlSkipColumns(Set.of("generated", "runId", "sourceapplicationid"))     // generated has database DEFAULT 0
+                    .setCommitRowsBeforeContinuing(true));
 
             //pass in voc cols here
             Set<DomainProperty> vocabularyDomainProperties = findVocabularyProperties(colNameMap);
@@ -896,7 +923,7 @@ public class ExpDataIterators
         private Set<DomainProperty> findVocabularyProperties(Map<String, Integer> colNameMap)
         {
             Set<DomainProperty> vocabularyDomainProperties = new HashSet<>();
-            for (String key: colNameMap.keySet())
+            for (String key : colNameMap.keySet())
             {
                 if (URIUtil.hasURICharacters(key))
                 {
@@ -914,6 +941,127 @@ public class ExpDataIterators
                 }
             }
             return vocabularyDomainProperties;
+        }
+    }
+
+    public static class DerivationDataIteratorBuilderTestCase extends Assert
+    {
+        StringTestIterator simpleData = new StringTestIterator
+            (
+                Arrays.asList("lsid", "SomeId", "Text", "MaterialInputs/ParentCol", "Int"),
+                Arrays.asList(
+                    new Object[] {"string-row-lsid", 1, "blah", "abcd", 1},
+                    new Object[] {"integer-row-lsid", 2, "more blah", 2, 2},
+                    new Object[] {"nullParent-row-lsid", 3, "more blah", null, 2},
+                    new Object[] {"float-row-lsid", 4, "more blah", 123.45, 2},
+                    new Object[] {"multiParent-row-lsid", 5, "more blah", "abcd,efg", 3}
+                )
+            );
+
+        //TODO: Expand test coverage
+        @Test
+        public void parentIdTypeParseTest() throws Exception
+        {
+            Mockery mockContext = new Mockery();
+            mockContext.setImposteriser(ClassImposteriser.INSTANCE);
+            User user = mockContext.mock(User.class);
+            Container container = mockContext.mock(Container.class);
+            DataIteratorContext diContext = mockContext.mock(DataIteratorContext.class);
+            BatchValidationException mockErrors = new BatchValidationException();
+
+            //Mock experiment service for local testing
+            ExperimentService experimentService = mockContext.mock(ExperimentService.class);
+            if (ExperimentService.get() == null)
+                ServiceRegistry.get().registerService(ExperimentService.class, experimentService);
+
+            //Mock SampleTypeService for local testing
+            SampleTypeService sampleTypeService = mockContext.mock(SampleTypeService.class);
+            if (SampleTypeService.get() == null)
+                ServiceRegistry.get().registerService(SampleTypeService.class, sampleTypeService);
+
+            ExpMaterial mat = mockContext.mock(ExpMaterial.class);
+            ExpSampleType sampleType = mockContext.mock(ExpSampleType.class);
+            Map<Integer,ExpMaterial> map = Collections.emptyMap();
+            mockContext.checking(new Expectations()
+            {{
+                allowing(diContext).getConfigParameters();
+                will(returnValue(Collections.emptyMap()));
+                allowing(diContext).getErrors();
+                will(returnValue(mockErrors));
+                allowing(diContext).getInsertOption();
+                will(returnValue(QueryUpdateService.InsertOption.INSERT));
+                allowing(experimentService).getExpMaterial(with(any(String.class)));
+//                will(returnValue(null));
+                will(returnValue(mat));
+                oneOf(experimentService).deriveSamplesBulk(with(any(List.class)), with(any(ViewBackgroundInfo.class)), with(aNull(Logger.class)));
+
+                allowing(experimentService).findExpMaterial(
+                        with(any(Container.class)),
+                        with(any(User.class)),
+                        with(any(ExpSampleType.class)),
+                        with(any(String.class)),
+                        with(any(String.class)),
+                        with(any(RemapCache.class)),
+                        with(any(Map.class)));
+                will(returnValue(mat));
+
+                allowing(mat).getRowId();
+                will(returnValue(1));
+                allowing(mat).getSampleType();
+                will(returnValue(sampleType));
+
+                allowing(sampleType).getName();
+                will(returnValue("ParentCol"));
+
+                allowing(sampleTypeService).getSampleType(
+                        with(any(Container.class)),
+                        with(any(User.class)),
+                        with(any(String.class)));
+                will(returnValue(sampleType));
+
+                allowing(container).getId();
+                will(returnValue("xyz"));
+
+                allowing(user).isGuest();
+                will(returnValue(false));
+                allowing(user).getEmail();
+                will(returnValue("noreply@labkey.test"));
+                allowing(user).getUserId();
+                will(returnValue(-10));
+            }});
+
+
+            ExpDataIterators.DerivationDataIteratorBuilder ddib = new ExpDataIterators.DerivationDataIteratorBuilder(DataIteratorBuilder.wrap(simpleData), container, user, true);
+            DerivationDataIterator derive = (DerivationDataIterator) ddib.getDataIterator(diContext);
+//            derive.next();
+            new Pump(derive, diContext).run();
+            if (diContext.getErrors().hasErrors())
+                Assert.fail(diContext.getErrors().getMessage());
+
+            String parentColHeader = "MaterialInputs/ParentCol";
+            final Map<String, Set<Pair<String, String>>> parentMappings = derive._parentNames;
+
+            //All rows should be present since the ParentCol is present
+            assertEquals("Unexpected number of rows", 5, parentMappings.size());
+
+            //Check values of parent ids
+            parentMappings.get("string-row-lsid").forEach(p -> validateParentMapping(p, parentColHeader, "abcd", "string-row-lsid"));
+            parentMappings.get("integer-row-lsid").forEach(p -> validateParentMapping(p, parentColHeader, "2", "integer-row-lsid"));
+            parentMappings.get("nullParent-row-lsid").forEach(p -> validateParentMapping(p, parentColHeader, null, "nullParent-row-lsid"));
+            parentMappings.get("float-row-lsid").forEach(p -> validateParentMapping(p, parentColHeader, "123.45", "float-row-lsid"));
+
+            String multiId = "multiParent-row-lsid";
+            parentMappings.get(multiId).forEach(p -> {
+                assertEquals(multiId + ": Unexpected value for parent type for row", parentColHeader, p.first);
+                //Order of elements is not guaranteed
+                assertTrue(multiId + ": Unexpected value for parent Id", "abcd".equals(p.second) || "efg".equals(p.second));
+            });
+        }
+
+        private void validateParentMapping(Pair<String, String> mapping, String expectedParentType, String expectedParentId, String lsid)
+        {
+            assertEquals(lsid + ": Unexpected value for parent type for row", expectedParentType, mapping.first);
+            assertEquals(lsid + ": Unexpected value for parent Id", expectedParentId, mapping.second);
         }
     }
 }

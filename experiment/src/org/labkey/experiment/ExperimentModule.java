@@ -520,6 +520,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return Set.of(
             DomainPropertyImpl.TestCase.class,
             ExpDataClassDataTestCase.class,
+            ExpDataIterators.DerivationDataIteratorBuilderTestCase.class,
             ExpDataTableImpl.TestCase.class,
             ExpSampleTypeTestCase.class,
             ExperimentServiceImpl.TestCase.class,

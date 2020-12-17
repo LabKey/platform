@@ -27,14 +27,15 @@ import java.util.List;
 * Date: 2011-05-20
 * Time: 2:16 PM
 */
-class StringTestIterator extends AbstractDataIterator implements ScrollableDataIterator
+//TODO Move to JUnit test utils package?
+public class StringTestIterator extends AbstractDataIterator implements ScrollableDataIterator
 {
     final List<String> columns;
-    final List<String[]> data;
+    final List<Object[]> data;
     boolean isScrollable = false;
     int row = -1;
 
-    StringTestIterator(List<String> columns, List<String[]> data)
+    public StringTestIterator(List<String> columns, List<Object[]> data)
     {
         super(null);
         this.columns = columns;
