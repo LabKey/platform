@@ -669,7 +669,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     // it with a "MVIndicator" suffix (no underscore)
                     var mvColumn = new AliasedColumn(this, dp.getName() + MvColumn.MV_INDICATOR_SUFFIX,
                             StorageProvisioner.get().getMvIndicatorColumn(dbTable, dp.getPropertyDescriptor(), "No MV column found for '" + dp.getName() + "' in sample type '" + getName() + "'"));
-                    mvColumn.setLabel(dp.getLabel() + " MV Indicator");
+                    mvColumn.setLabel(dp.getLabel() != null ? dp.getLabel() : dp.getName() + " MV Indicator");
                     mvColumn.setSqlTypeName("VARCHAR");
                     mvColumn.setPropertyURI(dp.getPropertyURI());
                     mvColumn.setNullable(true);

@@ -470,21 +470,34 @@ public interface QueryService
     void cubeDataChanged(Set<Container> containers);
     String warmCube(User user, Set<Container> containers, String schemaName, String configId, String cubeName);
     String cubeDataChangedAndRewarmCube(User user, Set<Container> containers, String schemaName, String configId, String cubeName);
+    List<String> getRolapConfigIds(Container c);
 
+    interface Hierarchy
+    {
+        String getName();
+        String getTableName();
+        Map<String, String> getAnnotations();
+    }
+
+    /**
+     * Returns information about the specified cube dimension's hierarchies
+     * @return A Collection of Hierarchy objects containing basic information about each hierarchy
+     */
+    Collection<Hierarchy> getOlapHierarchies(String configId, Container c, String cubeName, String dimension);
 
     void saveNamedSet(String setName, List<String> setList);
     void deleteNamedSet(String setName);
     List<String> getNamedSet(String setName);
 
     /**
-     * Add a passthrough method to the whitelist for the primary LabKey database type. This enables modules to create
+     * Add a pass-through method to the allow list for the primary LabKey database type. This enables modules to create
      * and enable custom database functions, for example.
      */
     void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments);
 
     /**
-     * Add a passthrough method to the whitelist for a particular database type. This enables modules to create
-     * and enable custom database functions, for example.
+     * Add a pass-through method to the allow list for a particular database type. This enables modules to create and
+     * enable custom database functions, for example.
      */
     void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect);
 

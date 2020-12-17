@@ -63,12 +63,10 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -448,29 +446,6 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             }
         }
         return errors;
-    }
-
-    protected Map<String,Object> _fixupPropertyMap(Map<String,Object> in)
-    {
-        Map<String,Object> out = new HashMap<>(in);
-
-        /** see TableViewForm.setTypedValues() */
-        for (Map.Entry<String,Object> entry : in.entrySet())
-        {
-            String propName = entry.getKey();
-            Object o = entry.getValue();
-
-            if (Character.isUpperCase(propName.charAt(0)))
-            {
-                out.remove(propName);
-                propName = Introspector.decapitalize(propName);
-                out.put(propName,o);
-            }
-        }
-
-        out.remove("container");
-        out.remove("user");
-        return out;
     }
 
     @Override

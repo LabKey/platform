@@ -190,7 +190,7 @@ public class FolderManagement
     /**
      * Base action class for management actions that only need to display a view (no post handling).
      */
-    private static abstract class ManagementViewAction extends SimpleViewAction<Void> implements ManagementAction
+    private static abstract class ManagementViewAction extends SimpleViewAction<Object> implements ManagementAction
     {
         @Override
         public ModelAndView handleRequest() throws Exception
@@ -201,7 +201,7 @@ public class FolderManagement
         }
 
         @Override
-        public ModelAndView getView(Void form, BindException errors) throws Exception
+        public ModelAndView getView(Object form, BindException errors) throws Exception
         {
             return wrapViewInTabStrip(this, getType(), getTabView(), errors);
         }

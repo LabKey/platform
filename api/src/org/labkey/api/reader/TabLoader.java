@@ -42,6 +42,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringBufferInputStream;
+import java.io.StringReader;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -52,6 +53,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 
@@ -330,9 +332,7 @@ public class TabLoader extends DataLoader
         return value;
     }
 
-    private ArrayList<String> listParse = new ArrayList<>(30);
-
-
+    private final ArrayList<String> listParse = new ArrayList<>(30);
 
     private CharSequence readLine(TabBufferedReader r, boolean skipComments, boolean skipBlankLines)
     {
@@ -354,7 +354,6 @@ public class TabLoader extends DataLoader
         }
         return sb;
     }
-
 
     private String readOneTextLine(TabBufferedReader r, boolean skipComments, boolean skipBlankLines)
     {
@@ -703,54 +702,55 @@ public class TabLoader extends DataLoader
     {
         String malformedCsvData =
                 "\"Header1\",\"Header2\", \"Header3\"\n" +
-                        "\"test1a\", \"testb";
+                "\"test1a\", \"testb";
 
         String csvData =
                 "# algorithm=org.fhcrc.cpas.viewer.feature.FeatureStrategyPeakClusters\n" +
-                        "# date=Mon May 22 13:25:28 PDT 2006\n" +
-                        "# java.vendor=Sun Microsystems Inc.\n" +
-                        "# java.version=1.5.0_06\n" +
-                        "# revision=rev1.1\n" +
-                        "# user.name=Matthew\n" +
-                        "date,scan,time,mz,accurateMZ,mass,intensity,charge,chargeStates,kl,background,median,peaks,scanFirst,scanLast,scanCount,totalIntensity,description\n" +
-                        "1/2/2006,96,1543.3401,858.3246,FALSE,1714.6346,2029.6295,2,1,0.19630894,26.471083,12.982442,4,92,100,9,20248.762,description\n" +
+                "# date=Mon May 22 13:25:28 PDT 2006\n" +
+                "# java.vendor=Sun Microsystems Inc.\n" +
+                "# java.version=1.5.0_06\n" +
+                "# revision=rev1.1\n" +
+                "# user.name=Matthew\n" +
+                "date,scan,time,mz,accurateMZ,mass,intensity,charge,chargeStates,kl,background,median,peaks,scanFirst,scanLast,scanCount,totalIntensity,description\n" +
+                "1/2/2006,96,1543.3401,858.3246,FALSE,1714.6346,2029.6295,2,1,0.19630894,26.471083,12.982442,4,92,100,9,20248.762,description\n" +
 /*empty int*/   "2/Jan/2006,100,1560.348,858.37555,FALSE,1714.7366,1168.3536,2,1,0.033085547,63.493385,8.771278,5,101,119,19,17977.979,\"desc\"\"ion\"\n" +
 /*empty date*/  ",25,1460.2411,745.39404,FALSE,744.3868,1114.4303,1,1,0.020280406,15.826528,12.413276,4,17,41,25,13456.231,\"des,crip,tion\"\n" +
-                        "2-Jan-06,89,1535.602,970.9579,FALSE,1939.9012,823.70984,2,1,0.0228055,10.497823,2.5962036,5,81,103,23,9500.36,\n" +
-                        "2 January 2006,164,1624.442,783.8968,FALSE,1565.779,771.20935,2,1,0.024676466,11.3547325,3.3645654,5,156,187,32,12656.351,\n" +
-                        "\"January 2, 2006\",224,1695.389,725.39404,FALSE,2173.1604,6.278867,3,1,0.2767084,1.6497655,1.2496755,3,221,229,9,55.546417\n" +
-                        "1/2/06,249,1724.5541,773.42175,FALSE,1544.829,5.9057474,2,1,0.5105971,0.67020833,1.4744527,2,246,250,5,29.369175\n" +
-                        "# bar\n" +
-                        "\n" +
-                        "#";
+                "2-Jan-06,89,1535.602,970.9579,FALSE,1939.9012,823.70984,2,1,0.0228055,10.497823,2.5962036,5,81,103,23,9500.36,\n" +
+                "2 January 2006,164,1624.442,783.8968,FALSE,1565.779,771.20935,2,1,0.024676466,11.3547325,3.3645654,5,156,187,32,12656.351,\n" +
+                "\"January 2, 2006\",224,1695.389,725.39404,FALSE,2173.1604,6.278867,3,1,0.2767084,1.6497655,1.2496755,3,221,229,9,55.546417\n" +
+                "1/2/06,249,1724.5541,773.42175,FALSE,1544.829,5.9057474,2,1,0.5105971,0.67020833,1.4744527,2,246,250,5,29.369175\n" +
+                "# bar\n" +
+                "\n" +
+                "#";
+
         String tsvData =
                 "# algorithm=org.fhcrc.cpas.viewer.feature.FeatureStrategyPeakClusters\n" +
-                        "# date=Mon May 22 13:25:28 PDT 2006\n" +
-                        "# java.vendor=Sun Microsystems Inc.\n" +
-                        "# java.version=1.5.0_06\n" +
-                        "# revision=rev1.1\n" +
-                        "# user.name=Matthew\n" +
-                        "date\tscan\ttime\tmz\taccurateMZ\tmass\tintensity\tcharge\tchargeStates\tkl\tbackground\tmedian\tpeaks\tscanFirst\tscanLast\tscanCount\ttotalIntensity\tdescription\n" +
-                        "1/2/2006\t96\t1543.3401\t858.3246\tFALSE\t1714.6346\t2029.6295\t2\t1\t0.19630894\t26.471083\t12.982442\t4\t92\t100\t9\t20248.762\tdescription\n" +
-                        /*empty int*/   "2/Jan/2006\t100\t1560.348\t858.37555\tFALSE\t1714.7366\t1168.3536\t2\t1\t0.033085547\t63.493385\t8.771278\t5\t101\t119\t19\t17977.979\tdesc\"ion\n" +
-                        /*empty date*/  "\t25\t1460.2411\t745.39404\tFALSE\t744.3868\t1114.4303\t1\t1\t0.020280406\t15.826528\t12.413276\t4\t17\t41\t25\t13456.231\tdes,crip,tion\n" +
-                        "2-Jan-06\t89\t1535.602\t970.9579\tFALSE\t1939.9012\t823.70984\t2\t1\t0.0228055\t10.497823\t2.5962036\t5\t81\t103\t23\t9500.36\t\n" +
-                        "2 January 2006\t164\t1624.442\t783.8968\tFALSE\t1565.779\t771.20935\t2\t1\t0.024676466\t11.3547325\t3.3645654\t5\t156\t187\t32\t12656.351\t\n" +
-                        "January 2, 2006\t224\t1695.389\t725.39404\tFALSE\t2173.1604\t6.278867\t3\t1\t0.2767084\t1.6497655\t1.2496755\t3\t221\t229\t9\t55.546417\t\n" +
-                        "1/2/06\t249\t1724.5541\t773.42175\tFALSE\t1544.829\t5.9057474\t2\t1\t0.5105971\t0.67020833\t1.4744527\t2\t246\t250\t5\t29.369175\t\n" +
-                        "# foo\n" +
-                        "\n" +
-                        "#";
+                "# date=Mon May 22 13:25:28 PDT 2006\n" +
+                "# java.vendor=Sun Microsystems Inc.\n" +
+                "# java.version=1.5.0_06\n" +
+                "# revision=rev1.1\n" +
+                "# user.name=Matthew\n" +
+                "date\tscan\ttime\tmz\taccurateMZ\tmass\tintensity\tcharge\tchargeStates\tkl\tbackground\tmedian\tpeaks\tscanFirst\tscanLast\tscanCount\ttotalIntensity\tdescription\n" +
+                "1/2/2006\t96\t1543.3401\t858.3246\tFALSE\t1714.6346\t2029.6295\t2\t1\t0.19630894\t26.471083\t12.982442\t4\t92\t100\t9\t20248.762\tdescription\n" +
+/*empty int*/   "2/Jan/2006\t100\t1560.348\t858.37555\tFALSE\t1714.7366\t1168.3536\t2\t1\t0.033085547\t63.493385\t8.771278\t5\t101\t119\t19\t17977.979\tdesc\"ion\n" +
+/*empty date*/  "\t25\t1460.2411\t745.39404\tFALSE\t744.3868\t1114.4303\t1\t1\t0.020280406\t15.826528\t12.413276\t4\t17\t41\t25\t13456.231\tdes,crip,tion\n" +
+                "2-Jan-06\t89\t1535.602\t970.9579\tFALSE\t1939.9012\t823.70984\t2\t1\t0.0228055\t10.497823\t2.5962036\t5\t81\t103\t23\t9500.36\t\n" +
+                "2 January 2006\t164\t1624.442\t783.8968\tFALSE\t1565.779\t771.20935\t2\t1\t0.024676466\t11.3547325\t3.3645654\t5\t156\t187\t32\t12656.351\t\n" +
+                "January 2, 2006\t224\t1695.389\t725.39404\tFALSE\t2173.1604\t6.278867\t3\t1\t0.2767084\t1.6497655\t1.2496755\t3\t221\t229\t9\t55.546417\t\n" +
+                "1/2/06\t249\t1724.5541\t773.42175\tFALSE\t1544.829\t5.9057474\t2\t1\t0.5105971\t0.67020833\t1.4744527\t2\t246\t250\t5\t29.369175\t\n" +
+                "# foo\n" +
+                "\n" +
+                "#";
         /* same data in a different order */
         String tsvDataReordered =
-                        "date\tscan\ttime\tmz\taccurateMZ\tmass\tintensity\tcharge\tchargeStates\tkl\tbackground\tmedian\tpeaks\tscanFirst\tscanLast\tscanCount\ttotalIntensity\tdescription\n" +
-                        "1/2/06\t249\t1724.5541\t773.42175\tFALSE\t1544.829\t5.9057474\t2\t1\t0.5105971\t0.67020833\t1.4744527\t2\t246\t250\t5\t29.369175\t\n"+
-                        /*empty date*/  "\t25\t1460.2411\t745.39404\tFALSE\t744.3868\t1114.4303\t1\t1\t0.020280406\t15.826528\t12.413276\t4\t17\t41\t25\t13456.231\tdes,crip,tion\n" +
-                        "2-Jan-06\t89\t1535.602\t970.9579\tFALSE\t1939.9012\t823.70984\t2\t1\t0.0228055\t10.497823\t2.5962036\t5\t81\t103\t23\t9500.36\t\n" +
-                        "January 2, 2006\t224\t1695.389\t725.39404\tFALSE\t2173.1604\t6.278867\t3\t1\t0.2767084\t1.6497655\t1.2496755\t3\t221\t229\t9\t55.546417\t\n" +
-                        /*empty int*/   "2/Jan/2006\t100\t1560.348\t858.37555\tFALSE\t1714.7366\t1168.3536\t2\t1\t0.033085547\t63.493385\t8.771278\t5\t101\t119\t19\t17977.979\tdesc\"ion\n" +
-                        "1/2/2006\t96\t1543.3401\t858.3246\tFALSE\t1714.6346\t2029.6295\t2\t1\t0.19630894\t26.471083\t12.982442\t4\t92\t100\t9\t20248.762\tdescription\n" +
-                        "2 January 2006\t164\t1624.442\t783.8968\tFALSE\t1565.779\t771.20935\t2\t1\t0.024676466\t11.3547325\t3.3645654\t5\t156\t187\t32\t12656.351\t\n";
+                "date\tscan\ttime\tmz\taccurateMZ\tmass\tintensity\tcharge\tchargeStates\tkl\tbackground\tmedian\tpeaks\tscanFirst\tscanLast\tscanCount\ttotalIntensity\tdescription\n" +
+                "1/2/06\t249\t1724.5541\t773.42175\tFALSE\t1544.829\t5.9057474\t2\t1\t0.5105971\t0.67020833\t1.4744527\t2\t246\t250\t5\t29.369175\t\n"+
+                /*empty date*/  "\t25\t1460.2411\t745.39404\tFALSE\t744.3868\t1114.4303\t1\t1\t0.020280406\t15.826528\t12.413276\t4\t17\t41\t25\t13456.231\tdes,crip,tion\n" +
+                "2-Jan-06\t89\t1535.602\t970.9579\tFALSE\t1939.9012\t823.70984\t2\t1\t0.0228055\t10.497823\t2.5962036\t5\t81\t103\t23\t9500.36\t\n" +
+                "January 2, 2006\t224\t1695.389\t725.39404\tFALSE\t2173.1604\t6.278867\t3\t1\t0.2767084\t1.6497655\t1.2496755\t3\t221\t229\t9\t55.546417\t\n" +
+                /*empty int*/   "2/Jan/2006\t100\t1560.348\t858.37555\tFALSE\t1714.7366\t1168.3536\t2\t1\t0.033085547\t63.493385\t8.771278\t5\t101\t119\t19\t17977.979\tdesc\"ion\n" +
+                "1/2/2006\t96\t1543.3401\t858.3246\tFALSE\t1714.6346\t2029.6295\t2\t1\t0.19630894\t26.471083\t12.982442\t4\t92\t100\t9\t20248.762\tdescription\n" +
+                "2 January 2006\t164\t1624.442\t783.8968\tFALSE\t1565.779\t771.20935\t2\t1\t0.024676466\t11.3547325\t3.3645654\t5\t156\t187\t32\t12656.351\t\n";
 
         private File _createTempFile(String data, String ext) throws IOException
         {
@@ -765,206 +765,250 @@ public class TabLoader extends DataLoader
             return f;
         }
 
-
         @Test
         public void testMalformedCsv() throws IOException
         {
             File csv = _createTempFile(malformedCsvData, ".csv");
 
-            TabLoader l = new TabLoader(csv);
-            l.parseAsCSV();
-            List<Map<String, Object>> maps = l.load();
-            assertEquals(l.getColumns().length, 3);
-            assertEquals(String.class, l.getColumns()[0].clazz);
-            assertEquals(String.class, l.getColumns()[1].clazz);
-            assertEquals(String.class, l.getColumns()[2].clazz);
-            assertEquals(2, maps.size());
+            try (TabLoader l = new TabLoader(csv))
+            {
+                l.parseAsCSV();
+                List<Map<String, Object>> maps = l.load();
+                assertEquals(3, l.getColumns().length);
+                assertEquals(String.class, l.getColumns()[0].clazz);
+                assertEquals(String.class, l.getColumns()[1].clazz);
+                assertEquals(String.class, l.getColumns()[2].clazz);
+                assertEquals(2, maps.size());
 
-            assertEquals("Header1", maps.get(0).get("column0"));
-            assertEquals("Header2", maps.get(0).get("column1"));
-            assertEquals("Header3", maps.get(0).get("column2"));
+                assertEquals("Header1", maps.get(0).get("column0"));
+                assertEquals("Header2", maps.get(0).get("column1"));
+                assertEquals("Header3", maps.get(0).get("column2"));
 
-            assertEquals("test1a", maps.get(1).get("column0"));
-            assertEquals("testb", maps.get(1).get("column1"));
-            assertEquals(null, maps.get(1).get("column2"));
+                assertEquals("test1a", maps.get(1).get("column0"));
+                assertEquals("testb", maps.get(1).get("column1"));
+                assertNull(maps.get(1).get("column2"));
+            }
+
+            assertTrue(csv.delete());
         }
 
         @Test
-        public void testTSVFile() throws IOException
+        public void testTSV() throws IOException
         {
-            File tsv = _createTempFile(tsvData, ".tsv");
-
-            TabLoader l = new TabLoader(tsv);
-            List<Map<String, Object>> maps = l.load();
-            assertEquals(l.getColumns().length, 18);
-            assertEquals(l.getColumns()[0].clazz, Date.class);
-            assertEquals(l.getColumns()[1].clazz, Integer.class);
-            assertEquals(l.getColumns()[2].clazz, Double.class);
-            assertEquals(l.getColumns()[4].clazz, Boolean.class);
-            assertEquals(l.getColumns()[17].clazz, String.class);
-            assertEquals(maps.size(), 7);
-
-            Map<String, Object> firstRow = maps.get(0);
-            assertTrue(firstRow.get("scan").equals(96));
-            assertTrue(firstRow.get("accurateMZ").equals(false));
-            assertTrue(firstRow.get("description").equals("description"));
-            tsv.delete();
-        }
-
-
-        @Test
-        public void testTSVReader() throws IOException
-        {
-            File csv = _createTempFile(tsvData, ".tsv");
-            Reader r = Readers.getReader(csv);
-            TabLoader l = new TabLoader(r, true);
-            List<Map<String, Object>> maps = l.load();
-            assertEquals(l.getColumns().length, 18);
-            assertEquals(maps.size(), 7);
-            r.close();
-            csv.delete();
-        }
-
-
-        @Test
-        public void testCSVFile() throws IOException
-        {
-            File csv = _createTempFile(csvData, ".csv");
-
-            TabLoader l = new TabLoader(csv);
-            l.parseAsCSV();
-            List<Map<String, Object>> maps = l.load();
-            assertEquals(l.getColumns().length, 18);
-            assertEquals(l.getColumns()[0].clazz, Date.class);
-            assertEquals(l.getColumns()[1].clazz, Integer.class);
-            assertEquals(l.getColumns()[2].clazz, Double.class);
-            assertEquals(l.getColumns()[4].clazz, Boolean.class);
-            assertEquals(l.getColumns()[17].clazz, String.class);
-            assertEquals(maps.size(), 7);
-
-            Map firstRow = maps.get(0);
-            assertTrue(firstRow.get("scan").equals(96));
-            assertTrue(firstRow.get("accurateMZ").equals(false));
-            assertTrue(firstRow.get("description").equals("description"));
-
-            csv.delete();
+            testTextFile(tsvData, ".tsv", t->{});
+            testReader(tsvData, ".tsv", t->{});
         }
 
         @Test
-        public void testCSVReader() throws IOException
+        public void testCSV() throws IOException
         {
-            File csv = _createTempFile(csvData, ".csv");
-            Reader r = Readers.getReader(csv);
-            TabLoader l = new TabLoader(r, true);
-            l.parseAsCSV();
-            List<Map<String, Object>> maps = l.load();
-            assertEquals(l.getColumns().length, 18);
-            assertEquals(maps.size(), 7);
-            r.close();
-            csv.delete();
+            testTextFile(csvData, ".csv", TabLoader::parseAsCSV);
+            testReader(csvData, ".csv", TabLoader::parseAsCSV);
         }
 
+        private void testTextFile(String data, String extension, Consumer<TabLoader> consumer) throws IOException
+        {
+            File file = _createTempFile(data, extension);
+
+            try (TabLoader l = new TabLoader(file))
+            {
+                consumer.accept(l);
+                List<Map<String, Object>> maps = l.load();
+                assertEquals(18, l.getColumns().length);
+                assertEquals(Date.class, l.getColumns()[0].clazz);
+                assertEquals(Integer.class, l.getColumns()[1].clazz);
+                assertEquals(Double.class, l.getColumns()[2].clazz);
+                assertEquals(Boolean.class, l.getColumns()[4].clazz);
+                assertEquals(String.class, l.getColumns()[17].clazz);
+                assertEquals(7, maps.size());
+
+                Map<String, Object> firstRow = maps.get(0);
+                assertEquals(96, firstRow.get("scan"));
+                assertEquals(false, firstRow.get("accurateMZ"));
+                assertEquals("description", firstRow.get("description"));
+            }
+
+            assertTrue(file.delete());
+        }
+
+        public void testReader(String data, String extension, Consumer<TabLoader> consumer) throws IOException
+        {
+            File file = _createTempFile(data, extension);
+
+            try (Reader r = Readers.getReader(file); TabLoader l = new TabLoader(r, true))
+            {
+                consumer.accept(l);
+                List<Map<String, Object>> maps = l.load();
+                assertEquals(18, l.getColumns().length);
+                assertEquals(7, maps.size());
+            }
+            assertTrue(file.delete());
+        }
+
+        // Test that TabLoader can handle empty and nearly empty content, Issue 41897
+        @Test
+        public void testEmptyTabLoader() throws IOException
+        {
+            testEmptyTabLoader("", 0);
+            testEmptyTabLoader("X", 1);
+            testEmptyTabLoader("X\n", 1);
+        }
+
+        private void testEmptyTabLoader(String content, int expectedColumnCount) throws IOException
+        {
+            try (TabLoader l = new TabLoader(content, true))
+            {
+                testEmptyTabLoader(l, expectedColumnCount);
+            }
+            try (Reader r = new StringReader(content); TabLoader l = new TabLoader(r, true))
+            {
+                testEmptyTabLoader(l, expectedColumnCount);
+            }
+            File tsv = _createTempFile(content, ".tsv");
+            try (TabLoader l = new TabLoader(tsv, true))
+            {
+                testEmptyTabLoader(l, expectedColumnCount);
+            }
+            try (Reader r = Readers.getReader(tsv); TabLoader l = new TabLoader(r, true))
+            {
+                testEmptyTabLoader(l, expectedColumnCount);
+            }
+            try (Reader r = Readers.getUnbufferedReader(tsv); TabLoader l = new TabLoader(r, true))
+            {
+                testEmptyTabLoader(l, expectedColumnCount);
+            }
+            assertTrue(tsv.delete());
+        }
+
+        private void testEmptyTabLoader(TabLoader l, int expectedColumnCount) throws IOException
+        {
+            List<Map<String, Object>> maps = l.load();
+            assertEquals(expectedColumnCount, l.getColumns().length);
+            assertEquals(0, maps.size());
+        }
+
+        @Test
+        // We had a window (after incorporating org.labkey.api.reader.BufferedReader but before fixing Issue 41897) where
+        // TabLoader would fail to read the last line at infer time. Test that we don't regress.
+        public void testSmallFile() throws IOException
+        {
+            File tsv = _createTempFile("Heading1\tHeading2\n1\t1.2", ".tsv");
+
+            try (TabLoader l = new TabLoader(tsv, true))
+            {
+                List<Map<String, Object>> maps = l.load();
+                assertEquals(1, maps.size());
+                assertEquals(Integer.class, l.getColumns()[0].clazz);
+                assertEquals(Double.class, l.getColumns()[1].clazz);
+            }
+            assertTrue(tsv.delete());
+        }
 
         @Test
         public void compareTSVtoCSV() throws IOException
         {
-            TabLoader lCSV = new TabLoader(csvData, true);
-            lCSV.parseAsCSV();
-            List<Map<String, Object>> mapsCSV = lCSV.load();
+            try (TabLoader lCSV = new TabLoader(csvData, true))
+            {
+                lCSV.parseAsCSV();
+                List<Map<String, Object>> mapsCSV = lCSV.load();
 
-            TabLoader lTSV = new TabLoader(tsvData, true);
-            List<Map<String, Object>> mapsTSV = lTSV.load();
+                try (TabLoader lTSV = new TabLoader(tsvData, true))
+                {
+                    List<Map<String, Object>> mapsTSV = lTSV.load();
 
-            assertEquals(lCSV.getColumns().length, lTSV.getColumns().length);
-            assertEquals(mapsCSV.size(), mapsTSV.size());
-            for (int i = 0; i < mapsCSV.size(); i++)
-                assertEquals(mapsCSV.get(i), mapsTSV.get(i));
+                    assertEquals(lCSV.getColumns().length, lTSV.getColumns().length);
+                    assertEquals(mapsCSV.size(), mapsTSV.size());
+                    for (int i = 0; i < mapsCSV.size(); i++)
+                        assertEquals(mapsCSV.get(i), mapsTSV.get(i));
+                }
+            }
         }
-
 
         @Test
         public void testObject() throws Exception
         {
-            TabLoader tl = new TabLoader(tsvData);
-            CloseableIterator<TestRow> iter = new BeanIterator<>(tl.iterator(), TestRow.class);
-
-            assertTrue(iter.hasNext());
-            TestRow firstRow = iter.next();
-
-            assertEquals(firstRow.getScan(), 96);
-            assertFalse(firstRow.isAccurateMZ());
-            assertEquals(firstRow.getDescription(), "description");
-
-            int count = 1;
-
-            while (iter.hasNext())
+            try (TabLoader tl = new TabLoader(tsvData); CloseableIterator<TestRow> iter = new BeanIterator<>(tl.iterator(), TestRow.class))
             {
-                iter.next();
-                count++;
-            }
+                assertTrue(iter.hasNext());
+                TestRow firstRow = iter.next();
 
-            iter.close();
-            assertTrue(count == 7);
+                assertEquals(96, firstRow.getScan());
+                assertFalse(firstRow.isAccurateMZ());
+                assertEquals("description", firstRow.getDescription());
+
+                int count = 1;
+
+                while (iter.hasNext())
+                {
+                    iter.next();
+                    count++;
+                }
+
+                assertEquals(7, count);
+            }
         }
 
         @Test
         public void testUnescape()
         {
             final String data =
-                    "A\tMulti-Line\tB\n" +
-                    "a\tthis\\nis\\tmulti-line\tb\n" +
-                    "\tthis\\nis\\tmulti-line\tb\n";
+                "A\tMulti-Line\tB\n" +
+                "a\tthis\\nis\\tmulti-line\tb\n" +
+                "\tthis\\nis\\tmulti-line\tb\n";
 
-            TabLoader loader = new TabLoader(data, true);
-            loader.setUnescapeBackslashes(true);
-            List<Map<String, Object>> rows = loader.load();
-            assertEquals(2, rows.size());
+            try (TabLoader loader = new TabLoader(data, true))
+            {
+                loader.setUnescapeBackslashes(true);
+                List<Map<String, Object>> rows = loader.load();
+                assertEquals(2, rows.size());
 
-            Map<String, Object> row = rows.get(0);
-            assertEquals("a", row.get("A"));
-            assertEquals("this\nis\tmulti-line", row.get("Multi-Line"));
-            assertEquals("b", row.get("B"));
+                Map<String, Object> row = rows.get(0);
+                assertEquals("a", row.get("A"));
+                assertEquals("this\nis\tmulti-line", row.get("Multi-Line"));
+                assertEquals("b", row.get("B"));
 
-            row = rows.get(1);
-            assertEquals(null, row.get("A"));
-            assertEquals("this\nis\tmulti-line", row.get("Multi-Line"));
-            assertEquals("b", row.get("B"));
+                row = rows.get(1);
+                assertNull(row.get("A"));
+                assertEquals("this\nis\tmulti-line", row.get("Multi-Line"));
+                assertEquals("b", row.get("B"));
+            }
 
             // now test no-unescaping
-            loader = new TabLoader(data, true);
-            loader.setUnescapeBackslashes(false);
-            rows = loader.load();
-            assertEquals(2, rows.size());
+            try (TabLoader loader = new TabLoader(data, true))
+            {
+                loader.setUnescapeBackslashes(false);
+                List<Map<String, Object>> rows = loader.load();
+                assertEquals(2, rows.size());
 
-            row = rows.get(0);
-            assertEquals("a", row.get("A"));
-            assertEquals("this\\nis\\tmulti-line", row.get("Multi-Line"));
-            assertEquals("b", row.get("B"));
+                Map<String, Object> row = rows.get(0);
+                assertEquals("a", row.get("A"));
+                assertEquals("this\\nis\\tmulti-line", row.get("Multi-Line"));
+                assertEquals("b", row.get("B"));
 
-            row = rows.get(1);
-            assertEquals(null, row.get("A"));
-            assertEquals("this\\nis\\tmulti-line", row.get("Multi-Line"));
-            assertEquals("b", row.get("B"));
-
+                row = rows.get(1);
+                assertNull(row.get("A"));
+                assertEquals("this\\nis\\tmulti-line", row.get("Multi-Line"));
+                assertEquals("b", row.get("B"));
+            }
         }
 
         @Test
         public void testEmptyRow()
         {
             final String data =
-                    "A\tB\n" +
-                    "first\tline\n" +
-                    "\n" +
-                    "# comment\n" +
-                    "second\tline\n";
+                "A\tB\n" +
+                "first\tline\n" +
+                "\n" +
+                "# comment\n" +
+                "second\tline\n";
 
             for (int i = 0; i < 1; i++)
             {
                 boolean parseQuotes = i == 0;
 
                 // default behavior is to skip blank lines
+                try (TabLoader loader = new TabLoader(data, true))
                 {
-                    TabLoader loader = new TabLoader(data, true);
                     loader.setInferTypes(false);
                     loader.setParseQuotes(parseQuotes);
                     List<Map<String, Object>> rows = loader.load();
@@ -978,8 +1022,8 @@ public class TabLoader extends DataLoader
                 }
 
                 // include blank lines as row of all null values
+                try (TabLoader loader = new TabLoader(data, true))
                 {
-                    TabLoader loader = new TabLoader(data, true);
                     loader.setInferTypes(false);
                     loader.setParseQuotes(parseQuotes);
                     loader.setIncludeBlankLines(true);
@@ -990,13 +1034,12 @@ public class TabLoader extends DataLoader
                     assertEquals("first", row.get("A"));
 
                     row = rows.get(1);
-                    assertEquals(null, row.get("A"));
-                    assertEquals(null, row.get("B"));
+                    assertNull(row.get("A"));
+                    assertNull(row.get("B"));
 
                     row = rows.get(2);
                     assertEquals("second", row.get("A"));
                 }
-
             }
         }
 
@@ -1004,82 +1047,90 @@ public class TabLoader extends DataLoader
         public void testParseQuotes()
         {
             final String data =
-                    "Name\tMulti-Line\tAge\n" +
-                    "Bob\t\"apple\norange\tgrape\"\t3\n" +
-                    "Bob\t\"one\n\"\"two\"\"\tthree\"\n" +
-                    "\tred\\nblue\\tgreen\t4\n" +
-                    "Fred\t\"quoted stuff\" unquoted\t1";
-            TabLoader loader = new TabLoader(data, true);
-            loader.setParseQuotes(true);
-            loader.setUnescapeBackslashes(true);
+                "Name\tMulti-Line\tAge\n" +
+                "Bob\t\"apple\norange\tgrape\"\t3\n" +
+                "Bob\t\"one\n\"\"two\"\"\tthree\"\n" +
+                "\tred\\nblue\\tgreen\t4\n" +
+                "Fred\t\"quoted stuff\" unquoted\t1";
 
-            List<Map<String, Object>> rows = loader.load();
-            assertEquals(4, rows.size());
+            try (TabLoader loader = new TabLoader(data, true))
+            {
+                loader.setParseQuotes(true);
+                loader.setUnescapeBackslashes(true);
 
-            Map<String, Object> row = rows.get(0);
-            assertEquals("Bob", row.get("Name"));
-            assertEquals("apple\norange\tgrape", row.get("Multi-Line"));
-            assertEquals(3, row.get("Age"));
+                List<Map<String, Object>> rows = loader.load();
+                assertEquals(4, rows.size());
 
-            row = rows.get(1);
-            assertEquals("Bob", row.get("Name"));
-            assertEquals("one\n\"two\"\tthree", row.get("Multi-Line"));
-            assertEquals(null, row.get("Age"));
+                Map<String, Object> row = rows.get(0);
+                assertEquals("Bob", row.get("Name"));
+                assertEquals("apple\norange\tgrape", row.get("Multi-Line"));
+                assertEquals(3, row.get("Age"));
 
-            row = rows.get(2);
-            assertEquals(null, row.get("Name"));
-            assertEquals("red\nblue\tgreen", row.get("Multi-Line"));
-            assertEquals(4, row.get("Age"));
+                row = rows.get(1);
+                assertEquals("Bob", row.get("Name"));
+                assertEquals("one\n\"two\"\tthree", row.get("Multi-Line"));
+                assertNull(row.get("Age"));
+
+                row = rows.get(2);
+                assertNull(row.get("Name"));
+                assertEquals("red\nblue\tgreen", row.get("Multi-Line"));
+                assertEquals(4, row.get("Age"));
+            }
 
             // now test no-unescaping
-            loader = new TabLoader(data, true);
-            loader.setParseQuotes(true);
-            loader.setUnescapeBackslashes(false);
+            try (TabLoader loader = new TabLoader(data, true))
+            {
+                loader.setParseQuotes(true);
+                loader.setUnescapeBackslashes(false);
 
-            rows = loader.load();
-            assertEquals(4, rows.size());
+                List<Map<String, Object>> rows = loader.load();
+                assertEquals(4, rows.size());
 
-            row = rows.get(0);
-            assertEquals("Bob", row.get("Name"));
-            assertEquals("apple\norange\tgrape", row.get("Multi-Line"));
-            assertEquals(3, row.get("Age"));
+                Map<String, Object> row = rows.get(0);
+                assertEquals("Bob", row.get("Name"));
+                assertEquals("apple\norange\tgrape", row.get("Multi-Line"));
+                assertEquals(3, row.get("Age"));
 
-            row = rows.get(1);
-            assertEquals("Bob", row.get("Name"));
-            assertEquals("one\n\"two\"\tthree", row.get("Multi-Line"));
-            assertEquals(null, row.get("Age"));
+                row = rows.get(1);
+                assertEquals("Bob", row.get("Name"));
+                assertEquals("one\n\"two\"\tthree", row.get("Multi-Line"));
+                assertNull(row.get("Age"));
 
-            row = rows.get(2);
-            assertEquals(null, row.get("Name"));
-            assertEquals("red\\nblue\\tgreen", row.get("Multi-Line"));
-            assertEquals(4, row.get("Age"));
+                row = rows.get(2);
+                assertNull(row.get("Name"));
+                assertEquals("red\\nblue\\tgreen", row.get("Multi-Line"));
+                assertEquals(4, row.get("Age"));
 
-            row = rows.get(3);
-            assertEquals("Fred", row.get("Name"));
-            assertEquals("quoted stuff unquoted", row.get("Multi-Line"));
-            assertEquals(1, row.get("Age"));
+                row = rows.get(3);
+                assertEquals("Fred", row.get("Name"));
+                assertEquals("quoted stuff unquoted", row.get("Multi-Line"));
+                assertEquals(1, row.get("Age"));
+            }
         }
-
 
         @Test
         public void testMySql() throws IOException
         {
             String mysqlData =
-                    "3072~@~\\N~@~biotinylated antihuIgG antibody~@~ESR8865~@~2149~@@~\n" +
-                    "3073~@~Multiline\n" +
-                            "description~@~anti-huIgM antibody~@~ESR8866~@~2149~@@~\n" +
-                    "3074~@~short~description~@~anti-huIgA antibody~@~ESR8867~@~2149~@@~\n" +
-                    "3075~@~description with\n" +
-                            "\n" +
-                            "\n" +
-                            "\n" +
-                            "blank lines\n" +
-                            "\n~@~avidin-D-HRP conjugate~@~ESR8868~@~2149~@@~\n";
-            TabLoader loader = (TabLoader)new TabLoader.MysqlFactory().createLoader(new StringBufferInputStream(mysqlData), false, null);
-            loader.setColumns(new ColumnDescriptor[] {new ColumnDescriptor("analyte_id"), new ColumnDescriptor("description"), new ColumnDescriptor("name"),new ColumnDescriptor("reagent_ascession"),new ColumnDescriptor("workspace_id")});
-            loader.setDelimiters("~@~","~@@~");
-            List<Map<String, Object>> rows = loader.load();
-            loader.close();
+                "3072~@~\\N~@~biotinylated antihuIgG antibody~@~ESR8865~@~2149~@@~\n" +
+                "3073~@~Multiline\n" +
+                        "description~@~anti-huIgM antibody~@~ESR8866~@~2149~@@~\n" +
+                "3074~@~short~description~@~anti-huIgA antibody~@~ESR8867~@~2149~@@~\n" +
+                "3075~@~description with\n" +
+                        "\n" +
+                        "\n" +
+                        "\n" +
+                        "blank lines\n" +
+                        "\n~@~avidin-D-HRP conjugate~@~ESR8868~@~2149~@@~\n";
+
+            final List<Map<String, Object>> rows;
+
+            try (TabLoader loader = (TabLoader)new TabLoader.MysqlFactory().createLoader(new StringBufferInputStream(mysqlData), false, null))
+            {
+                loader.setColumns(new ColumnDescriptor[]{new ColumnDescriptor("analyte_id"), new ColumnDescriptor("description"), new ColumnDescriptor("name"), new ColumnDescriptor("reagent_ascession"), new ColumnDescriptor("workspace_id")});
+                loader.setDelimiters("~@~", "~@@~");
+                rows = loader.load();
+            }
 
             assertEquals(4, rows.size());
 

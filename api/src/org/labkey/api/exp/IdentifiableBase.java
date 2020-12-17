@@ -86,6 +86,14 @@ public class IdentifiableBase implements Identifiable, Serializable
         this.objectId = objectId;
     }
 
+    // allows updating objectId -- should only be used if there is an existing objectId that was updated
+    public void replaceExistingObjectId(int objectId)
+    {
+        if (this.objectId == null || this.objectId.equals(objectId))
+            throw new IllegalStateException("only call this method if you are creating a new exp.object with a different LSID and need to update the objectId");
+        this.objectId = objectId;
+    }
+
     @Override
     public Container getContainer()
     {

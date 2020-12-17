@@ -846,10 +846,10 @@ public class OntologyManager
 
     public static void deleteOntologyObjects(Container c, boolean deleteOwnedObjects, int... objectIds)
     {
-        deleteOntologyObjects(c, deleteOwnedObjects, true, objectIds);
+        deleteOntologyObjects(c, deleteOwnedObjects, true, true, objectIds);
     }
 
-    private static void deleteOntologyObjects(Container c, boolean deleteOwnedObjects, boolean deleteObjects, int... objectIds)
+    public static void deleteOntologyObjects(Container c, boolean deleteOwnedObjects, boolean deleteObjectProperties, boolean deleteObjects, int... objectIds)
     {
         if (objectIds.length == 0)
             return;
@@ -866,7 +866,7 @@ public class OntologyManager
                 {
                     int[] sub = new int[Math.min(lenBatch, objectIds.length - s)];
                     System.arraycopy(objectIds, s, sub, 0, sub.length);
-                    deleteOntologyObjects(c, deleteOwnedObjects, deleteObjects, sub);
+                    deleteOntologyObjects(c, deleteOwnedObjects, deleteObjectProperties, deleteObjects, sub);
                 }
 
                 return;
@@ -898,10 +898,13 @@ public class OntologyManager
                 new SqlExecutor(getExpSchema()).execute(sqlDeleteOwnedObjects);
             }
 
-            if (deleteObjects)
+            if (deleteObjectProperties)
             {
                 deleteProperties(c, objectIds);
+            }
 
+            if (deleteObjects)
+            {
                 StringBuilder sqlDeleteObjects = new StringBuilder();
                 sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject()).append(" WHERE Container = '").append(c.getId()).append("' AND ObjectId IN (");
                 sqlDeleteObjects.append(in);
@@ -923,7 +926,7 @@ public class OntologyManager
 
         if (null != ontologyObject)
         {
-            deleteOntologyObjects(container, deleteOwnedObjects, true, ontologyObject.getObjectId());
+            deleteOntologyObjects(container, deleteOwnedObjects, true, true, ontologyObject.getObjectId());
         }
     }
 

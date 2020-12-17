@@ -87,7 +87,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -310,7 +309,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             ExpProtocol protocol = run.getProtocol();
             AssayProvider provider = AssayService.get().getProvider(protocol);
-            FieldKey assayResultLsidFieldKey = provider.getTableMetadata(protocol).getResultLsidFieldKey();
+            FieldKey assayResultLsidFieldKey = provider != null ? provider.getTableMetadata(protocol).getResultLsidFieldKey() : null;
 
             SQLFragment assayResultLsidSql = null;
 
@@ -340,7 +339,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 // results/data domain for TSV-style assays
                 try
                 {
-                    domain = AbstractAssayProvider.getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
+                    domain = AbstractAssayProvider.getDomainByPrefixIfExists(protocol, ExpProtocol.ASSAY_DOMAIN_DATA) ;
                 }
                 catch (IllegalStateException ignored)
                 {
@@ -354,7 +353,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             // delete the assay result row exp.objects
             if (assayResultLsidSql != null)
             {
-                if (LOG.isTraceEnabled())
+                if (LOG.isDebugEnabled())
                 {
                     SQLFragment t = new SQLFragment("SELECT o.*")
                             .append(" FROM ").append(OntologyManager.getTinfoObject(), "o")
@@ -365,6 +364,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     SqlSelector ss = new SqlSelector(ExperimentService.get().getSchema(), t);
                     try (TableResultSet rs = ss.getResultSet())
                     {
+                        LOG.debug("objects that will be deleted:");
                         ResultSetUtil.logData(rs, LOG);
                     }
                     catch (SQLException x)
@@ -1144,7 +1144,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     @Override
     public void deleteData(ExpData data, Container container, User user)
     {
-        OntologyManager.deleteOntologyObjects(container, data.getLSID());
     }
 
     @Override
