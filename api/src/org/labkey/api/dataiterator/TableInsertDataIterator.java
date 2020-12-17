@@ -42,6 +42,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -116,10 +117,12 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
                 var col = di.getColumnInfo(i);
                 targetOnlyColumnNames.remove(col.getName());
 
+                // We expose MV indicator columns in the virtual tables without the underscore before the suffix, while the provisioned column
+                // is created with and underscore separator, we need to account for this difference when the target table is the provisioned table
                 if (col.getName().toLowerCase().endsWith(MvColumn.MV_INDICATOR_SUFFIX.toLowerCase()))
                 {
-                    String name = col.getName().substring(0, col.getName().length() - MvColumn.MV_INDICATOR_SUFFIX.length());
-                    targetOnlyColumnNames.remove(name + "_" + MvColumn.MV_INDICATOR_SUFFIX);
+                    String mvIndicatorName = col.getName().toLowerCase().replace(MvColumn.MV_INDICATOR_SUFFIX.toLowerCase(), "_" + MvColumn.MV_INDICATOR_SUFFIX);
+                    targetOnlyColumnNames.remove(mvIndicatorName);
                 }
             }
             // ... except for the Modified and ModifiedBy columns, which should still be updated.
