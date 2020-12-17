@@ -2107,7 +2107,7 @@ public class Query
             QueryDefinition query = QueryService.get().createQueryDef(user, c, SchemaKey.fromParts("lists"), GUID.makeHash());
             query.setSql(sql);
             ArrayList<QueryException> qerrors = new ArrayList<>();
-            TableInfo t = query.getTable(query.getSchema(), qerrors, false, true, true);
+            TableInfo t = query.getTable(query.getSchema(), qerrors, false, true);
 
             if (null == t)
             {
