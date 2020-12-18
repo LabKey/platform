@@ -877,6 +877,10 @@ public class StudyPublishTest extends StudyPHIExportTest
                 "Full-text search settings",
                 "Missing value indicators",
                 "Notification settings",
+                "Role assignments for users and groups",
+                "Webpart properties and layout",
+                "Wikis and their attachments",
+                "Files",
                 "QC State Settings",
                 "Sample Types");
         clickButton("Next", 0);
