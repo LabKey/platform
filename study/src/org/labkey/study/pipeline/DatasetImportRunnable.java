@@ -229,6 +229,7 @@ public class DatasetImportRunnable implements Runnable
                     _datasetDefinition.getKeyManagementType() == Dataset.KeyManagementType.None &&
                     _action != AbstractDatasetImportTask.Action.DELETE;
             int count = 0;
+            ArrayList<String> importMessages = new ArrayList<>();
 
             if (tryDataDiffing)
             {
@@ -243,21 +244,44 @@ public class DatasetImportRunnable implements Runnable
                 else
                 {
                     if (_action== AbstractDatasetImportTask.Action.REPLACE)
-                        b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.DELETE,DataIntegrationService.ReimportOperations.UPDATE, DataIntegrationService.ReimportOperations.INSERT));
-                    else if (_action == AbstractDatasetImportTask.Action.APPEND)
+                    {
+                        b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.DELETE, DataIntegrationService.ReimportOperations.REPLACE, DataIntegrationService.ReimportOperations.INSERT));
+                    }
+                    else
+                    {
+                        assert _action == AbstractDatasetImportTask.Action.APPEND;
                         b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.INSERT));
+                    }
                     b.setConfigParameters(config);
                     b.execute(batchErrors);
                     if (!batchErrors.hasErrors())
                     {
+                        if (0 < b.getProcessed())
+                        {
+                            String msg = (_datasetDefinition.getLabel() + ": Processed  " + b.getProcessed() + " rows from " + _fileName);
+                            if (useCutoff && skippedRowCount[0] > 0)
+                                msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
+                            importMessages.add(msg);
+                        }
                         if (0 < b.getDeleted())
-                            _logger.info(_datasetDefinition.getLabel() + ": Deleted " + b.getDeleted() + " rows");
+                        {
+                            importMessages.add(_datasetDefinition.getLabel() + ": Deleted " + b.getDeleted() + " rows");
+                        }
                         if (0 < b.getInserted())
+                        {
                             count += b.getInserted();
+                            importMessages.add(_datasetDefinition.getLabel() + ": Inserted " + b.getInserted() + " rows");
+                        }
                         if (0 < b.getMerged())
+                        {
                             count += b.getMerged();
+                            importMessages.add(_datasetDefinition.getLabel() + ": Merged " + b.getMerged() + " rows");
+                        }
                         if (0 < b.getUpdated())
+                        {
                             count += b.getUpdated();
+                            importMessages.add(_datasetDefinition.getLabel() + ": Updated " + b.getUpdated() + " rows");
+                        }
                     }
                 }
             }
@@ -278,6 +302,11 @@ public class DatasetImportRunnable implements Runnable
                 _logger.info(_datasetDefinition.getLabel() + ": Starting import from " + _fileName);
 
                 count = qus.importRows(user, c, loader, batchErrors, config, null);
+
+                String msg = _datasetDefinition.getLabel() + ": Successfully imported " + count + " rows from " + _fileName;
+                if (useCutoff && skippedRowCount[0] > 0)
+                    msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
+                importMessages.add(msg);
             }
 
             if (!batchErrors.hasErrors())
@@ -299,10 +328,8 @@ public class DatasetImportRunnable implements Runnable
                 {
                     assert cpuCommit.start();
                     transaction.commit();
-                    String msg = _datasetDefinition.getLabel() + ": Successfully imported " + count + " rows from " + _fileName;
-                    if (useCutoff && skippedRowCount[0] > 0)
-                        msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
-                    _logger.info(msg);
+                    for (var msg : importMessages)
+                        _logger.info(msg);
                     assert cpuCommit.stop();
                 }
             }

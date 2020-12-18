@@ -102,10 +102,11 @@ public interface DataIntegrationService
         // after execute() or dryRun() this method can be used
         // NOTE: if a merge is performed insert/updated are not separated (SPEC?)
         // if merge >= 0 then getInserted() and getUpdated() will == -1 (and vice versa)
-        int getInserted();
-        int getUpdated();
-        int getMerged();
-        int getDeleted();
+        int getProcessed();     // rows read from source, might not be set if there is nothing to do (e.g. delete rows from emtpy table)
+        int getInserted();      // rows inserted
+        int getUpdated();       // rows updates
+        int getMerged();        // in the case of merge, insert and updated rows are combined into one number (sorry)
+        int getDeleted();       // rows deleted
     }
 
     boolean supportsReimport(TableInfo ti);
