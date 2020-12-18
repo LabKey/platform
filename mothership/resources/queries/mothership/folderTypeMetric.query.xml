@@ -4,62 +4,7 @@
             <table tableName="folderTypeMetric" tableDbType="NOT_IN_DB">
                 <tableTitle>Folder Type Metric</tableTitle>
                 <columns>
-                    <column columnName="Study" >
-                        <displayColumnFactory>
-                            <className>org.labkey.mothership.MetricJSONDisplayColumnFactory</className>
-                            <properties>
-                                <property name="jsonPath">['folderTypeCounts']['Study']</property>
-                            </properties>
-                        </displayColumnFactory>
-                    </column>
-                    <column columnName="Assay">
-                        <displayColumnFactory>
-                            <className>org.labkey.mothership.MetricJSONDisplayColumnFactory</className>
-                            <properties>
-                                <property name="jsonPath">['folderTypeCounts']['Assay']</property>
-                            </properties>
-                        </displayColumnFactory>
-                    </column>
-                    <column columnName="Collaboration">
-                        <displayColumnFactory>
-                            <className>org.labkey.mothership.MetricJSONDisplayColumnFactory</className>
-                            <properties>
-                                <property name="jsonPath">['folderTypeCounts']['Collaboration']</property>
-                            </properties>
-                        </displayColumnFactory>
-                    </column>
-                    <column columnName="MicroArray">
-                        <displayColumnFactory>
-                            <className>org.labkey.mothership.MetricJSONDisplayColumnFactory</className>
-                            <properties>
-                                <property name="jsonPath">['folderTypeCounts']['Microarray']</property>
-                            </properties>
-                        </displayColumnFactory>
-                    </column>
-                    <column columnName="TargetedMS">
-                        <displayColumnFactory>
-                            <className>org.labkey.mothership.MetricJSONDisplayColumnFactory</className>
-                            <properties>
-                                <property name="jsonPath">['folderTypeCounts']['Targeted MS']</property>
-                            </properties>
-                        </displayColumnFactory>
-                    </column>
-                    <column columnName="NAb">
-                        <displayColumnFactory>
-                            <className>org.labkey.mothership.MetricJSONDisplayColumnFactory</className>
-                            <properties>
-                                <property name="jsonPath">['folderTypeCounts']['Nab']</property>
-                            </properties>
-                        </displayColumnFactory>
-                    </column>
-                    <column columnName="Flow">
-                        <displayColumnFactory>
-                            <className>org.labkey.mothership.MetricJSONDisplayColumnFactory</className>
-                            <properties>
-                                <property name="jsonPath">['folderTypeCounts']['Flow']</property>
-                            </properties>
-                        </displayColumnFactory>
-                    </column>
+
                 </columns>
             </table>
         </tables>

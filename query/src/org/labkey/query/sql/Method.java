@@ -475,7 +475,7 @@ public abstract class Method
         labkeyMethod.put(name.toLowerCase(), m);
     }
 
-    public static void addPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect)
+    public static void addPassthroughMethod(String name, @Nullable String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect)
     {
         PassthroughMethod m = new PassthroughMethod(name, declaringSchemaName, returnType, minArguments, maxArguments);
         if (dialect.isPostgreSQL())

@@ -493,13 +493,13 @@ public interface QueryService
      * Add a pass-through method to the allow list for the primary LabKey database type. This enables modules to create
      * and enable custom database functions, for example.
      */
-    void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments);
+    void registerPassthroughMethod(String name, @Nullable String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments);
 
     /**
      * Add a pass-through method to the allow list for a particular database type. This enables modules to create and
      * enable custom database functions, for example.
      */
-    void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect);
+    void registerPassthroughMethod(String name, @Nullable String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect);
 
     void registerMethod(String name, MethodInfo method, JdbcType returnType, int minArgs, int maxArgs);
 
