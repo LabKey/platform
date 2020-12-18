@@ -881,7 +881,8 @@ public class StudyPublishTest extends StudyPHIExportTest
                 "Webpart properties and layout",
                 "Wikis and their attachments",
                 "Files",
-                "QC State Settings");
+                "QC State Settings",
+                "Sample Types");
         clickButton("Next", 0);
 
         // Wizard page 11 : Publish Options
