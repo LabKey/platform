@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-ALTER TABLE mothership.ServerSession
-  ADD buildTime datetime;
-GO
-
-EXEC core.fn_dropifexists 'ServerSession', 'mothership', 'COLUMN', 'buildTIme';
-GO
-
-ALTER TABLE mothership.ServerSession
-  ADD buildTime datetime;
-GO
+SELECT
+    SUM(NumberValue) AS FolderCount,
+    Key,
+    ServerSessionId
+FROM JsonMetricValues
+WHERE DisplayKey LIKE 'folderTypeCounts.%'
+GROUP BY ServerSessionId, Key
+PIVOT FolderCount BY Key

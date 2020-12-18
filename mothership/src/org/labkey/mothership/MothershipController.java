@@ -27,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -43,6 +44,7 @@ import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -54,6 +56,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DetailsView;
@@ -663,6 +666,22 @@ public class MothershipController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException("Intentional exception for testing purposes");
+        }
+    }
+
+    @CSRF(CSRF.Method.NONE)
+    @RequiresSiteAdmin
+    public class SelfReportMetricsAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            MothershipReport report = UsageReportingLevel.generateReport(UsageReportingLevel.MEDIUM, MothershipReport.Target.local);
+            if (report != null)
+            {
+                report.run();
+            }
+            return Collections.singletonMap("status", "success");
         }
     }
 

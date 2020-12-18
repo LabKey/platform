@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 SELECT
-    JsonMetrics as Study,
-    JsonMetrics as Assay,
-    JsonMetrics as Collaboration,
-    JsonMetrics as MicroArray,
-    JsonMetrics as TargetedMS,
-    JsonMetrics as NAb,
-    JsonMetrics as Flow,
-    JsonMetrics
+    CAST(json_op(JsonMetrics, '#>>', '{folderTypeCounts,Study}') AS INTEGER) AS Study,
+    CAST(json_op(JsonMetrics, '#>>', '{folderTypeCounts,Assay}') AS INTEGER) AS Assay,
+    CAST(json_op(JsonMetrics, '#>>', '{folderTypeCounts,Collaboration}') AS INTEGER) AS Collaboration,
+    CAST(json_op(JsonMetrics, '#>>', '{folderTypeCounts,MicroArray}') AS INTEGER) AS MicroArray,
+    CAST(json_op(JsonMetrics, '#>>', '{folderTypeCounts,"Targeted MS"}') AS INTEGER) AS TargetedMS,
+    CAST(json_op(JsonMetrics, '#>>', '{folderTypeCounts,NAb}') AS INTEGER) AS NAb,
+    CAST(json_op(JsonMetrics, '#>>', '{folderTypeCounts,Flow}') AS INTEGER) AS Flow,
+    ServerSessionId
 FROM ServerSessions
-WHERE JsonMetrics IS NOT NULL AND JsonMetrics <> ' '
+WHERE JsonMetrics IS NOT NULL
 
