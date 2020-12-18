@@ -1097,8 +1097,8 @@ public class Query
         private static final String[] days = new String[] {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
         private static final String[] months = new String[] {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
 
-        private String[][] data;
-        RowMapFactory _rowMapFactory;
+        private final String[][] data;
+        private final RowMapFactory<Object> _rowMapFactory;
 
 		// UNDONE: need some NULLS in here
         @SuppressWarnings({"UnusedAssignment"})
@@ -1109,7 +1109,7 @@ public class Query
             var m = new HashMap<String,Integer>();
             for (int i=0 ; i<COLUMNS.length ; i++)
                 m.put(COLUMNS[i],i);
-            _rowMapFactory = new RowMapFactory(new ArrayListMap.FindMap(m));
+            _rowMapFactory = new RowMapFactory<>(new ArrayListMap.FindMap<>(m));
 
             for (int i=1 ; i<=len ; i++)
             {
@@ -1121,7 +1121,7 @@ public class Query
                 row[c++] = days[i%7];
                 row[c++] = months[i%12];
                 row[c++] = DateUtil.toISO(DateUtil.parseISODateTime("2010-01-01") + ((long)i)*12*60*60*1000L);
-                row[c++] = DateUtil.formatDuration(i*1000);
+                row[c++] = DateUtil.formatDuration(((long)i)*1000);
                 row[c++] = GUID.makeGUID();
             }
             _columns = new ColumnDescriptor[COLUMNS.length];
@@ -1136,7 +1136,7 @@ public class Query
             return data;
         }
 
-        int i=1;
+        private int i=1;
 
         @Override
         @NotNull
@@ -1254,7 +1254,7 @@ public class Query
     {
         private final JdbcType _type;
         private final Object _value;
-        private final Callable _call;
+        private final Callable<Object> _call;
 
         MethodSqlTest(String sql, JdbcType type, Object value)
         {
@@ -1264,7 +1264,7 @@ public class Query
             _call = null;
         }
 
-        MethodSqlTest(String sql, JdbcType type, Callable call)
+        MethodSqlTest(String sql, JdbcType type, Callable<Object> call)
         {
             super(sql, 1, 1);
             _type = type;
@@ -1852,7 +1852,8 @@ public class Query
     @TestWhen(TestWhen.When.BVT)
     public static class QueryTestCase extends Assert
     {
-        private String hash = GUID.makeHash();
+        private final String hash = GUID.makeHash();
+
         private QuerySchema lists;
 
         @Before

@@ -455,6 +455,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     {
         return getQuery(schema, errors, parent, includeMetadata, false);
     }
+
     /*
      * I find it very strange that only the xml errors get added to the "errors" list, while
      * the parse errors remain in the getParseErrors() list
