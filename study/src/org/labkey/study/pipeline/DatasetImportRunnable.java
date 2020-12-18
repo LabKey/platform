@@ -18,12 +18,14 @@ package org.labkey.study.pipeline;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
+import org.apache.tika.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
@@ -37,6 +39,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.Filter;
@@ -56,6 +59,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class DatasetImportRunnable implements Runnable
 {
@@ -158,104 +162,149 @@ public class DatasetImportRunnable implements Runnable
             return;
         }
 
-        DataLoader loader = null;
+        // resources to handle in finally or catch
         BatchValidationException batchErrors = new BatchValidationException();
+        InputStream is = null;
+        DataLoader loader = null;
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             final String visitDatePropertyURI = getVisitDateURI(_studyImportContext.getUser());
             boolean useCutoff =
                     _action == AbstractDatasetImportTask.Action.REPLACE &&
-                    visitDatePropertyURI != null &&
-                    _replaceCutoff != null;
+                            visitDatePropertyURI != null &&
+                            _replaceCutoff != null;
 
-            if (_action == AbstractDatasetImportTask.Action.REPLACE || _action == AbstractDatasetImportTask.Action.DELETE)
-            {
-                assert cpuDelete.start();
-                _logger.info(_datasetDefinition.getLabel() + ": Starting delete" + (useCutoff ? " of rows newer than " + _replaceCutoff : ""));
-                int rows = StudyManager.getInstance().purgeDataset(_datasetDefinition, useCutoff ? _replaceCutoff : null);
-                _logger.info(_datasetDefinition.getLabel() + ": Deleted " + rows + " rows");
-                assert cpuDelete.stop();
-            }
+            User user = _studyImportContext.getUser();
+            Container c = _studyImportContext.getContainer();
+            QuerySchema qs = DefaultSchema.get(user,c).getSchema("study");
+            TableInfo datasetTable = null==qs ? null : qs.getTable(_datasetDefinition.getName());
+            QueryUpdateService qus = null == datasetTable ? null : datasetTable.getUpdateService();
+            if (null == qus)
+                throw UnexpectedException.wrap(new NullPointerException(),"Table not found for table: " + _datasetDefinition.getName());
+            Map<Enum,Object> config = new HashMap<>();
+            config.put(DatasetUpdateService.Config.CheckForDuplicates, DatasetDefinition.CheckForDuplicates.sourceOnly);
+            config.put(DatasetUpdateService.Config.StudyImportMaps, _studyImportContext.getTableIdMapMap());
+            if (null != defaultQCState)
+                config.put(DatasetUpdateService.Config.DefaultQCState, defaultQCState);
+            config.put(QueryUpdateService.ConfigParameters.Logger, _logger);
+
+            final Integer[] skippedRowCount = new Integer[]{0};
 
             if (_action == AbstractDatasetImportTask.Action.APPEND || _action == AbstractDatasetImportTask.Action.REPLACE)
             {
-                final Integer[] skippedRowCount = new Integer[] { 0 };
-
-                try (InputStream is = _root.getInputStream(_fileName))
+                is = _root.getInputStream(_fileName);
+                loader = DataLoaderService.get().createLoader(_fileName, null, is, true, _studyImportContext.getContainer(), TabLoader.TSV_FILE_TYPE);
+                if (useCutoff && loader instanceof TabLoader)
                 {
-                    loader = DataLoaderService.get().createLoader(_fileName, null, is, true, _studyImportContext.getContainer(), TabLoader.TSV_FILE_TYPE);
-                    if (useCutoff && loader instanceof TabLoader)
+                    // UNDONE: shouldn't be tied to TabLoader
+                    ((TabLoader) loader).setMapFilter(new Filter<Map<String, Object>>()
                     {
-                        // UNDONE: shouldn't be tied to TabLoader
-                        ((TabLoader) loader).setMapFilter(new Filter<Map<String, Object>>()
+                        @Override
+                        public boolean accept(Map<String, Object> row)
                         {
-                            @Override
-                            public boolean accept(Map<String, Object> row)
-                            {
-                                Object o = row.get(visitDatePropertyURI);
+                            Object o = row.get(visitDatePropertyURI);
 
-                                // Allow rows with no Date or those that have failed conversion (e.g., value is a StudyManager.CONVERSION_ERROR)
-                                if (!(o instanceof Date))
-                                    return true;
+                            // Allow rows with no Date or those that have failed conversion (e.g., value is a StudyManager.CONVERSION_ERROR)
+                            if (!(o instanceof Date))
+                                return true;
 
-                                // Allow rows after the cutoff date.
-                                if (((Date) o).compareTo(_replaceCutoff) > 0)
-                                    return true;
+                            // Allow rows after the cutoff date.
+                            if (((Date) o).compareTo(_replaceCutoff) > 0)
+                                return true;
 
-                                skippedRowCount[0]++;
-                                return false;
-                            }
-                        });
-                    }
-
-                    assert cpuImport.start();
-                    _logger.info(_datasetDefinition.getLabel() + ": Starting import from " + _fileName);
-
-                    User user = _studyImportContext.getUser();
-                    Container c = _studyImportContext.getContainer();
-                    QuerySchema qs = DefaultSchema.get(user,c).getSchema("study");
-                    TableInfo datasetTable = null==qs ? null : qs.getTable(_datasetDefinition.getName());
-                    QueryUpdateService qus = null == datasetTable ? null : datasetTable.getUpdateService();
-                    if (null == qus)
-                        throw UnexpectedException.wrap(new NullPointerException(),"Table not found for table: " + _datasetDefinition.getName());
-                    Map<Enum,Object> config = new HashMap<>();
-                    config.put(DatasetUpdateService.Config.CheckForDuplicates, DatasetDefinition.CheckForDuplicates.sourceOnly);
-                    config.put(DatasetUpdateService.Config.StudyImportMaps, _studyImportContext.getTableIdMapMap());
-                    if (null != defaultQCState)
-                        config.put(DatasetUpdateService.Config.DefaultQCState, defaultQCState);
-                    config.put(QueryUpdateService.ConfigParameters.Logger, _logger);
-
-                    int count = qus.importRows(user, c, loader, batchErrors, config, null);
-                    if (!batchErrors.hasErrors())
-                    {
-                        // optional check if new visits exist before committing, visit based timepoint studies only
-                        boolean shouldCommit = true;
-                        if (_studyImportContext.isFailForUndefinedVisits() && _study.getTimepointType() == TimepointType.VISIT)
-                        {
-                            List<Double> undefinedSequenceNums = StudyManager.getInstance().getUndefinedSequenceNumsForDataset(_datasetDefinition.getContainer(), _datasetDefinition.getDatasetId());
-                            if (!undefinedSequenceNums.isEmpty())
-                            {
-                                Collections.sort(undefinedSequenceNums);
-                                _logger.error("The following undefined visits exist in the dataset data: " + StringUtils.join(undefinedSequenceNums, ", "));
-                                shouldCommit = false;
-                            }
+                            skippedRowCount[0]++;
+                            return false;
                         }
-
-                        if (shouldCommit)
-                        {
-                            assert cpuCommit.start();
-                            transaction.commit();
-                            String msg = _datasetDefinition.getLabel() + ": Successfully imported " + count + " rows from " + _fileName;
-                            if (useCutoff && skippedRowCount[0] > 0)
-                                msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
-                            _logger.info(msg);
-                            assert cpuCommit.stop();
-                        }
-                    }
-                    assert cpuImport.stop();
+                    });
                 }
             }
+
+            assert cpuImport.start();
+            _logger.info(_datasetDefinition.getLabel() + ": Starting import from " + _fileName);
+
+            boolean tryDataDiffing = null != DataIntegrationService.get() &&
+                    _datasetDefinition.getKeyManagementType() == Dataset.KeyManagementType.None &&
+                    _action != AbstractDatasetImportTask.Action.DELETE;
+            int count = 0;
+
+            if (tryDataDiffing)
+            {
+                var b = DataIntegrationService.get().createReimportBuilder(user, c, datasetTable);
+                b.setSource(loader);
+                b.validate(batchErrors);
+                if (batchErrors.hasErrors())
+                {
+                    batchErrors.clear();
+                    tryDataDiffing = false;
+                }
+                else
+                {
+                    if (_action== AbstractDatasetImportTask.Action.REPLACE)
+                        b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.DELETE,DataIntegrationService.ReimportOperations.UPDATE, DataIntegrationService.ReimportOperations.INSERT));
+                    else if (_action == AbstractDatasetImportTask.Action.APPEND)
+                        b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.INSERT));
+                    b.setConfigParameters(config);
+                    b.execute(batchErrors);
+                    if (!batchErrors.hasErrors())
+                    {
+                        if (0 < b.getDeleted())
+                            _logger.info(_datasetDefinition.getLabel() + ": Deleted " + b.getDeleted() + " rows");
+                        if (0 < b.getInserted())
+                            count += b.getInserted();
+                        if (0 < b.getMerged())
+                            count += b.getMerged();
+                        if (0 < b.getUpdated())
+                            count += b.getUpdated();
+                    }
+                }
+            }
+
+            if (!tryDataDiffing)
+            {
+                if (_action == AbstractDatasetImportTask.Action.REPLACE || _action == AbstractDatasetImportTask.Action.DELETE)
+                {
+                    assert cpuDelete.start();
+                    _logger.info(_datasetDefinition.getLabel() + ": Starting delete" + (useCutoff ? " of rows newer than " + _replaceCutoff : ""));
+                    int rows = StudyManager.getInstance().purgeDataset(_datasetDefinition, useCutoff ? _replaceCutoff : null);
+                    _logger.info(_datasetDefinition.getLabel() + ": Deleted " + rows + " rows");
+                    assert cpuDelete.stop();
+                }
+
+
+                assert cpuImport.start();
+                _logger.info(_datasetDefinition.getLabel() + ": Starting import from " + _fileName);
+
+                count = qus.importRows(user, c, loader, batchErrors, config, null);
+            }
+
+            if (!batchErrors.hasErrors())
+            {
+                // optional check if new visits exist before committing, visit based timepoint studies only
+                boolean shouldCommit = true;
+                if (_studyImportContext.isFailForUndefinedVisits() && _study.getTimepointType() == TimepointType.VISIT)
+                {
+                    List<Double> undefinedSequenceNums = StudyManager.getInstance().getUndefinedSequenceNumsForDataset(_datasetDefinition.getContainer(), _datasetDefinition.getDatasetId());
+                    if (!undefinedSequenceNums.isEmpty())
+                    {
+                        Collections.sort(undefinedSequenceNums);
+                        _logger.error("The following undefined visits exist in the dataset data: " + StringUtils.join(undefinedSequenceNums, ", "));
+                        shouldCommit = false;
+                    }
+                }
+
+                if (shouldCommit)
+                {
+                    assert cpuCommit.start();
+                    transaction.commit();
+                    String msg = _datasetDefinition.getLabel() + ": Successfully imported " + count + " rows from " + _fileName;
+                    if (useCutoff && skippedRowCount[0] > 0)
+                        msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
+                    _logger.info(msg);
+                    assert cpuCommit.stop();
+                }
+            }
+            assert cpuImport.stop();
         }
         catch (Exception x)
         {
@@ -263,6 +312,7 @@ public class DatasetImportRunnable implements Runnable
         }
         finally
         {
+            IOUtils.closeQuietly(is);
             for (ValidationException err : batchErrors.getRowErrors())
                 _logger.error(_fileName + " -- " + err.getMessage());
 

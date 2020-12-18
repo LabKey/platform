@@ -354,7 +354,7 @@ public enum Crypt
             if (s.length()*2 > buf.length)
             {
                 byte[] bytes = s.getBytes(StandardCharsets.UTF_16);
-                assert ((byte)0xff)==bytes[0] && ((byte)0xfd)==bytes[1];
+                assert (((byte)0xff)==bytes[0] && ((byte)0xfe)==bytes[1]) || (((byte)0xfe)==bytes[0] && ((byte)0xff)==bytes[1]);
                 digest.update(bytes,2,bytes.length-2);  // skip byte-order indicators
                 return;
             }

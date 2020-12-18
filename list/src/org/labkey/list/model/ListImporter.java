@@ -197,10 +197,6 @@ public class ListImporter
                         var b = DataIntegrationService.get().createReimportBuilder(user, c, ti);
                         b.setSource(loader);
                         b.validate(batchErrors);
-                        if (deleteFromTarget)
-                            b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.DELETE,DataIntegrationService.ReimportOperations.UPDATE, DataIntegrationService.ReimportOperations.INSERT));
-                        else
-                            b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.UPDATE, DataIntegrationService.ReimportOperations.INSERT));
                         if (batchErrors.hasErrors())
                         {
                             batchErrors.clear();
@@ -208,6 +204,10 @@ public class ListImporter
                         }
                         else
                         {
+                            if (deleteFromTarget)
+                                b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.DELETE,DataIntegrationService.ReimportOperations.UPDATE, DataIntegrationService.ReimportOperations.INSERT));
+                            else
+                                b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.UPDATE, DataIntegrationService.ReimportOperations.INSERT));
                             b.execute(batchErrors);
                             if (!batchErrors.hasErrors())
                             {

@@ -21,6 +21,7 @@ import org.labkey.remoteapi.Connection;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 
@@ -88,6 +89,10 @@ public interface DataIntegrationService
 
         /* Ignore import data with modified <= modifiedSince.  This option is not supported with ReimportOperations.DELETE */
         void setModifiedSince(Timestamp modifiedSince);
+
+        /** config params to pass to QUS insert/merge */
+        public void setConfigParameters(Map<Enum,Object> config);
+
         void validate(BatchValidationException ex);
         void execute(BatchValidationException ex);
         //void dryRun(BatchValidationException ex);

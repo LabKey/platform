@@ -43,6 +43,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
+import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -1301,7 +1302,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             // base columns
 
-            for (String name : Arrays.asList("Container", "lsid", "ParticipantSequenceNum", "sourcelsid", "Created", "CreatedBy", "Modified", "ModifiedBy", "dsrowid"))
+            for (String name : Arrays.asList("Container", "lsid", "ParticipantSequenceNum", "sourcelsid", "Created", "CreatedBy", "Modified", "ModifiedBy", "dsrowid", DataIntegrationService.Columns.TransformImportHash.getColumnName()))
             {
                 var col = getStorageColumn(name);
                 if (null == col) continue;
@@ -1726,11 +1727,10 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
     private static String uriForName(String name)
     {
-        final String StudyURI = getStudyBaseURI();
-        assert "container".equalsIgnoreCase(name)  || getStandardPropertiesMap().get(name).getPropertyURI().equalsIgnoreCase(StudyURI + name);
+        assert null != getStandardPropertiesMap().get(name);
+        assert "container".equalsIgnoreCase(name)  || getStandardPropertiesMap().get(name).getPropertyURI().equalsIgnoreCase(getStudyBaseURI() + name);
         return getStandardPropertiesMap().get(name).getPropertyURI();
     }
-
 
     public static String getKeyURI()
     {
