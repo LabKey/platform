@@ -75,8 +75,9 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     // also see QueryUpdateService.ConfigParameters.Logger
     public enum Config
     {
-        CheckForDuplicates,    // expected: enum CheckForDuplicates
-        DefaultQCState,               // expected: class QCState
+        CheckForDuplicates,     // expected: enum CheckForDuplicates
+        DefaultQCState,         // expected: class QCState
+        SkipResyncStudy,        // expected: Boolean
 
         // NOTE: There really has to be better way to handle the functionality of StudyImportContext.getTableIdMap()
         // NOTE: Could this be handled by a method on StudySchema or something???
@@ -137,7 +138,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         int count = _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
-        if (count > 0)
+        if (count > 0 && Boolean.TRUE != context.getConfigParameterBoolean(Config.SkipResyncStudy))
         {
             StudyManager.datasetModified(_dataset, true);
             resyncStudy(user, container, null, null, true);

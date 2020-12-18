@@ -182,12 +182,14 @@ public class DatasetImportRunnable implements Runnable
             QueryUpdateService qus = null == datasetTable ? null : datasetTable.getUpdateService();
             if (null == qus)
                 throw UnexpectedException.wrap(new NullPointerException(),"Table not found for table: " + _datasetDefinition.getName());
+
             Map<Enum,Object> config = new HashMap<>();
             config.put(DatasetUpdateService.Config.CheckForDuplicates, DatasetDefinition.CheckForDuplicates.sourceOnly);
             config.put(DatasetUpdateService.Config.StudyImportMaps, _studyImportContext.getTableIdMapMap());
             if (null != defaultQCState)
                 config.put(DatasetUpdateService.Config.DefaultQCState, defaultQCState);
             config.put(QueryUpdateService.ConfigParameters.Logger, _logger);
+            config.put(DatasetUpdateService.Config.SkipResyncStudy, Boolean.TRUE);
 
             final Integer[] skippedRowCount = new Integer[]{0};
 

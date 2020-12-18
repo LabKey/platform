@@ -60,12 +60,14 @@ public interface DataIntegrationService
      *   if it exists diImportHash columnm will be matched against an MD5 hash of the raw (unconverted) data values from input dataiterator
      * NOTE: if dataiterator contains generated data (e.g. LSID, they can be excluded form hash using setHashColumns)
      * NOTE: hash is column order sensitive
+     *
+     * NOTE! Not the same as QueryUpdateService.ImportOptions.REPLACE.  Each of these
+     * enums is a separate operation (ReimportOperations.UPDATE does not imply UPDATE+INSERT like QueryUpdateService.ImportOptions.REPLACE does)
      */
     enum ReimportOperations
     {
         INSERT,
-        UPDATE,
-        /* REPLACE, delete/insert */
+        UPDATE, REPLACE, // pick ONE
         DELETE
     }
 
