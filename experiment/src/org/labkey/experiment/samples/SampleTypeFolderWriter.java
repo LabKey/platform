@@ -76,7 +76,8 @@ public class SampleTypeFolderWriter extends BaseFolderWriter
     @Override
     public boolean show(Container c)
     {
-        return !SampleTypeService.get().getSampleTypes(c, null, false).isEmpty();
+        // need to always return true so it can be used in a folder template
+        return true;
     }
 
     @Override
