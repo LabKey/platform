@@ -27,6 +27,7 @@ import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -34,8 +35,8 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -105,10 +106,10 @@ public class ContainerDisplayColumn extends DataColumn
             String id = getEntityIdValue(ctx);
             if(id != null)
                 return "<deleted>";
-            else if (getEntityIdFieldKey(ctx) != null && id == null)
+            else if (getEntityIdFieldKey(ctx) != null)
                 return "";
             else
-                return "<could not resolve container>";
+                return super.getDisplayValue(ctx);
         }
         return _showPath ? c.getPath() : c.getTitle();
     }
@@ -155,8 +156,17 @@ public class ContainerDisplayColumn extends DataColumn
 
     private Container getContainer(RenderContext ctx)
     {
-        String id = getEntityIdValue(ctx);
+        // Issue 41050 - use URL's container context when possible to resolve the referenced container
+        if (getURLExpression() instanceof DetailsURL)
+        {
+            ContainerContext containerContext = ((DetailsURL) getURLExpression()).getContainerContext();
+            if (containerContext != null)
+            {
+                return containerContext.getContainer(ctx);
+            }
+        }
 
+        String id = getEntityIdValue(ctx);
         return id == null ? null : ContainerManager.getForId(id);
     }
 
@@ -295,7 +305,7 @@ public class ContainerDisplayColumn extends DataColumn
 
                     assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").getString("value"), project.getName());
 
-                    assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("value"), null);
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("value"));
                     assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"), "");
 
                 }
@@ -310,7 +320,7 @@ public class ContainerDisplayColumn extends DataColumn
 
                     assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").getString("value"), subFolder1.getName());
 
-                    assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("value"), null);
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("value"));
                     assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"), "");
 
                 }
@@ -320,13 +330,13 @@ public class ContainerDisplayColumn extends DataColumn
                     assertEquals("Incorrect json value for for ProjectId column", project.getEntityId().toString(), row.getJSONObject(row.containsKey("ProjectId")?"ProjectId":"projectid").getString("value"));
                     assertEquals("Incorrect json value for ProjectId/Name column", project.getName(), row.getJSONObject("ProjectId/Name").getString("value"));
 
-                    assertEquals("Incorrect json value for ContainerId column", null, row.getJSONObject("ContainerId").getString("value"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId").getString("value"));
                     assertEquals("Incorrect json value for ContainerId column", "<deleted>", row.getJSONObject("ContainerId").getString("displayValue"));
 
-                    assertEquals("Incorrect json value for ContainerId column", null, row.getJSONObject("ContainerId/Name").getString("value"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").getString("value"));
                     assertEquals("Incorrect json value for ContainerId column", "", row.getJSONObject("ContainerId/Name").getString("displayValue"));
 
-                    assertEquals("Incorrect json value for ContainerId column", null, row.getJSONObject("ProjectId/Parent/Name").getString("value"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("value"));
                     assertEquals("Incorrect json value for ContainerId column", "", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"));
                 }
                 else if (comment.contains(subFolder2.getName() + " was deleted"))
@@ -335,13 +345,13 @@ public class ContainerDisplayColumn extends DataColumn
                     assertEquals("Incorrect json value for for ProjectId column", project.getEntityId().toString(), row.getJSONObject(row.containsKey("ProjectId")?"ProjectId":"projectid").getString("value"));
                     assertEquals("Incorrect json value for ProjectId/Name column", project.getName(), row.getJSONObject("ProjectId/Name").getString("value"));
 
-                    assertEquals("Incorrect json value for ContainerId column", null, row.getJSONObject("ContainerId").getString("value"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId").getString("value"));
                     assertEquals("Incorrect json value for ContainerId column", "<deleted>", row.getJSONObject("ContainerId").getString("displayValue"));
 
-                    assertEquals("Incorrect json value for ContainerId column", null, row.getJSONObject("ContainerId/Name").getString("value"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").getString("value"));
                     assertEquals("Incorrect json value for ContainerId column", "", row.getJSONObject("ContainerId/Name").getString("displayValue"));
 
-                    assertEquals("Incorrect json value for ContainerId column", null, row.getJSONObject("ProjectId/Parent/Name").getString("value"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("value"));
                     assertEquals("Incorrect json value for ContainerId column", "", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"));
                 }
                 else
