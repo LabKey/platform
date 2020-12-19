@@ -115,7 +115,6 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
             // when running through Enterprise Pipeline
             QueryService.get().clearEnvironment();
 
-            notifyDone(job);
             ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
             boolean removed = _running.remove(job);
             assert removed;
@@ -268,7 +267,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
 
         // For serialization
         protected TestJob() {}
-        
+
         TestJob(Container c, AtomicInteger counter)
         {
             super(null, new ViewBackgroundInfo(c, null, null), PipelineService.get().findPipelineRoot(c));

@@ -85,7 +85,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
         if (factory instanceof ActiveMQConnectionFactory)
         {
             String brokerUrl = ((ActiveMQConnectionFactory) factory).getBrokerURL();
-            assert brokerUrl != null : "ActiveMQConnectionFactory requires a broker URL."; 
+            assert brokerUrl != null : "ActiveMQConnectionFactory requires a broker URL.";
 
             // Detect default server configuration for the Enterprise Pipeline, which does
             // not persist JMS messages between server restarts.
@@ -309,7 +309,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
                 try { client.dispose(); } catch (Exception e) {}
                 RequestContext.clear();
             }
-        }        
+        }
     }
 
     @Override
@@ -321,7 +321,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
     @Override
     public void starting(PipelineJob job, Thread thread)
     {
-        throw new UnsupportedOperationException("Mini-pipeline maintenance notification not supported.");
+        throw new UnsupportedOperationException("Enterprise pipeline maintenance notification not supported.");
     }
 
     @Override

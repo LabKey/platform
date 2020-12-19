@@ -395,6 +395,18 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     }
 
     @Override
+    public void sendServerEvent(List<Integer> userIds, Enum e)
+    {
+        NotificationEndpoint.sendEvent(userIds, e);
+    }
+
+    @Override
+    public void sendServerEvent(List<Integer> userIds, Class clazz)
+    {
+        NotificationEndpoint.sendEvent(userIds, clazz);
+    }
+
+    @Override
     public void closeServerEvents(int userId, @Nullable HttpSession session, Enum e)
     {
         NotificationEndpoint.close(userId, session, e.getClass().getCanonicalName() + "#" + e.name());

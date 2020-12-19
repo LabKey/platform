@@ -139,6 +139,10 @@ public interface NotificationService
      * send event to browser
      */
     void sendServerEvent(int userId, Enum e);
+
+    void sendServerEvent(List<Integer> userIds, Enum e);
+
+    void sendServerEvent(List<Integer> userIds, Class clazz);
     /**
      * cleanly close any websockets associated with the userId
      * If session is provided, only WebSockets associated with the HttpSession will close.

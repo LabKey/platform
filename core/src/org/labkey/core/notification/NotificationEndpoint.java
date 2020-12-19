@@ -35,6 +35,7 @@ import javax.websocket.server.HandshakeRequest;
 import javax.websocket.server.ServerEndpoint;
 import javax.websocket.server.ServerEndpointConfig;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -153,6 +154,22 @@ public class NotificationEndpoint extends Endpoint
         return Arrays.asList(arr);
     }
 
+    private static List<NotificationEndpoint> endpoints(List<Integer> userIds)
+    {
+        List<NotificationEndpoint> endpoints = new ArrayList<>();
+        synchronized (endpointsMap)
+        {
+            for (Integer userId : userIds)
+            {
+                Collection<NotificationEndpoint> coll = endpointsMap.get(userId);
+                // prune errored or closed endpoints
+                coll.removeIf(e -> e.errored || !e.session.isOpen());
+                endpoints.addAll(coll);
+            }
+        }
+        return endpoints;
+    }
+
     // execute function in try/catch and close session on exception
     private boolean safely(Fn fn)
     {
@@ -189,11 +206,18 @@ public class NotificationEndpoint extends Endpoint
             LOG.debug("WebSocket: no sessions to close for " + userId + " (" + (httpSession != null ? httpSession.getId() : "all sessions") + "): " + message);
     }
 
-
     private static void sendEvent(int userId, String eventName)
     {
+        List<Integer> users = new ArrayList<>();
+        users.add(userId);
+
+        sendEvent(users, eventName);
+    }
+
+    private static void sendEvent(List<Integer> userIds, String eventName)
+    {
         final String data = "{\"event\":\"" + eventName + "\"}";
-        long count = endpoints(userId)
+        long count = endpoints(userIds)
                 .stream()
                 .map(e -> e.safely(() -> {
                     e.session.getBasicRemote().sendText(data);
@@ -202,7 +226,13 @@ public class NotificationEndpoint extends Endpoint
                 .count();
 
         if (count == 0)
-            LOG.debug("WebSocket: no sessions to send for " + userId + ": " + eventName);
+        {
+            if (userIds.size() == 1)
+                LOG.debug("WebSocket: no sessions to send for " + userIds.get(0) + ": " + eventName);
+            else
+                LOG.debug("WebSocket: no sessions to send:" + eventName);
+        }
+
     }
 
     public static void sendEvent(int userId, Enum e)
@@ -213,6 +243,16 @@ public class NotificationEndpoint extends Endpoint
     public static void sendEvent(int userId, Class clazz)
     {
         sendEvent(userId, clazz.getCanonicalName());
+    }
+
+    public static void sendEvent(List<Integer> userIds, Enum e)
+    {
+        sendEvent(userIds, e.getClass().getCanonicalName() + "#" + e.name());
+    }
+
+    public static void sendEvent(List<Integer> userIds, Class clazz)
+    {
+        sendEvent(userIds, clazz.getCanonicalName());
     }
 
     public static void close(int userId, @Nullable HttpSession session, String message)

@@ -1093,7 +1093,7 @@ public class PipelineController extends SpringActionController
     private ActionURL urlStatus()
     {
         boolean allContainers = (getViewContext().getRequest().getParameter(StatusParams.allcontainers.toString()) != null);
-        
+
         return urlStatus(getContainer(), allContainers);
     }
 
@@ -1106,7 +1106,7 @@ public class PipelineController extends SpringActionController
             // Job data is only available from the mini-pipeline.
             if (PipelineService.get().isEnterprisePipeline())
                 throw new NotFoundException();
-            
+
             setHelpTopic(getHelpTopic("pipeline/status"));
 
             PipelineQueue queue = PipelineService.get().getPipelineQueue();
@@ -1816,11 +1816,23 @@ public class PipelineController extends SpringActionController
 
             return url;
         }
+
+        @Override
+        public ActionURL statusDetails(Container container)
+        {
+            return new ActionURL(StatusController.DetailsAction.class, container);
+        }
+
+        @Override
+        public ActionURL statusList(Container container)
+        {
+            return new ActionURL(StatusController.DetailsAction.class, container);
+        }
     }
 
     public static ActionURL urlBegin(Container container)
     {
-        return new ActionURL(BeginAction.class, container); 
+        return new ActionURL(BeginAction.class, container);
     }
 
 
