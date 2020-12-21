@@ -441,7 +441,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                 .setJobNotificationProvider(getQueryImportJobNotificationProviderName());
 
                             QueryImportPipelineJob job = new QueryImportPipelineJob(getQueryImportProviderName(), info, root, importContextBuilder);
-                            PipelineService.get().queueJob(job);
+                            PipelineService.get().queueJob(job, getQueryImportJobNotificationProviderName());
 
                             JSONObject response = new JSONObject();
                             response.put("success", true);

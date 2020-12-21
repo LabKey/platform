@@ -217,13 +217,18 @@ public class NotificationEndpoint extends Endpoint
     private static void sendEvent(List<Integer> userIds, String eventName)
     {
         final String data = "{\"event\":\"" + eventName + "\"}";
-        long count = endpoints(userIds)
-                .stream()
-                .map(e -> e.safely(() -> {
-                    e.session.getBasicRemote().sendText(data);
-                    LOG.debug(e.toString() + " sendText: " + eventName);
-                }))
-                .count();
+        List<NotificationEndpoint> endpoints = endpoints(userIds);
+
+        long count = 0;
+        // do not refactor to use stream as it might result in deadlock
+        for (NotificationEndpoint endpoint : endpoints)
+        {
+            endpoint.safely(() -> {
+                endpoint.session.getBasicRemote().sendText(data);
+                LOG.debug(endpoint.toString() + " sendText: " + eventName);
+            });
+            count++;
+        }
 
         if (count == 0)
         {
