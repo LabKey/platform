@@ -802,13 +802,13 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return new SQLFragment("DATEDIFF(" + partName + ", ").append(value2).append(", ").append(value1).append(")");
     }
 
-
     @Override
     public String getDateTimeToDateCast(String expression)
     {
         return "CONVERT(DATETIME, CONVERT(VARCHAR, (" + expression + "), 101))";
     }
 
+    @Override
     public SQLFragment getNumericCast(SQLFragment expression)
     {
         SQLFragment cast = new SQLFragment(expression);
@@ -1192,7 +1192,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
             // If the set of columns is larger than 900 bytes, creating an index will succeed, but fail when trying to insert
             List<PropertyStorageSpec> specs = change.toSpecs(Arrays.asList(index.columnNames));
-            long bytes = specs.stream().collect(Collectors.summingLong(this::columnStorageSize));
+            long bytes = specs.stream().mapToLong(this::columnStorageSize).sum();
 
             if (bytes <= MAX_INDEX_SIZE)
             {
@@ -1431,11 +1431,11 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             if(mode == TableChange.IndexSizeMode.Auto)
             {
                 List<PropertyStorageSpec> specs = change.toSpecs(Arrays.asList(index.columnNames));
-                bytes = specs.stream().collect(Collectors.summingInt(spec -> {
+                bytes = specs.stream().mapToInt(spec -> {
                     // Use the old scale if we're in the process of resizing the column
                     Integer oldScale = change.getColumnResizes().get(spec.getName());
                     return columnStorageSize(spec, oldScale);
-                }));
+                }).sum();
             }
 
             String nameIndex = nameIndex(change.getTableName(), index.columnNames, false);
@@ -1928,13 +1928,11 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         }
         sb.append("CALL ").append(procSchema).append(".").append(procName);
         if (paramCount > 0)
-            sb.append("(");
-        for (int i = 0; i < paramCount; i++)
         {
-            sb.append("?,");
-        }
-        if (paramCount > 0)
+            sb.append("(");
+            sb.append("?, ".repeat(paramCount));
             sb.append(")");
+        }
 
         return sb.toString();
     }

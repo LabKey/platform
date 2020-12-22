@@ -52,7 +52,6 @@ import org.springframework.dao.DeadlockLoserDataAccessException;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
-import javax.sql.PooledConnection;
 import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
@@ -61,7 +60,6 @@ import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.Driver;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -78,6 +76,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.Random;
 import java.util.RandomAccess;
 import java.util.Set;
@@ -129,7 +128,6 @@ public class DbScope
     private final String _displayName;
     private final DataSource _dataSource;
     private final @Nullable String _databaseName;    // Possibly null, e.g., for SAS datasources
-    private final String _URL;
     private final String _databaseProductName;
     private final String _databaseProductVersion;
     private final String _driverName;
@@ -256,7 +254,6 @@ public class DbScope
         _displayName = null;
         _dataSource = null;
         _databaseName = null;
-        _URL = null;
         _databaseProductName = null;
         _databaseProductVersion = null;
         _driverName = null;
@@ -347,7 +344,6 @@ public class DbScope
             _displayName = null != props.getDisplayName() ? props.getDisplayName() : extractDisplayName(_dsName);
             _dataSource = dataSource;
             _databaseName = _dialect.getDatabaseName(_dsProps);
-            _URL = dbmd.getURL();
             _databaseProductName = dbmd.getDatabaseProductName();
             _driverName = dbmd.getDriverName();
             _driverVersion = dbmd.getDriverVersion();
@@ -396,7 +392,14 @@ public class DbScope
 
     public String getURL()
     {
-        return _URL;
+        try
+        {
+            return _dsProps.getUrl();
+        }
+        catch (ServletException e)
+        {
+            throw new RuntimeException("Unable to retrieve URL property", e);
+        }
     }
 
     public String getDatabaseProductName()
@@ -494,7 +497,6 @@ public class DbScope
         }
         return beginTransaction(transactionKind, locks);
     }
-
 
     /**
      * Starts a new transaction using a new Connection.
@@ -618,7 +620,6 @@ public class DbScope
 
         return result;
     }
-
 
     public interface RetryFn<ReturnType>
     {
@@ -860,7 +861,7 @@ public class DbScope
     {
         try
         {
-            Connection raw = DriverManager.getConnection(_URL, _dsProps.getUsername(), _dsProps.getPassword());
+            Connection raw = getRawConnection(_dsProps);
             return new SimpleConnectionWrapper(raw, this);
         }
         catch (ServletException e)
@@ -869,13 +870,11 @@ public class DbScope
         }
     }
 
-
     static Class classDelegatingConnection = null;
     static Method methodGetInnermostDelegate = null;
     static boolean isDelegating = false;
     static boolean isDelegationInitialized;
     private static final Object delegationLock = new Object();
-
 
     private static void ensureDelegation(Connection conn)
     {
@@ -919,23 +918,9 @@ public class DbScope
         }
     }
 
-
     static Connection getDelegate(Connection conn)
     {
         Connection delegate = null;
-
-        // This works for Tomcat JDBC Connection Pool
-        if (conn instanceof PooledConnection)
-        {
-            try
-            {
-                return ((PooledConnection) conn).getConnection();
-            }
-            catch (SQLException e)
-            {
-                LOG.error("Attempt to retrieve underlying connection failed", e);
-            }
-        }
 
         // This approach is required for Commons DBCP (default Tomcat connection pool)
         ensureDelegation(conn);
@@ -955,7 +940,6 @@ public class DbScope
             delegate = conn;
         return delegate;
     }
-
 
     @JsonIgnore
     public Class getDelegateClass()
@@ -1021,7 +1005,6 @@ public class DbScope
     {
         logCurrentConnectionState(new SimpleLoggerWriter(log));
     }
-
 
     private static final int spidUnknown = -1;
 
@@ -1275,7 +1258,7 @@ public class DbScope
                         }
                         catch (Throwable t)
                         {
-                            // Database creation failed, but the data source may still be useable for external schemas
+                            // Database creation failed, but the data source may still be usable for external schemas
                             // (e.g., a MySQL data source), so continue on and attempt to initialize the scope
                             LOG.info("Failed to create database", t);
                             addDataSourceFailure(dsName, t);
@@ -1324,7 +1307,6 @@ public class DbScope
             _labkeyScope.getSqlDialect().prepareNewLabKeyDatabase(_labkeyScope);
         }
     }
-
 
     public static void addScope(String dsName, DataSource dataSource, LabKeyDataSourceProperties props) throws ServletException, SQLException
     {
@@ -1391,7 +1373,7 @@ public class DbScope
                 dialect.prepareDriver(driverClass);
 
                 // Create non-pooled connection... don't want to pool a failed connection
-                conn = DriverManager.getConnection(props.getUrl(), props.getUsername(), props.getPassword());
+                conn = getRawConnection(props);
                 LOG.debug("Successful connection to \"" + dsName + "\" at " + props.getUrl());
                 return true;        // Database already exists
             }
@@ -1399,7 +1381,7 @@ public class DbScope
             {
                 if (dialect.isNoDatabaseException(e))
                 {
-                    createDataBase(dialect, props.getUrl(), props.getUsername(), props.getPassword(), isPrimaryDataSource(dsName));
+                    createDataBase(dialect, props, isPrimaryDataSource(dsName));
                     return false;   // Successfully created database
                 }
                 else
@@ -1431,9 +1413,37 @@ public class DbScope
         throw new ConfigurationException("Can't connect to data source \"" + dsName + "\".", "Make sure that your LabKey Server configuration file includes the correct user name, password, url, port, etc. for your database and that the database server is running.", lastException);
     }
 
-
-    public static void createDataBase(SqlDialect dialect, String url, String username, String password, boolean primaryDataSource) throws ServletException
+    // Establish a data source connection that bypasses the connection pool
+    private static Connection getRawConnection(DataSourceProperties props) throws ServletException, SQLException
     {
+        return getRawConnection(props.getUrl(), props);
+    }
+
+    // Establish a direct connection to the specified URL using the data source's driver and credentials. This bypasses the connection pool.
+    private static Connection getRawConnection(String url, DataSourceProperties props) throws ServletException, SQLException
+    {
+        Driver driver;
+        Properties info;
+        try
+        {
+            @SuppressWarnings("unchecked")
+            Class<Driver> driverClass = (Class<Driver>)Class.forName(props.getDriverClassName());
+            driver = driverClass.getConstructor().newInstance();
+            info = new Properties();
+            info.put("user", props.getUsername());
+            info.put("password", props.getPassword());
+        }
+        catch (Exception e)
+        {
+            throw new ServletException("Unable to retrieve data source properties", e);
+        }
+
+        return driver.connect(url, info);
+    }
+
+    public static void createDataBase(SqlDialect dialect, DataSourceProperties props, boolean primaryDataSource) throws ServletException
+    {
+        String url = props.getUrl();
         String dbName = dialect.getDatabaseName(url);
 
         LOG.info("Attempting to create database \"" + dbName + "\"");
@@ -1441,7 +1451,7 @@ public class DbScope
         String masterUrl = StringUtils.replace(url, dbName, dialect.getMasterDataBaseName());
         String createSql = "(undefined)";
 
-        try (Connection conn = DriverManager.getConnection(masterUrl, username, password))
+        try (Connection conn = getRawConnection(masterUrl, props))
         {
             // Get version-specific dialect; don't log version warnings.
             dialect = SqlDialectManager.getFromMetaData(conn.getMetaData(), false, primaryDataSource);
@@ -1608,10 +1618,11 @@ public class DbScope
     /** weak identity hash map, could just subclass WeakHashMap but eq() is static (and not overridable) */
     private static class _WeakestLinkMap<K, V>
     {
-        int _max = 1000;
+        private final ReferenceQueue<K> _q = new ReferenceQueue<>();
 
-        final ReferenceQueue<K> _q = new ReferenceQueue<>();
-        LinkedHashMap<_IdentityWrapper, V> _map = new LinkedHashMap<_IdentityWrapper, V>()
+        private int _max = 1000;
+
+        LinkedHashMap<_IdentityWrapper, V> _map = new LinkedHashMap<>()
         {
             @Override
             protected boolean removeEldestEntry(Map.Entry<_IdentityWrapper, V> eldest)
@@ -1904,11 +1915,12 @@ public class DbScope
         private final Set<Runnable> _postCommitTasks = new LinkedHashSet<>();
         private final Set<Runnable> _postRollbackTasks = new LinkedHashSet<>();
 
-        private List<List<Lock>> _locks = new ArrayList<>();
+        private final List<List<Lock>> _locks = new ArrayList<>();
+        private final Throwable _creation = new Throwable();
+        private final TransactionKind _transactionKind;
+
         private boolean _aborted = false;
         private int _closesToIgnore = 0;
-        private Throwable _creation = new Throwable();
-        private final TransactionKind _transactionKind;
         private Long _auditId;
 
         TransactionImpl(@NotNull ConnectionWrapper conn, TransactionKind transactionKind)
@@ -2446,7 +2458,7 @@ public class DbScope
         @Test
         public void testAutoCommitFailure()
         {
-            try (Transaction t = getLabKeyScope().ensureTransaction(AUTO_COMMIT_FAILURE_SIMULATOR))
+            try (Transaction ignored = getLabKeyScope().ensureTransaction(AUTO_COMMIT_FAILURE_SIMULATOR))
             {
                 fail("Shouldn't have gotten here, expected RuntimeSQLException");
             }
@@ -2465,7 +2477,7 @@ public class DbScope
             ReentrantLock lock2 = new ReentrantLock();
             try
             {
-                try (Transaction t = getLabKeyScope().ensureTransaction(lock))
+                try (Transaction ignored = getLabKeyScope().ensureTransaction(lock))
                 {
                     try
                     {
@@ -2722,10 +2734,7 @@ public class DbScope
         {
             // test ServerLock failures
 
-            Lock failServerLock = new ServerLock()
-            {
-                @Override public void lock() { throw new DeadlockLoserDataAccessException("test",null); }
-            };
+            Lock failServerLock = (ServerLock) () -> { throw new DeadlockLoserDataAccessException("test",null); };
 
             try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction(failServerLock))
             {
@@ -2781,7 +2790,7 @@ public class DbScope
 
             try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction())
             {
-                try (Transaction txInner = CoreSchema.getInstance().getScope().ensureTransaction(failLock))
+                try (Transaction ignored = CoreSchema.getInstance().getScope().ensureTransaction(failLock))
                 {
                     fail("shouldn't get here");
                     txFg.commit();

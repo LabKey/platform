@@ -1093,7 +1093,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     {
         verifyJdbcDrivers();
 
-        _log.debug("Ensuring that all databases specified by datasources in webapp configuration xml are present");
+        _log.debug("Ensuring that all databases specified by data sources in webapp configuration xml are present");
 
         Map<String, DataSource> dataSources = new TreeMap<>(String::compareTo);
 
@@ -1115,7 +1115,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 {
                     Binding o = iter.next();
                     String dsName = o.getName();
-                    DataSource ds = (DataSource) o.getObject();
+                    DataSource ds = validate((DataSource) o.getObject(), dsName);
                     dataSources.put(dsName, ds);
                 }
                 catch (NamingException e)
@@ -1130,6 +1130,28 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
 
         DbScope.initializeScopes(labkeyDsName, dataSources);
+    }
+
+    // Reject data sources configured with the Tomcat JDBC connection pool, #42125
+    private DataSource validate(DataSource dataSource, String dsName) throws ServletException
+    {
+        String dataSourceClassName = dataSource.getClass().getName();
+        if (!dataSourceClassName.equals("org.apache.tomcat.dbcp.dbcp2.BasicDataSource"))
+        {
+            String message;
+            if (dataSourceClassName.equals("org.apache.tomcat.jdbc.pool.DataSource"))
+            {
+                message = "Tomcat JDBC connection pool is not supported;";
+            }
+            else
+            {
+                message = "Unknown DataSource implementation, \"" + dataSourceClassName + "\";";
+            }
+
+            throw new ServletException(message + " LabKey only supports the Commons DBCP connection pool. Please remove the \"factory\" attribute from the \"" + dsName + "\" DataSource definition.");
+        }
+
+        return dataSource;
     }
 
     // Verify that old JDBC drivers are not present in <tomcat>/lib -- they are now provided by the API module
@@ -1199,7 +1221,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
             try
             {
-                dataSource = (DataSource)envCtx.lookup("jdbc/" + dsName);
+                dataSource = validate((DataSource)envCtx.lookup("jdbc/" + dsName), dsName);
                 break;
             }
             catch (NameNotFoundException e)
@@ -1208,43 +1230,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
             }
             catch (NamingException e)
             {
-                String message = e.getMessage();
-
-                // dataSource is defined but the database doesn't exist. This happens only with the Tomcat JDBC
-                // connection pool, which attempts a connection on bind. In this case, we need to use some horrible
-                // reflection to get the properties we need to create the database.
-                if ((message.contains("FATAL: database") && message.contains("does not exist")) ||
-                    (message.contains("Cannot open database") && message.contains("requested by the login. The login failed.")))
-                {
-                    try
-                    {
-                        Object namingContext = envCtx.lookup("jdbc");
-                        Field bindingsField = namingContext.getClass().getDeclaredField("bindings");
-                        bindingsField.setAccessible(true);
-                        Map bindings = (Map)bindingsField.get(namingContext);
-                        Object namingEntry = bindings.get(dsName);
-                        Field valueField = namingEntry.getClass().getDeclaredField("value");
-                        Reference reference = (Reference)valueField.get(namingEntry);
-
-                        String driverClassname = (String)reference.get("driverClassName").getContent();
-                        SqlDialect dialect = SqlDialectManager.getFromDriverClassname(dsName, driverClassname);
-                        String url = (String)reference.get("url").getContent();
-                        String password = (String)reference.get("password").getContent();
-                        String username = (String)reference.get("username").getContent();
-
-                        DbScope.createDataBase(dialect, url, username, password, DbScope.isPrimaryDataSource(dsName));
-                    }
-                    catch (Exception e2)
-                    {
-                        throw new ConfigurationException("Failed to retrieve \"" + dsName + "\" properties from " + AppProps.getInstance().getWebappConfigurationFilename() + ". Try creating the database manually and restarting the server.", e2);
-                    }
-
-                    // Try it again
-                    dataSource = (DataSource)envCtx.lookup("jdbc/" + dsName);
-                    break;
-                }
-
-                throw new ConfigurationException("Failed to load DataSource \"" + dsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ".", e);
+                throw new ConfigurationException("Failed to load DataSource \"" + dsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() +
+                    ". This could be caused by an attempt to use the Tomcat JDBC connection pool, which is not supported. Please remove the \"factory\" attribute from this DataSource definition.", e);
             }
         }
 
