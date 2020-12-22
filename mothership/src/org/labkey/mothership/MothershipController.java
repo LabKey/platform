@@ -104,7 +104,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends SimpleViewAction
+    public static class BeginAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -143,7 +143,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class UpdateAction extends FormHandlerAction<SoftwareReleaseForm>
+    public static class UpdateAction extends FormHandlerAction<SoftwareReleaseForm>
     {
         @Override
         public void validateCommand(SoftwareReleaseForm target, Errors errors)
@@ -166,13 +166,13 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ShowReleasesAction extends SimpleViewAction
+    public static class ShowReleasesAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
-            QuerySettings settings = schema.getSettings(getViewContext(), "softwareReleases", MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME);
+            QuerySettings settings = schema.getSettings(getViewContext(), "softwareReleases", MothershipSchema.SOFTWARE_RELEASE_TABLE_NAME);
             settings.getBaseSort().insertSortColumn(FieldKey.fromParts("BuildTime"), Sort.SortDirection.DESC);
 
             QueryView queryView = schema.createView(getViewContext(), settings, errors);
@@ -187,7 +187,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ShowExceptionsAction extends SimpleViewAction
+    public static class ShowExceptionsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -203,13 +203,13 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ShowInstallationsAction extends SimpleViewAction
+    public static class ShowInstallationsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
-            QuerySettings settings = schema.getSettings(getViewContext(), "serverInstallations", MothershipSchema.SERVER_INSTALLATIONS_TABLE_NAME);
+            QuerySettings settings = schema.getSettings(getViewContext(), "serverInstallations", MothershipSchema.SERVER_INSTALLATION_TABLE_NAME);
             settings.setSchemaName(schema.getSchemaName());
             settings.getBaseSort().insertSortColumn(FieldKey.fromParts("LastPing"), Sort.SortDirection.DESC);
 
@@ -257,7 +257,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class EditUpgradeMessageAction extends SimpleViewAction
+    public static class EditUpgradeMessageAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -307,7 +307,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ShowServerSessionDetailAction extends SimpleViewAction<ServerSessionForm>
+    public static class ShowServerSessionDetailAction extends SimpleViewAction<ServerSessionForm>
     {
         @Override
         public ModelAndView getView(ServerSessionForm form, BindException errors)
@@ -382,7 +382,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ShowStackTraceDetailAction extends SimpleViewAction<ExceptionStackTraceForm>
+    public static class ShowStackTraceDetailAction extends SimpleViewAction<ExceptionStackTraceForm>
     {
         @Override
         public ModelAndView getView(ExceptionStackTraceForm form, BindException errors) throws Exception
@@ -401,7 +401,7 @@ public class MothershipController extends SpringActionController
             {
                 throw new NotFoundException();
             }
-            ExceptionStackTraceUpdateView updateView = new ExceptionStackTraceUpdateView(form, getViewContext().getActionURL(), getContainer(), errors);
+            ExceptionStackTraceUpdateView updateView = new ExceptionStackTraceUpdateView(form, getContainer(), errors);
 
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = new QuerySettings(getViewContext(), "ExceptionReports", MothershipSchema.EXCEPTION_REPORT_TABLE_NAME);
@@ -415,7 +415,7 @@ public class MothershipController extends SpringActionController
             return new VBox(updateView, summaryGridView, constructCreateIssueForm(stackTrace));
         }
 
-        private JspView constructCreateIssueForm(ExceptionStackTrace stackTrace) throws IOException
+        private JspView<Map<String, String>> constructCreateIssueForm(ExceptionStackTrace stackTrace) throws IOException
         {
             // Moved from CreateIssueDisplayColumn. Instead of piggybacking off the ExceptionStackTraceForm,
             // we now have a separate hidden form on the page to have control over exactly which fields
@@ -483,7 +483,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class UpdateStackTraceAction extends FormHandlerAction<ExceptionStackTraceForm>
+    public static class UpdateStackTraceAction extends FormHandlerAction<ExceptionStackTraceForm>
     {
         @Override
         public void validateCommand(ExceptionStackTraceForm target, Errors errors)
@@ -526,13 +526,28 @@ public class MothershipController extends SpringActionController
         }
     }
 
+    public static class ErrorCodeForm
+    {
+        private String errorCode;
+
+        public String getErrorCode()
+        {
+            return errorCode;
+        }
+
+        public void setErrorCode(String errorCode)
+        {
+            this.errorCode = errorCode;
+        }
+    }
+
     @RequiresPermission(ReadPermission.class)
-    public class JumpToErrorCodeAction extends SimpleRedirectAction
+    public static class JumpToErrorCodeAction extends SimpleRedirectAction<ErrorCodeForm>
     {
         @Override
-        public URLHelper getRedirectURL(Object o)
+        public URLHelper getRedirectURL(ErrorCodeForm form)
         {
-            String errorCode = StringUtils.trimToNull((String)getProperty("errorCode"));
+            String errorCode = StringUtils.trimToNull(form.getErrorCode());
             ActionURL url;
             if (errorCode != null)
             {
@@ -577,7 +592,7 @@ public class MothershipController extends SpringActionController
     public class ReportExceptionAction extends MutatingApiAction<ExceptionForm>
     {
         @Override
-        public Object execute(ExceptionForm form, BindException errors) throws Exception
+        public Object execute(ExceptionForm form, BindException errors)
         {
             try
             {
@@ -653,7 +668,7 @@ public class MothershipController extends SpringActionController
 
     @SuppressWarnings("UnusedDeclaration")
     @RequiresPermission(ReadPermission.class)
-    public class ThrowExceptionAction extends SimpleViewAction
+    public static class ThrowExceptionAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -671,10 +686,10 @@ public class MothershipController extends SpringActionController
 
     @CSRF(CSRF.Method.NONE)
     @RequiresSiteAdmin
-    public class SelfReportMetricsAction extends ReadOnlyApiAction<Object>
+    public static class SelfReportMetricsAction extends ReadOnlyApiAction<Object>
     {
         @Override
-        public Object execute(Object o, BindException errors) throws Exception
+        public Object execute(Object o, BindException errors)
         {
             MothershipReport report = UsageReportingLevel.generateReport(UsageReportingLevel.MEDIUM, MothershipReport.Target.local);
             if (report != null)
@@ -1381,7 +1396,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class ThrowConfigurationExceptionAction extends SimpleViewAction<Object>
+    public static class ThrowConfigurationExceptionAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object form, BindException errors)
@@ -1397,7 +1412,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class ThrowNotFoundExceptionAction extends SimpleViewAction<Object>
+    public static class ThrowNotFoundExceptionAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object form, BindException errors)
@@ -1413,7 +1428,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class ThrowPermissionExceptionAction extends SimpleViewAction<Object>
+    public static class ThrowPermissionExceptionAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object form, BindException errors)
@@ -1429,7 +1444,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class ThrowExecutionExceptionAction extends SimpleViewAction<Object>
+    public static class ThrowExecutionExceptionAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object form, BindException errors)
@@ -1500,7 +1515,7 @@ public class MothershipController extends SpringActionController
 
     public static class ExceptionStackTraceUpdateView extends UpdateView
     {
-        public ExceptionStackTraceUpdateView(ExceptionStackTraceForm form, ActionURL url, Container c, BindException errors)
+        public ExceptionStackTraceUpdateView(ExceptionStackTraceForm form, Container c, BindException errors)
         {
             super(new DataRegion(), form, errors);
 
@@ -1535,7 +1550,7 @@ public class MothershipController extends SpringActionController
         {
             super(new DataRegion(), form, errors);
 
-            TableInfo serverInstallationTable = new MothershipSchema(getViewContext().getUser(), getViewContext().getContainer()).getTable(MothershipSchema.SERVER_INSTALLATIONS_TABLE_NAME, null, true, true);
+            TableInfo serverInstallationTable = new MothershipSchema(getViewContext().getUser(), getViewContext().getContainer()).getTable(MothershipSchema.SERVER_INSTALLATION_TABLE_NAME, null, true, true);
             getDataRegion().setTable(serverInstallationTable);
 
             Collection<FieldKey> requestedColumns = new ArrayList<>();

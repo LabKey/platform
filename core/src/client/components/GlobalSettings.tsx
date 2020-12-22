@@ -50,12 +50,9 @@ export default class GlobalSettings extends PureComponent<Props> {
 
                 <span className="global-settings__text">
                     {text.text}
-                    <LabelHelpTip
-                        title="Tip"
-                        body={() => {
-                            return <div> {text.tip} </div>;
-                        }}
-                    />
+                    <LabelHelpTip title="Tip">
+                        <div> {text.tip} </div>
+                    </LabelHelpTip>
                 </span>
             </div>
         ));
