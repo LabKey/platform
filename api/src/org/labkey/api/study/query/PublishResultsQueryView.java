@@ -33,6 +33,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleDisplayColumn;
@@ -86,6 +87,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -949,31 +951,6 @@ public class PublishResultsQueryView extends ResultsQueryView
         FieldKey runIdFieldKey = tableMetadata.getRunRowIdFieldKeyFromResults();
         FieldKey objectIdFieldKey = tableMetadata.getResultRowIdFieldKey();
         FieldKey assayPTIDFieldKey = _defaultValueSource.getParticipantIDFieldKey(tableMetadata);
-        //NOTE: the name of the assay PTID field might not always match ParticipantId.  this allows us to also
-        //support PARTICIPANT_CONCEPT_URI
-        boolean found = false;
-        if (assayPTIDFieldKey != null)
-        {
-            for (ColumnInfo c : selectColumns)
-            {
-                if (assayPTIDFieldKey.equals(c.getFieldKey()))
-                {
-                    found = true;
-                    break;
-                }
-            }
-        }
-        if (!found)
-        {
-            for (ColumnInfo c : selectColumns)
-            {
-                if (PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()))
-                {
-                    assayPTIDFieldKey = c.getFieldKey();
-                    break;
-                }
-            }
-        }
         FieldKey assayVisitIDFieldKey = _defaultValueSource.getVisitIDFieldKey(tableMetadata, TimepointType.VISIT);
         FieldKey assayDateFieldKey = _defaultValueSource.getVisitIDFieldKey(tableMetadata, TimepointType.DATE);
         FieldKey specimenIDFieldKey = tableMetadata.getSpecimenIDFieldKey();
@@ -997,9 +974,28 @@ public class PublishResultsQueryView extends ResultsQueryView
         Map<FieldKey, ColumnInfo> colInfos = QueryService.get().getColumns(getTable(), fieldKeys, selectColumns);
         ColumnInfo objectIdCol = colInfos.get(objectIdFieldKey);
         ColumnInfo assayPTIDCol = colInfos.get(assayPTIDFieldKey);
+        if (assayPTIDCol == null)
+        {
+            //NOTE: the name of the assay PTID field might not always match ParticipantId.  this allows us to also
+            //support PARTICIPANT_CONCEPT_URI
+            assayPTIDCol = selectColumns.stream().filter(c -> PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI())).findFirst().orElse(null);
+        }
+
         ColumnInfo runIdCol = colInfos.get(runIdFieldKey);
         ColumnInfo assayVisitIDCol = colInfos.get(assayVisitIDFieldKey);
         ColumnInfo assayDateCol = colInfos.get(assayDateFieldKey);
+        if (assayDateCol == null)
+        {
+            // issue 41982 : look for an alternate date column if the standard assay date field does not exist
+            List<ColumnInfo> dateCols = selectColumns.stream()
+                    .filter(c -> JdbcType.TIMESTAMP.equals(c.getJdbcType()) &&
+                            (!c.getName().equalsIgnoreCase("Created") && !c.getName().equalsIgnoreCase("Modified")))
+                    .collect(Collectors.toList());
+
+            if (dateCols.size() == 1)
+                assayDateCol = dateCols.get(0);
+        }
+
         ColumnInfo specimenIDCol = colInfos.get(specimenIDFieldKey);
         ColumnInfo matchCol = colInfos.get(matchFieldKey);
         ColumnInfo specimenPTIDCol = colInfos.get(specimenPTIDFieldKey);
