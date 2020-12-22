@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/list/gen && rimraf resources/views/gen && rimraf resources/views/*.*"
   },
   "dependencies": {
-    "@labkey/components": "1.10.1-bugFixes21.1-seh.2"
+    "@labkey/components": "1.11.1-bugFixes21.1-seh.3"
   },
   "devDependencies": {
     "@labkey/build": "0.5.0"
