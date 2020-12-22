@@ -36,6 +36,7 @@ import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.IssuesHelper;
 import org.labkey.test.util.Maps;
 import org.labkey.test.util.PermissionsHelper.MemberType;
+import org.labkey.test.util.PostgresOnlyTest;
 import org.labkey.test.util.TextSearcher;
 import org.labkey.test.util.mothership.MothershipHelper;
 
@@ -54,7 +55,7 @@ import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJEC
 
 @Category({DailyB.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 6)
-public class MothershipTest extends BaseWebDriverTest
+public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTest
 {
     private static final String ASSIGNEE = "assignee@mothership.test";
     private static final String NON_ASSIGNEE = "non_assignee@mothership.test";

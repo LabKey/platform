@@ -97,6 +97,7 @@ public class SampleTypeFolderImporter implements FolderImporter
                     }
                     log.info("Importing XAR file: " + xarFile.getName());
                     XarReader reader = new XarReader(xarSource, job);
+                    reader.setStrictValidateExistingSampleType(false);
                     reader.parseAndLoad(false);
                 }
                 else
@@ -161,7 +162,7 @@ public class SampleTypeFolderImporter implements FolderImporter
         @Override
         public int getPriority()
         {
-            return DEFAULT_PRIORITY;
+            return 75;
         }
     }
 }
