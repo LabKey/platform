@@ -24,12 +24,13 @@ import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
@@ -57,20 +58,22 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class SampleTypeFolderWriter extends BaseFolderWriter
+public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 {
     private static final String DEFAULT_DIRECTORY = "sample-types";
     private static final String XAR_FILE_NAME = "sample_types.xar";
     private static final String XAR_XML_FILE_NAME = XAR_FILE_NAME + ".xml";
+    public static final String SAMPLE_TYPE_PREFIX = "SAMPLE_TYPE_";
+    public static final String DATA_CLASS_PREFIX = "DATA_CLASS_";
 
-    private SampleTypeFolderWriter()
+    private SampleTypeAndDataClassFolderWriter()
     {
     }
 
     @Override
     public String getDataType()
     {
-        return FolderArchiveDataTypes.SAMPLE_TYPES;
+        return FolderArchiveDataTypes.SAMPLE_TYPES_AND_DATA_CLASSES;
     }
 
     @Override
@@ -84,6 +87,7 @@ public class SampleTypeFolderWriter extends BaseFolderWriter
     {
         XarExportSelection selection = new XarExportSelection();
         Set<ExpSampleType> sampleTypes = new HashSet<>();
+        Set<ExpDataClass> dataClasses = new HashSet<>();
         boolean exportXar = false;
 
         Lsid sampleTypeLsid = new Lsid(ExperimentService.get().generateLSID(ctx.getContainer(), ExpSampleType.class, "export"));
@@ -104,6 +108,12 @@ public class SampleTypeFolderWriter extends BaseFolderWriter
             }
         }
 
+        for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(ctx.getContainer(), ctx.getUser(), false))
+        {
+            dataClasses.add(dataClass);
+            selection.addDataClass(dataClass);
+        }
+
         // add any sample derivation runs
         List<ExpRun> runs = ExperimentService.get().getExpRuns(ctx.getContainer(), null, null).stream()
                 .filter(run -> run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID))
@@ -112,7 +122,7 @@ public class SampleTypeFolderWriter extends BaseFolderWriter
         Set<ExpRun> exportedRuns = new HashSet<>();
         for (ExpRun run : runs)
         {
-            if (exportRun(run, sampleTypes))
+            if (exportRun(run, sampleTypes, dataClasses))
                 exportedRuns.add(run);
         }
 
@@ -133,6 +143,15 @@ public class SampleTypeFolderWriter extends BaseFolderWriter
             }
         }
 
+        // write the sample type data as .tsv files
+        writeSampleTypeDataFiles(sampleTypes, ctx, xarDir);
+
+        // write the data class data as .tsv files
+        writeDataClassDataFiles(dataClasses, ctx, xarDir);
+    }
+
+    private void writeSampleTypeDataFiles(Set<ExpSampleType> sampleTypes, ImportContext<FolderDocument.Folder> ctx, VirtualFile dir) throws Exception
+    {
         // write out the sample rows that aren't participating in the derivation protocol
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), SamplesSchema.SCHEMA_NAME);
         if (userSchema != null)
@@ -165,7 +184,48 @@ public class SampleTypeFolderWriter extends BaseFolderWriter
                         {
                             tsvWriter.setApplyFormats(false);
                             tsvWriter.setColumnHeaderType(ColumnHeaderType.FieldKey);
-                            PrintWriter out = xarDir.getPrintWriter(sampleType.getName() + ".tsv");
+                            PrintWriter out = dir.getPrintWriter(SAMPLE_TYPE_PREFIX + sampleType.getName() + ".tsv");
+                            tsvWriter.write(out);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void writeDataClassDataFiles(Set<ExpDataClass> dataClasses, ImportContext<FolderDocument.Folder> ctx, VirtualFile dir) throws Exception
+    {
+        // write out the sample rows that aren't participating in the derivation protocol
+        UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), ExpSchema.SCHEMA_EXP_DATA);
+        if (userSchema != null)
+        {
+            for (ExpDataClass dataClass : dataClasses)
+            {
+                TableInfo tinfo = userSchema.getTable(dataClass.getName());
+                if (tinfo != null)
+                {
+                    Collection<ColumnInfo> columns = getColumnsToExport(tinfo);
+
+                    if (!columns.isEmpty())
+                    {
+                        // query to get all of the data rows that were involved in a derivation protocol, we want to
+                        // omit these from the tsv since the XAR importer will currently wire up those rows
+                        SQLFragment sql = new SQLFragment("SELECT DISTINCT(dataId) FROM ").append(ExperimentService.get().getTinfoDataInput(), "di")
+                                .append(" JOIN ").append(ExperimentService.get().getTinfoData(), "dat")
+                                .append(" ON di.dataId = dat.rowId")
+                                .append(" WHERE dat.cpastype = ?")
+                                .add(dataClass.getLSID());
+
+                        Collection<Integer> derivedIds = new SqlSelector(ExperimentService.get().getSchema(), sql).getCollection(Integer.class);
+                        SimpleFilter filter = new SimpleFilter();
+                        if (!derivedIds.isEmpty())
+                            filter.addCondition(FieldKey.fromParts("RowId"), derivedIds, CompareType.NOT_IN);
+                        Results rs = QueryService.get().select(tinfo, columns, filter, null);
+                        try (TSVGridWriter tsvWriter = new TSVGridWriter(rs))
+                        {
+                            tsvWriter.setApplyFormats(false);
+                            tsvWriter.setColumnHeaderType(ColumnHeaderType.FieldKey);
+                            PrintWriter out = dir.getPrintWriter(DATA_CLASS_PREFIX + dataClass.getName() + ".tsv");
                             tsvWriter.write(out);
                         }
                     }
@@ -179,24 +239,24 @@ public class SampleTypeFolderWriter extends BaseFolderWriter
      * from the set of specified sample types. Will return true if either the
      * inputs or outputs are from the set of sample types.
      */
-    private boolean exportRun(ExpRun run, Set<ExpSampleType> sampleTypes)
+    private boolean exportRun(ExpRun run, Set<ExpSampleType> sampleTypes, Set<ExpDataClass> dataClasses)
     {
-        for (ExpMaterial material : run.getMaterialOutputs())
+        if (run.getMaterialInputs().keySet().stream().anyMatch(mat -> sampleTypes.contains(mat.getSampleType())))
         {
-            if (sampleTypes.contains(material.getSampleType()))
-            {
-                return true;
-            }
+            return true;
         }
 
-        for (ExpMaterial material : run.getMaterialInputs().keySet())
+        if (run.getMaterialOutputs().stream().anyMatch(mat -> sampleTypes.contains(mat.getSampleType())))
         {
-            if (sampleTypes.contains(material.getSampleType()))
-            {
-                return true;
-            }
+            return true;
         }
-        return false;
+
+        if (run.getDataInputs().keySet().stream().anyMatch(data -> dataClasses.contains(data.getDataClass(null))))
+        {
+            return true;
+        }
+
+        return run.getDataOutputs().stream().anyMatch(data -> dataClasses.contains(data.getDataClass(null)));
     }
 
     private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo)
@@ -209,7 +269,7 @@ public class SampleTypeFolderWriter extends BaseFolderWriter
 
         for (ColumnInfo col : tinfo.getColumns())
         {
-            if (basePropNames.contains(col.getName()))
+            if (basePropNames.contains(col.getName()) && !ExpMaterialTable.Column.Name.name().equalsIgnoreCase(col.getName()))
                 continue;
 
             if (ExpMaterialTable.Column.Flag.name().equalsIgnoreCase(col.getName()))
@@ -289,7 +349,7 @@ public class SampleTypeFolderWriter extends BaseFolderWriter
         @Override
         public FolderWriter create()
         {
-            return new SampleTypeFolderWriter();
+            return new SampleTypeAndDataClassFolderWriter();
         }
     }
 }

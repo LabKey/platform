@@ -29,23 +29,25 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
-public class SampleTypeFolderImporter implements FolderImporter
+public class SampleTypeAndDataClassFolderImporter implements FolderImporter
 {
     private static final String DEFAULT_DIRECTORY = "sample-types";
     private static final String XAR_FILE_NAME = "sample_types.xar";
     private static final String XAR_XML_FILE_NAME = XAR_FILE_NAME + ".xml";
 
-    private SampleTypeFolderImporter()
+    private SampleTypeAndDataClassFolderImporter()
     {
     }
 
     @Override
     public String getDataType()
     {
-        return FolderArchiveDataTypes.SAMPLE_TYPES;
+        return FolderArchiveDataTypes.SAMPLE_TYPES_AND_DATA_CLASSES;
     }
 
     @Override
@@ -62,7 +64,8 @@ public class SampleTypeFolderImporter implements FolderImporter
         if (xarDir != null)
         {
             File xarFile = null;
-            Set<String> dataFiles = new HashSet<>();
+            Map<String, String> sampleTypeDataFiles = new HashMap<>();
+            Set<String> dataClassDataFiles = new HashSet<>();
             Logger log = ctx.getLogger();
 
             log.info("Starting Sample Type import");
@@ -77,7 +80,10 @@ public class SampleTypeFolderImporter implements FolderImporter
                 }
                 else if (file.toLowerCase().endsWith(".tsv"))
                 {
-                    dataFiles.add(file);
+                    if (file.startsWith(SampleTypeAndDataClassFolderWriter.SAMPLE_TYPE_PREFIX))
+                    {
+                        sampleTypeDataFiles.put(file, FileUtil.getBaseName(file.substring(SampleTypeAndDataClassFolderWriter.SAMPLE_TYPE_PREFIX.length())));
+                    }
                 }
             }
 
@@ -107,10 +113,11 @@ public class SampleTypeFolderImporter implements FolderImporter
                 UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), SamplesSchema.SCHEMA_NAME);
                 if (userSchema != null)
                 {
-                    for (String dataFileName : dataFiles)
+                    for (Map.Entry<String, String> entry : sampleTypeDataFiles.entrySet())
                     {
+                        String dataFileName = entry.getKey();
+                        String sampleTypeName = entry.getValue();
                         log.info("Importing Sample Type data file: " + dataFileName);
-                        String sampleTypeName = FileUtil.getBaseName(dataFileName);
                         TableInfo tinfo = userSchema.getTable(sampleTypeName);
                         if (tinfo != null)
                         {
@@ -156,7 +163,7 @@ public class SampleTypeFolderImporter implements FolderImporter
         @Override
         public FolderImporter create()
         {
-            return new SampleTypeFolderImporter();
+            return new SampleTypeAndDataClassFolderImporter();
         }
 
         @Override

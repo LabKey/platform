@@ -303,6 +303,15 @@ public class XarReader extends AbstractXarImporter
                 }
             }
 
+            ExperimentArchiveType.DataClasses dataClasses = _experimentArchive.getDataClasses();
+            if (dataClasses != null)
+            {
+                for (DataClassType dataClass : dataClasses.getDataClassArray())
+                {
+                    loadDataClass(dataClass);
+                }
+            }
+
             // Then start loading
             if (protocolDefs != null)
             {
@@ -530,6 +539,60 @@ public class XarReader extends AbstractXarImporter
         materialSource.save(getUser());
 
         return materialSource;
+    }
+
+    private ExpDataClass loadDataClass(DataClassType dataClassType) throws XarFormatException, ExperimentException
+    {
+        String lsid = LsidUtils.resolveLsidFromTemplate(dataClassType.getAbout(), getRootContext(), "DataClass");
+        ExpDataClass existingDataClass = ExperimentService.get().getDataClass(lsid);
+
+        getLog().debug("Importing DataClass with LSID '" + lsid + "'");
+        DataClass bean = new DataClass();
+        bean.setContainer(getContainer());
+        bean.setName(dataClassType.getName());
+        bean.setLSID(lsid);
+        ExpDataClass dataClass = new ExpDataClassImpl(bean);
+
+        if (dataClassType.getDescription() != null)
+            dataClass.setDescription(dataClassType.getDescription());
+
+        if (dataClassType.getNameExpression() != null)
+            dataClass.setNameExpression(dataClassType.getNameExpression());
+
+        if (dataClassType.getCategory() != null)
+            dataClass.setCategory(dataClassType.getCategory());
+
+        if (dataClassType.getSampleType() != null)
+        {
+            ExpSampleType sampleType = SampleTypeService.get().getSampleType(getContainer(), getUser(), dataClassType.getSampleType());
+            if (sampleType != null)
+                dataClass.setSampleType(sampleType.getRowId());
+        }
+
+        if (existingDataClass != null)
+        {
+            if (_strictValidateExistingSampleType)
+            {
+                List<IdentifiableEntity.Difference> diffs = new ArrayList<>();
+                IdentifiableEntity.diff(dataClassType.getName(), existingDataClass.getName(), "Name", diffs);
+                IdentifiableEntity.diff(dataClassType.getDescription(), existingDataClass.getDescription(), "Description", diffs);
+                IdentifiableEntity.diff(dataClassType.getNameExpression(), existingDataClass.getNameExpression(), "Name Expression", diffs);
+                IdentifiableEntity.diff(dataClassType.getCategory(), existingDataClass.getCategory(), "Category", diffs);
+
+                if (!diffs.isEmpty())
+                {
+                    getLog().error("The DataClass specified with LSID '" + lsid + "' has " + diffs.size() + " differences from the one that has already been loaded");
+                    for (IdentifiableEntity.Difference diff : diffs)
+                    {
+                        getLog().error(diff.toString());
+                    }
+                    throw new XarFormatException("DataClass with LSID '" + lsid + "' does not match existing DataClass");
+                }
+            }
+            return existingDataClass;
+        }
+        dataClass.save(getUser());
+        return dataClass;
     }
 
     private Domain loadDomain(DomainDescriptorType xDomain) throws ExperimentException
