@@ -84,7 +84,6 @@
                 schemaName  : <%=q(schemaName)%>,
                 queryName   : <%=q(queryName)%>,
                 viewName    : <%=(viewName != null) ? q(viewName) : null%>,
-                showReports : false,
                 frame       : 'none',
                 allowChooseQuery : false
             });
