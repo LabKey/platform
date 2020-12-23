@@ -2,7 +2,7 @@
  * Copyright (c) 2019 LabKey Corporation. All rights reserved. No portion of this work may be reproduced in
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
-import React from 'react'
+import React, {PureComponent} from 'react'
 import {List, Map} from "immutable";
 import {
     SchemaQuery,
@@ -12,8 +12,11 @@ import {
     EditableGridPanel,
     getQueryGridModel,
     getStateQueryGridModel,
-    gridInit
+    gridInit,
+    QueryGridModel
 } from "@labkey/components";
+
+import {SchemaQueryInputContext, SchemaQueryInputProvider} from "./SchemaQueryInputProvider";
 
 const columnMetadata = Map<string, EditableColumnMetadata>({
     "Name": {
@@ -24,7 +27,26 @@ const columnMetadata = Map<string, EditableColumnMetadata>({
     }
 });
 
-export class EditableGridPage extends React.Component<any, any> {
+const defaultProps = {
+    title: 'EditableGridPanel',
+    initialEmptyRowCount: 0,
+    bordered: true,
+    condensed: false,
+    striped: true,
+    allowAdd: true,
+    allowBulkAdd: true,
+    allowBulkRemove: true,
+    allowBulkUpdate: true,
+    addControlProps: {
+        nounPlural: 'rows',
+        nounSingular: 'row'
+    },
+    bulkAddProps: {
+        title: 'Bulk Add'
+    },
+};
+
+class EditableGridPageImpl extends PureComponent<SchemaQueryInputContext> {
 
     componentWillMount() {
         this.initEditableModel();
@@ -71,33 +93,59 @@ export class EditableGridPage extends React.Component<any, any> {
         gridInit(editorModelWithData, true, this);
     }
 
+    getEditorQueryGridModel = (): QueryGridModel => {
+        const { model } = this.props;
+        const editModel = getStateQueryGridModel('component-editormodel', SchemaQuery.create(model.schema, model.query), () => {
+            return {
+                editable: true,
+                queryInfo: model.queryInfo,
+                bindURL: false,
+                loader: {
+                    fetch: () => {
+                        const gridData = Map<string, Map<string, any>>();
+                        return new Promise(resolve => {
+                            resolve({
+                                data: gridData,
+                                dataIds: gridData.keySeq().toList(),
+                            });
+                        });
+                    },
+                },
+            };
+        });
+
+        return getQueryGridModel(editModel.getId()) || editModel;
+    };
+
     render() {
+        const { model } = this.props;
         const editorModelWithData  = getQueryGridModel("edit-with-data|assay/assaylist");
 
         if (!editorModelWithData) {
             return <LoadingSpinner/>;
         }
+        if (model && !model.isLoaded) {
+            // TODO hack to force rerender after model is loaded
+            window.setTimeout(() => this.forceUpdate(), 500);
+        }
 
-        return <EditableGridPanel
-            model={editorModelWithData}
-            columnMetadata={columnMetadata}
-            initialEmptyRowCount={0}
-            bordered={true}
-            condensed={false}
-            striped={true}
-            allowAdd={true}
-            allowBulkAdd={true}
-            allowBulkRemove={true}
-            allowBulkUpdate={true}
-            addControlProps={{
-                placement: 'top',
-                nounPlural: 'rows',
-                nounSingular: 'row'
-            }}
-            bulkAddProps={{
-                title: 'Bulk Add'
-            }}
-        />;
+        return (
+            <>
+                {model
+                    ? <EditableGridPanel
+                        {...defaultProps}
+                        model={this.getEditorQueryGridModel()}
+                    />
+                    : <EditableGridPanel
+                        {...defaultProps}
+                        model={editorModelWithData}
+                        columnMetadata={columnMetadata}
+                    />
+                }
+            </>
+        );
     }
 }
+
+export const EditableGridPage = SchemaQueryInputProvider(EditableGridPageImpl);
 

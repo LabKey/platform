@@ -273,9 +273,7 @@ export class App extends React.Component<any, State> {
                     <DetailPage editable={true}/>
                 }
                 {selected === 'EditableGridPanel' &&
-                    this.renderPanel('EditableGridPanel',
-                        <EditableGridPage/>
-                    )
+                    <EditableGridPage/>
                 }
                 {selected === 'EntityInsertPanel' &&
                     this.renderPanel('EntityInsertPanel',
