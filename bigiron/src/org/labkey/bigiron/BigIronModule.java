@@ -82,6 +82,6 @@ public class BigIronModule extends CodeOnlyModule
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return Collections.singleton(GroupConcatInstallationManager.TestCase.class);
+        return Set.of(GroupConcatInstallationManager.TestCase.class);
     }
 }

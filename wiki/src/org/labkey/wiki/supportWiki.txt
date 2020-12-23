@@ -1,5 +1,5 @@
-<p>Your users will arrive at this page when they select <b>Help > Support</b> on your LabKey Server instance.</p>
+<p>Your users will arrive at this page when they select <b><i class="fa fa-user"></i> (User) > Support</b> on your LabKey Server instance.</p>
 
 <p>Here you can provide support resources to your users, such as issue trackers or message boards. Customize this page to meet the needs of your users and your organization's policies.</p>
 
-<p>The destination page for the <b>Help > Support</b> link can also be changed at <b><i class="fa fa-cog"></i> (Admin) > Site > Admin Console > Settings > Look and Feel Settings</b>.</p>
+<p>The destination page for the <b><i class="fa fa-user"></i> (User) > Support</b> link can also be changed at <b><i class="fa fa-cog"></i> (Admin) > Site > Admin Console > Settings > Look and Feel Settings</b>.</p>
