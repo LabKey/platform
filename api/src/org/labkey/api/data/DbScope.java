@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.Cache;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialect.DataSourceProperties;
@@ -77,7 +78,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Class that wraps a data source and is shared amongst that data source's DbSchemas.
@@ -1280,21 +1280,24 @@ public class DbScope
         return dataSource;
     }
 
-    // Verify that old JDBC drivers are not present in <tomcat>/lib -- they are now provided by the API module
+    // Verify that old JDBC drivers are not present in <tomcat>/lib -- they are now provided by the API, BigIron, and Redshift modules
     private static void verifyJdbcDrivers()
     {
         File lib = ModuleLoader.getTomcatLib();
 
         if (null != lib)
         {
-            List<String> existing = Stream.of("jtds.jar", "mysql.jar", "postgresql.jar")
-                .filter(name->new File(lib, name).exists())
-                .collect(Collectors.toList());
+            Set<String> drivers = CaseInsensitiveHashSet.of("jtds.jar", "mysql.jar", "postgresql.jar");
+            String[] existing = lib.list((dir, name) ->
+                drivers.contains(name) ||
+                StringUtils.startsWithIgnoreCase(name, "RedshiftJDBC") ||
+                StringUtils.startsWithIgnoreCase(name, "redshift-jdbc")
+            );
 
-            if (!existing.isEmpty())
+            if (existing.length > 0)
             {
                 String path = FileUtil.getAbsoluteCaseSensitiveFile(lib).getAbsolutePath();
-                throw new ConfigurationException("You must delete the following JDBC drivers from " + path + ": " + existing);
+                throw new ConfigurationException("You must delete the following JDBC drivers from " + path + ": " + Arrays.toString(existing));
             }
         }
     }
