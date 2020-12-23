@@ -49,7 +49,6 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * User: adam
@@ -59,28 +58,17 @@ import java.util.Set;
 @TestWhen(TestWhen.When.BVT)
 public class ContainerDisplayColumn extends DataColumn
 {
-    public static final DisplayColumnFactory FACTORY = colInfo -> new ContainerDisplayColumn(colInfo, false, true);
+    public static final DisplayColumnFactory FACTORY = colInfo -> new ContainerDisplayColumn(colInfo, false);
 
     private final boolean _showPath;
-    private final boolean _boundColHasEntityId;
 
     /**
      * @param showPath if true, show the container's full path. If false, show just its name
      */
     public ContainerDisplayColumn(ColumnInfo col, boolean showPath)
     {
-        this(col, showPath, false);
-    }
-
-    /**
-     * @param showPath if true, show the container's full path. If false, show just its name
-     * @param boundColHasEntityId if true, the value of this column will be used as the entityId.  If not, it will resolve to the containers table (for example, container/EntityId)
-     */
-    public ContainerDisplayColumn(ColumnInfo col, boolean showPath, boolean boundColHasEntityId)
-    {
         super(col);
         _showPath = showPath;
-        _boundColHasEntityId = boundColHasEntityId;
     }
 
     @Override
@@ -106,52 +94,15 @@ public class ContainerDisplayColumn extends DataColumn
             String id = getEntityIdValue(ctx);
             if(id != null)
                 return "<deleted>";
-            else if (getEntityIdFieldKey(ctx) != null)
-                return "";
             else
                 return super.getDisplayValue(ctx);
         }
-        return _showPath ? c.getPath() : c.getTitle();
-    }
-
-    //NOTE: custom SQL statements may not container a column named entityId, so we fall back to container if entityId is absent
-    private List<FieldKey> getEntityIdFieldKeys()
-    {
-        List<FieldKey> keys = new ArrayList<>();
-
-        if(_boundColHasEntityId)
-        {
-            keys.add(getBoundColumn().getFieldKey());
-        }
-        else
-        {
-            keys.add(new FieldKey(getDisplayColumn().getFieldKey().getParent(), "EntityId"));
-            keys.add(new FieldKey(getDisplayColumn().getFieldKey().getParent(), "Container"));
-            keys.add(new FieldKey(getDisplayColumn().getFieldKey().getParent(), "Folder"));
-        }
-
-        return keys;
-    }
-
-    private FieldKey getEntityIdFieldKey(RenderContext ctx)
-    {
-        for(FieldKey fk : getEntityIdFieldKeys())
-        {
-            if(ctx.containsKey(fk) && (ctx.get(fk) == null || ctx.get(fk) instanceof String))
-            {
-                return fk;
-            }
-        }
-        return null;
+        return _showPath ? c.getPath() : c.getName();
     }
 
     private String getEntityIdValue(RenderContext ctx)
     {
-        FieldKey fk = getEntityIdFieldKey(ctx);
-        if(fk == null)
-            return null;
-
-        return ctx.get(fk) == null ? null : (String)ctx.get(fk);
+        return (String)ctx.get(getBoundColumn().getFieldKey());
     }
 
     private Container getContainer(RenderContext ctx)
@@ -168,14 +119,6 @@ public class ContainerDisplayColumn extends DataColumn
 
         String id = getEntityIdValue(ctx);
         return id == null ? null : ContainerManager.getForId(id);
-    }
-
-
-    @Override
-    public void addQueryFieldKeys(Set<FieldKey> keys)
-    {
-        super.addQueryFieldKeys(keys);
-        keys.addAll(getEntityIdFieldKeys());
     }
 
     @Override
