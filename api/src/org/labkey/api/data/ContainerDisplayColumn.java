@@ -239,7 +239,7 @@ public class ContainerDisplayColumn extends DataColumn
                     assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").getString("value"), project.getName());
 
                     assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("value"));
-                    assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"), "");
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"));
 
                 }
                 else if (comment.contains(subFolder1.getName() + " was created"))
@@ -267,10 +267,10 @@ public class ContainerDisplayColumn extends DataColumn
                     assertEquals("Incorrect json value for ContainerId column", "<deleted>", row.getJSONObject("ContainerId").getString("displayValue"));
 
                     assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").getString("value"));
-                    assertEquals("Incorrect json value for ContainerId column", "", row.getJSONObject("ContainerId/Name").getString("displayValue"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").getString("displayValue"));
 
                     assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("value"));
-                    assertEquals("Incorrect json value for ContainerId column", "", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"));
                 }
                 else if (comment.contains(subFolder2.getName() + " was deleted"))
                 {
@@ -282,10 +282,10 @@ public class ContainerDisplayColumn extends DataColumn
                     assertEquals("Incorrect json value for ContainerId column", "<deleted>", row.getJSONObject("ContainerId").getString("displayValue"));
 
                     assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").getString("value"));
-                    assertEquals("Incorrect json value for ContainerId column", "", row.getJSONObject("ContainerId/Name").getString("displayValue"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").getString("displayValue"));
 
                     assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("value"));
-                    assertEquals("Incorrect json value for ContainerId column", "", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"));
                 }
                 else
                 {
