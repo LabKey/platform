@@ -40,6 +40,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.LoggerWriter;
 import org.labkey.api.util.MemTracker;
@@ -49,9 +50,16 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.dao.DeadlockLoserDataAccessException;
 
+import javax.naming.Binding;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NameNotFoundException;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
+import java.io.File;
 import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
@@ -62,31 +70,14 @@ import java.sql.DatabaseMetaData;
 import java.sql.Driver;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Random;
-import java.util.RandomAccess;
-import java.util.Set;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Class that wraps a data source and is shared amongst that data source's DbSchemas.
@@ -623,7 +614,7 @@ public class DbScope
 
     public interface RetryFn<ReturnType>
     {
-        ReturnType exec(DbScope.Transaction tx) throws DeadlockLoserDataAccessException, RuntimeSQLException;
+        ReturnType exec(Transaction tx) throws DeadlockLoserDataAccessException, RuntimeSQLException;
     }
 
     /** Can be used to conveniently throw a typed exception out of executeWithRetry */
@@ -660,7 +651,7 @@ public class DbScope
         for (var tri=0 ; tri < tries ; tri++ )
         {
             lastException = null;
-            try (DbScope.Transaction transaction = ensureTransaction(extraLocks))
+            try (Transaction transaction = ensureTransaction(extraLocks))
             {
                 ret = fn.exec(transaction);
                 transaction.commit();
@@ -1223,8 +1214,134 @@ public class DbScope
         }
     }
 
+    // Enumerate each jdbc DataSource in labkey.xml and initialize them
+    public static void initializeDataSources()
+    {
+        verifyJdbcDrivers();
 
-    public static void initializeScopes(String labkeyDsName, Map<String, DataSource> dataSources)
+        LOG.debug("Ensuring that all databases specified by data sources in webapp configuration xml are present");
+
+        Map<String, DataSource> dataSources = new TreeMap<>(String::compareTo);
+
+        String labkeyDsName;
+
+        try
+        {
+            // Ensure that the labkeyDataSource (or cpasDataSource, for old installations) exists in
+            // labkey.xml / cpas.xml and create the associated database if it doesn't already exist.
+            labkeyDsName = ensureDatabase(ModuleLoader.LABKEY_DATA_SOURCE, ModuleLoader.CPAS_DATA_SOURCE);
+
+            InitialContext ctx = new InitialContext();
+            Context envCtx = (Context) ctx.lookup("java:comp/env");
+            NamingEnumeration<Binding> iter = envCtx.listBindings("jdbc");
+
+            while (iter.hasMore())
+            {
+                try
+                {
+                    Binding o = iter.next();
+                    String dsName = o.getName();
+                    DataSource ds = validate((DataSource) o.getObject(), dsName);
+                    dataSources.put(dsName, ds);
+                }
+                catch (NamingException e)
+                {
+                    LOG.error("DataSources are not properly configured in " + AppProps.getInstance().getWebappConfigurationFilename() + ".", e);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            throw new ConfigurationException("DataSources are not properly configured in " + AppProps.getInstance().getWebappConfigurationFilename() + ".", e);
+        }
+
+        initializeScopes(labkeyDsName, dataSources);
+    }
+
+    // Reject data sources configured with the Tomcat JDBC connection pool, #42125
+    private static DataSource validate(DataSource dataSource, String dsName) throws ServletException
+    {
+        String dataSourceClassName = dataSource.getClass().getName();
+        if (!dataSourceClassName.equals("org.apache.tomcat.dbcp.dbcp2.BasicDataSource"))
+        {
+            String message;
+            if (dataSourceClassName.equals("org.apache.tomcat.jdbc.pool.DataSource"))
+            {
+                message = "Tomcat JDBC connection pool is not supported;";
+            }
+            else
+            {
+                message = "Unknown DataSource implementation, \"" + dataSourceClassName + "\";";
+            }
+
+            throw new ServletException(message + " LabKey only supports the Commons DBCP connection pool. Please remove the \"factory\" attribute from the \"" + dsName + "\" DataSource definition.");
+        }
+
+        return dataSource;
+    }
+
+    // Verify that old JDBC drivers are not present in <tomcat>/lib -- they are now provided by the API module
+    private static void verifyJdbcDrivers()
+    {
+        File lib = ModuleLoader.getTomcatLib();
+
+        if (null != lib)
+        {
+            List<String> existing = Stream.of("jtds.jar", "mysql.jar", "postgresql.jar")
+                .filter(name->new File(lib, name).exists())
+                .collect(Collectors.toList());
+
+            if (!existing.isEmpty())
+            {
+                String path = FileUtil.getAbsoluteCaseSensitiveFile(lib).getAbsolutePath();
+                throw new ConfigurationException("You must delete the following JDBC drivers from " + path + ": " + existing);
+            }
+        }
+    }
+
+    // For each name, look for a matching data source in labkey.xml. If found, attempt a connection and
+    // create the database if it doesn't already exist, report any errors and return the name.
+    private static String ensureDatabase(@NotNull String primaryName, String... alternativeNames) throws NamingException, ServletException
+    {
+        List<String> dsNames = new ArrayList<>();
+        dsNames.add(primaryName);
+        dsNames.addAll(Arrays.asList(alternativeNames));
+
+        InitialContext ctx = new InitialContext();
+        Context envCtx = (Context) ctx.lookup("java:comp/env");
+
+        DataSource dataSource = null;
+        String dsName = null;
+
+        for (String name : dsNames)
+        {
+            dsName = name;
+
+            try
+            {
+                dataSource = validate((DataSource)envCtx.lookup("jdbc/" + dsName), dsName);
+                break;
+            }
+            catch (NameNotFoundException e)
+            {
+                // Name not found is fine (for now); keep looping through alternative names
+            }
+            catch (NamingException e)
+            {
+                throw new ConfigurationException("Failed to load DataSource \"" + dsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() +
+                    ". This could be caused by an attempt to use the Tomcat JDBC connection pool, which is not supported. Please remove the \"factory\" attribute from this DataSource definition.", e);
+            }
+        }
+
+        if (null == dataSource)
+            throw new ConfigurationException("You must have a DataSource named \"" + primaryName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ".");
+
+        ensureDataBase(dsName, dataSource);
+
+        return dsName;
+    }
+
+    private static void initializeScopes(String labkeyDsName, Map<String, DataSource> dataSources)
     {
         synchronized (_scopes)
         {
@@ -1254,7 +1371,7 @@ public class DbScope
                     {
                         try
                         {
-                            ModuleLoader.getInstance().ensureDatabase(dsName);
+                            ensureDatabase(dsName);
                         }
                         catch (Throwable t)
                         {
@@ -1813,7 +1930,7 @@ public class DbScope
     {
         @Override
         @NotNull
-        public <T extends Runnable> T addCommitTask(@NotNull T runnable, @NotNull DbScope.CommitTaskOption firstOption, DbScope.CommitTaskOption... additionalOptions)
+        public <T extends Runnable> T addCommitTask(@NotNull T runnable, @NotNull CommitTaskOption firstOption, CommitTaskOption... additionalOptions)
         {
             runnable.run();
             return runnable;
@@ -1959,7 +2076,7 @@ public class DbScope
 
         @Override
         @NotNull
-        public <T extends Runnable> T addCommitTask(@NotNull T task, @NotNull DbScope.CommitTaskOption firstOption, CommitTaskOption... additionalOptions)
+        public <T extends Runnable> T addCommitTask(@NotNull T task, @NotNull CommitTaskOption firstOption, CommitTaskOption... additionalOptions)
         {
             T result = firstOption.add(this, task);
             for (CommitTaskOption taskOption : additionalOptions)
@@ -2027,7 +2144,7 @@ public class DbScope
             }
             if (_closesToIgnore < 0)
             {
-                throw createIllegalStateException("Popped too many closes from the stack",DbScope.this,_conn);
+                throw createIllegalStateException("Popped too many closes from the stack", DbScope.this,_conn);
             }
         }
 
@@ -2036,14 +2153,14 @@ public class DbScope
         {
             if (_aborted)
             {
-                throw createIllegalStateException("Transaction has already been rolled back",DbScope.this,_conn);
+                throw createIllegalStateException("Transaction has already been rolled back", DbScope.this, _conn);
             }
             if (_closesToIgnore > 0)
             {
                 _closesToIgnore = 0;
                 closeConnection();
                 clearCommitTasks();
-                throw createIllegalStateException("Missing expected call to close after prior commit",DbScope.this,_conn);
+                throw createIllegalStateException("Missing expected call to close after prior commit", DbScope.this, _conn);
             }
 
             _closesToIgnore++;
@@ -2315,7 +2432,7 @@ public class DbScope
             // and then SELECT 10 rows from a random table in a random schema in every datasource.
             List<TableInfo> tablesToTest = new LinkedList<>();
 
-            for (DbScope scope : DbScope.getDbScopes())
+            for (DbScope scope : getDbScopes())
             {
                 SqlDialect dialect = scope.getSqlDialect();
                 List<String> schemaNames = new ArrayList<>();
@@ -2344,10 +2461,10 @@ public class DbScope
                     tablesToTest.add(tinfo);
             }
 
-            try (Transaction ignored = DbScope.getLabKeyScope().ensureTransaction())
+            try (Transaction ignored = getLabKeyScope().ensureTransaction())
             {
                 // LabKey scope should have an active transaction, and all other scopes should not
-                for (DbScope scope : DbScope.getDbScopes())
+                for (DbScope scope : getDbScopes())
                     Assert.assertEquals(scope.isLabKeyScope(), scope.isTransactionActive());
 
                 for (TableInfo table : tablesToTest)
@@ -2467,7 +2584,7 @@ public class DbScope
                 assertTrue("Bad message: " + e.getMessage(), e.getMessage().contains("simulated"));
             }
             assertFalse(getLabKeyScope().isTransactionActive());
-            DbScope.closeAllConnectionsForCurrentThread();
+            closeAllConnectionsForCurrentThread();
         }
 
         @Test
@@ -2809,12 +2926,12 @@ public class DbScope
         @Test
         public void testTryWithResources() throws SQLException
         {
-            try (Transaction t = DbScope.getLabKeyScope().ensureTransaction())
+            try (Transaction t = getLabKeyScope().ensureTransaction())
             {
                 Connection c = t.getConnection();
                 assertFalse(c.isClosed());
 
-                try (Transaction t2 = DbScope.getLabKeyScope().ensureTransaction())
+                try (Transaction t2 = getLabKeyScope().ensureTransaction())
                 {
                     try (Connection c2 = t2.getConnection())
                     {
