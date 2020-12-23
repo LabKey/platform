@@ -104,7 +104,6 @@ public class ContainerTable extends FilteredTable<UserSchema>
         this.addColumn(col);
 
         var name = getMutableColumn("Name");
-        name.setDisplayColumnFactory(colInfo -> new ContainerDisplayColumn(colInfo, false));
         name.setURL(detailsURL);
         name.setReadOnly(true); // CONSIDER: allow renames via QueryUpdateService api
 
@@ -130,7 +129,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
         folderDisplayColumn.setReadOnly(true);
         setTitleColumn(folderDisplayColumn.getName());
 
-        final var folderPathCol = this.wrapColumn("Path", getRealTable().getColumn("Name"));
+        final var folderPathCol = this.wrapColumn("Path", getRealTable().getColumn("EntityId"));
         folderPathCol.setReadOnly(true);
         folderPathCol.setDisplayColumnFactory(colInfo -> new ContainerDisplayColumn(colInfo, true));
         addColumn(folderPathCol);

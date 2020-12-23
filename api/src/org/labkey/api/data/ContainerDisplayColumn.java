@@ -27,6 +27,7 @@ import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -34,8 +35,8 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -48,7 +49,6 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * User: adam
@@ -58,28 +58,17 @@ import java.util.Set;
 @TestWhen(TestWhen.When.BVT)
 public class ContainerDisplayColumn extends DataColumn
 {
-    public static final DisplayColumnFactory FACTORY = colInfo -> new ContainerDisplayColumn(colInfo, false, true);
+    public static final DisplayColumnFactory FACTORY = colInfo -> new ContainerDisplayColumn(colInfo, false);
 
     private final boolean _showPath;
-    private final boolean _boundColHasEntityId;
 
     /**
      * @param showPath if true, show the container's full path. If false, show just its name
      */
     public ContainerDisplayColumn(ColumnInfo col, boolean showPath)
     {
-        this(col, showPath, false);
-    }
-
-    /**
-     * @param showPath if true, show the container's full path. If false, show just its name
-     * @param boundColHasEntityId if true, the value of this column will be used as the entityId.  If not, it will resolve to the containers table (for example, container/EntityId)
-     */
-    public ContainerDisplayColumn(ColumnInfo col, boolean showPath, boolean boundColHasEntityId)
-    {
         super(col);
         _showPath = showPath;
-        _boundColHasEntityId = boundColHasEntityId;
     }
 
     @Override
@@ -105,67 +94,21 @@ public class ContainerDisplayColumn extends DataColumn
             String id = getEntityIdValue(ctx);
             if(id != null)
                 return "<deleted>";
-            else if (getEntityIdFieldKey(ctx) != null && id == null)
-                return "";
             else
-                return "<could not resolve container>";
+                return super.getDisplayValue(ctx);
         }
-        return _showPath ? c.getPath() : c.getTitle();
-    }
-
-    //NOTE: custom SQL statements may not container a column named entityId, so we fall back to container if entityId is absent
-    private List<FieldKey> getEntityIdFieldKeys()
-    {
-        List<FieldKey> keys = new ArrayList<>();
-
-        if(_boundColHasEntityId)
-        {
-            keys.add(getBoundColumn().getFieldKey());
-        }
-        else
-        {
-            keys.add(new FieldKey(getDisplayColumn().getFieldKey().getParent(), "EntityId"));
-            keys.add(new FieldKey(getDisplayColumn().getFieldKey().getParent(), "Container"));
-            keys.add(new FieldKey(getDisplayColumn().getFieldKey().getParent(), "Folder"));
-        }
-
-        return keys;
-    }
-
-    private FieldKey getEntityIdFieldKey(RenderContext ctx)
-    {
-        for(FieldKey fk : getEntityIdFieldKeys())
-        {
-            if(ctx.containsKey(fk) && (ctx.get(fk) == null || ctx.get(fk) instanceof String))
-            {
-                return fk;
-            }
-        }
-        return null;
+        return _showPath ? c.getPath() : c.getName();
     }
 
     private String getEntityIdValue(RenderContext ctx)
     {
-        FieldKey fk = getEntityIdFieldKey(ctx);
-        if(fk == null)
-            return null;
-
-        return ctx.get(fk) == null ? null : (String)ctx.get(fk);
+        return (String)ctx.get(getBoundColumn().getFieldKey());
     }
 
     private Container getContainer(RenderContext ctx)
     {
         String id = getEntityIdValue(ctx);
-
         return id == null ? null : ContainerManager.getForId(id);
-    }
-
-
-    @Override
-    public void addQueryFieldKeys(Set<FieldKey> keys)
-    {
-        super.addQueryFieldKeys(keys);
-        keys.addAll(getEntityIdFieldKeys());
     }
 
     @Override
@@ -295,8 +238,8 @@ public class ContainerDisplayColumn extends DataColumn
 
                     assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").getString("value"), project.getName());
 
-                    assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("value"), null);
-                    assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"), "");
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("value"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"));
 
                 }
                 else if (comment.contains(subFolder1.getName() + " was created"))
@@ -310,7 +253,7 @@ public class ContainerDisplayColumn extends DataColumn
 
                     assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").getString("value"), subFolder1.getName());
 
-                    assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("value"), null);
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("value"));
                     assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"), "");
 
                 }
@@ -320,14 +263,14 @@ public class ContainerDisplayColumn extends DataColumn
                     assertEquals("Incorrect json value for for ProjectId column", project.getEntityId().toString(), row.getJSONObject(row.containsKey("ProjectId")?"ProjectId":"projectid").getString("value"));
                     assertEquals("Incorrect json value for ProjectId/Name column", project.getName(), row.getJSONObject("ProjectId/Name").getString("value"));
 
-                    assertEquals("Incorrect json value for ContainerId column", null, row.getJSONObject("ContainerId").getString("value"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId").getString("value"));
                     assertEquals("Incorrect json value for ContainerId column", "<deleted>", row.getJSONObject("ContainerId").getString("displayValue"));
 
-                    assertEquals("Incorrect json value for ContainerId column", null, row.getJSONObject("ContainerId/Name").getString("value"));
-                    assertEquals("Incorrect json value for ContainerId column", "", row.getJSONObject("ContainerId/Name").getString("displayValue"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").getString("value"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").getString("displayValue"));
 
-                    assertEquals("Incorrect json value for ContainerId column", null, row.getJSONObject("ProjectId/Parent/Name").getString("value"));
-                    assertEquals("Incorrect json value for ContainerId column", "", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("value"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"));
                 }
                 else if (comment.contains(subFolder2.getName() + " was deleted"))
                 {
@@ -335,14 +278,14 @@ public class ContainerDisplayColumn extends DataColumn
                     assertEquals("Incorrect json value for for ProjectId column", project.getEntityId().toString(), row.getJSONObject(row.containsKey("ProjectId")?"ProjectId":"projectid").getString("value"));
                     assertEquals("Incorrect json value for ProjectId/Name column", project.getName(), row.getJSONObject("ProjectId/Name").getString("value"));
 
-                    assertEquals("Incorrect json value for ContainerId column", null, row.getJSONObject("ContainerId").getString("value"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId").getString("value"));
                     assertEquals("Incorrect json value for ContainerId column", "<deleted>", row.getJSONObject("ContainerId").getString("displayValue"));
 
-                    assertEquals("Incorrect json value for ContainerId column", null, row.getJSONObject("ContainerId/Name").getString("value"));
-                    assertEquals("Incorrect json value for ContainerId column", "", row.getJSONObject("ContainerId/Name").getString("displayValue"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").getString("value"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").getString("displayValue"));
 
-                    assertEquals("Incorrect json value for ContainerId column", null, row.getJSONObject("ProjectId/Parent/Name").getString("value"));
-                    assertEquals("Incorrect json value for ContainerId column", "", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("value"));
+                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"));
                 }
                 else
                 {
