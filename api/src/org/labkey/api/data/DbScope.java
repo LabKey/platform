@@ -1530,7 +1530,7 @@ public class DbScope
         throw new ConfigurationException("Can't connect to data source \"" + dsName + "\".", "Make sure that your LabKey Server configuration file includes the correct user name, password, url, port, etc. for your database and that the database server is running.", lastException);
     }
 
-    // Establish a data source connection that bypasses the connection pool
+    // Establish a direct data source connection that bypasses the connection pool
     private static Connection getRawConnection(DataSourceProperties props) throws ServletException, SQLException
     {
         return getRawConnection(props.getUrl(), props);
@@ -1558,7 +1558,7 @@ public class DbScope
         return driver.connect(url, info);
     }
 
-    public static void createDataBase(SqlDialect dialect, DataSourceProperties props, boolean primaryDataSource) throws ServletException
+    private static void createDataBase(SqlDialect dialect, DataSourceProperties props, boolean primaryDataSource) throws ServletException
     {
         String url = props.getUrl();
         String dbName = dialect.getDatabaseName(url);
