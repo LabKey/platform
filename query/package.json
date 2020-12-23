@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/query/gen && rimraf resources/views/gen  && rimraf resources/views/queryMetadataEditor*"
   },
   "dependencies": {
-    "@labkey/components": "1.11.2-bugFixes21.1-seh.4"
+    "@labkey/components": "1.11.2-bugFixes21.1-seh.5"
   },
   "devDependencies": {
     "@labkey/build": "0.5.1"
