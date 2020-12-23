@@ -107,16 +107,6 @@ public class ContainerDisplayColumn extends DataColumn
 
     private Container getContainer(RenderContext ctx)
     {
-        // Issue 41050 - use URL's container context when possible to resolve the referenced container
-        if (getURLExpression() instanceof DetailsURL)
-        {
-            ContainerContext containerContext = ((DetailsURL) getURLExpression()).getContainerContext();
-            if (containerContext != null)
-            {
-                return containerContext.getContainer(ctx);
-            }
-        }
-
         String id = getEntityIdValue(ctx);
         return id == null ? null : ContainerManager.getForId(id);
     }
