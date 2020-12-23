@@ -1930,7 +1930,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         if (paramCount > 0)
         {
             sb.append("(");
-            sb.append("?, ".repeat(paramCount));
+            sb.append(StringUtils.repeat("?", ", ", paramCount));
             sb.append(")");
         }
 
