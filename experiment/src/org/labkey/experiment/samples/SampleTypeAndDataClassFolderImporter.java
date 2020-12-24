@@ -18,6 +18,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
+import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -188,6 +189,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                                 DataIteratorContext context = new DataIteratorContext(errors);
                                 context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
                                 context.setAllowImportLookupByAlternateKey(true);
+                                ((AbstractQueryUpdateService)qus).setAttachmentDirectory(dir.getDir(tableName));
 
                                 qus.loadRows(ctx.getUser(), ctx.getContainer(), loader, context, null);
                             }

@@ -81,7 +81,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     {
         super(queryTable, dbTable, createMVMapping(queryTable.getList().getDomain()));
         _list = (ListDefinitionImpl) list;
-        setAttachmentParentFactory(new ListItemAttachmentParentFactory());
     }
 
     @Override
@@ -100,6 +99,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return context;
     }
 
+    @Override
+    protected @Nullable AttachmentParentFactory getAttachmentParentFactory()
+    {
+        return new ListItemAttachmentParentFactory();
+    }
 
     @Override
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> listRow) throws InvalidKeyException

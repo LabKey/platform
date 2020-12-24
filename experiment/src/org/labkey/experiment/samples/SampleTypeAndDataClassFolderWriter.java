@@ -16,6 +16,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
@@ -55,7 +56,6 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.labkey.folder.xml.FolderDocument;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -80,6 +80,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
     private static final String XAR_XML_FILE_NAME = XAR_FILE_NAME + ".xml";
     public static final String SAMPLE_TYPE_PREFIX = "SAMPLE_TYPE_";
     public static final String DATA_CLASS_PREFIX = "DATA_CLASS_";
+    private PHI _exportPhiLevel = PHI.NotPHI;
 
     private SampleTypeAndDataClassFolderWriter()
     {
@@ -104,6 +105,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         XarExportSelection selection = new XarExportSelection();
         Set<ExpSampleType> sampleTypes = new HashSet<>();
         Set<ExpDataClass> dataClasses = new HashSet<>();
+        _exportPhiLevel = ctx.getPhiLevel();
         boolean exportXar = false;
 
         Lsid sampleTypeLsid = new Lsid(ExperimentService.get().generateLSID(ctx.getContainer(), ExpSampleType.class, "export"));
@@ -128,6 +130,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         {
             dataClasses.add(dataClass);
             selection.addDataClass(dataClass);
+            exportXar = true;
         }
 
         // add any sample derivation runs
@@ -287,6 +290,8 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 
         for (ColumnInfo col : tinfo.getColumns())
         {
+            if (!isExportable(col))
+                continue;
             if (basePropNames.contains(col.getName()) && !ExpMaterialTable.Column.Name.name().equalsIgnoreCase(col.getName()))
                 continue;
 
@@ -332,22 +337,29 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 
     private void writeAttachments(Container c, TableInfo tinfo, VirtualFile dir) throws SQLException, IOException
     {
-        List<DomainProperty> attachmentProps = tinfo.getDomain().getProperties().stream()
-                .filter(dp -> dp.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
-                .collect(Collectors.toList());
+        List<ColumnInfo> attachmentCols = new ArrayList<>();
+        for (DomainProperty prop : tinfo.getDomain().getProperties())
+        {
+            if (prop.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
+            {
+                ColumnInfo col = tinfo.getColumn(prop.getName());
 
-        if (!attachmentProps.isEmpty())
+                if (isExportable(col))
+                    attachmentCols.add(col);
+            }
+        }
+
+        if (!attachmentCols.isEmpty())
         {
             VirtualFile tableDir = dir.getDir(tinfo.getName());
             Map<String, FileNameUniquifier> uniquifiers = new HashMap<>();
             List<ColumnInfo> selectColumns = new ArrayList<>();
 
             selectColumns.add(tinfo.getColumn(FieldKey.fromParts(ExpDataClassDataTable.Column.LSID)));
-            for (DomainProperty prop : attachmentProps)
-            {
-                uniquifiers.put(prop.getName(), new FileNameUniquifier());
-                selectColumns.add(tinfo.getColumn(FieldKey.fromParts(prop.getName())));
-            }
+            selectColumns.addAll(attachmentCols);
+
+            for (ColumnInfo col : attachmentCols)
+                uniquifiers.put(col.getName(), new FileNameUniquifier());
 
             try (ResultSet rs = QueryService.get().select(tinfo, selectColumns, null, null))
             {
@@ -357,7 +369,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                     AttachmentParent attachmentParent = new ExpDataClassAttachmentParent(c, lsid);
                     int attachmentCol = 2;
 
-                    for (DomainProperty prop : attachmentProps)
+                    for (ColumnInfo col : attachmentCols)
                     {
                         String filename = rs.getString(attachmentCol++);
 
@@ -365,7 +377,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                         if (filename == null)
                             continue;
 
-                        String columnName = prop.getName();
+                        String columnName = col.getName();
                         VirtualFile columnDir = tableDir.getDir(columnName);
                         FileNameUniquifier uniquifier = uniquifiers.get(columnName);
 
@@ -373,15 +385,15 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                         {
                             FileUtil.copyData(is, os);
                         }
-                        catch (FileNotFoundException e)
-                        {
-                            // Shouldn't happen... but just skip this file in production if it does
-                            assert false;
-                        }
                     }
                 }
             }
         }
+    }
+
+    private boolean isExportable(ColumnInfo col)
+    {
+        return col.getPHI().isExportLevelAllowed(_exportPhiLevel);
     }
 
     private static class SampleTypeAliasColumnFactory extends AbstractAliasColumnFactory
