@@ -7,10 +7,11 @@ import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.exp.CompressedXarSource;
+import org.labkey.api.exp.CompressedInputStreamXarSource;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpSchema;
@@ -22,7 +23,9 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.XarReader;
 
@@ -92,7 +95,45 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
             {
                 if (xarFile != null)
                 {
-                    XarSource xarSource = new CompressedXarSource(xarFile, job, ctx.getContainer());
+                    File logFile = CompressedInputStreamXarSource.getLogFileFor(xarFile);
+
+                    if (job == null)
+                    {
+                        // need to fake up a job for the XarReader
+                        job = new PipelineJob()
+                        {
+                            @Override
+                            public User getUser()
+                            {
+                                return ctx.getUser();
+                            }
+
+                            @Override
+                            public Container getContainer()
+                            {
+                                return ctx.getContainer();
+                            }
+
+                            @Override
+                            public synchronized Logger getLogger()
+                            {
+                                return ctx.getLogger();
+                            }
+
+                            @Override
+                            public URLHelper getStatusHref()
+                            {
+                                return null;
+                            }
+
+                            @Override
+                            public String getDescription()
+                            {
+                                return "Sample Type XAR Import";
+                            }
+                        };
+                    }
+                    XarSource xarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(xarFile.getName()), xarFile, logFile, job);
                     try
                     {
                         xarSource.init();
