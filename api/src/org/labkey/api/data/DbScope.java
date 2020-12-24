@@ -1310,7 +1310,7 @@ public class DbScope
             if (existing.length > 0)
             {
                 String path = FileUtil.getAbsoluteCaseSensitiveFile(lib).getAbsolutePath();
-                throw new ConfigurationException("You must delete the following JAR files from " + path + ": " + Arrays.toString(existing));
+                throw new ConfigurationException("You must delete the following files from " + path + ": " + Arrays.toString(existing));
             }
         }
     }
