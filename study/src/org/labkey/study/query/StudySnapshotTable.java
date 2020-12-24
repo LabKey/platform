@@ -83,7 +83,7 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
             @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                return new ContainerDisplayColumn(colInfo, false, true){
+                return new ContainerDisplayColumn(colInfo, false){
                     @Override
                     public String renderURL(RenderContext ctx)
                     {

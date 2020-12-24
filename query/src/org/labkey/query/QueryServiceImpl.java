@@ -2245,13 +2245,13 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     }
 
     @Override
-    public void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments)
+    public void registerPassthroughMethod(String name, @Nullable String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments)
     {
         registerPassthroughMethod(name, declaringSchemaName, returnType, minArguments, maxArguments, QueryManager.get().getDbSchema().getSqlDialect());
     }
 
     @Override
-    public void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect)
+    public void registerPassthroughMethod(String name, @Nullable String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect)
     {
         Method.addPassthroughMethod(name, declaringSchemaName, returnType, minArguments, maxArguments, dialect);
     }
