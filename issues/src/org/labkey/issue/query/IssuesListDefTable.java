@@ -241,6 +241,12 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         return LINK_DISABLER_ACTION_URL;
     }
 
+    @Override
+    public String getPublicName()
+    {
+        return IssuesQuerySchema.TableType.IssueListDef.name();
+    }
+
     private class UpdateService extends DefaultQueryUpdateService
     {
         public UpdateService(IssuesListDefTable table)
