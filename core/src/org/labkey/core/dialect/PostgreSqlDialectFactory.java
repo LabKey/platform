@@ -17,13 +17,14 @@
 package org.labkey.core.dialect;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CsvSet;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelperTest;
@@ -48,6 +49,12 @@ import java.util.Set;
 public class PostgreSqlDialectFactory implements SqlDialectFactory
 {
     private static final Logger _log = LogManager.getLogger(PostgreSqlDialectFactory.class);
+
+    public PostgreSqlDialectFactory()
+    {
+        // PostgreSQL JDBC driver should not be present in <tomcat>/lib
+        DbScope.registerForbiddenTomcatFilenamePredicate(filename->filename.equalsIgnoreCase("postgresql.jar"));
+    }
 
     @Override
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
