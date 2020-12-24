@@ -13,6 +13,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.CompressedXarSource;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
@@ -26,13 +27,13 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.XarReader;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 public class SampleTypeAndDataClassFolderImporter implements FolderImporter
 {
@@ -53,7 +54,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
     @Override
     public String getDescription()
     {
-        return "Sample Types Importer";
+        return "Sample Types and Data Class Importer";
     }
 
     @Override
@@ -65,10 +66,10 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         {
             File xarFile = null;
             Map<String, String> sampleTypeDataFiles = new HashMap<>();
-            Set<String> dataClassDataFiles = new HashSet<>();
+            Map<String, String> dataClassDataFiles = new HashMap<>();
             Logger log = ctx.getLogger();
 
-            log.info("Starting Sample Type import");
+            log.info("Starting Sample Type and Data Class import");
             for (String file: xarDir.list())
             {
                 if (file.toLowerCase().endsWith(".xar"))
@@ -81,9 +82,9 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                 else if (file.toLowerCase().endsWith(".tsv"))
                 {
                     if (file.startsWith(SampleTypeAndDataClassFolderWriter.SAMPLE_TYPE_PREFIX))
-                    {
                         sampleTypeDataFiles.put(file, FileUtil.getBaseName(file.substring(SampleTypeAndDataClassFolderWriter.SAMPLE_TYPE_PREFIX.length())));
-                    }
+                    else if (file.startsWith(SampleTypeAndDataClassFolderWriter.DATA_CLASS_PREFIX))
+                        dataClassDataFiles.put(file, FileUtil.getBaseName(file.substring(SampleTypeAndDataClassFolderWriter.DATA_CLASS_PREFIX.length())));
                 }
             }
 
@@ -109,47 +110,57 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                 else
                     log.info("No xar file to process.");
 
-                // process any sample type data files
-                UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), SamplesSchema.SCHEMA_NAME);
-                if (userSchema != null)
-                {
-                    for (Map.Entry<String, String> entry : sampleTypeDataFiles.entrySet())
-                    {
-                        String dataFileName = entry.getKey();
-                        String sampleTypeName = entry.getValue();
-                        log.info("Importing Sample Type data file: " + dataFileName);
-                        TableInfo tinfo = userSchema.getTable(sampleTypeName);
-                        if (tinfo != null)
-                        {
-                            try (InputStream is = xarDir.getInputStream(dataFileName))
-                            {
-                                if (null != is)
-                                {
-                                    BatchValidationException errors = new BatchValidationException();
-                                    DataLoader loader = DataLoader.get().createLoader(dataFileName, null, is, true, null, null);
+                // process any sample type data files and data class files
+                importTsvData(ctx, SamplesSchema.SCHEMA_NAME, sampleTypeDataFiles, xarDir);
+                importTsvData(ctx, ExpSchema.SCHEMA_EXP_DATA.toString(), dataClassDataFiles, xarDir);
 
-                                    QueryUpdateService qus = tinfo.getUpdateService();
-                                    if (qus != null)
-                                    {
-                                        DataIteratorContext context = new DataIteratorContext(errors);
-                                        context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
-                                        context.setAllowImportLookupByAlternateKey(true);
-
-                                        qus.loadRows(ctx.getUser(), ctx.getContainer(), loader, context, null);
-                                    }
-                                    else
-                                        log.error("Unable to import Sample Type data, could not find QUS : " + sampleTypeName);
-                                }
-                            }
-                        }
-                        else
-                            log.error("Unable to import Sample Type data, table not found: " + sampleTypeName);
-                    }
-                }
                 transaction.commit();
-                log.info("Finished importing Sample Types");
+                log.info("Finished importing Sample Types and Data Classes");
             }
         }
+    }
+
+    private void importTsvData(ImportContext ctx, String schemaName, Map<String, String> dataFileMap, VirtualFile dir) throws IOException, SQLException
+    {
+        Logger log = ctx.getLogger();
+        UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), schemaName);
+        if (userSchema != null)
+        {
+            for (Map.Entry<String, String> entry : dataFileMap.entrySet())
+            {
+                String dataFileName = entry.getKey();
+                String tableName = entry.getValue();
+                log.info("Importing data file: " + dataFileName);
+                TableInfo tinfo = userSchema.getTable(tableName);
+                if (tinfo != null)
+                {
+                    try (InputStream is = dir.getInputStream(dataFileName))
+                    {
+                        if (null != is)
+                        {
+                            BatchValidationException errors = new BatchValidationException();
+                            DataLoader loader = DataLoader.get().createLoader(dataFileName, null, is, true, null, null);
+
+                            QueryUpdateService qus = tinfo.getUpdateService();
+                            if (qus != null)
+                            {
+                                DataIteratorContext context = new DataIteratorContext(errors);
+                                context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
+                                context.setAllowImportLookupByAlternateKey(true);
+
+                                qus.loadRows(ctx.getUser(), ctx.getContainer(), loader, context, null);
+                            }
+                            else
+                                log.error("Unable to import TSV data, could not find QUS for table : " + tableName);
+                        }
+                    }
+                }
+                else
+                    log.error("Unable to import TSV data, table not found: " + tableName);
+            }
+        }
+        else
+            log.error("Unable to import TSV data, schema not found: " + schemaName);
     }
 
     @Override

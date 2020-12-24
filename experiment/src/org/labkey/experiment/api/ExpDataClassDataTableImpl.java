@@ -35,11 +35,13 @@ import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.NameExpressionDataIteratorBuilder;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
@@ -308,10 +310,31 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             for (int i = 0; null != getColumn(newName); i++)
                 newName = newName + i;
 
+            if (col.isMvIndicatorColumn())
+                continue;
+
             // Can't use addWrapColumn here since 'col' isn't from the parent table
             var wrapped = wrapColumnFromJoinedTable(col.getName(), col);
             if (col.isHidden())
                 wrapped.setHidden(true);
+
+            if (wrapped.isMvEnabled())
+            {
+                DomainProperty dp = _dataClass.getDomain().getPropertyByName(wrapped.getName());
+                if (dp != null)
+                {
+                    // The column in the physical table has a "_MVIndicator" suffix, but we want to expose
+                    // it with a "MVIndicator" suffix (no underscore)
+                    var mvCol = StorageProvisioner.getMvIndicatorColumn(extTable, dp.getPropertyDescriptor(), "No MV column found for: " + dp.getName());
+                    var wrappedMvCol = wrapColumnFromJoinedTable(wrapped.getName() + MvColumn.MV_INDICATOR_SUFFIX, mvCol);
+                    wrappedMvCol.setHidden(true);
+                    wrappedMvCol.setMvIndicatorColumn(true);
+
+                    addColumn(wrappedMvCol);
+                    wrappedMvCol.getFieldKey();
+                    wrapped.setMvColumnName(wrappedMvCol.getFieldKey());
+                }
+            }
             addColumn(wrapped);
             cols.add(wrapped);
         }

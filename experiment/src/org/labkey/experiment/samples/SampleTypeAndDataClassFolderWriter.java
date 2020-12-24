@@ -5,6 +5,8 @@ import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
@@ -24,11 +26,14 @@ import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -39,20 +44,30 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileNameUniquifier;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.api.AliasInsertHelper;
+import org.labkey.experiment.api.ExpDataClassAttachmentParent;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.labkey.folder.xml.FolderDocument;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -228,6 +243,8 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                             PrintWriter out = dir.getPrintWriter(DATA_CLASS_PREFIX + dataClass.getName() + ".tsv");
                             tsvWriter.write(out);
                         }
+
+                        writeAttachments(ctx.getContainer(), tinfo, dir);
                     }
                 }
             }
@@ -261,7 +278,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 
     private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo)
     {
-        Set<ColumnInfo> columns = new LinkedHashSet<>();
+        Map<FieldKey, ColumnInfo> columns = new LinkedHashMap<>();
         Set<PropertyStorageSpec> baseProps = tinfo.getDomainKind().getBaseProperties(tinfo.getDomain());
         Set<String> basePropNames = baseProps.stream()
                 .map(PropertyStorageSpec::getName)
@@ -279,42 +296,24 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                 Map<FieldKey, ColumnInfo> select = QueryService.get().getColumns(tinfo, Collections.singletonList(flagFieldKey));
                 ColumnInfo flagAlias = new AliasedColumn(tinfo, ExpMaterialTable.Column.Flag.name(), select.get(flagFieldKey));
 
-                columns.add(flagAlias);
+                columns.put(flagAlias.getFieldKey(), flagAlias);
             }
             else if (ExpMaterialTable.Column.Alias.name().equalsIgnoreCase(col.getName()))
             {
                 MutableColumnInfo aliasCol = WrappedColumnInfo.wrap(col);
 
-                aliasCol.setDisplayColumnFactory(new DisplayColumnFactory()
-                {
-                    @Override
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        return new DataColumn(aliasCol)
-                        {
-                            @Override
-                            public Object getValue(RenderContext ctx)
-                            {
-                                Object val = super.getValue(ctx);
+                if (tinfo.getSchema().getName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
+                    aliasCol.setDisplayColumnFactory(new SampleTypeAliasColumnFactory(aliasCol));
+                else
+                    aliasCol.setDisplayColumnFactory(new DataClassAliasColumnFactory(aliasCol));
 
-                                if (val != null)
-                                {
-                                    Collection<String> aliases = AliasInsertHelper.getAliases(String.valueOf(val));
-                                    if (!aliases.isEmpty())
-                                        return String.join(",", aliases);
-                                }
-                                return "";
-                            }
-                        };
-                    }
-                });
-                columns.add(aliasCol);
+                columns.put(aliasCol.getFieldKey(), aliasCol);
             }
             else if ((col.isUserEditable() && !col.isHidden() && !col.isReadOnly()) || col.isKeyField())
             {
                 MutableColumnInfo wrappedCol = WrappedColumnInfo.wrap(col);
                 wrappedCol.setDisplayColumnFactory(colInfo -> new ExportDataColumn(colInfo));
-                columns.add(wrappedCol);
+                columns.put(wrappedCol.getFieldKey(), wrappedCol);
 
                 // If the column is MV enabled, export the data in the indicator column as well
                 if (col.isMvEnabled())
@@ -323,11 +322,132 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                     if (null == mvIndicator)
                         ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("MV indicator column not found: " + tinfo.getName() + "|" + col.getMvColumnName()));
                     else
-                        columns.add(mvIndicator);
+                        columns.put(mvIndicator.getFieldKey(), mvIndicator);
                 }
             }
         }
-        return columns;
+        return columns.values();
+    }
+
+    private void writeAttachments(Container c, TableInfo tinfo, VirtualFile dir) throws SQLException, IOException
+    {
+        List<DomainProperty> attachmentProps = tinfo.getDomain().getProperties().stream()
+                .filter(dp -> dp.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
+                .collect(Collectors.toList());
+
+        if (!attachmentProps.isEmpty())
+        {
+            VirtualFile tableDir = dir.getDir(tinfo.getName());
+            Map<String, FileNameUniquifier> uniquifiers = new HashMap<>();
+            List<ColumnInfo> selectColumns = new ArrayList<>();
+
+            selectColumns.add(tinfo.getColumn(FieldKey.fromParts(ExpDataClassDataTable.Column.LSID)));
+            for (DomainProperty prop : attachmentProps)
+            {
+                uniquifiers.put(prop.getName(), new FileNameUniquifier());
+                selectColumns.add(tinfo.getColumn(FieldKey.fromParts(prop.getName())));
+            }
+
+            try (ResultSet rs = QueryService.get().select(tinfo, selectColumns, null, null))
+            {
+                while (rs.next())
+                {
+                    Lsid lsid = Lsid.parse(rs.getString(1));
+                    AttachmentParent attachmentParent = new ExpDataClassAttachmentParent(c, lsid);
+                    int attachmentCol = 2;
+
+                    for (DomainProperty prop : attachmentProps)
+                    {
+                        String filename = rs.getString(attachmentCol++);
+
+                        // Item might not have an attachment in this column
+                        if (filename == null)
+                            continue;
+
+                        String columnName = prop.getName();
+                        VirtualFile columnDir = tableDir.getDir(columnName);
+                        FileNameUniquifier uniquifier = uniquifiers.get(columnName);
+
+                        try (InputStream is = AttachmentService.get().getInputStream(attachmentParent, filename); OutputStream os = columnDir.getOutputStream(uniquifier.uniquify(filename)))
+                        {
+                            FileUtil.copyData(is, os);
+                        }
+                        catch (FileNotFoundException e)
+                        {
+                            // Shouldn't happen... but just skip this file in production if it does
+                            assert false;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static class SampleTypeAliasColumnFactory extends AbstractAliasColumnFactory
+    {
+        public SampleTypeAliasColumnFactory(ColumnInfo aliasColumn)
+        {
+            super(aliasColumn);
+        }
+
+        @Override
+        Collection<String> getAliases(String lsid)
+        {
+            return AliasInsertHelper.getAliases(lsid);
+        }
+    }
+
+    private static class DataClassAliasColumnFactory extends AbstractAliasColumnFactory
+    {
+        public DataClassAliasColumnFactory(ColumnInfo aliasColumn)
+        {
+            super(aliasColumn);
+        }
+
+        @Override
+        Collection<String> getAliases(String lsid)
+        {
+            SQLFragment sql = new SQLFragment("SELECT AL.name FROM ").append(ExperimentService.get().getTinfoAlias(), "AL")
+                    .append(" JOIN ").append(ExperimentService.get().getTinfoDataAliasMap(), "DM")
+                    .append(" ON AL.rowId = DM.alias")
+                    .append(" WHERE DM.lsid = ?")
+                    .add(lsid);
+
+            return new SqlSelector(ExperimentService.get().getSchema(), sql).getCollection(String.class);
+        }
+    }
+
+    private abstract static class AbstractAliasColumnFactory implements DisplayColumnFactory
+    {
+        private ColumnInfo _aliasColumn;
+
+        public AbstractAliasColumnFactory(ColumnInfo aliasColumn)
+        {
+            _aliasColumn = aliasColumn;
+        }
+
+        @Override
+        public DisplayColumn createRenderer(ColumnInfo colInfo)
+        {
+            return new DataColumn(_aliasColumn)
+            {
+                @Override
+                public Object getValue(RenderContext ctx)
+                {
+                    Object val = super.getValue(ctx);
+
+                    if (val != null)
+                    {
+                        Collection<String> aliases = getAliases(String.valueOf(val));
+                        if (!aliases.isEmpty())
+                            return String.join(",", aliases);
+                    }
+                    return "";
+                }
+            };
+        }
+
+        abstract Collection<String> getAliases(String lsid);
     }
 
     private static class ExportDataColumn extends DataColumn
