@@ -23,6 +23,7 @@ import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.util.ResultSetUtil;
 
@@ -62,7 +63,19 @@ public class ResultSetDataIterator extends AbstractDataIterator implements Scrol
             _columns = new ColumnInfo[rsmd.getColumnCount()+1];
             _columns[0] = new BaseColumnInfo("_row", JdbcType.INTEGER);
             for (int i=1 ; i<=rsmd.getColumnCount() ; i++)
-                _columns[i] = new BaseColumnInfo(rsmd, i);
+            {
+                ColumnInfo ci = null;
+                if (rs instanceof Results)
+                {
+                    // Use field map to get size of columnInfos which is field map size + 1
+                    if (i <= ((Results) rs).getFieldMap().size())
+                    {
+                        ci = ((Results) rs).getColumn(i);
+                    }
+                }
+                
+                _columns[i] = ci == null ? new BaseColumnInfo(rsmd, i) : ci;
+            }
         }
         catch (SQLException x)
         {

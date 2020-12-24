@@ -35,6 +35,8 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.LSIDRelativizer;
@@ -74,7 +76,8 @@ public class SampleTypeFolderWriter extends BaseFolderWriter
     @Override
     public boolean show(Container c)
     {
-        return !SampleTypeService.get().getSampleTypes(c, null, false).isEmpty();
+        // need to always return true so it can be used in a folder template
+        return true;
     }
 
     @Override
@@ -82,10 +85,15 @@ public class SampleTypeFolderWriter extends BaseFolderWriter
     {
         XarExportSelection selection = new XarExportSelection();
         Set<ExpSampleType> sampleTypes = new HashSet<>();
+        boolean exportXar = false;
 
         Lsid sampleTypeLsid = new Lsid(ExperimentService.get().generateLSID(ctx.getContainer(), ExpSampleType.class, "export"));
         for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(ctx.getContainer(), ctx.getUser(), true))
         {
+            // ignore the magic sample type that is used for the specimen repository, it is managed by the specimen importer
+            if (StudyService.get().getStudy(ctx.getContainer()) != null && SpecimenService.SAMPLE_TYPE_NAME.equals(sampleType.getName()))
+                continue;
+
             // filter out non sample type material sources
             Lsid lsid = new Lsid(sampleType.getLSID());
 
@@ -93,6 +101,7 @@ public class SampleTypeFolderWriter extends BaseFolderWriter
             {
                 sampleTypes.add(sampleType);
                 selection.addSampleType(sampleType);
+                exportXar = true;
             }
         }
 
@@ -107,14 +116,22 @@ public class SampleTypeFolderWriter extends BaseFolderWriter
             if (exportRun(run, sampleTypes))
                 exportedRuns.add(run);
         }
-        selection.addRuns(exportedRuns);
+
+        if (!exportedRuns.isEmpty())
+        {
+            selection.addRuns(exportedRuns);
+            exportXar = true;
+        }
         VirtualFile xarDir = vf.getDir(DEFAULT_DIRECTORY);
 
-        XarExporter exporter = new XarExporter(LSIDRelativizer.FOLDER_RELATIVE, selection, ctx.getUser(), XAR_XML_FILE_NAME, ctx.getLogger());
-
-        try (OutputStream fOut = xarDir.getOutputStream(XAR_FILE_NAME))
+        if (exportXar)
         {
-            exporter.writeAsArchive(fOut);
+            XarExporter exporter = new XarExporter(LSIDRelativizer.FOLDER_RELATIVE, selection, ctx.getUser(), XAR_XML_FILE_NAME, ctx.getLogger());
+
+            try (OutputStream fOut = xarDir.getOutputStream(XAR_FILE_NAME))
+            {
+                exporter.writeAsArchive(fOut);
+            }
         }
 
         // write out the sample rows that aren't participating in the derivation protocol

@@ -35,7 +35,6 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -121,6 +120,45 @@ public class NotificationController extends SpringActionController
             try(DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
                 for (Notification notification : _notifications)
+                {
+                    Container c = ContainerManager.getForId(notification.getContainer());
+                    int numUpdated = NotificationService.get().markAsRead(c, getUser(), notification.getObjectId(),
+                            Collections.singletonList(notification.getType()), notification.getUserId()
+                    );
+
+                    totalUpdated += numUpdated;
+                }
+
+                transaction.commit();
+            }
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("numUpdated", totalUpdated);
+            response.put("success", true);
+            return response;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
+    public class MarkAllNotificationAsReadAction extends MutatingApiAction<NotificationsForm>
+    {
+        @Override
+        public ApiResponse execute(NotificationsForm form, BindException errors)
+        {
+            int totalUpdated = 0;
+
+            try(DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
+            {
+                NotificationService service = NotificationService.get();
+                Container container = form.getContainer() == null ? null : ContainerManager.getForId(form.getContainer());
+
+                List<Notification> notifications;
+                if (form.getTypeLabels() == null || form.getTypeLabels().isEmpty())
+                    notifications = service.getNotificationsByUser(container, getUser().getUserId(), true);
+                else
+                    notifications = service.getNotificationsByTypeLabels(container, form.getTypeLabels(), getUser().getUserId(), true);
+
+                for (Notification notification : notifications)
                 {
                     Container c = ContainerManager.getForId(notification.getContainer());
                     int numUpdated = NotificationService.get().markAsRead(c, getUser(), notification.getObjectId(),
@@ -234,27 +272,81 @@ public class NotificationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class GetUserNotificationsAction extends ReadOnlyApiAction<Object>
+    public class GetUserNotificationsAction extends ReadOnlyApiAction<NotificationsForm>
     {
         @Override
-        public ApiResponse execute(Object form, BindException errors)
+        public ApiResponse execute(NotificationsForm form, BindException errors)
         {
             NotificationService service = NotificationService.get();
 
             List<Map<String, Object>> notificationList = new ArrayList<>();
-            for (Notification notification : service.getNotificationsByUser(null, getUser().getUserId(), false))
+            Container container = form.getContainer() == null ? null : ContainerManager.getForId(form.getContainer());
+            List<Notification> notifications;
+            if (form.getTypeLabels() == null || form.getTypeLabels().isEmpty())
+                notifications = service.getNotificationsByUser(container, getUser().getUserId(), false);
+            else
+                notifications = service.getNotificationsByTypeLabels(container, form.getTypeLabels(), getUser().getUserId(), false);
+
+            int i = 0;
+            int unreadCount = 0;
+            for (Notification notification : notifications)
             {
-                Map<String, Object> notifPropMap = notification.asPropMap();
-                notifPropMap.put("CreatedBy", UserManager.getDisplayName((Integer)notifPropMap.get("CreatedBy"), getUser()));
-                notifPropMap.put("TypeLabel", service.getNotificationTypeLabel(notification.getType()));
-                notifPropMap.put("IconCls", service.getNotificationTypeIconCls(notification.getType()));
-                notificationList.add(notifPropMap);
+                if (form.getMaxRows() == null || i < form.getMaxRows())
+                {
+                    Map<String, Object> notifPropMap = notification.asPropMap();
+                    notifPropMap.put("CreatedBy", UserManager.getDisplayName((Integer) notifPropMap.get("CreatedBy"), getUser()));
+                    notifPropMap.put("TypeLabel", service.getNotificationTypeLabel(notification.getType()));
+                    notifPropMap.put("IconCls", service.getNotificationTypeIconCls(notification.getType()));
+                    notificationList.add(notifPropMap);
+                }
+                i++;
+                if (notification.getReadOn() == null)
+                    unreadCount++;
             }
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("notifications", notificationList);
+            response.put("totalRows", notifications.size());
+            response.put("unreadCount", unreadCount);
             response.put("success", true);
             return response;
+        }
+    }
+
+    public static class NotificationsForm
+    {
+        private String _container;
+        private List<String> _typeLabels;
+        private Integer _maxRows;
+
+        public String getContainer()
+        {
+            return _container;
+        }
+
+        public void setContainer(String container)
+        {
+            _container = container;
+        }
+
+        public List<String> getTypeLabels()
+        {
+            return _typeLabels;
+        }
+
+        public void setTypeLabels(List<String> typeLabels)
+        {
+            _typeLabels = typeLabels;
+        }
+
+        public Integer getMaxRows()
+        {
+            return _maxRows;
+        }
+
+        public void setMaxRows(Integer maxRows)
+        {
+            _maxRows = maxRows;
         }
     }
 

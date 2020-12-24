@@ -872,6 +872,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @BeforeClass
         public static void createList() throws Exception
         {
+            if (null == ListService.get())
+                return;
             deleteList();
 
             TabLoader testData = getTestData();
@@ -909,6 +911,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @Before
         public void resetList() throws Exception
         {
+            if (null == ListService.get())
+                return;
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
             TableInfo rTableInfo = ((UserSchema)DefaultSchema.get(user, c).getSchema("lists")).getTable("R", null);
@@ -919,6 +923,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @AfterClass
         public static void deleteList() throws Exception
         {
+            if (null == ListService.get())
+                return;
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
             ListService s = ListService.get();
@@ -947,6 +953,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @Test
         public void INSERT() throws Exception
         {
+            if (null == ListService.get())
+                return;
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
             TableInfo rTableInfo = ((UserSchema)DefaultSchema.get(user, c).getSchema("lists")).getTable("R", null);
@@ -965,6 +973,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @Test
         public void UPSERT() throws Exception
         {
+            if (null == ListService.get())
+                return;
             /* not sure how you use/test ImportOptions.UPSERT
              * the only row returning QUS method is insertRows(), which doesn't let you specify the InsertOption?
              */
@@ -973,6 +983,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @Test
         public void IMPORT() throws Exception
         {
+            if (null == ListService.get())
+                return;
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
             TableInfo rTableInfo = ((UserSchema)DefaultSchema.get(user, c).getSchema("lists")).getTable("R", null);
@@ -991,6 +1003,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @Test
         public void MERGE() throws Exception
         {
+            if (null == ListService.get())
+                return;
             INSERT();
             assertEquals("Wrong number of rows after INSERT", 3, getRows().size());
 
@@ -1002,7 +1016,16 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             mergeRows.add(CaseInsensitiveHashMap.of("pk",2,"s","TWO"));
             mergeRows.add(CaseInsensitiveHashMap.of("pk",3,"s","THREE"));
             BatchValidationException errors = new BatchValidationException();
-            var count = qus.mergeRows(user, c, new ListofMapsDataIterator(mergeRows.get(0).keySet(), mergeRows), errors, null, null);
+            int count=0;
+            try (var tx = rTableInfo.getSchema().getScope().ensureTransaction())
+            {
+                var ret = qus.mergeRows(user, c, new ListofMapsDataIterator(mergeRows.get(0).keySet(), mergeRows), errors, null, null);
+                if (!errors.hasErrors())
+                {
+                    tx.commit();
+                    count = ret;
+                }
+            }
             assertFalse("mergeRows error(s): " + errors.getMessage(), errors.hasErrors());
             assertEquals(count,2);
             var rows = getRows();
@@ -1018,6 +1041,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @Test
         public void REPLACE() throws Exception
         {
+            if (null == ListService.get())
+                return;
             assert(getRows().size()==0);
             INSERT();
 
@@ -1046,6 +1071,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @Test
         public void IMPORT_IDENTITY()
         {
+            if (null == ListService.get())
+                return;
             // TODO
         }
     }

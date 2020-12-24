@@ -18,9 +18,7 @@ export class TextInput extends PureComponent<TextInputProps> {
             <div className="modal__text-input">
                 <span className="modal__field-label">
                     {caption}
-                    {description && (
-                        <LabelHelpTip title="Tip" body={() => <div> {description} </div>} />
-                    )}
+                    {description && <LabelHelpTip title="Tip"><div> {description} </div></LabelHelpTip>}
                     {required ? ' *' : null}
                 </span>
 
@@ -59,9 +57,7 @@ export class CheckBoxInput extends PureComponent<CheckBoxInputProps> {
             <div className="modal__field">
                 <span className="modal__field-label">
                     {caption}
-                    {description && (
-                        <LabelHelpTip title="Tip" body={() => <div> {description} </div>} />
-                    )}
+                    {description && <LabelHelpTip title="Tip"><div> {description} </div></LabelHelpTip>}
                     {required ? ' *' : null}
                 </span>
 
@@ -95,9 +91,7 @@ export class Option extends PureComponent<OptionInputProps> {
             <div className="modal__option-field">
                 <span className="modal__field-label">
                     {caption}
-                    {description && (
-                        <LabelHelpTip title="Tip" body={() => <div> {description} </div>} />
-                    )}
+                    {description && <LabelHelpTip title="Tip"><div> {description} </div></LabelHelpTip>}
                     {required ? ' *' : null}
                 </span>
 
@@ -136,9 +130,7 @@ export class FixedHtml extends PureComponent<FixedHtmlProps> {
         return (
             <div className="modal__fixed-html-field">
                 <span className="modal__field-label">{caption}</span>
-                {description && (
-                    <LabelHelpTip title="Tip" body={() => <div> {description} </div>} />
-                )}
+                {description && <LabelHelpTip title="Tip"><div> {description} </div></LabelHelpTip>}
 
                 {/* HTML set is text-only information that lives on the server */}
                 <div className="modal__fixed-html-text">
@@ -165,9 +157,7 @@ export class SmallFileUpload extends PureComponent<SmallFileInputProps> {
             <div className="modal__compact-file-upload-field">
                 <span className="modal__field-label">
                     {caption}
-                    {description && (
-                        <LabelHelpTip title="Tip" body={() => <div> {description} </div>} />
-                    )}
+                    {description && <LabelHelpTip title="Tip"><div> {description} </div></LabelHelpTip>}
                     {required ? ' *' : null}
                 </span>
 

@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * User: dave
@@ -125,12 +126,21 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
 
                 if (null != uschema)
                 {
-                    JSONArray userDefined = new JSONArray();
-                    JSONArray builtIn = new JSONArray();
 
+                    // Add any children schemas
+                    for (UserSchema child : uschema.getUserSchemas(true))
+                    {
+                        if (child.isHidden() && !form.isShowHidden())
+                            continue;
+
+                        SchemaKey childPath = new SchemaKey(schemaPath, child.getName());
+                        JSONObject schemaProps = getSchemaProps(childPath, child);
+                        respArray.put(schemaProps);
+                    }
+
+                    Map<String, JSONObject> queries = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
                     //get built-in queries
                     List<String> queryNames = new ArrayList<>(form.isShowHidden() ? uschema.getTableNames() : uschema.getVisibleTableNames());
-                    queryNames.sort(String.CASE_INSENSITIVE_ORDER);
 
                     for (String qname : queryNames)
                     {
@@ -149,14 +159,12 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
                             label = tinfo.getTitle();           // Display title defaults to name, but uses label if set
 
                         // If there's an error, still include the table in the tree
-                        addQueryToList(schemaPath, qname, label, tinfo == null ? null : tinfo.getDescription(), false, builtIn);
+                        addQueryToList(schemaPath, qname, label, tinfo == null ? null : tinfo.getDescription(), false, queries, true);
                     }
-
 
                     //get user-defined queries
                     Map<String, QueryDefinition> queryDefMap = uschema.getQueryDefs();
                     queryNames = new ArrayList<>(queryDefMap.keySet());
-                    queryNames.sort(String.CASE_INSENSITIVE_ORDER);
 
                     for (String qname : queryNames)
                     {
@@ -166,42 +174,15 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
                             if (qdef.isHidden() && !form.isShowHidden())
                                 continue;
 
-                            addQueryToList(schemaPath, qname, qname, qdef.getDescription(), qdef.isHidden(), userDefined);
+                            // LinkedSchemaQueryDefinitions should be considered to be tables, and we can distinguish them
+                            // based on how the report isUserDefined()
+                            addQueryToList(schemaPath, qname, qname, qdef.getDescription(), qdef.isHidden(), queries, !qdef.isUserDefined());
                         }
                     }
 
-                    //group the user-defined and built-in queries into folders
-                    if (userDefined.length() > 0)
+                    for (JSONObject value : queries.values())
                     {
-                        JSONObject fldr = new JSONObject();
-                        fldr.put("text", "user-defined queries");
-                        fldr.put("description", "Custom queries created by you and those shared by others.");
-                        fldr.put("expanded", true);
-                        fldr.put("children", userDefined);
-                        fldr.put("schemaName", schemaPath);
-                        respArray.put(fldr);
-                    }
-
-                    if (builtIn.length() > 0)
-                    {
-                        JSONObject fldr = new JSONObject();
-                        fldr.put("text", "built-in queries & tables");
-                        fldr.put("description", "Queries and tables that are part of the schema by default.");
-                        fldr.put("expanded", true);
-                        fldr.put("children", builtIn);
-                        fldr.put("schemaName", schemaPath);
-                        respArray.put(fldr);
-                    }
-
-                    // Add any children schemas
-                    for (UserSchema child : uschema.getUserSchemas(true))
-                    {
-                        if (child.isHidden() && !form.isShowHidden())
-                            continue;
-
-                        SchemaKey childPath = new SchemaKey(schemaPath, child.getName());
-                        JSONObject schemaProps = getSchemaProps(childPath, child);
-                        respArray.put(schemaProps);
+                        respArray.put(value);
                     }
                 }
             }
@@ -226,7 +207,7 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
         return schemaProps;
     }
 
-    protected void addQueryToList(SchemaKey schemaName, String qname, String label, String description, boolean hidden, JSONArray list)
+    protected void addQueryToList(SchemaKey schemaName, String qname, String label, String description, boolean hidden, Map<String, JSONObject> list, boolean table)
     {
         JSONObject qprops = new JSONObject();
         qprops.put("schemaName", schemaName);
@@ -237,12 +218,13 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
             text += " (" + label + ")";
         qprops.put("text", text);
         qprops.put("leaf", true);
+        qprops.put("table", table);
         if (null != description)
         {
             qprops.put("description", description);
         }
         qprops.put("hidden", hidden);
-        list.put(qprops);
+        list.put(qname, qprops);
     }
 
     public static class Form

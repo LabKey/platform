@@ -7,10 +7,11 @@ import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.exp.CompressedXarSource;
+import org.labkey.api.exp.CompressedInputStreamXarSource;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -21,7 +22,9 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.XarReader;
 
@@ -51,7 +54,7 @@ public class SampleTypeFolderImporter implements FolderImporter
     @Override
     public String getDescription()
     {
-        return null;
+        return "Sample Types Importer";
     }
 
     @Override
@@ -63,7 +66,7 @@ public class SampleTypeFolderImporter implements FolderImporter
         {
             File xarFile = null;
             Set<String> dataFiles = new HashSet<>();
-            Logger log = job.getLogger();
+            Logger log = ctx.getLogger();
 
             log.info("Starting Sample Type import");
             for (String file: xarDir.list())
@@ -73,7 +76,7 @@ public class SampleTypeFolderImporter implements FolderImporter
                     if (xarFile == null)
                         xarFile = new File(xarDir.getLocation(), file);
                     else
-                        ctx.getLogger().error("More than one XAR file found in the sample type directory: ", file);
+                        log.error("More than one XAR file found in the sample type directory: ", file);
                 }
                 else if (file.toLowerCase().endsWith(".tsv"))
                 {
@@ -85,22 +88,61 @@ public class SampleTypeFolderImporter implements FolderImporter
             {
                 if (xarFile != null)
                 {
-                    XarSource xarSource = new CompressedXarSource(xarFile, job, ctx.getContainer());
+                    File logFile = CompressedInputStreamXarSource.getLogFileFor(xarFile);
+
+                    if (job == null)
+                    {
+                        // need to fake up a job for the XarReader
+                        job = new PipelineJob()
+                        {
+                            @Override
+                            public User getUser()
+                            {
+                                return ctx.getUser();
+                            }
+
+                            @Override
+                            public Container getContainer()
+                            {
+                                return ctx.getContainer();
+                            }
+
+                            @Override
+                            public synchronized Logger getLogger()
+                            {
+                                return ctx.getLogger();
+                            }
+
+                            @Override
+                            public URLHelper getStatusHref()
+                            {
+                                return null;
+                            }
+
+                            @Override
+                            public String getDescription()
+                            {
+                                return "Sample Type XAR Import";
+                            }
+                        };
+                    }
+                    XarSource xarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(xarFile.getName()), xarFile, logFile, job);
                     try
                     {
                         xarSource.init();
                     }
                     catch (Exception e)
                     {
-                        ctx.getLogger().error("Failed to initialize XAR source", e);
+                        log.error("Failed to initialize XAR source", e);
                         throw(e);
                     }
                     log.info("Importing XAR file: " + xarFile.getName());
                     XarReader reader = new XarReader(xarSource, job);
+                    reader.setStrictValidateExistingSampleType(false);
                     reader.parseAndLoad(false);
                 }
                 else
-                    ctx.getLogger().info("No xar file to process.");
+                    log.info("No xar file to process.");
 
                 // process any sample type data files
                 UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), SamplesSchema.SCHEMA_NAME);
@@ -161,7 +203,7 @@ public class SampleTypeFolderImporter implements FolderImporter
         @Override
         public int getPriority()
         {
-            return DEFAULT_PRIORITY;
+            return 75;
         }
     }
 }

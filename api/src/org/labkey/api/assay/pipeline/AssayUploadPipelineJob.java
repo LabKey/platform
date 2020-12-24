@@ -26,6 +26,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -62,30 +63,13 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
         {
             baseName = baseName.substring(0, baseName.lastIndexOf("."));
         }
-        findUniqueLogFile(primaryFile, baseName);
+        setLogFile(findUniqueLogFile(primaryFile, baseName));
         _forceSaveBatchProps = forceSaveBatchProps;
 
         context.logProperties(getLogger());
         _context = context;
         _batchId = batch.getRowId();
         _primaryFile = primaryFile;
-    }
-
-    /** Finds a file name that hasn't been used yet, appending ".2", ".3", etc as needed */
-    private void findUniqueLogFile(File primaryFile, String baseName)
-    {
-        // need to look in both the assay data and archived dirs for any unused log file names (issue 20987)
-        File fileLog = FT_LOG.newFile(primaryFile.getParentFile(), baseName);
-        File archivedDir = new File(primaryFile.getParentFile(), AssayFileWriter.ARCHIVED_DIR_NAME);
-        File fileLogArchived = FT_LOG.newFile(archivedDir, baseName);
-
-        int index = 1;
-        while (NetworkDrive.exists(fileLog) || NetworkDrive.exists(fileLogArchived))
-        {
-            fileLog = FT_LOG.newFile(primaryFile.getParentFile(), baseName + "." + (index));
-            fileLogArchived = FT_LOG.newFile(archivedDir, baseName + "." + (index++));
-        }
-        setLogFile(fileLog);
     }
 
     @Override
@@ -136,6 +120,8 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
             // Create the basic run
             _run = AssayService.get().createExperimentRun(_context.getName(), getContainer(), _context.getProtocol(), _primaryFile);
             _run.setComments(_context.getComments());
+            // remember which job created the run so we can show this run on the job details page
+            _run.setJobId(PipelineService.get().getJobId(getUser(), getContainer(), getJobGUID()));
 
             // Find a batch for the run
             ExpExperiment batch = ExperimentService.get().getExpExperiment(_batchId);

@@ -261,7 +261,8 @@ public class AssayModule extends SpringModule
     public @NotNull Set<Class> getIntegrationTests()
     {
         return Set.of(
-            ModuleAssayCache.TestCase.class
+            ModuleAssayCache.TestCase.class,
+            AssayIntegrationTestCase.class
         );
     }
 
