@@ -449,9 +449,10 @@ public class SqlScriptController extends SpringActionController
                     else if (includeSingleScripts)
                     {
                         String filename = consolidator.getFilename();
+                        SqlScript script = scripts.get(0);
 
                         // Skip if the single script in this range is the consolidation script
-                        if (!scripts.get(0).getDescription().equalsIgnoreCase(filename))
+                        if (!script.getDescription().equalsIgnoreCase(filename) && 0.0 != script.getFromVersion())
                             consolidators.add(consolidator);
                     }
                 }
@@ -517,7 +518,7 @@ public class SqlScriptController extends SpringActionController
         {
             html.append("    <tr><td colspan=2><input type=\"checkbox\" name=\"includeSingleScripts\"");
             html.append(form.getIncludeSingleScripts() ? " checked" : "");
-            html.append("/>Include single scripts</td></tr>\n");
+            html.append("/>Include single scripts that don't start with 0.00</td></tr>\n");
         }
 
         @Override
@@ -814,14 +815,7 @@ public class SqlScriptController extends SpringActionController
         {
             ScriptConsolidator consolidator = getConsolidator(form);
             consolidator.saveScript();
-
-            // Consider deleting the old scripts when consolidating bootstrap scripts, #38810
-            if (0.0 == form.getFromVersion())
-            {
-                // ...but only if there are no incremental scripts involved
-                if (consolidator.getScripts().stream().noneMatch(SqlScript::isIncremental))
-                    deleteScripts(consolidator.getScriptDirectory(), consolidator.getScripts());
-            }
+            deleteScripts(consolidator.getScriptDirectory(), consolidator.getScripts());
 
             return true;
         }

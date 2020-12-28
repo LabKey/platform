@@ -2222,6 +2222,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public Collection<String> getScriptWarnings(String name, String sql)
     {
+        sql = new SqlScanner(sql).stripComments().toString();
+
         // At the moment, we're only checking for stored procedure definitions that aren't followed immediately by a GO
         // statement or end of the script. These will cause major problems if they are missed during script consolidation.
 
