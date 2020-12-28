@@ -143,12 +143,12 @@ public class FlagColumnRenderer extends DataColumn
         }
     }
 
-    private String flagEnabledCls()
+    public static String flagEnabledCls()
     {
         return "fa fa-flag lk-flag-enabled";
     }
 
-    private String flagDisabledCls()
+    public static String flagDisabledCls()
     {
         return "fa fa-flag-o lk-flag-disabled";
     }
