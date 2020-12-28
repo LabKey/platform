@@ -1,0 +1,9 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="internal/flagColumn.css"/>
+        <script path="internal/flagColumn.js"/>
+    </library>
+    <dependencies>
+        <dependency path="Ext4"/>
+    </dependencies>
+</libraries>
