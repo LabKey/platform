@@ -12,6 +12,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.CompressedInputStreamXarSource;
+import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpSchema;
@@ -23,6 +24,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
@@ -37,14 +39,14 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.DEFAULT_DIRECTORY;
 
 public class SampleTypeAndDataClassFolderImporter implements FolderImporter
 {
-    private static final String DEFAULT_DIRECTORY = "sample-types";
-    private static final String XAR_FILE_NAME = "sample_types.xar";
-    private static final String XAR_XML_FILE_NAME = XAR_FILE_NAME + ".xml";
-
     private SampleTypeAndDataClassFolderImporter()
     {
     }
@@ -86,9 +88,9 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                 else if (file.toLowerCase().endsWith(".tsv"))
                 {
                     if (file.startsWith(SampleTypeAndDataClassFolderWriter.SAMPLE_TYPE_PREFIX))
-                        sampleTypeDataFiles.put(file, FileUtil.getBaseName(file.substring(SampleTypeAndDataClassFolderWriter.SAMPLE_TYPE_PREFIX.length())));
+                        sampleTypeDataFiles.put(FileUtil.getBaseName(file.substring(SampleTypeAndDataClassFolderWriter.SAMPLE_TYPE_PREFIX.length())), file);
                     else if (file.startsWith(SampleTypeAndDataClassFolderWriter.DATA_CLASS_PREFIX))
-                        dataClassDataFiles.put(file, FileUtil.getBaseName(file.substring(SampleTypeAndDataClassFolderWriter.DATA_CLASS_PREFIX.length())));
+                        dataClassDataFiles.put(FileUtil.getBaseName(file.substring(SampleTypeAndDataClassFolderWriter.DATA_CLASS_PREFIX.length())), file);
                 }
             }
 
@@ -148,13 +150,15 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                     XarReader reader = new XarReader(xarSource, job);
                     reader.setStrictValidateExistingSampleType(false);
                     reader.parseAndLoad(false);
+
+                    // process any sample type data files and data class files
+                    importTsvData(ctx, SamplesSchema.SCHEMA_NAME, reader.getSampleTypes().stream().map(Identifiable::getName).collect(Collectors.toList()),
+                            sampleTypeDataFiles, xarDir);
+                    importTsvData(ctx, ExpSchema.SCHEMA_EXP_DATA.toString(), reader.getDataClasses().stream().map(Identifiable::getName).collect(Collectors.toList()),
+                            dataClassDataFiles, xarDir);
                 }
                 else
                     log.info("No xar file to process.");
-
-                // process any sample type data files and data class files
-                importTsvData(ctx, SamplesSchema.SCHEMA_NAME, sampleTypeDataFiles, xarDir);
-                importTsvData(ctx, ExpSchema.SCHEMA_EXP_DATA.toString(), dataClassDataFiles, xarDir);
 
                 transaction.commit();
                 log.info("Finished importing Sample Types and Data Classes");
@@ -162,44 +166,53 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         }
     }
 
-    private void importTsvData(ImportContext ctx, String schemaName, Map<String, String> dataFileMap, VirtualFile dir) throws IOException, SQLException
+    private void importTsvData(ImportContext ctx, String schemaName, List<String> tableNames, Map<String, String> dataFileMap, VirtualFile dir) throws IOException, SQLException
     {
         Logger log = ctx.getLogger();
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), schemaName);
         if (userSchema != null)
         {
-            for (Map.Entry<String, String> entry : dataFileMap.entrySet())
+            for (String tableName : tableNames)
             {
-                String dataFileName = entry.getKey();
-                String tableName = entry.getValue();
-                log.info("Importing data file: " + dataFileName);
-                TableInfo tinfo = userSchema.getTable(tableName);
-                if (tinfo != null)
+                // tsv file name will have been generated from a sanitized table name
+                String fileName = FileUtil.makeLegalName(tableName);
+                if (dataFileMap.containsKey(fileName))
                 {
-                    try (InputStream is = dir.getInputStream(dataFileName))
+                    String dataFileName = dataFileMap.get(fileName);
+                    log.info("Importing data file: " + dataFileName);
+                    TableInfo tinfo = userSchema.getTable(tableName);
+                    if (tinfo != null)
                     {
-                        if (null != is)
+                        try (InputStream is = dir.getInputStream(dataFileName))
                         {
-                            BatchValidationException errors = new BatchValidationException();
-                            DataLoader loader = DataLoader.get().createLoader(dataFileName, null, is, true, null, null);
-
-                            QueryUpdateService qus = tinfo.getUpdateService();
-                            if (qus != null)
+                            if (null != is)
                             {
-                                DataIteratorContext context = new DataIteratorContext(errors);
-                                context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
-                                context.setAllowImportLookupByAlternateKey(true);
-                                ((AbstractQueryUpdateService)qus).setAttachmentDirectory(dir.getDir(tableName));
+                                BatchValidationException errors = new BatchValidationException();
+                                DataLoader loader = DataLoader.get().createLoader(dataFileName, null, is, true, null, null);
 
-                                qus.loadRows(ctx.getUser(), ctx.getContainer(), loader, context, null);
+                                QueryUpdateService qus = tinfo.getUpdateService();
+                                if (qus != null)
+                                {
+                                    DataIteratorContext context = new DataIteratorContext(errors);
+                                    context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
+                                    context.setAllowImportLookupByAlternateKey(true);
+                                    ((AbstractQueryUpdateService)qus).setAttachmentDirectory(dir.getDir(tableName));
+
+                                    qus.loadRows(ctx.getUser(), ctx.getContainer(), loader, context, null);
+                                    if (context.getErrors().hasErrors())
+                                    {
+                                        for (ValidationException error : context.getErrors().getRowErrors())
+                                            log.error(error.getMessage());
+                                    }
+                                }
+                                else
+                                    log.error("Unable to import TSV data, could not find QUS for table : " + tableName);
                             }
-                            else
-                                log.error("Unable to import TSV data, could not find QUS for table : " + tableName);
                         }
                     }
                 }
                 else
-                    log.error("Unable to import TSV data, table not found: " + tableName);
+                    log.error("Unable to import TSV data, data for table not found: " + tableName);
             }
         }
         else

@@ -75,8 +75,8 @@ import java.util.stream.Collectors;
 
 public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 {
-    private static final String DEFAULT_DIRECTORY = "sample-types";
-    private static final String XAR_FILE_NAME = "sample_types.xar";
+    public static final String DEFAULT_DIRECTORY = "sample-types";
+    public static final String XAR_FILE_NAME = "sample_types.xar";
     private static final String XAR_XML_FILE_NAME = XAR_FILE_NAME + ".xml";
     public static final String SAMPLE_TYPE_PREFIX = "SAMPLE_TYPE_";
     public static final String DATA_CLASS_PREFIX = "DATA_CLASS_";

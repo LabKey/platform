@@ -123,6 +123,8 @@ public class XarReader extends AbstractXarImporter
     private boolean _strictValidateExistingSampleType = true;
 
     private List<ExpRun> _loadedRuns = new ArrayList<>();
+    private List<ExpSampleType> _loadedSampleTypes = new ArrayList<>();
+    private List<ExpDataClass> _loadedDataClasses = new ArrayList<>();
 
     public static final String CONTACT_PROPERTY = "terms.fhcrc.org#Contact";
     public static final String CONTACT_ID_PROPERTY = "terms.fhcrc.org#ContactId";
@@ -299,7 +301,7 @@ public class XarReader extends AbstractXarImporter
             {
                 for (SampleSetType sampleSet : sampleSets.getSampleSetArray())
                 {
-                    loadSampleType(sampleSet);
+                    _loadedSampleTypes.add(loadSampleType(sampleSet));
                 }
             }
 
@@ -308,7 +310,7 @@ public class XarReader extends AbstractXarImporter
             {
                 for (DataClassType dataClass : dataClasses.getDataClassArray())
                 {
-                    loadDataClass(dataClass);
+                    _loadedDataClasses.add(loadDataClass(dataClass));
                 }
             }
 
@@ -567,6 +569,8 @@ public class XarReader extends AbstractXarImporter
             ExpSampleType sampleType = SampleTypeService.get().getSampleType(getContainer(), getUser(), dataClassType.getSampleType());
             if (sampleType != null)
                 dataClass.setSampleType(sampleType.getRowId());
+            else
+                getLog().warn("DataClass Sample Type : '" + dataClassType.getSampleType() + "' was not found.");
         }
 
         if (existingDataClass != null)
@@ -815,6 +819,16 @@ public class XarReader extends AbstractXarImporter
     public List<ExpRun> getExperimentRuns()
     {
         return _loadedRuns;
+    }
+
+    public List<ExpSampleType> getSampleTypes()
+    {
+        return _loadedSampleTypes;
+    }
+
+    public List<ExpDataClass> getDataClasses()
+    {
+        return _loadedDataClasses;
     }
 
     private void loadExperimentRun(ExperimentRunType a, List<ExpMaterial> startingMaterials, List<Data> startingData) throws SQLException, ExperimentException
