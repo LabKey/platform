@@ -29,6 +29,7 @@ import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -865,16 +866,17 @@ public class ExpDataIterators
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
                     .setAddlSkipColumns(Set.of("generated","runId","sourceapplicationid"))     // generated has database DEFAULT 0
-                    .setCommitRowsBeforeContinuing(true))
-                    ;
+                    .setCommitRowsBeforeContinuing(true));
 
-            //pass in voc cols here
+            // pass in voc cols here
             Set<DomainProperty> vocabularyDomainProperties = findVocabularyProperties(colNameMap);
 
+            // pass in remap columns to help reconcile columns that may be aliased in the virtual table
             DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2, _propertiesTable, _container)
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
-                    .setVocabularyProperties(vocabularyDomainProperties));
+                    .setVocabularyProperties(vocabularyDomainProperties)
+                    .setRemapSchemaColumns(((UpdateableTableInfo)_expTable).remapSchemaColumns()));
 
             DataIteratorBuilder step4 = step3;
             if (colNameMap.containsKey("flag") || colNameMap.containsKey("comment"))
