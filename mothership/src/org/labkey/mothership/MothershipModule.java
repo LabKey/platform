@@ -53,8 +53,8 @@ import org.labkey.mothership.view.ExceptionListWebPart;
 
 import java.beans.PropertyChangeEvent;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -74,7 +74,7 @@ public class MothershipModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 20.001;
+        return 21.000;
     }
 
     @Override
@@ -82,7 +82,6 @@ public class MothershipModule extends DefaultModule
     {
         addController("mothership", MothershipController.class);
         MothershipSchema.register(this);
-
 
         SqlDialect postgresDialect = SqlDialectManager.getFromDriverClassname(null, "org.postgresql.Driver");
 
@@ -164,15 +163,15 @@ public class MothershipModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Collections.singletonList(
-                new BaseWebPartFactory("Exception List", false, false)
+        return List.of(
+            new BaseWebPartFactory("Exception List", false, false)
+            {
+                @Override
+                public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, Portal.@NotNull WebPart webPart)
                 {
-                    @Override
-                    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, Portal.@NotNull WebPart webPart)
-                    {
-                        return new ExceptionListWebPart(portalCtx.getUser(), portalCtx.getContainer(), null);
-                    }
+                    return new ExceptionListWebPart(portalCtx.getUser(), portalCtx.getContainer(), null);
                 }
+            }
         );
     }
 
