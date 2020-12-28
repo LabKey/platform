@@ -75,7 +75,7 @@ public class SessionAppender extends AbstractAppender
                 // Safeguard against runaway size. ConcurrentReferenceHashMap does not have removeEldestEntry so have
                 // to randomly remove an entry
                 if (size() > 1000)
-                    remove(0);
+                    remove(eventIdMap.keySet().toArray()[0]);
                 return super.put(key, value);
             }
         });
