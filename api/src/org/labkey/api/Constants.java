@@ -160,7 +160,7 @@ public class Constants
         {
             double lowest = getLowestSchemaVersion();
             double expected = Math.round(Year.now().getValue() / 100.0);
-            assertEquals("It's time to update Constants.getLowestSchemaVersion()!", expected, lowest, 0.0);
+            assertTrue("It's time to update Constants.getLowestSchemaVersion() to " + expected + "!", expected <= lowest);
         }
 
         @Test
