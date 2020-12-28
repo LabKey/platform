@@ -662,7 +662,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(DesignAssayPermission.class)
-    public class GetAssayDesignSelectOptionsAction extends ReadOnlyApiAction<Object>
+    public class GetAssayTypeSelectOptionsAction extends ReadOnlyApiAction<Object>
     {
         private List<AssayProviderBean> getProviders()
         {
@@ -710,7 +710,7 @@ public class AssayController extends SpringActionController
             String defaultLocation = null;
             for (Pair<Container, String> entry : AssayService.get().getLocationOptions(getContainer(), getUser()))
             {
-                locations.put(entry.getKey().getId(), entry.getValue());
+                locations.put(entry.getKey().getEncodedPath(), entry.getValue());
                 if (defaultLocation == null)
                     defaultLocation = entry.getKey().getId();
             }
