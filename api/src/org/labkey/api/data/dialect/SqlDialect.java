@@ -1088,7 +1088,7 @@ public abstract class SqlDialect
     }
 
 
-    // Trying to be DataSource implementation agnostic here.  DataSource interface doesn't provide access to any of
+    // Trying to be DataSource-implementation agnostic here. DataSource interface doesn't provide access to any of
     // these properties, but we don't want to cast to a specific implementation class, so use reflection to get them.
     public static class DataSourceProperties
     {
@@ -1144,16 +1144,7 @@ public abstract class SqlDialect
 
         public String getPassword() throws ServletException
         {
-            // Special handling for Tomcat JDBC connection pool; getPassword() returns a fixed string
-            if ("org.apache.tomcat.jdbc.pool.DataSource".equals(_ds.getClass().getName()))
-            {
-                Properties props = callGetter("getDbProperties");
-                return props.getProperty("password");
-            }
-            else
-            {
-                return getProperty("getPassword");
-            }
+            return getProperty("getPassword");
         }
 
         public Integer getMaxTotal()
@@ -1193,7 +1184,6 @@ public abstract class SqlDialect
                 return null;
             }
         }
-
     }
 
 
