@@ -96,11 +96,11 @@ import java.util.zip.ZipOutputStream;
 public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
 {
     public static final FileType SAMPLE_MINDED_FILE_TYPE = new FileType(".xlsx");
+
     private static final String INVALID_SUFFIX = "-invalid";
     private static final Map<String, Integer> STANDARD_PRIMARY_TYPE_IDS;
     private static final Map<String, Integer> STANDARD_DERIVATIVE_TYPE_IDS;
     private static final Map<String, String> DERIVATIVE_PRIMARY_MAPPINGS;
-
     private static final Set<String> IGNORED_HASH_COLUMNS = new CaseInsensitiveHashSet(PageFlowUtil.set("comments", "episodetype", "episodevalue"));
 
     static
@@ -150,8 +150,8 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
     private final Map<String, Integer> _labIds = new LinkedHashMap<>();
     private final Map<String, Integer> _primaryIds = new LinkedHashMap<>(STANDARD_PRIMARY_TYPE_IDS);
     private final Map<String, Integer> _derivativeIds = new LinkedHashMap<>(STANDARD_DERIVATIVE_TYPE_IDS);
-    boolean _validate = true;
 
+    boolean _validate = true;
 
     public SampleMindedTransformTask(@Nullable PipelineJob job)
     {

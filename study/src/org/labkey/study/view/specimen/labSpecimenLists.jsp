@@ -23,7 +23,7 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.LabSpecimenListsBean" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestAction" %>
 <%@ page import="org.labkey.study.model.LocationImpl" %>
-<%@ page import="org.labkey.study.model.Vial" %>
+<%@ page import="org.labkey.api.specimen.Vial" %>
 <%@ page import="org.labkey.study.specimen.notifications.ActorNotificationRecipientSet" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>

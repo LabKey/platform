@@ -17,6 +17,8 @@
 package org.labkey.study.requirements;
 
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.specimen.requirements.RequirementOwner;
+import org.labkey.api.specimen.requirements.RequirementType;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.SpecimenRequest;
 import org.labkey.study.model.SpecimenRequestActor;

@@ -24,7 +24,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Vial;
+import org.labkey.api.specimen.Vial;
 
 /**
  * User: brittp

@@ -18,7 +18,6 @@ package org.labkey.study.importer;
 
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.study.SpecimenImportStrategy;
-import org.labkey.study.importer.SpecimenImporter.SpecimenTableType;
 
 import java.io.IOException;
 
@@ -29,7 +28,7 @@ import java.io.IOException;
 */
 public interface SpecimenImportFile
 {
-    public SpecimenImportStrategy getStrategy();
-    public SpecimenTableType getTableType();
-    public DataLoader getDataLoader() throws IOException;
+    SpecimenImportStrategy getStrategy();
+    SpecimenTableType getTableType();
+    DataLoader getDataLoader() throws IOException;
 }

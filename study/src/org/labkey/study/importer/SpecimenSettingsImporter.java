@@ -20,6 +20,13 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.specimen.SpecimenRequestStatus;
+import org.labkey.api.specimen.requirements.RequirementType;
+import org.labkey.api.specimen.settings.DisplaySettings;
+import org.labkey.api.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.RequestNotificationSettings;
+import org.labkey.api.specimen.settings.StatusSettings;
+import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.security.xml.GroupType;
 import org.labkey.study.SpecimenManager;
@@ -28,17 +35,10 @@ import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.SpecimenRequestActor;
 import org.labkey.study.model.SpecimenRequestRequirement;
-import org.labkey.study.model.SpecimenRequestStatus;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.requirements.RequirementType;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
 import org.labkey.study.specimen.LocationCache;
-import org.labkey.study.specimen.settings.DisplaySettings;
-import org.labkey.study.specimen.settings.RepositorySettings;
-import org.labkey.study.specimen.settings.RequestNotificationSettings;
-import org.labkey.study.specimen.settings.StatusSettings;
-import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.DefaultRequirementType;
 import org.labkey.study.xml.DefaultRequirementsType;
 import org.labkey.study.xml.LegacySpecimenSettingsType;
@@ -74,7 +74,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
     @Override
     public String getDataType()
     {
-        return StudyArchiveDataTypes.SPECIMEN_SETTINGS;
+        return SpecimenArchiveDataTypes.SPECIMEN_SETTINGS;
     }
 
     @Override

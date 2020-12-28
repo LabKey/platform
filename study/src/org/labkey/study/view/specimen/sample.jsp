@@ -23,7 +23,7 @@
 <%@ page import="org.labkey.study.SpecimenManager" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
 <%@ page import="org.labkey.study.model.SpecimenComment" %>
-<%@ page import="org.labkey.study.model.Vial" %>
+<%@ page import="org.labkey.api.specimen.Vial" %>
 <%@ page import="org.labkey.study.security.permissions.SetSpecimenCommentsPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%

@@ -119,7 +119,6 @@ public class StudySchema
 
     public TableInfo getTableInfoSite(Container container, User user)
     {
-//        return getSchema().getTable("Site");
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
         return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.LOCATION_TABLENAME);
     }
@@ -291,7 +290,6 @@ public class StudySchema
 
     public TableInfo getTableInfoSpecimenPrimaryType(Container container, User user)
     {
-//        return getSchema().getTable("SpecimenPrimaryType");
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
         return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.PRIMARYTYPE_TABLENAME);
     }
@@ -303,7 +301,6 @@ public class StudySchema
 
     public TableInfo getTableInfoSpecimenAdditive(Container container, User user)
     {
-//        return getSchema().getTable("SpecimenAdditive");
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
         return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.ADDITIVETYPE_TABLENAME);
     }
@@ -315,7 +312,6 @@ public class StudySchema
 
     public TableInfo getTableInfoSpecimenDerivative(Container container, User user)
     {
-//        return getSchema().getTable("SpecimenDerivative");
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
         return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.DERIVATIVETYPE_TABLENAME);
     }

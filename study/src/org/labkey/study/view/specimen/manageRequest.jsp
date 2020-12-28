@@ -47,9 +47,9 @@
 <%@ page import="org.labkey.study.model.LocationImpl" %>
 <%@ page import="org.labkey.study.model.SpecimenRequestActor" %>
 <%@ page import="org.labkey.study.model.SpecimenRequestRequirement" %>
-<%@ page import="org.labkey.study.model.SpecimenRequestStatus" %>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.model.Vial" %>
+<%@ page import="org.labkey.api.specimen.Vial" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>

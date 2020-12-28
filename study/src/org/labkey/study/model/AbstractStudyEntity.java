@@ -30,6 +30,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.study.AbstractStudyCachable;
 import org.labkey.api.study.StudyEntity;
 import org.labkey.study.StudyModule;
 

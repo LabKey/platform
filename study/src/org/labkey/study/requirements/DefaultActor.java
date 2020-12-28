@@ -26,6 +26,7 @@ import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.specimen.requirements.RequirementActor;
 import org.labkey.api.study.Location;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;

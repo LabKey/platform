@@ -17,6 +17,12 @@ package org.labkey.study.writer;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.specimen.SpecimenRequestStatus;
+import org.labkey.api.specimen.settings.DisplaySettings;
+import org.labkey.api.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.RequestNotificationSettings;
+import org.labkey.api.specimen.settings.StatusSettings;
+import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.security.xml.GroupType;
 import org.labkey.security.xml.GroupsType;
@@ -26,12 +32,7 @@ import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.SpecimenRequestActor;
 import org.labkey.study.model.SpecimenRequestRequirement;
-import org.labkey.study.model.SpecimenRequestStatus;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.specimen.settings.DisplaySettings;
-import org.labkey.study.specimen.settings.RepositorySettings;
-import org.labkey.study.specimen.settings.RequestNotificationSettings;
-import org.labkey.study.specimen.settings.StatusSettings;
 import org.labkey.study.xml.DefaultRequirementType;
 import org.labkey.study.xml.DefaultRequirementsType;
 import org.labkey.study.xml.SpecimenRepositoryType;
@@ -57,7 +58,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
     @Override
     public String getDataType()
     {
-        return StudyArchiveDataTypes.SPECIMEN_SETTINGS;
+        return SpecimenArchiveDataTypes.SPECIMEN_SETTINGS;
     }
 
     @Override

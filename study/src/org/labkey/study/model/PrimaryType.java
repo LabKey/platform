@@ -16,6 +16,7 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.study.AbstractStudyCachable;
 
 import java.util.Map;
 

@@ -537,6 +537,12 @@ public class StudyServiceImpl implements StudyService
     }
 
     @Override
+    public DbSchema getStudySchema()
+    {
+        return StudySchema.getInstance().getSchema();
+    }
+
+    @Override
     public void updateDatasetCategory(User user, @NotNull Dataset dataset, @NotNull ViewCategory category)
     {
         DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByEntityId(dataset.getStudy(), dataset.getEntityId());

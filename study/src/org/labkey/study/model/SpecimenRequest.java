@@ -18,9 +18,11 @@ package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.specimen.Vial;
+import org.labkey.api.study.AbstractStudyCachable;
 import org.labkey.api.study.Location;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.requirements.RequirementOwner;
+import org.labkey.api.specimen.requirements.RequirementOwner;
 
 import java.util.Date;
 import java.util.List;

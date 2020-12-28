@@ -82,7 +82,7 @@ import org.labkey.study.query.studydesign.StudyTreatmentProductTable;
 import org.labkey.study.query.studydesign.StudyTreatmentTable;
 import org.labkey.study.query.studydesign.StudyTreatmentVisitMapTable;
 import org.labkey.study.visualization.StudyVisualizationProvider;
-import org.labkey.study.writer.AbstractContext;
+import org.labkey.api.study.writer.AbstractContext;
 import org.springframework.validation.BindException;
 
 import java.util.Arrays;

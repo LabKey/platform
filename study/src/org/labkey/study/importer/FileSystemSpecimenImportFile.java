@@ -20,7 +20,6 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.study.SpecimenImportStrategy;
 import org.labkey.api.util.Filter;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.study.importer.SpecimenImporter.SpecimenTableType;
 
 import java.io.IOException;
 import java.io.InputStream;

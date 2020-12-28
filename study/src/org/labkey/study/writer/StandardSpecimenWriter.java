@@ -27,7 +27,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.study.StudySchema;
-import org.labkey.study.importer.SpecimenImporter.ImportableColumn;
+import org.labkey.study.importer.ImportableColumn;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.PrintWriter;

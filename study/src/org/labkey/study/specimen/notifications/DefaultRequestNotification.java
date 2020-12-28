@@ -29,9 +29,9 @@ import org.labkey.study.SpecimenManager;
 import org.labkey.study.model.SpecimenRequest;
 import org.labkey.study.model.SpecimenRequestEvent;
 import org.labkey.study.model.SpecimenRequestRequirement;
-import org.labkey.study.model.Vial;
+import org.labkey.api.specimen.Vial;
 import org.labkey.study.query.SpecimenQueryView;
-import org.labkey.study.specimen.settings.RequestNotificationSettings;
+import org.labkey.api.specimen.settings.RequestNotificationSettings;
 
 import java.io.IOException;
 import java.sql.SQLException;

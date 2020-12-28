@@ -63,6 +63,9 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.specimen.report.RequestSummaryByVisitType;
+import org.labkey.api.specimen.report.SummaryByVisitParticipant;
+import org.labkey.api.specimen.report.SummaryByVisitType;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyCachable;
@@ -81,7 +84,7 @@ import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.importer.RequestabilityManager.InvalidRuleException;
 import org.labkey.study.importer.SpecimenImporter;
-import org.labkey.study.importer.SpecimenImporter.VialSpecimenRollup;
+import org.labkey.api.specimen.importer.VialSpecimenRollup;
 import org.labkey.study.model.AdditiveType;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DerivativeType;
@@ -89,31 +92,30 @@ import org.labkey.study.model.ExtendedSpecimenRequestView;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.PrimaryType;
 import org.labkey.study.model.SpecimenComment;
-import org.labkey.study.model.SpecimenEvent;
+import org.labkey.api.specimen.SpecimenEvent;
 import org.labkey.study.model.SpecimenRequest;
 import org.labkey.study.model.SpecimenRequestActor;
 import org.labkey.study.model.SpecimenRequestEvent;
 import org.labkey.study.model.SpecimenRequestRequirement;
-import org.labkey.study.model.SpecimenRequestStatus;
+import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.study.model.SpecimenTypeSummary;
 import org.labkey.study.model.SpecimenTypeSummaryRow;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Vial;
+import org.labkey.api.specimen.Vial;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.requirements.RequirementProvider;
+import org.labkey.api.specimen.requirements.RequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.specimen.LocationCache;
 import org.labkey.study.specimen.SpecimenCommentAuditProvider;
-import org.labkey.study.specimen.report.SpecimenCountSummary;
-import org.labkey.study.specimen.settings.DisplaySettings;
-import org.labkey.study.specimen.settings.RepositorySettings;
-import org.labkey.study.specimen.settings.RequestNotificationSettings;
-import org.labkey.study.specimen.settings.StatusSettings;
+import org.labkey.api.specimen.settings.DisplaySettings;
+import org.labkey.api.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.RequestNotificationSettings;
+import org.labkey.api.specimen.settings.StatusSettings;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
@@ -140,9 +142,6 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     private final static SpecimenManager _instance = new SpecimenManager();
 
     private final QueryHelper<SpecimenRequestEvent> _requestEventHelper;
-//    private final QueryHelper<AdditiveType> _additiveHelper;
-//    private final QueryHelper<DerivativeType> _derivativeHelper;
-//    private final QueryHelper<PrimaryType> _primaryTypeHelper;
     private final QueryHelper<SpecimenRequest> _requestHelper;
     private final QueryHelper<SpecimenRequestStatus> _requestStatusHelper;
     private final RequirementProvider<SpecimenRequestRequirement, SpecimenRequestActor> _requirementProvider =
@@ -151,28 +150,6 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     private SpecimenManager()
     {
-/*        _primaryTypeHelper = new QueryHelper<>(new TableInfoGetter()
-        {
-            public TableInfo getTableInfo()
-            {
-                return StudySchema.getInstance().getTableInfoPrimaryType();
-            }
-        }, PrimaryType.class);
-        _derivativeHelper = new QueryHelper<>(new TableInfoGetter()
-        {
-            public TableInfo getTableInfo()
-            {
-                return StudySchema.getInstance().getTableInfoDerivativeType();
-            }
-        }, DerivativeType.class);
-        _additiveHelper = new QueryHelper<>(new TableInfoGetter()
-        {
-            public TableInfo getTableInfo()
-            {
-                return StudySchema.getInstance().getTableInfoAdditiveType();
-            }
-        }, AdditiveType.class);
-*/
         _requestEventHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoSampleRequestEvent(), SpecimenRequestEvent.class);
         _requestHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoSampleRequest(), SpecimenRequest.class);
         _requestStatusHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoSampleRequestStatus(), SpecimenRequestStatus.class);
@@ -400,33 +377,6 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return eventList;
     }
 
-    public Map<Vial, List<SpecimenEvent>> getDateOrderedEventLists(List<Vial> vials, boolean includeObsolete)
-    {
-        List<SpecimenEvent> allEvents = getSpecimenEvents(vials, includeObsolete);
-        Map<Long, List<SpecimenEvent>> vialIdToEvents = new HashMap<>();
-
-        for (SpecimenEvent event : allEvents)
-        {
-            List<SpecimenEvent> vialEvents = vialIdToEvents.computeIfAbsent(event.getVialId(), k -> new ArrayList<>());
-            vialEvents.add(event);
-        }
-
-        Map<Vial, List<SpecimenEvent>> results = new HashMap<>();
-
-        for (Vial vial : vials)
-        {
-            List<SpecimenEvent> events = vialIdToEvents.get(vial.getRowId());
-            if (events != null && events.size() > 0)
-                events.sort(getSpecimenEventDateComparator());
-            else
-                events = Collections.emptyList();
-            results.put(vial, events);
-        }
-
-        return results;
-    }
-
-
     public Comparator<SpecimenEvent> getSpecimenEventDateComparator()
     {
         return _specimenEventDateComparator;
@@ -558,7 +508,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
             // update specimen states
             List<Vial> vials = request.getVials();
-            if (vials != null && vials.size() > 0)
+            if (vials.size() > 0)
             {
                 SpecimenRequestStatus status = getRequestStatus(request.getContainer(), request.getStatusId());
                 updateSpecimenStatus(vials, user, status.isSpecimensLocked());
@@ -946,7 +896,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         COMMENT_ADDED("Comment/Attachment(s) Added"),
         NOTIFICATION_SENT("Notification Sent");
 
-        private String _displayText;
+        private final String _displayText;
 
         RequestEventType(String displayText)
         {
@@ -1127,12 +1077,13 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     public static class SpecimenRequestInput
     {
-        private String _title;
-        private String _helpText;
+        private final String _title;
+        private final String _helpText;
+        private final int _displayOrder;
+
         private boolean _required;
         private boolean _rememberSiteValue;
         private boolean _multiLine;
-        private int _displayOrder;
         private Map<Integer,String> _locationToDefaultValue;
 
         public SpecimenRequestInput(String title, String helpText, int displayOrder, boolean multiLine, boolean required, boolean rememberSiteValue)
@@ -2125,91 +2076,6 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return new TableSelector(StudySchema.getInstance().getTableInfoVisit(), filter, new Sort("DisplayOrder,SequenceNumMin")).getArrayList(VisitImpl.class);
     }
 
-    public static class SummaryByVisitType extends SpecimenCountSummary
-    {
-        private String _primaryType;
-        private String _derivative;
-        private String _additive;
-        private Long _participantCount;
-        private Set<String> _participantIds;
-
-        public String getPrimaryType()
-        {
-            return _primaryType;
-        }
-
-        public void setPrimaryType(String primaryType)
-        {
-            _primaryType = primaryType;
-        }
-
-        public String getDerivative()
-        {
-            return _derivative;
-        }
-
-        public void setDerivative(String derivative)
-        {
-            _derivative = derivative;
-        }
-
-        public Long getParticipantCount()
-        {
-            return _participantCount;
-        }
-
-        public void setParticipantCount(Long participantCount)
-        {
-            _participantCount = participantCount;
-        }
-
-        public Set<String> getParticipantIds()
-        {
-            return _participantIds;
-        }
-
-        public void setParticipantIds(Set<String> participantIds)
-        {
-            _participantIds = participantIds;
-        }
-
-        public String getAdditive()
-        {
-            return _additive;
-        }
-
-        public void setAdditive(String additive)
-        {
-            _additive = additive;
-        }
-    }
-
-    public static class RequestSummaryByVisitType extends SummaryByVisitType
-    {
-        private Integer _destinationSiteId;
-        private String _siteLabel;
-
-        public Integer getDestinationSiteId()
-        {
-            return _destinationSiteId;
-        }
-
-        public void setDestinationSiteId(Integer destinationSiteId)
-        {
-            _destinationSiteId = destinationSiteId;
-        }
-
-        public String getSiteLabel()
-        {
-            return _siteLabel;
-        }
-
-        public void setSiteLabel(String siteLabel)
-        {
-            _siteLabel = siteLabel;
-        }
-    }
-
     public SummaryByVisitType[] getSpecimenSummaryByVisitType(Container container, User user, boolean includeParticipantGroups, SpecimenTypeLevel level)
     {
         return getSpecimenSummaryByVisitType(container, user, null, includeParticipantGroups, level);
@@ -2217,9 +2083,9 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     public static class SpecimenTypeBeanProperty
     {
-        private FieldKey _typeKey;
-        private String _beanProperty;
-        private SpecimenTypeLevel _level;
+        private final FieldKey _typeKey;
+        private final String _beanProperty;
+        private final SpecimenTypeLevel _level;
 
         public SpecimenTypeBeanProperty(FieldKey typeKey, String beanProperty, SpecimenTypeLevel level)
         {
@@ -2578,34 +2444,8 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     }
 
 
-    public static class SummaryByVisitParticipant extends SpecimenCountSummary
-    {
-        private String _participantId;
-        private String _cohort;
-
-        public String getParticipantId()
-        {
-            return _participantId;
-        }
-
-        public void setParticipantId(String participantId)
-        {
-            _participantId = participantId;
-        }
-
-        public String getCohort()
-        {
-            return _cohort;
-        }
-
-        public void setCohort(String cohort)
-        {
-            _cohort = cohort;
-        }
-    }
-
     public Collection<SummaryByVisitParticipant> getParticipantSummaryByVisitType(Container container, User user,
-                                SimpleFilter specimenDetailFilter, CustomView baseView, CohortFilter.Type cohortType)
+                                                                                  SimpleFilter specimenDetailFilter, CustomView baseView, CohortFilter.Type cohortType)
     {
         if (specimenDetailFilter == null)
             specimenDetailFilter = new SimpleFilter();

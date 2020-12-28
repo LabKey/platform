@@ -27,6 +27,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoWriter;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
@@ -57,7 +58,7 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
     @Override
     public String getDataType()
     {
-        return StudyArchiveDataTypes.SPECIMENS;
+        return SpecimenArchiveDataTypes.SPECIMENS;
     }
 
     @Override
@@ -134,16 +135,14 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
     private static class SpecimenTableInfoWriter extends TableInfoWriter
     {
         private final Map<String, DomainProperty> _properties = new CaseInsensitiveHashMap<>();
-        private final Domain _domain;
         private final String _name;
 
         protected SpecimenTableInfoWriter(Container c, TableInfo ti, String tableName, Domain domain, Collection<ColumnInfo> columns)
         {
             super(c, ti, columns);
-            _domain = domain;
             _name = tableName;
 
-            for (DomainProperty prop : _domain.getProperties())
+            for (DomainProperty prop : domain.getProperties())
                 _properties.put(prop.getName(), prop);
         }
 

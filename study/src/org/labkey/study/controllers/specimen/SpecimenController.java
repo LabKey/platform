@@ -122,10 +122,10 @@ import org.labkey.study.model.SpecimenRequest;
 import org.labkey.study.model.SpecimenRequestActor;
 import org.labkey.study.model.SpecimenRequestEvent;
 import org.labkey.study.model.SpecimenRequestRequirement;
-import org.labkey.study.model.SpecimenRequestStatus;
+import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Vial;
+import org.labkey.api.specimen.Vial;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.pipeline.SpecimenArchive;
 import org.labkey.study.pipeline.SpecimenBatch;
@@ -136,7 +136,7 @@ import org.labkey.study.query.SpecimenEventQueryView;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.query.SpecimenRequestQueryView;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.requirements.RequirementProvider;
+import org.labkey.api.specimen.requirements.RequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
 import org.labkey.study.security.permissions.ManageDisplaySettingsPermission;
 import org.labkey.study.security.permissions.ManageNewRequestFormPermission;
@@ -166,10 +166,10 @@ import org.labkey.study.specimen.report.request.RequestReportFactory;
 import org.labkey.study.specimen.report.specimentype.TypeCohortReportFactory;
 import org.labkey.study.specimen.report.specimentype.TypeParticipantReportFactory;
 import org.labkey.study.specimen.report.specimentype.TypeSummaryReportFactory;
-import org.labkey.study.specimen.settings.DisplaySettings;
-import org.labkey.study.specimen.settings.RepositorySettings;
-import org.labkey.study.specimen.settings.RequestNotificationSettings;
-import org.labkey.study.specimen.settings.StatusSettings;
+import org.labkey.api.specimen.settings.DisplaySettings;
+import org.labkey.api.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.RequestNotificationSettings;
+import org.labkey.api.specimen.settings.StatusSettings;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -483,11 +483,12 @@ public class SpecimenController extends BaseStudyController
 
     public static final class SpecimenHeaderBean
     {
-        private ActionURL _otherViewURL;
-        private ViewContext _viewContext;
-        private boolean _showingVials;
+        private final ActionURL _otherViewURL;
+        private final ViewContext _viewContext;
+        private final boolean _showingVials;
+        private final Set<Pair<String, String>> _filteredPtidVisits;
+
         private Integer _selectedRequest;
-        private Set<Pair<String, String>> _filteredPtidVisits;
 
         public SpecimenHeaderBean(ViewContext context, SpecimenQueryView view)
         {
@@ -956,13 +957,14 @@ public class SpecimenController extends BaseStudyController
     {
         public static final String SUBMISSION_WARNING = "Once a request is submitted, its specimen list may no longer be modified. Continue?";
         public static final String CANCELLATION_WARNING = "Canceling will permanently delete this pending request. Continue?";
+
         protected SpecimenRequest _specimenRequest;
         protected boolean _requestManager;
         protected boolean _requirementsComplete;
         protected boolean _finalState;
         private List<ActorNotificationRecipientSet> _possibleNotifications;
         protected List<String> _missingSpecimens = null;
-        private Boolean _submissionResult;
+        private final Boolean _submissionResult;
         private Location[] _providingLocations;
         private String _returnUrl;
 
@@ -1196,8 +1198,9 @@ public class SpecimenController extends BaseStudyController
     {
         public static final String PARAM_STATUSLABEL = "SpecimenRequest.Status/Label~eq";
         public static final String PARAM_CREATEDBY = "SpecimenRequest.CreatedBy/DisplayName~eq";
-        private SpecimenRequestQueryView _view;
-        private ViewContext _context;
+
+        private final SpecimenRequestQueryView _view;
+        private final ViewContext _context;
 
         public ViewRequestsHeaderBean(ViewContext context, SpecimenRequestQueryView view)
         {
@@ -1238,7 +1241,10 @@ public class SpecimenController extends BaseStudyController
                 grid.setButtons(Collections.singletonList(insertButton));
             }
             else
+            {
                 grid.setButtons(Collections.emptyList());
+            }
+
             JspView<ViewRequestsHeaderBean> header = new JspView<>("/org/labkey/study/view/specimen/viewRequestsHeader.jsp",
                     new ViewRequestsHeaderBean(getViewContext(), grid));
 

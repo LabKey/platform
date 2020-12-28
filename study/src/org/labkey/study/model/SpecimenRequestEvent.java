@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.Container;
+import org.labkey.api.study.AbstractStudyCachable;
 
 import java.util.Date;
 

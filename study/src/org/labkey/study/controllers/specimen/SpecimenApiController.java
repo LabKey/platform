@@ -39,13 +39,13 @@ import org.labkey.study.model.DerivativeType;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.PrimaryType;
 import org.labkey.study.model.SpecimenRequest;
-import org.labkey.study.model.SpecimenRequestStatus;
+import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.study.model.SpecimenTypeSummary;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Vial;
+import org.labkey.api.specimen.Vial;
 import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
-import org.labkey.study.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.RepositorySettings;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;

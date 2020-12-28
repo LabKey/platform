@@ -23,9 +23,9 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteStatusAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusOrderAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusesAction" %>
-<%@ page import="org.labkey.study.model.SpecimenRequestStatus" %>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.study.specimen.settings.StatusSettings" %>
+<%@ page import="org.labkey.api.specimen.settings.StatusSettings" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>

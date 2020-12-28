@@ -16,11 +16,12 @@
 
 package org.labkey.study.requirements;
 
+import org.labkey.api.specimen.requirements.RequirementType;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.SpecimenRequest;
 import org.labkey.study.model.SpecimenRequestRequirement;
-import org.labkey.study.model.Vial;
+import org.labkey.api.specimen.Vial;
 
 import java.util.ArrayList;
 import java.util.Collections;

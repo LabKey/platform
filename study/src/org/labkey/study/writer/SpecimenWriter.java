@@ -35,9 +35,10 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
-import org.labkey.study.importer.SpecimenImporter.SpecimenColumn;
+import org.labkey.study.importer.SpecimenColumn;
+import org.labkey.api.specimen.importer.TargetTable;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.Vial;
+import org.labkey.api.specimen.Vial;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.io.PrintWriter;
@@ -88,7 +89,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         SqlDialect dialect = schema.getSqlDialect();
         for (SpecimenColumn column : columns)
         {
-            SpecimenImporter.TargetTable tt = column.getTargetTable();
+            TargetTable tt = column.getTargetTable();
             TableInfo tinfo = tt.isEvents() ? tableInfoSpecimenEvent : tableInfoSpecimenDetail;
             TableInfo queryTable = tt.isEvents() ? queryTableSpecimenEvent : queryTableSpecimenDetail;
             ColumnInfo ci = tinfo.getColumn(column.getDbColumnName());
@@ -159,7 +160,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             {
                 assert column.getTargetTable().isEvents();
 
-                SpecimenImporter.TargetTable tt = column.getTargetTable();
+                TargetTable tt = column.getTargetTable();
                 TableInfo tinfo = tt.isEvents() ? tableInfoSpecimenEvent : tableInfoSpecimenDetail;
                 ColumnInfo ci = tinfo.getColumn(column.getDbColumnName());
                 sql.append("\n    ");
@@ -311,8 +312,8 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             var ciRestrictedPhi = new BaseColumnInfo("test", JdbcType.OTHER);
             ciRestrictedPhi.setPHI(PHI.Restricted);
 
-            SpecimenColumn notKeyCol = new SpecimenColumn("test", "test", "INT", SpecimenImporter.TargetTable.SPECIMEN_EVENTS);
-            SpecimenColumn keyCol = new SpecimenColumn("test", "test", "INT", true, SpecimenImporter.TargetTable.SPECIMEN_EVENTS);
+            SpecimenColumn notKeyCol = new SpecimenColumn("test", "test", "INT", TargetTable.SPECIMEN_EVENTS);
+            SpecimenColumn keyCol = new SpecimenColumn("test", "test", "INT", true, TargetTable.SPECIMEN_EVENTS);
 
             // should remove if not a key column and it is at or above PHI export level
             assertTrue(shouldRemovePhi(PHI.PHI, notKeyCol, ciRestrictedPhi));

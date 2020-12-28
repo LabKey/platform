@@ -33,7 +33,7 @@ import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.InsertUpdateAction;
 import org.labkey.study.model.SpecimenComment;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.Vial;
+import org.labkey.api.specimen.Vial;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 

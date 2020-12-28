@@ -48,7 +48,7 @@ import org.labkey.study.model.ChildStudyDefinition;
 import org.labkey.study.model.SpecimenRequest;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Vial;
+import org.labkey.api.specimen.Vial;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;

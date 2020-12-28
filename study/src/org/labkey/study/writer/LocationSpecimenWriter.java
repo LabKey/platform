@@ -19,7 +19,7 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.study.importer.SpecimenImporter;
+import org.labkey.study.importer.ImportableColumn;
 import org.labkey.study.xml.StudyDocument;
 
 import java.util.Collection;
@@ -31,7 +31,7 @@ import java.util.Collection;
 public class LocationSpecimenWriter extends StandardSpecimenWriter
 {
     @Override
-    protected SQLFragment generateSql(ImportContext<StudyDocument.Study> ctx, TableInfo tinfo, Collection<SpecimenImporter.ImportableColumn> columns)
+    protected SQLFragment generateSql(ImportContext<StudyDocument.Study> ctx, TableInfo tinfo, Collection<ImportableColumn> columns)
     {
         SqlDialect d = tinfo.getSqlDialect();
 
@@ -39,7 +39,7 @@ public class LocationSpecimenWriter extends StandardSpecimenWriter
         SQLFragment sql = new SQLFragment().append("SELECT ");
         String comma = "";
 
-        for (SpecimenImporter.ImportableColumn column : columns)
+        for (ImportableColumn column : columns)
         {
             sql.append(comma);
 

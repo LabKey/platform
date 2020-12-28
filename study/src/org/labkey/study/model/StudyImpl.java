@@ -51,6 +51,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -74,7 +75,7 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.StudyDesignInfo;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.RepositorySettings;
 
 import java.io.IOException;
 import java.math.BigDecimal;

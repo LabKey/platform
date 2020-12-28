@@ -19,6 +19,7 @@ package org.labkey.study.requirements;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.requirements.Requirement;
 
 /**
  * User: brittp

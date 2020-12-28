@@ -48,8 +48,8 @@ public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
 
     public static class StudyDomainInfo implements DomainInfo
     {
-        final boolean _useSharedProjectDomain;
-        final String _domainUriPrefix;
+        private final boolean _useSharedProjectDomain;
+        private final String _domainUriPrefix;
 
         protected StudyDomainInfo(String domainUriPrefix, boolean useSharedDomain)
         {

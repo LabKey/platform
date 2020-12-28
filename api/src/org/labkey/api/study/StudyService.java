@@ -150,6 +150,9 @@ public interface StudyService
 
     DbSchema getDatasetSchema();
 
+    @Deprecated // Use SpecimenSchema instead
+    DbSchema getStudySchema();
+
     void updateDatasetCategory(User user, @NotNull Dataset dataset, @NotNull ViewCategory category);
 
     void addAssayRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user);

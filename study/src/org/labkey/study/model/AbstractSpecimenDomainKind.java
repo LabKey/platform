@@ -37,13 +37,15 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTablesTemplate;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.TableType;
-import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.importer.EventVialRollup;
 import org.labkey.study.importer.SpecimenImporter;
+import org.labkey.api.specimen.importer.VialSpecimenRollup;
 import org.labkey.study.query.SpecimenTablesProvider;
 
 import java.util.ArrayList;
@@ -112,7 +114,7 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
     @Override
     public DbScope getScope()
     {
-        return StudySchema.getInstance().getSchema().getScope();
+        return StudyService.get().getStudySchema().getScope();
     }
 
     @Override
@@ -165,21 +167,9 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
     public void afterLoadTable(SchemaTableInfo ti, Domain domain)
     {
         // Grab the meta data for this table (event, vial, or specimen) and apply it to the provisioned table
-        DbSchema studySchema = StudySchema.getInstance().getSchema();
+        DbSchema studySchema = StudyService.get().getStudySchema();
         TableType xmlTable = studySchema.getTableXmlMap().get(getMetaDataTableName());
         ti.loadTablePropertiesFromXml(xmlTable, true);
-    }
-
-    private String getMessageString(List<String> messages)
-    {
-        String sep = "";
-        String msgString = "";
-        for (String msg : messages)
-        {
-            msgString += sep + msg;
-            sep = "\n";
-        }
-        return msgString;
     }
 
     protected ValidationException checkRollups(
@@ -220,13 +210,13 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
                 eventProps.add(domainProperty.getPropertyDescriptor());
         }
         CaseInsensitiveHashSet eventFieldNamesDisallowedForRollups = SpecimenImporter.getEventFieldNamesDisallowedForRollups();
-        Map<String, Pair<String, SpecimenImporter.RollupInstance<SpecimenImporter.EventVialRollup>>> vialToEventNameMap = SpecimenImporter.getVialToEventNameMap(vialProps, eventProps);     // includes rollups with type mismatches
+        Map<String, Pair<String, SpecimenImporter.RollupInstance<EventVialRollup>>> vialToEventNameMap = SpecimenImporter.getVialToEventNameMap(vialProps, eventProps);     // includes rollups with type mismatches
 
         if (editingVial)
         {
             for (PropertyDescriptor prop : vialProps)
             {
-                Pair<String, SpecimenImporter.RollupInstance<SpecimenImporter.EventVialRollup>> eventPair = vialToEventNameMap.get(prop.getName().toLowerCase());
+                Pair<String, SpecimenImporter.RollupInstance<EventVialRollup>> eventPair = vialToEventNameMap.get(prop.getName().toLowerCase());
                 if (null != eventPair)
                 {
                     String eventFieldName = eventPair.first;
@@ -246,13 +236,13 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
                 vialProps.add(domainProperty.getPropertyDescriptor());
         }
         CaseInsensitiveHashSet vialFieldNamesDisallowedForRollups = SpecimenImporter.getVialFieldNamesDisallowedForRollups();
-        Map<String, Pair<String, SpecimenImporter.RollupInstance<SpecimenImporter.VialSpecimenRollup>>> specimenToVialNameMap = SpecimenImporter.getSpecimenToVialNameMap(specimenProps, vialProps);     // includes rollups with type mismatches
+        Map<String, Pair<String, SpecimenImporter.RollupInstance<VialSpecimenRollup>>> specimenToVialNameMap = SpecimenImporter.getSpecimenToVialNameMap(specimenProps, vialProps);     // includes rollups with type mismatches
 
         if (editingSpecimen)
         {
             for (PropertyDescriptor prop : specimenProps)
             {
-                Pair<String, SpecimenImporter.RollupInstance<SpecimenImporter.VialSpecimenRollup>> vialPair = specimenToVialNameMap.get(prop.getName().toLowerCase());
+                Pair<String, SpecimenImporter.RollupInstance<VialSpecimenRollup>> vialPair = specimenToVialNameMap.get(prop.getName().toLowerCase());
                 if (null != vialPair)
                 {
                     String vialFieldName = vialPair.first;

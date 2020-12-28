@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.specimen.settings;
+package org.labkey.api.specimen.settings;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;

@@ -40,7 +40,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.Vial;
+import org.labkey.api.specimen.Vial;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,7 +77,6 @@ public class RequestabilityManager
                 throw new IllegalArgumentException("Rule data is currently limited to 250 characters.");
             _markType = rule.getMarkType();
         }
-
 
         public Integer getRowId()
         {
@@ -143,35 +142,36 @@ public class RequestabilityManager
         {
             return _ruleType.createRule(_container, _ruleData);
         }
-
     }
 
-    public static enum MarkType
+    public enum MarkType
     {
         AVAILABLE
-                {
-                    @Override
-                    public String getLabel()
-                    {
-                        return "Available";
-                    }},
+        {
+            @Override
+            public String getLabel()
+            {
+                return "Available";
+            }
+        },
 
         UNAVAILABLE
-                {
-                    @Override
-                    public String getLabel()
-                    {
-                        return "Unavailable";
-                    }},
+        {
+            @Override
+            public String getLabel()
+            {
+                return "Unavailable";
+            }
+        },
 
         AVAILABLE_OR_UNAVAILABLE
-                {
-                    @Override
-                    public String getLabel()
-                    {
-                        return "Available or unavailable";
-                    }};
-
+        {
+            @Override
+            public String getLabel()
+            {
+                return "Available or unavailable";
+            }
+        };
 
         public abstract String getLabel();
     }
@@ -180,172 +180,176 @@ public class RequestabilityManager
     public enum RuleType
     {
         ADMIN_OVERRIDE
-                {
-                    @Override
-                    public RequestableRule createRule(Container container, String ruleData)
-                    {
-                        return new AdminOverrideRule(container);
-                    }
+        {
+            @Override
+            public RequestableRule createRule(Container container, String ruleData)
+            {
+                return new AdminOverrideRule(container);
+            }
 
-                    @Override
-                    public String getName()
-                    {
-                        return "Administrator Override";
-                    }
+            @Override
+            public String getName()
+            {
+                return "Administrator Override";
+            }
 
-                    @Override
-                    public String getDescription()
-                    {
-                        return "Marks vials available or unavailable based on the 'requestable' column in the specimen data feed.";
-                    }
+            @Override
+            public String getDescription()
+            {
+                return "Marks vials available or unavailable based on the 'requestable' column in the specimen data feed.";
+            }
 
-                    @Override
-                    public MarkType getDefaultMarkType()
-                    {
-                        return MarkType.AVAILABLE_OR_UNAVAILABLE;
-                    }
+            @Override
+            public MarkType getDefaultMarkType()
+            {
+                return MarkType.AVAILABLE_OR_UNAVAILABLE;
+            }
 
-                    @Override
-                    public ActionURL getDefaultTestURL(Container container)
-                    {
-                        ActionURL testURL = SpecimenController.getSamplesURL(container);
-                        testURL.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, true);
-                        testURL.addFilter("SpecimenDetail", FieldKey.fromParts("Requestable"), CompareType.NONBLANK, null);
-                        return testURL;
-                    }},
+            @Override
+            public ActionURL getDefaultTestURL(Container container)
+            {
+                ActionURL testURL = SpecimenController.getSamplesURL(container);
+                testURL.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, true);
+                testURL.addFilter("SpecimenDetail", FieldKey.fromParts("Requestable"), CompareType.NONBLANK, null);
+                return testURL;
+            }
+        },
         AT_REPOSITORY
-                {
-                    @Override
-                    public RequestableRule createRule(Container container, String ruleData)
-                    {
-                        return new RepositoryRule(container);
-                    }
+        {
+            @Override
+            public RequestableRule createRule(Container container, String ruleData)
+            {
+                return new RepositoryRule(container);
+            }
 
-                    @Override
-                    public String getName()
-                    {
-                        return "At Repository Check";
-                    }
+            @Override
+            public String getName()
+            {
+                return "At Repository Check";
+            }
 
-                    @Override
-                    public String getDescription()
-                    {
-                        return "Marks vials unavailable if they are not currently held by a repository.";
-                    }
+            @Override
+            public String getDescription()
+            {
+                return "Marks vials unavailable if they are not currently held by a repository.";
+            }
 
-                    @Override
-                    public MarkType getDefaultMarkType()
-                    {
-                        return MarkType.UNAVAILABLE;
-                    }
+            @Override
+            public MarkType getDefaultMarkType()
+            {
+                return MarkType.UNAVAILABLE;
+            }
 
-                    @Override
-                    public ActionURL getDefaultTestURL(Container container)
-                    {
-                        ActionURL testURL = SpecimenController.getSamplesURL(container);
-                        testURL.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, true);
-                        testURL.addFilter("SpecimenDetail", FieldKey.fromParts("AtRepository"), CompareType.EQUAL, Boolean.FALSE);
-                        return testURL;
+            @Override
+            public ActionURL getDefaultTestURL(Container container)
+            {
+                ActionURL testURL = SpecimenController.getSamplesURL(container);
+                testURL.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, true);
+                testURL.addFilter("SpecimenDetail", FieldKey.fromParts("AtRepository"), CompareType.EQUAL, Boolean.FALSE);
+                return testURL;
 
-                    }},
+            }
+        },
         LOCKED_IN_REQUEST
-                {
-                    @Override
-                    public RequestableRule createRule(Container container, String ruleData)
-                    {
-                        return new LockedInRequestRule(container);
-                    }
+        {
+            @Override
+            public RequestableRule createRule(Container container, String ruleData)
+            {
+                return new LockedInRequestRule(container);
+            }
 
-                    @Override
-                    public String getName()
-                    {
-                        return "Locked In Request Check";
-                    }
+            @Override
+            public String getName()
+            {
+                return "Locked In Request Check";
+            }
 
-                    @Override
-                    public String getDescription()
-                    {
-                        return "Marks vials unavailable if they are part of an active specimen request.";
-                    }
+            @Override
+            public String getDescription()
+            {
+                return "Marks vials unavailable if they are part of an active specimen request.";
+            }
 
-                    @Override
-                    public MarkType getDefaultMarkType()
-                    {
-                        return MarkType.UNAVAILABLE;
-                    }
+            @Override
+            public MarkType getDefaultMarkType()
+            {
+                return MarkType.UNAVAILABLE;
+            }
 
-                    @Override
-                    public ActionURL getDefaultTestURL(Container container)
-                    {
-                        ActionURL testURL = SpecimenController.getSamplesURL(container);
-                        testURL.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, true);
-                        testURL.addFilter("SpecimenDetail", FieldKey.fromParts("LockedInRequest"), CompareType.EQUAL, Boolean.TRUE);
-                        return testURL;
+            @Override
+            public ActionURL getDefaultTestURL(Container container)
+            {
+                ActionURL testURL = SpecimenController.getSamplesURL(container);
+                testURL.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, true);
+                testURL.addFilter("SpecimenDetail", FieldKey.fromParts("LockedInRequest"), CompareType.EQUAL, Boolean.TRUE);
+                return testURL;
 
-                    }},
+            }
+        },
         LOCKED_WHILE_PROCESSING
-                {
-                    @Override
-                    public RequestableRule createRule(Container container, String ruleData)
-                    {
-                        return new LockedWhileProcessingRule(container);
-                    }
+        {
+            @Override
+            public RequestableRule createRule(Container container, String ruleData)
+            {
+                return new LockedWhileProcessingRule(container);
+            }
 
-                    @Override
-                    public String getName()
-                    {
-                        return "Locked While Processing Check";
-                    }
+            @Override
+            public String getName()
+            {
+                return "Locked While Processing Check";
+            }
 
-                    @Override
-                    public String getDescription()
-                    {
-                        return "Marks vials unavailable if they are being processed.";
-                    }
+            @Override
+            public String getDescription()
+            {
+                return "Marks vials unavailable if they are being processed.";
+            }
 
-                    @Override
-                    public MarkType getDefaultMarkType()
-                    {
-                        return MarkType.UNAVAILABLE;
-                    }
+            @Override
+            public MarkType getDefaultMarkType()
+            {
+                return MarkType.UNAVAILABLE;
+            }
 
-                    @Override
-                    public ActionURL getDefaultTestURL(Container container)
-                    {
-                        return null;
-
-                    }},
+            @Override
+            public ActionURL getDefaultTestURL(Container container)
+            {
+                return null;
+            }
+        },
         CUSTOM_QUERY
-                {
-                    @Override
-                    public RequestableRule createRule(Container container, String ruleData)
-                    {
-                        return new CustomQueryRule(container, ruleData);
-                    }
+        {
+            @Override
+            public RequestableRule createRule(Container container, String ruleData)
+            {
+                return new CustomQueryRule(container, ruleData);
+            }
 
-                    @Override
-                    public String getName()
-                    {
-                        return "Custom Query";
-                    }
+            @Override
+            public String getName()
+            {
+                return "Custom Query";
+            }
 
-                    @Override
-                    public String getDescription()
-                    {
-                        return "Marks vials available or unavailable based on the results of an administrator-defined query.";
-                    }
+            @Override
+            public String getDescription()
+            {
+                return "Marks vials available or unavailable based on the results of an administrator-defined query.";
+            }
 
-                    @Override
-                    public MarkType getDefaultMarkType()
-                    {
-                        return null;
-                    }
+            @Override
+            public MarkType getDefaultMarkType()
+            {
+                return null;
+            }
 
-                    @Override
-                    public ActionURL getDefaultTestURL(Container container)
-                    {
-                        return null;
-                    }};
+            @Override
+            public ActionURL getDefaultTestURL(Container container)
+            {
+                return null;
+            }
+        };
 
         public abstract RequestableRule createRule(Container container, String ruleData);
 
@@ -481,12 +485,13 @@ public class RequestabilityManager
     }
 
     public static final String CUSTOM_QUERY_DATA_SEPARATOR = "~";
+
     private static class CustomQueryRule extends RequestableRule
     {
-        private String _schemaName;
-        private String _queryName;
+        private final String _schemaName;
+        private final String _queryName;
         private String _viewName;
-        private boolean _markRequestable;
+        private final boolean _markRequestable;
 
         protected CustomQueryRule(Container container, String state)
         {
@@ -557,7 +562,6 @@ public class RequestabilityManager
             ColumnInfo globalUniqueIdCol = tinfo.getColumn("GlobalUniqueId");
             if (globalUniqueIdCol == null)
                 throw new InvalidRuleException("Query " + _queryName + " in schema " + _schemaName + " doesn't include required column name 'GlobalUniqueId'.");
-
 
             SQLFragment vialListSql = Table.getSelectSQL(tinfo, Collections.singleton(globalUniqueIdCol), viewFilter, null);
 

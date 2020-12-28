@@ -173,7 +173,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
@@ -212,7 +211,7 @@ import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudyQueryView;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.security.permissions.ManageStudyPermission;
-import org.labkey.study.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.visitmanager.VisitManager.VisitStatistic;
@@ -251,16 +250,16 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 public class StudyController extends BaseStudyController
 {
     private static final Logger _log = LogManager.getLogger(StudyController.class);
-
     private static final String PARTICIPANT_CACHE_PREFIX = "Study_participants/participantCache";
     private static final String EXPAND_CONTAINERS_KEY = StudyController.class.getName() + "/expandedContainers";
-
     private static final String DATASET_DATAREGION_NAME = "Dataset";
+    private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(
+        StudyController.class,
+        CreateChildStudyAction.class
+    );
+
     public static final String DATASET_REPORT_ID_PARAMETER_NAME = "Dataset.reportId";
     public static final String DATASET_VIEW_NAME_PARAMETER_NAME = "Dataset.viewName";
-    private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(
-            StudyController.class,
-            CreateChildStudyAction.class);
 
     public static class StudyUrlsImpl implements StudyUrls
     {

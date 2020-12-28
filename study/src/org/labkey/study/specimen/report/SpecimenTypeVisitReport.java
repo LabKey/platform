@@ -22,7 +22,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.SpecimenManager.SpecimenTypeLevel;
-import org.labkey.study.SpecimenManager.SummaryByVisitType;
+import org.labkey.api.specimen.report.SummaryByVisitType;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.VisitImpl;
 

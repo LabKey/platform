@@ -57,13 +57,13 @@ public class SpecimenTablesProvider
     private final Container _container;
     private final User _user;
     private final SpecimenTablesTemplate _template;
-    final private AbstractSpecimenDomainKind _specimenDomainKind = new SpecimenDomainKind();
-    final private AbstractSpecimenDomainKind _vialDomainKind;
-    final private AbstractSpecimenDomainKind _specimenEventDomainKind;
-    final private AbstractSpecimenDomainKind _locationDomainKind = new LocationDomainKind();
-    final private AbstractSpecimenDomainKind _primaryTypeDomainKind = new PrimaryTypeDomainKind();
-    final private AbstractSpecimenDomainKind _derivativeTypeDomainKind = new DerivativeTypeDomainKind();
-    final private AbstractSpecimenDomainKind _additiveTypeDomainKind = new AdditiveTypeDomainKind();
+    private final AbstractSpecimenDomainKind _specimenDomainKind = new SpecimenDomainKind();
+    private final AbstractSpecimenDomainKind _vialDomainKind;
+    private final AbstractSpecimenDomainKind _specimenEventDomainKind;
+    private final AbstractSpecimenDomainKind _locationDomainKind = new LocationDomainKind();
+    private final AbstractSpecimenDomainKind _primaryTypeDomainKind = new PrimaryTypeDomainKind();
+    private final AbstractSpecimenDomainKind _derivativeTypeDomainKind = new DerivativeTypeDomainKind();
+    private final AbstractSpecimenDomainKind _additiveTypeDomainKind = new AdditiveTypeDomainKind();
 
     public SpecimenTablesProvider(Container container, @Nullable User user, @Nullable SpecimenTablesTemplate template)
     {
@@ -78,7 +78,6 @@ public class SpecimenTablesProvider
         // SpecimenEvent depends on Vial
         String vialDomainURI = getDomainKind(VIAL_TABLENAME).generateDomainURI(SCHEMA_NAME, VIAL_TABLENAME, _container, _user);
         _specimenEventDomainKind =  new SpecimenEventDomainKind(vialDomainURI);
-
     }
 
     @Nullable

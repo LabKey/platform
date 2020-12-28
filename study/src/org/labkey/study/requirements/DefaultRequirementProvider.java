@@ -25,6 +25,11 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.requirements.Requirement;
+import org.labkey.api.specimen.requirements.RequirementActor;
+import org.labkey.api.specimen.requirements.RequirementOwner;
+import org.labkey.api.specimen.requirements.RequirementProvider;
+import org.labkey.api.specimen.requirements.RequirementType;
 import org.labkey.api.util.GUID;
 import org.labkey.study.StudySchema;
 
