@@ -33,8 +33,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.WeakHashMap;
 
 /**
  * User: matthewb
@@ -67,7 +67,7 @@ public class SessionAppender extends AbstractAppender
 
         final String key;
         boolean on;
-        final Map<LogEvent, String> eventIdMap = new ConcurrentReferenceHashMap<>(16, ConcurrentReferenceHashMap.ReferenceType.WEAK)
+        final Map<LogEvent, String> eventIdMap = Collections.synchronizedMap(new LinkedHashMap<>()
         {
             @Override
             public String put(LogEvent key, String value)
@@ -78,7 +78,7 @@ public class SessionAppender extends AbstractAppender
                     remove(0);
                 return super.put(key, value);
             }
-        };
+        });
         int eventId=0;
     }
 
