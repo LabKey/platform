@@ -5631,7 +5631,7 @@ public class StudyController extends BaseStudyController
 
     /**
      * We don't need to render this report as of 19.1 but we need to be able to register an instance of it so
-     * it can be converted to a javascript report. This class can be deleted in the 21.2 release.
+     * it can be converted to a javascript report. This class can be deleted in the 21.7 release.
      */
     @Deprecated
     public static class StudyChartReport extends ChartQueryReport

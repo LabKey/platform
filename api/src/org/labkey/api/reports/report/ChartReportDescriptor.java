@@ -27,7 +27,7 @@ import java.util.Objects;
  * Date: Oct 5, 2006
  */
 
-@Deprecated // can delete in release 21.2
+@Deprecated // can delete in the 21.7 release
 public class ChartReportDescriptor extends ReportDescriptor
 {
     public static final String CHART_XY = "1";

@@ -200,7 +200,7 @@ public interface ReportService
 
     /**
      * Convert legacy chart view report to new JS report, this method (and all related conversion code) can be deleted
-     * in version : 21.2
+     * in version : 21.7
      * @param report
      * @return
      */
