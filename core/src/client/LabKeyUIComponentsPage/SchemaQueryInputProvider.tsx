@@ -38,7 +38,6 @@ export const SchemaQueryInputProvider = (Component: React.ComponentType) => {
             }));
         };
 
-
         onApply = () => {
             const { schemaName, queryName } = this.state;
 

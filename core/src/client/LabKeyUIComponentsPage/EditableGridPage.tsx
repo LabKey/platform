@@ -121,11 +121,8 @@ class EditableGridPageImpl extends PureComponent<SchemaQueryInputContext> {
         const { model } = this.props;
         const editorModelWithData  = getQueryGridModel("edit-with-data|assay/assaylist");
 
-        if (!editorModelWithData) {
-            return <LoadingSpinner/>;
-        }
+        // TODO hack to force rerender after model is loaded
         if (model && !model.isLoaded) {
-            // TODO hack to force rerender after model is loaded
             window.setTimeout(() => this.forceUpdate(), 500);
         }
 
