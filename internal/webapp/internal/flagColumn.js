@@ -24,6 +24,8 @@ Ext4.define('LABKEY.internal.FlagColumn', {
 
     translatePrimaryKey: undefined,
 
+    url: LABKEY.ActionURL.buildURL('experiment', 'setFlag.api'),
+
     getDataRegion : function() {
         var region;
         if (LABKEY.DataRegions && LABKEY.Utils.isString(this.dataRegionName)) {
@@ -80,7 +82,7 @@ Ext4.define('LABKEY.internal.FlagColumn', {
             fn : function(btnId, value) {
                 if (btnId === 'ok') {
                     Ext4.Ajax.request({
-                        url: LABKEY.ActionURL.buildURL('experiment', 'setFlag.api'),
+                        url: this.url,
                         params: {
                             lsid: lsids,
                             comment: value,
