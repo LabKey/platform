@@ -723,7 +723,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(DesignAssayPermission.class)
-    public class ChooseAssayTypeAction extends SimpleViewAction
+    public class ChooseAssayTypeAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception

@@ -50,6 +50,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.actions.UploadWizardAction;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
@@ -5890,6 +5891,91 @@ public class ExperimentController extends SpringActionController
                 root.addChild(new NavTree("Experiment Run", ExperimentUrlsImpl.get().getRunGraphURL(_form.lookupRun())));
             }
             root.addChild(new NavTree("Selected Protocol Applications"));
+        }
+    }
+
+    @RequiresPermission(DesignAssayPermission.class)
+    public class AssayXarFileAction extends MutatingApiAction<Object>
+    {
+
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
+                throw new BadRequestException("Expected MultipartHttpServletRequest when posting files.");
+
+            if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
+            {
+                return false;
+            }
+
+            MultipartFile formFile = getFileMap().get("file");
+            if (formFile == null)
+            {
+                errors.addError(new LabKeyError("No file was posted by the browser."));
+                return false;
+            }
+
+            byte[] bytes = formFile.getBytes();
+            if (bytes.length == 0)
+            {
+                errors.addError(new LabKeyError("No file was posted by the browser."));
+                return false;
+            }
+
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
+            File systemDir = pipeRoot.ensureSystemDirectory();
+            File uploadDir = new File(systemDir, "UploadedXARs");
+            uploadDir.mkdirs();
+            if (!uploadDir.isDirectory())
+            {
+                errors.addError(new LabKeyError("Unable to create a 'system/UploadedXARs' directory under the pipeline root"));
+                return false;
+            }
+            String userDirName = getUser().getEmail();
+            if (userDirName == null || userDirName.length() == 0)
+            {
+                userDirName = GUEST_DIRECTORY_NAME;
+            }
+            File userDir = new File(uploadDir, userDirName);
+            userDir.mkdirs();
+            if (!userDir.isDirectory())
+            {
+                errors.addError(new LabKeyError("Unable to create an 'UploadedXARs/" + userDirName + "' directory under the pipeline root"));
+                return false;
+            }
+
+            File xarFile = new File(userDir, formFile.getOriginalFilename());
+            OutputStream out = null;
+            try
+            {
+                out = new BufferedOutputStream(new FileOutputStream(xarFile));
+                out.write(bytes);
+            }
+            catch (IOException e)
+            {
+                errors.addError(new LabKeyError("Unable to write uploaded XAR file to " + xarFile.getPath()));
+                return false;
+            }
+            finally
+            {
+                if (out != null)
+                { //noinspection EmptyCatchBlock
+                    try
+                    {
+                        out.close();
+                    }
+                    catch (IOException e)
+                    {
+                    }
+                }
+            }
+
+            ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), xarFile,
+                    "Uploaded file", true, pipeRoot);
+            PipelineService.get().queueJob(job);
+
+            return true;
         }
     }
 
