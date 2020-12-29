@@ -882,7 +882,7 @@ public class StudyPublishTest extends StudyPHIExportTest
                 "Wikis and their attachments",
                 "Files",
                 "QC State Settings",
-                "Sample Types");
+                "Sample Types and Data Classes");
         clickButton("Next", 0);
 
         // Wizard page 11 : Publish Options

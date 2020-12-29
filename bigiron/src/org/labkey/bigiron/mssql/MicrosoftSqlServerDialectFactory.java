@@ -22,7 +22,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelperTest;
@@ -56,6 +58,12 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     private String getProductName()
     {
         return PRODUCT_NAME;
+    }
+
+    public MicrosoftSqlServerDialectFactory()
+    {
+        // jTDS JDBC driver should not be present in <tomcat>/lib
+        DbScope.registerForbiddenTomcatFilenamePredicate(filename->filename.equalsIgnoreCase("jtds.jar"));
     }
 
     @Override
