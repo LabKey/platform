@@ -40,7 +40,7 @@ import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.PrimaryType;
 import org.labkey.study.model.SpecimenRequest;
 import org.labkey.api.specimen.SpecimenRequestStatus;
-import org.labkey.study.model.SpecimenTypeSummary;
+import org.labkey.api.specimen.model.SpecimenTypeSummary;
 import org.labkey.study.model.StudyManager;
 import org.labkey.api.specimen.Vial;
 import org.labkey.study.security.permissions.ManageRequestsPermission;

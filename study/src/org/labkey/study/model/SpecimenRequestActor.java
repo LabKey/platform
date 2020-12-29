@@ -28,15 +28,13 @@ import org.labkey.study.requirements.DefaultActor;
  * Date: Feb 8, 2006
  * Time: 4:18:20 PM
  */
-public class SpecimenRequestActor extends DefaultActor<SpecimenRequestActor>
-        implements StudyCachable<SpecimenRequestActor>, Cloneable
+public class SpecimenRequestActor extends DefaultActor<SpecimenRequestActor> implements StudyCachable<SpecimenRequestActor>, Cloneable
 {
     private int _rowId;
     private Integer _sortOrder;
     private Container _container;
     private String _label;
     private boolean _perSite;
-
     private boolean _mutable = true;
 
     public SpecimenRequestActor()
@@ -66,7 +64,6 @@ public class SpecimenRequestActor extends DefaultActor<SpecimenRequestActor>
         _mutable = false;
     }
 
-
     @Override
     public SpecimenRequestActor createMutable()
     {
@@ -81,7 +78,6 @@ public class SpecimenRequestActor extends DefaultActor<SpecimenRequestActor>
             throw new RuntimeException(e);
         }
     }
-
 
     @Override
     public Container getContainer()

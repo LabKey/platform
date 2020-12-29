@@ -33,8 +33,6 @@ public interface RequirementActor<A extends RequirementActor>
 
     String getGroupName();
 
-    void addMembers(User... users);
-
     void addMembers(Location location, User... users);
 
     User[] getMembers();

@@ -5,8 +5,8 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.TimeOnlyDate;
-import org.labkey.study.StudySchema;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -59,11 +59,11 @@ public class ImportableColumn
         switch (databaseType)
         {
             case SpecimenImporter.DURATION_TYPE:
-                _dbType = StudySchema.getInstance().getSqlDialect().getDefaultDateTimeDataType();
+                _dbType = StudyService.get().getStudySchema().getSqlDialect().getDefaultDateTimeDataType();
                 _javaClass = TimeOnlyDate.class;
                 break;
             case SpecimenImporter.DATETIME_TYPE:
-                _dbType = StudySchema.getInstance().getSqlDialect().getDefaultDateTimeDataType();
+                _dbType = StudyService.get().getStudySchema().getSqlDialect().getDefaultDateTimeDataType();
                 _javaClass = Date.class;
                 break;
             default:

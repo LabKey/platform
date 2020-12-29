@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 LabKey Corporation
+ * Copyright (c) 2009-2018 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.pipeline;
 
-import org.labkey.api.study.SpecimenTransform;
+package org.labkey.api.specimen.pipeline;
+
+import org.labkey.api.admin.ImportException;
 
 import java.io.File;
 
-/**
- * Created by klum on 5/24/2014.
- */
-public interface SpecimenReloadJobSupport extends SpecimenJobSupport
+/*
+* User: adam
+* Date: Sep 1, 2009
+* Time: 3:02:30 PM
+*/
+public interface SpecimenJobSupport
 {
-    void setSpecimenArchive(File archiveFile);
-
-    String getSpecimenTransform();
-
-    SpecimenTransform.ExternalImportConfig getExternalImportConfig();
+    /** A specimen archive as originally delivered. Might be transformed before import */
+    File getSpecimenArchive() throws ImportException;
+    boolean isMerge();
 }

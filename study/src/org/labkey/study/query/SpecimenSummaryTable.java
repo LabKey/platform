@@ -39,7 +39,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.SpecimenComment;
+import org.labkey.api.specimen.model.SpecimenComment;
 
 import java.io.IOException;
 import java.io.Writer;

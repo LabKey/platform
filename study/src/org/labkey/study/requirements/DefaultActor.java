@@ -28,9 +28,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.specimen.requirements.RequirementActor;
 import org.labkey.api.study.Location;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
@@ -44,13 +44,6 @@ import java.util.List;
  */
 public abstract class DefaultActor<A extends DefaultActor<A>> implements RequirementActor<A>
 {
-    // TODO: Unused... delete this?
-    @Override
-    public void addMembers(User... users)
-    {
-        addMembers(null, users);
-    }
-
     @Override
     public void addMembers(@Nullable Location location, User... users)
     {
@@ -181,7 +174,7 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
     @Override
     public void delete()
     {
-        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        DbScope scope = StudyService.get().getStudySchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             deleteAllGroups();

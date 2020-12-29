@@ -86,7 +86,7 @@ import org.labkey.study.SpecimenServiceImpl;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.SequenceNumImportHelper;
-import org.labkey.study.model.SpecimenComment;
+import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.specimen.SpecimenEvent;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;

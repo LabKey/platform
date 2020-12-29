@@ -22,7 +22,7 @@ import org.labkey.api.study.StudyCachable;
 import org.labkey.api.util.MemTracker;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
-import org.labkey.study.requirements.DefaultRequirement;
+import org.labkey.api.specimen.requirements.DefaultRequirement;
 
 /**
  * User: brittp

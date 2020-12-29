@@ -37,6 +37,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.specimen.importer.StandardSpecimenImportStrategy;
 import org.labkey.api.study.SpecimenImportStrategy;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.StudySchema;
@@ -218,7 +219,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
     {
         //Map from column name to
         Container container = getContainer();
-        Study study = StudyManager.getInstance().getStudy(container);
+        Study study = StudyService.get().getStudy(container);
         Map<String, LookupTable> lookupTables = new HashMap<>();
         lookupTables.put("additive_type", new LookupTable(StudySchema.getInstance().getTableInfoSpecimenAdditive(container), container, _additivesTableType, "additive_type_id", "additive_id", "additive", "Additive"));
         lookupTables.put("derivative_type", new LookupTable(StudySchema.getInstance().getTableInfoSpecimenDerivative(container), container, _derivativesTableType, "derivative_type_id", "derivative_id", "derivative", "Derivative"));

@@ -171,10 +171,10 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         importRequestStatuses(study, ctx, xmlSettings);
         importRequestActors(study, ctx, xmlSettings);
         importDefaultRequirements(study, ctx, xmlSettings);
-        importDisplaySettings(study, ctx, xmlSettings);
-        importRequestForm(study, ctx, xmlSettings);
+        importDisplaySettings(ctx, xmlSettings);
+        importRequestForm(ctx, xmlSettings);
         importNotifications(study, ctx, xmlSettings);
-        importRequestabilityRules(study, ctx, xmlSettings);
+        importRequestabilityRules(ctx, xmlSettings);
     }
 
 
@@ -264,7 +264,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                     {
                         // create new request actor if label does not match existing in-use actor label
                         SpecimenRequestActor actor;
-                        if (!inUseActors.keySet().contains(newActorLabel))
+                        if (!inUseActors.containsKey(newActorLabel))
                         {
                             actor = new SpecimenRequestActor();
                             actor.setContainer(ctx.getContainer());
@@ -382,9 +382,9 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
             if (null != xmlGroupings)
             {
                 ArrayList<String[]> groupings = new ArrayList<>(2);
-                for (int i = 0; i < xmlGroupings.length; i += 1)
+                for (StudyDocument.Study.Specimens.SpecimenWebPartGroupings.Grouping xmlGrouping : xmlGroupings)
                 {
-                    String[] groupBys = xmlGroupings[i].getGroupByArray();
+                    String[] groupBys = xmlGrouping.getGroupByArray();
                     groupings.add(groupBys);
                 }
                 reposSettings.setSpecimenWebPartGroupings(groupings);
@@ -409,7 +409,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
             study.setAllowReqLocEndpoint(xmlSettings.getAllowReqLocEndpoint());
     }
 
-    private void importDisplaySettings(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings)
+    private void importDisplaySettings(StudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
         ctx.getLogger().info("Importing specimen display settings");
         SpecimenSettingsType.DisplaySettings xmlDisplay = xmlSettings.getDisplaySettings();
@@ -433,7 +433,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         }
     }
 
-    private void importRequestForm(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
+    private void importRequestForm(StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
     {
         ctx.getLogger().info("Importing specimen request forms");
         // try to merge with any existing request forms, even though there doesn't seem to be the notion of a duplicate value
@@ -456,12 +456,13 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                     if (!currentInputs.contains(form.getTitle()))
                     {
                         SpecimenRequestInput input = new SpecimenRequestInput(
-                                form.getTitle(),
-                                form.getHelpText(),
-                                form.getDisplayOrder(),
-                                form.getMultiLine(),
-                                form.getRequired(),
-                                form.getRememberSiteValue());
+                            form.getTitle(),
+                            form.getHelpText(),
+                            form.getDisplayOrder(),
+                            form.getMultiLine(),
+                            form.getRequired(),
+                            form.getRememberSiteValue()
+                        );
 
                         inputs.add(input);
                     }
@@ -501,7 +502,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         }
     }
 
-    private void importRequestabilityRules(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings)
+    private void importRequestabilityRules(StudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
         ctx.getLogger().info("Importing specimen requestability rules");
         SpecimenSettingsType.RequestabilityRules xmlRules = xmlSettings.getRequestabilityRules();
