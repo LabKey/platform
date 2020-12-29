@@ -41,6 +41,7 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -62,6 +63,7 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AliasedColumn;
@@ -71,6 +73,8 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
@@ -1586,6 +1590,37 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         {
             return _maxContainedPhi;
         }
+
+        @Override
+        public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, List<Map<String, Object>>[] params)
+        {
+            List<Map<String, Object>> rows = params[0];
+            List<Map<String, Object>> updatedRows = params.length > 1 ? params[1] : Collections.emptyList();
+
+            for (int i=0; i < rows.size(); i++)
+            {
+                Map<String, Object> row = rows.get(i);
+                Map<String, Object> updatedRow = updatedRows.isEmpty() ? Collections.emptyMap() : updatedRows.get(i);
+
+                StudyServiceImpl.addDatasetAuditEvent(user, DatasetDefinition.this, row, updatedRow);
+            }
+        }
+
+        @Override
+        public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, Map<String, Object> parameters)
+        {
+            if (auditAction != QueryService.AuditAction.MERGE)
+            {
+                super.addAuditEvent(user, container, auditBehavior, userComment, auditAction, parameters);
+                return;
+            }
+
+            //REVIEW: I'm guessing this is a terrible idea for multiple reasons, but seems to work...
+            String lsid = String.valueOf(parameters.get("lsid"));
+            Map<String,Object> oldRow = DatasetDefinition.this.getDatasetRow(user, lsid);
+
+            StudyServiceImpl.addDatasetAuditEvent(user, DatasetDefinition.this, oldRow, parameters);
+        }
     }
 
 
@@ -2096,20 +2131,26 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         TableInfo table = getTableInfo(user, false);
         boolean needToHandleQCState = table.getColumn(DatasetTableImpl.QCSTATE_ID_COLNAME) != null;
 
+        DataIteratorBuilder dib = in;
+
         DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(this,
                 user,
                 needToHandleQCState,
                 defaultQCState,
                 studyImportContext);
-        b.setInput(in);
+        b.setInput(dib);
         b.setCheckDuplicates(checkDuplicates);
         b.setForUpdate(forUpdate);
         b.setUseImportAliases(!forUpdate);
         b.setKeyList(lsids);
 
         Container target = getDataSharingEnum() == DataSharing.NONE ? getContainer() : getDefinitionContainer();
-        StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
-        return ((UpdateableTableInfo)table).persistRows(etl, context);
+        dib = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
+
+        if (context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior) == AuditBehaviorType.DETAILED)
+            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(this.getTableInfo(user, false), dib, context.getInsertOption() == QueryUpdateService.InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, target);
+
+        return ((UpdateableTableInfo)table).persistRows(dib, context);
     }
 
 
