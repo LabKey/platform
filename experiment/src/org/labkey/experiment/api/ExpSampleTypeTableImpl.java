@@ -41,7 +41,7 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
 {
     public ExpSampleTypeTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoSampleType(), schema, new ExpSampleTypeImpl(new MaterialSource()), cf);
+        super(name, ExperimentServiceImpl.get().getTinfoSampleType(), schema, cf);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
     }

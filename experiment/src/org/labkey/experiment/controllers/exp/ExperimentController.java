@@ -131,7 +131,6 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFactory;
-import org.labkey.api.reader.TabLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresNoPermission;
@@ -171,7 +170,6 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HBox;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -4669,8 +4667,6 @@ public class ExperimentController extends SpringActionController
     @RequiresNoPermission
     public class SetFlagAction extends FormHandlerAction<SetFlagForm>
     {
-        private URLHelper _successURL;
-
         @Override
         public void validateCommand(SetFlagForm target, Errors errors)
         {
@@ -4692,18 +4688,13 @@ public class ExperimentController extends SpringActionController
             }
 
             obj.setComment(getUser(), form.getComment());
-
-            if (form.isRedirect())
-            {
-                _successURL = new URLHelper(obj.urlFlag(!StringUtils.isEmpty(form.getComment())));
-            }
             return true;
         }
 
         @Override
         public URLHelper getSuccessURL(SetFlagForm form)
         {
-            return _successURL;
+            return null;
         }
     }
 

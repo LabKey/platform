@@ -121,7 +121,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
     public ExpDataClassDataTableImpl(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClassImpl dataClass)
     {
-        super(name, ExperimentService.get().getTinfoData(), schema, dataClass, cf);
+        super(name, ExperimentService.get().getTinfoData(), schema, cf);
         _dataClass = dataClass;
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);

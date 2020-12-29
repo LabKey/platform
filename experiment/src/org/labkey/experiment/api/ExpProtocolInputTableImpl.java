@@ -31,7 +31,7 @@ public abstract class ExpProtocolInputTableImpl<C extends Enum> extends ExpTable
 {
     protected ExpProtocolInputTableImpl(String name, TableInfo rootTable, UserSchema schema, ContainerFilter cf)
     {
-        super(name, rootTable, schema, null, cf);
+        super(name, rootTable, schema, cf);
     }
 
     @Override

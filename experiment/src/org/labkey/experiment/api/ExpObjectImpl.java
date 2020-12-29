@@ -137,12 +137,6 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
     }
 
     @Override
-    public String urlFlag(boolean flagged)
-    {
-        return AppProps.getInstance().getContextPath() + "/experiment/" + (flagged ? "flagDefault.gif" : "unflagDefault.gif");
-    }
-
-    @Override
     public Object getProperty(DomainProperty prop)
     {
         return getProperty(prop.getPropertyDescriptor());
