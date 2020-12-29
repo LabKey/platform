@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -141,7 +142,7 @@ public class NotificationEndpoint extends Endpoint
         void apply() throws IOException, IllegalStateException;
     }
 
-    private static List<NotificationEndpoint> endpoints(int userId)
+    private static List<NotificationEndpoint> getEndpoints(int userId)
     {
         NotificationEndpoint[] arr;
         synchronized (endpointsMap)
@@ -154,7 +155,7 @@ public class NotificationEndpoint extends Endpoint
         return Arrays.asList(arr);
     }
 
-    private static List<NotificationEndpoint> endpoints(List<Integer> userIds)
+    private static List<NotificationEndpoint> getEndpoints(List<Integer> userIds)
     {
         List<NotificationEndpoint> endpoints = new ArrayList<>();
         synchronized (endpointsMap)
@@ -196,7 +197,7 @@ public class NotificationEndpoint extends Endpoint
     {
         // Close WebSockets for the user AND httpSession
         final CloseReason reason = new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, message);
-        long count = endpoints(userId)
+        long count = getEndpoints(userId)
                 .stream()
                 .filter(e -> e.isSameHttpSession(httpSession))
                 .map(e -> e.safely(() -> e.session.close(reason)))
@@ -208,20 +209,16 @@ public class NotificationEndpoint extends Endpoint
 
     private static void sendEvent(int userId, String eventName)
     {
-        List<Integer> users = new ArrayList<>();
-        users.add(userId);
-
-        sendEvent(users, eventName);
+        sendEvent(Collections.singletonList(userId), eventName);
     }
 
     private static void sendEvent(List<Integer> userIds, String eventName)
     {
         final String data = "{\"event\":\"" + eventName + "\"}";
-        List<NotificationEndpoint> endpoints = endpoints(userIds);
 
         long count = 0;
         // do not refactor to use stream as it might result in deadlock
-        for (NotificationEndpoint endpoint : endpoints)
+        for (NotificationEndpoint endpoint : getEndpoints(userIds))
         {
             endpoint.safely(() -> {
                 endpoint.session.getBasicRemote().sendText(data);

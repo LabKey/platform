@@ -76,11 +76,47 @@ public interface PipelineJobNotificationProvider
         @Override
         public void onJobDone(PipelineJob job)
         {
-
-            sendJobNotification(job, null);
+            sendJobNotification(job, getJobNotification(job, null));
         }
 
-        public static void sendJobNotification(PipelineJob job, @Nullable String msgContent)
+        public static Notification getJobNotification(PipelineJob job, @Nullable String msgContent)
+        {
+            User user = job.getUser();
+            PipelineJob.TaskStatus status = job.getActiveTaskStatus();
+
+            Notification n = new Notification(job.getJobGUID(), status.getNotificationType(), user);
+            if (StringUtils.isEmpty(msgContent))
+            {
+                String description = StringUtils.defaultString(job.getDescription(), job.toString());
+                n.setContent(String.format("Background job %s\n%s", status.toString().toLowerCase(), description), "text/plain");
+            }
+            else
+                n.setContent(msgContent);
+
+            if (null != job.getStatusHref())
+            {
+                n.setActionLinkURL(job.getStatusHref().getLocalURIString());
+                n.setActionLinkText("view");
+            }
+            else
+            {
+                Integer jobId = PipelineService.get().getJobId(user, job.getContainer(), job.getJobGUID());
+                if (jobId != null)
+                {
+                    n.setActionLinkURL(PageFlowUtil.urlProvider(PipelineUrls.class).statusDetails(job.getContainer()).addParameter("rowId", jobId).getLocalURIString());
+                    n.setActionLinkText("view");
+                }
+                else
+                {
+                    n.setActionLinkURL(PageFlowUtil.urlProvider(PipelineUrls.class).statusList(job.getContainer()).getLocalURIString());
+                    n.setActionLinkText("pipeline");
+                }
+            }
+
+            return n;
+        }
+
+        public static void sendJobNotification(PipelineJob job, Notification n)
         {
             User user = job.getUser();
             if (null == user || user.isServiceUser() || user.getUserId() <= 0)
@@ -97,41 +133,12 @@ public interface PipelineJobNotificationProvider
 
             try
             {
-                PipelineJob.TaskStatus status = job.getActiveTaskStatus();
-                Notification n = new Notification(job.getJobGUID(), status.getNotificationType(), user);
-                if (StringUtils.isEmpty(msgContent))
-                {
-                    String description = StringUtils.defaultString(job.getDescription(), job.toString());
-                    n.setContent(String.format("Background job %s\n%s", status.toString().toLowerCase(), description), "text/plain");
-                }
-                else
-                    n.setContent(msgContent);
-
-                if (null != job.getStatusHref())
-                {
-                    n.setActionLinkURL(job.getStatusHref().getLocalURIString());
-                    n.setActionLinkText("view");
-                }
-                else
-                {
-                    Integer jobId = PipelineService.get().getJobId(user, job.getContainer(), job.getJobGUID());
-                    if (jobId != null)
-                    {
-                        n.setActionLinkURL(PageFlowUtil.urlProvider(PipelineUrls.class).statusDetails(job.getContainer()).addParameter("rowId", jobId).getLocalURIString());
-                        n.setActionLinkText("view");
-                    }
-                    else
-                    {
-                        n.setActionLinkURL(PageFlowUtil.urlProvider(PipelineUrls.class).statusList(job.getContainer()).getLocalURIString());
-                        n.setActionLinkText("pipeline");
-                    }
-                }
                 // Remove all previous notifications for this job
                 NotificationService.get().removeNotifications(
-                    job.getContainer(),
-                    job.getJobGUID(),
-                    Arrays.stream(PipelineJob.TaskStatus.values()).map(PipelineJob.TaskStatus::getNotificationType).collect(Collectors.toList()),
-                    user.getUserId());
+                        job.getContainer(),
+                        job.getJobGUID(),
+                        Arrays.stream(PipelineJob.TaskStatus.values()).map(PipelineJob.TaskStatus::getNotificationType).collect(Collectors.toList()),
+                        user.getUserId());
                 NotificationService.get().addNotification(job.getContainer(), user, n);
             }
             catch (ValidationException x)
@@ -140,6 +147,7 @@ public interface PipelineJobNotificationProvider
             }
 
         }
+
     }
 
 }
