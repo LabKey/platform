@@ -90,7 +90,7 @@ export const App: FC<any> = memo(props => {
                     />
                 </Panel.Body>
             </Panel>
-            <div className={'assay-type-select-panel'}>
+            <div className={'assay-type-select-panel assay-type-select-btns'}>
                 <Button onClick={onCancel}>Cancel</Button>
                 <Button
                     className="pull-right"
