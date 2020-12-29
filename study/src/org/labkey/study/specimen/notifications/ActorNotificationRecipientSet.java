@@ -18,6 +18,7 @@ package org.labkey.study.specimen.notifications;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.notifications.NotificationRecipientSet;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -35,8 +36,8 @@ import org.labkey.study.model.StudyManager;
 */
 public class ActorNotificationRecipientSet extends NotificationRecipientSet
 {
-    private SpecimenRequestActor _actor;
-    private LocationImpl _location;
+    private final SpecimenRequestActor _actor;
+    private final LocationImpl _location;
 
     public ActorNotificationRecipientSet(SpecimenRequestActor actor, LocationImpl location)
     {

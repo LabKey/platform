@@ -35,7 +35,6 @@ import java.util.List;
 public class SpecimenTable extends AbstractSpecimenTable
 {
     private List<SpecimenTable> _studySpecimenTables = null;
-    private List<ColumnInfo> _unionColumns = null;
 
     public SpecimenTable(StudyQuerySchema schema, ContainerFilter cf, boolean skipPermissionChecks, boolean allStudies)
     {
