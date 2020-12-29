@@ -304,12 +304,6 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     @Override
-    public String urlFlag(boolean flagged)
-    {
-        return AppProps.getInstance().getContextPath() + "/experiment/" + (flagged ? "flagRun.gif" : "unflagRun.gif");
-    }
-
-    @Override
     public void save(User user) throws BatchValidationException
     {
         try (DbScope.Transaction t = ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction())

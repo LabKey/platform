@@ -4,6 +4,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.DomainProperty;
 
+import java.util.Map;
 import java.util.Set;
 
 public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
@@ -16,6 +17,7 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
     Set<String> dontUpdate = null;
     boolean commitRowsBeforeContinuing = false;
     private Set<DomainProperty> vocabularyProperties;
+    Map<String, String> remapSchemaColumns = null;
 
     public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table, Container c)
     {
@@ -42,6 +44,12 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
         return this;
     }
 
+    public TableInsertDataIteratorBuilder setRemapSchemaColumns(Map<String, String> remapSchemaColumns)
+    {
+        this.remapSchemaColumns = remapSchemaColumns;
+        return this;
+    }
+
     /**
      * This option can be used to request that this data iterator does not return rows that are not yet 'in' the database.
      * For instance, this may be important if there is a subsequent insert into a table with an enforced foreign key to this table.
@@ -63,7 +71,8 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
     @Override
     public DataIterator getDataIterator(DataIteratorContext context)
     {
-        DataIterator di = TableInsertDataIterator.create(builder, table, container, context, keyColumns, addlSkipColumns, dontUpdate, vocabularyProperties, commitRowsBeforeContinuing);
+        DataIterator di = TableInsertDataIterator.create(builder, table, container, context, keyColumns, addlSkipColumns,
+                dontUpdate, vocabularyProperties, commitRowsBeforeContinuing, remapSchemaColumns);
         if (null == di)
         {
             //noinspection ThrowableNotThrown

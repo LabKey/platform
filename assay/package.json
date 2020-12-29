@@ -15,6 +15,6 @@
     "@labkey/components": "1.9.0-fb-assay-picker.18"
   },
   "devDependencies": {
-    "@labkey/build": "0.4.0"
+    "@labkey/build": "0.5.1"
   }
 }

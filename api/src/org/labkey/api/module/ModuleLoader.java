@@ -51,7 +51,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.ModuleUpgrader.Execution;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
@@ -84,13 +83,6 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.naming.Binding;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NameNotFoundException;
-import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
-import javax.naming.Reference;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -98,12 +90,10 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -122,11 +112,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
@@ -477,7 +465,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         verifyProductionModeMatchesBuild();
 
         // Initialize data sources before initializing modules; modules will fail to initialize if the appropriate data sources aren't available
-        initializeDataSources();
+        DbScope.initializeDataSources();
 
         // Start up a thread that lets us hit a breakpoint in the debugger, even if all the real working threads are hung.
         // This lets us invoke methods in the debugger, gain easier access to statics, etc.
@@ -1088,70 +1076,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         return _tomcatVersion;
     }
 
-    // Enumerate each jdbc DataSource in labkey.xml and tell DbScope to initialize them
-    private void initializeDataSources()
-    {
-        verifyJdbcDrivers();
-
-        _log.debug("Ensuring that all databases specified by datasources in webapp configuration xml are present");
-
-        Map<String, DataSource> dataSources = new TreeMap<>(String::compareTo);
-
-        String labkeyDsName;
-
-        try
-        {
-            // Ensure that the labkeyDataSource (or cpasDataSource, for old installations) exists in
-            // labkey.xml / cpas.xml and create the associated database if it doesn't already exist.
-            labkeyDsName = ensureDatabase(LABKEY_DATA_SOURCE, CPAS_DATA_SOURCE);
-
-            InitialContext ctx = new InitialContext();
-            Context envCtx = (Context) ctx.lookup("java:comp/env");
-            NamingEnumeration<Binding> iter = envCtx.listBindings("jdbc");
-
-            while (iter.hasMore())
-            {
-                try
-                {
-                    Binding o = iter.next();
-                    String dsName = o.getName();
-                    DataSource ds = (DataSource) o.getObject();
-                    dataSources.put(dsName, ds);
-                }
-                catch (NamingException e)
-                {
-                    _log.error("DataSources are not properly configured in " + AppProps.getInstance().getWebappConfigurationFilename() + ".", e);
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            throw new ConfigurationException("DataSources are not properly configured in " + AppProps.getInstance().getWebappConfigurationFilename() + ".", e);
-        }
-
-        DbScope.initializeScopes(labkeyDsName, dataSources);
-    }
-
-    // Verify that old JDBC drivers are not present in <tomcat>/lib -- they are now provided by the API module
-    private void verifyJdbcDrivers()
-    {
-        File lib = getTomcatLib();
-
-        if (null != lib)
-        {
-            List<String> existing = Stream.of("jtds.jar", "mysql.jar", "postgresql.jar")
-                .filter(name->new File(lib, name).exists())
-                .collect(Collectors.toList());
-
-            if (!existing.isEmpty())
-            {
-                String path = FileUtil.getAbsoluteCaseSensitiveFile(lib).getAbsolutePath();
-                throw new ConfigurationException("You must delete the following JDBC drivers from " + path + ": " + existing);
-            }
-        }
-    }
-
-    public @Nullable File getTomcatLib()
+    public static @Nullable File getTomcatLib()
     {
         String classPath = System.getProperty("java.class.path", ".");
 
@@ -1177,83 +1102,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
 
         return new File(tomcat, "lib");
-    }
-
-    // For each name, look for a matching data source in labkey.xml. If found, attempt a connection and
-    // create the database if it doesn't already exist, report any errors and return the name.
-    public String ensureDatabase(@NotNull String primaryName, String... alternativeNames) throws NamingException, ServletException
-    {
-        List<String> dsNames = new ArrayList<>();
-        dsNames.add(primaryName);
-        dsNames.addAll(Arrays.asList(alternativeNames));
-
-        InitialContext ctx = new InitialContext();
-        Context envCtx = (Context) ctx.lookup("java:comp/env");
-
-        DataSource dataSource = null;
-        String dsName = null;
-
-        for (String name : dsNames)
-        {
-            dsName = name;
-
-            try
-            {
-                dataSource = (DataSource)envCtx.lookup("jdbc/" + dsName);
-                break;
-            }
-            catch (NameNotFoundException e)
-            {
-                // Name not found is fine (for now); keep looping through alternative names
-            }
-            catch (NamingException e)
-            {
-                String message = e.getMessage();
-
-                // dataSource is defined but the database doesn't exist. This happens only with the Tomcat JDBC
-                // connection pool, which attempts a connection on bind. In this case, we need to use some horrible
-                // reflection to get the properties we need to create the database.
-                if ((message.contains("FATAL: database") && message.contains("does not exist")) ||
-                    (message.contains("Cannot open database") && message.contains("requested by the login. The login failed.")))
-                {
-                    try
-                    {
-                        Object namingContext = envCtx.lookup("jdbc");
-                        Field bindingsField = namingContext.getClass().getDeclaredField("bindings");
-                        bindingsField.setAccessible(true);
-                        Map bindings = (Map)bindingsField.get(namingContext);
-                        Object namingEntry = bindings.get(dsName);
-                        Field valueField = namingEntry.getClass().getDeclaredField("value");
-                        Reference reference = (Reference)valueField.get(namingEntry);
-
-                        String driverClassname = (String)reference.get("driverClassName").getContent();
-                        SqlDialect dialect = SqlDialectManager.getFromDriverClassname(dsName, driverClassname);
-                        String url = (String)reference.get("url").getContent();
-                        String password = (String)reference.get("password").getContent();
-                        String username = (String)reference.get("username").getContent();
-
-                        DbScope.createDataBase(dialect, url, username, password, DbScope.isPrimaryDataSource(dsName));
-                    }
-                    catch (Exception e2)
-                    {
-                        throw new ConfigurationException("Failed to retrieve \"" + dsName + "\" properties from " + AppProps.getInstance().getWebappConfigurationFilename() + ". Try creating the database manually and restarting the server.", e2);
-                    }
-
-                    // Try it again
-                    dataSource = (DataSource)envCtx.lookup("jdbc/" + dsName);
-                    break;
-                }
-
-                throw new ConfigurationException("Failed to load DataSource \"" + dsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ".", e);
-            }
-        }
-
-        if (null == dataSource)
-            throw new ConfigurationException("You must have a DataSource named \"" + primaryName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ".");
-
-        DbScope.ensureDataBase(dsName, dataSource);
-
-        return dsName;
     }
 
 

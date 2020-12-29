@@ -40,7 +40,7 @@
         %>
             <strong>Site Level Validation Results</strong>
             <% if (siteResults.isEmpty()) { %>
-            <span>No site-wide validators have been registered.</span>
+            <p>No site-wide validators have been registered.</p>
             <% }
                 else {
             %>
