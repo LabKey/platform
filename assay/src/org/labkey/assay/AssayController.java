@@ -712,7 +712,7 @@ public class AssayController extends SpringActionController
             {
                 locations.put(entry.getKey().getEncodedPath(), entry.getValue());
                 if (defaultLocation == null)
-                    defaultLocation = entry.getKey().getId();
+                    defaultLocation = entry.getKey().getEncodedPath();
             }
 
             response.put("defaultLocation", defaultLocation);
