@@ -44,7 +44,7 @@ import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.LocationImpl;
+import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.specimen.LocationCache;
 

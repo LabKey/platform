@@ -135,7 +135,7 @@ import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ExtendedSpecimenRequestView;
-import org.labkey.study.model.LocationImpl;
+import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.SpecimenRequest;

@@ -9,7 +9,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.LocationImpl;
+import org.labkey.api.specimen.location.LocationImpl;
 
 import java.util.Collections;
 import java.util.HashMap;

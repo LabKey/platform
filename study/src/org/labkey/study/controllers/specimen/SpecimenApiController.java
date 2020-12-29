@@ -36,7 +36,7 @@ import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.model.AdditiveType;
 import org.labkey.study.model.DerivativeType;
-import org.labkey.study.model.LocationImpl;
+import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.study.model.PrimaryType;
 import org.labkey.study.model.SpecimenRequest;
 import org.labkey.api.specimen.SpecimenRequestStatus;

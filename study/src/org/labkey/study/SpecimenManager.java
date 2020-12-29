@@ -89,7 +89,7 @@ import org.labkey.study.model.AdditiveType;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DerivativeType;
 import org.labkey.study.model.ExtendedSpecimenRequestView;
-import org.labkey.study.model.LocationImpl;
+import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.study.model.PrimaryType;
 import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.specimen.SpecimenEvent;

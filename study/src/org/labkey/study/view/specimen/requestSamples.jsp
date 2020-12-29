@@ -26,7 +26,7 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.HandleCreateSampleRequestAction"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.NewRequestBean" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ViewRequestsAction" %>
-<%@ page import="org.labkey.study.model.LocationImpl" %>
+<%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.api.specimen.Vial" %>
 <%@ page import="org.springframework.validation.BindException" %>

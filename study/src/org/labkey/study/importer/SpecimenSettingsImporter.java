@@ -32,7 +32,7 @@ import org.labkey.security.xml.GroupType;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.SpecimenManager.SpecimenRequestInput;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.LocationImpl;
+import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.study.model.SpecimenRequestActor;
 import org.labkey.study.model.SpecimenRequestRequirement;
 import org.labkey.study.model.StudyImpl;

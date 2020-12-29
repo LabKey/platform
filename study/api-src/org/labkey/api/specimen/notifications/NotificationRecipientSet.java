@@ -20,9 +20,9 @@ import javax.mail.Address;
 
 /**
  * User: brittp
-* Date: May 4, 2007
-* Time: 3:35:26 PM
-*/
+ * Date: May 4, 2007
+ * Time: 3:35:26 PM
+ */
 public class NotificationRecipientSet
 {
     private String[] _addresses;

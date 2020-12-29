@@ -27,10 +27,10 @@ import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.model.SpecimenTypeSummary;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.PrimaryType;
 import org.labkey.study.model.StudyManager;
 

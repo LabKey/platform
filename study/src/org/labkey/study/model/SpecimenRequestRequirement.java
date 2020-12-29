@@ -18,6 +18,7 @@ package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.study.StudyCachable;
 import org.labkey.api.util.MemTracker;
 import org.labkey.study.SpecimenManager;

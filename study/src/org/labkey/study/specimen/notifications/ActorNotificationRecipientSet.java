@@ -25,15 +25,15 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.ShowGroupMembersAction;
-import org.labkey.study.model.LocationImpl;
+import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.study.model.SpecimenRequestActor;
 import org.labkey.study.model.StudyManager;
 
 /**
  * User: brittp
-* Date: May 4, 2007
-* Time: 3:36:19 PM
-*/
+ * Date: May 4, 2007
+ * Time: 3:36:19 PM
+ */
 public class ActorNotificationRecipientSet extends NotificationRecipientSet
 {
     private final SpecimenRequestActor _actor;
