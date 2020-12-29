@@ -48,6 +48,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -109,8 +110,8 @@ import org.labkey.study.query.SpecimenWrapTable;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.VialTable;
 import org.labkey.study.query.VisitTable;
-import org.labkey.study.security.roles.SpecimenCoordinatorRole;
-import org.labkey.study.security.roles.SpecimenRequesterRole;
+import org.labkey.api.specimen.security.roles.SpecimenCoordinatorRole;
+import org.labkey.api.specimen.security.roles.SpecimenRequesterRole;
 import org.springframework.validation.BindException;
 
 import java.io.File;
@@ -134,10 +135,17 @@ import java.util.concurrent.ConcurrentHashMap;
 public class StudyServiceImpl implements StudyService
 {
     public static final StudyServiceImpl INSTANCE = new StudyServiceImpl();
+    private static final List<StudyManagementOption> _managementOptions = new ArrayList<>();
+
     private final Map<String, StudyReloadSource> _reloadSourceMap = new ConcurrentHashMap<>();
-    private static List<StudyManagementOption> _managementOptions = new ArrayList<>();
 
     private StudyServiceImpl() {}
+
+    @Override
+    public Class<? extends Module> getStudyModuleClass()
+    {
+        return StudyModule.class;
+    }
 
     @Override
     public StudyImpl getStudy(Container container)

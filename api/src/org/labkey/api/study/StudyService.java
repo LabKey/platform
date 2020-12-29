@@ -28,6 +28,7 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.QuerySchema;
@@ -72,6 +73,12 @@ public interface StudyService
     {
         return ServiceRegistry.get().getService(StudyService.class);
     }
+
+    /**
+     * Useful for associating permissions and roles that live in API or other modules with the study module
+     * @return The Study module's {@code Class}
+     */
+    Class<? extends Module> getStudyModuleClass();
 
     /**
      * Get the {@link Study} for the {@link Container} if it exists.

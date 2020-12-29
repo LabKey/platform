@@ -40,7 +40,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.EditSpecimenDataPermission;
+import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.CohortForeignKey;

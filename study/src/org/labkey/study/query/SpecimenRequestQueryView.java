@@ -37,8 +37,8 @@ import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.security.permissions.ManageRequestsPermission;
-import org.labkey.study.security.permissions.RequestSpecimensPermission;
+import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
+import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 
 import java.io.IOException;
 import java.io.Writer;

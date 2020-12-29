@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 LabKey Corporation
+ * Copyright (c) 2009-2012 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.security.permissions;
+package org.labkey.api.specimen.security.permissions;
 
+import org.labkey.api.security.permissions.AbstractPermission;
+import org.labkey.api.study.StudyService;
 
-/**
- * User: davebradlee
- * Date: 6/10/13
- * Time: 2:53 PM
- */
-public class EditSpecimenDataPermission extends AbstractPermission
+/*
+* User: Dave
+* Date: May 18, 2009
+* Time: 11:39:16 AM
+*/
+public class SetSpecimenCommentsPermission extends AbstractPermission
 {
-    public EditSpecimenDataPermission()
+    public SetSpecimenCommentsPermission()
     {
-        super("Edit Specimen Data", "Allows editing of specimen data");
+        super("Set Specimen Comments",
+                "Allows the setting of comments on specimens",
+                StudyService.get().getStudyModuleClass()); // TODO: Switch to SpecimenModule.class
     }
 }

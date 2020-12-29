@@ -25,7 +25,7 @@
 <%@ page import="org.labkey.study.controllers.specimen.ShowSearchAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.ShowUploadSpecimensAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
-<%@ page import="org.labkey.study.security.permissions.RequestSpecimensPermission" %>
+<%@ page import="org.labkey.api.specimen.security.permissions.RequestSpecimensPermission" %>
 <%@ page import="org.labkey.study.specimen.SpecimenWebPart" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%

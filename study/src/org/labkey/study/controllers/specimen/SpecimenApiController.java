@@ -43,8 +43,8 @@ import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.model.SpecimenTypeSummary;
 import org.labkey.study.model.StudyManager;
 import org.labkey.api.specimen.Vial;
-import org.labkey.study.security.permissions.ManageRequestsPermission;
-import org.labkey.study.security.permissions.RequestSpecimensPermission;
+import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
+import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.springframework.validation.BindException;
 
