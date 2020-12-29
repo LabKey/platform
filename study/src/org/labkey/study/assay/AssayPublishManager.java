@@ -56,6 +56,7 @@ import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.QCState;
@@ -826,7 +827,7 @@ public class AssayPublishManager implements AssayPublishService
      * Return an array of LSIDs from the newly created dataset entries,
      * along with the upload log.
      */
-    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DatasetDefinition dsd, DataLoader dl, boolean importLookupByAlternateKey, FileStream fileIn, String originalFileName, Map<String, String> columnMap, BatchValidationException errors)
+    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DatasetDefinition dsd, DataLoader dl, boolean importLookupByAlternateKey, FileStream fileIn, String originalFileName, Map<String, String> columnMap, BatchValidationException errors, QueryUpdateService.InsertOption insertOption, @Nullable AuditBehaviorType auditBehaviorType)
     {
         DbScope scope = StudySchema.getInstance().getScope();
 
@@ -845,7 +846,7 @@ public class AssayPublishManager implements AssayPublishService
                 if (defaultQCStateId != null)
                     defaultQCState = QCStateManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
                 lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, DatasetDefinition.CheckForDuplicates.sourceOnly,
-                        defaultQCState, QueryUpdateService.InsertOption.IMPORT, null, null, importLookupByAlternateKey);
+                        defaultQCState, insertOption, null, null, importLookupByAlternateKey, auditBehaviorType);
                 if (!errors.hasErrors())
                     transaction.commit();
             }
