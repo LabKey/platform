@@ -110,7 +110,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     private boolean _bulkLoad = false;
     private CaseInsensitiveHashMap<ColumnInfo> _columnImportMap = null;
     private VirtualFile _att = null;
-    private AttachmentParentFactory _attachmentParentFactory;
 
     protected AbstractQueryUpdateService(TableInfo queryTable)
     {
@@ -806,21 +805,31 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return file;
     }
 
-    protected void setAttachmentDirectory(VirtualFile att)
+    /**
+     * Is used by the AttachmentDataIterator to point to the location of the serialized
+     * attachment files.
+     */
+    public void setAttachmentDirectory(VirtualFile att)
     {
         _att = att;
     }
+
+    @Nullable
     protected VirtualFile getAttachmentDirectory()
     {
         return _att;
     }
 
-    protected void setAttachmentParentFactory(AttachmentParentFactory ap)
+    /**
+     * QUS instances that allow import of attachments through the AttachmentDataIterator should furnish a factory
+     * implementation in order to resolve the attachment parent on incoming attachment files.
+     * @return
+     */
+    @Nullable
+    protected AttachmentParentFactory getAttachmentParentFactory()
     {
-        _attachmentParentFactory = ap;
+        return null;
     }
-    protected AttachmentParentFactory getAttachmentParentFactory() { return _attachmentParentFactory; }
-
 
     /** Translate between the column name that query is exposing to the column name that actually lives in the database */
     protected static void aliasColumns(Map<String, String> columnMapping, Map<String, Object> row)
