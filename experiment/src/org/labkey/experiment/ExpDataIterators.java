@@ -868,14 +868,11 @@ public class ExpDataIterators
                     .setAddlSkipColumns(Set.of("generated","runId","sourceapplicationid"))     // generated has database DEFAULT 0
                     .setCommitRowsBeforeContinuing(true));
 
-            // pass in voc cols here
-            Set<DomainProperty> vocabularyDomainProperties = findVocabularyProperties(colNameMap);
-
             // pass in remap columns to help reconcile columns that may be aliased in the virtual table
             DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2, _propertiesTable, _container)
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
-                    .setVocabularyProperties(vocabularyDomainProperties)
+                    .setVocabularyProperties(ExperimentService.get().findVocabularyProperties(_container, colNameMap.keySet()))
                     .setRemapSchemaColumns(((UpdateableTableInfo)_expTable).remapSchemaColumns()));
 
             DataIteratorBuilder step4 = step3;
@@ -893,29 +890,6 @@ public class ExpDataIterators
                 step6 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step5, _indexFunction)); // may need to add this after the aliases are set
 
             return LoggingDataIterator.wrap(step6.getDataIterator(context));
-        }
-
-        private Set<DomainProperty> findVocabularyProperties(Map<String, Integer> colNameMap)
-        {
-            Set<DomainProperty> vocabularyDomainProperties = new HashSet<>();
-            for (String key: colNameMap.keySet())
-            {
-                if (URIUtil.hasURICharacters(key))
-                {
-                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(key, _container);
-
-                    if (null != pd)
-                    {
-                        List<Domain> vocabDomains = OntologyManager.getDomainsForPropertyDescriptor(_container, pd).stream().filter(d -> d.getDomainKind() instanceof VocabularyDomainKind).collect(Collectors.toList());
-                        if (!vocabDomains.isEmpty())
-                        {
-                            DomainProperty dp = vocabDomains.get(0).getPropertyByURI(key);
-                            vocabularyDomainProperties.add(dp);
-                        }
-                    }
-                }
-            }
-            return vocabularyDomainProperties;
         }
     }
 }

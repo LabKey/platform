@@ -107,6 +107,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -213,7 +214,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpRunImpl getExpRun(int rowid)
+    public @Nullable ExpRunImpl getExpRun(int rowid)
     {
         SimpleFilter filter = new SimpleFilter().addCondition(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowid);
         ExperimentRun run = new TableSelector(getTinfoExperimentRun(), filter, null).getObject(ExperimentRun.class);
@@ -7118,6 +7119,39 @@ public class ExperimentServiceImpl implements ExperimentService
     public boolean useUXDomainDesigner()
     {
         return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_DOMAIN_DESIGNER);
+    }
+
+    @Override
+    public Set<DomainProperty> findVocabularyProperties(Container container, Set<String> keyColumnNames)
+    {
+        Set<DomainProperty> vocabularyDomainProperties = new HashSet<>();
+
+        if (null != container)
+        {
+            for (String key : keyColumnNames)
+            {
+                if (URIUtil.hasURICharacters(key))
+                {
+                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(key, container);
+
+                    if (null != pd)
+                    {
+                        List<Domain> vocabDomains = OntologyManager.getDomainsForPropertyDescriptor(container, pd)
+                                .stream()
+                                .filter(d -> d.getDomainKind() instanceof VocabularyDomainKind)
+                                .collect(Collectors.toList());
+
+                        if (!vocabDomains.isEmpty())
+                        {
+                            DomainProperty dp = vocabDomains.get(0).getPropertyByURI(key);
+                            vocabularyDomainProperties.add(dp);
+                        }
+                    }
+                }
+            }
+        }
+
+        return vocabularyDomainProperties;
     }
 
     public static class TestCase extends Assert

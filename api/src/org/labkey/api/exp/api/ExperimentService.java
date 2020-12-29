@@ -39,6 +39,8 @@ import org.labkey.api.exp.ProtocolApplicationParameter;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
+import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataClassTable;
 import org.labkey.api.exp.query.ExpDataInputTable;
@@ -111,6 +113,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @Nullable
     ExpObject findObjectFromLSID(String lsid);
 
+    @Nullable
     ExpRun getExpRun(int rowid);
 
     List<? extends ExpRun> getExpRuns(Collection<Integer> rowIds);
@@ -750,6 +753,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<String> collectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options);
 
     SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options);
+
+    Set<DomainProperty> findVocabularyProperties(Container container, Set<String> colNameMap);
 
     class XarExportOptions
     {

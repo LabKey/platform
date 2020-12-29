@@ -121,17 +121,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     protected DataIteratorBuilder preTriggerDataIterator(DataIteratorBuilder in, DataIteratorContext context)
     {
-//        boolean addUniqueSuffix = false;
-//        boolean skipDerivation = false;
-        Map<Enum,Object> configParameters = context.getConfigParameters();
-        if (configParameters != null)
-        {
-//            if (configParameters.containsKey(SampleSetUpdateServiceDI.Options.AddUniqueSuffixForDuplicateNames))
-//                addUniqueSuffix = true;
-//            if (configParameters.containsKey(SampleSetUpdateServiceDI.Options.SkipDerivation))
-//                skipDerivation = true;
-        }
-
         // MOVE PrepareDataIteratorBuilder into this file
         return new UploadSamplesHelper.PrepareDataIteratorBuilder(_sampleType, getQueryTable(), in);
     }
