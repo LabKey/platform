@@ -71,13 +71,14 @@ import java.sql.Driver;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Class that wraps a data source and is shared amongst that data source's DbSchemas.
@@ -1217,7 +1218,7 @@ public class DbScope
     // Enumerate each jdbc DataSource in labkey.xml and initialize them
     public static void initializeDataSources()
     {
-        verifyJdbcDrivers();
+        verifyTomcatLibJars();
 
         LOG.debug("Ensuring that all databases specified by data sources in webapp configuration xml are present");
 
@@ -1280,21 +1281,36 @@ public class DbScope
         return dataSource;
     }
 
-    // Verify that old JDBC drivers are not present in <tomcat>/lib -- they are now provided by the API module
-    private static void verifyJdbcDrivers()
+    private static final List<Predicate<String>> TOMCAT_LIB_PREDICATES = new CopyOnWriteArrayList<>();
+
+    /**
+     * Register a {@code Predicate<String>} that identifies filenames that aren't allowed in the {@code <tomcat>/lib}
+     * directory. This is used to warn administrators about old, conflicting JDBC drivers that need to be removed from
+     * Tomcat.
+     * @param predicate a {@code Predicate<String>} whose {@code test(String filename)} method returns true if filename
+     *        is not allowed in the {@code <tomcat>/lib} directory
+     */
+    public static void registerForbiddenTomcatFilenamePredicate(Predicate<String> predicate)
+    {
+        TOMCAT_LIB_PREDICATES.add(predicate);
+    }
+
+    // Verify that old JDBC drivers are not present in <tomcat>/lib -- they are now provided by the modules that manage them
+    private static void verifyTomcatLibJars()
     {
         File lib = ModuleLoader.getTomcatLib();
 
         if (null != lib)
         {
-            List<String> existing = Stream.of("jtds.jar", "mysql.jar", "postgresql.jar")
-                .filter(name->new File(lib, name).exists())
-                .collect(Collectors.toList());
+            Predicate<String> aggregatePredicate = TOMCAT_LIB_PREDICATES.stream().reduce(x->false, Predicate::or);
+            String[] existing = lib.list((dir, name) ->
+                aggregatePredicate.test(name)
+            );
 
-            if (!existing.isEmpty())
+            if (existing.length > 0)
             {
                 String path = FileUtil.getAbsoluteCaseSensitiveFile(lib).getAbsolutePath();
-                throw new ConfigurationException("You must delete the following JDBC drivers from " + path + ": " + existing);
+                throw new ConfigurationException("You must delete the following files from " + path + ": " + Arrays.toString(existing));
             }
         }
     }
