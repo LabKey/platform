@@ -43,9 +43,9 @@ import static org.labkey.api.data.UpdateableTableInfo.ObjectUriType.schemaColumn
 
 public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C> implements UpdateableTableInfo
 {
-    protected ExpRunItemTableImpl(String name, TableInfo rootTable, UserSchema schema, @Nullable ExpObjectImpl objectType, ContainerFilter cf)
+    protected ExpRunItemTableImpl(String name, TableInfo rootTable, UserSchema schema, ContainerFilter cf)
     {
-        super(name, rootTable, schema, objectType, cf);
+        super(name, rootTable, schema, cf);
     }
 
     protected MutableColumnInfo createAliasColumn(String alias, Supplier<TableInfo> aliasMapTable)

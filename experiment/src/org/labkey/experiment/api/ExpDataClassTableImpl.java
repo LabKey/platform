@@ -64,7 +64,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
 {
     protected ExpDataClassTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoDataClass(), schema, new ExpDataClassImpl(new DataClass()), cf);
+        super(name, ExperimentServiceImpl.get().getTinfoDataClass(), schema, cf);
         addAllowablePermission(DesignDataClassPermission.class);
     }
 

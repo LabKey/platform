@@ -51,7 +51,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
 {
     public ExpRunGroupMapTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoRunList(), schema, null, cf);
+        super(name, ExperimentServiceImpl.get().getTinfoRunList(), schema, cf);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(DeletePermission.class);
     }

@@ -54,7 +54,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -109,7 +108,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
     public ExpDataTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoData(), schema, new ExpDataImpl(new Data()), cf);
+        super(name, ExperimentServiceImpl.get().getTinfoData(), schema, cf);
 
         addAllowablePermission(UpdatePermission.class);
         addAllowablePermission(InsertPermission.class);
@@ -694,19 +693,6 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             addCondition(getColumn("classId"), _dataClass.getRowId());
         }
     }
-
-    @Override
-    public String urlFlag(boolean flagged)
-    {
-        String ret = null;
-        DataType type = getDataType();
-        if (type != null)
-            ret = type.urlFlag(flagged);
-        if (ret != null)
-            return ret;
-        return super.urlFlag(flagged);
-    }
-
 
     @Override
     public MutableColumnInfo addInputRunCountColumn(String alias)

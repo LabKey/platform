@@ -35,9 +35,9 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
     private ExpRun _run;
     private ExpProtocol.ApplicationType _type;
 
-    public ExpInputTableImpl(String name, TableInfo rootTable, UserSchema schema, AbstractRunItemImpl objectType, ContainerFilter cf)
+    public ExpInputTableImpl(String name, TableInfo rootTable, UserSchema schema, ContainerFilter cf)
     {
-        super(name, rootTable, schema, objectType, cf);
+        super(name, rootTable, schema, cf);
     }
 
     @Override
