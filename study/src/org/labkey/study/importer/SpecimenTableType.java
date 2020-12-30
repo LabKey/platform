@@ -1,5 +1,7 @@
 package org.labkey.study.importer;
 
+import org.labkey.api.specimen.importer.ImportableColumn;
+
 import java.util.Collection;
 
 public class SpecimenTableType

@@ -19,7 +19,7 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.study.importer.ImportableColumn;
+import org.labkey.api.specimen.importer.ImportableColumn;
 import org.labkey.study.xml.StudyDocument;
 
 import java.util.Collection;

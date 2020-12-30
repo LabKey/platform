@@ -37,10 +37,11 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.Vial;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.api.specimen.Vial;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -408,7 +409,7 @@ public class RequestabilityManager
             updateSQL.append(reason);
             updateSQL.append(" WHERE ");
             updateSQL.append(getFilterSQL(_container, user, vials));
-            return new SqlExecutor(StudySchema.getInstance().getSchema()).execute(updateSQL);
+            return new SqlExecutor(SpecimenSchema.get().getSchema()).execute(updateSQL);
         }
 
         protected SQLFragment getAvailableAssignmentSQL()
@@ -438,7 +439,7 @@ public class RequestabilityManager
             {
                 specimenIDs.add(vial.getGlobalUniqueId());
             }
-            return StudySchema.getInstance().getSqlDialect().appendInClauseSql(new SQLFragment(), specimenIDs);
+            return SpecimenSchema.get().getSqlDialect().appendInClauseSql(new SQLFragment(), specimenIDs);
         }
 
         protected abstract SQLFragment getFilterSQL(Container container, User user, List<Vial> vials) throws InvalidRuleException;
@@ -706,13 +707,13 @@ public class RequestabilityManager
 
             sql.append(" RowId IN (SELECT SV.RowId FROM ").append(tableInfoVial.getSelectName()).append(" SV")
                 .append(" LEFT OUTER JOIN (SELECT Container, SampleRequestId, SpecimenGlobalUniqueId FROM ")
-                .append(StudySchema.getInstance().getTableInfoSampleRequestSpecimen().getSelectName())
+                .append(SpecimenSchema.get().getTableInfoSampleRequestSpecimen().getSelectName())
                 .append(") SRS ON (GlobalUniqueId = SpecimenGlobalUniqueId)")
                 .append(" LEFT OUTER JOIN (SELECT RowId, StatusId FROM ")
-                .append(StudySchema.getInstance().getTableInfoSampleRequest().getSelectName())
+                .append(SpecimenSchema.get().getTableInfoSampleRequest().getSelectName())
                 .append(") SR ON (SR.RowId = SRS.SampleRequestId)")
                 .append(" LEFT OUTER JOIN (SELECT RowId, FinalState FROM ")
-                .append(StudySchema.getInstance().getTableInfoSampleRequestStatus().getSelectName())
+                .append(SpecimenSchema.get().getTableInfoSampleRequestStatus().getSelectName())
                 .append(") SRST ON (SRST.RowId = SR.StatusId)")
                 .append(" WHERE SRS.Container = ? AND SRST.FinalState = ?");
             sql.add(container.getId());
@@ -744,7 +745,7 @@ public class RequestabilityManager
 
     public List<RequestableRule> getRules(Container container)
     {
-        TableInfo ruleTableInfo = StudySchema.getInstance().getTableInfoSampleAvailabilityRule();
+        TableInfo ruleTableInfo = SpecimenSchema.get().getTableInfoSampleAvailabilityRule();
         List<RuleBean> ruleBeans = new TableSelector(ruleTableInfo,
                 SimpleFilter.createContainerFilter(container),
                 new Sort("SortOrder")).getArrayList(RuleBean.class);
@@ -757,8 +758,8 @@ public class RequestabilityManager
 
     public void saveRules(Container container, User user, List<RequestableRule> rules)
     {
-        TableInfo ruleTableInfo = StudySchema.getInstance().getTableInfoSampleAvailabilityRule();
-        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        TableInfo ruleTableInfo = SpecimenSchema.get().getTableInfoSampleAvailabilityRule();
+        DbScope scope = SpecimenSchema.get().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             Table.delete(ruleTableInfo, new SimpleFilter(FieldKey.fromString("Container"), container.getId()));
@@ -786,7 +787,7 @@ public class RequestabilityManager
 
     private void updateRequestability(Container container, User user, boolean resetToAvailable, Logger logger, List<Vial> vials) throws InvalidRuleException
     {
-        DbSchema schema = StudySchema.getInstance().getSchema();
+        DbSchema schema = SpecimenSchema.get().getSchema();
         assert schema.getScope().isTransactionActive() : "Requestability should always be updated within a transaction wrapping the addition/removal of vials.";
         if (logger != null)
             logger.info("Updating vial availability...");

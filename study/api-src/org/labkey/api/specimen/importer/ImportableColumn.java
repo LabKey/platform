@@ -1,11 +1,11 @@
-package org.labkey.study.importer;
+package org.labkey.api.specimen.importer;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.reader.ColumnDescriptor;
-import org.labkey.api.study.StudyService;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.util.TimeOnlyDate;
 
 import java.util.Collection;
@@ -58,12 +58,12 @@ public class ImportableColumn
 
         switch (databaseType)
         {
-            case SpecimenImporter.DURATION_TYPE:
-                _dbType = StudyService.get().getStudySchema().getSqlDialect().getDefaultDateTimeDataType();
+            case ImportTypes.DURATION_TYPE:
+                _dbType = SpecimenSchema.get().getSchema().getSqlDialect().getDefaultDateTimeDataType();
                 _javaClass = TimeOnlyDate.class;
                 break;
-            case SpecimenImporter.DATETIME_TYPE:
-                _dbType = StudyService.get().getStudySchema().getSqlDialect().getDefaultDateTimeDataType();
+            case ImportTypes.DATETIME_TYPE:
+                _dbType = SpecimenSchema.get().getSchema().getSqlDialect().getDefaultDateTimeDataType();
                 _javaClass = Date.class;
                 break;
             default:
@@ -89,20 +89,20 @@ public class ImportableColumn
     // Can't use standard JdbcType.valueOf() method since this uses contains()
     private static Class determineJavaType(String dbType)
     {
-        if (dbType.contains(SpecimenImporter.DATETIME_TYPE))
+        if (dbType.contains(ImportTypes.DATETIME_TYPE))
             throw new IllegalStateException("Java types for DateTime/Timestamp columns should be previously initialized.");
 
         if (dbType.contains("VARCHAR"))
             return String.class;
-        else if (dbType.contains("FLOAT") || dbType.contains("DOUBLE") || dbType.contains(SpecimenImporter.NUMERIC_TYPE))
+        else if (dbType.contains("FLOAT") || dbType.contains("DOUBLE") || dbType.contains(ImportTypes.NUMERIC_TYPE))
             return Double.class;
         else if (dbType.contains("BIGINT"))
             return Long.class;
         else if (dbType.contains("INT"))
             return Integer.class;
-        else if (dbType.contains(SpecimenImporter.BOOLEAN_TYPE))
+        else if (dbType.contains(ImportTypes.BOOLEAN_TYPE))
             return Boolean.class;
-        else if (dbType.contains(SpecimenImporter.BINARY_TYPE))
+        else if (dbType.contains(ImportTypes.BINARY_TYPE))
             return byte[].class;
         else if (dbType.contains("DATE"))
             return Date.class;

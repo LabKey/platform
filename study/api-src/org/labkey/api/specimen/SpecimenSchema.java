@@ -4,6 +4,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.SpecimenTablesTemplate;
@@ -35,6 +36,11 @@ public class SpecimenSchema
         return getSchema().getScope();
     }
 
+    public SqlDialect getSqlDialect()
+    {
+        return getSchema().getSqlDialect();
+    }
+
     public TableInfo getTableInfoSampleRequest()
     {
         return getSchema().getTable("SampleRequest");
@@ -63,6 +69,16 @@ public class SpecimenSchema
     public TableInfo getTableInfoSampleRequestSpecimen()
     {
         return getSchema().getTable("SampleRequestSpecimen");
+    }
+
+    public TableInfo getTableInfoSampleAvailabilityRule()
+    {
+        return getSchema().getTable("SampleAvailabilityRule");
+    }
+
+    public TableInfo getTableInfoSpecimenComment()
+    {
+        return getSchema().getTable("SpecimenComment");
     }
 
     public TableInfo getTableInfoLocation(Container container)

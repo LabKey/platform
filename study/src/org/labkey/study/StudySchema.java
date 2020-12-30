@@ -25,12 +25,12 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.DefaultSpecimenTablesTemplate;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.api.specimen.DefaultSpecimenTablesTemplate;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.api.specimen.model.SpecimenTablesProvider;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -168,6 +168,8 @@ public class StudySchema
         return getSchema().getTable("ParticipantVisit");
     }
 
+    // TODO: Remove the below -- use SpecimenSchema instead
+
     public TableInfo getTableInfoSampleRequest()
     {
         return getSchema().getTable("SampleRequest");
@@ -196,6 +198,11 @@ public class StudySchema
     public TableInfo getTableInfoSampleRequestSpecimen()
     {
         return getSchema().getTable("SampleRequestSpecimen");
+    }
+
+    public TableInfo getTableInfoSpecimenComment()
+    {
+        return getSchema().getTable("SpecimenComment");
     }
 
     /*
@@ -278,11 +285,6 @@ public class StudySchema
         return getSchema().getTable("SpecimenDetail");
     }
 
-    public TableInfo getTableInfoSpecimenSummary()
-    {
-        return getSchema().getTable("SpecimenSummary");
-    }
-
     public TableInfo getTableInfoSpecimenPrimaryType(Container container)
     {
         return getTableInfoSpecimenPrimaryType(container, null);
@@ -329,21 +331,6 @@ public class StudySchema
     public TableInfo getTableInfoParticipantView()
     {
         return getSchema().getTable("ParticipantView");
-    }
-
-    public TableInfo getTableInfoSpecimenComment()
-    {
-        return getSchema().getTable("SpecimenComment");
-    }
-
-    public TableInfo getTableInfoSpecimenVialCount()
-    {
-        return getSchema().getTable("VialCounts");
-    }
-
-    public TableInfo getTableInfoSampleAvailabilityRule()
-    {
-        return getSchema().getTable("SampleAvailabilityRule");
     }
 
     public TableInfo getTableInfoParticipantCategory()

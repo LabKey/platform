@@ -23,8 +23,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.RenderContext;
@@ -41,6 +39,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.study.StudyService;
@@ -110,14 +109,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                 return new LocationTable(_userSchema, cf);
             }
         });
-        siteNameColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new SiteNameDisplayColumn(colInfo);
-            }
-        });
+        siteNameColumn.setDisplayColumnFactory(SiteNameDisplayColumn::new);
         addColumn(siteNameColumn);
 
         var siteLdmsCodeColumn = wrapColumn("SiteLdmsCode", getRealTable().getColumn("CurrentLocation"));
@@ -201,7 +193,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                 return;
 
             SQLFragment joinSql = new SQLFragment();
-            joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoSpecimenComment(), tableAlias);
+            joinSql.append(" LEFT OUTER JOIN ").append(SpecimenSchema.get().getTableInfoSpecimenComment(), tableAlias);
             joinSql.append(" ON ");
             joinSql.append(parentAlias).append(".GlobalUniqueId = ").append(tableAlias).append(".GlobalUniqueId AND ");
             joinSql.append(tableAlias).append(".Container = ").append(parentAlias).append(".Container");

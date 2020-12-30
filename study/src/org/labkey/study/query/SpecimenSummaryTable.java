@@ -35,6 +35,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
@@ -114,7 +115,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         // summary table; derivative and additive types are required as well.  We use this number so we know if additional
         // (more expensive) queries are required to check for actual comments in the DB for each row.
         SQLFragment sqlFragComments = new SQLFragment("(SELECT CAST(COUNT(*) AS VARCHAR(5)) FROM " +
-                StudySchema.getInstance().getTableInfoSpecimenComment() +
+                SpecimenSchema.get().getTableInfoSpecimenComment() +
                 " WHERE SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash" +
                 " AND Container = ?)");
         sqlFragComments.add(getContainer().getId());
@@ -136,7 +137,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         // use sql aggregates to 'OR' together the conflict bits of the vials associated with this specimen hash:
         SQLFragment sqlFragConflicts = new SQLFragment("(SELECT CASE WHEN COUNT(QualityControlFlag) = 0 OR " +
                 "SUM(CAST(QualityControlFlag AS INT)) = 0 THEN ? ELSE ? END FROM " +
-                StudySchema.getInstance().getTableInfoSpecimenComment() +
+                SpecimenSchema.get().getTableInfoSpecimenComment() +
                 " WHERE SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash" +
                 " AND Container = ?)");
         sqlFragConflicts.add(Boolean.FALSE);

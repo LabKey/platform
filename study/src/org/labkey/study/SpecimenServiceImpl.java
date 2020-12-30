@@ -34,6 +34,10 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.DefaultSpecimenTablesTemplate;
+import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.importer.SpecimenColumn;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenChangeListener;
 import org.labkey.api.study.SpecimenImportStrategyFactory;
@@ -47,12 +51,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.controllers.specimen.AutoCompleteAction;
 import org.labkey.study.importer.SimpleSpecimenImporter;
-import org.labkey.study.importer.SpecimenColumn;
 import org.labkey.study.importer.SpecimenImporter;
-import org.labkey.api.specimen.DefaultSpecimenTablesTemplate;
-import org.labkey.api.specimen.Vial;
 import org.labkey.study.pipeline.SpecimenReloadJob;
-import org.labkey.api.specimen.model.SpecimenTablesProvider;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -119,10 +119,11 @@ public class SpecimenServiceImpl implements SpecimenService
 
     private class StudyParticipantVisit implements ParticipantVisit
     {
-        private Container _studyContainer;
-        private String _participantID;
-        private Double _visitID;
-        private String _specimenID;
+        private final Container _studyContainer;
+        private final String _participantID;
+        private final Double _visitID;
+        private final String _specimenID;
+
         private ExpMaterial _material;
         private Date _date;
 
@@ -270,8 +271,6 @@ public class SpecimenServiceImpl implements SpecimenService
     public Set<Pair<String, Date>> getSampleInfo(Container studyContainer, User user, boolean truncateTime)
     {
         TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(studyContainer);
-        if (null == tableInfoSpecimen)
-            return Collections.EMPTY_SET;
 
         String dateExpr = truncateTime ? StudySchema.getInstance().getSqlDialect().getDateTimeToDateCast("DrawTimestamp") : "DrawTimestamp";
         SQLFragment sql = new SQLFragment("SELECT DISTINCT PTID, " + dateExpr + " AS DrawTimestamp FROM ");
@@ -293,8 +292,6 @@ public class SpecimenServiceImpl implements SpecimenService
     public Set<Pair<String, Double>> getSampleInfo(Container studyContainer, User user)
     {
         TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(studyContainer);
-        if (null == tableInfoSpecimen)
-            return Collections.EMPTY_SET;
 
         SQLFragment sql = new SQLFragment("SELECT DISTINCT PTID, VisitValue FROM ");
         sql.append(tableInfoSpecimen.getSelectName()).append(";");
@@ -327,7 +324,7 @@ public class SpecimenServiceImpl implements SpecimenService
 
         // In case module with active transform has been disabled in container
         Collection<SpecimenTransform> transforms = getSpecimenTransforms(container);
-        boolean noTransformsActive = transforms.stream().allMatch(transform -> !activeTransform.equals(transform.getName()));
+        boolean noTransformsActive = transforms.stream().noneMatch(transform -> activeTransform.equals(transform.getName()));
 
         if (noTransformsActive)
             return null;
@@ -408,7 +405,7 @@ public class SpecimenServiceImpl implements SpecimenService
             l.specimensChanged(c, user, logger);
     }
 
-    private static SpecimenTablesTemplate _specimenTablesTemplate = new DefaultSpecimenTablesTemplate();
+    private static final SpecimenTablesTemplate _specimenTablesTemplate = new DefaultSpecimenTablesTemplate();
 
     @Nullable
     @Override

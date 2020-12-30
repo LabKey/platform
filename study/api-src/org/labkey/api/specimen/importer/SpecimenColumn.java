@@ -1,6 +1,5 @@
-package org.labkey.study.importer;
+package org.labkey.api.specimen.importer;
 
-import org.labkey.api.specimen.importer.TargetTable;
 import org.labkey.api.util.TimeOnlyDate;
 
 import java.util.Collection;

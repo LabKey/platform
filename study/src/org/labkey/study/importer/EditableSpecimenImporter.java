@@ -28,6 +28,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.importer.EventVialRollup;
 import org.labkey.api.specimen.importer.RollupInstance;
+import org.labkey.api.specimen.importer.SpecimenColumn;
 import org.labkey.api.specimen.importer.StandardSpecimenImportStrategy;
 import org.labkey.api.study.SpecimenImportStrategy;
 import org.labkey.study.SpecimenManager;

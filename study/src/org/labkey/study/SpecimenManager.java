@@ -63,6 +63,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.report.RequestSummaryByVisitType;
 import org.labkey.api.specimen.report.SummaryByVisitParticipant;
@@ -1985,8 +1986,8 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         Table.delete(StudySchema.getInstance().getTableInfoSpecimenPrimaryType(), containerFilter);
         assert set.add(StudySchema.getInstance().getTableInfoSpecimenPrimaryType());
 */
-        Table.delete(StudySchema.getInstance().getTableInfoSampleAvailabilityRule(), containerFilter);
-        assert set.add(StudySchema.getInstance().getTableInfoSampleAvailabilityRule());
+        Table.delete(SpecimenSchema.get().getTableInfoSampleAvailabilityRule(), containerFilter);
+        assert set.add(SpecimenSchema.get().getTableInfoSampleAvailabilityRule());
 
 
         _requirementProvider.purgeContainer(c);
@@ -2613,7 +2614,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
             filter.addInClause(FieldKey.fromParts("GlobalUniqueId"), idToVial.keySet());
 
-            new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null).forEach(SpecimenComment.class, comment -> {
+            new TableSelector(SpecimenSchema.get().getTableInfoSpecimenComment(), filter, null).forEach(SpecimenComment.class, comment -> {
                 Vial vial = idToVial.get(comment.getGlobalUniqueId());
                 result.put(vial, comment);
             });
@@ -2629,7 +2630,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("GlobalUniqueId"), globalUniqueId);
 
-        return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null).getObject(SpecimenComment.class);
+        return new TableSelector(SpecimenSchema.get().getTableInfoSpecimenComment(), filter, null).getObject(SpecimenComment.class);
     }
 
     public SpecimenComment getSpecimenCommentForVial(Vial vial)
@@ -2647,7 +2648,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         SimpleFilter hashFilter = SimpleFilter.createContainerFilter(container);
         hashFilter.addInClause(FieldKey.fromParts("SpecimenHash"), specimenHashes);
 
-        return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), hashFilter, new Sort("GlobalUniqueId")).getArray(SpecimenComment.class);
+        return new TableSelector(SpecimenSchema.get().getTableInfoSpecimenComment(), hashFilter, new Sort("GlobalUniqueId")).getArray(SpecimenComment.class);
     }
 
     private boolean safeComp(Object a, Object b)
@@ -2693,7 +2694,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     public SpecimenComment setSpecimenComment(User user, Vial vial, String commentText, boolean qualityControlFlag, boolean qualityControlFlagForced)
     {
-        TableInfo commentTable = StudySchema.getInstance().getTableInfoSpecimenComment();
+        TableInfo commentTable = SpecimenSchema.get().getTableInfoSpecimenComment();
         DbScope scope = commentTable.getSchema().getScope();
         SpecimenComment comment = getSpecimenCommentForVial(vial);
         boolean clearComment = commentText == null && !qualityControlFlag && !qualityControlFlagForced;

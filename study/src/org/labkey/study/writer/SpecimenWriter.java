@@ -35,7 +35,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
-import org.labkey.study.importer.SpecimenColumn;
+import org.labkey.api.specimen.importer.SpecimenColumn;
 import org.labkey.api.specimen.importer.TargetTable;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.api.specimen.Vial;
