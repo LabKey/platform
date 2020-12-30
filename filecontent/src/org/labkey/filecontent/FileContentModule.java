@@ -41,7 +41,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -60,7 +59,7 @@ public class FileContentModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 20.000;
+        return 21.000;
     }
 
     @Override
@@ -76,7 +75,7 @@ public class FileContentModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(
+        return List.of(
             new FilesWebPart.Factory()
         );
     }

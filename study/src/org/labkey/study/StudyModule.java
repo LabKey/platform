@@ -174,8 +174,6 @@ import org.labkey.study.writer.SpecimenWriter;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.writer.StudyWriterFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -221,7 +219,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public Double getSchemaVersion()
     {
-        return 20.000;
+        return 21.000;
     }
 
     @Override
@@ -298,15 +296,16 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<>(Arrays.asList(reportsPartFactory, samplesPartFactory,
-                datasetsPartFactory, manageStudyPartFactory,
-                studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
-                subjectDetailsWebPartFactory, studyListWebPartFactory, sampleSearchPartFactory,
-                subjectsWebPartFactory, dataToolsWebPartFactory,
-                specimenToolsWebPartFactory,
-                specimenReportWebPartFactory, studyScheduleWebPartFactory,
-                assayScheduleWebPartFactory, vaccineDesignWebPartFactory, immunizationScheduleWebpartFactory,
-                new SharedStudyController.StudyFilterWebPartFactory()));
+        return List.of(reportsPartFactory, samplesPartFactory,
+            datasetsPartFactory, manageStudyPartFactory,
+            studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
+            subjectDetailsWebPartFactory, studyListWebPartFactory, sampleSearchPartFactory,
+            subjectsWebPartFactory, dataToolsWebPartFactory,
+            specimenToolsWebPartFactory,
+            specimenReportWebPartFactory, studyScheduleWebPartFactory,
+            assayScheduleWebPartFactory, vaccineDesignWebPartFactory, immunizationScheduleWebpartFactory,
+            new SharedStudyController.StudyFilterWebPartFactory()
+        );
     }
 
     @Override
@@ -788,10 +787,12 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         @Test
         public void testUsageMetrics()
         {
-            List<String> metricNames = Arrays.asList("studyCount",
-                    "datasetCount",
-                    "studyReloadCount",
-                    "reportCountsByType");
+            List<String> metricNames = List.of(
+                "studyCount",
+                "datasetCount",
+                "studyReloadCount",
+                "reportCountsByType"
+            );
             assertTrue("Mothership report missing expected metrics",
                     UsageReportingLevel.MothershipReportTestHelper.getModuleMetrics(UsageReportingLevel.MEDIUM, MODULE_NAME)
                     .keySet().containsAll(metricNames));
