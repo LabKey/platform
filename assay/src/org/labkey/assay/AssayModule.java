@@ -74,7 +74,6 @@ import org.labkey.assay.view.AssayRunsWebPartFactory;
 import org.labkey.pipeline.xml.AssayImportRunTaskType;
 
 import javax.servlet.ServletContext;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -98,7 +97,7 @@ public class AssayModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 20.003;
+        return 21.000;
     }
 
     @Override
@@ -117,7 +116,7 @@ public class AssayModule extends SpringModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(
+        return List.of(
             assayListWebPartFactory, assayBatchesWebPartFactory, assayRunsWebPartFactory, assayResultsWebPartFactory, assayList2WebPartFactory
         );
     }

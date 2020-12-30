@@ -29,6 +29,7 @@ import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -242,7 +243,6 @@ public class ExpDataIterators
             boolean hasNext = super.next();
 
             // skip processing if there are errors upstream
-            //noinspection ThrowableNotThrown
             if (getErrors().hasErrors())
                 return hasNext;
 
@@ -335,7 +335,6 @@ public class ExpDataIterators
                 return false;
 
             // skip processing if there are errors upstream
-            //noinspection ThrowableNotThrown
             if (getErrors().hasErrors())
                 return true;
 
@@ -461,7 +460,6 @@ public class ExpDataIterators
             boolean hasNext = super.next();
 
             // skip processing if there are errors upstream
-            //noinspection ThrowableNotThrown
             if (getErrors().hasErrors())
                 return hasNext;
 
@@ -486,8 +484,13 @@ public class ExpDataIterators
                         }
                         else if (o instanceof Collection)
                         {
+                            //noinspection rawtypes
                             Collection<?> c = ((Collection)o);
                             parentNames = c.stream().map(String::valueOf).collect(Collectors.toSet());
+                        }
+                        else if (o instanceof Number)
+                        {
+                            parentNames = Arrays.asList(o.toString());
                         }
                         else
                         {
@@ -513,7 +516,6 @@ public class ExpDataIterators
                     _parentNames.put(lsid, allParts);
             }
 
-            //noinspection ThrowableNotThrown
             if (getErrors().hasErrors())
                 return hasNext;
 
@@ -605,8 +607,7 @@ public class ExpDataIterators
                                 Map<ExpMaterial, String> parentMaterialMap = pair.first.getMaterials();
                                 Map<ExpData, String> parentDataMap = pair.first.getDatas();
 
-                                boolean merge = _isSample;
-                                UploadSamplesHelper.record(merge, runRecords,
+                                UploadSamplesHelper.record(_isSample, runRecords,
                                         parentMaterialMap, currentMaterialMap,
                                         parentDataMap, currentDataMap);
                             }
@@ -714,7 +715,7 @@ public class ExpDataIterators
     // see SimpleQueryUpdateService.convertTypes() for similar handling of FILE_LINK columns
     public static class FileLinkDataIterator extends WrapperDataIterator
     {
-        Supplier[] suppliers;
+        Supplier<?>[] suppliers;
         String[] savedFileName;
 
         FileLinkDataIterator(final DataIterator in, final DataIteratorContext context, Container c, String file_link_dir_name)
@@ -772,8 +773,7 @@ public class ExpDataIterators
         @Override
         public boolean next() throws BatchValidationException
         {
-            for (int i=0 ; i<savedFileName.length ; i++)
-                savedFileName[i] = null;
+            Arrays.fill(savedFileName, null);
             return super.next();
         }
     }
@@ -866,16 +866,17 @@ public class ExpDataIterators
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
                     .setAddlSkipColumns(Set.of("generated","runId","sourceapplicationid"))     // generated has database DEFAULT 0
-                    .setCommitRowsBeforeContinuing(true))
-                    ;
+                    .setCommitRowsBeforeContinuing(true));
 
-            //pass in voc cols here
+            // pass in voc cols here
             Set<DomainProperty> vocabularyDomainProperties = findVocabularyProperties(colNameMap);
 
+            // pass in remap columns to help reconcile columns that may be aliased in the virtual table
             DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2, _propertiesTable, _container)
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
-                    .setVocabularyProperties(vocabularyDomainProperties));
+                    .setVocabularyProperties(vocabularyDomainProperties)
+                    .setRemapSchemaColumns(((UpdateableTableInfo)_expTable).remapSchemaColumns()));
 
             DataIteratorBuilder step4 = step3;
             if (colNameMap.containsKey("flag") || colNameMap.containsKey("comment"))
@@ -888,11 +889,10 @@ public class ExpDataIterators
 
             // Hack: add the alias and lsid values back into the input so we can process them in the chained data iterator
             DataIteratorBuilder step6 = step5;
-            DataIteratorBuilder step7 = step6;
             if (null != _indexFunction)
-                step7 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step6, _indexFunction)); // may need to add this after the aliases are set
+                step6 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step5, _indexFunction)); // may need to add this after the aliases are set
 
-            return LoggingDataIterator.wrap(step7.getDataIterator(context));
+            return LoggingDataIterator.wrap(step6.getDataIterator(context));
         }
 
         private Set<DomainProperty> findVocabularyProperties(Map<String, Integer> colNameMap)

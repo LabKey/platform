@@ -81,7 +81,7 @@ public class ListModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 20.001;
+        return 21.000;
     }
 
     // Note: ExperimentModule handles the list schema
@@ -95,10 +95,10 @@ public class ListModule extends SpringModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        List<WebPartFactory> result = new ArrayList<>();
-        result.add(ListsWebPart.FACTORY);
-        result.add(new SingleListWebPartFactory());
-        return result;
+        return List.of(
+            ListsWebPart.FACTORY,
+            new SingleListWebPartFactory()
+        );
     }
 
     @Override

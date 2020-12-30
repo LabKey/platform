@@ -290,27 +290,6 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     }
 
     @Override
-    public String urlFlag(boolean flagged)
-    {
-        String ret = null;
-        if (getLSID() != null)
-        {
-            DataType type = getDataType();
-            if (type != null)
-            {
-                ret = type.urlFlag(flagged);
-            }
-            if (ret != null)
-                return ret;
-        }
-        if (flagged)
-        {
-            return AppProps.getInstance().getContextPath() + "/experiment/flagData.png";
-        }
-        return AppProps.getInstance().getContextPath() + "/experiment/images/unflagData.png";
-    }
-
-    @Override
     public void delete(User user)
     {
         delete(user, true);

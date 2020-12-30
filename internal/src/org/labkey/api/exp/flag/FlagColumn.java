@@ -25,20 +25,10 @@ import org.labkey.api.security.User;
 
 public class FlagColumn extends PropertyColumn
 {
-    String _urlFlagged;
-    String _urlUnflagged;
-
-    public FlagColumn(ColumnInfo parent, String urlFlagged, String urlUnflagged, Container container, User user, String name)
+    public FlagColumn(ColumnInfo parent, Container container, User user, String name)
     {
         super(ExperimentProperty.COMMENT.getPropertyDescriptor(), parent, container, user, false);
         setFieldKey(new FieldKey(parent.getFieldKey(),name));
         setAlias(parent.getAlias() + "$");
-        _urlFlagged = urlFlagged;
-        _urlUnflagged = urlUnflagged;
-    }
-
-    public String urlFlag(boolean flagged)
-    {
-        return flagged ? _urlFlagged : _urlUnflagged;
     }
 }

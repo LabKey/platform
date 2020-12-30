@@ -50,11 +50,6 @@ public class DataType
         return null;
     }
 
-    public String urlFlag(boolean flagged)
-    {
-        return null;
-    }
-
     public boolean matches(Lsid lsid)
     {
         return lsid != null && lsid.getNamespacePrefix() != null && lsid.getNamespacePrefix().equals(_namespacePrefix);
