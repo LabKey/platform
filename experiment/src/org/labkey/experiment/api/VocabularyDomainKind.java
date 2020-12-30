@@ -128,6 +128,12 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
         return getKindName().equals(lsid.getNamespacePrefix()) ? Priority.MEDIUM : null;
     }
 
+    @Override
+    public String generateDomainURI(String schemaName, String queryName, Container container, User user)
+    {
+        return generateDomainURI(schemaName, container);
+    }
+
     public String generateDomainURI(String vocabularyName, Container container)
     {
         return new Lsid(getKindName()+".Folder-"+container.getRowId(), vocabularyName).toString();
