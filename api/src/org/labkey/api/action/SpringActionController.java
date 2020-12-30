@@ -135,7 +135,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     protected static void registerAction(ActionDescriptor ad)
     {
-        _classToDescriptor.put(ad.getActionClass(), ad);
+        ActionDescriptor prev = _classToDescriptor.put(ad.getActionClass(), ad);
+        assert null == prev || prev == ad;
     }
 
     @NotNull
@@ -847,7 +848,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             HTMLFileActionDescriptor htmlDescriptor = createFileActionDescriptor(module, actionName);
             _nameToDescriptor.put(actionName, htmlDescriptor);
-            registerAction(htmlDescriptor);
 
             return htmlDescriptor.createController(actionController);
         }
@@ -859,13 +859,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         protected class HTMLFileActionDescriptor extends BaseActionDescriptor
         {
-            private final Module _module;
+            private final String _moduleName;
             private final String _primaryName;
             private final List<String> _allNames;
 
             protected HTMLFileActionDescriptor(Module module, String primaryName)
             {
-                _module = module;
+                _moduleName = module.getName();
                 _primaryName = primaryName;
                 _allNames = Collections.singletonList(_primaryName);
             }
@@ -897,8 +897,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
             @Override
             public Controller createController(Controller actionController)
             {
-                Path path = ModuleHtmlView.getViewPath(_module, getPrimaryName());
-                return new SimpleAction(_module, path);
+                Module m = ModuleLoader.getInstance().getModule(_moduleName);
+                if (null == m)
+                    return null;
+                Path path = ModuleHtmlView.getViewPath(m, getPrimaryName());
+                return new SimpleAction(m, path);
             }
         }
 
