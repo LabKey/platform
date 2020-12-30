@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.model;
+package org.labkey.api.specimen.model;
 
 
 import org.jetbrains.annotations.NotNull;
@@ -29,12 +29,11 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.study.StudySchema;
-import org.labkey.study.query.SpecimenTablesProvider;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -238,7 +237,7 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
                                                      @Nullable JSONObject options, Container container, User user, boolean includeWarnings)
     {
         ValidationException validationException;
-        try (var transaction = StudySchema.getInstance().getScope().ensureTransaction())
+        try (var transaction = SpecimenSchema.get().getScope().ensureTransaction())
         {
             validationException = new ValidationException();
 

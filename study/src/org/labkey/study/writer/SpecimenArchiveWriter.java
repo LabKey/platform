@@ -36,7 +36,7 @@ import org.labkey.data.xml.TablesType;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.query.SpecimenTablesProvider;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.study.writer.StandardSpecimenWriter.QueryInfo;
 import org.labkey.study.xml.StudyDocument;
 

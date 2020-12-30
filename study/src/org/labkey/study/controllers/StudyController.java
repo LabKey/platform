@@ -135,6 +135,7 @@ import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.MasterPatientIndexService;
@@ -274,6 +275,12 @@ public class StudyController extends BaseStudyController
         public ActionURL getManageStudyURL(Container container)
         {
             return new ActionURL(ManageStudyAction.class, container);
+        }
+
+        @Override
+        public Class<? extends Controller> getManageStudyClass()
+        {
+            return ManageStudyAction.class;
         }
 
         @Override
@@ -1782,7 +1789,7 @@ public class StudyController extends BaseStudyController
             {
                 if (c.hasPermission(getUser(), AdminPermission.class))
                 {
-                    for (LocationImpl loc : StudyManager.getInstance().getLocations(c))
+                    for (LocationImpl loc : LocationManager.get().getLocations(c))
                     {
                         if (!StudyManager.getInstance().isLocationInUse(loc))
                         {
@@ -1807,7 +1814,7 @@ public class StudyController extends BaseStudyController
             {
                 if (c.hasPermission(getUser(), AdminPermission.class))
                 {
-                    for (LocationImpl loc : StudyManager.getInstance().getLocations(c))
+                    for (LocationImpl loc : LocationManager.get().getLocations(c))
                     {
                         if (!StudyManager.getInstance().isLocationInUse(loc))
                         {

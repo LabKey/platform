@@ -56,6 +56,7 @@ import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -434,10 +435,9 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
     void loadLookupsFromDb(Container c)
     {
         DbSchema study = StudySchema.getInstance().getSchema();
-        StudyManager sm = StudyManager.getInstance();
         String primaryTypeSelectName = StudySchema.getInstance().getTableInfoSpecimenPrimaryType(c).getSelectName();
         String derivativeSelectName = StudySchema.getInstance().getTableInfoSpecimenDerivative(c).getSelectName();
-        for (Location l : sm.getLocations(c))
+        for (Location l : LocationManager.get().getLocations(c))
             _labIds.put(l.getLabel(), l.getRowId());
         (new SqlSelector(study,"SELECT primaryType, rowId FROM " + primaryTypeSelectName + " WHERE container=?", c)).forEach(rs -> _primaryIds.put(rs.getString(1), rs.getInt(2)));
         (new SqlSelector(study,"SELECT derivative, rowId FROM " + derivativeSelectName + " WHERE container=?", c)).forEach(rs -> _derivativeIds.put(rs.getString(1), rs.getInt(2)));

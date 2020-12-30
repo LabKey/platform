@@ -22,7 +22,7 @@ import org.labkey.api.specimen.requirements.RequirementOwner;
 import org.labkey.api.specimen.requirements.RequirementType;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.SpecimenRequest;
-import org.labkey.study.model.SpecimenRequestActor;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.study.model.SpecimenRequestRequirement;
 
 import java.util.List;

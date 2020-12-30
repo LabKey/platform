@@ -30,7 +30,7 @@ import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationImpl;
-import org.labkey.study.model.SpecimenRequestActor;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.study.model.SpecimenRequestRequirement;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.DefaultRequirementType;

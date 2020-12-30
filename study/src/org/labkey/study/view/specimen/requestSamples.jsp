@@ -33,6 +33,7 @@
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.specimen.location.LocationManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -47,7 +48,7 @@
     NewRequestBean bean = me.getModelBean();
     ViewContext context = getViewContext();
     Container c = getContainer();
-    List<LocationImpl> locations = StudyManager.getInstance().getValidRequestingLocations(c);
+    List<LocationImpl> locations = LocationManager.get().getValidRequestingLocations(c);
     boolean shoppingCart = SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(c);
     boolean hasExtendedRequestView = SpecimenManager.getInstance().getExtendedSpecimenRequestView(context) != null;
     List<Vial> vials = bean.getVials();

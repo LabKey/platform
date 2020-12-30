@@ -27,10 +27,10 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.DefaultSpecimenTablesTemplate;
+import org.labkey.api.specimen.DefaultSpecimenTablesTemplate;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.SpecimenTablesProvider;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 
 import java.util.ArrayList;
 import java.util.Collection;

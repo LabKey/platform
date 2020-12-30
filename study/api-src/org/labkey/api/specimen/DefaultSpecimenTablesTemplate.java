@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.model;
+package org.labkey.api.specimen;
 
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;

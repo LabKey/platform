@@ -18,6 +18,7 @@ package org.labkey.study.specimen.report.request;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.study.Location;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
@@ -61,7 +62,7 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
     @Override
     public String getLabel()
     {
-        Location location = _enrollmentSiteId != null ? StudyManager.getInstance().getLocation(getContainer(), _enrollmentSiteId) : null;
+        Location location = _enrollmentSiteId != null ? LocationManager.get().getLocation(getContainer(), _enrollmentSiteId) : null;
         return "Requested by Enrollment Location" + (location != null ? ": " + location.getLabel() : "");
     }
 
@@ -78,7 +79,7 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
 
         if (getEnrollmentSiteId() != null)
         {
-            locations = Collections.singleton(StudyManager.getInstance().getLocation(getContainer(), getEnrollmentSiteId()));
+            locations = Collections.singleton(LocationManager.get().getLocation(getContainer(), getEnrollmentSiteId()));
         }
         else
         {

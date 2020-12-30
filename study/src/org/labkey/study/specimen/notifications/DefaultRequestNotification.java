@@ -30,7 +30,7 @@ import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.model.SpecimenRequest;
-import org.labkey.study.model.SpecimenRequestEvent;
+import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.study.model.SpecimenRequestRequirement;
 import org.labkey.study.query.SpecimenQueryView;
 

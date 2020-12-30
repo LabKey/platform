@@ -25,6 +25,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.UserManagementPermission;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.security.permissions.ManageSpecimenActorsPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -32,10 +35,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.api.specimen.location.LocationImpl;
-import org.labkey.study.model.SpecimenRequestActor;
-import org.labkey.study.model.StudyManager;
-import org.labkey.api.specimen.security.permissions.ManageSpecimenActorsPermission;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -177,7 +177,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
     private LocationImpl getLocation(UpdateGroupForm form)
     {
         if (_location == null && form.getLocationId() != null)
-            _location = StudyManager.getInstance().getLocation(getContainer(), form.getLocationId());
+            _location = LocationManager.get().getLocation(getContainer(), form.getLocationId());
 
         return _location;
     }

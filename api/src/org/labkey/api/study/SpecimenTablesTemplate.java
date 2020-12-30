@@ -22,7 +22,7 @@ import java.util.Set;
 
 public interface SpecimenTablesTemplate
 {
-    public Set<PropertyStorageSpec> getExtraSpecimenEventProperties();
-    public Set<PropertyStorageSpec> getExtraVialProperties();
-    public Set<PropertyStorageSpec> getExtraSpecimenProperties();
+    Set<PropertyStorageSpec> getExtraSpecimenEventProperties();
+    Set<PropertyStorageSpec> getExtraVialProperties();
+    Set<PropertyStorageSpec> getExtraSpecimenProperties();
 }

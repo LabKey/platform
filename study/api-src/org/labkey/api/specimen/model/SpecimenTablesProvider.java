@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.query;
+package org.labkey.api.specimen.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,14 +30,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTablesTemplate;
-import org.labkey.study.model.AbstractSpecimenDomainKind;
-import org.labkey.study.model.AdditiveTypeDomainKind;
-import org.labkey.study.model.DerivativeTypeDomainKind;
-import org.labkey.study.model.LocationDomainKind;
-import org.labkey.study.model.PrimaryTypeDomainKind;
-import org.labkey.study.model.SpecimenDomainKind;
-import org.labkey.study.model.SpecimenEventDomainKind;
-import org.labkey.study.model.VialDomainKind;
 
 import java.util.Arrays;
 import java.util.List;

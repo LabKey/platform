@@ -28,24 +28,24 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.SpecimenRequestStatus;
+import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.PrimaryType;
+import org.labkey.api.specimen.model.SpecimenTypeSummary;
+import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
+import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
+import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.importer.RequestabilityManager;
-import org.labkey.study.model.AdditiveType;
-import org.labkey.study.model.DerivativeType;
-import org.labkey.api.specimen.location.LocationImpl;
-import org.labkey.study.model.PrimaryType;
+import org.labkey.api.specimen.model.AdditiveType;
+import org.labkey.api.specimen.model.DerivativeType;
 import org.labkey.study.model.SpecimenRequest;
-import org.labkey.api.specimen.SpecimenRequestStatus;
-import org.labkey.api.specimen.model.SpecimenTypeSummary;
-import org.labkey.study.model.StudyManager;
-import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
-import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
-import org.labkey.api.specimen.settings.RepositorySettings;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
@@ -190,7 +190,7 @@ public class SpecimenApiController extends BaseStudyController
 
     private Map<String, Object> getLocation(Container container, int locationId)
     {
-        LocationImpl location = StudyManager.getInstance().getLocation(container, locationId);
+        LocationImpl location = LocationManager.get().getLocation(container, locationId);
         if (location == null)
             return null;
         return getLocation(location);
@@ -229,7 +229,7 @@ public class SpecimenApiController extends BaseStudyController
         public ApiResponse execute(SpecimenApiForm form, BindException errors)
         {
             final List<Map<String, Object>> repositories = new ArrayList<>();
-            for (LocationImpl location : StudyManager.getInstance().getLocations(getContainer()))
+            for (LocationImpl location : LocationManager.get().getLocations(getContainer()))
             {
                 if (location.isRepository())
                     repositories.add(getLocation(location));

@@ -1177,8 +1177,8 @@ public class StudyQuerySchema extends UserSchema
         return new TablePackage(tableInfo, container, isProjectLevel);
     }
 
-    private static Set<String> _dataspaceProjectLevelTables = new HashSet<>();
-    private static Set<String> _dataspaceFolderLevelTables = new HashSet<>();
+    private static final Set<String> _dataspaceProjectLevelTables = new HashSet<>();
+    private static final Set<String> _dataspaceFolderLevelTables = new HashSet<>();
     static
     {
         _dataspaceProjectLevelTables.add(STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);

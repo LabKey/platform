@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorOrderAction"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorsAction"%>
-<%@ page import="org.labkey.study.model.SpecimenRequestActor"%>
+<%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor"%>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>

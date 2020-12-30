@@ -19,6 +19,7 @@ package org.labkey.study.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.study.StudySchema;
 
 /**

@@ -63,6 +63,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.report.RequestSummaryByVisitType;
 import org.labkey.api.specimen.report.SummaryByVisitParticipant;
 import org.labkey.api.specimen.report.SummaryByVisitType;
@@ -83,19 +84,21 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.importer.RequestabilityManager.InvalidRuleException;
+import org.labkey.api.specimen.importer.RollupInstance;
+import org.labkey.api.specimen.importer.RollupHelper.RollupMap;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.api.specimen.importer.VialSpecimenRollup;
-import org.labkey.study.model.AdditiveType;
+import org.labkey.api.specimen.model.AdditiveType;
 import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.DerivativeType;
+import org.labkey.api.specimen.model.DerivativeType;
 import org.labkey.study.model.ExtendedSpecimenRequestView;
 import org.labkey.api.specimen.location.LocationImpl;
-import org.labkey.study.model.PrimaryType;
+import org.labkey.api.specimen.model.PrimaryType;
 import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.specimen.SpecimenEvent;
 import org.labkey.study.model.SpecimenRequest;
-import org.labkey.study.model.SpecimenRequestActor;
-import org.labkey.study.model.SpecimenRequestEvent;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
+import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.study.model.SpecimenRequestRequirement;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.model.SpecimenTypeSummary;
@@ -104,13 +107,13 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.api.specimen.Vial;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.query.SpecimenTablesProvider;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.api.specimen.requirements.RequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
-import org.labkey.study.specimen.LocationCache;
+import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.study.specimen.SpecimenCommentAuditProvider;
 import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
@@ -387,7 +390,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     {
         Integer locationId = getCurrentLocationId(vial);
         if (locationId != null)
-            return StudyManager.getInstance().getLocation(vial.getContainer(), locationId);
+            return LocationManager.get().getLocation(vial.getContainer(), locationId);
         return null;
     }
 
@@ -457,7 +460,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     {
         if (vial.getOriginatingLocationId() != null)
         {
-            LocationImpl location = StudyManager.getInstance().getLocation(vial.getContainer(), vial.getOriginatingLocationId());
+            LocationImpl location = LocationManager.get().getLocation(vial.getContainer(), vial.getOriginatingLocationId());
             if (location != null)
                 return location;
         }
@@ -465,7 +468,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         List<SpecimenEvent> events = getDateOrderedEventList(vial);
         Integer firstLabId = getProcessingLocationId(events);
         if (firstLabId != null)
-            return StudyManager.getInstance().getLocation(vial.getContainer(), firstLabId);
+            return LocationManager.get().getLocation(vial.getContainer(), firstLabId);
         else
             return null;
     }
@@ -581,11 +584,11 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
         String tableInfoSpecimenSelectName = tableInfoSpecimen.getSelectName();
         String tableInfoVialSelectName = tableInfoVial.getSelectName();
-        SpecimenImporter.RollupMap<VialSpecimenRollup> matchedRollups = SpecimenImporter.getVialToSpecimenRollups(container, user);
+        RollupMap<VialSpecimenRollup> matchedRollups = SpecimenImporter.getVialToSpecimenRollups(container, user);
 
         SQLFragment updateSql = new SQLFragment();
         updateSql.append("UPDATE ").append(tableInfoSpecimenSelectName).append(UPDATE_SPECIMEN_SETS);
-        for (List<SpecimenImporter.RollupInstance<VialSpecimenRollup>> rollupList : matchedRollups.values())
+        for (List<RollupInstance<VialSpecimenRollup>> rollupList : matchedRollups.values())
             for (Pair<String, VialSpecimenRollup> rollupItem : rollupList)
             {
                 ColumnInfo column = tableInfoSpecimen.getColumn(rollupItem.first);
@@ -603,13 +606,13 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         updateSql.add(Boolean.TRUE); // LockedInRequest case of ExpectedAvailableCount
         updateSql.add(Boolean.FALSE); // Requestable case of ExpectedAvailableCount
 
-        for (Map.Entry<String, List<SpecimenImporter.RollupInstance<VialSpecimenRollup>>> entry : matchedRollups.entrySet())
+        for (Map.Entry<String, List<RollupInstance<VialSpecimenRollup>>> entry : matchedRollups.entrySet())
         {
             ColumnInfo vialColumn = tableInfoVial.getColumn(entry.getKey());
             if (null == vialColumn)
                 throw new IllegalStateException("Expected Vial table column to exist.");
             String fromName = vialColumn.getSelectName();
-            for (SpecimenImporter.RollupInstance<VialSpecimenRollup> rollupItem : entry.getValue())
+            for (RollupInstance<VialSpecimenRollup> rollupItem : entry.getValue())
             {
                 VialSpecimenRollup rollup = rollupItem.second;
                 ColumnInfo column = tableInfoSpecimen.getColumn(rollupItem.first);
@@ -2437,7 +2440,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             if (rs.getObject(idColumnName) == null)
                 locations.add(null);
             else
-                locations.add(StudyManager.getInstance().getLocation(container, rs.getInt(idColumnName)));
+                locations.add(LocationManager.get().getLocation(container, rs.getInt(idColumnName)));
         });
 
         return locations;

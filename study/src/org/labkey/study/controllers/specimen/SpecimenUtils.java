@@ -48,6 +48,10 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
+import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.notifications.NotificationRecipientSet;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
@@ -74,12 +78,9 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.SpecimenRequest;
-import org.labkey.study.model.SpecimenRequestActor;
-import org.labkey.study.model.SpecimenRequestEvent;
 import org.labkey.study.model.SpecimenRequestRequirement;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -345,7 +346,7 @@ public class SpecimenUtils
             throw new IllegalStateException("Request " + specimenRequest.getRowId() + " in folder " +
                     specimenRequest.getContainer().getPath() + " does not have a valid destination site id.");
         }
-        LocationImpl destLocation = StudyManager.getInstance().getLocation(specimenRequest.getContainer(), specimenRequest.getDestinationSiteId().intValue());
+        LocationImpl destLocation = LocationManager.get().getLocation(specimenRequest.getContainer(), specimenRequest.getDestinationSiteId().intValue());
         relevantSites.put(destLocation.getRowId(), destLocation);
         for (Vial vial : specimenRequest.getVials())
         {
@@ -423,7 +424,7 @@ public class SpecimenUtils
             out.write("<option value=''>&lt;Show All&gt;</option>");
             String excludeStr = ctx.getRequest().getParameter(SpecimenQueryView.PARAMS.excludeRequestedBySite.name());
             int locationId = null == StringUtils.trimToNull(excludeStr) ? 0 : Integer.parseInt(excludeStr);
-            List<LocationImpl> locations = StudyManager.getInstance().getValidRequestingLocations(ctx.getContainer());
+            List<LocationImpl> locations = LocationManager.get().getValidRequestingLocations(ctx.getContainer());
             for (LocationImpl location : locations)
             {
                 out.write("<option value=\"");
@@ -579,7 +580,7 @@ public class SpecimenUtils
 
         public String getRequestingSiteName()
         {
-            Location destLocation = StudyManager.getInstance().getLocation(_notification.getSampleRequest().getContainer(),
+            Location destLocation = LocationManager.get().getLocation(_notification.getSampleRequest().getContainer(),
                     _notification.getSampleRequest().getDestinationSiteId());
             if (destLocation != null)
                 return destLocation.getDisplayName();
@@ -783,7 +784,7 @@ public class SpecimenUtils
                 int idx = 0;
 
                 for (Integer id : _possibleLocationIds)
-                    _possibleLocations[idx++] = StudyManager.getInstance().getLocation(_container, id.intValue());
+                    _possibleLocations[idx++] = LocationManager.get().getLocation(_container, id.intValue());
             }
             return _possibleLocations;
         }
@@ -825,7 +826,7 @@ public class SpecimenUtils
                     _providingLocations = new ArrayList<>(_providingLocationIds.size());
 
                     for (Integer locationId : _providingLocationIds)
-                        _providingLocations.add(StudyManager.getInstance().getLocation(container, locationId.intValue()));
+                        _providingLocations.add(LocationManager.get().getLocation(container, locationId.intValue()));
                 }
             }
             return _providingLocations;

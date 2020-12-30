@@ -1,11 +1,10 @@
-package org.labkey.study.importer;
+package org.labkey.api.specimen.importer;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.specimen.SpecimenEvent;
-import org.labkey.api.specimen.importer.Rollup;
-import org.labkey.study.SpecimenManager;
+import org.labkey.api.specimen.SpecimenEventManager;
 
 import java.util.Arrays;
 import java.util.List;
@@ -27,7 +26,7 @@ public enum EventVialRollup implements Rollup
             // Input is SpecimenEvent list
             if (null == events || events.isEmpty())
                 return null;
-            return SpecimenManager.getInstance().getLastEvent(events).get(eventColName);
+            return SpecimenEventManager.getLastEvent(events).get(eventColName);
         }
 
         @Override
@@ -50,7 +49,7 @@ public enum EventVialRollup implements Rollup
             // Input is SpecimenEvent list
             if (null == events || events.isEmpty())
                 return null;
-            return SpecimenManager.getInstance().getFirstEvent(events).get(eventColName);
+            return SpecimenEventManager.getFirstEvent(events).get(eventColName);
         }
 
         @Override

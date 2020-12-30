@@ -40,13 +40,14 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.specimen.LocationCache;
+import org.labkey.api.specimen.location.LocationCache;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -148,7 +149,7 @@ public class LocationTable extends BaseStudyTable
             if (null == locId)
                 throw new InvalidKeyException("Invalid location ID");
 
-            LocationImpl loc = StudyManager.getInstance().getLocation(c, locId);
+            LocationImpl loc = LocationManager.get().getLocation(c, locId);
             if (null == loc)
                 throw new BatchValidationException(Collections.singletonList(new ValidationException("Location not found: " + locId)), extraScriptContext);
             loc.createMutable();    // Test mutability
@@ -167,7 +168,7 @@ public class LocationTable extends BaseStudyTable
         public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException
         {
             assert null == configParameters && null == extraScriptContext;      // We're not expecting these for this table
-            StudyManager mgr = StudyManager.getInstance();
+            LocationManager mgr = LocationManager.get();
 
             List<ValidationException> validationExceptions = new ArrayList<>();
             for (Map<String, Object> map : keys)
@@ -194,7 +195,7 @@ public class LocationTable extends BaseStudyTable
                     continue;
                 }
 
-                if (mgr.isLocationInUse(loc))
+                if (StudyManager.getInstance().isLocationInUse(loc))
                 {
                     validationExceptions.add(new ValidationException("Location is currently in use and cannot be deleted: " + loc.getDisplayName()));
                     continue;

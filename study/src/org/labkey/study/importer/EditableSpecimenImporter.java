@@ -26,10 +26,13 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.importer.EventVialRollup;
+import org.labkey.api.specimen.importer.RollupInstance;
 import org.labkey.api.specimen.importer.StandardSpecimenImportStrategy;
 import org.labkey.api.study.SpecimenImportStrategy;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
+import org.labkey.api.specimen.importer.RollupHelper.RollupMap;
 
 import java.io.IOException;
 import java.util.ArrayList;

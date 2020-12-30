@@ -1,4 +1,4 @@
-package org.labkey.study.specimen;
+package org.labkey.api.specimen.location;
 
 import org.labkey.api.Constants;
 import org.labkey.api.cache.Cache;
@@ -8,8 +8,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
-import org.labkey.study.StudySchema;
-import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.SpecimenSchema;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,7 +32,7 @@ public class LocationCache
             Map<Integer, LocationImpl> byRowId = new HashMap<>();
             Map<String, LocationImpl> byLabel = new HashMap<>();
 
-            TableInfo tableInfo = StudySchema.getInstance().getTableInfoSite(c);
+            TableInfo tableInfo = SpecimenSchema.get().getTableInfoLocation(c);
             new TableSelector(tableInfo, null, new Sort(FieldKey.fromParts("Label"))).forEachMap(map->{
                 LocationImpl location = new LocationImpl(c, map);
                 list.add(location);

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.model;
+package org.labkey.api.specimen.model;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -21,7 +21,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.SpecimenTablesTemplate;
-import org.labkey.study.query.SpecimenTablesProvider;
 
 import java.util.Arrays;
 import java.util.Collections;

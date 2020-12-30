@@ -53,6 +53,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -294,7 +296,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @Override
     public List<LocationImpl> getLocations()
     {
-        return StudyManager.getInstance().getLocations(getContainer());
+        return LocationManager.get().getLocations(getContainer());
     }
 
     @Override

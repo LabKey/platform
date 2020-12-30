@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.model;
+package org.labkey.api.specimen.model;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -21,7 +21,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.SpecimenTablesTemplate;
-import org.labkey.study.query.SpecimenTablesProvider;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,17 +32,17 @@ import java.util.Set;
 /**
  * Created by davebradlee on 2/7/15
  */
-public final class AdditiveTypeDomainKind extends AbstractSpecimenDomainKind
+public final class DerivativeTypeDomainKind extends AbstractSpecimenDomainKind
 {
-    private static final String NAME = "SpecimenAdditive";
-    private static final String NAMESPACE_PREFIX = "SpecimenAdditive";
+    private static final String NAME = "SpecimenDerivative";
+    private static final String NAMESPACE_PREFIX = "SpecimenDerivative";
 
     public static final String ROWID = "RowId";
     public static final String CONTAINER = "Container";
     public static final String EXTERNALID = "ExternalId";
-    public static final String LDMSADDITIVECODE = "LdmsAdditiveCode";
-    public static final String LABWAREADDITIVECODE = "LabwareAdditiveCode";
-    public static final String ADDITIVE = "Additive";
+    public static final String LDMSDERIVATIVECODE = "LdmsDerivativeCode";
+    public static final String LABWAREDERIVATIVECODE = "LabwareDerivativeCode";
+    public static final String DERIVATIVE = "Derivative";
 
     private static final List<PropertyStorageSpec> BASE_PROPERTIES;
     private static final Set<PropertyStorageSpec.Index> BASE_INDICES;
@@ -54,17 +53,17 @@ public final class AdditiveTypeDomainKind extends AbstractSpecimenDomainKind
             new PropertyStorageSpec(ROWID, JdbcType.INTEGER, 0, PropertyStorageSpec.Special.PrimaryKey, false, true, null),
             new PropertyStorageSpec(CONTAINER, JdbcType.GUID).setNullable(false),
             new PropertyStorageSpec(EXTERNALID, JdbcType.INTEGER, 0, false, null),
-            new PropertyStorageSpec(LDMSADDITIVECODE, JdbcType.VARCHAR, 30),
-            new PropertyStorageSpec(LABWAREADDITIVECODE, JdbcType.VARCHAR, 20),
-            new PropertyStorageSpec(ADDITIVE, JdbcType.VARCHAR, 100),
+            new PropertyStorageSpec(LDMSDERIVATIVECODE, JdbcType.VARCHAR, 30),
+            new PropertyStorageSpec(LABWAREDERIVATIVECODE, JdbcType.VARCHAR, 20),
+            new PropertyStorageSpec(DERIVATIVE, JdbcType.VARCHAR, 100),
         };
         BASE_PROPERTIES = Arrays.asList(props);
 
         PropertyStorageSpec.Index[] indices =
-            {
-                new PropertyStorageSpec.Index(true, EXTERNALID),
-                new PropertyStorageSpec.Index(false, ADDITIVE)
-            };
+        {
+            new PropertyStorageSpec.Index(true, EXTERNALID),
+            new PropertyStorageSpec.Index(false, DERIVATIVE)
+        };
         BASE_INDICES = new HashSet<>(Arrays.asList(indices));
     }
 
