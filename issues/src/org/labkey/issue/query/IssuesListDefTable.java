@@ -46,6 +46,7 @@ import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
+import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -210,9 +211,9 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         addColumn(domainContainer);
 
         addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Created")));
-        UserIdForeignKey.initColumn(addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("CreatedBy"))));
+        UserIdQueryForeignKey.initColumn(getUserSchema(), addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("CreatedBy"))), true);
         addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Modified")));
-        UserIdForeignKey.initColumn(addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("ModifiedBy"))));
+        UserIdQueryForeignKey.initColumn(getUserSchema(), addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("ModifiedBy"))), true);
     }
 
     @Nullable
