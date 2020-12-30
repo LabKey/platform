@@ -51,8 +51,8 @@ export const App: FC<any> = memo(props => {
         setProvider(provider);
     }, [])
 
-    const onContainerSelect = useCallback((provider) => {
-        setContainer(provider);
+    const onContainerSelect = useCallback((cont) => {
+        setContainer(cont);
     }, [])
 
     const onSubmit = useCallback(() => {

@@ -710,9 +710,9 @@ public class AssayController extends SpringActionController
             String defaultLocation = null;
             for (Pair<Container, String> entry : AssayService.get().getLocationOptions(getContainer(), getUser()))
             {
-                locations.put(entry.getKey().getEncodedPath(), entry.getValue());
+                locations.put(entry.getKey().getPath(), entry.getValue());
                 if (defaultLocation == null)
-                    defaultLocation = entry.getKey().getEncodedPath();
+                    defaultLocation = entry.getKey().getPath();
             }
 
             response.put("defaultLocation", defaultLocation);
