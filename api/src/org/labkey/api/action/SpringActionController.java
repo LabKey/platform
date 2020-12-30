@@ -139,6 +139,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         assert null == prev || prev == ad;
     }
 
+    @Nullable
     static ActionDescriptor getActionDescriptor(Class<? extends Controller> actionClass)
     {
         return _classToDescriptor.get(actionClass);
@@ -146,18 +147,18 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     public static String getControllerName(Class<? extends Controller> actionClass)
     {
-        var ad = getActionDescriptor(actionClass).getControllerName();
+        var ad = getActionDescriptor(actionClass);
         if (null == ad)
             throw new IllegalStateException("Action class '" + actionClass + "' has not been registered with a controller");
-        return ad;
+        return ad.getControllerName();
     }
 
     public static String getActionName(Class<? extends Controller> actionClass)
     {
-        var ad = getActionDescriptor(actionClass).getPrimaryName();
+        var ad = getActionDescriptor(actionClass);
         if (null == ad)
             throw new IllegalStateException("Action class '" + actionClass + "' has not been registered with a controller");
-        return ad;
+        return ad.getPrimaryName();
     }
 
     public static Collection<ActionDescriptor> getRegisteredActionDescriptors()
