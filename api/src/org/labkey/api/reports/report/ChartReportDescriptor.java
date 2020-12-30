@@ -17,6 +17,7 @@
 package org.labkey.api.reports.report;
 
 import org.apache.commons.lang3.math.NumberUtils;
+import org.labkey.api.annotations.RemoveIn21_7;
 
 import java.util.Arrays;
 import java.util.List;
@@ -28,6 +29,7 @@ import java.util.Objects;
  */
 
 @Deprecated // can delete in the 21.7 release
+@RemoveIn21_7
 public class ChartReportDescriptor extends ReportDescriptor
 {
     public static final String CHART_XY = "1";

@@ -51,6 +51,7 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.annotations.RemoveIn21_7;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.attachments.AttachmentFile;
@@ -5634,6 +5635,7 @@ public class StudyController extends BaseStudyController
      * it can be converted to a javascript report. This class can be deleted in the 21.7 release.
      */
     @Deprecated
+    @RemoveIn21_7
     public static class StudyChartReport extends ChartQueryReport
     {
         public static final String TYPE = "Study.chartReport";

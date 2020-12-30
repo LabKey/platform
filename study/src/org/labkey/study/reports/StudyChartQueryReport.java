@@ -16,6 +16,7 @@
 
 package org.labkey.study.reports;
 
+import org.labkey.api.annotations.RemoveIn21_7;
 import org.labkey.api.reports.report.ChartQueryReport;
 
 /*
@@ -28,6 +29,7 @@ import org.labkey.api.reports.report.ChartQueryReport;
  * it can be converted to a javascript report. This class can be deleted in the 21.7 release.
  */
 @Deprecated
+@RemoveIn21_7
 public class StudyChartQueryReport extends ChartQueryReport
 {
     public static final String TYPE = "Study.chartQueryReport";
