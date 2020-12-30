@@ -48,6 +48,7 @@ import org.labkey.search.view.SearchWebPartFactory;
 import javax.servlet.ServletContext;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 
@@ -65,7 +66,7 @@ public class SearchModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 20.002;
+        return 21.000;
     }
 
     @Override
@@ -96,7 +97,7 @@ public class SearchModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Collections.singletonList(new SearchWebPartFactory());
+        return List.of(new SearchWebPartFactory());
     }
 
     

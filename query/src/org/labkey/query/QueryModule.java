@@ -127,7 +127,6 @@ import org.labkey.query.view.QueryDataViewProvider;
 import org.labkey.query.view.QueryWebPartFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -151,7 +150,7 @@ public class QueryModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 20.000;
+        return 21.000;
     }
 
     @Override
@@ -229,7 +228,7 @@ public class QueryModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(
+        return List.of(
             new DataViewsWebPartFactory(),
             new QueryWebPartFactory(),
             new ReportsWebPartFactory()

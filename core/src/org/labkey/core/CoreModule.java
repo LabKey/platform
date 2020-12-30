@@ -241,7 +241,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -1116,7 +1115,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @NotNull
     public Collection<String> getSchemaNames()
     {
-        return Arrays.asList
+        return List.of
         (
             CoreSchema.getInstance().getSchemaName(),       // core
             PropertySchema.getInstance().getSchemaName(),   // prop
