@@ -15,7 +15,6 @@
  */
 package org.labkey.api.dataiterator;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
@@ -31,6 +30,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -164,7 +164,21 @@ public class AttachmentDataIterator extends WrapperDataIterator
         }
     }
 
-    public static DataIteratorBuilder getAttachmentDataIteratorBuilder(TableInfo ti, @NotNull final DataIteratorBuilder builder, final User user, @Nullable final VirtualFile attachmentDir, Container container, AttachmentParentFactory parentFactory)
+    public static DataIteratorBuilder getAttachmentDataIteratorBuilder(TableInfo ti, @NotNull final DataIteratorBuilder builder,
+                                                                       final User user,
+                                                                       @Nullable final VirtualFile attachmentDir,
+                                                                       Container container,
+                                                                       AttachmentParentFactory parentFactory)
+    {
+        return getAttachmentDataIteratorBuilder(ti, builder, user, attachmentDir, container, parentFactory, FieldKey.fromParts("entityId"));
+    }
+
+    public static DataIteratorBuilder getAttachmentDataIteratorBuilder(TableInfo ti, @NotNull final DataIteratorBuilder builder,
+                                                                       final User user,
+                                                                       @Nullable final VirtualFile attachmentDir,
+                                                                       Container container,
+                                                                       AttachmentParentFactory parentFactory,
+                                                                       FieldKey entityId)
     {
         return context -> {
             //Adding as check against Issue #26599
@@ -186,7 +200,7 @@ public class AttachmentDataIterator extends WrapperDataIterator
                 {
                     ColumnInfo col = it.getColumnInfo(c);
 
-                    if (StringUtils.equalsIgnoreCase("entityId", col.getName()))
+                    if (col.getFieldKey().equals(entityId))
                         entityIdIndex = c;
 
                     // TODO: Issue 22505: Don't seem to have attachment information in the ColumnInfo, so we need to lookup the DomainProperty

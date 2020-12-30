@@ -2277,7 +2277,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("runningThreads"));
+            getPageConfig().setHelpTopic(new HelpTopic("dumpDebugging#threads"));
             addAdminNavTrail(root, "Current Threads", this.getClass());
         }
     }
@@ -2553,7 +2553,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("queryLogger"));
+            getPageConfig().setHelpTopic(new HelpTopic("queryPerf"));
             addAdminNavTrail(root, "Queries", this.getClass());
         }
     }

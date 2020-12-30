@@ -29,14 +29,10 @@ import org.labkey.api.util.StringExpression;
 public class FlagForeignKey extends AbstractForeignKey
 {
     public static final String DISPLAYFIELD_NAME = "Comment";
-    private final String _urlFlagged;
-    private final String _urlUnflagged;
 
-    public FlagForeignKey(UserSchema schema, String urlFlagged, String urlUnflagged)
+    public FlagForeignKey(UserSchema schema)
     {
         super(schema, null);
-        _urlFlagged = urlFlagged;
-        _urlUnflagged = urlUnflagged;
     }
 
     @Override
@@ -48,7 +44,7 @@ public class FlagForeignKey extends AbstractForeignKey
         }
         if (!displayField.equalsIgnoreCase(DISPLAYFIELD_NAME))
             return null;
-        return new FlagColumn(parent, _urlFlagged, _urlUnflagged, _sourceSchema.getContainer(), _sourceSchema.getUser(), displayField);
+        return new FlagColumn(parent, _sourceSchema.getContainer(), _sourceSchema.getUser(), displayField);
     }
 
     @Override
