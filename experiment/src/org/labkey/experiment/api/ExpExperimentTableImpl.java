@@ -49,7 +49,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
 {
     public ExpExperimentTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoExperiment(), schema, new ExpExperimentImpl(new Experiment()), cf);
+        super(name, ExperimentServiceImpl.get().getTinfoExperiment(), schema, cf);
         addCondition(new SQLFragment("Hidden = ?", Boolean.FALSE), FieldKey.fromParts("Hidden"));
 
         ActionURL deleteExpUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteSelectedExperimentsURL(getContainer(), null);

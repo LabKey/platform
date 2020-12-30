@@ -50,6 +50,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
@@ -203,6 +204,8 @@ public class SqlScriptController extends SpringActionController
         @Override
         public ModelAndView getView(ScriptsForm form, BindException errors) throws Exception
         {
+            setHelpTopic(new HelpTopic("sqlScripts#admin"));
+
             StringBuilder html = new StringBuilder("<table>");
 
             if (AppProps.getInstance().isDevMode())
@@ -362,6 +365,8 @@ public class SqlScriptController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
+            setHelpTopic(new HelpTopic("sqlScripts#admin"));
+
             ArrayList<SqlScript> scriptsWithErrors = new ArrayList<>();
             Map<SqlScript, String> errorMessages = new HashMap<>();
 
@@ -477,6 +482,8 @@ public class SqlScriptController extends SpringActionController
         @Override
         public final ModelAndView getView(K form, BindException errors)
         {
+            setHelpTopic(new HelpTopic("sqlScripts#admin"));
+
             double _fromVersion = form.getFromVersion();
             double _toVersion = form.getToVersion();
 
@@ -885,6 +892,8 @@ public class SqlScriptController extends SpringActionController
         @Override
         public ModelAndView getView(Object form, BindException errors) throws IOException
         {
+            setHelpTopic(new HelpTopic("sqlScripts#admin"));
+
             Set<SqlScript> orphanedScripts = new TreeSet<>();
             Set<String> unclaimedFiles = new TreeSet<>();
             Map<SqlScript, SqlScript> successors = new HashMap<>();

@@ -637,6 +637,33 @@ public class XarExporter
         queueDomain(domain);
     }
 
+    public void addDataClass(ExpDataClass dataClass)
+    {
+        if (_archive.getDataClasses() == null)
+        {
+            _archive.addNewDataClasses();
+        }
+
+        DataClassType dataClassType = _archive.getDataClasses().addNewDataClass();
+        dataClassType.setAbout(_relativizedLSIDs.relativize(dataClass.getLSID()));
+
+        dataClassType.setName(dataClass.getName());
+
+        if (dataClass.getDescription() != null)
+            dataClassType.setDescription(dataClass.getDescription());
+
+        if (dataClass.getNameExpression() != null)
+            dataClassType.setNameExpression(dataClass.getNameExpression());
+
+        if (dataClass.getCategory() != null)
+            dataClassType.setCategory(dataClass.getCategory());
+
+        if (dataClass.getSampleType() != null)
+            dataClassType.setSampleType(dataClass.getSampleType().getName());
+
+        queueDomain(dataClass.getDomain());
+    }
+
     // Return the "name" portion of the propertyURI after the hash
     private String getPropertyName(DomainProperty dp)
     {
