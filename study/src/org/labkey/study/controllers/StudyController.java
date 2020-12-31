@@ -2547,6 +2547,7 @@ public class StudyController extends BaseStudyController
                 return new RequirePipelineView(_study, true, errors);
 
             setShowImportOptions(true);
+            setSuccessMessageSuffix("imported");  //Works for when the merge option is selected (may include updates) vs default "inserted"
             return getDefaultImportView(form, errors);
         }
 
