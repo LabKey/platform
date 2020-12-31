@@ -351,7 +351,7 @@ public class OntologyManager
                 if (propsToInsert.size() > MAX_PROPS_IN_BATCH)
                 {
                     assert insert.start();
-                    insertPropertiesBulk(c, propsToInsert);
+                    insertPropertiesBulk(c, propsToInsert, false);
                     helper.afterBatchInsert(rowCount);
                     assert insert.stop();
                     propsToInsert = new ArrayList<>(MAX_PROPS_IN_BATCH + descriptors.size());
@@ -369,7 +369,7 @@ public class OntologyManager
                 throw new ValidationException(errors);
 
             assert insert.start();
-            insertPropertiesBulk(c, propsToInsert);
+            insertPropertiesBulk(c, propsToInsert, false);
             helper.afterBatchInsert(rowCount);
             assert insert.stop();
         }
@@ -1834,7 +1834,7 @@ public class OntologyManager
     }
 
 
-    private static void insertProperties(Container c, List<ObjectProperty> props, boolean skipValidation) throws SQLException, ValidationException
+    private static void insertProperties(Container c, List<ObjectProperty> props, boolean skipValidation, boolean insertNullValues) throws SQLException, ValidationException
     {
         HashMap<String, PropertyDescriptor> descriptors = new HashMap<>();
         HashMap<String, Integer> objects = new HashMap<>();
@@ -1887,11 +1887,11 @@ public class OntologyManager
         }
         if (!errors.isEmpty())
             throw new ValidationException(errors);
-        insertPropertiesBulk(c, props);
+        insertPropertiesBulk(c, props, insertNullValues);
     }
 
 
-    private static void insertPropertiesBulk(Container container, List<? extends PropertyRow> props) throws SQLException
+    private static void insertPropertiesBulk(Container container, List<? extends PropertyRow> props, boolean insertNullValues) throws SQLException
     {
         List<List<?>> floats = new ArrayList<>();
         List<List<?>> dates = new ArrayList<>();
@@ -1924,7 +1924,11 @@ public class OntologyManager
             }
             else if (null != mvIndicator)
             {
-                mvIndicators.add(Arrays.<Object>asList(objectId, propertyId, property.getTypeTag(), mvIndicator));
+                mvIndicators.add(Arrays.asList(objectId, propertyId, property.getTypeTag(), mvIndicator));
+            }
+            else if (insertNullValues)
+            {
+                strings.add(Arrays.asList(objectId, propertyId, null, null));
             }
         }
 
@@ -2061,10 +2065,10 @@ public class OntologyManager
 
     public static void insertProperties(Container container, String ownerObjectLsid, ObjectProperty... properties) throws ValidationException
     {
-        insertProperties(container, ownerObjectLsid, false, properties);
+        insertProperties(container, ownerObjectLsid, false, false, properties);
     }
 
-    public static void insertProperties(Container container, String ownerObjectLsid, boolean skipValidation, ObjectProperty... properties) throws ValidationException
+    public static void insertProperties(Container container, String ownerObjectLsid, boolean skipValidation, boolean insertNullValues, ObjectProperty... properties) throws ValidationException
     {
         try (Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
@@ -2073,7 +2077,7 @@ public class OntologyManager
             {
                 oprop.setObjectOwnerId(parentId);
             }
-            insertProperties(container, Arrays.asList(properties), skipValidation);
+            insertProperties(container, Arrays.asList(properties), skipValidation, insertNullValues);
 
             transaction.commit();
         }
