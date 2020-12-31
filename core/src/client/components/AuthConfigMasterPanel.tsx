@@ -74,7 +74,7 @@ class PrimaryTab extends PureComponent<PrimaryTabProps> {
 
                 <div>
                     <div className="configurations__config-section-title">
-                        <span className="bold-text"> Single Sign On Configurations </span>
+                        <span className="bold-text"> Single Sign-on Configurations </span>
                         <LabelHelpTip title="Tip">
                             <div> {SSO_TIP_TEXT} </div>
                         </LabelHelpTip>

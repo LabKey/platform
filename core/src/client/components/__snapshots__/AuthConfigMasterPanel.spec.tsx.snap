@@ -1027,7 +1027,7 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
               <span
                 className="bold-text"
               >
-                 Single Sign On Configurations 
+                 Single Sign-on Configurations 
               </span>
               <span
                 className="label-help-target"
