@@ -31,10 +31,10 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.dataiterator.DataIteratorUtil;
-import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyColumn;
@@ -490,17 +490,22 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     {
         ColumnInfo objectUriCol = getObjectUriColumn();
         Domain domain = getDomain();
-        if (objectUriCol != null && domain != null && !domain.getProperties().isEmpty())
-        {
-            String lsid = (String)oldRow.get(objectUriCol.getName());
 
+        // The lsid may be null for the row until a property has been inserted
+        String lsid = null;
+        if (objectUriCol != null)
+            lsid = (String)oldRow.get(objectUriCol.getName());
+
+        List<PropertyDescriptor> tableProperties = new ArrayList<>();
+        if (objectUriCol != null && domain != null && domain.getProperties().isEmpty())
+        {
             // convert "Property name"->value map into PropertyURI->value map
-            List<PropertyDescriptor> pds = new ArrayList<>();
             Map<String, Object> newValues = new HashMap<>();
+
             for (PropertyColumn pc : getPropertyColumns())
             {
                 PropertyDescriptor pd = pc.getPropertyDescriptor();
-                pds.add(pd);
+                tableProperties.add(pd);
 
                 if (lsid != null && hasProperty(oldRow, pd))
                     OntologyManager.deleteProperty(lsid, pd.getPropertyURI(), getDomainObjContainer(c), getDomainContainer(c));
@@ -512,44 +517,40 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
             // Note: copy lsid into newValues map so it will be found by the ImportHelper.beforeImportObject()
             newValues.put(objectUriCol.getName(), lsid);
-            List<String> lsids = OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), pds, Collections.singletonList(newValues), true);
+            List<String> lsids = OntologyManager.insertTabDelimited(getDomainObjContainer(c), user, null, new ImportHelper(), tableProperties, Collections.singletonList(newValues), true);
 
             // Update the lsid in the row: the lsid may have not existed in the row before the update.
             lsid = lsids.get(0);
             row.put(objectUriCol.getName(), lsid);
         }
 
-        for (Map.Entry<String, Object> rowEntry : row.entrySet())
+        // Get lsid value if it hasn't been set.
+        // This should only happen if the QueryUpdateService doesn't have a DomainUpdateHelper (DataClass and SampleType)
+        if (lsid == null && getQueryTable() instanceof UpdateableTableInfo)
         {
-            if (getQueryTable().getColumn(rowEntry.getKey()) instanceof PropertyColumn)
+            String objectUriColName = ((UpdateableTableInfo)getQueryTable()).getObjectURIColumnName();
+            if (objectUriColName != null)
+                lsid = (String)row.getOrDefault(objectUriColName, oldRow.get(objectUriColName));
+        }
+
+        // handle vocabulary properties
+        if (lsid != null)
+        {
+            for (Map.Entry<String, Object> rowEntry : row.entrySet())
             {
-                boolean vocabularyColumn = ((PropertyColumn) getQueryTable().getColumn(rowEntry.getKey())).isVocabulary();
+                String colName = rowEntry.getKey();
+                Object value = rowEntry.getValue();
 
-                if (vocabularyColumn)
+                ColumnInfo col = getQueryTable().getColumn(colName);
+                if (col instanceof PropertyColumn)
                 {
-                    //Getting Object URIs in case of Sample Types and Data Classes as the object URI column is different (LSID) for these tables
-                    String objectURI = (String) oldRow.get(getQueryTable().getDomain().getDomainKind().getObjectUriColumnName());
-                    OntologyObject ontologyObject = OntologyManager.getOntologyObject(c, objectURI);
-                    ObjectProperty objectProperty = null;
-
-                    for (Map.Entry<String, ObjectProperty> entry : OntologyManager.getPropertyObjects(c, objectURI).entrySet())
+                    PropertyColumn propCol = (PropertyColumn) col;
+                    PropertyDescriptor pd = propCol.getPropertyDescriptor();
+                    if (pd.isVocabulary() && !tableProperties.contains(pd))
                     {
-                        if (entry.getKey().equalsIgnoreCase(rowEntry.getKey()) && entry.getValue().getObjectId() == ontologyObject.getObjectId())
-                        {
-                            objectProperty = entry.getValue();
-                        }
-                    }
-
-                    if (null != objectProperty)
-                    {
-                        OntologyManager.updateObjectProperty(user, c, OntologyManager.getPropertyDescriptor(objectProperty.getPropertyId()), objectURI, rowEntry.getValue(), null);
-                    }
-                    else
-                    {
-                        OntologyManager.insertProperties(c, objectURI,  new ObjectProperty(objectURI, c, rowEntry.getKey(), rowEntry.getValue()));
+                        OntologyManager.updateObjectProperty(user, c, pd, lsid, value, null);
                     }
                 }
-
             }
         }
 
