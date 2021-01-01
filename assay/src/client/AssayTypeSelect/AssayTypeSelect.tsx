@@ -1,4 +1,4 @@
-import React, { FC, memo, useCallback, useEffect, useState } from 'react'
+import React, { FC, memo, useCallback, useEffect, useState, useMemo } from 'react'
 import { AssayPicker } from '@labkey/components';
 import { Button, Panel } from "react-bootstrap";
 
@@ -42,6 +42,8 @@ export const App: FC<any> = memo(props => {
     useEffect(() => {
         setReturnUrl(ActionURL.getParameter('returnUrl'));
     }, [])
+
+    const tab = useMemo(() => ActionURL.getParameter('tab'), [])
 
     const onCancel = useCallback(() => {
         window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', getServerContext().container.path);
@@ -87,6 +89,7 @@ export const App: FC<any> = memo(props => {
                         onContainerSelect={onContainerSelect}
                         onFileChange={setXar}
                         setIsFileUpload={setIsFileUpload}
+                        selectedTab={tab}
                     />
                 </Panel.Body>
             </Panel>

@@ -5779,6 +5779,8 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(Object o, BindException errors) throws Exception
         {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
             if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
                 throw new BadRequestException("Expected MultipartHttpServletRequest when posting files.");
 
@@ -5790,14 +5792,14 @@ public class ExperimentController extends SpringActionController
             MultipartFile formFile = getFileMap().get("file");
             if (formFile == null)
             {
-                errors.addError(new LabKeyError("No file was posted by the browser."));
+                errors.reject(ERROR_MSG, "No file was posted by the browser.");
                 return false;
             }
 
             byte[] bytes = formFile.getBytes();
             if (bytes.length == 0)
             {
-                errors.addError(new LabKeyError("No file was posted by the browser."));
+                errors.reject(ERROR_MSG, "No file was posted by the browser.");
                 return false;
             }
 
@@ -5807,7 +5809,7 @@ public class ExperimentController extends SpringActionController
             uploadDir.mkdirs();
             if (!uploadDir.isDirectory())
             {
-                errors.addError(new LabKeyError("Unable to create a 'system/UploadedXARs' directory under the pipeline root"));
+                errors.reject(ERROR_MSG, "Unable to create a 'system/UploadedXARs' directory under the pipeline root");
                 return false;
             }
             String userDirName = getUser().getEmail();
@@ -5819,7 +5821,7 @@ public class ExperimentController extends SpringActionController
             userDir.mkdirs();
             if (!userDir.isDirectory())
             {
-                errors.addError(new LabKeyError("Unable to create an 'UploadedXARs/" + userDirName + "' directory under the pipeline root"));
+                errors.reject(ERROR_MSG, "Unable to create an 'UploadedXARs/" + userDirName + "' directory under the pipeline root");
                 return false;
             }
 
@@ -5832,7 +5834,7 @@ public class ExperimentController extends SpringActionController
             }
             catch (IOException e)
             {
-                errors.addError(new LabKeyError("Unable to write uploaded XAR file to " + xarFile.getPath()));
+                errors.reject(ERROR_MSG, "Unable to write uploaded XAR file to " + xarFile.getPath());
                 return false;
             }
             finally
@@ -5852,8 +5854,9 @@ public class ExperimentController extends SpringActionController
             ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), xarFile,
                     "Uploaded file", true, pipeRoot);
             PipelineService.get().queueJob(job);
-
-            return true;
+            
+            response.put("success", true);
+            return response;
         }
     }
 
@@ -6312,7 +6315,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public ActionURL getUploadXARURL(Container container)
         {
-            return new ActionURL("assay", "chooseAssayType", container);
+            return new ActionURL("assay", "chooseAssayType", container).addParameter("tab", "import");
         }
 
         @Override
