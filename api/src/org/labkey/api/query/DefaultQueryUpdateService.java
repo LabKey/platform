@@ -548,7 +548,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                     PropertyDescriptor pd = propCol.getPropertyDescriptor();
                     if (pd.isVocabulary() && !tableProperties.contains(pd))
                     {
-                        OntologyManager.updateObjectProperty(user, c, pd, lsid, value, null);
+                        OntologyManager.updateObjectProperty(user, c, pd, lsid, value, null, false);
                     }
                 }
             }
