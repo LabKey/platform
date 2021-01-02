@@ -113,20 +113,20 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
 
     public class PublishBean
     {
-        private List<Integer> _ids;
-        private AssayProvider _provider;
-        private ExpProtocol _protocol;
-        private Set<Container> _studies;
-        private boolean _nullStudies;
-        private boolean _insufficientPermissions;
-        private String _dataRegionSelectionKey;
-        private final String _returnURL;
+        private final List<Integer> _ids;
+        private final AssayProvider _provider;
+        private final ExpProtocol _protocol;
+        private final Set<Container> _studies;
+        private final boolean _nullStudies;
+        private final boolean _insufficientPermissions;
+        private final String _dataRegionSelectionKey;
+        private final ActionURL _returnURL;
         private final String _containerFilterName;
-        private List<Integer> _runIds;
+        private final List<Integer> _runIds;
 
         public PublishBean(AssayProvider provider, ExpProtocol protocol,
                            List<Integer> ids, String dataRegionSelectionKey,
-                           Set<Container> studies, boolean nullStudies, boolean insufficientPermissions, String returnURL,
+                           Set<Container> studies, boolean nullStudies, boolean insufficientPermissions, ActionURL returnURL,
                            String containerFilterName, List<Integer> runIds)
         {
             _insufficientPermissions = insufficientPermissions;
@@ -141,13 +141,13 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             _runIds = runIds;
         }
 
-        public String getReturnURL()
+        public ActionURL getReturnURL()
         {
             if (_returnURL != null)
             {
                 return _returnURL;
             }
-            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), getProtocol()).addParameter("clearDataRegionSelectionKey", getDataRegionSelectionKey()).toString();
+            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), getProtocol()).addParameter("clearDataRegionSelectionKey", getDataRegionSelectionKey());
         }
 
         public List<Integer> getIds()
@@ -288,7 +288,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
                         containers,
                         nullsFound,
                         insufficientPermissions,
-                        publishForm.getReturnUrl(),
+                        publishForm.getReturnActionURL(),
                         publishForm.getContainerFilterName(),
                         runIds));
         }
