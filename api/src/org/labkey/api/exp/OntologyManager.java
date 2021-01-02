@@ -2068,6 +2068,11 @@ public class OntologyManager
         insertProperties(container, ownerObjectLsid, false, false, properties);
     }
 
+    public static void insertProperties(Container container, String ownerObjectLsid, boolean skipValidation, ObjectProperty... properties) throws ValidationException
+    {
+        insertProperties(container, ownerObjectLsid, skipValidation, false, properties);
+    }
+
     public static void insertProperties(Container container, String ownerObjectLsid, boolean skipValidation, boolean insertNullValues, ObjectProperty... properties) throws ValidationException
     {
         try (Transaction transaction = getExpSchema().getScope().ensureTransaction())
