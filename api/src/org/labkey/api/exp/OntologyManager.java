@@ -2423,7 +2423,6 @@ public class OntologyManager
         return pd;
     }
 
-
     public static ObjectProperty updateObjectProperty(User user, Container container, PropertyDescriptor pd, String lsid, Object value, @Nullable ExpObject expObject, boolean insertNullValues) throws ValidationException
     {
         ObjectProperty oprop;
