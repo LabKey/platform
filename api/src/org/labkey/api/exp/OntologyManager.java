@@ -2016,7 +2016,12 @@ public class OntologyManager
 
     public static void insertProperties(Container container, User user, String ownerObjectLsid, ObjectProperty... properties) throws ValidationException
     {
-        insertProperties(container, user, ownerObjectLsid, false, false, properties);
+        insertProperties(container, user, ownerObjectLsid, false, properties);
+    }
+
+    public static void insertProperties(Container container, User user, String ownerObjectLsid, boolean skipValidation, ObjectProperty... properties) throws ValidationException
+    {
+        insertProperties(container, user, ownerObjectLsid, skipValidation, false, properties);
     }
 
     public static void insertProperties(Container container, User user, String ownerObjectLsid, boolean skipValidation, boolean insertNullValues, ObjectProperty... properties) throws ValidationException
