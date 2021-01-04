@@ -2195,7 +2195,7 @@ public class PageFlowUtil
             HttpServletRequest request = viewContext.getRequest();
             if (request != null)
             {
-                json.put("login", AuthenticationManager.getLoginPageConfiguration(getTermsOfUseProject(project, request.getParameter("returnUrl"))));
+                json.put("login", AuthenticationManager.getLoginPageConfiguration(getTermsOfUseProject(project, request.getParameter(ActionURL.Param.returnUrl.name()))));
                 if (includePostParameters && "post".equalsIgnoreCase(request.getMethod()))
                     json.put("postParameters", request.getParameterMap());
                 String tok = CSRFUtil.getExpectedToken(request, null);

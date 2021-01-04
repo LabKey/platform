@@ -38,7 +38,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.compliance.ComplianceService;
-import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -125,8 +124,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 public class PipelineController extends SpringActionController
 {
@@ -1637,7 +1634,7 @@ public class PipelineController extends SpringActionController
                 url = getContainer().getStartURL(getUser());
 
             response.put("success", true);
-            response.put("returnUrl", url.toString());
+            response.put(ActionURL.Param.returnUrl.name(), url.toString());
 
             return response;
         }
@@ -1681,6 +1678,11 @@ public class PipelineController extends SpringActionController
         public void setReturnUrl(String returnUrl)
         {
             urlForm.setReturnUrl(returnUrl);
+        }
+
+        public ActionURL getReturnActionURL()
+        {
+            return urlForm.getReturnActionURL();
         }
 
         public String getPipelineTask()

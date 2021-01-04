@@ -435,7 +435,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
     },
 
     goToReturnUrl: function() {
-        var returnUrl = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.getParameter('returnURL') || LABKEY.ActionURL.getParameter('returnUrl');
+        var returnUrl = LABKEY.ActionURL.getReturnUrl();
 
         if (!returnUrl) {
             // default to using the project-begin action

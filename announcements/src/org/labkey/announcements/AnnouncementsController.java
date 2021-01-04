@@ -1518,8 +1518,8 @@ public class AnnouncementsController extends SpringActionController
             page.emailPreference = form.getEmailPreference();
             page.srcIdentifier = form.getSrcIdentifier();
             page.notificationType = form.getNotificationType();
-            if (URLHelper.isHttpURL(form.getSrcUrl()))
-                page.srcURL = form.getSrcUrl();
+            if (form.getReturnActionURL() != null)
+                page.returnUrl = form.getReturnActionURL();
             page.message = _message;
             page.hasMemberList = settings.hasMemberList();
             page.conversationName = settings.getConversationName().toLowerCase();
