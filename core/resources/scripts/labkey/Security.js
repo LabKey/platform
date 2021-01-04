@@ -1204,8 +1204,6 @@ LABKEY.Security = new function()
                 method: "GET",
                 params: { resourceId: config.resourceId },
                 success: LABKEY.Utils.getCallbackWrapper(function(data, req){
-                    console.log("HEY", data);
-
                     data.policy.requestedResourceId = config.resourceId;
                     LABKEY.Utils.getOnSuccess(config).call(config.scope || this, data.policy, data.relevantRoles, req);
                 }, this),
