@@ -754,8 +754,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options);
 
-    Set<DomainProperty> findVocabularyProperties(Container container, Set<String> colNameMap);
-
     class XarExportOptions
     {
         String _lsidRelativizer = LSID_OPTION_FOLDER_RELATIVE;

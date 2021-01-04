@@ -30,7 +30,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.MvColumn;
-import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
@@ -208,7 +208,7 @@ public class DataIteratorUtil
             if (null == to)
             {
                 // Check to see if the column i.e. propURI has a property descriptor and vocabulary domain is present
-                var vocabProperties = ExperimentService.get().findVocabularyProperties(container, Collections.singleton(from.getColumnName()));
+                var vocabProperties = PropertyService.get().findVocabularyProperties(container, Collections.singleton(from.getColumnName()));
                 if (vocabProperties.size() > 0)
                 {
                     to = Pair.of(target.getColumn(from.getColumnName()), MatchType.propertyuri);

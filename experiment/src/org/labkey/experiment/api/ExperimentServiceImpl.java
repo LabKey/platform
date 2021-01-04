@@ -7121,39 +7121,6 @@ public class ExperimentServiceImpl implements ExperimentService
         return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_DOMAIN_DESIGNER);
     }
 
-    @Override
-    public Set<DomainProperty> findVocabularyProperties(Container container, Set<String> keyColumnNames)
-    {
-        Set<DomainProperty> vocabularyDomainProperties = new HashSet<>();
-
-        if (null != container)
-        {
-            for (String key : keyColumnNames)
-            {
-                if (URIUtil.hasURICharacters(key))
-                {
-                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(key, container);
-
-                    if (null != pd)
-                    {
-                        List<Domain> vocabDomains = OntologyManager.getDomainsForPropertyDescriptor(container, pd)
-                                .stream()
-                                .filter(d -> d.getDomainKind() instanceof VocabularyDomainKind)
-                                .collect(Collectors.toList());
-
-                        if (!vocabDomains.isEmpty())
-                        {
-                            DomainProperty dp = vocabDomains.get(0).getPropertyByURI(key);
-                            vocabularyDomainProperties.add(dp);
-                        }
-                    }
-                }
-            }
-        }
-
-        return vocabularyDomainProperties;
-    }
-
     public static class TestCase extends Assert
     {
         @Before
