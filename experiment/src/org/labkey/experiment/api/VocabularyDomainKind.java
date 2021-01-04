@@ -131,6 +131,9 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
     @Override
     public String generateDomainURI(String schemaName, String queryName, Container container, User user)
     {
+        // This makes "schemaName" synonymous with "vocabularyName" which it isn't, however, this is the
+        // interface exposed variant of generateDomainURI() allowing for resolution of a VocabularyDomainKind URI
+        // without needing access to the class.
         return generateDomainURI(schemaName, container);
     }
 
