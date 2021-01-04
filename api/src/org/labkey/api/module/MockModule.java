@@ -39,7 +39,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -355,7 +354,7 @@ public class MockModule implements Module
     @Override
     public Set<String> getModuleDependenciesAsSet()
     {
-        return new HashSet<>(Arrays.asList(_dependencies));
+        return Set.of(_dependencies);
     }
 
     @Override

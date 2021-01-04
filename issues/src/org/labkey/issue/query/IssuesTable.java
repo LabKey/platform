@@ -55,6 +55,7 @@ import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
+import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -270,7 +271,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
 
             if (isUserId(colName))
             {
-                UserIdForeignKey.initColumn(extensionCol);
+                UserIdQueryForeignKey.initColumn(getUserSchema(), extensionCol, true);
             }
             else if (colName.equalsIgnoreCase("AssignedTo"))
             {
@@ -740,7 +741,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         }
     }
 
-    static class AssignedToForeignKey extends UserIdForeignKey
+    static class AssignedToForeignKey extends UserIdQueryForeignKey
     {
         UserSchema _schema;
 
