@@ -135,28 +135,30 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     protected static void registerAction(ActionDescriptor ad)
     {
-        _classToDescriptor.put(ad.getActionClass(), ad);
+        ActionDescriptor prev = _classToDescriptor.put(ad.getActionClass(), ad);
+        assert null == prev || prev == ad;
     }
 
-    @NotNull
+    @Nullable
     static ActionDescriptor getActionDescriptor(Class<? extends Controller> actionClass)
     {
-        ActionDescriptor ad = _classToDescriptor.get(actionClass);
-
-        if (null == ad)
-            throw new IllegalStateException("Action class '" + actionClass + "' has not been registered with a controller");
-
-        return ad;
+        return _classToDescriptor.get(actionClass);
     }
 
     public static String getControllerName(Class<? extends Controller> actionClass)
     {
-        return getActionDescriptor(actionClass).getControllerName();
+        var ad = getActionDescriptor(actionClass);
+        if (null == ad)
+            throw new IllegalStateException("Action class '" + actionClass + "' has not been registered with a controller");
+        return ad.getControllerName();
     }
 
     public static String getActionName(Class<? extends Controller> actionClass)
     {
-        return getActionDescriptor(actionClass).getPrimaryName();
+        var ad = getActionDescriptor(actionClass);
+        if (null == ad)
+            throw new IllegalStateException("Action class '" + actionClass + "' has not been registered with a controller");
+        return ad.getPrimaryName();
     }
 
     public static Collection<ActionDescriptor> getRegisteredActionDescriptors()
@@ -847,7 +849,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             HTMLFileActionDescriptor htmlDescriptor = createFileActionDescriptor(module, actionName);
             _nameToDescriptor.put(actionName, htmlDescriptor);
-            registerAction(htmlDescriptor);
 
             return htmlDescriptor.createController(actionController);
         }
@@ -859,13 +860,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         protected class HTMLFileActionDescriptor extends BaseActionDescriptor
         {
-            private final Module _module;
+            private final String _moduleName;
             private final String _primaryName;
             private final List<String> _allNames;
 
             protected HTMLFileActionDescriptor(Module module, String primaryName)
             {
-                _module = module;
+                _moduleName = module.getName();
                 _primaryName = primaryName;
                 _allNames = Collections.singletonList(_primaryName);
             }
@@ -897,8 +898,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
             @Override
             public Controller createController(Controller actionController)
             {
-                Path path = ModuleHtmlView.getViewPath(_module, getPrimaryName());
-                return new SimpleAction(_module, path);
+                Module m = ModuleLoader.getInstance().getModule(_moduleName);
+                if (null == m)
+                    return null;
+                Path path = ModuleHtmlView.getViewPath(m, getPrimaryName());
+                return new SimpleAction(m, path);
             }
         }
 
@@ -999,7 +1003,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
         @Override
         public void addTime(Controller action, long elapsedTime)
         {
-            getActionDescriptor(action.getClass()).addTime(elapsedTime);
+            ActionDescriptor ad = getActionDescriptor(action.getClass());
+            if (null != ad)
+                ad.addTime(elapsedTime);
         }
 
 

@@ -230,6 +230,10 @@ public abstract class SqlDialect
         _sqlTypeNameMap.put("VARBINARY", Types.VARBINARY);
         _sqlTypeNameMap.put("VARCHAR", Types.VARCHAR);
 
+        // Some databases call Types.TIMESTAMP "TIMESTAMP" and some call it "DATETIME"
+        // however we always want to accept "DATETIME" which can be used unambiguously in schema.xml
+        _sqlTypeNameMap.put("DATETIME", Types.TIMESTAMP);
+
         addSqlTypeNames(_sqlTypeNameMap);
     }
 

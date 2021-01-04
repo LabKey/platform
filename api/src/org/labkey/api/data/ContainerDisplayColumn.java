@@ -97,7 +97,7 @@ public class ContainerDisplayColumn extends DataColumn
             else
                 return super.getDisplayValue(ctx);
         }
-        return _showPath ? c.getPath() : c.getName();
+        return _showPath ? c.getPath() : c.getTitle();
     }
 
     private String getEntityIdValue(RenderContext ctx)

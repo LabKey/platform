@@ -61,7 +61,6 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -98,7 +97,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @Override
     public @Nullable Double getSchemaVersion()
     {
-        return 20.000;
+        return 21.000;
     }
 
     @Override
@@ -121,12 +120,12 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(
+        return List.of(
             new AnnouncementsController.AnnouncementWebPartFactory(WEB_PART_NAME),
             new AlwaysAvailableWebPartFactory(WEB_PART_NAME + " List")
             {
                 @Override
-                public WebPartView getWebPartView(@NotNull ViewContext parentCtx, @NotNull Portal.WebPart webPart)
+                public WebPartView<?> getWebPartView(@NotNull ViewContext parentCtx, @NotNull Portal.WebPart webPart)
                 {
                     return new AnnouncementsController.AnnouncementListWebPart(parentCtx);
                 }

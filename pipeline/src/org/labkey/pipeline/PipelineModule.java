@@ -42,8 +42,6 @@ import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
@@ -87,9 +85,9 @@ import org.labkey.pipeline.xml.ScriptTaskType;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -107,7 +105,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     @Override
     public Double getSchemaVersion()
     {
-        return 20.000;
+        return 21.000;
     }
 
     @Override
@@ -145,21 +143,20 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(
+        return List.of(
             new BaseWebPartFactory(PipelineWebPart.getPartName())
             {
                 @Override
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
                 {
                     return new PipelineWebPart(portalCtx);
                 }
             },
-
             new DefaultWebPartFactory("Pipeline Files", PipelineController.BrowseWebPart.class),
             new BaseWebPartFactory(ProtocolManagementWebPart.getName())
             {
                 @Override
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
                 {
                     return new ProtocolManagementWebPart(portalCtx);
                 }

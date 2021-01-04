@@ -54,11 +54,11 @@ import org.labkey.issue.query.IssuesQuerySchema;
 import org.labkey.issue.view.IssuesSummaryWebPartFactory;
 import org.labkey.issue.view.IssuesWebPartFactory;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -79,7 +79,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     @Override
     public Double getSchemaVersion()
     {
-        return 20.000;
+        return 21.000;
     }
 
     @Override
@@ -102,28 +102,25 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        ArrayList<WebPartFactory> result = new ArrayList<>();
-
-        result.add(new BaseWebPartFactory("Issue Definitions")
-        {
-            @Override
-            public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+        return List.of(
+            new BaseWebPartFactory("Issue Definitions")
             {
-                UserSchema schema = QueryService.get().getUserSchema(portalCtx.getUser(), portalCtx.getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-                QuerySettings settings = schema.getSettings(portalCtx, IssuesQuerySchema.TableType.IssueListDef.name(), IssuesQuerySchema.TableType.IssueListDef.name());
+                @Override
+                public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                {
+                    UserSchema schema = QueryService.get().getUserSchema(portalCtx.getUser(), portalCtx.getContainer(), IssuesQuerySchema.SCHEMA_NAME);
+                    QuerySettings settings = schema.getSettings(portalCtx, IssuesQuerySchema.TableType.IssueListDef.name(), IssuesQuerySchema.TableType.IssueListDef.name());
 
-                QueryView view = schema.createView(portalCtx, settings, null);
-                view.setFrame(WebPartView.FrameType.PORTAL);
-                view.setTitle("Issue Definitions");
+                    QueryView view = schema.createView(portalCtx, settings, null);
+                    view.setFrame(WebPartView.FrameType.PORTAL);
+                    view.setTitle("Issue Definitions");
 
-                return view;
-            }
-        });
-
-        result.add(new IssuesWebPartFactory());
-        result.add(new IssuesSummaryWebPartFactory());
-
-        return result;
+                    return view;
+                }
+            },
+            new IssuesWebPartFactory(),
+            new IssuesSummaryWebPartFactory()
+        );
     }
 
     @Override
