@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -64,25 +65,26 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     public static TableInsertDataIterator create(DataIterator data, TableInfo table, DataIteratorContext context)
     {
         DataIteratorBuilder builder = DataIteratorBuilder.wrap(data);
-        return (TableInsertDataIterator)create(builder, table, null, context, null, null, null, null, false);
+        return (TableInsertDataIterator)create(builder, table, null, context, null, null, null, null, false, null);
     }
 
     /** If container != null, it will be set as a constant in the insert statement */
     @Deprecated // use TableInsertDataIteratorBuilder
     public static TableInsertDataIterator create(DataIteratorBuilder builder, TableInfo table, @Nullable Container c, DataIteratorContext context)
     {
-        return (TableInsertDataIterator)create(builder, table, c, context, null, null, null, null, false);
+        return (TableInsertDataIterator)create(builder, table, c, context, null, null, null, null, false, null);
     }
 
     @Deprecated  // use TableInsertDataIteratorBuilder
     public static DataIteratorBuilder create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context,
                                       @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
     {
-        return (TableInsertDataIterator)create(data, table, c, context, keyColumns, addlSkipColumns, dontUpdate, null, false);
+        return (TableInsertDataIterator)create(data, table, c, context, keyColumns, addlSkipColumns, dontUpdate, null, false, null);
     }
 
     public static DataIterator create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context,
-         @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate, @Nullable Set<DomainProperty> vocabularyColumns , boolean commitRowsBeforeContinuing)
+         @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate,
+         @Nullable Set<DomainProperty> vocabularyColumns , boolean commitRowsBeforeContinuing, @Nullable Map<String, String> remapSchemaColumns)
             //extra param @NUllable Set<PDs/Names?CIs> VOCCOls
     {
         // TODO it would be better to postpone calling data.getDataIterator() until the TableInsertDataIterator.getDataIterator() is called
@@ -105,10 +107,12 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
 
         if (context.getInsertOption().mergeRows && !context.getInsertOption().replace)
         {
+            final Map<String, String> remap = remapSchemaColumns != null ? remapSchemaColumns : Collections.emptyMap();
+
             // If the target has additional columns that aren't present in the source, don't overwrite (update) existing values...
             Set<String> targetOnlyColumnNames = table.getColumns()
                     .stream()
-                    .map(ColumnInfo::getName)
+                    .map(col -> remap.containsKey(col.getName()) ? remap.get(col.getName()) : col.getName())
                     .collect(Collectors.toCollection(CaseInsensitiveHashSet::new));
             for (int i = 1; i <= di.getColumnCount(); i++) // Note DataIterator column index is 1-based
             {

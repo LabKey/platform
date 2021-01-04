@@ -51,7 +51,7 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
 {
     public ExpProtocolTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoProtocol(), schema, new ExpProtocolImpl(new Protocol()), cf);
+        super(name, ExperimentServiceImpl.get().getTinfoProtocol(), schema, cf);
         setTitleColumn("Name");
     }
 

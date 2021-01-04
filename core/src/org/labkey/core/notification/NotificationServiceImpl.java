@@ -54,6 +54,7 @@ import javax.mail.MessagingException;
 import javax.mail.internet.MimeMultipart;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -69,6 +70,7 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
 {
     private final static NotificationServiceImpl INSTANCE = new NotificationServiceImpl();
     private final Map<String, String> _typeLabelMap = new ConcurrentHashMap<>();
+    private final Map<String, List<String>> _labelTypesMap = new ConcurrentHashMap<>();
     private final Map<String, String> _typeIconMap = new ConcurrentHashMap<>();
 
     public static NotificationServiceImpl getInstance()
@@ -188,17 +190,27 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     @Override
     public List<Notification> getNotificationsByType(Container container, @NotNull String type, int notifyUserId, boolean unreadOnly)
     {
-        return getNotificationsByUserOrType(container, type, notifyUserId, unreadOnly);
+        return getNotificationsByUserOrType(container, Collections.singletonList(type), notifyUserId, unreadOnly);
     }
 
-    private List<Notification> getNotificationsByUserOrType(Container container, String type, int notifyUserId, boolean unreadOnly)
+    @Override
+    public List<Notification> getNotificationsByTypeLabels(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly)
+    {
+        List<String> types = new ArrayList<>();
+        typeLabels.forEach(label -> {
+            types.addAll(_labelTypesMap.get(label));
+        });
+        return getNotificationsByUserOrType(container, types, notifyUserId, unreadOnly);
+    }
+
+    private List<Notification> getNotificationsByUserOrType(Container container, @Nullable List<String> types, int notifyUserId, boolean unreadOnly)
     {
         SimpleFilter filter = new SimpleFilter();
         if (null != container)
             filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("UserID"), notifyUserId);
-        if (type != null)
-            filter.addCondition(FieldKey.fromParts("Type"), type);
+        if (types != null)
+            filter.addCondition(FieldKey.fromParts("Type"), types, CompareType.IN);
         if (unreadOnly)
             filter.addCondition(FieldKey.fromParts("ReadOn"), null, CompareType.ISBLANK);
 
@@ -338,6 +350,9 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
             _typeLabelMap.put(type, label);
         else
             throw new IllegalStateException("A label has already been registered for this type: " + type);
+        List<String> typesForLabel = _labelTypesMap.getOrDefault(label, new ArrayList<>());
+        typesForLabel.add(type);
+        _labelTypesMap.put(label, typesForLabel);
 
         if (iconCls != null)
         {

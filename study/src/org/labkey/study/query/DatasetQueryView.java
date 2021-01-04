@@ -696,29 +696,32 @@ public class DatasetQueryView extends StudyQueryView
                 }
             }
 
-            ParticipantGroup sessionGroup = ParticipantGroupManager.getInstance().getSessionParticipantGroup(dqs.getContainer(), dqs.getUser(), ctx.getViewContext().getRequest());
-            if (sessionGroup != null)
+            if (ParticipantGroupManager.getInstance().getSessionParticipantGroupShowMessage(dqs.getContainer(), ctx.getViewContext().getRequest()))
             {
-                if (msg.length() > 0)
-                    msg.append("&nbsp;&nbsp;");
-                msg.append("<span class=\"labkey-strong\">Selected " + PageFlowUtil.filter(dqs.getStudy().getSubjectNounPlural()) + ":</span>&nbsp;");
-                msg.append(sessionGroup.getParticipantIds().length);
+                ParticipantGroup sessionGroup = ParticipantGroupManager.getInstance().getSessionParticipantGroup(dqs.getContainer(), dqs.getUser(), ctx.getViewContext().getRequest());
+                if (sessionGroup != null)
+                {
+                    if (msg.length() > 0)
+                        msg.append("&nbsp;&nbsp;");
+                    msg.append("<span class=\"labkey-strong\">Selected " + PageFlowUtil.filter(dqs.getStudy().getSubjectNounPlural()) + ":</span>&nbsp;");
+                    msg.append(sessionGroup.getParticipantIds().length);
+                }
+
+                if (msg.length() != 0)
+                {
+                    // HACK -- link to immport/studyFinder.view
+                    Module immport = ModuleLoader.getInstance().getModule("immport");
+                    Container project = ctx.getContainer().getProject();
+                    if (immport != null && project != null && project.getActiveModules().contains(immport))
+                    {
+                        ActionURL finderURL = new ActionURL("immport", "dataFinderRedirect.view", project);
+                        msg.append("&nbsp;&nbsp;").append(PageFlowUtil.button("Edit").href(finderURL.toString()));
+                    }
+                    msg.append("</div>");
+
+                    headerMessage.append(msg);
+                }
             }
-
-            if (msg.length() == 0)
-                return;
-
-            // HACK -- link to immport/studyFinder.view
-            Module immport = ModuleLoader.getInstance().getModule("immport");
-            Container project = ctx.getContainer().getProject();
-            if (immport != null && project != null && project.getActiveModules().contains(immport))
-            {
-                ActionURL finderURL = new ActionURL("immport", "dataFinderRedirect.view", project);
-                msg.append("&nbsp;&nbsp;").append(PageFlowUtil.button("Edit").href(finderURL.toString()));
-            }
-            msg.append("</div>");
-
-            headerMessage.append(msg);
         }
     }
 

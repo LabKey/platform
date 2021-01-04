@@ -203,7 +203,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             InputStream is = getClass().getResourceAsStream("tikaConfig.xml");
             org.w3c.dom.Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
-            config = new TikaConfig(doc, new ServiceLoader(Thread.currentThread().getContextClassLoader(), LoadErrorHandler.IGNORE, new ProblemHandler(), true));
+            config = new TikaConfig(doc, new ServiceLoader(Thread.currentThread().getContextClassLoader(), LoadErrorHandler.IGNORE, new ProblemHandler(_log), true));
         }
         catch (Exception e)
         {

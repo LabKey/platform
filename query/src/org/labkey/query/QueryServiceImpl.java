@@ -34,7 +34,6 @@ import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
-import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -84,7 +83,10 @@ import org.labkey.data.xml.queryCustomView.OperatorType;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.controllers.QueryController;
+import org.labkey.query.olap.OlapSchemaDescriptor;
 import org.labkey.query.olap.ServerManager;
+import org.labkey.query.olap.rolap.RolapCubeDef;
+import org.labkey.query.olap.rolap.RolapCubeDef.DimensionDef;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.LinkedSchemaDef;
@@ -2243,13 +2245,13 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     }
 
     @Override
-    public void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments)
+    public void registerPassthroughMethod(String name, @Nullable String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments)
     {
         registerPassthroughMethod(name, declaringSchemaName, returnType, minArguments, maxArguments, QueryManager.get().getDbSchema().getSqlDialect());
     }
 
     @Override
-    public void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect)
+    public void registerPassthroughMethod(String name, @Nullable String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect)
     {
         Method.addPassthroughMethod(name, declaringSchemaName, returnType, minArguments, maxArguments, dialect);
     }
@@ -2954,7 +2956,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     }
 
 
-    private  QueryUpdateAuditProvider.QueryUpdateAuditEvent createAuditRecord(Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row)
+    private QueryUpdateAuditProvider.QueryUpdateAuditEvent createAuditRecord(Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row)
     {
         QueryUpdateAuditProvider.QueryUpdateAuditEvent event = new QueryUpdateAuditProvider.QueryUpdateAuditEvent(c.getId(), comment);
         DbScope.Transaction tx = tinfo.getSchema().getScope().getCurrentTransaction();
@@ -2978,6 +2980,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         return event;
     }
 
+    @Override
     public List<DetailedAuditTypeEvent> getQueryUpdateAuditRecords(User user, Container container, long transactionAuditId)
     {
         SimpleFilter filter = new SimpleFilter();
@@ -3090,6 +3093,35 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         return result.toString();
     }
 
+    @Override
+    public List<String> getRolapConfigIds(Container c)
+    {
+        return ServerManager.getDescriptors(c).stream()
+            .filter(d->!d.usesMondrian())
+            .map(OlapSchemaDescriptor::getId)
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public Collection<QueryService.Hierarchy> getOlapHierarchies(String configId, Container c, String cubeName, String dimension)
+    {
+        OlapSchemaDescriptor descriptor = ServerManager.getDescriptor(c, configId);
+
+        if (null == descriptor)
+            throw new IllegalArgumentException("OLAP schema descriptor not found: " + configId);
+
+        RolapCubeDef rolap = descriptor.getRolapCubeDefinitionByName(cubeName);
+
+        if (null == rolap)
+            throw new IllegalArgumentException("Unable to find cube definition for cubeName: " + cubeName);
+
+        DimensionDef def = rolap.getDimension(dimension);
+
+        if (null == def)
+            throw new IllegalArgumentException("Unable to find dimension " + dimension);
+
+        return new ArrayList<>(def.getHierarchies());
+    }
 
     /*
     public Set<ColumnInfo> getIncomingLookups(User user, Container c, TableInfo targetTable, Set<SchemaKey> schemaKeys)

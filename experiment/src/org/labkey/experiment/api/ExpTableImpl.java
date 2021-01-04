@@ -60,7 +60,6 @@ abstract public class ExpTableImpl<C extends Enum>
         extends FilteredTable<UserSchema>
         implements ExpTable<C>
 {
-    private final ExpObjectImpl _objectType;
     private final Set<Class<? extends Permission>> _allowablePermissions = new HashSet<>();
     private Domain _domain;
     private ExpSchema _expSchema = null;
@@ -68,10 +67,9 @@ abstract public class ExpTableImpl<C extends Enum>
     // The populated flag indicates all standard columns have been added to the table, but metadata override have not yet been added
     protected boolean _populated;
 
-    protected ExpTableImpl(String name, TableInfo rootTable, UserSchema schema, @Nullable ExpObjectImpl objectType, ContainerFilter cf)
+    protected ExpTableImpl(String name, TableInfo rootTable, UserSchema schema, ContainerFilter cf)
     {
         super(rootTable, schema, cf);
-        _objectType = objectType;
         setName(name);
         _allowablePermissions.add(DeletePermission.class);
         _allowablePermissions.add(ReadPermission.class);
@@ -224,12 +222,6 @@ abstract public class ExpTableImpl<C extends Enum>
         return ret;
     }
 
-    public String urlFlag(boolean flagged)
-    {
-        assert _objectType != null : "No ExpObject configured for ExpTable type: " + getClass();
-        return _objectType.urlFlag(flagged);
-    }
-
     protected ColumnInfo getLSIDColumn()
     {
         return _rootTable.getColumn("LSID");
@@ -239,7 +231,7 @@ abstract public class ExpTableImpl<C extends Enum>
     protected MutableColumnInfo createFlagColumn(String alias)
     {
         var ret = wrapColumn(alias, getLSIDColumn());
-        ret.setFk(new FlagForeignKey(_userSchema, urlFlag(true), urlFlag(false)));
+        ret.setFk(new FlagForeignKey(_userSchema));
         ret.setDisplayColumnFactory(FlagColumnRenderer::new);
         ret.setDescription("Contains a reference to a user-editable comment about this row");
         ret.setNullable(true);

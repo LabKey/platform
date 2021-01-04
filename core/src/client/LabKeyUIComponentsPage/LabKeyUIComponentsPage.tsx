@@ -273,9 +273,7 @@ export class App extends React.Component<any, State> {
                     <DetailPage editable={true}/>
                 }
                 {selected === 'EditableGridPanel' &&
-                    this.renderPanel('EditableGridPanel',
-                        <EditableGridPage/>
-                    )
+                    <EditableGridPage/>
                 }
                 {selected === 'EntityInsertPanel' &&
                     this.renderPanel('EntityInsertPanel',
@@ -338,13 +336,11 @@ export class App extends React.Component<any, State> {
                 }
                 {selected === 'LabelHelpTip' &&
                     this.renderPanel('LabelHelpTip',
-                        <LabelHelpTip title={'test'} body={() => {
-                            return (
-                                <div>
-                                    Testing body of the LabelHelpTip, with a <a href={'https://www.labkey.com'} target={'_blank'}>link</a> in it.
-                                </div>
-                            )
-                        }}/>
+                        <LabelHelpTip title="test">
+                            <div>
+                                Testing body of the LabelHelpTip, with a <a href="https://www.labkey.com" target="_blank">link</a> in it.
+                            </div>
+                        </LabelHelpTip>
                     )
                 }
                 {selected === 'Lineage' &&

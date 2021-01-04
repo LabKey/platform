@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 
 /**
@@ -25,8 +26,8 @@ import org.labkey.api.data.Container;
 public class OntologyObject
 {
     private int objectId;
-    private Container container;
-    private String objectURI;
+    private @NotNull Container container;
+    private @NotNull String objectURI;
     private Integer ownerObjectId;
 
     public int getObjectId()
@@ -39,22 +40,22 @@ public class OntologyObject
         this.objectId = objectId;
     }
 
-    public Container getContainer()
+    public @NotNull Container getContainer()
     {
         return container;
     }
 
-    public void setContainer(Container container)
+    public void setContainer(@NotNull Container container)
     {
         this.container = container;
     }
 
-    public String getObjectURI()
+    public @NotNull String getObjectURI()
     {
         return objectURI;
     }
 
-    public void setObjectURI(String objectURI)
+    public void setObjectURI(@NotNull String objectURI)
     {
         this.objectURI = objectURI;
     }

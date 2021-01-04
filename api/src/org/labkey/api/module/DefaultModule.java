@@ -75,7 +75,6 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1319,7 +1318,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @NotNull
     protected Collection<String> getInternalJarFilenames()
     {
-        return Arrays.asList(_name + ".jar", _name + "_api.jar", _name + "_jsp.jar", "schemas.jar");
+        return List.of(_name + ".jar", _name + "_api.jar", _name + "_jsp.jar", "schemas.jar");
     }
 
     protected ApplicationContext _applicationContext = null;

@@ -41,6 +41,10 @@ Ext4.define('LABKEY.query.browser.Tree', {
                     {name: 'queryName'},
                     {name: 'queryLabel'},
                     {name: 'text'},
+                    {name: 'icon', convert: function(_, rec) {
+                        if (rec.raw.table === undefined) { return undefined; }
+                        return LABKEY.ActionURL.getContextPath() + '/reports/' + (rec.raw.table ? 'grid.gif' : 'grid-sql.png');
+                    }},
                     {name: 'leaf', type: 'boolean', defaultValue: false}
                 ]
             });

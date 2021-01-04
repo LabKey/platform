@@ -106,7 +106,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     public ExpMaterialTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoMaterial(), schema, new ExpMaterialImpl(new Material()), cf);
+        super(name, ExperimentServiceImpl.get().getTinfoMaterial(), schema, cf);
         setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowMaterialAction.class, schema.getContainer()), Collections.singletonMap("rowId", "rowId")));
         setName(ExpSchema.TableType.Materials.name());
         setPublicSchemaName(ExpSchema.SCHEMA_NAME);
@@ -669,7 +669,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     // it with a "MVIndicator" suffix (no underscore)
                     var mvColumn = new AliasedColumn(this, dp.getName() + MvColumn.MV_INDICATOR_SUFFIX,
                             StorageProvisioner.getMvIndicatorColumn(dbTable, dp.getPropertyDescriptor(), "No MV column found for '" + dp.getName() + "' in sample type '" + getName() + "'"));
-                    mvColumn.setLabel(dp.getLabel() + " MV Indicator");
+                    mvColumn.setLabel(dp.getLabel() != null ? dp.getLabel() : dp.getName() + " MV Indicator");
                     mvColumn.setSqlTypeName("VARCHAR");
                     mvColumn.setPropertyURI(dp.getPropertyURI());
                     mvColumn.setNullable(true);
@@ -797,13 +797,20 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public CaseInsensitiveHashMap<String> remapSchemaColumns()
     {
+        CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<>();
+
         if (null != getRealTable().getColumn("container") && null != getColumn("folder"))
         {
-            CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<>();
             m.put("container", "folder");
-            return m;
         }
-        return null;
+
+        for (ColumnInfo col : getColumns())
+        {
+            if (col.getMvColumnName() != null)
+                m.put(col.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX, col.getMvColumnName().getName());
+        }
+
+        return m;
     }
 
     @Override

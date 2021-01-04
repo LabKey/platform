@@ -32,8 +32,6 @@ import java.io.Writer;
 
 public class FlagColumnRenderer extends DataColumn
 {
-    protected String flagSrc;
-    protected String unflagSrc;
     protected String defaultTitle = "Flag for review"; // if there is no comment
     protected String endpoint = null;
     // to enable multi edit, the dataregion needs to provide a mapping pk->lsid
@@ -42,11 +40,6 @@ public class FlagColumnRenderer extends DataColumn
 
     public FlagColumnRenderer(ColumnInfo colinfo)
     {
-        this(colinfo, null, null);
-    }
-
-    public FlagColumnRenderer(ColumnInfo colinfo, String unflagSrc, String flagSrc)
-    {
         super(colinfo);
 
         ColumnInfo displayField = colinfo.getDisplayField();
@@ -54,9 +47,6 @@ public class FlagColumnRenderer extends DataColumn
         {
             setInputType(displayField.getInputType());
         }
-        String contextPath = AppProps.getInstance().getContextPath();
-        this.unflagSrc = null==unflagSrc ? null : contextPath + unflagSrc;
-        this.flagSrc = null==flagSrc ? null : contextPath + flagSrc;
     }
 
 
@@ -80,35 +70,21 @@ public class FlagColumnRenderer extends DataColumn
 
         setFlagFn = "__setFlag" + dr + "_" + getUnique(ctx);
 
-        if (getDisplayColumn() instanceof FlagColumn)
-        {
-            FlagColumn flagCol = (FlagColumn)getDisplayColumn();
-            if (null == flagSrc)
-                flagSrc = flagCol.urlFlag(true);
-            if (null == unflagSrc)
-                unflagSrc = flagCol.urlFlag(false);
-        }
-        if (null == flagSrc)
-            flagSrc = AppProps.getInstance().getContextPath() +"/experiment/flagDefault.gif";
-        if (null == unflagSrc)
-            unflagSrc = AppProps.getInstance().getContextPath() +"/experiment/unflagDefault.gif";
-
         try
         {
             out.write("<script type=\"text/javascript\">\n");
             out.write("var " + setFlagFn + ";");
-            out.write("LABKEY.requiresExt4Sandbox(function() {");
-            out.write("LABKEY.requiresScript('internal/flagColumn.js', function() {");
+            out.write("LABKEY.requiresScript('internal/flagColumn', function() {");
             out.write(setFlagFn + " = LABKEY.internal.FlagColumn._showDialog({");
             if (null != endpoint)
                 out.write("url: " + PageFlowUtil.jsString(endpoint) + ", ");
             if (null != jsConvertPKToLSID)
                 out.write("  translatePrimaryKey : " + jsConvertPKToLSID + ", ");
             out.write("  dataRegionName: " + PageFlowUtil.jsString(dataRegionName) + ", ");
-            out.write("  imgSrcFlagged: " + PageFlowUtil.jsString(flagSrc) + ", ");
-            out.write("  imgSrcUnflagged: " + PageFlowUtil.jsString(unflagSrc) + ", ");
+            out.write("  flagEnabledCls: " + PageFlowUtil.jsString(flagEnabledCls()) + ", ");
+            out.write("  flagDisabledCls: " + PageFlowUtil.jsString(flagDisabledCls()) + ", ");
             out.write("  imgTitle: " + PageFlowUtil.jsString(defaultTitle));
-            out.write("});\n});});");
+            out.write("});\n});");
             out.write("</script>");
 
             return setFlagFn;
@@ -151,27 +127,31 @@ public class FlagColumnRenderer extends DataColumn
         {
             out.write("<a href=\"#\" onclick=\"return " + setFlagFn + "(");
             out.write(hq(objectId));
-            out.write(")\">");
+            out.write(")\" style=\"color: #aaaaaa\">");
         }
 
-        out.write("<img height=\"16\" width=\"16\" src=\"");
-        out.write(h(null==comment ? unflagSrc : flagSrc));
-        out.write("\"");
+        out.write("<i class=\"" + (null==comment ? flagDisabledCls() : flagEnabledCls()) + "\"");
         if (comment == null && Boolean.TRUE == canUpdate && null != objectId)
             comment = defaultTitle;
-        out.write(" title=\"");
-        out.write(h(comment));
-        out.write("\"");
-        out.write(" flagId=\"");
-        out.write(h(objectId));
-        out.write("\"");
-        out.write(">");
+        out.write(" title=\"" + h(comment) + "\"");
+        out.write(" flagId=\"" + h(objectId) + "\"");
+        out.write("/>");
+
         if (canUpdate)
         {
             out.write("</a>");
         }
     }
 
+    public static String flagEnabledCls()
+    {
+        return "fa fa-flag lk-flag-enabled";
+    }
+
+    public static String flagDisabledCls()
+    {
+        return "fa fa-flag-o lk-flag-disabled";
+    }
 
     @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException

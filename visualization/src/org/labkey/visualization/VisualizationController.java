@@ -583,12 +583,12 @@ public class VisualizationController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class TestGetDataAction extends SimpleViewAction<Void>
+    public class TestGetDataAction extends SimpleViewAction<Object>
     {
         @Override
-        public ModelAndView getView(Void noform, BindException errors)
+        public ModelAndView getView(Object noform, BindException errors)
         {
-            return new JspView("/org/labkey/visualization/test/test.jsp");
+            return new JspView<>("/org/labkey/visualization/test/test.jsp");
         }
 
         @Override
@@ -675,12 +675,12 @@ public class VisualizationController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class cdsTestGetDataAction extends SimpleViewAction<Void>
+    public class cdsTestGetDataAction extends SimpleViewAction<Object>
     {
         @Override
-        public ModelAndView getView(Void noform, BindException errors)
+        public ModelAndView getView(Object noform, BindException errors)
         {
-            return new JspView("/org/labkey/visualization/test/test.jsp");
+            return new JspView<>("/org/labkey/visualization/test/test.jsp");
         }
 
         @Override

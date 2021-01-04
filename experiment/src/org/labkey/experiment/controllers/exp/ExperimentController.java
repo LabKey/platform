@@ -131,7 +131,6 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFactory;
-import org.labkey.api.reader.TabLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresNoPermission;
@@ -171,7 +170,6 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HBox;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -252,6 +250,8 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.exp.query.ExpSchema.TableType.DataInputs;
+import static org.labkey.api.query.QueryImportPipelineJob.QUERY_IMPORT_PIPELINE_DESCRIPTION_PARAM;
+import static org.labkey.api.query.QueryImportPipelineJob.QUERY_IMPORT_PIPELINE_PROVIDER_PARAM;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.action;
 import static org.labkey.api.util.DOM.Attribute.href;
@@ -3675,6 +3675,7 @@ public class ExperimentController extends SpringActionController
                 root.addChild(_form.getQueryName(), url);
             root.addChild("Import Data");
         }
+
     }
 
     public abstract class AbstractExpDataImportAction extends AbstractQueryImportAction<QueryForm>
@@ -3695,28 +3696,6 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        protected void configureLoader(DataLoader loader) throws IOException
-        {
-            super.configureLoader(loader);
-
-            // Issue 40302: Unable to use samples or data class with integer like names as material or data input
-            // treat lineage columns as string values
-            ColumnDescriptor[] cols = loader.getColumns();
-            for (ColumnDescriptor col : cols)
-            {
-                String name = col.name.toLowerCase();
-                if (name.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase() + "/") ||
-                    name.startsWith(ExpMaterial.MATERIAL_OUTPUT_CHILD.toLowerCase() + "/") ||
-                    name.startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase() + "/") ||
-                    name.startsWith(ExpData.DATA_OUTPUT_CHILD.toLowerCase() + "/"))
-                {
-                    col.clazz = String.class;
-                    col.converter = TabLoader.noopConverter;
-                }
-            }
-        }
-
-        @Override
         protected Map<String, String> getRenamedColumns()
         {
             final String renameParamPrefix = "importAlias.";
@@ -3732,6 +3711,32 @@ public class ExperimentController extends SpringActionController
             }
 
             return renameColumns;
+        }
+
+        @Override
+        protected String getQueryImportProviderName()
+        {
+            PropertyValue pv = _form.getInitParameters().getPropertyValue(QUERY_IMPORT_PIPELINE_PROVIDER_PARAM);
+            return pv == null ? null : (String) pv.getValue();
+        }
+
+        @Override
+        protected String getQueryImportDescription()
+        {
+            PropertyValue pv = _form.getInitParameters().getPropertyValue(QUERY_IMPORT_PIPELINE_DESCRIPTION_PARAM);
+            return pv == null ? null : (String) pv.getValue();
+        }
+
+        @Override
+        protected boolean isBackgroundImportSupported()
+        {
+            return true;
+        }
+
+        @Override
+        protected boolean hasLineageColumns()
+        {
+            return true;
         }
 
     }
@@ -3779,6 +3784,7 @@ public class ExperimentController extends SpringActionController
                 root.addChild(_form.getQueryName(), url);
             root.addChild("Import Data");
         }
+
     }
 
     @RequiresPermission(InsertPermission.class)
@@ -4661,8 +4667,6 @@ public class ExperimentController extends SpringActionController
     @RequiresNoPermission
     public class SetFlagAction extends FormHandlerAction<SetFlagForm>
     {
-        private URLHelper _successURL;
-
         @Override
         public void validateCommand(SetFlagForm target, Errors errors)
         {
@@ -4684,18 +4688,13 @@ public class ExperimentController extends SpringActionController
             }
 
             obj.setComment(getUser(), form.getComment());
-
-            if (form.isRedirect())
-            {
-                _successURL = new URLHelper(obj.urlFlag(!StringUtils.isEmpty(form.getComment())));
-            }
             return true;
         }
 
         @Override
         public URLHelper getSuccessURL(SetFlagForm form)
         {
-            return _successURL;
+            return null;
         }
     }
 

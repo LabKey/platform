@@ -465,7 +465,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             }
             else if (val instanceof Date){
                 var format = item.format || 'Y-m-d';
-                val = val.format(format);
+                val = Ext4.Date.format(val, format);
             }
 
             if (!Ext4.isEmpty(val) || !filterType.isDataValueRequired()){

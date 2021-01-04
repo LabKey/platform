@@ -37,7 +37,7 @@ public class ExpDataInputTableImpl extends ExpInputTableImpl<ExpDataInputTable.C
 {
     public ExpDataInputTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoDataInput(), schema, null, cf);
+        super(name, ExperimentServiceImpl.get().getTinfoDataInput(), schema, cf);
     }
 
     @Override

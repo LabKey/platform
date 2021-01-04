@@ -775,8 +775,7 @@ public class ExceptionUtil
             log.error("Unhandled exception: " + message, unhandledException);
         }
 
-        boolean isJSON = request.getContentType() != null && request.getContentType().contains(ApiJsonWriter.CONTENT_TYPE_JSON);
-        boolean isXML = request.getContentType() != null && request.getContentType().contains(ApiXmlWriter.CONTENT_TYPE);
+        ApiResponseWriter.Format responseFormat = ApiResponseWriter.getResponseFormat(request, null);
 
         if (response.isCommitted())
         {
@@ -800,8 +799,7 @@ public class ExceptionUtil
                 }
             }
         }
-        // TODO: Possibly respect "respFormat" parameter as found in ApiAction first?
-        else if (isJSON || isXML)
+        else if (responseFormat != null)
         {
             try
             {
@@ -821,11 +819,7 @@ public class ExceptionUtil
                 if (responseStatusMessage != null || message != null)
                     errorResponse.put("exception", StringUtils.defaultString(message,responseStatusMessage));
 
-                ApiResponseWriter writer;
-                if (isJSON)
-                    writer = ApiResponseWriter.Format.JSON.createWriter(response, null, null);
-                else
-                    writer = ApiResponseWriter.Format.XML.createWriter(response, null, null);
+                ApiResponseWriter writer = responseFormat.createWriter(response, null, null);
 
                 errorResponse.render(writer);
                 writer.close();
@@ -885,6 +879,8 @@ public class ExceptionUtil
         try
         {
             renderer.setErrorType(errorType);
+            // Issue 41891: do not add google analytics on error pages.
+            pageConfig.setAllowTrackingScript(PageConfig.TrueFalse.False);
 
             if (HttpView.hasCurrentView())
             {

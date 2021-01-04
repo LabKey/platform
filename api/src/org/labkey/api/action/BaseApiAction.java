@@ -61,10 +61,10 @@ import java.util.Map;
  */
 public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 {
+    public static final String RESPONSE_FORMAT_PARAMETER_NAME = "respFormat";
     private final Marshaller _marshaller;
 
     private ApiResponseWriter.Format _reqFormat = null;
-    private ApiResponseWriter.Format _respFormat = ApiResponseWriter.Format.JSON;
     private String _contentTypeOverride = null;
     private double _requestedApiVersion = -1;
     private ObjectMapper _requestObjectMapper;
@@ -107,6 +107,20 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     }
 
     @Override
+    public void checkPermissions() throws UnauthorizedException
+    {
+        // Set the preferred response format here so we can use it for 401s
+        setResponseFormat();
+
+        super.checkPermissions();
+    }
+
+    private void setResponseFormat()
+    {
+        ApiResponseWriter.setResponseFormat(getViewContext().getRequest(), ApiResponseWriter.Format.getFormatByName(getViewContext().getRequest().getParameter(RESPONSE_FORMAT_PARAMETER_NAME), ApiResponseWriter.Format.JSON));
+    }
+
+    @Override
     protected String getCommandClassMethodName()
     {
         return "execute";
@@ -115,6 +129,9 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     @Override
     public ModelAndView handleRequest() throws Exception
     {
+        // Likely a dupe with what's been done in checkPermissions(), but ensuring that future code path variants will pass through
+        setResponseFormat();
+
         switch (getViewContext().getMethod())
         {
             case POST:
@@ -127,7 +144,6 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         }
         throw new BadRequestException("Method Not Allowed: " + getViewContext().getRequest().getMethod(), null, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
     }
-
 
     @Override
     public void setViewContext(ViewContext context)
@@ -158,15 +174,6 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 
             FORM form = pair.first;
             BindException errors = pair.second;
-
-            if ("xml".equalsIgnoreCase(getViewContext().getRequest().getParameter("respFormat")))
-            {
-                _respFormat = ApiResponseWriter.Format.XML;
-            }
-            else if ("json_compact".equalsIgnoreCase(getViewContext().getRequest().getParameter("respFormat")))
-            {
-                _respFormat = ApiResponseWriter.Format.JSON_COMPACT;
-            }
 
             if (form != null)
             {
@@ -565,15 +572,10 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     protected ApiResponseWriter createResponseWriter() throws IOException
     {
         // Let the response format dictate how we write the response. Typically JSON, but not always.
-        ApiResponseWriter writer = _respFormat.createWriter(getViewContext().getResponse(), getContentTypeOverride(), getResponseObjectMapper());
+        ApiResponseWriter writer = ApiResponseWriter.getResponseFormat(getViewContext().getRequest(), ApiResponseWriter.Format.JSON).createWriter(getViewContext().getResponse(), getContentTypeOverride(), getResponseObjectMapper());
         if (_marshaller == Marshaller.Jackson)
             writer.setSerializeViaJacksonAnnotations(true);
         return writer;
-    }
-
-    public ApiResponseWriter.Format getResponseFormat()
-    {
-        return _respFormat;
     }
 
     public ApiResponseWriter.Format getRequestFormat()
