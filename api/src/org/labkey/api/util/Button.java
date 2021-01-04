@@ -232,10 +232,11 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         boolean iconOnly = getIconCls() != null;
         String submitId = GUID.makeGUID();
         final HtmlString tip = (null != tooltip ? HtmlString.of(tooltip) : (!iconOnly ? null : html));
+        String hrefValue = (null == getHref()) ? "#" : getHref();
 
         var attrs = at(attributes)
             .id(getId())
-            .at(Attribute.href, getHref(), title, tip, onclick, generateOnClick(submitId), Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget(), tabindex, 0)
+            .at(Attribute.href, hrefValue, title, tip, onclick, generateOnClick(submitId), Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget(), tabindex, 0)
             .data("tt", (HtmlString.isBlank(tip) ? null : "tooltip"))
             .data("placement", "top")
             .cl(CLS, typeCls, getCssClass())
