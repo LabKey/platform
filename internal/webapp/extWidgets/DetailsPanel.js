@@ -98,8 +98,18 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
         if(bbar)
             bbar.removeAll();
 
-        var url = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.getParameter('returnUrl') || LABKEY.ActionURL.getParameter('returnURL');
-        if(url && this.showBackBtn !== false){
+        // Prefer using 'returnUrl' instead of 'returnURL' or 'srcURL'
+        var url = LABKEY.ActionURL.getParameter('returnUrl');
+
+        if (LABKEY.ActionURL.getParameter('srcURL')) {
+            throw new Error("Use 'returnUrl' instead of 'srcURL'")
+        }
+
+        if (LABKEY.ActionURL.getParameter('returnURL')) {
+            throw new Error("Use 'returnUrl' instead of 'returnURL'")
+        }
+
+        if (url && this.showBackBtn !== false){
             bbar.add({
                 xtype: 'button',
                 text: 'Back',
