@@ -235,7 +235,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
 
         var attrs = at(attributes)
             .id(getId())
-            .at(Attribute.href, getHref(), title, tip, onclick, generateOnClick(submitId), Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget())
+            .at(Attribute.href, getHref(), title, tip, onclick, generateOnClick(submitId), Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget(), tabindex, 0)
             .data("tt", (HtmlString.isBlank(tip) ? null : "tooltip"))
             .data("placement", "top")
             .cl(CLS, typeCls, getCssClass())

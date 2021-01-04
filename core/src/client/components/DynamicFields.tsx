@@ -239,6 +239,10 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                         />
                     );
                 case 'checkbox':
+                    console.log("field", field);
+                    console.log("fieldValues", fieldValues);
+                    console.log()
+
                     return (
                         <CheckBoxInput
                             key={index}
