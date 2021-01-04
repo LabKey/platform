@@ -37,7 +37,6 @@ exports[`<GlobalSettings/> view-only mode 1`] = `
           focusable="false"
           role="img"
           style={Object {}}
-          tabIndex={0}
           viewBox="0 0 448 512"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -93,7 +92,6 @@ exports[`<GlobalSettings/> view-only mode 1`] = `
           focusable="false"
           role="img"
           style={Object {}}
-          tabIndex={0}
           viewBox="0 0 448 512"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -149,7 +147,6 @@ exports[`<GlobalSettings/> view-only mode 1`] = `
           focusable="false"
           role="img"
           style={Object {}}
-          tabIndex={0}
           viewBox="0 0 448 512"
           xmlns="http://www.w3.org/2000/svg"
         >

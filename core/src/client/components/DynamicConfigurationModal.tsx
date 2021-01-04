@@ -176,8 +176,6 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
         const finalizeButtonText = isAddNewConfig ? 'Finish' : 'Apply';
         const requiredFieldEmpty = emptyRequiredFields.indexOf("description") !== -1;
 
-        console.log("authConfig", authConfig);
-
         return (
             <Modal show={true} onHide={closeModal}>
                 <Modal.Header closeButton>

@@ -14,7 +14,6 @@ exports[`<FACheckBox/> Checked, clickable 1`] = `
     focusable="false"
     role="img"
     style={Object {}}
-    tabIndex={0}
     viewBox="0 0 448 512"
     xmlns="http://www.w3.org/2000/svg"
   >
@@ -41,7 +40,6 @@ exports[`<FACheckBox/> Checked, view-only 1`] = `
     focusable="false"
     role="img"
     style={Object {}}
-    tabIndex={0}
     viewBox="0 0 448 512"
     xmlns="http://www.w3.org/2000/svg"
   >
@@ -68,7 +66,6 @@ exports[`<FACheckBox/> Unchecked, clickable 1`] = `
     focusable="false"
     role="img"
     style={Object {}}
-    tabIndex={0}
     viewBox="0 0 448 512"
     xmlns="http://www.w3.org/2000/svg"
   >
@@ -95,7 +92,6 @@ exports[`<FACheckBox/> Unchecked, view-only 1`] = `
     focusable="false"
     role="img"
     style={Object {}}
-    tabIndex={0}
     viewBox="0 0 448 512"
     xmlns="http://www.w3.org/2000/svg"
   >
