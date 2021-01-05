@@ -112,6 +112,7 @@ public class MutatingSqlDetector
         ));
 
         WORD_MUTATING_MAP.putAll(Map.of(
+            ";", false,  // Handle standalone semicolons (whitespace on both sides)
             "BEGIN", false,
             "DO", false,
             "END", false,

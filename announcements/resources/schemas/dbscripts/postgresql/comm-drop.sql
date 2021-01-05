@@ -20,10 +20,6 @@
 -- remain in place so we can correctly upgrade from older versions, which we commit to for two years after each release.
 
 SELECT core.fn_dropifexists('Threads', 'comm', 'VIEW', NULL);
-
--- This view was removed in 14.3, but we must leave drop statement in place until at least 17.1. See #20848
-SELECT core.fn_dropifexists('PagesAndVersions', 'comm', 'VIEW', NULL);
-
 SELECT core.fn_dropifexists('CurrentWikiVersions', 'comm', 'VIEW', NULL);
 SELECT core.fn_dropifexists('AllWikiVersions', 'comm', 'VIEW', NULL);
 SELECT core.fn_dropifexists('PagePaths', 'comm', 'VIEW', NULL);
