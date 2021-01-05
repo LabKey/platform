@@ -703,7 +703,7 @@ public class DatasetQueryView extends StudyQueryView
                 {
                     if (msg.length() > 0)
                         msg.append("  ");
-                    msg.append("Selected " + PageFlowUtil.filter(dqs.getStudy().getSubjectNounPlural()) + ": ");
+                    msg.append("Selected " + dqs.getStudy().getSubjectNounPlural() + ": ");
                     msg.append(sessionGroup.getParticipantIds().length);
                 }
                 headerMessage.append(msg);
