@@ -39,8 +39,6 @@ import org.labkey.api.exp.ProtocolApplicationParameter;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
-import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataClassTable;
 import org.labkey.api.exp.query.ExpDataInputTable;
