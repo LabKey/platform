@@ -477,7 +477,7 @@ LABKEY.ext4.FORMBUTTONS = {
             text: 'Cancel',
             returnUrl: LABKEY.ActionURL.getReturnUrl(),
             handler: function(btn, key){
-                window.location = btn.returnURL || LABKEY.ActionURL.buildURL('project', 'begin');
+                window.location = btn.returnUrl || LABKEY.ActionURL.buildURL('project', 'begin');
             }
         }, config)
     }
