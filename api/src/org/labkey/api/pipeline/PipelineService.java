@@ -56,7 +56,7 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     String CACHE_DIR = "cache";
 
     String PRIMARY_ROOT = "PRIMARY";
-    
+
     static PipelineService get()
     {
         return ServiceRegistry.get().getService(PipelineService.class);
@@ -73,6 +73,8 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
      * @param aliases Alternate names for this provider
      */
     void registerPipelineProvider(PipelineProvider provider, String... aliases);
+
+    void registerPipelineJobNotificationProvider(PipelineJobNotificationProvider provider);
 
     /**
      * Register a supplier of (likely multiple) PipelineProviders. Suppliers are called any time the service returns all
@@ -137,6 +139,8 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
      * @param job Job to be run
      */
     void queueJob(PipelineJob job) throws PipelineValidationException;
+
+    void queueJob(PipelineJob job, String jobNotificationProvider) throws PipelineValidationException;
 
     /**
      * This will update the active task status of this job and re-queue that job if the task is complete
@@ -231,6 +235,10 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     File getProtocolParametersFile(ExpRun expRun);
 
     void deleteStatusFile(Container c, User u, boolean deleteExpRuns, Collection<Integer> rowIds) throws PipelineProvider.HandlerException;
+
+    PipelineJobNotificationProvider getPipelineJobNotificationProvider(@Nullable String name);
+
+    PipelineJobNotificationProvider getPipelineJobNotificationProvider(@Nullable String name, PipelineJob job);
 
     interface PipelineProviderSupplier
     {
