@@ -690,11 +690,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ContainerManager.getHomeContainer();
             ContainerManager.getSharedContainer();
         });
-
-        if (moduleContext.getInstalledVersion() < 18.30)
-        {
-            new CoreUpgradeCode().purgeDeveloperRole();
-        }
     }
 
 

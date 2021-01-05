@@ -6,13 +6,17 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobNotificationProvider;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.springframework.util.StringUtils;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.labkey.api.query.AbstractQueryUpdateService.createTransactionAuditEvent;
@@ -22,8 +26,11 @@ public class QueryImportPipelineJob extends PipelineJob
     public static final String QUERY_IMPORT_PIPELINE_PROVIDER = "QueryImport";
     public static final String QUERY_IMPORT_PIPELINE_PROVIDER_PARAM = "pipelineProvider";
     public static final String QUERY_IMPORT_PIPELINE_DESCRIPTION_PARAM = "pipelineDescription";
+    public static final String QUERY_IMPORT_NOTIFICATION_PROVIDER_PARAM = "pipelineNotificationProvider";
 
-    protected QueryImportAsyncContextBuilder _importContextBuilder;
+    private QueryImportAsyncContextBuilder _importContextBuilder;
+
+    private long _transactionAuditId;
 
     protected QueryImportPipelineJob()
     {}
@@ -53,6 +60,8 @@ public class QueryImportPipelineJob extends PipelineJob
         boolean _hasLineageColumns = false;
 
         String _jobDescription;
+
+        String _jobNotificationProvider;
 
         public QueryImportAsyncContextBuilder()
         {
@@ -117,6 +126,16 @@ public class QueryImportPipelineJob extends PipelineJob
         public String getJobDescription()
         {
             return StringUtils.isEmpty(_jobDescription) ? (_schemaName + " - " + _queryName + " - " + _primaryFile.getName()) : _jobDescription;
+        }
+
+        public String getJobNotificationProvider()
+        {
+            return _jobNotificationProvider;
+        }
+
+        public void setJobNotificationProvider(String jobNotificationProvider)
+        {
+            _jobNotificationProvider = jobNotificationProvider;
         }
 
         public QueryImportAsyncContextBuilder setPrimaryFile(File primaryFile)
@@ -196,6 +215,18 @@ public class QueryImportPipelineJob extends PipelineJob
     @Override
     public URLHelper getStatusHref()
     {
+        UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), _importContextBuilder.getSchemaName());
+        TableInfo target = schema.getTable(_importContextBuilder.getQueryName(), true);
+
+        if (null != target)
+        {
+            ActionURL url =  target.getGridURL(getContainer());
+            if (_transactionAuditId > 0)
+                url.addParameter("transactionAuditId", _transactionAuditId);
+
+            return url;
+        }
+
         return null;
     }
 
@@ -210,10 +241,15 @@ public class QueryImportPipelineJob extends PipelineJob
     {
         BatchValidationException ve = new BatchValidationException();
 
+        PipelineJobNotificationProvider notificationProvider = getNotificationProvider();
+
         try
         {
             setStatus(TaskStatus.running);
             getLogger().info("Starting importing " + getDescription());
+
+            if (notificationProvider != null)
+                notificationProvider.onJobStart(this);
 
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), _importContextBuilder.getSchemaName());
             TableInfo target = schema.getTable(_importContextBuilder.getQueryName(), true);
@@ -240,13 +276,46 @@ public class QueryImportPipelineJob extends PipelineJob
 
             setStatus(TaskStatus.complete);
             getLogger().info("Done importing " + getDescription() + ". " + importedCount + " row(s) imported.");
+
+            if (notificationProvider != null)
+            {
+                Map<String, Object> results = new HashMap<>();
+                results.put("rowCount", importedCount);
+                if (auditEvent != null)
+                {
+                    _transactionAuditId = auditEvent.getRowId();
+                    results.put("transactionAuditId", _transactionAuditId);
+                }
+
+
+                notificationProvider.onJobSuccess(this, results);
+            }
         }
         catch (Exception e)
         {
             error("Import failed: " + e.getMessage());
             setStatus(TaskStatus.error);
+
+            if (notificationProvider != null)
+                notificationProvider.onJobError(this, e.getMessage());
         }
 
+    }
+
+    @Override
+    protected String getJobNotificationProvider()
+    {
+        return _importContextBuilder._jobNotificationProvider;
+    }
+
+    private PipelineJobNotificationProvider getNotificationProvider()
+    {
+        return PipelineService.get().getPipelineJobNotificationProvider(getJobNotificationProvider(), this);
+    }
+
+    public QueryImportAsyncContextBuilder getImportContextBuilder()
+    {
+        return _importContextBuilder;
     }
 
 }

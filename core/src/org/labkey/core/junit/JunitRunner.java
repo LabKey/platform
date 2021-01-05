@@ -17,13 +17,14 @@
 package org.labkey.core.junit;
 
 import junit.framework.TestCase;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.runner.Description;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Request;
 import org.junit.runner.Result;
 import org.junit.runner.Runner;
+import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.TestContext;
@@ -100,6 +101,13 @@ public class JunitRunner
                     ArrayList<CPUTimer> timers = TestContext.get().getPerfResults();
                     testTimers.put(description, timers);
                     allTimers.addAll(timers);
+                }
+
+                @Override
+                public void testFailure(Failure failure) throws Exception
+                {
+                    Throwable t = failure.getException();
+                    LOG.error("Test failed: " + failure.getDescription() + ":\n" + JunitController.renderTrace(t));
                 }
             });
             Result result = core.run(request);

@@ -1796,6 +1796,15 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             _queue.done(this);
         }
+
+        PipelineJobNotificationProvider notificationProvider = PipelineService.get().getPipelineJobNotificationProvider(getJobNotificationProvider(), this);
+        if (notificationProvider != null)
+            notificationProvider.onJobDone(this);
+    }
+
+    protected String getJobNotificationProvider()
+    {
+        return null;
     }
 
     public static String serializeJob(PipelineJob job)
