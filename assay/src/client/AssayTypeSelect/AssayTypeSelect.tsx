@@ -1,11 +1,11 @@
-import React, { FC, memo, useCallback, useEffect, useState, useMemo } from 'react'
-import { AssayPicker } from '@labkey/components';
+import React, { FC, memo, useCallback, useEffect, useMemo, useState } from 'react'
+import {AssayPicker, AssayPickerSelectionModel, AssayPickerTabs, GENERAL_ASSAY_PROVIDER_NAME} from '@labkey/components';
 import { Button, Panel } from "react-bootstrap";
 
 import "./AssayTypeSelect.scss"
-import { ActionURL, Ajax, Utils, getServerContext } from "@labkey/api";
+import {ActionURL, Ajax, getServerContext, Utils} from "@labkey/api";
 
-export function uploadXarFile(
+function uploadXarFile(
     file: File,
     container: string
 ): Promise<string> {
@@ -33,11 +33,13 @@ export function uploadXarFile(
 }
 
 export const App: FC<any> = memo(props => {
-    const [ provider, setProvider ] = useState<string>('General');
-    const [ container, setContainer ] = useState<string>();
     const [ returnUrl, setReturnUrl ] = useState<string>();
-    const [ isFileUpload, setIsFileUpload ] = useState(false);
-    const [ xar, setXar ] = useState<File>()
+    const [ assayPickerSelection, setAssayPickerSelection ] = useState<AssayPickerSelectionModel>({
+        provider: undefined,
+        container: "",
+        file: undefined,
+        tab: undefined
+    })
 
     useEffect(() => {
         setReturnUrl(ActionURL.getParameter('returnUrl'));
@@ -49,30 +51,27 @@ export const App: FC<any> = memo(props => {
         window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', getServerContext().container.path);
     }, [returnUrl])
 
-    const onSelect = useCallback((provider) => {
-        setProvider(provider);
-    }, [])
-
-    const onContainerSelect = useCallback((cont) => {
-        setContainer(cont);
+    const onChange = useCallback((model: AssayPickerSelectionModel) => {
+        setAssayPickerSelection(model);
     }, [])
 
     const onSubmit = useCallback(() => {
-        const cont = container ?? getServerContext().container.path;
-        if (isFileUpload && xar) {
-            uploadXarFile(xar, container).then(() => {
-                window.location.href = ActionURL.buildURL('pipeline', 'status-showList', container);
+        const cont = assayPickerSelection.container ?? getServerContext().container.path;
+        if (assayPickerSelection.tab === AssayPickerTabs.XAR_IMPORT_TAB
+            && assayPickerSelection.file) {
+            uploadXarFile(assayPickerSelection.file, assayPickerSelection.container).then(() => {
+                window.location.href = ActionURL.buildURL('pipeline', 'status-showList', getServerContext().container.path);
             })
         }
         else {
             window.location.href = ActionURL.buildURL('assay', 'designer', cont, {
-                'providerName': provider,
+                'providerName': assayPickerSelection.provider.name,
                 'returnUrl': returnUrl
             });
         }
-    }, [provider, returnUrl, container, isFileUpload, xar])
+    }, [assayPickerSelection, returnUrl])
 
-    const label = provider === "General" ? "Standard" : provider
+    const label = (!assayPickerSelection.provider || assayPickerSelection.provider.name === GENERAL_ASSAY_PROVIDER_NAME) ? "Standard" : assayPickerSelection.provider.name
 
     return (
         <>
@@ -85,10 +84,7 @@ export const App: FC<any> = memo(props => {
                 <Panel.Body>
                     <AssayPicker
                         showImport={true}
-                        onProviderSelect={onSelect}
-                        onContainerSelect={onContainerSelect}
-                        onFileChange={setXar}
-                        setIsFileUpload={setIsFileUpload}
+                        onChange={onChange}
                         selectedTab={tab}
                     />
                 </Panel.Body>
@@ -99,9 +95,10 @@ export const App: FC<any> = memo(props => {
                     className="pull-right"
                     bsStyle={'primary'}
                     onClick={onSubmit}
-                    disabled={isFileUpload && !xar}
+                    disabled={assayPickerSelection.tab === AssayPickerTabs.XAR_IMPORT_TAB
+                        && !assayPickerSelection.file}
                 >
-                    {isFileUpload ? 'Import' : 'Choose ' + label + ' Assay'}
+                    {assayPickerSelection.tab === AssayPickerTabs.XAR_IMPORT_TAB ? 'Import' : 'Choose ' + label + ' Assay'}
                 </Button>
             </div>
         </>

@@ -18,6 +18,7 @@ module.exports = {
         name: 'assayTypeSelect',
         title: 'New Assay Design',
         permission: 'insert',
+        permissionClasses: ['DesignAssayPermission'],
         path: './src/client/AssayTypeSelect'
     }]
 };
