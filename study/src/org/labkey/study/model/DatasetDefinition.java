@@ -1589,7 +1589,11 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         @Override
         public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, List<Map<String, Object>>[] params)
         {
-            List<Map<String, Object>> rows = params[0];
+            // Only add an event if Detailed audit logging is enabled
+            if (AuditBehaviorType.DETAILED != auditBehavior)
+                return;
+
+                List<Map<String, Object>> rows = params[0];
             List<Map<String, Object>> updatedRows = params.length > 1 ? params[1] : Collections.emptyList();
 
             for (int i=0; i < rows.size(); i++)
@@ -1604,17 +1608,18 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         @Override
         public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, Map<String, Object> parameters)
         {
-            if (AuditBehaviorType.DETAILED == auditBehavior)
-            {
-                Map<String, Object> oldRow = null;
-                //Leaving this block as reference for getting update diff
-                // if (auditAction == QueryService.AuditAction.MERGE)
-                // {
-                //      String lsid = String.valueOf(parameters.get("lsid"));
-                //      oldRow = DatasetDefinition.this.getDatasetRow(user, lsid);
-                // }
-                StudyServiceImpl.addDatasetAuditEvent(user, DatasetDefinition.this, oldRow, parameters);
-            }
+            // Only add an event if Detailed audit logging is enabled
+            if (AuditBehaviorType.DETAILED != auditBehavior)
+                return;
+
+            Map<String, Object> oldRow = null;
+            //Leaving this block as reference for getting update diff
+            // if (auditAction == QueryService.AuditAction.MERGE)
+            // {
+            //      String lsid = String.valueOf(parameters.get("lsid"));
+            //      oldRow = DatasetDefinition.this.getDatasetRow(user, lsid);
+            // }
+            StudyServiceImpl.addDatasetAuditEvent(user, DatasetDefinition.this, oldRow, parameters);
         }
 
         @Override
