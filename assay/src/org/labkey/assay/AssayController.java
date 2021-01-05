@@ -16,6 +16,7 @@
 
 package org.labkey.assay;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
@@ -26,6 +27,8 @@ import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -661,6 +664,7 @@ public class AssayController extends SpringActionController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
     @RequiresPermission(DesignAssayPermission.class)
     public class GetAssayTypeSelectOptionsAction extends ReadOnlyApiAction<Object>
     {
@@ -694,17 +698,11 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public Object execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(Object o, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            List<AssayProviderBean> providers = getProviders();
-            JSONArray jsonProvider = new JSONArray();
-            for (AssayProviderBean provider : providers)
-            {
-                jsonProvider.put(new JSONObject(provider));
-            }
-            response.put("providers", jsonProvider);
+            response.put("providers", getProviders());
 
             Map<String, String> locations = new LinkedHashMap<>();
             String defaultLocation = null;
