@@ -21,6 +21,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.annotations.RemoveIn21_7;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.QuerySettings;
@@ -200,11 +201,12 @@ public interface ReportService
 
     /**
      * Convert legacy chart view report to new JS report, this method (and all related conversion code) can be deleted
-     * in version : 21.2
+     * in the 21.7 release
      * @param report
      * @return
      */
     @Deprecated
+    @RemoveIn21_7
     Report createConvertedChartViewReportInstance(Report report, ContainerUser context);
 
     interface DesignerInfo

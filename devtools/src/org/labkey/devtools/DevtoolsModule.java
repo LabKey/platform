@@ -78,7 +78,7 @@ public class DevtoolsModule extends CodeOnlyModule
     }
 
     @Override
-    public @NotNull List<Factory<Class>> getIntegrationTestFactories()
+    public @NotNull List<Factory<Class<?>>> getIntegrationTestFactories()
     {
         return Collections.singletonList(new JspTestCase("/org/labkey/devtools/test/JspTestCaseTest.jsp"));
     }

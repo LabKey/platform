@@ -219,7 +219,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         synchronized(INSTANTIATED_MODULES)
         {
-            Pair<Class, String> reg = new Pair<>(getClass(), getName());
+            Pair<Class<?>, String> reg = new Pair<>(getClass(), getName());
             INSTANTIATED_MODULES.remove(reg);
         }
     }

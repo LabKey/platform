@@ -20,8 +20,8 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -52,7 +52,6 @@ import org.labkey.api.reports.RserveScriptEngineFactory;
 import org.labkey.api.script.RhinoScriptEngine;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
@@ -82,7 +81,6 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 {
     private static final Logger LOG = LogManager.getLogger(ScriptEngineManagerImpl.class);
 
-    public static final String SCRIPT_ENGINE_MAP = "ExternalScriptEngineMap";
     private static final String ENGINE_DEF_MAP_PREFIX = "ScriptEngineDefinition_";
 
     private static final String ALL_ENGINES = "ALL";
@@ -437,40 +435,6 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 .filter(e -> Objects.equals(e.getRowId(), rowId))
                 .filter(e -> e.getType() == type)
                 .findFirst().orElse(null);
-    }
-
-    /**
-     * Returns the collection of engine configurations that were stored in the legacy
-     * property store. This is only used in the upgrade script from 18.22-18.23
-     */
-    @Deprecated
-    public List<ExternalScriptEngineDefinition> getLegacyEngineDefinitions()
-    {
-        List<ExternalScriptEngineDefinition> engines = new ArrayList<>();
-        Map<String, String> map = PropertyManager.getProperties(SCRIPT_ENGINE_MAP);
-
-        for (String name : map.values())
-        {
-            Map<String, String> def = PropertyManager.getProperties(name);
-            boolean isRemote = false;
-
-            if (def.containsKey(Props.remote.name()))
-                isRemote = Boolean.valueOf(def.get(Props.remote.name()));
-
-            boolean isDocker = false;
-            if (def.containsKey(Props.docker.name()))
-                isDocker = Boolean.valueOf(def.get(Props.docker.name()));
-            try
-            {
-                if (!isRemote || PremiumService.get().isRemoteREnabled() || isDocker)
-                    engines.add(createDefinition(def, false));
-            }
-            catch (Exception e)
-            {
-                LOG.error("Failed to parse script engine definition: " + e.getMessage());
-            }
-        }
-        return engines;
     }
 
     @Override

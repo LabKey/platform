@@ -251,6 +251,7 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.exp.query.ExpSchema.TableType.DataInputs;
+import static org.labkey.api.query.QueryImportPipelineJob.QUERY_IMPORT_NOTIFICATION_PROVIDER_PARAM;
 import static org.labkey.api.query.QueryImportPipelineJob.QUERY_IMPORT_PIPELINE_DESCRIPTION_PARAM;
 import static org.labkey.api.query.QueryImportPipelineJob.QUERY_IMPORT_PIPELINE_PROVIDER_PARAM;
 import static org.labkey.api.util.DOM.A;
@@ -3725,6 +3726,13 @@ public class ExperimentController extends SpringActionController
         protected String getQueryImportDescription()
         {
             PropertyValue pv = _form.getInitParameters().getPropertyValue(QUERY_IMPORT_PIPELINE_DESCRIPTION_PARAM);
+            return pv == null ? null : (String) pv.getValue();
+        }
+
+        @Override
+        protected String getQueryImportJobNotificationProviderName()
+        {
+            PropertyValue pv = _form.getInitParameters().getPropertyValue(QUERY_IMPORT_NOTIFICATION_PROVIDER_PARAM);
             return pv == null ? null : (String) pv.getValue();
         }
 

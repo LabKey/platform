@@ -19,7 +19,6 @@
 -- NOTE: Don't remove any of these drop statements, even if we stop re-creating the view in *-create.sql. Drop statements must
 -- remain in place so we can correctly upgrade from older versions, which we commit to for two years after each release.
 
-SELECT core.fn_dropifexists('MaterialSourceWithProject', 'exp', 'VIEW', NULL);
 SELECT core.fn_dropifexists('ObjectPropertiesView', 'exp', 'VIEW', NULL);
 SELECT core.fn_dropifexists('ExperimentRunMaterialOutputs', 'exp', 'VIEW', NULL);
 SELECT core.fn_dropifexists('ObjectClasses', 'exp', 'VIEW', NULL);
