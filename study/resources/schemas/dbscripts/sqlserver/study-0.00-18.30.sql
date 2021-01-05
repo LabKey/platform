@@ -67,6 +67,62 @@ ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultAssayQCState FOREIGN KEY 
 ALTER TABLE study.Study ADD BlankQCStatePublic BIT NOT NULL DEFAULT 0
 GO
 
+ALTER TABLE study.Study ADD Description text
+ALTER TABLE study.Study ADD ProtocolDocumentEntityId ENTITYID
+ALTER TABLE study.Study ALTER COLUMN ProtocolDocumentEntityId ENTITYID NOT NULL
+ALTER TABLE study.Study ADD SourceStudyContainerId ENTITYID
+ALTER TABLE study.Study ADD DescriptionRendererType VARCHAR(50) NOT NULL DEFAULT 'TEXT_WITH_LINKS';
+ALTER TABLE study.Study ADD investigator nvarchar(200)
+ALTER TABLE study.Study ADD studyGrant nvarchar(200)
+
+EXEC sp_RENAME 'study.Study.studyGrant', 'Grant', 'COLUMN';
+
+ALTER TABLE study.study ADD DefaultTimepointDuration INT NOT NULL DEFAULT 1;
+
+DELETE FROM study.study WHERE Container NOT IN (SELECT EntityId FROM core.Containers);
+
+ALTER TABLE study.Study
+    ADD CONSTRAINT FK_Study_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
+
+-- Add columns to store an alternate ID "template", i.e., an optional prefix and number of digits to use when generating random alternate IDs
+ALTER TABLE study.Study ADD AlternateIdPrefix VARCHAR(20) NULL;
+ALTER TABLE study.Study ADD AlternateIdDigits INT NOT NULL DEFAULT 6;
+
+ALTER TABLE study.Study ADD
+    StudySnapshot INT NULL,
+    LastSpecimenLoad DATETIME NULL;  -- Helps determine whether a specimen refresh is needed
+
+CREATE INDEX IX_Study_StudySnapshot ON study.Study(StudySnapshot);
+
+ALTER TABLE study.Study ADD AllowReqLocRepository BIT NOT NULL DEFAULT 1;
+ALTER TABLE study.Study ADD AllowReqLocClinic BIT NOT NULL DEFAULT 1;
+ALTER TABLE study.Study ADD AllowReqLocSAL BIT NOT NULL DEFAULT 1;
+ALTER TABLE study.Study ADD AllowReqLocEndpoint BIT NOT NULL DEFAULT 1;
+ALTER TABLE study.study ADD ParticipantAliasDatasetName NVARCHAR(200);
+ALTER TABLE study.study ADD ParticipantAliasSourceColumnName NVARCHAR(200);
+ALTER TABLE study.study ADD ParticipantAliasColumnName NVARCHAR(200);
+ALTER TABLE study.study DROP COLUMN ParticipantAliasDatasetName;
+ALTER TABLE study.study ADD ParticipantAliasDatasetId INT;
+
+EXEC sp_rename 'study.study.ParticipantAliasSourceColumnName', 'ParticipantAliasSourceProperty', 'COLUMN';
+EXEC sp_rename 'study.study.ParticipantAliasColumnName', 'ParticipantAliasProperty', 'COLUMN';
+
+-- new fields to add to existing study properties table
+ALTER TABLE study.Study ADD Species NVARCHAR(200);
+ALTER TABLE study.Study ADD EndDate DATETIME;
+ALTER TABLE study.Study ADD AssayPlan NTEXT;
+
+ALTER TABLE study.Study ALTER COLUMN Description NVARCHAR(MAX);
+
+ALTER TABLE study.Study ADD ShareDatasetDefinitions BIT NOT NULL DEFAULT 0;
+
+-- Add new skip query validation column to study.study
+ALTER TABLE study.Study ADD ValidateQueriesAfterImport BIT NOT NULL DEFAULT 0;
+GO
+UPDATE study.Study SET ValidateQueriesAfterImport = 1 WHERE AllowReload = 1;
+
+ALTER TABLE study.Study ADD ShareVisitDefinitions BIT NOT NULL DEFAULT 0;
+
 CREATE TABLE study.Cohort
 (
     RowId INT IDENTITY(1,1),
@@ -77,6 +133,12 @@ CREATE TABLE study.Cohort
     CONSTRAINT PK_Cohort PRIMARY KEY (RowId),
     CONSTRAINT UQ_Cohort_Label UNIQUE(Label, Container)
 );
+
+ALTER TABLE study.Cohort ADD Enrolled BIT NOT NULL DEFAULT 1;
+
+-- new fields to add to existing cohort table
+ALTER TABLE study.Cohort ADD SubjectCount INT;
+ALTER TABLE study.Cohort ADD Description NTEXT;
 
 CREATE TABLE study.Visit
 (
@@ -98,6 +160,28 @@ CREATE TABLE study.Visit
 );
 
 CREATE INDEX IX_Visit_CohortId ON study.Visit(CohortId);
+
+ALTER TABLE study.Visit ADD SequenceNumHandling VARCHAR(32) NULL;
+ALTER TABLE study.Visit ADD Description NTEXT;
+GO
+
+-- new fields to add to existing visit table, default SequenceNumTarget to SequenceNumMin
+ALTER TABLE study.Visit ADD SequenceNumTarget NUMERIC(15,4) NOT NULL DEFAULT 0;
+
+EXEC sp_rename 'study.visit.SequenceNumTarget', 'ProtocolDay', 'COLUMN';
+GO
+
+UPDATE study.Visit
+SET ProtocolDay = Round((SequenceNumMax + SequenceNumMin)/2, 0)
+FROM study.Study SS
+WHERE SS.Container = study.Visit.Container AND SS.TimePointType = 'DATE';
+
+--ALTER TABLE study.visit ALTER protocolday DROP NOT NULL;
+EXEC core.fn_dropifexists 'Visit', 'study', 'DEFAULT', 'ProtocolDay';
+GO
+ALTER TABLE study.Visit ALTER COLUMN ProtocolDay NUMERIC(15,4) NULL;
+GO
+ALTER TABLE study.Visit ADD DEFAULT NULL FOR ProtocolDay;
 
 CREATE TABLE study.VisitMap
 (
@@ -136,6 +220,32 @@ CREATE TABLE study.DataSet -- AKA CRF or Assay
 
 CREATE INDEX IX_Dataset_CohortId ON study.Dataset(CohortId);
 
+ALTER TABLE study.Dataset ADD CategoryId INT;
+GO
+
+-- drop the category column
+ALTER TABLE study.Dataset DROP COLUMN Category;
+ALTER TABLE study.Dataset ADD Modified DATETIME;
+ALTER TABLE study.Dataset ADD Type NVARCHAR(50) NOT NULL DEFAULT 'Standard';
+
+-- clustered indexes just contribute to deadlocks, we don't really need this one
+
+ALTER TABLE study.DataSet DROP CONSTRAINT PK_DataSet;
+GO
+
+ALTER TABLE study.DataSet ADD CONSTRAINT PK_DataSet PRIMARY KEY (Container, DataSetId);
+
+-- Add new tag column to study.dataset
+ALTER TABLE study.dataset ADD Tag VARCHAR(1000);
+
+-- used by shared dataset definitions, specifies if data is shared across folders
+--   NONE: (default) data is not shared across folders, same as any other container filtered table
+--   ALL:  rows are all shared, visible in all study folders containing this dataset
+--   PTID: rows are all shared, and are visible if PTID is a found in study.participants for the current folder
+ALTER TABLE study.dataset ADD dataSharing NVARCHAR(20) NOT NULL DEFAULT 'NONE';
+ALTER TABLE study.dataset ADD UseTimeKeyField BIT NOT NULL DEFAULT 0;
+ALTER TABLE study.Dataset ALTER COLUMN TypeURI NVARCHAR(300);
+
 -- ParticipantId is not a sequence, we assume these are externally defined
 CREATE TABLE study.Participant
 (
@@ -157,6 +267,20 @@ CREATE INDEX IX_Participant_InitialCohort ON study.Participant(InitialCohortId);
 CREATE INDEX IX_Participant_CohortId ON study.Participant(CurrentCohortId);
 CREATE INDEX IX_Participant_CurrentCohort ON study.Participant(CurrentCohortId);
 
+-- Default to random offset, 1 - 365
+ALTER TABLE study.Participant ADD DateOffset INT NOT NULL DEFAULT ABS(CHECKSUM(NEWID())) % 364 + 1;
+
+-- Random alternate IDs are set via code
+ALTER TABLE study.Participant ADD AlternateId VARCHAR(32) NULL;
+
+-- Track participant indexing in the participant table now
+ALTER TABLE study.Participant ADD LastIndexed DATETIME NULL;
+
+-- Add Modified column so we can actually use LastIndexed, #31139
+ALTER TABLE study.Participant ADD Modified DATETIME;
+GO
+
+UPDATE study.Participant SET Modified = CURRENT_TIMESTAMP;
 CREATE TABLE study.SampleRequestStatus
 (
     RowId INT IDENTITY(1,1),
@@ -302,6 +426,60 @@ CREATE INDEX IX_ParticipantVisit_ParticipantId ON study.ParticipantVisit(Partici
 CREATE INDEX IX_ParticipantVisit_SequenceNum ON study.ParticipantVisit(SequenceNum);
 CREATE INDEX IX_ParticipantVisit_ParticipantSequenceKey ON study.ParticipantVisit(ParticipantSequenceKey, Container);
 
+-- Rename 'ParticipantSequenceKey' to 'ParticipantSequenceNum' along with constraints and indices.
+EXEC sp_rename 'study.ParticipantVisit.ParticipantSequenceKey', 'ParticipantSequenceNum', 'COLUMN';
+EXEC sp_rename 'study.ParticipantVisit.UQ_StudyData_ParticipantSequenceKey', 'UQ_ParticipantVisit_ParticipantSequenceNum';
+EXEC sp_rename 'study.ParticipantVisit.IX_ParticipantVisit_ParticipantSequenceKey', 'IX_ParticipantVisit_ParticipantSequenceNum', 'INDEX';
+GO
+
+-- To change the PK, it is more efficient to drop all other indexes (including unique constraints),
+-- drop and recreate PK, and then rebuild indexes
+
+ALTER TABLE study.ParticipantVisit DROP CONSTRAINT UQ_ParticipantVisit_ParticipantSequenceNum;
+
+-- changing order of keys to make supporting index useful for Container+Participant queries
+ALTER TABLE study.ParticipantVisit DROP CONSTRAINT PK_ParticipantVisit;
+
+-- Consider:  do we need a unique constraint on ParticipantSequenceNum if we have separate ones on Participant, SequenceNum ??
+DROP INDEX study.ParticipantVisit.IX_ParticipantVisit_Container;
+DROP INDEX study.ParticipantVisit.IX_ParticipantVisit_ParticipantId;
+DROP INDEX study.ParticipantVisit.IX_ParticipantVisit_ParticipantSequenceNum;
+DROP INDEX study.ParticipantVisit.IX_ParticipantVisit_SequenceNum;
+
+-- Was previously Container, SequenceNum, ParticipantId
+ALTER TABLE study.ParticipantVisit ADD CONSTRAINT PK_ParticipantVisit PRIMARY KEY CLUSTERED
+  (Container, ParticipantId, SequenceNum);
+
+
+ALTER TABLE study.ParticipantVisit ADD CONSTRAINT UQ_ParticipantVisit_ParticipantSequenceNum UNIQUE
+(ParticipantSequenceNum ASC, Container ASC);
+
+CREATE INDEX IX_ParticipantVisit_ParticipantId ON study.ParticipantVisit (ParticipantId);
+CREATE INDEX IX_ParticipantVisit_SequenceNum ON study.ParticipantVisit (SequenceNum);
+
+-- clean up some bad participantsequencenum values seen in the wild
+DELETE FROM Study.ParticipantVisit WHERE ParticipantSequenceNum = 'NULL';
+
+UPDATE study.participantvisit SET visitrowid=-1 WHERE visitrowid IS NULL;
+ALTER TABLE study.participantvisit ALTER COLUMN visitrowid INT NOT NULL;
+ALTER TABLE study.participantvisit ADD CONSTRAINT study_pv_visitrowid_def DEFAULT -1 for visitrowid;
+
+EXEC core.fn_dropifexists 'ParticipantVisit', 'study', 'INDEX', 'IX_PV_SequenceNum';
+EXEC core.fn_dropifexists 'ParticipantVisit', 'study', 'INDEX', 'IX_ParticipantVisit_ParticipantId';
+EXEC core.fn_dropifexists 'ParticipantVisit', 'study', 'INDEX', 'IX_ParticipantVisit_SequenceNum';
+
+CREATE INDEX IX_PV_SequenceNum ON study.ParticipantVisit (Container, SequenceNum) INCLUDE (VisitRowId);
+
+EXEC core.fn_dropifexists 'ParticipantVisit', 'study', 'INDEX', 'IX_PV_SequenceNum';
+EXEC core.fn_dropifexists 'ParticipantVisit', 'study', 'INDEX', 'ix_participantvisit_sequencenum';
+EXEC core.fn_dropifexists 'ParticipantVisit', 'study', 'INDEX', 'ix_participantvisit_visitrowid';
+
+-- For Resync perf
+CREATE INDEX ix_participantvisit_sequencenum ON study.participantvisit (container, participantid, sequencenum, ParticipantSequenceNum);
+
+-- Adding as an explicit index because it got lost on postgresql as an include column
+CREATE INDEX ix_participantvisit_visitrowid ON study.participantvisit (visitrowid);
+
 CREATE TABLE study.StudyDesign
 (
     -- standard fields
@@ -322,6 +500,8 @@ CREATE TABLE study.StudyDesign
     CONSTRAINT UQ_StudyDesign UNIQUE (Container,StudyId),
     CONSTRAINT UQ_StudyDesignLabel UNIQUE (Container, Label)
 );
+
+UPDATE study.StudyDesign SET sourceContainer=Container WHERE sourceContainer NOT IN (SELECT entityid FROM core.containers);
 
 CREATE TABLE study.StudyDesignVersion
 (
@@ -510,167 +690,6 @@ ALTER TABLE study.ParticipantGroupMap ADD CONSTRAINT
 	  ON DELETE CASCADE
 GO
 
-ALTER TABLE study.Study ADD Description text
-ALTER TABLE study.Study ADD ProtocolDocumentEntityId ENTITYID
-ALTER TABLE study.Study ALTER COLUMN ProtocolDocumentEntityId ENTITYID NOT NULL
-ALTER TABLE study.Study ADD SourceStudyContainerId ENTITYID
-ALTER TABLE study.Study ADD DescriptionRendererType VARCHAR(50) NOT NULL DEFAULT 'TEXT_WITH_LINKS';
-ALTER TABLE study.Study ADD investigator nvarchar(200)
-ALTER TABLE study.Study ADD studyGrant nvarchar(200)
-
-EXEC sp_RENAME 'study.Study.studyGrant', 'Grant', 'COLUMN';
-
-ALTER TABLE study.study ADD DefaultTimepointDuration INT NOT NULL DEFAULT 1;
-
-DELETE FROM study.study WHERE Container NOT IN (SELECT EntityId FROM core.Containers);
-
-ALTER TABLE study.Study
-    ADD CONSTRAINT FK_Study_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
-
--- Add columns to store an alternate ID "template", i.e., an optional prefix and number of digits to use when generating random alternate IDs
-ALTER TABLE study.Study ADD AlternateIdPrefix VARCHAR(20) NULL;
-ALTER TABLE study.Study ADD AlternateIdDigits INT NOT NULL DEFAULT 6;
-
-ALTER TABLE study.Study ADD
-    StudySnapshot INT NULL,
-    LastSpecimenLoad DATETIME NULL;  -- Helps determine whether a specimen refresh is needed
-
-CREATE INDEX IX_Study_StudySnapshot ON study.Study(StudySnapshot);
-
-ALTER TABLE study.Study ADD AllowReqLocRepository BIT NOT NULL DEFAULT 1;
-ALTER TABLE study.Study ADD AllowReqLocClinic BIT NOT NULL DEFAULT 1;
-ALTER TABLE study.Study ADD AllowReqLocSAL BIT NOT NULL DEFAULT 1;
-ALTER TABLE study.Study ADD AllowReqLocEndpoint BIT NOT NULL DEFAULT 1;
-ALTER TABLE study.study ADD ParticipantAliasDatasetName NVARCHAR(200);
-ALTER TABLE study.study ADD ParticipantAliasSourceColumnName NVARCHAR(200);
-ALTER TABLE study.study ADD ParticipantAliasColumnName NVARCHAR(200);
-ALTER TABLE study.study DROP COLUMN ParticipantAliasDatasetName;
-ALTER TABLE study.study ADD ParticipantAliasDatasetId INT;
-
-EXEC sp_rename 'study.study.ParticipantAliasSourceColumnName', 'ParticipantAliasSourceProperty', 'COLUMN';
-EXEC sp_rename 'study.study.ParticipantAliasColumnName', 'ParticipantAliasProperty', 'COLUMN';
-
--- new fields to add to existing study properties table
-ALTER TABLE study.Study ADD Species NVARCHAR(200);
-ALTER TABLE study.Study ADD EndDate DATETIME;
-ALTER TABLE study.Study ADD AssayPlan NTEXT;
-
-ALTER TABLE study.Study ALTER COLUMN Description NVARCHAR(MAX);
-
-ALTER TABLE study.Study ADD ShareDatasetDefinitions BIT NOT NULL DEFAULT 0;
-
--- Add new skip query validation column to study.study
-ALTER TABLE study.Study ADD ValidateQueriesAfterImport BIT NOT NULL DEFAULT 0;
-GO
-UPDATE study.Study SET ValidateQueriesAfterImport = 1 WHERE AllowReload = 1;
-
-ALTER TABLE study.Study ADD ShareVisitDefinitions BIT NOT NULL DEFAULT 0;
-
-ALTER TABLE study.Dataset ADD CategoryId INT;
-GO
-
-UPDATE study.Dataset
-    SET CategoryId = (SELECT rowId FROM core.ViewCategory vc WHERE Dataset.container = vc.container AND Dataset.category = vc.label);
-
--- drop the category column
-ALTER TABLE study.Dataset DROP COLUMN Category;
-ALTER TABLE study.Dataset ADD Modified DATETIME;
-ALTER TABLE study.Dataset ADD Type NVARCHAR(50) NOT NULL DEFAULT 'Standard';
-
--- clustered indexes just contribute to deadlocks, we don't really need this one
-
-ALTER TABLE study.DataSet DROP CONSTRAINT PK_DataSet;
-GO
-
-ALTER TABLE study.DataSet ADD CONSTRAINT PK_DataSet PRIMARY KEY (Container, DataSetId);
-
--- Add new tag column to study.dataset
-ALTER TABLE study.dataset ADD Tag VARCHAR(1000);
-
--- used by shared dataset definitions, specifies if data is shared across folders
---   NONE: (default) data is not shared across folders, same as any other container filtered table
---   ALL:  rows are all shared, visible in all study folders containing this dataset
---   PTID: rows are all shared, and are visible if PTID is a found in study.participants for the current folder
-ALTER TABLE study.dataset ADD dataSharing NVARCHAR(20) NOT NULL DEFAULT 'NONE';
-ALTER TABLE study.dataset ADD UseTimeKeyField BIT NOT NULL DEFAULT 0;
-ALTER TABLE study.Dataset ALTER COLUMN TypeURI NVARCHAR(300);
-
--- Rename 'ParticipantSequenceKey' to 'ParticipantSequenceNum' along with constraints and indices.
-EXEC sp_rename 'study.ParticipantVisit.ParticipantSequenceKey', 'ParticipantSequenceNum', 'COLUMN';
-EXEC sp_rename 'study.ParticipantVisit.UQ_StudyData_ParticipantSequenceKey', 'UQ_ParticipantVisit_ParticipantSequenceNum';
-EXEC sp_rename 'study.ParticipantVisit.IX_ParticipantVisit_ParticipantSequenceKey', 'IX_ParticipantVisit_ParticipantSequenceNum', 'INDEX';
-GO
-
--- To change the PK, it is more efficient to drop all other indexes (including unique constraints),
--- drop and recreate PK, and then rebuild indexes
-
-ALTER TABLE study.ParticipantVisit DROP CONSTRAINT UQ_ParticipantVisit_ParticipantSequenceNum;
-
--- changing order of keys to make supporting index useful for Container+Participant queries
-ALTER TABLE study.ParticipantVisit DROP CONSTRAINT PK_ParticipantVisit;
-
--- Consider:  do we need a unique constraint on ParticipantSequenceNum if we have separate ones on Participant, SequenceNum ??
-DROP INDEX study.ParticipantVisit.IX_ParticipantVisit_Container;
-DROP INDEX study.ParticipantVisit.IX_ParticipantVisit_ParticipantId;
-DROP INDEX study.ParticipantVisit.IX_ParticipantVisit_ParticipantSequenceNum;
-DROP INDEX study.ParticipantVisit.IX_ParticipantVisit_SequenceNum;
-
--- Was previously Container, SequenceNum, ParticipantId
-ALTER TABLE study.ParticipantVisit ADD CONSTRAINT PK_ParticipantVisit PRIMARY KEY CLUSTERED
-  (Container, ParticipantId, SequenceNum);
-
-
-ALTER TABLE study.ParticipantVisit ADD CONSTRAINT UQ_ParticipantVisit_ParticipantSequenceNum UNIQUE
-(ParticipantSequenceNum ASC, Container ASC);
-
-CREATE INDEX IX_ParticipantVisit_ParticipantId ON study.ParticipantVisit (ParticipantId);
-CREATE INDEX IX_ParticipantVisit_SequenceNum ON study.ParticipantVisit (SequenceNum);
-
--- clean up some bad participantsequencenum values seen in the wild
-DELETE FROM Study.ParticipantVisit WHERE ParticipantSequenceNum = 'NULL';
-
-UPDATE study.participantvisit SET visitrowid=-1 WHERE visitrowid IS NULL;
-ALTER TABLE study.participantvisit ALTER COLUMN visitrowid INT NOT NULL;
-ALTER TABLE study.participantvisit ADD CONSTRAINT study_pv_visitrowid_def DEFAULT -1 for visitrowid;
-
-EXEC core.fn_dropifexists 'ParticipantVisit', 'study', 'INDEX', 'IX_PV_SequenceNum';
-EXEC core.fn_dropifexists 'ParticipantVisit', 'study', 'INDEX', 'IX_ParticipantVisit_ParticipantId';
-EXEC core.fn_dropifexists 'ParticipantVisit', 'study', 'INDEX', 'IX_ParticipantVisit_SequenceNum';
-
-CREATE INDEX IX_PV_SequenceNum ON study.ParticipantVisit (Container, SequenceNum) INCLUDE (VisitRowId);
-
-EXEC core.fn_dropifexists 'ParticipantVisit', 'study', 'INDEX', 'IX_PV_SequenceNum';
-EXEC core.fn_dropifexists 'ParticipantVisit', 'study', 'INDEX', 'ix_participantvisit_sequencenum';
-EXEC core.fn_dropifexists 'ParticipantVisit', 'study', 'INDEX', 'ix_participantvisit_visitrowid';
-
--- For Resync perf
-CREATE INDEX ix_participantvisit_sequencenum ON study.participantvisit (container, participantid, sequencenum, ParticipantSequenceNum);
-
--- Adding as an explicit index because it got lost on postgresql as an include column
-CREATE INDEX ix_participantvisit_visitrowid ON study.participantvisit (visitrowid);
-
-UPDATE study.StudyDesign SET sourceContainer=Container WHERE sourceContainer NOT IN (SELECT entityid FROM core.containers);
-
--- Default to random offset, 1 - 365
-ALTER TABLE study.Participant ADD DateOffset INT NOT NULL DEFAULT ABS(CHECKSUM(NEWID())) % 364 + 1;
-
--- Random alternate IDs are set via code
-ALTER TABLE study.Participant ADD AlternateId VARCHAR(32) NULL;
-
--- Track participant indexing in the participant table now
-ALTER TABLE study.Participant ADD LastIndexed DATETIME NULL;
-
--- Add Modified column so we can actually use LastIndexed, #31139
-ALTER TABLE study.Participant ADD Modified DATETIME;
-GO
-
-UPDATE study.Participant SET Modified = CURRENT_TIMESTAMP;
-ALTER TABLE study.Cohort ADD Enrolled BIT NOT NULL DEFAULT 1;
-
--- new fields to add to existing cohort table
-ALTER TABLE study.Cohort ADD SubjectCount INT;
-ALTER TABLE study.Cohort ADD Description NTEXT;
-
 -- History of all study snapshots (i.e., ancillary studies and published studies) and the settings used to generate
 -- them. Rows are effectively owned by both the source and destination container; they remain as long as EITHER the
 -- source or destination container exists. This table is used primarily to support nightly refresh of specimen data
@@ -703,28 +722,6 @@ GO
 
 ALTER TABLE study.StudySnapshot ADD Type VARCHAR(10);
 GO
-
-ALTER TABLE study.Visit ADD SequenceNumHandling VARCHAR(32) NULL;
-ALTER TABLE study.Visit ADD Description NTEXT;
-GO
-
--- new fields to add to existing visit table, default SequenceNumTarget to SequenceNumMin
-ALTER TABLE study.Visit ADD SequenceNumTarget NUMERIC(15,4) NOT NULL DEFAULT 0;
-
-EXEC sp_rename 'study.visit.SequenceNumTarget', 'ProtocolDay', 'COLUMN';
-GO
-
-UPDATE study.Visit
-SET ProtocolDay = Round((SequenceNumMax + SequenceNumMin)/2, 0)
-FROM study.Study SS
-WHERE SS.Container = study.Visit.Container AND SS.TimePointType = 'DATE';
-
---ALTER TABLE study.visit ALTER protocolday DROP NOT NULL;
-EXEC core.fn_dropifexists 'Visit', 'study', 'DEFAULT', 'ProtocolDay';
-GO
-ALTER TABLE study.Visit ALTER COLUMN ProtocolDay NUMERIC(15,4) NULL;
-GO
-ALTER TABLE study.Visit ADD DEFAULT NULL FOR ProtocolDay;
 
 CREATE TABLE study.StudyDesignImmunogenTypes
 (
