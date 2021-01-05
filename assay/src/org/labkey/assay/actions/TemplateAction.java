@@ -39,9 +39,9 @@ import java.util.Map;
 
 /**
  * User: brittp
-* Date: Jul 26, 2007
-* Time: 7:23:37 PM
-*/
+ * Date: Jul 26, 2007
+ * Time: 7:23:37 PM
+ */
 @RequiresPermission(InsertPermission.class)
 public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
 {
