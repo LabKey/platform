@@ -219,14 +219,14 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         _workbook = workbook == null ? docType.createWorkbook() : workbook;
     }
 
-    public ExcelWriter(ResultsFactory factory, List<DisplayColumn> displayColumns, ExcelDocumentType docType)
+    public ExcelWriter(@NotNull ResultsFactory factory, List<DisplayColumn> displayColumns, ExcelDocumentType docType)
     {
         this(docType);
         setResultsFactory(factory);
         addDisplayColumns(displayColumns);
     }
 
-    public ExcelWriter(ResultsFactory factory, List<DisplayColumn> displayColumns)
+    public ExcelWriter(@NotNull ResultsFactory factory, List<DisplayColumn> displayColumns)
     {
         this(factory, displayColumns, ExcelDocumentType.xls);
     }
@@ -291,7 +291,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         setColumns(cols);
     }
 
-    public void setResultsFactory(ResultsFactory factory)
+    public void setResultsFactory(@NotNull ResultsFactory factory)
     {
         _factory = factory;
     }

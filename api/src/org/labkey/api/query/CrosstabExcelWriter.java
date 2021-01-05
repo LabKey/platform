@@ -27,6 +27,7 @@ import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.ResultsFactory;
 import org.labkey.api.util.Pair;
 
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 /**
@@ -43,7 +44,7 @@ public class CrosstabExcelWriter extends ExcelWriter
     private int _numRowAxisCols = 0;
     private final List<Pair<CrosstabMember, List<DisplayColumn>>> _groupedByMember;
 
-    public CrosstabExcelWriter(CrosstabTableInfo table, ResultsFactory factory, List<DisplayColumn> displayColumns, int numRowAxisCols, ExcelDocumentType docType)
+    public CrosstabExcelWriter(CrosstabTableInfo table, @NotNull ResultsFactory factory, List<DisplayColumn> displayColumns, int numRowAxisCols, ExcelDocumentType docType)
     {
         super(factory, displayColumns, docType);
         _table = table;
