@@ -1604,14 +1604,17 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         @Override
         public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, Map<String, Object> parameters)
         {
-            Map<String,Object> oldRow = null;
-            //Leaving this block as reference for getting update diff
-//            if (auditAction == QueryService.AuditAction.MERGE)
-//            {
-//                String lsid = String.valueOf(parameters.get("lsid"));
-//                oldRow = DatasetDefinition.this.getDatasetRow(user, lsid);
-//            }
-            StudyServiceImpl.addDatasetAuditEvent(user, DatasetDefinition.this, oldRow, parameters);
+            if (AuditBehaviorType.DETAILED == auditBehavior)
+            {
+                Map<String, Object> oldRow = null;
+                //Leaving this block as reference for getting update diff
+                // if (auditAction == QueryService.AuditAction.MERGE)
+                // {
+                //      String lsid = String.valueOf(parameters.get("lsid"));
+                //      oldRow = DatasetDefinition.this.getDatasetRow(user, lsid);
+                // }
+                StudyServiceImpl.addDatasetAuditEvent(user, DatasetDefinition.this, oldRow, parameters);
+            }
         }
 
         @Override
