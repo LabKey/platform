@@ -19,7 +19,7 @@ import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsFactory;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
@@ -198,8 +198,8 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                         SimpleFilter filter = new SimpleFilter();
                         if (!derivedIds.isEmpty())
                             filter.addCondition(FieldKey.fromParts("RowId"), derivedIds, CompareType.NOT_IN);
-                        Results rs = QueryService.get().select(tinfo, columns, filter, null);
-                        try (TSVGridWriter tsvWriter = new TSVGridWriter(rs))
+                        ResultsFactory factory = ()->QueryService.get().select(tinfo, columns, filter, null);
+                        try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
                         {
                             tsvWriter.setApplyFormats(false);
                             tsvWriter.setColumnHeaderType(ColumnHeaderType.FieldKey);
@@ -239,8 +239,8 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                         SimpleFilter filter = new SimpleFilter();
                         if (!derivedIds.isEmpty())
                             filter.addCondition(FieldKey.fromParts("RowId"), derivedIds, CompareType.NOT_IN);
-                        Results rs = QueryService.get().select(tinfo, columns, filter, null);
-                        try (TSVGridWriter tsvWriter = new TSVGridWriter(rs))
+                        ResultsFactory factory = ()->QueryService.get().select(tinfo, columns, filter, null);
+                        try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
                         {
                             tsvWriter.setApplyFormats(false);
                             tsvWriter.setColumnHeaderType(ColumnHeaderType.FieldKey);

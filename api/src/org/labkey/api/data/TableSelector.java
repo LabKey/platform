@@ -43,7 +43,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFactory, TableSelector>
+public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFactory, TableSelector> implements ResultsFactory
 {
     public static final Set<String> ALL_COLUMNS = Collections.unmodifiableSet(Collections.emptySet());
 
@@ -295,6 +295,12 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     public Results getResults()
     {
         return getResults(true);
+    }
+
+    @Override
+    public Results get() throws Exception
+    {
+        return getResults();
     }
 
     public Results getResults(boolean cache)

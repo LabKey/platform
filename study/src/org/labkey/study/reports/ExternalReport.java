@@ -20,7 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnHeaderType;
-import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsFactory;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -202,20 +202,20 @@ public class ExternalReport extends AbstractReport
             dataFile = File.createTempFile(getFilePrefix(), DATA_FILE_SUFFIX, getReportDir(viewContext));
             String dataFileName = dataFile.getName();
 
-            Results rs;
+            ResultsFactory factory;
             if (null == getQueryName())
-                rs = ReportManager.get().getReportResultSet(viewContext, getDatasetId(), getVisitRowId());
+                factory = ()->ReportManager.get().getReportResultSet(viewContext, getDatasetId(), getVisitRowId());
             else
             {
                 UserSchema schema = getStudyQuerySchema(viewContext.getUser(), ReadPermission.class, viewContext);
                 TableInfo mainTable = schema.getTable(getQueryName());
                 if (mainTable == null)
                     return new HtmlView("Unable to get TableInfo for query: " + getQueryName());
-                rs = new TableSelector(mainTable).getResults();
+                factory = new TableSelector(mainTable);
             }
 
-            // TSVGridWriter.close() closes the ResultSet
-            try (TSVGridWriter tsv = new TSVGridWriter(rs))
+            // TSVGridWriter generates and closed the Results
+            try (TSVGridWriter tsv = new TSVGridWriter(factory))
             {
                 tsv.setColumnHeaderType(ColumnHeaderType.Name); // CONSIDER: Use FieldKey instead
                 tsv.write(dataFile);
