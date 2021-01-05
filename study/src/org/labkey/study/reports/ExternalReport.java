@@ -214,7 +214,7 @@ public class ExternalReport extends AbstractReport
                 factory = new TableSelector(mainTable);
             }
 
-            // TSVGridWriter generates and closed the Results
+            // TSVGridWriter generates and closes the Results
             try (TSVGridWriter tsv = new TSVGridWriter(factory))
             {
                 tsv.setColumnHeaderType(ColumnHeaderType.Name); // CONSIDER: Use FieldKey instead

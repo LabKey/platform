@@ -2549,7 +2549,7 @@ public class QueryView extends WebPartView<Object>
     {
         List<DisplayColumn> displayColumns = getExcelTemplateDisplayColumns(fieldKeys);
 
-        return renameCols == null || renameCols.isEmpty()? new ExcelWriter(()->null, displayColumns, docType) : new AliasColumnExcelWriter(null, displayColumns, docType, renameCols);
+        return renameCols == null || renameCols.isEmpty()? new ExcelWriter(()->null, displayColumns, docType) : new AliasColumnExcelWriter(()->null, displayColumns, docType, renameCols);
     }
 
     protected RenderContext configureForExcelExport(ExcelWriter.ExcelDocumentType docType, DataView view, DataRegion rgn)
