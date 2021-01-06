@@ -21,25 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.ButtonBarLineBreak;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.MenuButton;
-import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.Results;
-import org.labkey.api.data.SimpleDisplayColumn;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.TSVGridWriter;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
@@ -1021,23 +1003,21 @@ public class SpecimenUtils
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(specimenRequest.getContainer());
         ctx.setBaseFilter(getSpecimenListFilter(specimenRequest, srcLocation, type));
-        Results results = dr.getResults(ctx);
         List<DisplayColumn> cols = dr.getDisplayColumns();
-        TSVGridWriter tsv = new TSVGridWriter(results, cols);
+        TSVGridWriter tsv = new TSVGridWriter(()->dr.getResults(ctx), cols);
         tsv.setFilenamePrefix(getSpecimenListFileName(srcLocation, destLocation));
         return tsv;
     }
 
     public ExcelWriter getSpecimenListXlsWriter(SpecimenRequest specimenRequest, LocationImpl srcLocation,
-                                                 LocationImpl destLocation, SpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
+                                                 LocationImpl destLocation, SpecimenController.LabSpecimenListsBean.Type type)
     {
         DataRegion dr = createDataRegionForWriters(specimenRequest);
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(specimenRequest.getContainer());
         ctx.setBaseFilter(getSpecimenListFilter(specimenRequest, srcLocation, type));
-        Results results = dr.getResults(ctx);
         List<DisplayColumn> cols = dr.getDisplayColumns();
-        ExcelWriter xl = new ExcelWriter(results, cols);
+        ExcelWriter xl = new ExcelWriter(() -> dr.getResults(ctx), cols);
         xl.setFilenamePrefix(getSpecimenListFileName(srcLocation, destLocation));
         return xl;
     }

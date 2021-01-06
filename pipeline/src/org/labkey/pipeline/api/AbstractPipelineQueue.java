@@ -17,24 +17,14 @@ package org.labkey.pipeline.api;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.labkey.api.admin.notification.Notification;
-import org.labkey.api.admin.notification.NotificationService;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineQueue;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.view.ActionURL;
-import org.labkey.pipeline.status.StatusController;
-import org.mule.util.StringUtils;
 
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
 /**
  * User: jeckels
@@ -91,57 +81,4 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
 
     protected abstract void enqueue(PipelineJob job);
 
-    protected void notifyDone(PipelineJob job)
-    {
-        User user = job.getUser();
-        if (null == user || user.isServiceUser() || user.getUserId() <= 0)
-            return;
-        if (null == job.getJobGUID())
-            return;
-
-        // don't attempt to add a notification if the Container has been deleted or is deleting
-        if (ContainerManager.getForId(job.getContainerId()) == null || ContainerManager.isDeleting(job.getContainer()))
-        {
-            LOG.info("Job container has been deleted or is being deleted; skipping notification for '" + StringUtils.defaultString(job.getDescription(), job.toString()) + "'");
-            return;
-        }
-
-        try
-        {
-            PipelineJob.TaskStatus status = job.getActiveTaskStatus();
-            Notification n = new Notification(job.getJobGUID(), status.getNotificationType(), user);
-            String description = StringUtils.defaultString(job.getDescription(), job.toString());
-            n.setContent(String.format("Background job %s\n%s", status.toString().toLowerCase(), description), "text/plain");
-            if (null != job.getStatusHref())
-            {
-                n.setActionLinkURL(job.getStatusHref().getLocalURIString());
-                n.setActionLinkText("view");
-            }
-            else
-            {
-                Integer jobId = PipelineService.get().getJobId(user, job.getContainer(), job.getJobGUID());
-                if (jobId != null)
-                {
-                    n.setActionLinkURL(new ActionURL(StatusController.DetailsAction.class, job.getContainer()).addParameter("rowId", jobId).getLocalURIString());
-                    n.setActionLinkText("view");
-                }
-                else
-                {
-                    n.setActionLinkURL(new ActionURL(StatusController.ShowListAction.class, job.getContainer()).getLocalURIString());
-                    n.setActionLinkText("pipeline");
-                }
-            }
-            // Remove all previous notifications for this job
-            NotificationService.get().removeNotifications(
-                    job.getContainer(),
-                    job.getJobGUID(),
-                    Arrays.stream(PipelineJob.TaskStatus.values()).map(PipelineJob.TaskStatus::getNotificationType).collect(Collectors.toList()),
-                    user.getUserId());
-            NotificationService.get().addNotification(job.getContainer(), user, n);
-        }
-        catch (ValidationException x)
-        {
-            LOG.warn("Notification error", x);
-        }
-    }
 }

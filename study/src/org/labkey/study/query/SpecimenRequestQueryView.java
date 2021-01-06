@@ -35,6 +35,8 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.api.specimen.SpecimenRequestStatus;
+import org.labkey.study.controllers.specimen.SpecimenController.ManageRequestAction;
+import org.labkey.study.model.SpecimenRequestStatus;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
@@ -57,16 +59,16 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
 
     private static class RequestOptionDisplayColumn extends SimpleDisplayColumn
     {
-        private ColumnInfo _colCreatedBy;
-        private ColumnInfo _colStatus;
+        private final ColumnInfo _colCreatedBy;
+        private final ColumnInfo _colStatus;
+        private final boolean _showOptionLinks;
+        private final NavTree[] _extraLinks;
+        private final boolean _userIsSpecimenManager;
+        private final boolean _userCanRequest;
+        private final int _userId;
+        private final boolean _cartEnabled;
 
-        private boolean _showOptionLinks;
-        private NavTree[] _extraLinks;
         private Integer _shoppingCartStatusRowId;
-        private boolean _userIsSpecimenManager;
-        private boolean _userCanRequest;
-        private int _userId;
-        private boolean _cartEnabled;
 
         public RequestOptionDisplayColumn(ViewContext context, boolean showOptionLinks, ColumnInfo colCreatedBy, ColumnInfo colStatus, NavTree... extraLinks)
         {
@@ -120,18 +122,16 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
 
                     if (statusId.intValue() == _shoppingCartStatusRowId.intValue() && canEdit)
                     {
-                        String submitLink = (new ActionURL(SpecimenController.SubmitRequestAction.class, ctx.getContainer())).toString() + "id=${requestId}";
-                        String cancelLink = (new ActionURL(SpecimenController.DeleteRequestAction.class, ctx.getContainer())).toString() + "id=${requestId}";
+                        ActionURL submitUrl = new ActionURL(SpecimenController.SubmitRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");
+                        ActionURL cancelUrl = new ActionURL(SpecimenController.DeleteRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");
 
-                        content.append(PageFlowUtil.button("Submit").href(submitLink)
-                            .onClick("return LABKEY.Utils.confirmAndPost('" + SpecimenController.ManageRequestBean.SUBMISSION_WARNING + "', '" + submitLink + "')")).append(" ");
-                        content.append(PageFlowUtil.button("Cancel").href(cancelLink)
-                            .onClick("return LABKEY.Utils.confirmAndPost('" + SpecimenController.ManageRequestBean.CANCELLATION_WARNING + "', '" + cancelLink + "')")).append(" ");
+                        content.append(PageFlowUtil.button("Submit").href(submitUrl).usePost(SpecimenController.ManageRequestBean.SUBMISSION_WARNING));
+                        content.append(PageFlowUtil.button("Cancel").href(cancelUrl).usePost(SpecimenController.ManageRequestBean.CANCELLATION_WARNING));
                     }
                 }
 
-                String detailsLink = (new ActionURL(SpecimenController.ManageRequestAction.class, ctx.getContainer())).toString() + "id=${requestId}";
-                content.append(PageFlowUtil.button("Details").href(detailsLink));
+                ActionURL detailsUrl = new ActionURL(ManageRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");
+                content.append(PageFlowUtil.button("Details").href(detailsUrl));
             }
             content.append("</div>");
             setDisplayHtml(content.toString());
