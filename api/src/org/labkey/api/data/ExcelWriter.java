@@ -823,27 +823,20 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
     protected void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws Exception
     {
-        assert null != _factory;
         try (Results results = _factory.get())
         {
-            renderGrid(ctx, sheet, visibleColumns, results);
-        }
-    }
+            if (null == results)
+                return;
 
-    // Note: caller closed Results
-    private void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns, Results results) throws SQLException, MaxRowsExceededException
-    {
-        if (null == results)
-            return;
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
+            ctx.setResults(results);
 
-        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
-        ctx.setResults(results);
-
-        // Output all the rows, but don't exceed the document's maximum number of rows
-        while (results.next() && _currentRow <= _docType.getMaxRows())
-        {
-            ctx.setRow(factory.getRowMap(results));
-            renderGridRow(sheet, ctx, visibleColumns);
+            // Output all the rows, but don't exceed the document's maximum number of rows
+            while (results.next() && _currentRow <= _docType.getMaxRows())
+            {
+                ctx.setRow(factory.getRowMap(results));
+                renderGridRow(sheet, ctx, visibleColumns);
+            }
         }
     }
 
