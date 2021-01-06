@@ -16,6 +16,8 @@
 
 package org.labkey.api.study;
 
+import org.labkey.api.data.Container;
+
 /**
  * A specimen location, such as a clinic or specimen repository.
  * User: kevink
@@ -23,6 +25,8 @@ package org.labkey.api.study;
  */
 public interface Location
 {
+    Container getContainer();
+
     int getRowId();
 
     String getEntityId();

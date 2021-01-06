@@ -1,5 +1,6 @@
 package org.labkey.api.specimen;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -90,5 +91,61 @@ public class SpecimenSchema
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, SPECIMEN_TABLES_TEMPLATE);
         return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.LOCATION_TABLENAME);
+    }
+
+    /*
+     *  Provisioned tables: Specimen, Vial, SpecimenEvent
+     */
+    private static SpecimenTablesTemplate _specimenTablesTemplate = new DefaultSpecimenTablesTemplate();
+
+    public SpecimenTablesTemplate setSpecimenTablesTemplates(SpecimenTablesTemplate template)
+    {
+        if (template != null)
+        {
+            SpecimenTablesTemplate prevTemplate = _specimenTablesTemplate;
+            _specimenTablesTemplate = template;
+
+            return prevTemplate;
+        }
+        return null;
+    }
+
+    @NotNull
+    public TableInfo getTableInfoVial(Container container)
+    {
+        return getTableInfoVial(container, null);
+    }
+
+    @NotNull
+    public TableInfo getTableInfoVial(Container container, User user)
+    {
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
+        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.VIAL_TABLENAME);
+    }
+
+    @NotNull
+    public TableInfo getTableInfoSpecimen(Container container)
+    {
+        return getTableInfoSpecimen(container, null);
+    }
+
+    @NotNull
+    public TableInfo getTableInfoSpecimen(Container container, User user)
+    {
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
+        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.SPECIMEN_TABLENAME);
+    }
+
+    @NotNull
+    public TableInfo getTableInfoSpecimenEvent(Container container)
+    {
+        return getTableInfoSpecimenEvent(container, null);
+    }
+
+    @NotNull
+    public TableInfo getTableInfoSpecimenEvent(Container container, User user)
+    {
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
+        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.SPECIMENEVENT_TABLENAME);
     }
 }

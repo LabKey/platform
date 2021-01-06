@@ -1728,7 +1728,7 @@ public class StudyController extends BaseStudyController
                             location = location.createMutable();
                             location.setLabel(formLocation.getLabel());
                             location.setDescription(formLocation.getDescription());
-                            StudyManager.getInstance().updateSite(getUser(), location);
+                            LocationManager.get().updateLocation(getUser(), location);
                         }
                     }
                 }
@@ -1753,7 +1753,7 @@ public class StudyController extends BaseStudyController
                         location.setLdmsLabCode(Integer.parseInt(form.getNewId()));
                         location.setDescription(form.getNewDescription());
                         location.setContainer(getContainer());
-                        StudyManager.getInstance().createSite(getUser(), location);
+                        LocationManager.get().createLocation(getUser(), location);
                     }
                     catch (NumberFormatException e)
                     {
@@ -1790,9 +1790,10 @@ public class StudyController extends BaseStudyController
             {
                 if (c.hasPermission(getUser(), AdminPermission.class))
                 {
-                    for (LocationImpl loc : LocationManager.get().getLocations(c))
+                    LocationManager mgr = LocationManager.get();
+                    for (LocationImpl loc : mgr.getLocations(c))
                     {
-                        if (!StudyManager.getInstance().isLocationInUse(loc))
+                        if (!mgr.isLocationInUse(loc))
                         {
                             temp.add(c.getName() + "/" + loc.getLabel());
                         }
@@ -1815,11 +1816,12 @@ public class StudyController extends BaseStudyController
             {
                 if (c.hasPermission(getUser(), AdminPermission.class))
                 {
-                    for (LocationImpl loc : LocationManager.get().getLocations(c))
+                    LocationManager mgr = LocationManager.get();
+                    for (LocationImpl loc : mgr.getLocations(c))
                     {
-                        if (!StudyManager.getInstance().isLocationInUse(loc))
+                        if (!mgr.isLocationInUse(loc))
                         {
-                            StudyManager.getInstance().deleteLocation(loc);
+                            mgr.deleteLocation(loc);
                         }
                     }
                 }

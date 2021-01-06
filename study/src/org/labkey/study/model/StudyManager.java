@@ -112,12 +112,11 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DataspaceContainerFilter;
-import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -151,7 +150,6 @@ import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.StudySnapshot.SnapshotSettings;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.study.visitmanager.AbsoluteDateVisitManager;
 import org.labkey.study.visitmanager.RelativeDateVisitManager;
 import org.labkey.study.visitmanager.SequenceVisitManager;
@@ -1661,100 +1659,6 @@ public class StudyManager
                 participant,
                 new Object[]{participant.getContainer().getId(), participant.getParticipantId()}
         );
-    }
-
-    @Deprecated // Use LocationManager instead!
-    public List<LocationImpl> getLocations(Container container)
-    {
-        return LocationCache.getLocations(container);
-    }
-
-    public void createSite(User user, LocationImpl location)
-    {
-        Table.insert(user, getTableInfoLocations(location.getContainer()), location);
-        LocationCache.clear(location.getContainer());
-    }
-
-    public void updateSite(User user, LocationImpl location)
-    {
-        Table.update(user, getTableInfoLocations(location.getContainer()), location, location.getRowId());
-        LocationCache.clear(location.getContainer());
-    }
-
-    private boolean isLocationInUse(LocationImpl loc, TableInfo table, String... columnNames)
-    {
-        List<Object> params = new ArrayList<>();
-        params.add(loc.getContainer().getId());
-
-        StringBuilder cols = new StringBuilder("(");
-        String or = "";
-        for (String columnName : columnNames)
-        {
-            cols.append(or).append(columnName).append(" = ?");
-            params.add(loc.getRowId());
-            or = " OR ";
-        }
-        cols.append(")");
-
-        String containerColumn = " = ? AND ";
-        if (table.getName().contains("_vial") || table.getName().equals("_specimenevent"))
-        {
-            //vials and events use a column called fr_container instead of normal container.
-            containerColumn = "FR_Container" + containerColumn;
-        }
-        else if (table.getName().contains("_specimen"))
-        {
-            params.remove(0);
-            containerColumn = "";
-        }
-        else
-        {
-            containerColumn = "Container" + containerColumn;
-        }
-        return new SqlSelector(StudySchema.getInstance().getSchema(), new SQLFragment("SELECT * FROM " +
-                table + " WHERE " + containerColumn + cols.toString(), params)).exists();
-    }
-
-    public boolean isLocationInUse(LocationImpl loc)
-    {
-        return isLocationInUse(loc, StudySchema.getInstance().getTableInfoSampleRequest(), "DestinationSiteId") ||
-                isLocationInUse(loc, StudySchema.getInstance().getTableInfoSampleRequestRequirement(), "SiteId") ||
-                isLocationInUse(loc, StudySchema.getInstance().getTableInfoParticipant(), "EnrollmentSiteId", "CurrentSiteId") ||
-                isLocationInUse(loc, StudySchema.getInstance().getTableInfoAssaySpecimen(), "LocationId") ||
-                isLocationInUse(loc, StudySchema.getInstance().getTableInfoVial(loc.getContainer()), "CurrentLocation", "ProcessingLocation") ||
-                //vials and events use a column called fr_container instead of normal container.
-                isLocationInUse(loc, StudySchema.getInstance().getTableInfoSpecimen(loc.getContainer()), "originatinglocationid", "ProcessingLocation") ||
-                //Doesn't have a container or fr_container column
-                isLocationInUse(loc, StudySchema.getInstance().getTableInfoSpecimenEvent(loc.getContainer()), "LabId", "OriginatingLocationId");
-        //vials and events use a column called fr_container instead of normal container.
-    }
-
-    public void deleteLocation(LocationImpl location) throws ValidationException
-    {
-        StudySchema schema = StudySchema.getInstance();
-        if (!isLocationInUse(location))
-        {
-            try (Transaction transaction = schema.getSchema().getScope().ensureTransaction())
-            {
-                Container container = location.getContainer();
-
-                TreatmentManager.getInstance().deleteTreatmentVisitMapForCohort(container, location.getRowId());
-
-                Table.delete(getTableInfoLocations(container), new SimpleFilter(FieldKey.fromString("RowId"), location.getRowId()));
-                LocationCache.clear(container);
-
-                transaction.commit();
-            }
-        }
-        else
-        {
-            throw new ValidationException("Locations currently in use cannot be deleted");
-        }
-    }
-
-    private TableInfo getTableInfoLocations(Container container)
-    {
-        return StudySchema.getInstance().getTableInfoSite(container);
     }
 
     public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(Container container, String sortCol)

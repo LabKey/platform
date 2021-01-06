@@ -69,7 +69,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyManagementOption;
 import org.labkey.api.study.StudyReloadSource;
@@ -1224,5 +1226,12 @@ public class StudyServiceImpl implements StudyService
     public void registerManagementOption(StudyManagementOption option)
     {
         _managementOptions.add(option);
+    }
+
+    @Override
+    public boolean isLocationInUse(Location loc)
+    {
+        return LocationManager.get().isLocationInUse(loc, StudySchema.getInstance().getTableInfoParticipant(), "EnrollmentSiteId", "CurrentSiteId") ||
+            LocationManager.get().isLocationInUse(loc, StudySchema.getInstance().getTableInfoAssaySpecimen(), "LocationId");
     }
 }

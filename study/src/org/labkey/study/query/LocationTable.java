@@ -195,7 +195,7 @@ public class LocationTable extends BaseStudyTable
                     continue;
                 }
 
-                if (StudyManager.getInstance().isLocationInUse(loc))
+                if (LocationManager.get().isLocationInUse(loc))
                 {
                     validationExceptions.add(new ValidationException("Location is currently in use and cannot be deleted: " + loc.getDisplayName()));
                     continue;
@@ -204,7 +204,7 @@ public class LocationTable extends BaseStudyTable
                 try
                 {
                     // Note: deleteLocation() clears the location cache
-                    StudyManager.getInstance().deleteLocation(loc);
+                    LocationManager.get().deleteLocation(loc);
                 }
                 catch (ValidationException e)
                 {
