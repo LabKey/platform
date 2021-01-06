@@ -30,9 +30,7 @@ import org.labkey.announcements.model.DailyDigestEmailPrefsSelector;
 import org.labkey.announcements.model.DiscussionServiceImpl;
 import org.labkey.announcements.model.IndividualEmailPrefsSelector;
 import org.labkey.announcements.model.InsertMessagePermission;
-import org.labkey.announcements.model.NormalMessageBoardPermissions;
 import org.labkey.announcements.model.Permissions;
-import org.labkey.announcements.model.SecureMessageBoardPermissions;
 import org.labkey.announcements.query.AnnouncementSchema;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -128,7 +126,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.springframework.beans.PropertyValues;
-import org.springframework.util.CollectionUtils;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -144,7 +141,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -1473,12 +1469,12 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    public static ActionURL getEmailPreferencesURL(Container c, @Nullable URLHelper srcUrl, String srcIdentifier)
+    public static ActionURL getEmailPreferencesURL(Container c, @Nullable URLHelper returnUrl, String srcIdentifier)
     {
         ActionURL result = new ActionURL(EmailPreferencesAction.class, c);
         result.addParameter("srcIdentifier", srcIdentifier);
-        if (srcUrl != null)
-            result.addParameter("srcUrl", srcUrl.getLocalURIString());
+        if (returnUrl != null)
+            result.addReturnURL(returnUrl);
 
         return result;
     }
@@ -1742,7 +1738,6 @@ public class AnnouncementsController extends SpringActionController
         private int _emailPreference = EmailOption.MESSAGES_NONE.getValue();
         private int _notificationType = EmailOption.MESSAGES_NO_DAILY_DIGEST.getValue();
         private String _srcIdentifier;
-        private String _srcUrl = null;
         private boolean _resetFolderDefault = false;
 
         // Email option is a single int that contains the conversation preference AND choice for digest vs. individual
@@ -1839,16 +1834,6 @@ public class AnnouncementsController extends SpringActionController
         public void setNotificationType(int notificationType)
         {
             _notificationType = notificationType;
-        }
-
-        public String getSrcUrl()
-        {
-            return _srcUrl;
-        }
-
-        public void setSrcUrl(String srcUrl)
-        {
-            _srcUrl = srcUrl;
         }
 
         public String getSrcIdentifier()
