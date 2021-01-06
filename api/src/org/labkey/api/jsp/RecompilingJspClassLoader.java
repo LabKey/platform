@@ -111,7 +111,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
                     _log.info("Recompiling " + relativePath);
 
                     // Copy .jsp file from source to build staging directory
-                    File stagingJsp = new File(jspJavaFileBuildDirectory.getParent() + "/webapp", relativePath);
+                    File stagingJsp = new File(jspJavaFileBuildDirectory.getParentFile().getParent()  + "/jspWebappDir/webapp", relativePath);
                     if (!stagingJsp.getParentFile().exists())
                         stagingJsp.getParentFile().mkdirs();
                     FileUtil.copyFile(sourceFile, stagingJsp);
@@ -143,7 +143,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
                             return super.newTldScanner(context, namespaceAware, validate, blockExternal);
                         }
                     };
-                    jasper.setUriroot(jspJavaFileBuildDirectory.getParent() + "/webapp");
+                    jasper.setUriroot(jspJavaFileBuildDirectory.getParentFile().getParent() + "/jspWebappDir/webapp/");
                     jasper.setOutputDir(jspJavaFileBuildDirectory.getAbsolutePath());
                     jasper.setPackage("org.labkey.jsp.compiled");
                     jasper.setCompilerTargetVM("13");
