@@ -392,7 +392,7 @@ LABKEY.ext4.GRIDBUTTONS = {
         return Ext4.Object.merge({
             text: 'Cancel',
             handler: function(btn, key){
-                window.location = btn.returnUrl || LABKEY.ActionURL.getReturnUrl() || LABKEY.ActionURL.buildURL('project', 'begin')
+                window.location = btn.returnURL || LABKEY.ActionURL.getReturnUrl() || LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin')
             }
         }, config)
     }

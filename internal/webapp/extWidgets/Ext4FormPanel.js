@@ -433,7 +433,7 @@ LABKEY.ext4.FORMBUTTONS = {
         return Ext4.Object.merge({
             text: 'Submit',
             formBind: true,
-            successUrl: LABKEY.ActionURL.getReturnUrl(),
+            successURL: LABKEY.ActionURL.getReturnUrl() || LABKEY.ActionURL.getParameter('srcURL'),
             handler: function(btn){
                 var panel = btn.up('form');
                 panel.doSubmit(btn);
@@ -475,9 +475,9 @@ LABKEY.ext4.FORMBUTTONS = {
     CANCEL: function(config){
         return Ext4.Object.merge({
             text: 'Cancel',
-            returnUrl: LABKEY.ActionURL.getReturnUrl(),
+            returnURL: LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.getParameter('returnUrl'),
             handler: function(btn, key){
-                window.location = btn.returnUrl || LABKEY.ActionURL.buildURL('project', 'begin');
+                window.location = btn.returnURL || LABKEY.ActionURL.buildURL('project', 'begin');
             }
         }, config)
     }
