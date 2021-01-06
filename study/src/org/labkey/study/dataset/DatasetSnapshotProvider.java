@@ -83,6 +83,7 @@ import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.writer.DatasetDataWriter;
 import org.springframework.validation.BindException;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -201,7 +202,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     }
 
     @Override
-    public void createSnapshot(ViewContext context, QuerySnapshotDefinition qsDef, BindException errors) throws Exception
+    public void createSnapshot(ViewContext context, QuerySnapshotDefinition qsDef, BindException errors) throws IOException, SQLException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
 
@@ -513,7 +514,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                         }
                     }
                 }
-                catch (SQLException e)
+                catch (SQLException | IOException e)
                 {
                     ViewContext context = form.getViewContext();
                     StudyServiceImpl.addDatasetAuditEvent(context.getUser(), context.getContainer(), dsDef,

@@ -582,12 +582,10 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         return null;
     }
 
-
     public int getCurrentRow()
     {
         return _currentRow;
     }
-
 
     public void setCurrentRow(int currentRow) throws MaxRowsExceededException
     {
@@ -595,15 +593,13 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         checkCurrentRow();
     }
 
-
     protected void incrementRow() throws MaxRowsExceededException
     {
         _currentRow++;
         checkCurrentRow();
     }
 
-
-    private void checkCurrentRow()  throws MaxRowsExceededException
+    private void checkCurrentRow() throws MaxRowsExceededException
     {
         if (_currentRow > _docType.getMaxRows())
             throw new MaxRowsExceededException();
@@ -821,7 +817,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
-    protected void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws Exception
+    protected void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException, IOException
     {
         try (Results results = _factory.get())
         {

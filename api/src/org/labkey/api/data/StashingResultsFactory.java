@@ -1,5 +1,6 @@
 package org.labkey.api.data;
 
+import java.io.IOException;
 import java.sql.SQLException;
 
 /**
@@ -23,7 +24,7 @@ public class StashingResultsFactory implements ResultsFactory, AutoCloseable
     }
 
     @Override
-    public Results get() throws Exception
+    public Results get() throws IOException, SQLException
     {
         if (null == _results)
             _results = _factory.get();

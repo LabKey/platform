@@ -25,7 +25,6 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService.NamedParameterNotProvided;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.RConnectionHolder;
 import org.labkey.api.reports.Report;
@@ -225,21 +224,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             {
                 runScript(context, outputSubst, createInputDataFile(context), inputParameters);
             }
-            catch (ScriptException e)
-            {
-                boolean continueOn = renderer.handleRuntimeException(e);
-
-                if (!continueOn)
-                    return null;
-            }
-            catch (ValidationException e)
-            {
-                boolean continueOn = renderer.handleRuntimeException(e);
-
-                if (!continueOn)
-                    return null;
-            }
-            catch (NamedParameterNotProvided e)
+            catch (ScriptException | NamedParameterNotProvided e)
             {
                 boolean continueOn = renderer.handleRuntimeException(e);
 

@@ -41,8 +41,10 @@ import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -175,7 +177,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
 
                             FileUtils.copyFile(tempFile, out);
                         }
-                        catch (Exception e)
+                        catch (IOException | SQLException e)
                         {
                             throw new ExperimentException("Problem creating TSV grid for run " + run.getName() + "(lsid: " + run.getLSID() + ")", e);
                         }

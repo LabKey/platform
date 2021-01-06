@@ -116,7 +116,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
         {
             throw new RuntimeSQLException(ex);
         }
-        catch (Exception e)
+        catch (IOException e)
         {
             throw new RuntimeException(e);
         }

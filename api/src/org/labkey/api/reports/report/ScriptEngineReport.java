@@ -228,11 +228,20 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     /*
      * Create the .tsv associated with the data grid for this report.
      */
-    public File createInputDataFile(@NotNull ViewContext context) throws Exception
+    public File createInputDataFile(@NotNull ViewContext context) throws SQLException, IOException
     {
         File resultFile = new File(getReportDir(context.getContainer().getId()), DATA_INPUT);
 
-        ResultsFactory factory = ()->generateResults(context, true);
+        ResultsFactory factory = ()-> {
+            try
+            {
+                return generateResults(context, true);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        };
 
         try (StashingResultsFactory srf = new StashingResultsFactory(factory))
         {
@@ -815,7 +824,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     protected static class TempFileCleanup extends HttpView
     {
-        private String _path;
+        private final String _path;
 
         public TempFileCleanup(String path)
         {

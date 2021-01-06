@@ -6674,7 +6674,7 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(GenerateSchemaForm form, BindException errors) throws Exception
+        public boolean handlePost(GenerateSchemaForm form, BindException errors) throws SQLException, IOException
         {
             StringBuilder importScript = new StringBuilder();
 
