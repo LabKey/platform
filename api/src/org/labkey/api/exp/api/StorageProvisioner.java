@@ -545,35 +545,8 @@ public class StorageProvisioner
                 map.put(scn, name);
         }
 
-        VirtualTable wrapper = new _VirtualTable(schema, sti.getName(), sti, map, domain);
-
-        for (ColumnInfo from : sti.getColumns())
-        {
-            String name = StringUtils.defaultString(map.get(from.getName()), from.getName());
-            AliasedColumn to = new AliasedColumn(wrapper, new FieldKey(null, name), from, true)
-            {
-                @Override
-                public String getSelectName()
-                {
-                    return _column.getSelectName();
-                }
-
-                @Override
-                public String getAlias()
-                {
-                    // it seems that alias like selectname in some places (CompareClause.toSQLFragment())
-                    return _column.getAlias();
-                }
-
-                @Override
-                public SQLFragment getValueSql(String tableAlias)
-                {
-                    return super.getValueSql(tableAlias);
-                }
-            };
-            to.setHidden(from.isHidden());
-            wrapper.addColumn(to);
-        }
+        _VirtualTable wrapper = new _VirtualTable(schema, sti.getName(), sti, map, domain);
+        wrapper.wrapAllColumns();
 
         return wrapper;
     }
@@ -607,7 +580,7 @@ public class StorageProvisioner
         private final CaseInsensitiveHashMap<String> _map = new CaseInsensitiveHashMap<>();
         private Domain _domain;
 
-        _VirtualTable(DbSchema schema, String name, SchemaTableInfo inner, Map<String,String> map)
+        public _VirtualTable(DbSchema schema, String name, SchemaTableInfo inner, Map<String,String> map)
         {
             super(schema, name);
             _inner = inner;
@@ -618,6 +591,37 @@ public class StorageProvisioner
         {
             this(schema, name, inner, map);
             _domain = domain;
+        }
+
+        public void wrapAllColumns()
+        {
+            for (ColumnInfo from : _inner.getColumns())
+            {
+                String name = StringUtils.defaultString(_map.get(from.getName()), from.getName());
+                AliasedColumn to = new AliasedColumn(this, new FieldKey(null, name), from, true)
+                {
+                    @Override
+                    public String getSelectName()
+                    {
+                        return _column.getSelectName();
+                    }
+
+                    @Override
+                    public String getAlias()
+                    {
+                        // it seems that alias like selectname in some places (CompareClause.toSQLFragment())
+                        return _column.getAlias();
+                    }
+
+                    @Override
+                    public SQLFragment getValueSql(String tableAlias)
+                    {
+                        return super.getValueSql(tableAlias);
+                    }
+                };
+                to.setHidden(from.isHidden());
+                this.addColumn(to);
+            }
         }
 
         @Override

@@ -225,7 +225,7 @@ public class OntologyManager
     /**
      * @return map from PropertyURI to value
      */
-    public static Map<String, Object> getProperties(Container container, String parentLSID)
+    public static @NotNull Map<String, Object> getProperties(Container container, String parentLSID)
     {
         Map<String, Object> m = new HashMap<>();
         Map<String, ObjectProperty> propVals = getPropertyObjects(container, parentLSID);
@@ -351,7 +351,7 @@ public class OntologyManager
                 if (propsToInsert.size() > MAX_PROPS_IN_BATCH)
                 {
                     assert insert.start();
-                    insertPropertiesBulk(c, propsToInsert);
+                    insertPropertiesBulk(c, propsToInsert, false);
                     helper.afterBatchInsert(rowCount);
                     assert insert.stop();
                     propsToInsert = new ArrayList<>(MAX_PROPS_IN_BATCH + descriptors.size());
@@ -369,7 +369,7 @@ public class OntologyManager
                 throw new ValidationException(errors);
 
             assert insert.start();
-            insertPropertiesBulk(c, propsToInsert);
+            insertPropertiesBulk(c, propsToInsert, false);
             helper.afterBatchInsert(rowCount);
             assert insert.stop();
         }
@@ -950,8 +950,6 @@ public class OntologyManager
 
         try (Transaction t = getExpSchema().getScope().ensureTransaction())
         {
-
-
             // until we set a domain on objects themselves, we need to create a list of objects to
             // delete based on existing entries in ObjectProperties before we delete the objectProperties
             // which we need to do before we delete the objects.
@@ -1834,64 +1832,7 @@ public class OntologyManager
     }
 
 
-    private static void insertProperties(Container c, List<ObjectProperty> props, boolean skipValidation) throws SQLException, ValidationException
-    {
-        HashMap<String, PropertyDescriptor> descriptors = new HashMap<>();
-        HashMap<String, Integer> objects = new HashMap<>();
-        List<ValidationError> errors = new ArrayList<>();
-        // assert !c.equals(ContainerManager.getRoot());
-        // TODO - make user a parameter to this method 
-        User user = HttpView.hasCurrentView() ? HttpView.currentContext().getUser() : null;
-        ValidatorContext validatorCache = new ValidatorContext(c, user);
-
-        for (ObjectProperty property : props)
-        {
-            if (null == property)
-                continue;
-
-            PropertyDescriptor pd = descriptors.get(property.getPropertyURI());
-            if (0 == property.getPropertyId())
-            {
-                if (null == pd)
-                {
-                    PropertyDescriptor pdIn = new PropertyDescriptor(property.getPropertyURI(), property.getPropertyType(), property.getName(), c);
-                    pdIn.setFormat(property.getFormat());
-                    pd = getPropertyDescriptor(pdIn.getPropertyURI(), pdIn.getContainer());
-
-                    if (null == pd)
-                        pd = ensurePropertyDescriptor(pdIn);
-
-                    descriptors.put(property.getPropertyURI(), pd);
-                }
-                property.setPropertyId(pd.getPropertyId());
-            }
-            if (0 == property.getObjectId())
-            {
-                Integer objectId = objects.get(property.getObjectURI());
-                if (null == objectId)
-                {
-                    // I'm assuming all properties are in the same container
-                    objectId = ensureObject(property.getContainer(), property.getObjectURI(), property.getObjectOwnerId());
-                    objects.put(property.getObjectURI(), objectId);
-                }
-                property.setObjectId(objectId);
-            }
-            if (pd == null)
-            {
-                pd = getPropertyDescriptor(property.getPropertyId());
-            }
-            if (!skipValidation)
-            {
-                validateProperty(PropertyService.get().getPropertyValidators(pd), pd, property, errors, validatorCache);
-            }
-        }
-        if (!errors.isEmpty())
-            throw new ValidationException(errors);
-        insertPropertiesBulk(c, props);
-    }
-
-
-    private static void insertPropertiesBulk(Container container, List<? extends PropertyRow> props) throws SQLException
+    private static void insertPropertiesBulk(Container container, List<? extends PropertyRow> props, boolean insertNullValues) throws SQLException
     {
         List<List<?>> floats = new ArrayList<>();
         List<List<?>> dates = new ArrayList<>();
@@ -1924,7 +1865,11 @@ public class OntologyManager
             }
             else if (null != mvIndicator)
             {
-                mvIndicators.add(Arrays.<Object>asList(objectId, propertyId, property.getTypeTag(), mvIndicator));
+                mvIndicators.add(Arrays.asList(objectId, propertyId, property.getTypeTag(), mvIndicator));
+            }
+            else if (insertNullValues)
+            {
+                strings.add(Arrays.asList(objectId, propertyId, null, null));
             }
         }
 
@@ -2014,7 +1959,7 @@ public class OntologyManager
     }
 
     /**
-     * Removes the property from a single domain, and completley deletes it if there are no other references
+     * Removes the property from a single domain, and completely deletes it if there are no other references
      */
     public static void removePropertyDescriptorFromDomain(DomainProperty domainProp)
     {
@@ -2059,21 +2004,85 @@ public class OntologyManager
         }
     }
 
+    /***
+     * @deprecated Use {@link #insertProperties(Container, User, String, ObjectProperty...)} so that a user can be
+     * supplied.
+     */
     public static void insertProperties(Container container, String ownerObjectLsid, ObjectProperty... properties) throws ValidationException
     {
-        insertProperties(container, ownerObjectLsid, false, properties);
+        User user = HttpView.hasCurrentView() ? HttpView.currentContext().getUser() : null;
+        insertProperties(container, user, ownerObjectLsid, properties);
     }
 
-    public static void insertProperties(Container container, String ownerObjectLsid, boolean skipValidation, ObjectProperty... properties) throws ValidationException
+    public static void insertProperties(Container container, User user, String ownerObjectLsid, ObjectProperty... properties) throws ValidationException
+    {
+        insertProperties(container, user, ownerObjectLsid, false, properties);
+    }
+
+    public static void insertProperties(Container container, User user, String ownerObjectLsid, boolean skipValidation, ObjectProperty... properties) throws ValidationException
+    {
+        insertProperties(container, user, ownerObjectLsid, skipValidation, false, properties);
+    }
+
+    public static void insertProperties(Container container, User user, String ownerObjectLsid, boolean skipValidation, boolean insertNullValues, ObjectProperty... properties) throws ValidationException
     {
         try (Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
             Integer parentId = ownerObjectLsid == null ? null : ensureObject(container, ownerObjectLsid);
-            for (ObjectProperty oprop : properties)
+            HashMap<String, PropertyDescriptor> descriptors = new HashMap<>();
+            HashMap<String, Integer> objects = new HashMap<>();
+            List<ValidationError> errors = new ArrayList<>();
+
+            ValidatorContext validatorCache = new ValidatorContext(container, user);
+
+            for (ObjectProperty property : properties)
             {
-                oprop.setObjectOwnerId(parentId);
+                if (null == property)
+                    continue;
+
+                property.setObjectOwnerId(parentId);
+
+                PropertyDescriptor pd = descriptors.get(property.getPropertyURI());
+                if (0 == property.getPropertyId())
+                {
+                    if (null == pd)
+                    {
+                        PropertyDescriptor pdIn = new PropertyDescriptor(property.getPropertyURI(), property.getPropertyType(), property.getName(), container);
+                        pdIn.setFormat(property.getFormat());
+                        pd = getPropertyDescriptor(pdIn.getPropertyURI(), pdIn.getContainer());
+
+                        if (null == pd)
+                            pd = ensurePropertyDescriptor(pdIn);
+
+                        descriptors.put(property.getPropertyURI(), pd);
+                    }
+                    property.setPropertyId(pd.getPropertyId());
+                }
+                if (0 == property.getObjectId())
+                {
+                    Integer objectId = objects.get(property.getObjectURI());
+                    if (null == objectId)
+                    {
+                        // I'm assuming all properties are in the same container
+                        objectId = ensureObject(property.getContainer(), property.getObjectURI(), property.getObjectOwnerId());
+                        objects.put(property.getObjectURI(), objectId);
+                    }
+                    property.setObjectId(objectId);
+                }
+                if (pd == null)
+                {
+                    pd = getPropertyDescriptor(property.getPropertyId());
+                }
+                if (!skipValidation)
+                {
+                    validateProperty(PropertyService.get().getPropertyValidators(pd), pd, property, errors, validatorCache);
+                }
             }
-            insertProperties(container, Arrays.asList(properties), skipValidation);
+
+            if (!errors.isEmpty())
+                throw new ValidationException(errors);
+
+            insertPropertiesBulk(container, List.of(properties), insertNullValues);
 
             transaction.commit();
         }
@@ -2104,8 +2113,7 @@ public class OntologyManager
 
     public static List<Domain> getDomainsForPropertyDescriptor(Container container, PropertyDescriptor pd)
     {
-        List<? extends Domain> domainsInContainer = PropertyService.get().getDomains(container);
-        return domainsInContainer
+        return PropertyService.get().getDomains(container)
             .stream()
             .filter(d -> null != d.getPropertyByURI(pd.getPropertyURI()))
             .collect(Collectors.toList());
@@ -2264,7 +2272,6 @@ public class OntologyManager
         try (Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
             try
-
             {
                 deleteObjectsOfType(domainURI, c);
                 deleteDomain(domainURI, c);
@@ -2284,8 +2291,7 @@ public class OntologyManager
             throws ChangePropertyDescriptorException
     {
         validatePropertyDescriptor(pd);
-        DbScope scope = getExpSchema().getScope();
-        try (Transaction transaction = scope.ensureTransaction())
+        try (Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
             DomainDescriptor dexist = ensureDomainDescriptor(dd);
 
@@ -2422,8 +2428,7 @@ public class OntologyManager
         return pd;
     }
 
-
-    public static ObjectProperty updateObjectProperty(User user, Container container, PropertyDescriptor pd, String lsid, Object value, @Nullable ExpObject expObject) throws ValidationException
+    public static ObjectProperty updateObjectProperty(User user, Container container, PropertyDescriptor pd, String lsid, Object value, @Nullable ExpObject expObject, boolean insertNullValues) throws ValidationException
     {
         ObjectProperty oprop;
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
@@ -2431,10 +2436,10 @@ public class OntologyManager
             OntologyManager.deleteProperty(lsid, pd.getPropertyURI(), container, pd.getContainer());
 
             oprop = new ObjectProperty(lsid, container, pd, value);
-            if (value != null)
+            if (value != null || insertNullValues)
             {
                 oprop.setPropertyId(pd.getPropertyId());
-                OntologyManager.insertProperties(container, expObject == null ? lsid : expObject.getLSID(), oprop);
+                OntologyManager.insertProperties(container, user, expObject == null ? lsid : expObject.getLSID(), false, insertNullValues, oprop);
             }
             else
             {
@@ -2616,7 +2621,7 @@ public class OntologyManager
             assertNull(getOntologyObject(c, childObjectLsid));
 
             m = getProperties(c, oChild.getObjectURI());
-            assertTrue(null == m || m.size() == 0);
+            assertEquals(0, m.size());
         }
 
         @Test
@@ -2805,7 +2810,8 @@ public class OntologyManager
         {
             deleteMoveTestContainers();
 
-            Container proj1 = ContainerManager.ensureContainer("/_ontMgrTestP1");
+            String projectName = "_ontMgrTestP1";
+            Container proj1 = ContainerManager.ensureContainer(projectName);
             String p1Path = proj1.getPath() + "/";
 
             Container fldr1a = ContainerManager.ensureContainer(p1Path + "Fa");
@@ -2817,39 +2823,34 @@ public class OntologyManager
             defineCrossFolderProperties(fldr1aa, fldr1b);
             defineCrossFolderProperties(fldr1aaa, fldr1b);
 
-            deleteContainers(TestContext.get().getUser(), "/_ontMgrTestP1/Fb",
-                "/_ontMgrTestP1/Fa/Faa/Faaa", "/_ontMgrTestP1/Fa/Faa", "/_ontMgrTestP1/Fa", "/_ontMgrTestP1");
+            deleteProjects( projectName);
         }
 
         private void deleteMoveTestContainers()
         {
-            deleteContainers(TestContext.get().getUser(),
-                "/_ontMgrTestP2/Fc", "/_ontMgrTestP1/Fb",
-                "/_ontMgrTestP1/Fa/Faa/Faaa", "/_ontMgrTestP2/Fa/Faa/Faaa",
-                "/_ontMgrTestP1/Fa/Faa", "/_ontMgrTestP2/Fa/Faa",
-                "/_ontMgrTestP1/Fa", "/_ontMgrTestP2/Fa",
-                "/_ontMgrTestP2/_ontMgrDemotePromoteFa/Faa/Faaa", "/_ontMgrTestP2/_ontMgrDemotePromoteFa/Faa", "/_ontMgrTestP2/_ontMgrDemotePromoteFa",
-                "/_ontMgrTestP2", "/_ontMgrTestP1",
-                "/_ontMgrDemotePromoteFc", "/_ontMgrDemotePromoteFb", "/_ontMgrDemotePromoteFa/Faa/Faaa", "/_ontMgrDemotePromoteFa/Faa", "/_ontMgrDemotePromoteFa",
-                "/Fa/Faa/Faaa", "/Fa/Faa", "/Fa"
+            // Remove all projects. Subfolders will be deleted when project is removed.
+            deleteProjects(
+                "/_ontMgrTestP1",
+                "/_ontMgrTestP2",
+                "/_ontMgrDemotePromoteFa",
+                "/_ontMgrDemotePromoteFb",
+                "/_ontMgrDemotePromoteFc",
+                "/Fa"
             );
         }
 
-        private void deleteContainers(User user, String... paths)
+        private void deleteProjects(String... projectNames)
         {
-            for (String path : paths)
-                deleteContainerIfExists(user, path);
+            for (String path : projectNames)
+            {
+                Container c = ContainerManager.getForPath(path);
 
-            for (String path : paths)
+                if (null != c)
+                    ContainerManager.deleteAll(c, TestContext.get().getUser());
+            }
+
+            for (String path : projectNames)
                 assertNull("Container " + path + " was not deleted", ContainerManager.getForPath(path));
-        }
-
-        private void deleteContainerIfExists(User user, String path)
-        {
-            Container c = ContainerManager.getForPath(path);
-
-            if (null != c)
-                assertTrue(ContainerManager.delete(c, user));
         }
 
         @Test
@@ -3313,7 +3314,7 @@ public class OntologyManager
         executor.execute(sql, newProjId, projectId, container.getId(), newProjId);
 
         // now check to see if there is already an existing descriptor in the target (correct) project.
-        // this can happen if a folder containning a descriptor is moved to another project
+        // this can happen if a folder containing a descriptor is moved to another project
         // and the OntologyManager's containerMoved handler fails to fire for some reason. (note not in transaction)
         //  If this is the case, the descriptor is redundant and it should be deleted, after we move the objects that depend on it.
 
