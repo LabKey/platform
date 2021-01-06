@@ -24,6 +24,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.StashingResultsFactory;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -40,8 +41,10 @@ import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -146,12 +149,13 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                         TableSelector ts = new TableSelector(dataTable, new SimpleFilter(FieldKey.fromParts("DataId"), data.getRowId()), new Sort("RowId"));
                         // Be sure to request lookup values and other renderer-required info, see issue 36746
                         ts.setForDisplay(true);
-                        Results results = ts.getResults();
-                        if (results.getSize() == 0)
-                            return;
 
-                        try
+                        try (var factory = new StashingResultsFactory(ts))
                         {
+                            Results results = factory.get();
+                            if (results.getSize() == 0)
+                                return;
+
                             File tempFile = File.createTempFile(FileUtil.getBaseName(FileUtil.getFileName(dataFile)), ".tsv");
 
                             // Figure out the subset of columns to actually export in the TSV, see issue 36746
@@ -165,7 +169,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                                 }
                             }
 
-                            try (TSVGridWriter writer = new TSVGridWriter(results, displayColumns))
+                            try (TSVGridWriter writer = new TSVGridWriter(factory, displayColumns))
                             {
                                 writer.setColumnHeaderType(ColumnHeaderType.FieldKey);
                                 writer.write(tempFile);
@@ -173,7 +177,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
 
                             FileUtils.copyFile(tempFile, out);
                         }
-                        catch (Exception e)
+                        catch (IOException | SQLException e)
                         {
                             throw new ExperimentException("Problem creating TSV grid for run " + run.getName() + "(lsid: " + run.getLSID() + ")", e);
                         }
@@ -182,5 +186,4 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
             }
         }
     }
-
 }
