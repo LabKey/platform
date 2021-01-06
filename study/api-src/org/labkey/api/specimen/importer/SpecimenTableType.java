@@ -1,6 +1,4 @@
-package org.labkey.study.importer;
-
-import org.labkey.api.specimen.importer.ImportableColumn;
+package org.labkey.api.specimen.importer;
 
 import java.util.Collection;
 
