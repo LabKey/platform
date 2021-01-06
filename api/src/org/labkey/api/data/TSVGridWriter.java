@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.view.HttpView;
 
 import java.io.File;
@@ -50,9 +49,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     }
 
     /**
-     * Create a TSVGridWriter for a ResultsFactory and a set of DisplayColumns.
-     * You can use use {@link QueryService#getColumns(TableInfo, Collection, Collection)}
-     * to obtain a fieldMap which will include any extra ColumnInfo required by the selected DisplayColumns.
+     * Create a TSVGridWriter given a ResultsFactory and a set of DisplayColumns.
      *
      * @param factory ResultsFactory (supplier of ResultSet/Map<FieldKey,ColumnInfo>).
      * @param displayColumns The DisplayColumns.
@@ -142,26 +139,21 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     {
         try
         {
-            writeBody(_results);
+            RenderContext ctx = getRenderContext();
+            ctx.setResults(_results);
+
+            // Output all the data cells
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(_results);
+
+            while (_results.next())
+            {
+                ctx.setRow(factory.getRowMap(_results));
+                writeRow(ctx, _displayColumns);
+            }
         }
         catch (SQLException ex)
         {
             throw new RuntimeSQLException(ex);
-        }
-    }
-
-    private void writeBody(Results results) throws SQLException
-    {
-        RenderContext ctx = getRenderContext();
-        ctx.setResults(results);
-
-        // Output all the data cells
-        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
-
-        while (results.next())
-        {
-            ctx.setRow(factory.getRowMap(results));
-            writeRow(ctx, _displayColumns);
         }
     }
 

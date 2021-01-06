@@ -298,7 +298,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     }
 
     @Override
-    public Results get() throws Exception
+    public Results get()
     {
         return getResults();
     }
