@@ -1609,20 +1609,6 @@ api/src/org/labkey/api/writer/WriterFactory.java -text
 api/src/org/labkey/api/writer/ZipFile.java -text
 api/src/org/labkey/api/writer/ZipUtil.java -text
 api/webapp/clientapi.lib.xml -text
-api/webapp/clientapi/core/ActionURL.js -text
-api/webapp/clientapi/core/Assay.js -text
-api/webapp/clientapi/core/Experiment.js -text
-api/webapp/clientapi/core/Filter.js -text
-api/webapp/clientapi/core/GetData.js -text
-api/webapp/clientapi/core/Message.js -text
-api/webapp/clientapi/core/MultiRequest.js -text
-api/webapp/clientapi/core/ParticipantGroup.js -text
-api/webapp/clientapi/core/Query.js -text
-api/webapp/clientapi/core/Report.js -text
-api/webapp/clientapi/core/Security.js -text
-api/webapp/clientapi/core/Specimen.js -text
-api/webapp/clientapi/core/Utils.js -text
-api/webapp/clientapi/core/Visualization.js -text
 api/webapp/clientapi/dom/DataRegion.js -text
 api/webapp/clientapi/dom/Form.js -text
 api/webapp/clientapi/dom/GetData.js -text
@@ -1890,7 +1876,6 @@ core/resources/credits/executables.txt -text
 core/resources/credits/jars.txt -text
 core/resources/credits/scripts.txt -text
 core/resources/credits/tomcat_jars.txt -text
-core/resources/schemas/dbscripts/postgresql/core-18.20-18.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-0.00-16.30.sql -text
@@ -1899,7 +1884,6 @@ core/resources/schemas/dbscripts/postgresql/prop-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/test-0.00-13.20.sql -text
 core/resources/schemas/dbscripts/postgresql/test-create.sql -text
 core/resources/schemas/dbscripts/postgresql/test-drop.sql -text
-core/resources/schemas/dbscripts/sqlserver/core-18.20-18.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_install.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_install_1.00.23696.sql -text
@@ -1911,8 +1895,6 @@ core/resources/scripts/ExtAdapter.js -text
 core/resources/scripts/labkey/adapter/ext4Bridge.js -text
 core/resources/views/ModulePropertyAdmin.html -text
 core/resources/views/ModulePropertyAdmin.view.xml -text
-core/script-fragments/labkey/FieldKey.footer.js -text
-core/script-fragments/labkey/FieldKey.header.js -text
 core/src/org/labkey/core/admin/AbstractFileSiteSettingsAction.java -text
 core/src/org/labkey/core/admin/ActionsExceptionsView.java -text
 core/src/org/labkey/core/admin/ActionsTsvWriter.java -text
@@ -2128,10 +2110,8 @@ devtools/src/org/labkey/devtools/view/tags.jsp -text
 experiment/module.properties -text
 experiment/resources/queries/exp/RunGroups/NameOnly.qview.xml -text
 experiment/resources/queries/exp/SampleSets/NameOnly.qview.xml -text
-experiment/resources/schemas/dbscripts/postgresql/exp-18.20-18.30.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
-experiment/resources/schemas/dbscripts/sqlserver/exp-18.20-18.30.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-drop.sql -text
 experiment/resources/schemas/exp.xml -text
 experiment/src/org/labkey/experiment/addXarFile.jsp -text
@@ -3169,10 +3149,8 @@ study/gwtsrc/gwt/client/org/labkey/study/designer/client/VaccinePanel.java -text
 study/gwtsrc/gwt/public/org/labkey/study/designer/Designer.html -text
 study/gwtsrc/gwt/StudyApplication.gwt.xml -text
 study/module.properties -text
-study/resources/schemas/dbscripts/postgresql/study-18.20-18.30.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
-study/resources/schemas/dbscripts/sqlserver/study-18.20-18.30.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
 study/resources/web/progress-report.lib.xml -text

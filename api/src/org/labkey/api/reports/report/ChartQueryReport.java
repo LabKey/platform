@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports.report;
 
+import org.labkey.api.annotations.RemoveIn21_7;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
@@ -26,9 +27,10 @@ import org.labkey.api.view.ViewContext;
 
 /**
  * We don't need to render this report as of 19.1 but we need to be able to register an instance of it so
- * it can be converted to a javascript report. This class can be deleted in the 21.2 release.
+ * it can be converted to a javascript report. This class can be deleted in the 21.7 release.
  */
 @Deprecated
+@RemoveIn21_7
 public class ChartQueryReport extends ChartReport
 {
     public static final String TYPE = "ReportService.chartQueryReport";

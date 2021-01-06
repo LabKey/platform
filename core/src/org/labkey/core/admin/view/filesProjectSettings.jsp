@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -75,9 +76,9 @@
     String folderSetup = getActionURL().getParameter("folderSetup");
     boolean isFolderSetup = "true".equalsIgnoreCase(folderSetup);
     String cancelButtonText = isFolderSetup ? "Next" : "Cancel";
-    String cancelButtonUrl = isFolderSetup && getActionURL().getReturnURL() != null
-            ? getActionURL().getReturnURL().toString()
-            : getContainer().getStartURL(getUser()).toString();
+    URLHelper cancelButtonUrl = isFolderSetup && getActionURL().getReturnURL() != null
+            ? getActionURL().getReturnURL()
+            : getContainer().getStartURL(getUser());
     ActionURL redirectToPipeline = urlProvider(PipelineUrls.class).urlBegin(getContainer());
     boolean isCurrentFileRootCloud = FileRootProp.cloudRoot.name().equals(bean.getFileRootOption());
     boolean isCurrentFileRootManaged = !(isCurrentFileRootCloud &&

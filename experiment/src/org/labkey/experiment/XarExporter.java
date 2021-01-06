@@ -550,11 +550,6 @@ public class XarExporter
 
     private void addSampleType(String cpasType) throws ExperimentException
     {
-        if (_sampleSetLSIDs.contains(cpasType))
-        {
-            return;
-        }
-        _sampleSetLSIDs.add(cpasType);
         ExpSampleType sampleType = SampleTypeService.get().getSampleType(cpasType);
         addSampleType(sampleType);
     }
@@ -563,10 +558,13 @@ public class XarExporter
     {
         final String PLACEHOLDER_SUFFIX = "sfx";
 
-        if (sampleType == null)
+        if (sampleType == null || _sampleSetLSIDs.contains(sampleType.getLSID()))
         {
             return;
         }
+
+        _sampleSetLSIDs.add(sampleType.getLSID());
+
         if (_archive.getSampleSets() == null)
         {
             _archive.addNewSampleSets();
