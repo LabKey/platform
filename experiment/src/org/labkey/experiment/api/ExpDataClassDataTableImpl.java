@@ -340,7 +340,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 {
                     // The column in the physical table has a "_MVIndicator" suffix, but we want to expose
                     // it with a "MVIndicator" suffix (no underscore)
-                    var mvCol = StorageProvisioner.getMvIndicatorColumn(extTable, dp.getPropertyDescriptor(), "No MV column found for: " + dp.getName());
+                    var mvCol = StorageProvisioner.get().getMvIndicatorColumn(extTable, dp.getPropertyDescriptor(), "No MV column found for: " + dp.getName());
                     var wrappedMvCol = wrapColumnFromJoinedTable(wrapped.getName() + MvColumn.MV_INDICATOR_SUFFIX, mvCol);
                     wrappedMvCol.setHidden(true);
                     wrappedMvCol.setMvIndicatorColumn(true);

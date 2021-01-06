@@ -34,6 +34,7 @@ import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -389,7 +390,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
         else
         {
-            colNames = new CaseInsensitiveHashSet();
+            // Preserve casing by using wrapped CaseInsensitiveHashMap instead of CaseInsensitiveHashSet
+            colNames = Sets.newCaseInsensitiveHashSet();
             for (Map<String,Object> row : rows)
                 colNames.addAll(row.keySet());
         }

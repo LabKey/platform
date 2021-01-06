@@ -17,6 +17,7 @@ issues/node_modules
 # These files are copied to this location
 core/resources/scripts/Ext.js
 core/resources/scripts/Ext4.js
+core/resources/web/clientapi
 
 # Auto-generated files
 core/resources/web/core/css

@@ -199,9 +199,9 @@ public class ApiModule extends CodeOnlyModule
     }
 
     @Override
-    public @NotNull Collection<Factory<Class>> getIntegrationTestFactories()
+    public @NotNull Collection<Factory<Class<?>>> getIntegrationTestFactories()
     {
-        List<Factory<Class>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        List<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
         //TODO: No test cases.
         //list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
         return list;

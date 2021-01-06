@@ -756,9 +756,10 @@ public class JunitController extends SpringActionController
     }
 
 
-    private static void outputStackTrace(Throwable t, PrintWriter out)
+    private static List<String> filterStackTrace(Throwable t)
     {
-        out.println(h(t.toString()));
+        List<String> lines = new ArrayList<>();
+        lines.add(t.toString());
 
         for (StackTraceElement ste : t.getStackTrace())
         {
@@ -767,7 +768,23 @@ public class JunitController extends SpringActionController
             if (line.startsWith("org.junit.internal.") || line.startsWith("sun.reflect.") || line.startsWith("java.lang.reflect."))
                 break;
 
-            out.println(PageFlowUtil.filter("\tat " + ste.toString(), true));
+            lines.add("\tat " + ste.toString());
+        }
+
+        return lines;
+    }
+
+    public static String renderTrace(Throwable t)
+    {
+        return StringUtils.join(filterStackTrace(t), "\n");
+    }
+
+    private static void outputStackTrace(Throwable t, PrintWriter out)
+    {
+        List<String> lines = filterStackTrace(t);
+        for (String line : lines)
+        {
+            out.println(PageFlowUtil.filter(line, true));
         }
     }
 

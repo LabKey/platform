@@ -247,8 +247,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
     public List<Module> doInit(List<File> explodedModuleDirs)
     {
         List<Map.Entry<File,File>> moduleDirs = explodedModuleDirs.stream()
-                .map(dir -> new AbstractMap.SimpleEntry<File,File>(dir,null))
-                .collect(Collectors.toList());
+            .map(dir -> new AbstractMap.SimpleEntry<File,File>(dir,null))
+            .collect(Collectors.toList());
         return doInitWithSourceModule(moduleDirs);
     }
 
@@ -291,7 +291,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         public static ExplodedModuleService newInstance(Object obj)
         {
-            if (!"org.labkey.bootstrap.LabKeyBootstrapClassLoader".equals(obj.getClass().getName()) && !"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader".equals(obj.getClass().getName()))
+            if (!"org.labkey.bootstrap.LabKeyBootstrapClassLoader".equals(obj.getClass().getName()) &&
+                    !"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader".equals(obj.getClass().getName()) &&
+                    !"org.labkey.embedded.LabKeySpringBootClassLoader".equals(obj.getClass().getName()))
                 return null;
             Class interfaces[] = new Class[] {ExplodedModuleService.class};
             return (ExplodedModuleService)java.lang.reflect.Proxy.newProxyInstance(ExplodedModuleService.class.getClassLoader(), interfaces, new _Proxy(obj));
@@ -387,7 +389,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 // avoid error in startup, DefaultModule does not expect to see module with same name initialized again
                 ((DefaultModule)moduleCreated).unregister();
                 _moduleFailures.remove(moduleCreated.getName());
-                initializeAndPruneModules(moduleList);
+                pruneModules(moduleList);
+                initializeModules(moduleList);
 
                 Throwable t = _moduleFailures.get(moduleCreated.getName());
                 if (null != t)
@@ -479,6 +482,12 @@ public class ModuleLoader implements Filter, MemTrackerListener
         if (getTableInfoModules().getTableType() == DatabaseTableType.NOT_IN_DB)
             _newInstall = true;
 
+        // Prune modules before upgrading core module, see Issue 42150
+        synchronized (_modulesLock)
+        {
+            pruneModules(_modules);
+        }
+
         boolean coreRequiredUpgrade = upgradeCoreModule();
 
         // Issue 40422 - log server and session GUIDs during startup. Do it after the core module has
@@ -488,7 +497,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         synchronized (_modulesLock)
         {
             // use _modules here because this List<> needs to be modifiable
-            initializeAndPruneModules(_modules);
+            initializeModules(_modules);
         }
 
         if (!_duplicateModuleErrors.isEmpty())
@@ -618,21 +627,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
         return !PRODUCTION_BUILD_TYPE.equalsIgnoreCase(module.getBuildType());
     }
 
-    /** Goes through all the modules, initializes them, and removes the ones that fail to start up */
-    private void initializeAndPruneModules(List<Module> modules)
+    /** Enumerates all the modules, removing the ones that don't support the core database */
+    private void pruneModules(List<Module> modules)
     {
         Module core = getCoreModule();
-
-        /*
-         * NOTE: Module.initialize() really should not ask for resources from _other_ modules,
-         * as they may have not initialized themselves yet.  However, we did not enforce that
-         * so this cross-module behavior may have crept in.
-         *
-         * To help mitigate this a little, we remove modules that do not support this DB type
-         * before calling initialize().
-         *
-         * NOTE: see FolderTypeManager.get().registerFolderType() for an example of enforcing this
-         */
 
         ListIterator<Module> iterator = modules.listIterator();
         Module.SupportedDatabase coreType = Module.SupportedDatabase.get(CoreSchema.getInstance().getSqlDialect());
@@ -649,9 +647,26 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 removeModule(iterator, module, !AppProps.getInstance().isDevMode(), e);
             }
         }
+    }
+
+    /** Enumerates all remaining modules, initializing them and removing any that fail to initialize */
+    private void initializeModules(List<Module> modules)
+    {
+        Module core = getCoreModule();
+
+        /*
+         * NOTE: Module.initialize() really should not ask for resources from _other_ modules,
+         * as they may have not initialized themselves yet.  However, we did not enforce that
+         * so this cross-module behavior may have crept in.
+         *
+         * To help mitigate this a little, we remove modules that do not support this DB type
+         * before calling initialize().
+         *
+         * NOTE: see FolderTypeManager.get().registerFolderType() for an example of enforcing this
+         */
 
         //initialize each module in turn
-        iterator = modules.listIterator();
+        ListIterator<Module> iterator = modules.listIterator();
         while (iterator.hasNext())
         {
             Module module = iterator.next();
@@ -1105,9 +1120,11 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
 
-    // Initialize and update the CoreModule "manually", outside the normal UI-based process. We want to change the core
-    // tables before we display pages, require login, check permissions, or initialize any of the other modules.
-    // Returns true if core module required upgrading, otherwise false
+    /**
+     * Initialize and update the Core module first. We want to change the core tables before we display pages, request
+     * login, check permissions, or initialize any of the other modules.
+     * @return true if core module required upgrading, otherwise false
+     */
     private boolean upgradeCoreModule() throws ServletException
     {
         Module coreModule = getCoreModule();
