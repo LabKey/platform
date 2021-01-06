@@ -1762,10 +1762,31 @@ public class OntologyManager
         {
             try
             {
-                dd = Table.insert(null, getTinfoDomainDescriptor(), ddIn);
-                // We may have a cached miss that we need to clear
-                uncache(dd);
-                return getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
+                // ensureDomainDescriptor() shouldn't fail if there is a race condition, however Table.insert() will throw if row exists, so can't use that
+                // also a constraint violation will kill any current transaction
+                // CONSIDER to generalize add an option to check for existing row to Table.insert(ColumnInfo[] keyCols, Object[] keyValues)
+                String timestamp = getExpSchema().getSqlDialect().getSqlTypeName(JdbcType.TIMESTAMP);
+                String templateJson = null==ddIn.getTemplateInfo() ? null : ddIn.getTemplateInfo().toJSON();
+                SQLFragment insert = new SQLFragment(
+                        "INSERT INTO " + getTinfoDomainDescriptor().getSelectName() +
+                        " (Name, DomainURI, Description, Container, Project, StorageTableName, StorageSchemaName, ModifiedBy, Modified, TemplateInfo)\n" +
+                        "SELECT ?,?,?,?,?,?,?,CAST(NULL AS INT),CAST(NULL AS " + timestamp + "),?\n",
+                        ddIn.getName(), ddIn.getDomainURI(), ddIn.getDescription(), ddIn.getContainer(), ddIn.getProject(), ddIn.getStorageTableName(), ddIn.getStorageSchemaName(), templateJson)
+                .append("WHERE NOT EXISTS (SELECT * FROM "  + getTinfoDomainDescriptor().getSelectName() + " x WHERE x.DomainURI=? AND x.Project=?)\n")
+                .add(ddIn.getDomainURI()).add(ddIn.getProject());
+                int count = new SqlExecutor(getExpSchema().getScope()).execute(insert);
+
+                // alternately we could reselect rowid and then we wouldn't need this separate round trip
+                dd = fetchDomainDescriptorFromDB(ddIn.getDomainURI(), ddIn.getContainer());
+                if (count > 0)
+                {
+                    if (null == dd) // don't expect this
+                        throw OptimisticConflictException.create(Table.ERROR_DELETED);
+                    // We may have a cached miss that we need to clear
+                    uncache(dd);
+                    return dd;
+                }
+                // fall through to update case()
             }
             catch (RuntimeSQLException x)
             {
