@@ -1747,6 +1747,9 @@ public class ReportsController extends SpringActionController
                 defaultURL = new ReportUrlsImpl().urlReportDetails(getContainer(), r);
             }
 
+            if (defaultURL == null)
+                defaultURL = new ActionURL(ManageViewsAction.class, getContainer());
+
             return uploadForm.getReturnActionURL(defaultURL);
         }
     }
@@ -2232,13 +2235,6 @@ public class ReportsController extends SpringActionController
         {
             initialize(form);
             return new JspView<>("/org/labkey/query/reports/view/createQueryReport.jsp", form, errors);
-        }
-
-        @Override
-        public void initialize(QueryReportForm form) throws Exception
-        {
-//            form.setReturnUrl(getViewContext().getActionURL());
-            super.initialize(form);
         }
 
         @Override
