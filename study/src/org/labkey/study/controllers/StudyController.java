@@ -2509,11 +2509,13 @@ public class StudyController extends BaseStudyController
                 return new HtmlView("Error", HtmlString.of("Cannot insert dataset data in this folder.  Use a sub-study to import data."));
 
             if (_def.getTypeURI() == null)
-            throw new NotFoundException("Dataset is not yet defined.");
+                throw new NotFoundException("Dataset is not yet defined.");
 
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
                 return new RequirePipelineView(_study, true, errors);
 
+            setShowImportOptions(true);
+            setSuccessMessageSuffix("imported");  //Works for when the merge option is selected (may include updates) vs default "inserted"
             return getDefaultImportView(form, errors);
         }
 
@@ -2537,8 +2539,7 @@ public class StudyController extends BaseStudyController
                 columnMap.put(_form.getSequenceNum(), column);
             }
 
-            Pair<List<String>, UploadLog> result;
-            result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, _importLookupByAlternateKey, file, originalName, columnMap, errors);
+            Pair<List<String>, UploadLog> result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, _importLookupByAlternateKey, file, originalName, columnMap, errors, _form.getInsertOption(), auditBehaviorType);
 
             if (!result.getKey().isEmpty())
             {
@@ -5737,6 +5738,7 @@ public class StudyController extends BaseStudyController
         private String _participantId;
         private String _sequenceNum;
         private String _name;
+        private QueryUpdateService.InsertOption _insertOption = QueryUpdateService.InsertOption.IMPORT;
 
         public int getDatasetId()
         {
@@ -5806,6 +5808,16 @@ public class StudyController extends BaseStudyController
         public void setName(String name)
         {
             _name = name;
+        }
+
+        public QueryUpdateService.InsertOption getInsertOption()
+        {
+            return _insertOption;
+        }
+
+        public void setInsertOption(QueryUpdateService.InsertOption insertOption)
+        {
+            _insertOption = insertOption;
         }
     }
 

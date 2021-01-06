@@ -62,7 +62,6 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -2107,7 +2106,8 @@ public class QueryView extends WebPartView<Object>
 
         if (_customView != null && _customView.getErrors() != null)
         {
-            rgn.addMessageSupplier(dataRegion -> _customView.getErrors().stream().map(e -> new DataRegion.Message(PageFlowUtil.filter(e), DataRegion.MessageType.ERROR, DataRegion.MessagePart.view))
+            rgn.addMessageSupplier(dataRegion -> _customView.getErrors().stream()
+                    .map(e -> new DataRegion.Message(e, DataRegion.MessageType.ERROR, DataRegion.MessagePart.view))
                     .collect(Collectors.toList()));
         }
 
@@ -3245,7 +3245,7 @@ public class QueryView extends WebPartView<Object>
                 {
                     if (null != getContainerFilter())
                         queryDef.setContainerFilter(getContainerFilter());
-                    ti = queryDef.getTable(getSchema(), errors, true, false, false);
+                    ti = queryDef.getTable(getSchema(), errors, true, false);
                 }
             }
 

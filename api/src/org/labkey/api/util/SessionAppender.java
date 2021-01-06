@@ -33,8 +33,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.WeakHashMap;
 
 /**
  * User: matthewb
@@ -67,18 +67,15 @@ public class SessionAppender extends AbstractAppender
 
         final String key;
         boolean on;
-        final Map<LogEvent, String> eventIdMap = new ConcurrentReferenceHashMap<>(16, ConcurrentReferenceHashMap.ReferenceType.WEAK)
+        final Map<LogEvent, String> eventIdMap = Collections.synchronizedMap(new LinkedHashMap<>()
         {
+            // Safeguard against runaway size.
             @Override
-            public String put(LogEvent key, String value)
+            protected boolean removeEldestEntry(Map.Entry<LogEvent, String> eldest)
             {
-                // Safeguard against runaway size. ConcurrentReferenceHashMap does not have removeEldestEntry so have
-                // to randomly remove an entry
-                if (size() > 1000)
-                    remove(0);
-                return super.put(key, value);
+                return size() > 1000;
             }
-        };
+        });
         int eventId=0;
     }
 
