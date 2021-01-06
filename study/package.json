@@ -15,6 +15,6 @@
     "@labkey/components": "1.11.2"
   },
   "devDependencies": {
-    "@labkey/build": "0.5.1"
+    "@labkey/build": "0.5.1-fb-buildPostcssConfig.0"
   }
 }
