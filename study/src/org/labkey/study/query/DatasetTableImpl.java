@@ -1242,4 +1242,5 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             }
         }
         return cols;
-    }}
+    }
+}

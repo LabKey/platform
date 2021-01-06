@@ -137,32 +137,6 @@ public class DatasetController extends BaseStudyController
             if (newRecord != null)
             {
                 newData = DatasetAuditProvider.decodeFromDataMap(newRecord);
-                String lsid = newData.get("lsid");
-                if (lsid != null)
-                {
-                    // If we have a current record, display it
-                    Dataset ds = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), datasetId);
-                    if (null != ds)
-                    {
-                        TableInfo datasetTable = ds.getTableInfo(getUser());
-
-                        TableViewForm objForm = new TableViewForm(datasetTable);
-                        objForm.set("lsid", lsid);
-                        objForm.set(DatasetDefinition.DATASETKEY, datasetId);
-
-                        DetailsView objView = new DetailsView(objForm);
-
-                        view.addView(objView);
-                    }
-                }
-                else
-                {
-                    view.addView(new NoRecordView());
-                }
-            }
-            else
-            {
-                view.addView(new NoRecordView());
             }
 
             if (oldRecord != null)
@@ -188,6 +162,10 @@ public class DatasetController extends BaseStudyController
                 }
                 view.addView(new AuditChangesView(comment, oldData, newData));
             }
+            else
+            {
+                view.addView(new NoRecordView());
+            }
 
             return view;
         }
@@ -197,7 +175,7 @@ public class DatasetController extends BaseStudyController
             @Override
             protected void renderInternal(Object model, PrintWriter out)
             {
-                out.write("<p>No current record found</p>");
+                out.write("<p>No additional details recorded</p>");
             }
         }
 

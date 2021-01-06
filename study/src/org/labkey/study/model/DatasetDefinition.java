@@ -41,8 +41,10 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
+import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -62,6 +64,7 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AliasedColumn;
@@ -71,6 +74,8 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
@@ -1272,7 +1277,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             _storage = def.getStorageTableInfo();
             _template = getTemplateTableInfo();
             PHI maxContainedPhi = PHI.NotPHI;
-            
+
             // ParticipantId
 
             {
@@ -1576,15 +1581,51 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             return m;
         }
 
-        @Override
-        public CaseInsensitiveHashSet skipProperties()
-        {
-            return null;
-        }
-
         public PHI getMaxContainedPhi()
         {
             return _maxContainedPhi;
+        }
+
+        @Override
+        public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, List<Map<String, Object>>[] params)
+        {
+            // Only add an event if Detailed audit logging is enabled
+            if (AuditBehaviorType.DETAILED != auditBehavior)
+                return;
+
+                List<Map<String, Object>> rows = params[0];
+            List<Map<String, Object>> updatedRows = params.length > 1 ? params[1] : Collections.emptyList();
+
+            for (int i=0; i < rows.size(); i++)
+            {
+                Map<String, Object> row = rows.get(i);
+                Map<String, Object> updatedRow = updatedRows.isEmpty() ? Collections.emptyMap() : updatedRows.get(i);
+
+                StudyServiceImpl.addDatasetAuditEvent(user, DatasetDefinition.this, row, updatedRow);
+            }
+        }
+
+        @Override
+        public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, Map<String, Object> parameters)
+        {
+            // Only add an event if Detailed audit logging is enabled
+            if (AuditBehaviorType.DETAILED != auditBehavior)
+                return;
+
+            Map<String, Object> oldRow = null;
+            //Leaving this block as reference for getting update diff
+            // if (auditAction == QueryService.AuditAction.MERGE)
+            // {
+            //      String lsid = String.valueOf(parameters.get("lsid"));
+            //      oldRow = DatasetDefinition.this.getDatasetRow(user, lsid);
+            // }
+            StudyServiceImpl.addDatasetAuditEvent(user, DatasetDefinition.this, oldRow, parameters);
+        }
+
+        @Override
+        public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
+        {
+            return new TableInsertDataIteratorBuilder(data, this, null);
         }
     }
 
@@ -2108,8 +2149,15 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         b.setKeyList(lsids);
 
         Container target = getDataSharingEnum() == DataSharing.NONE ? getContainer() : getDefinitionContainer();
-        StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
-        return ((UpdateableTableInfo)table).persistRows(etl, context);
+        DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
+
+        if (context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior) == AuditBehaviorType.DETAILED)
+            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(this.getTableInfo(user, false), dib, context.getInsertOption() == QueryUpdateService.InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, target);
+
+        dib = ((UpdateableTableInfo)table).persistRows(dib, context);
+        CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet("Created", "CreatedBy");
+        ((TableInsertDataIteratorBuilder)dib).setDontUpdate(dontUpdate);
+        return dib;
     }
 
 
