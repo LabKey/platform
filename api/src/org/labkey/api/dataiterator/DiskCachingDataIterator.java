@@ -106,10 +106,10 @@ public class DiskCachingDataIterator extends CachingDataIterator
         {
             try
             {
-            _tempFile = File.createTempFile("buffer", "dat");
-            _tempFile.deleteOnExit();
-            _randomAccessFile = new RandomAccessFile(_tempFile, "rw");
-            _buffer = _randomAccessFile.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, 128 * 1024);
+                _tempFile = File.createTempFile("buffer", "dat");
+                _tempFile.deleteOnExit();
+                _randomAccessFile = new RandomAccessFile(_tempFile, "rw");
+                _buffer = _randomAccessFile.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, 128 * 1024);
             }
                 catch (IOException x)
             {

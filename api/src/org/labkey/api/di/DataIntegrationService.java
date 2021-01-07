@@ -96,6 +96,7 @@ public interface DataIntegrationService
         /** config params to pass to QUS insert/merge */
         public void setConfigParameters(Map<Enum,Object> config);
 
+        /** check that this Reimport configuration is valid (valid target table, valid options etc) */
         void validate(BatchValidationException ex);
         void execute(BatchValidationException ex);
         //void dryRun(BatchValidationException ex);
