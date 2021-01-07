@@ -1230,7 +1230,7 @@ public class Query
                     QueryDefinition existing = QueryService.get().getQueryDef(user, container, "lists", _name);
                     if (null != existing)
                         existing.delete(TestContext.get().getUser());
-                    QueryDefinition q = QueryService.get().createQueryDef(user, container, "lists", _name);
+                    QueryDefinition q = QueryService.get().createQueryDef(user, container, SchemaKey.fromString("lists"), _name);
                     q.setSql(_sql);
                     if (null != _metadata)
                         q.setMetadataXml(_metadata);
@@ -1436,16 +1436,28 @@ public class Query
         new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0 AS ZERO, 1 ONE, 2 AS TWO, 3 THREE, 4 FOUR, 5 FIVE, 6 SIX, NULL AS UNKNOWN)", 10, 12),
         new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6) ORDER BY twelve LIMIT 4", 9, 4),
         new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6) ORDER BY \"0::C\" LIMIT 12", 9, 12),
+        new SqlTest("SELECT seven, twelve, CASE WHEN (seven + twelve) > 6 THEN TRUE ELSE FALSE END AS big, COUNT(*) as C FROM R GROUP BY seven, twelve, big PIVOT C BY big", 9, 12), // Pivot on calculated column
         new SqlTest("SELECT seven, month, count(*) C\n" +
                 "FROM R\n" +
                 "GROUP BY seven, month\n" +
                 "PIVOT C BY month IN('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')"),
-        // Regression tests for issue 27910: pivot query summary columns not aggregated correctly
+        // Regression tests for Issue 27910: pivot query summary columns not aggregated correctly
         new SqlTest("SELECT day, month, count(*) as total, " +
                 "SUM(CASE WHEN month = 'April' THEN 1 ELSE 0 END) AS A, " +
                 "SUM(CASE WHEN month = 'May' THEN 1 ELSE 0 END) AS M " +
                 "FROM lists.R GROUP BY month, day " +
                 "PIVOT A, M BY month IN ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", 28, 7),
+        // Regression test for Issue 40618: Generate better error message when PIVOT column list can't be computed due to bad sql
+        new SqlTest("SELECT seven, COUNT(*) as C, " +
+            "CASE WHEN (twelve / seven) > 0.5 THEN 1 ELSE 0 END AS Z " + // divide by zero
+            "FROM R GROUP BY seven, Z " +
+            "PIVOT C BY Z", 0, 0),
+        // Try sub-select
+        new SqlTest("SELECT seven, COUNT(*) AS C, Z FROM " +
+            "(SELECT seven, " +
+            "CASE WHEN (twelve / seven) > 0.5 THEN 1 ELSE 0 END AS Z " + // divide by zero
+            "FROM R) " +
+            "GROUP BY seven, Z PIVOT C BY Z", 0, 0),
 
         // saved queries
         new SqlTest("Rquery",
