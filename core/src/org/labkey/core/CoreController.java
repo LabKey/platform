@@ -2447,7 +2447,7 @@ public class CoreController extends SpringActionController
 
     public class ManageQCStatesBean extends AbstractManageQCStatesBean
     {
-        ManageQCStatesBean(String returnUrl)
+        ManageQCStatesBean(ActionURL returnUrl)
         {
             super(returnUrl);
             _qcStateHandler = new CoreQCStateHandler();
@@ -2526,7 +2526,7 @@ public class CoreController extends SpringActionController
             if (AssayQCService.getProvider().supportsQC())
             {
                 return new JspView<>("/org/labkey/api/qc/view/manageQCStates.jsp",
-                        new ManageQCStatesBean(manageQCStatesForm.getReturnUrl()), errors);
+                        new ManageQCStatesBean(manageQCStatesForm.getReturnActionURL()), errors);
             }
             else
             {

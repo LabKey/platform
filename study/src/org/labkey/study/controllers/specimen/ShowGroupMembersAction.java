@@ -25,7 +25,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.UserManagementPermission;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -68,7 +67,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         User[] members = actor.getMembers(location);
 
         return new JspView<>("/org/labkey/study/view/specimen/groupMembers.jsp",
-                new GroupMembersBean(actor, location, members, form.getReturnUrl()), errors);
+                new GroupMembersBean(actor, location, members, form.getReturnActionURL()), errors);
     }
 
     @Override
@@ -237,9 +236,9 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         private LocationImpl _location;
         private User[] _members;
         private String _ldapDomain;
-        private String _returnUrl;
+        private ActionURL _returnUrl;
 
-        public GroupMembersBean(SpecimenRequestActor actor, LocationImpl location, User[] members, String returnUrl)
+        public GroupMembersBean(SpecimenRequestActor actor, LocationImpl location, User[] members, ActionURL returnUrl)
         {
             _actor = actor;
             _location = location;
@@ -268,7 +267,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
             return _ldapDomain;
         }
 
-        public String getReturnUrl()
+        public ActionURL getReturnUrl()
         {
             return _returnUrl;
         }

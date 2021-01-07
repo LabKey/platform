@@ -85,7 +85,7 @@
             <br/>
 
             <input type="hidden" name="<%=ReportDescriptor.Prop.reportId%>" value="<%=h(bean.getReportId())%>">
-            <input type="hidden" name="returnUrl" value="<%=h(bean.getReturnUrl())%>">
+            <%=generateReturnUrlFormField(bean)%>
             <%= button("Submit").submit(true) %>
             <%= button("Cancel").href(returnUrl) %>
         </labkey:form>

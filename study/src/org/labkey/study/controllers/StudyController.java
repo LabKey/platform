@@ -3303,7 +3303,7 @@ public class StudyController extends BaseStudyController
 
     public class ManageQCStatesBean extends AbstractManageQCStatesBean
     {
-        ManageQCStatesBean(String returnUrl)
+        ManageQCStatesBean(ActionURL returnUrl)
         {
             super(returnUrl);
             _qcStateHandler = new StudyQCStateHandler();
@@ -3386,7 +3386,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/api/qc/view/manageQCStates.jsp",
-                    new ManageQCStatesBean(manageQCStatesForm.getReturnUrl()), errors);
+                    new ManageQCStatesBean(manageQCStatesForm.getReturnActionURL()), errors);
         }
 
         @Override
@@ -7703,7 +7703,7 @@ public class StudyController extends BaseStudyController
                     PipelineService.get().queueJob(job);
 
                     response.put("success", true);
-                    response.put("returnUrl", PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()));
+                    response.put(ActionURL.Param.returnUrl.name(), PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()));
                 }
                 else
                 {

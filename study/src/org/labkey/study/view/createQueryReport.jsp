@@ -101,7 +101,7 @@
 <input type="hidden" id="redirectToReport" name="redirectToReport" value="true">
 <input type="hidden" id="redirectToDataset" name="redirectToDataset" value="-1">
 <input type="hidden" id="showWithDataset" name="showWithDataset" value="0">
-<input type="hidden" name="<%=ActionURL.Param.returnUrl%>" value="<%=h(bean.getSrcURL())%>">
+<%=generateReturnUrlFormField(bean.getReturnUrl())%>
 <input type="hidden" id="viewName" name="<%=QueryParam.viewName%>" value="">
 <input type="hidden" name="dataRegionName" value="<%=h(DatasetQueryView.DATAREGION)%>">
 <table>

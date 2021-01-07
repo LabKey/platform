@@ -44,23 +44,25 @@ public class CompressedInputStreamXarSource extends AbstractFileXarSource
         try (OutputStream stream = new BufferedOutputStream(byteStream))
         {
             byte[] zipBytes = _xarInputStream.readAllBytes();
+            _xarInputStream.close();
 
-            ByteArrayInputStream bais = new ByteArrayInputStream(zipBytes);
-            ZipInputStream zis = new ZipInputStream(bais);
-            ZipEntry entry;
-
-            while (null != (entry = zis.getNextEntry()))
+            try (ByteArrayInputStream bais = new ByteArrayInputStream(zipBytes); ZipInputStream zis = new ZipInputStream(bais))
             {
-                // not interested in directories, only files
-                if (!entry.isDirectory())
+                ZipEntry entry;
+
+                while (null != (entry = zis.getNextEntry()))
                 {
-                    if (entry.getName().endsWith(".xar.xml"))
+                    // not interested in directories, only files
+                    if (!entry.isDirectory())
                     {
-                        BufferedInputStream bis = new BufferedInputStream(zis);
-                        FileUtil.copyData(bis, stream);
+                        if (entry.getName().endsWith(".xar.xml"))
+                        {
+                            BufferedInputStream bis = new BufferedInputStream(zis);
+                            FileUtil.copyData(bis, stream);
+                        }
                     }
+                    zis.closeEntry();
                 }
-                zis.closeEntry();
             }
         }
         _xml = byteStream.toString(StandardCharsets.UTF_8);
