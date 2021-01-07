@@ -82,7 +82,7 @@
 
     function getReturnUrl()
     {
-        var returnUrl = LABKEY.ActionURL.getParameter('returnUrl');
+        var returnUrl = LABKEY.ActionURL.getReturnUrl();
         return (undefined == returnUrl ? "" : returnUrl);
     }
 
@@ -265,8 +265,8 @@
                 },{
                     text: 'Cancel',
                     handler: function(){
-                        if(LABKEY.ActionURL.getParameter('returnUrl')){
-                            window.location = LABKEY.ActionURL.getParameter('returnUrl');
+                        if(LABKEY.ActionURL.getReturnUrl()){
+                            window.location = LABKEY.ActionURL.getReturnUrl();
                         } else {
                             window.location = LABKEY.ActionURL.buildURL('reports', 'manageViews');
                         }

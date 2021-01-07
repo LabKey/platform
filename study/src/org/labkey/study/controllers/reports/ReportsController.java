@@ -31,6 +31,7 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BeanViewForm;
@@ -706,7 +707,7 @@ public class ReportsController extends BaseStudyController
         private Container _container;
         private User _user;
         private String _queryName;
-        private ActionURL _srcURL;
+        private ActionURL _returnUrl;
         private Map<String, DatasetDefinition> _datasetMap;
 
         public CreateQueryReportBean(ViewContext context, String queryName) throws IllegalStateException
@@ -715,7 +716,7 @@ public class ReportsController extends BaseStudyController
             _container = context.getContainer();
             _user = context.getUser();
             _queryName = queryName;
-            _srcURL = context.getActionURL();
+            _returnUrl = context.getActionURL();
         }
 
         private List<String> getTableAndQueryNames(ViewContext context) throws IllegalStateException
@@ -756,9 +757,9 @@ public class ReportsController extends BaseStudyController
             return _queryName;
         }
 
-        public ActionURL getSrcURL()
+        public ActionURL getReturnUrl()
         {
-            return _srcURL;
+            return _returnUrl;
         }
     }
 
@@ -786,7 +787,7 @@ public class ReportsController extends BaseStudyController
     {
         private final Report _report;
         private final boolean _confirm;
-        private final String _srcURL;
+        private final ActionURL _returnUrl;
         private final boolean _redirToReport;
 
         public SaveReportWidget(Report report)
@@ -794,11 +795,11 @@ public class ReportsController extends BaseStudyController
             this(report, false, null, false);
         }
 
-        public SaveReportWidget(Report report, boolean confirm, String srcURL, boolean redirToReport)
+        public SaveReportWidget(Report report, boolean confirm, ActionURL returnUrl, boolean redirToReport)
         {
             _report = report;
             _confirm = confirm;
-            _srcURL = srcURL;
+            _returnUrl = returnUrl;
             _redirToReport = redirToReport;
         }
 
@@ -828,9 +829,7 @@ public class ReportsController extends BaseStudyController
             out.write("<td>");
             if (!_confirm)
             {
-                out.write("<input type=hidden name=srcURL value='");
-                out.write(PageFlowUtil.filter(getViewContext().getActionURL().getLocalURIString()));
-                out.write("'>");
+                out.write(ReturnUrlForm.generateHiddenFormField(getViewContext().getActionURL()).toString());
             }
             out.write("<input type=hidden name=redirectToReport value='");
             out.write(Boolean.toString(_redirToReport));
@@ -868,7 +867,7 @@ public class ReportsController extends BaseStudyController
 
             if (_confirm)
             {
-                out.write("&nbsp;" + PageFlowUtil.button("Cancel").href(_srcURL));
+                out.write("&nbsp;" + PageFlowUtil.button("Cancel").href(_returnUrl));
             }
             out.write("</td></tr></table>");
         }

@@ -77,7 +77,7 @@ public interface AssayWellExclusionService
     ResultsQueryView.ResultsDataRegion createResultsDataRegion(ExpProtocol protocol);
 
     ActionURL getExclusionReportURL(Container container, ExpRun run);
-    ActionURL getExclusionURL(Container container, AssayProvider provider, int rowId, String runId, String returnUrl);
+    ActionURL getExclusionURL(Container container, AssayProvider provider, int rowId, String runId, ActionURL returnUrl);
 
     @Nullable
     // returns a view containing warnings if the specified run has current well exclusions associated with it

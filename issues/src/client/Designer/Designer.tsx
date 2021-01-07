@@ -81,7 +81,7 @@ export class App extends React.Component<{}, State> {
     navigate = (defaultUrl: string) => {
         this._dirty = false;
 
-        const returnUrl = ActionURL.getParameter('returnUrl');
+        const returnUrl = ActionURL.getReturnUrl();
         window.location.href = returnUrl || defaultUrl;
     };
 

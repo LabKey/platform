@@ -43,7 +43,7 @@
     SpecimenHeaderBean bean = me.getModelBean();
     ActionURL createRequestURL = new ActionURL(ShowAPICreateSampleRequestAction.class, getContainer());
     createRequestURL.addParameter("fromGroupedView", !bean.isShowingVials());
-    createRequestURL.addParameter("returnUrl", getActionURL().toString());
+    createRequestURL.addReturnURL(getActionURL());
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(getContainer());
     String subjectNounPlural = StudyService.get().getSubjectNounPlural(getContainer());
 %>

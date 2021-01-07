@@ -98,36 +98,31 @@ public class AsyncQueryRequest<T>
         final Object state = qs.cloneEnvironment();
         final RequestInfo current = MemTracker.getInstance().current();
 
-        Runnable runnable = new Runnable()
-        {
-            @Override
-            public void run()
+        Runnable runnable = () -> {
+            if (current != null)
+                 MemTracker.get().startProfiler("async query");
+
+            qs.copyEnvironment(state);
+            try
+            {
+                setResult(callable.call());
+            }
+            catch (Throwable t)
+            {
+                setException(t);
+            }
+            finally
             {
                 if (current != null)
-                     MemTracker.get().startProfiler("async query");
-
-                qs.copyEnvironment(state);
-                try
-                {
-                    setResult(callable.call());
-                }
-                catch (Throwable t)
-                {
-                    setException(t);
-                }
-                finally
-                {
-                    if (current != null)
-                        MemTracker.get().merge(current);
-                    qs.clearEnvironment();
-                }
+                    MemTracker.get().merge(current);
+                qs.clearEnvironment();
             }
         };
 
         Thread thread = new Thread(runnable, "AsyncQueryRequest: " + Thread.currentThread().getName());
         // We want the async thread to use the same database connection, in case we have a transaction open, and
         // so that when the original thread finishes processing the results it ends up closing the right connection
-        try (DbScope.ConnectionSharingCloseable closeable = DbScope.shareConnections(thread))
+        try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(thread))
         {
             thread.start();
 
