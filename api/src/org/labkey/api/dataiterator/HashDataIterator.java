@@ -76,7 +76,7 @@ public class HashDataIterator extends SimpleTranslator
         return ret;
     }
 
-    /*
+    /**
      * Shared implementation, so other iterators can duplicate this functionality (e.g. DataLoader)
      * setRowHash() is like calculateRowHash(), but actally modifies the passed in map.
      */
