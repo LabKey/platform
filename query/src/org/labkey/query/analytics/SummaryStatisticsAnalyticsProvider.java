@@ -23,9 +23,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.template.ClientDependency;
-
-import java.util.Set;
 
 public class SummaryStatisticsAnalyticsProvider extends ColumnAnalyticsProvider
 {
@@ -71,22 +68,16 @@ public class SummaryStatisticsAnalyticsProvider extends ColumnAnalyticsProvider
     public String getScript(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
         // Consider: Base provider could wrap any getScript() result with addClientDependencies() set
-        return "LABKEY.requiresScript('query/ColumnSummaryStatistics',function(){LABKEY.ColumnSummaryStatistics.showDialogFromDataRegion(" +
+        return "LABKEY.ColumnSummaryStatistics.showDialogFromDataRegion(" +
             PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "," +
             PageFlowUtil.jsString(col.getFieldKey().toString()) +
-        ");});";
+        ");";
     }
 
     @Override
     public boolean requiresPageReload()
     {
         return true;
-    }
-
-    @Override
-    public void addClientDependencies(Set<ClientDependency> dependencies)
-    {
-        dependencies.add(ClientDependency.fromPath("query/ColumnSummaryStatistics"));
     }
 
     @Override

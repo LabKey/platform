@@ -2717,9 +2717,7 @@ if (!LABKEY.DataRegions) {
                 _addAnalyticsProviderToView.call(this, view, colFieldKey, providerName, false);
 
                 var elementId = this.name + ':' + colFieldKey + ':analytics-' + providerName;
-                Ext4.each(Ext4.ComponentQuery.query('menuitem[elementId=' + elementId + ']'), function(menuItem) {
-                    menuItem.disable();
-                });
+                _updateAnalyticsProviderMenuItem(elementId, true);
             }
         }, null, this);
     };
@@ -2738,9 +2736,7 @@ if (!LABKEY.DataRegions) {
                 _removeAnalyticsProviderFromView.call(this, view, colFieldKey, providerName, false);
 
                 var elementId = this.name + ':' + colFieldKey + ':analytics-' + providerName;
-                Ext4.each(Ext4.ComponentQuery.query('menuitem[elementId=' + elementId + ']'), function(menuItem) {
-                    menuItem.enable();
-                });
+                _updateAnalyticsProviderMenuItem(elementId, false);
             }
         }, null, this);
     };
@@ -2828,6 +2824,16 @@ if (!LABKEY.DataRegions) {
         if (indexToRemove != null) {
             view.analyticsProviders.splice(indexToRemove, 1);
             _updateSessionCustomView.call(this, view, isSummaryStatistic);
+        }
+    };
+
+    var _updateAnalyticsProviderMenuItem = function(elementId, disable) {
+        var el = $('#' + elementId.replace(/:/g, '\\:'));
+        if (disable) {
+            el.addClass('disabled');
+        }
+        else {
+            el.removeClass('disabled');
         }
     };
 
@@ -4742,4 +4748,44 @@ LABKEY.AggregateTypes = {
     AVG: 'mean'
 
     // TODO how to allow premium module additions to aggregate types?
+};
+
+LABKEY.ColumnSummaryStatistics = new function () {
+    /**
+     * Used via SummaryStatisticsAnalyticsProvider to show a dialog of the applicable summary statistics for a column in the view.
+     * @param dataRegionName
+     * @param colFieldKey
+     */
+    var showDialogFromDataRegion = function(dataRegionName, colFieldKey) {
+        LABKEY.requiresScript('query/ColumnSummaryStatistics', function() {
+            var region = LABKEY.DataRegions[dataRegionName];
+            if (region) {
+                var regionViewName = region.viewName || "",
+                        column = region.getColumn(colFieldKey);
+
+                if (column) {
+                    region.getColumnAnalyticsProviders(regionViewName, colFieldKey, function(colSummaryStats) {
+                        Ext4.create('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
+                            queryConfig: region.getQueryConfig(),
+                            filterArray: LABKEY.Filter.getFiltersFromUrl(region.selectAllURL, 'query'), //Issue 26594
+                            containerPath: region.containerPath,
+                            column: column,
+                            initSelection: colSummaryStats,
+                            listeners: {
+                                applySelection: function(win, colSummaryStatsNames) {
+                                    win.getEl().mask("Applying selection...");
+                                    region.setColumnSummaryStatistics(regionViewName, colFieldKey, colSummaryStatsNames);
+                                    win.close();
+                                }
+                            }
+                        }).show();
+                    });
+                }
+            }
+        });
+    };
+
+    return {
+        showDialogFromDataRegion: showDialogFromDataRegion
+    };
 };

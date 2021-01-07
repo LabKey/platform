@@ -157,6 +157,8 @@ public class PopupMenuView extends HttpView<PopupMenu>
     protected static void renderTreeItem(NavTree item, String cls, Writer out) throws IOException
     {
         out.write("<li");
+        if (item.getId() != null)
+            out.write(" id=\"" + item.getId() + "\"");
         if (item.isDisabled())
             cls = cls != null ? cls + " disabled" : "disabled";
         if (cls != null)
