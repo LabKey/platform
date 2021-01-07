@@ -26,6 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
@@ -468,6 +469,8 @@ public class URLHelper implements Cloneable, Serializable
     public URLHelper addParameter(String key, String value)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
+        if (key.equals("returnURL"))
+            ReturnUrlForm.throwBadParam();
         if (null == _parameters) _parameters = new ArrayList<>();
         _parameters.add(new Pair<>(key, value));
         return this;

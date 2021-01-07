@@ -18,7 +18,6 @@ package org.labkey.query.reports;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -1748,6 +1747,9 @@ public class ReportsController extends SpringActionController
                 defaultURL = new ReportUrlsImpl().urlReportDetails(getContainer(), r);
             }
 
+            if (defaultURL == null)
+                defaultURL = new ActionURL(ManageViewsAction.class, getContainer());
+
             return uploadForm.getReturnActionURL(defaultURL);
         }
     }
@@ -2192,7 +2194,6 @@ public class ReportsController extends SpringActionController
         private String selectedSchemaName;
         private String selectedQueryName;
         private String selectedViewName;
-        private ActionURL srcURL;
 
         public String getSelectedSchemaName()
         {
@@ -2224,15 +2225,6 @@ public class ReportsController extends SpringActionController
             this.selectedViewName = selectedViewName;
         }
 
-        public ActionURL getSrcURL()
-        {
-            return srcURL;
-        }
-
-        public void setSrcURL(ActionURL srcURL)
-        {
-            this.srcURL = srcURL;
-        }
     }
 
     @RequiresPermission(InsertPermission.class)
@@ -2243,13 +2235,6 @@ public class ReportsController extends SpringActionController
         {
             initialize(form);
             return new JspView<>("/org/labkey/query/reports/view/createQueryReport.jsp", form, errors);
-        }
-
-        @Override
-        public void initialize(QueryReportForm form) throws Exception
-        {
-            form.setSrcURL(getViewContext().getActionURL());
-            super.initialize(form);
         }
 
         @Override
@@ -2786,7 +2771,7 @@ public class ReportsController extends SpringActionController
                 int startingDefaultDisplayOrder = 0;
                 Set<String> defaultCategories = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
-                getViewContext().put("returnUrl", form.getReturnUrl());
+                getViewContext().put(ActionURL.Param.returnUrl.name(), form.getReturnActionURL());
 
                 // get the data view information from all visible providers
                 List<DataViewInfo> views = new ArrayList<>();
@@ -2963,7 +2948,7 @@ public class ReportsController extends SpringActionController
             Set<String> defaultCategories = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
             if (null != form.getReturnUrl())
-                getViewContext().put("returnUrl", form.getReturnUrl());
+                getViewContext().put(ActionURL.Param.returnUrl.name(), form.getReturnActionURL());
 
             // get the data view information from all visible providers
             List<DataViewInfo> views = new ArrayList<>();
