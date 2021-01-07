@@ -18,6 +18,7 @@ package org.labkey.api.action;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HtmlString;
@@ -25,6 +26,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 
 /**
  * Simple form bean that includes a returnUrl property, typically used to send the user back to the page where they initiated the action.
@@ -34,6 +36,8 @@ import org.labkey.api.view.ActionURL;
  */
 public class ReturnUrlForm
 {
+    public static Logger LOG = Logger.getLogger(ReturnUrlForm.class);
+
     private ReturnURLString _returnUrl;
     private ReturnURLString _cancelUrl;
     private ReturnURLString _successUrl;
@@ -200,16 +204,14 @@ public class ReturnUrlForm
     @Deprecated
     public ReturnURLString getReturnURL()
     {
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_STRICT_RETURN_URL))
-            throw new UnsupportedOperationException("Use 'returnUrl' instead of 'returnURL'");
+        throwBadParam();
         return _returnUrl;
     }
 
     @Deprecated
     public void setReturnURL(ReturnURLString returnUrl)
     {
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_STRICT_RETURN_URL))
-            throw new UnsupportedOperationException("Use 'returnUrl' instead of 'returnURL'");
+        throwBadParam();
         setReturnUrl(returnUrl);
     }
 
@@ -231,4 +233,30 @@ public class ReturnUrlForm
 
         return null;
     }
+
+    /**
+     * Report a bad returnUrl usage.
+     * Some views don't show Spring binding errors from the thrown exception so
+     * log an ERROR message to the console and let the test framework report it.
+     */
+    public static void throwBadParam()
+    {
+        throwBadParam("returnURL");
+    }
+
+    /**
+     * Report a bad returnUrl usage.
+     * Some views don't show Spring binding errors from the thrown exception so
+     * log an ERROR message to the console and let the test framework report it.
+     */
+    public static void throwBadParam(String badParamName)
+    {
+        StringBuilder msg = new StringBuilder("Use 'returnUrl' instead of '").append(badParamName).append("'");
+        if (HttpView.hasCurrentView())
+            msg.append(" from URL: ").append(HttpView.currentContext().getRequest().getRequestURI());
+        LOG.error(msg.toString());
+        if (AppProps.getInstance().isDevMode())
+            throw new UnsupportedOperationException(msg.toString());
+    }
+
 }

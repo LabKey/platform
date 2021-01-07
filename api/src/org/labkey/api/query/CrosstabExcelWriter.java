@@ -24,9 +24,10 @@ import org.labkey.api.data.CrosstabTableInfo;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsFactory;
 import org.labkey.api.util.Pair;
 
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 /**
@@ -39,13 +40,13 @@ import java.util.List;
 public class CrosstabExcelWriter extends ExcelWriter
 {
     private boolean _includeDimensionHeader = false;
-    private CrosstabTableInfo _table;
+    private final CrosstabTableInfo _table;
     private int _numRowAxisCols = 0;
-    private List<Pair<CrosstabMember, List<DisplayColumn>>> _groupedByMember;
+    private final List<Pair<CrosstabMember, List<DisplayColumn>>> _groupedByMember;
 
-    public CrosstabExcelWriter(CrosstabTableInfo table, Results rs, List<DisplayColumn> displayColumns, int numRowAxisCols, ExcelDocumentType docType)
+    public CrosstabExcelWriter(CrosstabTableInfo table, @NotNull ResultsFactory factory, List<DisplayColumn> displayColumns, int numRowAxisCols, ExcelDocumentType docType)
     {
-        super(rs, displayColumns, docType);
+        super(factory, displayColumns, docType);
         _table = table;
         _numRowAxisCols = numRowAxisCols;
 

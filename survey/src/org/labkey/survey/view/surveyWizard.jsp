@@ -96,7 +96,7 @@
             renderTo        : <%=q(formRenderId)%>,
             headerRenderTo  : <%=q(headerRenderId)%>,
             footerRenderTo  : <%=q(footerRenderId)%>,
-            returnURL       : <%=q(returnURL)%>,
+            returnUrl       : <%=q(returnURL)%>,
             autosaveInterval: 60000
         });
 

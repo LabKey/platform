@@ -124,4 +124,6 @@ public interface PropertyService
     void saveConditionalFormats(User user, PropertyDescriptor pd, List<ConditionalFormat> formats);
 
     void configureObjectMapper(ObjectMapper om, @Nullable SimpleBeanPropertyFilter filter);
+
+    Set<DomainProperty> findVocabularyProperties(Container container, Set<String> colNameMap);
 }

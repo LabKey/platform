@@ -28,6 +28,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsFactory;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoWriter;
@@ -70,8 +71,8 @@ public abstract class DefaultStudyDesignWriter
         // Write each table as a separate .tsv
         if (table != null)
         {
-            Results rs = QueryService.get().select(table, columns, null, null, null, false);
-            writeResultsToTSV(rs, vf, getFileName(table));
+            ResultsFactory factory = ()->QueryService.get().select(table, columns, null, null, null, false);
+            writeResultsToTSV(factory, vf, getFileName(table));
         }
     }
 
@@ -80,10 +81,10 @@ public abstract class DefaultStudyDesignWriter
         return tableInfo.getName().toLowerCase() + ".tsv";
     }
 
-    protected void writeResultsToTSV(Results rs, VirtualFile vf, String fileName) throws IOException
+    protected void writeResultsToTSV(ResultsFactory factory, VirtualFile vf, String fileName) throws IOException
     {
-        // NOTE: TSVGridWriter.close() closes PrintWriter and ResultSet
-        try (TSVGridWriter tsvWriter = new TSVGridWriter(rs))
+        // NOTE: TSVGridWriter generates and closes the Results
+        try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
         {
             tsvWriter.setApplyFormats(false);
             tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead

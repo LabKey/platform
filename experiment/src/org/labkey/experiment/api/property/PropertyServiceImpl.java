@@ -65,14 +65,17 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.experiment.api.GWTDomainMixin;
+import org.labkey.experiment.api.VocabularyDomainKind;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -543,5 +546,38 @@ public class PropertyServiceImpl implements PropertyService
         OntologyService os = OntologyService.get();
         if (null != os)
             os.parseXml(xProp,prop);
+    }
+
+    @Override
+    public Set<DomainProperty> findVocabularyProperties(Container container, Set<String> keyColumnNames)
+    {
+        Set<DomainProperty> vocabularyDomainProperties = new HashSet<>();
+
+        if (null != container)
+        {
+            for (String key : keyColumnNames)
+            {
+                if (URIUtil.hasURICharacters(key))
+                {
+                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(key, container);
+
+                    if (null != pd)
+                    {
+                        List<Domain> vocabDomains = OntologyManager.getDomainsForPropertyDescriptor(container, pd)
+                                .stream()
+                                .filter(d -> d.getDomainKind() instanceof VocabularyDomainKind)
+                                .collect(Collectors.toList());
+
+                        if (!vocabDomains.isEmpty())
+                        {
+                            DomainProperty dp = vocabDomains.get(0).getPropertyByURI(key);
+                            vocabularyDomainProperties.add(dp);
+                        }
+                    }
+                }
+            }
+        }
+
+        return vocabularyDomainProperties;
     }
 }

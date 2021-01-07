@@ -53,7 +53,7 @@
 
     ActionURL completionUrl = urlFor(CompleteMemberAction.class);
     completionUrl.addParameter("groupId", bean.group.getUserId());
-    URLHelper returnURL = getActionURL().clone().deleteParameter("returnUrl");
+    URLHelper returnURL = getActionURL().clone().deleteParameter(ActionURL.Param.returnUrl);
 %>
 <style type="text/css">
     .lowlight {

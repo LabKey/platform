@@ -1537,21 +1537,21 @@ public class StringExpressionFactory
 
             StringExpression b = StringExpressionFactory.create("z/details.view?id=${rowId}", true);
 
-            // Add a srcURL parameter expression
-            StringExpression c = ((AbstractStringExpression)b).addParameter("srcURL", "${srcURL}");
+            // Add a returnUrl parameter expression
+            StringExpression c = ((AbstractStringExpression)b).addParameter("returnUrl", "${returnUrl}");
             assertNotSame("addParameter() should clone the original expression", c, b);
 
-            URLHelper srcURL = new URLHelper("/x/y.view?foo=bar&blee=q");
+            URLHelper returnUrl = new URLHelper("/x/y.view?foo=bar&blee=q");
             m.put("rowId",5);
-            m.put("srcURL", srcURL);
+            m.put("returnUrl", returnUrl);
             // XXX: URL parameters should be encoded with PageFlowUtil.encode() instead of PageFlowUtil.encodePart()
-            //assertEquals("z/details.view?id=5&srcURL=%2Fx%2Fy.view%3Ffoo%3Dbar%26blee%3Dq", c.eval(m));
+            //assertEquals("z/details.view?id=5&returnUrl=%2Fx%2Fy.view%3Ffoo%3Dbar%26blee%3Dq", c.eval(m));
 
-            // Add a srcURL parameter literal
-            String encodedSrcURL = PageFlowUtil.encode(srcURL.getLocalURIString(false));
-            StringExpression d = ((AbstractStringExpression)b).addParameter("srcURL", encodedSrcURL);
-            m.remove("srcURL");
-            assertEquals("z/details.view?id=5&srcURL=%2Fx%2Fy.view%3Ffoo%3Dbar%26blee%3Dq", d.eval(m));
+            // Add a returnUrl parameter literal
+            String encodedReturnUrl = PageFlowUtil.encode(returnUrl.getLocalURIString(false));
+            StringExpression d = ((AbstractStringExpression)b).addParameter("returnUrl", encodedReturnUrl);
+            m.remove("returnUrl");
+            assertEquals("z/details.view?id=5&returnUrl=%2Fx%2Fy.view%3Ffoo%3Dbar%26blee%3Dq", d.eval(m));
             //assertEquals(b.eval(m), d.eval(m));
         }
     }
