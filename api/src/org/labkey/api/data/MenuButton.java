@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenu;
@@ -69,20 +70,15 @@ public class MenuButton extends ActionButton
 
     public NavTree addMenuItem(String caption, ActionURL url)
     {
-        return addMenuItem(caption, url.toString());
+        return addMenuItem(caption, url, null, false);
     }
 
-    public NavTree addMenuItem(String caption, String url)
+    public NavTree addMenuItem(String caption, String onClickScript)
     {
-        return addMenuItem(caption, url, null);
+        return addMenuItem(caption, null, onClickScript, false);
     }
 
-    public NavTree addMenuItem(String caption, String url, String onClickScript)
-    {
-        return addMenuItem(caption, url, onClickScript, false);
-    }
-
-    public NavTree addMenuItem(String caption, String url, @Nullable String onClickScript, boolean checked)
+    public NavTree addMenuItem(String caption, URLHelper url, @Nullable String onClickScript, boolean checked)
     {
         return addMenuItem(caption, url, onClickScript, checked, false);
     }
@@ -92,7 +88,7 @@ public class MenuButton extends ActionButton
         return addMenuItem(caption, null, null, checked, disabled);
     }
 
-    protected NavTree addMenuItem(String caption, String url, @Nullable String onClickScript, boolean checked, boolean disabled)
+    private NavTree addMenuItem(String caption, URLHelper url, @Nullable String onClickScript, boolean checked, boolean disabled)
     {
         NavTree menuItem = new NavTree(caption, url);
         menuItem.setScript(onClickScript);

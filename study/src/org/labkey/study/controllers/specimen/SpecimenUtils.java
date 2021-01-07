@@ -131,20 +131,9 @@ public class SpecimenUtils
         return getSpecimenQueryView(showVials, forExport, null, viewMode, cohortFilter);
     }
 
-    private String urlFor(Class<? extends Controller> action)
+    private ActionURL urlFor(Class<? extends Controller> action)
     {
-        return urlFor(action, null);
-    }
-
-    private String urlFor(Class<? extends Controller> action, Map<Enum, String> parameters)
-    {
-        ActionURL url = new ActionURL(action, getContainer());
-        if (parameters != null)
-        {
-            for (Map.Entry<Enum, String> entry : parameters.entrySet())
-                url.addParameter(entry.getKey(), entry.getValue());
-        }
-        return url.getLocalURIString();
+        return new ActionURL(action, getContainer());
     }
 
     public static boolean isCommentsMode(Container container, SpecimenQueryView.Mode selectedMode)
@@ -196,18 +185,16 @@ public class SpecimenUtils
                 if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), RequestSpecimensPermission.class))
                 {
                     final String jsRegionObject = DataRegion.getJavaScriptObjectReference(gridView.getSettings().getDataRegionName());
-                    String createRequestURL = urlFor(SpecimenController.ShowCreateSampleRequestAction.class,
-                            Collections.singletonMap(SpecimenController.CreateSampleRequestForm.PARAMS.returnUrl,
-                                    getViewContext().getActionURL().getLocalURIString()));
+                    String createRequestURL = urlFor(SpecimenController.ShowCreateSampleRequestAction.class).addReturnURL(getViewContext().getActionURL()).toString();
 
-                    requestMenuButton.addMenuItem("Create New Request", null,
+                    requestMenuButton.addMenuItem("Create New Request",
                             "if (verifySelected(" + jsRegionObject + ".form, '" + createRequestURL +
                             "', 'post', 'rows')) " + jsRegionObject + ".form.submit();");
 
                     if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), ManageRequestsPermission.class) ||
                             SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(getViewContext().getContainer()))
                     {
-                        requestMenuButton.addMenuItem("Add To Existing Request", null,
+                        requestMenuButton.addMenuItem("Add To Existing Request",
                                 "if (verifySelected(" + jsRegionObject + ".form, '#', " +
                                 "'get', 'rows')) { " + jsRegionObject + ".getSelected({success: function (data) { showRequestWindow(data.selected, '" + (showVials ? SpecimenApiController.VialRequestForm.IdTypes.RowId
                                 : SpecimenApiController.VialRequestForm.IdTypes.SpecimenHash) + "');}})}");
@@ -231,14 +218,14 @@ public class SpecimenUtils
             {
                 MenuButton commentsMenuButton = new MenuButton("Comments" + (manualQCEnabled ? " and QC" : ""));
                 final String jsRegionObject = DataRegion.getJavaScriptObjectReference(gridView.getSettings().getDataRegionName());
-                String setCommentsURL = urlFor(SpecimenController.UpdateCommentsAction.class);
-                NavTree setItem = commentsMenuButton.addMenuItem("Set Vial Comment " + (manualQCEnabled ? "or QC State " : "") + "for Selected", "#",
+                String setCommentsURL = urlFor(SpecimenController.UpdateCommentsAction.class).toString();
+                NavTree setItem = commentsMenuButton.addMenuItem("Set Vial Comment " + (manualQCEnabled ? "or QC State " : "") + "for Selected",
                         "if (verifySelected(" + jsRegionObject + ".form, '" + setCommentsURL +
                         "', 'post', 'rows')) " + jsRegionObject + ".form.submit(); return false;");
                 setItem.setId("Comments:Set");
 
-                String clearCommentsURL = urlFor(SpecimenController.ClearCommentsAction.class);
-                NavTree clearItem = commentsMenuButton.addMenuItem("Clear Vial Comments for Selected", "#",
+                String clearCommentsURL = urlFor(SpecimenController.ClearCommentsAction.class).toString();
+                NavTree clearItem = commentsMenuButton.addMenuItem("Clear Vial Comments for Selected",
                         "if (verifySelected(" + jsRegionObject + ".form, '" + clearCommentsURL +
                         "', 'post', 'rows') && confirm('This will permanently clear comments for all selected vials. " +
                                 (manualQCEnabled ? "Quality control states will remain unchanged. " : "" )+ "Continue?')) " +

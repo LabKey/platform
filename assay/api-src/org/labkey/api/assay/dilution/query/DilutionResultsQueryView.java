@@ -113,7 +113,7 @@ public abstract class DilutionResultsQueryView extends ResultsQueryView
         rgn.addHiddenFormField("captionColumn", "");
         rgn.addHiddenFormField("chartTitle", "");
 
-        graphSelectedButton.addMenuItem("Default Graph", "#",
+        graphSelectedButton.addMenuItem("Default Graph",
                 "document.forms[" + PageFlowUtil.jsString(rgn.getFormId()) + "].action = '" + graphSelectedURL.getLocalURIString() + "';\n" +
                 "document.forms[" + PageFlowUtil.jsString(rgn.getFormId()) + "].method = 'POST';\n" +
                 "document.forms[" + PageFlowUtil.jsString(rgn.getFormId()) + "].submit(); return false;");

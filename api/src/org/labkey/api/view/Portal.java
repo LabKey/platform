@@ -1499,9 +1499,9 @@ public class Portal implements ModuleChangeListener
         return null;
     }
 
-    public static String getCustomizeURL(ViewContext context, Portal.WebPart webPart)
+    public static ActionURL getCustomizeURL(ViewContext context, Portal.WebPart webPart)
     {
-        return urlProvider().getCustomizeWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
+        return urlProvider().getCustomizeWebPartURL(context.getContainer(), webPart, context.getActionURL());
     }
 
 
