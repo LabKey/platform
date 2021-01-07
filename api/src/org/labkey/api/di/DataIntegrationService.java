@@ -49,7 +49,8 @@ public interface DataIntegrationService
 
     RemoteConnection getRemoteConnection(String name, Container c, @Nullable Logger log);
 
-    /* Execute an efficient reimport operation Create a dataIterator based on target.getQueryUpdateService()
+    /**
+     * Execute an efficient reimport operation Create a dataIterator based on target.getQueryUpdateService()
      * using a diffing merge operation e.g. ignore unchanged rows in import
      *
      * The provided DataIterator must be scrollable.  Usually it would be backed
