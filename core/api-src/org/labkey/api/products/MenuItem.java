@@ -26,8 +26,9 @@ public class MenuItem
     private Integer _orderNum; // ordinal for producing the primary sort order of the items
     private Boolean _requiresLogin = false; // indicates if link should be shown if not logged in.
     private String _productId = null; // indicates the product/application this link should direct to.  Can (should?) be null if the current application is to be used.
+    private String _iconCls; // the optional font icon class to be displayed with menu label
 
-    public MenuItem(String label, String url, Integer id, String key, Integer orderNum, String productId)
+    public MenuItem(String label, String url, Integer id, String key, Integer orderNum, String productId, String iconCls)
     {
         _label = label;
         _id = id;
@@ -35,6 +36,12 @@ public class MenuItem
         _url = url;
         _orderNum = orderNum == null ? -1 : orderNum;
         _productId = productId;
+        _iconCls = iconCls;
+    }
+
+    public MenuItem(String label, String url, Integer id, String key, Integer orderNum, String productId)
+    {
+        this(label, url, id, key, orderNum, productId, null);
     }
 
     public MenuItem(String label, ActionURL url, Integer id, Integer orderNum, String productId)
@@ -121,4 +128,15 @@ public class MenuItem
     {
         _requiresLogin = requiresLogin;
     }
+
+    public String getIconCls()
+    {
+        return _iconCls;
+    }
+
+    public void setIconCls(String iconCls)
+    {
+        _iconCls = iconCls;
+    }
+
 }
