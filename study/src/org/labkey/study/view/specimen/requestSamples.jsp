@@ -109,7 +109,7 @@ function setDefaults()
 }
 </script>
 <labkey:form name="CreateSampleRequest" action="<%=urlFor(HandleCreateSampleRequestAction.class)%>" method="POST">
-    <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
+    <%=generateReturnUrlFormField(bean.getReturnUrl())%>
     <%
         if (vials != null)
         {
@@ -199,7 +199,7 @@ function setDefaults()
                 <input type="hidden" name="<%= h(CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name()) %>" value="false">
                 <input type="hidden" name="<%= h(CreateSampleRequestForm.PARAMS.extendedRequestUrl.name()) %>" value="false">
                 <%
-                    boolean hasReturnURL = bean.getReturnUrl() != null && !bean.getReturnUrl().isEmpty();
+                    boolean hasReturnURL = bean.getReturnUrl() != null;
                     if (hasExtendedRequestView)
                     {
                         %>

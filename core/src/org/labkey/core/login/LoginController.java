@@ -690,15 +690,15 @@ public class LoginController extends SpringActionController
                 {
                     response.put("user", User.getUserProps(user, getContainer()));
                     if (!StringUtils.isEmpty(redirectUrl.getURIString()))
-                        response.put("returnUrl", redirectString);
+                        response.put(ActionURL.Param.returnUrl.name(), redirectString);
                     else
-                        response.put("returnUrl", StringUtils.defaultIfEmpty(form.getReturnUrl(),  AppProps.getInstance().getHomePageActionURL().getPath()));
+                        response.put(ActionURL.Param.returnUrl.name(), StringUtils.defaultIfEmpty(form.getReturnUrl(),  AppProps.getInstance().getHomePageActionURL().getPath()));
                 }
                 else
                 {
                     // AuthenticationResult returned by AuthenticationManager.handleAuthentication indicated that a secondary authentication is needed
                     // in the ajax response inform js handler to load page from secondary authenticator url
-                    response.put("returnUrl", redirectString);
+                    response.put(ActionURL.Param.returnUrl.name(), redirectString);
                 }
             }
             else if (!errors.hasErrors())
@@ -714,7 +714,7 @@ public class LoginController extends SpringActionController
 
                     response = new ApiSimpleResponse();
                     response.put("success", false);
-                    response.put("returnUrl", redirectString);
+                    response.put(ActionURL.Param.returnUrl.name(), redirectString);
                     AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), null);
                 }
             }
@@ -772,7 +772,7 @@ public class LoginController extends SpringActionController
             {
                 AuthenticationResult result = attemptSetPassword(_email, form.getReturnURLHelper(), "Changed password.", false, errors);
                 if (result != null)
-                    response.put("returnUrl", result.getRedirectURL());
+                    response.put(ActionURL.Param.returnUrl.name(), result.getRedirectURL());
             }
 
             response.put("success", !errors.hasErrors());
@@ -800,7 +800,7 @@ public class LoginController extends SpringActionController
                 {
                     AuthenticationResult result = attemptSetPassword(email, form.getReturnURLHelper(), "Verified and chose a password.", true, errors);
                     if (result != null)
-                        response.put("returnUrl", result.getRedirectURL());
+                        response.put(ActionURL.Param.returnUrl.name(), result.getRedirectURL());
                 }
             }
 

@@ -212,7 +212,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
     {
         Container container = null != containerId ? ContainerManager.getForId(containerId) : ctx.getContainer();
         ActionURL historyLink = new ActionURL(SpecimenController.SampleEventsAction.class, container);
-        historyLink.addParameter(ActionURL.Param.returnUrl, ctx.getActionURL().getLocalURIString());
+        historyLink.addReturnURL(ctx.getActionURL());
         return historyLink.toString() + "&id=";
     }
 

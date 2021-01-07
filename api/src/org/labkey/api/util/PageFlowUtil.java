@@ -2109,7 +2109,6 @@ public class PageFlowUtil
         experimental.put("useExperimentalCoreUI", useExperimentalCoreUI());
         experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP));
         experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER));
-        experimental.put(AppProps.EXPERIMENTAL_STRICT_RETURN_URL, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_STRICT_RETURN_URL));
         experimental.put(AppProps.EXPERIMENTAL_NO_GUESTS, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS));
         json.put("experimental", experimental);
 
@@ -2195,7 +2194,7 @@ public class PageFlowUtil
             HttpServletRequest request = viewContext.getRequest();
             if (request != null)
             {
-                json.put("login", AuthenticationManager.getLoginPageConfiguration(getTermsOfUseProject(project, request.getParameter("returnUrl"))));
+                json.put("login", AuthenticationManager.getLoginPageConfiguration(getTermsOfUseProject(project, request.getParameter(ActionURL.Param.returnUrl.name()))));
                 if (includePostParameters && "post".equalsIgnoreCase(request.getMethod()))
                     json.put("postParameters", request.getParameterMap());
                 String tok = CSRFUtil.getExpectedToken(request, null);
