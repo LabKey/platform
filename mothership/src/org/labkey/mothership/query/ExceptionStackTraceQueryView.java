@@ -56,14 +56,14 @@ public class ExceptionStackTraceQueryView extends QueryView
                 String script = "if (verifySelected("+form+", '" + url +
                         "', 'post', 'rows')) "+form+".submit();";
 
-                assignToButton.addMenuItem(user.getDisplayName(getSchema().getUser()), null, script);
+                assignToButton.addMenuItem(user.getDisplayName(getSchema().getUser()), script);
             }
             assignToButton.addSeparator();
             ActionURL ignoreURL = new ActionURL(MothershipController.BulkUpdateAction.class, getContainer());
             ignoreURL.addParameter("ignore", true);
             String ignoreScript = "if (verifySelected("+form+", '" + ignoreURL +
                     "', 'post', 'rows')) "+form+".submit();";
-            assignToButton.addMenuItem("Ignore", null, ignoreScript);
+            assignToButton.addMenuItem("Ignore", ignoreScript);
             bar.add(assignToButton);
         }
     }

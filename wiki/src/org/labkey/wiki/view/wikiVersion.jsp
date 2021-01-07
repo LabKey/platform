@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.wiki.WikiController.VersionBean" %>
@@ -89,7 +90,7 @@ else
         if (versions.length > 1)
         {
             MenuButton compare = new MenuButton("Compare With ...");
-            String baseCompareLink = bean.compareLink + "&version1=" + nCurVersion;
+            ActionURL baseCompareURL = bean.compareLink.addParameter("version1", nCurVersion);
 
             for (int i = versions.length - 1; i >= 0; i--)
             {
@@ -100,7 +101,7 @@ else
                 if (n != bean.wikiVersion.getVersion())
                 {
                     // Show the author who created the version if available, or skip if that user's been deleted
-                    compare.addMenuItem((n == nLatestVersion ? "Latest Version" : "Version " + n) + (author == null ? "" : " (" + author.getDisplayName(user) + ")"), baseCompareLink + "&version2=" + n);
+                    compare.addMenuItem((n == nLatestVersion ? "Latest Version" : "Version " + n) + (author == null ? "" : " (" + author.getDisplayName(user) + ")"), baseCompareURL.replaceParameter("version2", n));
                 }
             }
 

@@ -124,7 +124,7 @@ public abstract class TabStripView extends JspView<TabStripView>
     {
         public TabInfo(String name, String id, URLHelper url)
         {
-            super(name, url.clone().replaceParameter(TAB_PARAM, id).getLocalURIString());
+            super(name, url.clone().replaceParameter(TAB_PARAM, id));
             setId(id);
         }
     }

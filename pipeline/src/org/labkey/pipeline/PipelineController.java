@@ -173,7 +173,7 @@ public class PipelineController extends SpringActionController
     {
         ActionURL url = new ActionURL(SetupAction.class, c);
         if (returnURL != null)
-            url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
+            url.addReturnURL(returnURL);
         if (rootSet)
             url.addParameter(Params.rootset, "1");
         if (overrideRoot)
@@ -1725,7 +1725,7 @@ public class PipelineController extends SpringActionController
             ActionURL url = new ActionURL(BrowseAction.class, container);
 
             if (null != returnUrl)
-                url.addParameter(ActionURL.Param.returnUrl, returnUrl.toString());
+                url.addReturnURL(returnUrl);
 
             if (path != null)
                 url.addParameter(Params.path, path);
@@ -1799,7 +1799,7 @@ public class PipelineController extends SpringActionController
                 url.addParameter("pipelineTask", pipelineId);
 
             if (returnUrl != null)
-                url.addParameter(ActionURL.Param.returnUrl, returnUrl.toString());
+                url.addReturnURL(returnUrl);
 
             return url;
         }

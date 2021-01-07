@@ -2377,7 +2377,7 @@ public class AnnouncementsController extends SpringActionController
                         // Build up a link to unsubscribe from the thread
                         ActionURL url = new ActionURL(SubscribeThreadAction.class, c);
                         url.addParameter("threadId", ann.getParent() == null ? ann.getEntityId() : ann.getParent());
-                        url.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                        url.addReturnURL(getViewContext().getActionURL());
                         url.addParameter("unsubscribe", true);
                         buttons.addChild("unsubscribe", url).usePost();
                     }
@@ -2416,7 +2416,7 @@ public class AnnouncementsController extends SpringActionController
                             subscribeTree.addChild("forum", getEmailPreferencesURL(c, getViewContext().getActionURL(), ann.lookupSrcIdentifer()));
                             ActionURL subscribeThreadURL = new ActionURL(SubscribeThreadAction.class, c);
                             subscribeThreadURL.addParameter("threadId", ann.getParent() == null ? ann.getEntityId() : ann.getParent());
-                            subscribeThreadURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                            subscribeThreadURL.addReturnURL(getViewContext().getActionURL());
                             subscribeTree.addChild("thread", subscribeThreadURL).usePost();
                             buttons.addChild(subscribeTree);
                         }

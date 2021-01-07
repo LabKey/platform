@@ -96,8 +96,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         final VBox view = new VBox();
 
         // todo: pass inputParameters down from upper layers like we do for
-        // executeScript API below.  Currently they are still taken off the
-        // URL under the covers
+        // executeScript API below. Currently they are still taken off the URL under the covers
         renderReport(context, null, new Renderer<HttpView>()
         {
             @Override
