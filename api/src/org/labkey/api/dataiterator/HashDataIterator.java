@@ -10,7 +10,7 @@ import org.labkey.api.security.Crypt;
 import java.util.Set;
 import java.util.function.Supplier;
 
-/*
+/**
  * This iterator should be put as close as possible to the source data
  * e.g. before any coercion or missing value handling
  */
