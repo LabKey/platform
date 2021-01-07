@@ -62,7 +62,6 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -2315,7 +2314,7 @@ public class QueryView extends WebPartView<Object>
         return getTsvWriter(headerType, Collections.emptyMap());
     }
 
-    protected TSVGridWriter getTsvWriter(ColumnHeaderType headerType, @NotNull Map<String, String> renameColumn) throws IOException
+    protected TSVGridWriter getTsvWriter(ColumnHeaderType headerType, @NotNull Map<String, String> renameColumnMap) throws IOException
     {
         _exportView = true;
         DataView view = createDataView();
@@ -2324,20 +2323,12 @@ public class QueryView extends WebPartView<Object>
         rgn.setShowPagination(false);
         RenderContext rc = view.getRenderContext();
         rc.setCache(false);
-        try
-        {
-            Results results = rgn.getResults(rc);
-            TSVGridWriter tsv = new TSVGridWriter(results, getExportColumns(rgn.getDisplayColumns()), renameColumn);
-            tsv.setFilenamePrefix(getSettings().getQueryName() != null ? getSettings().getQueryName() : "query");
-            // don't step on default
-            if (null != headerType)
-                tsv.setColumnHeaderType(headerType);
-            return tsv;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        TSVGridWriter tsv = new TSVGridWriter(()->rgn.getResults(rc), getExportColumns(rgn.getDisplayColumns()), renameColumnMap);
+        tsv.setFilenamePrefix(getSettings().getQueryName() != null ? getSettings().getQueryName() : "query");
+        // don't step on default
+        if (null != headerType)
+            tsv.setColumnHeaderType(headerType);
+        return tsv;
     }
 
     public Results getResults() throws SQLException, IOException
@@ -2397,35 +2388,27 @@ public class QueryView extends WebPartView<Object>
         return getExcelWriter(docType, null);
     }
 
-    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType, Map<String, String> renameColumns) throws IOException
+    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType, Map<String, String> renameColumnMap) throws IOException
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
 
         RenderContext rc = configureForExcelExport(docType, view, rgn);
 
-        try
-        {
-            Results results = rgn.getResults(rc);
-            ExcelWriter ew = renameColumns == null || renameColumns.isEmpty() ? new ExcelWriter(results, getExportColumns(rgn.getDisplayColumns()), docType) : new AliasColumnExcelWriter(results, getExportColumns(rgn.getDisplayColumns()), docType, renameColumns);
-            ew.setFilenamePrefix(getSettings().getQueryName());
-            ew.setAutoSize(true);
-            return ew;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        ExcelWriter ew = renameColumnMap == null || renameColumnMap.isEmpty() ? new ExcelWriter(()->rgn.getResults(rc), getExportColumns(rgn.getDisplayColumns()), docType) : new AliasColumnExcelWriter(()->rgn.getResults(rc), getExportColumns(rgn.getDisplayColumns()), docType, renameColumnMap);
+        ew.setFilenamePrefix(getSettings().getQueryName());
+        ew.setAutoSize(true);
+        return ew;
     }
 
     private static class AliasColumnExcelWriter extends ExcelWriter
     {
-        private Map<String, String> _renameColumns;
+        private final Map<String, String> _renameColumnMap;
 
-        public AliasColumnExcelWriter(Results results, List<DisplayColumn> displayColumns, ExcelDocumentType docType, Map<String, String> renameColumns)
+        public AliasColumnExcelWriter(ResultsFactory factory, List<DisplayColumn> displayColumns, ExcelDocumentType docType, Map<String, String> renameColumnMap)
         {
-            super(results, displayColumns, docType);
-            _renameColumns = renameColumns;
+            super(factory, displayColumns, docType);
+            _renameColumnMap = renameColumnMap;
         }
 
         @Override
@@ -2434,18 +2417,18 @@ public class QueryView extends WebPartView<Object>
         {
 
             super.renderColumnCaptions(sheet, visibleColumns);
-            if (_renameColumns == null || _renameColumns.isEmpty())
+            if (_renameColumnMap == null || _renameColumnMap.isEmpty())
                 return;
 
             int row = getCurrentRow() - 1;
             for (int col = 0; col < visibleColumns.size(); col++)
             {
                 String originalColName = visibleColumns.get(col).getName();
-                if (_renameColumns.containsKey(originalColName))
+                if (_renameColumnMap.containsKey(originalColName))
                 {
                     Cell cell = sheet.getRow(row).getCell(col);
                     if (cell != null)
-                        cell.setCellValue(_renameColumns.get(originalColName));
+                        cell.setCellValue(_renameColumnMap.get(originalColName));
                 }
             }
         }
@@ -2566,7 +2549,7 @@ public class QueryView extends WebPartView<Object>
     {
         List<DisplayColumn> displayColumns = getExcelTemplateDisplayColumns(fieldKeys);
 
-        return renameCols == null || renameCols.isEmpty()? new ExcelWriter(null, displayColumns, docType) : new AliasColumnExcelWriter(null, displayColumns, docType, renameCols);
+        return renameCols == null || renameCols.isEmpty()? new ExcelWriter(()->null, displayColumns, docType) : new AliasColumnExcelWriter(()->null, displayColumns, docType, renameCols);
     }
 
     protected RenderContext configureForExcelExport(ExcelWriter.ExcelDocumentType docType, DataView view, DataRegion rgn)
@@ -2611,7 +2594,7 @@ public class QueryView extends WebPartView<Object>
                                  boolean respectView,
                                  List<FieldKey> includeColumns,
                                  List<FieldKey> excludeColumns,
-                                 @NotNull Map<String, String> renameColumns,
+                                 @NotNull Map<String, String> renameColumnMap,
                                  @Nullable String prefix
                                  )
             throws IOException
@@ -2620,8 +2603,8 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
-            try (ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, renameColumns, docType)
-                    : (renameColumns.isEmpty() ? getExcelWriter(docType) : getExcelWriter(docType, renameColumns)))
+            try (ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, renameColumnMap, docType)
+                    : (renameColumnMap.isEmpty() ? getExcelWriter(docType) : getExcelWriter(docType, renameColumnMap)))
             {
                 if (headerType == null)
                     headerType = getColumnHeaderType();
@@ -2687,22 +2670,21 @@ public class QueryView extends WebPartView<Object>
         exportToTsv(response, delim, quote, headerType, Collections.emptyMap());
     }
 
-    public void exportToTsv(final HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType, @NotNull Map<String, String> renameColumn) throws IOException
+    public void exportToTsv(final HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType, @NotNull Map<String, String> renameColumnMap) throws IOException
     {
         _exportView = true;
         TableInfo table = getTable();
 
         if (table != null)
         {
-            int rowCount = doExport(response, delim, quote, headerType, renameColumn);
+            int rowCount = doExport(response, delim, quote, headerType, renameColumnMap);
             logAuditEvent("Exported to TSV", rowCount);
         }
     }
 
-
-    private int doExport(HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType, @NotNull Map<String, String> renameColumn) throws IOException
+    private int doExport(HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType, @NotNull Map<String, String> renameColumnMap) throws IOException
     {
-        try (TSVGridWriter tsv = renameColumn.isEmpty() ? getTsvWriter(headerType) : getTsvWriter(headerType, renameColumn))
+        try (TSVGridWriter tsv = renameColumnMap.isEmpty() ? getTsvWriter(headerType) : getTsvWriter(headerType, renameColumnMap))
         {
             tsv.setDelimiterCharacter(delim);
             tsv.setQuoteCharacter(quote);

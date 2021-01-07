@@ -35,8 +35,10 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsFactory;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.StashingResultsFactory;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.pipeline.PipeRoot;
@@ -44,7 +46,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.Report;
@@ -67,7 +68,6 @@ import org.labkey.api.reports.report.r.view.SvgOutput;
 import org.labkey.api.reports.report.r.view.TextOutput;
 import org.labkey.api.reports.report.r.view.TsvOutput;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.DataView;
@@ -104,7 +104,7 @@ import java.util.regex.Pattern;
 public abstract class ScriptEngineReport extends ScriptReport implements Report.ResultSetGenerator
 {
     public static final String INPUT_FILE_TSV = "input_data";
-    public static Pattern scriptPattern = Pattern.compile("\\$\\{(.*?)\\}");
+    public static Pattern scriptPattern = Pattern.compile("\\$\\{(.*?)}");
 
     public static final String TYPE = "ReportService.scriptEngineReport";
     public static final String DATA_INPUT = "input_data.tsv";
@@ -113,7 +113,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     public static final String SUBSTITUTION_MAP = "substitutionMap.txt";
     public static final String CONSOLE_OUTPUT = "console.txt";
 
-    private static Logger _log = LogManager.getLogger(ScriptEngineReport.class);
+    private static final Logger LOG = LogManager.getLogger(ScriptEngineReport.class);
 
     static
     {
@@ -228,18 +228,40 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     /*
      * Create the .tsv associated with the data grid for this report.
      */
-    public File createInputDataFile(@NotNull ViewContext context) throws Exception
+    public File createInputDataFile(@NotNull ViewContext context) throws SQLException, IOException
     {
         File resultFile = new File(getReportDir(context.getContainer().getId()), DATA_INPUT);
 
-        if (context != null)
-        {
-            Results r = generateResults(context, true);
-            if (r != null && r.getResultSet() != null)
+        ResultsFactory factory = ()-> {
+            try
             {
-                // TSVGridWriter.close() closes the ResultSet
-                try (TSVGridWriter tsv = createGridWriter(r))
+                return generateResults(context, true);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        };
+
+        try (StashingResultsFactory srf = new StashingResultsFactory(factory))
+        {
+            Results results = srf.get();
+            if (results != null && results.getResultSet() != null)
+            {
+                ResultSetMetaData md = results.getMetaData();
+                List<String> outputColumnNames = outputColumnNames(results);
+                List<DisplayColumn> dataColumns = new ArrayList<>();
+
+                for (int i = 0; i < md.getColumnCount(); i++)
                 {
+                    int sqlColumn = i + 1;
+                    dataColumns.add(new NADisplayColumn(outputColumnNames.get(i), new BaseColumnInfo(md, sqlColumn)));
+                }
+
+                // TSVGridWriter closes the Results at render time
+                try (TSVGridWriter tsv = new TSVGridWriter(srf, dataColumns))
+                {
+                    tsv.setColumnHeaderType(ColumnHeaderType.Name); // CONSIDER: Use FieldKey instead
                     tsv.write(resultFile);
                 }
             }
@@ -392,25 +414,6 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return new File(tempDir, REPORT_DIR);
     }
 
-    protected TSVGridWriter createGridWriter(Results r) throws SQLException
-    {
-        ResultSetMetaData md = r.getMetaData();
-        List<String> outputColumnNames = outputColumnNames(r);
-        List<DisplayColumn> dataColumns = new ArrayList<>();
-
-        for (int i = 0; i < md.getColumnCount(); i++)
-        {
-            int sqlColumn = i + 1;
-            dataColumns.add(new NADisplayColumn(outputColumnNames.get(i), new BaseColumnInfo(md, sqlColumn)));
-        }
-
-        TSVGridWriter tsv = new TSVGridWriter(r, dataColumns);
-        tsv.setColumnHeaderType(ColumnHeaderType.Name); // CONSIDER: Use FieldKey instead
-
-        return tsv;
-    }
-
-
     protected List<String> outputColumnNames(Results r) throws SQLException
     {
         assert null != r.getResultSet();
@@ -500,11 +503,11 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                         if (null != output)
                         {
                             scriptOutputs.add(output);
-                            _log.debug("ExecuteScript:  Added output parameter for: " + param.getName());
+                            LOG.debug("ExecuteScript:  Added output parameter for: " + param.getName());
                         }
                         else
                         {
-                            _log.debug("ExecuteScript:  Could not add output parameter for: " + param.getName());
+                            LOG.debug("ExecuteScript:  Could not add output parameter for: " + param.getName());
                         }
                     }
                 }
@@ -526,9 +529,9 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         });
     }
 
-    public static HttpView renderViews(ScriptEngineReport report, final VBox view, Collection<ParamReplacement> parameters, boolean deleteTempFiles) throws IOException
+    public static HttpView<?> renderViews(ScriptEngineReport report, final VBox view, Collection<ParamReplacement> parameters, boolean deleteTempFiles) throws IOException
     {
-        return handleParameters(report, parameters, new ParameterHandler<HttpView>()
+        return handleParameters(report, parameters, new ParameterHandler<>()
         {
             @Override
             public boolean handleParameter(ViewContext context, Report report, ParamReplacement param, List<String> sectionNames)
@@ -544,7 +547,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             }
 
             @Override
-            public HttpView cleanup(ScriptEngineReport report, ContainerUser context)
+            public HttpView<?> cleanup(ScriptEngineReport report, ContainerUser context)
             {
                 if (report.shouldCleanup())
                     view.addView(new TempFileCleanup(report.getReportDir(context.getContainer().getId()).getAbsolutePath()));
@@ -821,7 +824,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     protected static class TempFileCleanup extends HttpView
     {
-        private String _path;
+        private final String _path;
 
         public TempFileCleanup(String path)
         {

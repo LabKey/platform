@@ -24,8 +24,6 @@ import org.labkey.api.data.CrosstabTableInfo;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.Results;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.util.Pair;
@@ -33,7 +31,6 @@ import org.labkey.api.view.DataView;
 import org.springframework.validation.Errors;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -254,19 +251,10 @@ public class CrosstabView extends QueryView
 
         configureForExcelExport(docType, view, rgn);
 
-        try
-        {
-            Results results = rgn.getResults(view.getRenderContext());
+        CrosstabTableInfo table = (CrosstabTableInfo)getTable();
+        List<DisplayColumn> displayColumns = rgn.getDisplayColumns();
 
-            CrosstabTableInfo table = (CrosstabTableInfo)getTable();
-            List<DisplayColumn> displayColumns = rgn.getDisplayColumns();
-
-            return new CrosstabExcelWriter(table, results, getExportColumns(displayColumns), _numRowAxisCols, docType);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return new CrosstabExcelWriter(table, ()->rgn.getResults(view.getRenderContext()), getExportColumns(displayColumns), _numRowAxisCols, docType);
     }
 
     public boolean isMemberIncluded(CrosstabMember member)
