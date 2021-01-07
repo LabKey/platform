@@ -7230,10 +7230,10 @@ public class StudyController extends BaseStudyController
                 cols.add(ti.getColumn("dateoffset"));
                 SimpleFilter filter = new SimpleFilter();
                 filter.addCondition(ti.getColumn("container"), getContainer());
-                Results rs = QueryService.get().select(ti, cols, filter, new Sort("participantid"));
+                ResultsFactory factory = ()->QueryService.get().select(ti, cols, filter, new Sort("participantid"));
 
-                // NOTE: TSVGridWriter.close() closes PrintWriter and ResultSet
-                try (TSVGridWriter writer = new TSVGridWriter(rs))
+                // NOTE: TSVGridWriter closes PrintWriter and ResultSet
+                try (TSVGridWriter writer = new TSVGridWriter(factory))
                 {
                     writer.setApplyFormats(false);
                     writer.setFilenamePrefix("ParticipantTransforms");

@@ -1657,7 +1657,7 @@ public class QueryController extends SpringActionController
         @Override
         void _export(ExportQueryForm form, QueryView view) throws Exception
         {
-            view.exportToExcel(getViewContext().getResponse(), form.getHeaderType(), ExcelWriter.ExcelDocumentType.xls, form.getRenameColumns());
+            view.exportToExcel(getViewContext().getResponse(), form.getHeaderType(), ExcelWriter.ExcelDocumentType.xls, form.getRenameColumnMap());
         }
     }
 
@@ -1668,7 +1668,7 @@ public class QueryController extends SpringActionController
         @Override
         void _export(ExportQueryForm form, QueryView view) throws Exception
         {
-            view.exportToExcel(getViewContext().getResponse(), form.getHeaderType(), ExcelWriter.ExcelDocumentType.xlsx, form.getRenameColumns());
+            view.exportToExcel(getViewContext().getResponse(), form.getHeaderType(), ExcelWriter.ExcelDocumentType.xlsx, form.getRenameColumnMap());
         }
     }
 
@@ -1787,7 +1787,7 @@ public class QueryController extends SpringActionController
                 }
                 catch (IllegalArgumentException ignored) {}
             }
-            view.exportToExcel(getViewContext().getResponse(), true, form.getHeaderType(), form.insertColumnsOnly, fileType, respectView, form.getIncludeColumns(), form.getExcludeColumns(), form.getRenameColumns(), form.getFilenamePrefix());
+            view.exportToExcel(getViewContext().getResponse(), true, form.getHeaderType(), form.insertColumnsOnly, fileType, respectView, form.getIncludeColumns(), form.getExcludeColumns(), form.getRenameColumnMap(), form.getFilenamePrefix());
         }
     }
 
@@ -1821,7 +1821,7 @@ public class QueryController extends SpringActionController
             this.excludeColumn = excludeColumn;
         }
 
-        public Map<String, String> getRenameColumns()
+        public Map<String, String> getRenameColumnMap()
         {
             if (renameColumns != null)
                 return renameColumns;
@@ -1840,7 +1840,6 @@ public class QueryController extends SpringActionController
 
             return renameColumns;
         }
-
     }
 
     @SuppressWarnings({"unused", "WeakerAccess"})
@@ -1883,7 +1882,7 @@ public class QueryController extends SpringActionController
         @Override
         void _export(ExportRowsTsvForm form, QueryView view) throws Exception
         {
-            view.exportToTsv(getViewContext().getResponse(), form.getDelim(), form.getQuote(), form.getHeaderType(), form.getRenameColumns());
+            view.exportToTsv(getViewContext().getResponse(), form.getDelim(), form.getQuote(), form.getHeaderType(), form.getRenameColumnMap());
         }
     }
 
@@ -6327,11 +6326,11 @@ public class QueryController extends SpringActionController
                 throw new NotFoundException();
 
             TableSelector selector = new TableSelector(queryExportAuditTable,
-                    PageFlowUtil.set(
-                            QueryExportAuditProvider.COLUMN_NAME_SCHEMA_NAME,
-                            QueryExportAuditProvider.COLUMN_NAME_QUERY_NAME,
-                            QueryExportAuditProvider.COLUMN_NAME_DETAILS_URL),
-                    new SimpleFilter(FieldKey.fromParts(AbstractAuditTypeProvider.COLUMN_NAME_ROW_ID), form.getRowId()), null);
+                PageFlowUtil.set(
+                    QueryExportAuditProvider.COLUMN_NAME_SCHEMA_NAME,
+                    QueryExportAuditProvider.COLUMN_NAME_QUERY_NAME,
+                    QueryExportAuditProvider.COLUMN_NAME_DETAILS_URL),
+                new SimpleFilter(FieldKey.fromParts(AbstractAuditTypeProvider.COLUMN_NAME_ROW_ID), form.getRowId()), null);
 
             Map<String, Object> result = selector.getMap();
             if (result == null)
@@ -6675,7 +6674,7 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(GenerateSchemaForm form, BindException errors) throws Exception
+        public boolean handlePost(GenerateSchemaForm form, BindException errors) throws SQLException, IOException
         {
             StringBuilder importScript = new StringBuilder();
 
@@ -6704,13 +6703,14 @@ public class QueryController extends SpringActionController
                     if (DatabaseTableType.TABLE.equals(table.getTableType()))
                     {
                         String tableName = table.getName();
-                        try (Results results = new TableSelector(table).getResults(false))
+                        try (var factory = new StashingResultsFactory(()->new TableSelector(table).getResults(false)))
                         {
+                            Results results = factory.get();
                             if (results.isBeforeFirst()) // only export tables with data
                             {
                                 File outputFile = new File(form.getOutputDir(), tableName + ".tsv.gz");
                                 GZIPOutputStream outputStream = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile), 64 * 1024), 64 * 1024);
-                                try (TSVGridWriter tsv = new TSVGridWriter(results))
+                                try (TSVGridWriter tsv = new TSVGridWriter(factory))
                                 {
                                     tsv.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey);
                                     tsv.setApplyFormats(false);
