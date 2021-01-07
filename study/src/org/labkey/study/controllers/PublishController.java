@@ -141,7 +141,7 @@ public class PublishController extends SpringActionController
             ActionURL url  = null != jobId ? urls.urlDetails(getContainer(), jobId) : urls.urlBegin(getContainer());
 
             response.put("success", true);
-            response.put("returnUrl", url);
+            response.put(ActionURL.Param.returnUrl.name(), url);
 
             return response;
         }

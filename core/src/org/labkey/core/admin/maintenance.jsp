@@ -33,7 +33,7 @@
 <script type="text/javascript">
 (function() {
     // grab the returnUrl if present, otherwise set to loginURL
-    var nextURL = LABKEY.ActionURL.getParameter('returnUrl') || <%=q(bean.loginURL == null ? null : bean.loginURL)%>;
+    var nextURL = LABKEY.ActionURL.getReturnUrl() || <%=q(bean.loginURL == null ? null : bean.loginURL)%>;
     if (nextURL) {
         var delay = 500;
         // if we have a URL, check for startup complete and redirect

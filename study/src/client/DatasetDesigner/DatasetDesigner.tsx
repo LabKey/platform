@@ -67,7 +67,7 @@ export class App extends PureComponent<any, State> {
     navigate(defaultUrl: string) {
         this._dirty = false;
 
-        const returnUrl = ActionURL.getParameter('returnUrl');
+        const returnUrl = ActionURL.getReturnUrl();
         window.location.href = returnUrl || defaultUrl;
     }
 

@@ -60,7 +60,7 @@
 
 <labkey:form action="<%=urlFor(CustomizeEmailAction.class)%>" method="post">
     <% if (bean.getReturnUrl() != null) { %>
-        <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>" />
+    <%= generateReturnUrlFormField(bean.getReturnActionURL()) %>
     <% } %>
     <table class="lk-fields-table" width="85%">
         <tr><td class="labkey-form-label" style="width: 85px">Email Type:</td>
