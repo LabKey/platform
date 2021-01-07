@@ -411,7 +411,7 @@ public class AssayManager implements AssayService
             if (context.getContainer().hasPermission(context.getUser(), DesignAssayPermission.class))
             {
                 ActionURL insertURL = PageFlowUtil.urlProvider(AssayUrls.class).getChooseAssayTypeURL(context.getContainer());
-                insertURL.addParameter(ActionURL.Param.returnUrl, context.getActionURL().getLocalURIString());
+                insertURL.addReturnURL(context.getActionURL());
                 menu.addChild("New Assay Design", insertURL);
             }
             menu.addChild("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getBeginURL(context.getContainer()));
@@ -906,7 +906,7 @@ public class AssayManager implements AssayService
     private ActionURL getAssayDataImportURL(ViewContext context)
     {
         ActionURL importURL = new ActionURL("assay", "assayDataImport", context.getContainer());
-        importURL.addParameter(ActionURL.Param.returnUrl, context.getActionURL().getLocalURIString());
+        importURL.addReturnURL(context.getActionURL());
         return importURL;
     }
 
