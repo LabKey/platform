@@ -509,7 +509,7 @@ public class DatasetQueryView extends StudyQueryView
 
         for (QCStateSet set : stateSets)
         {
-            NavTree setItem = new NavTree(set.getLabel(), getViewContext().cloneActionURL().replaceParameter(BaseStudyController.SharedFormParameters.QCState, set.getFormValue()).toString());
+            NavTree setItem = new NavTree(set.getLabel(), getViewContext().cloneActionURL().replaceParameter(BaseStudyController.SharedFormParameters.QCState, set.getFormValue()));
             setItem.setId("QCState:" + set.getLabel());
             if (set.equals(currentSet))
                 setItem.setSelected(true);
@@ -525,7 +525,7 @@ public class DatasetQueryView extends StudyQueryView
                 button.addSeparator();
             }
             ActionURL updateAction = new ActionURL(StudyController.UpdateQCStateAction.class, getContainer());
-            NavTree updateItem = button.addMenuItem("Update state of selected rows", "#", "if (verifySelected(" + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form, \"" +
+            NavTree updateItem = button.addMenuItem("Update state of selected rows", "if (verifySelected(" + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form, \"" +
                     updateAction.getLocalURIString() + "\", \"post\", \"rows\")) " + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form.submit()");
             updateItem.setId("QCState:updateSelected");
         }
@@ -535,7 +535,7 @@ public class DatasetQueryView extends StudyQueryView
             if (!addSeparator)
                 button.addSeparator();
             button.addMenuItem("Manage states", new ActionURL(StudyController.ManageQCStatesAction.class,
-                    getContainer()).addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString()));
+                    getContainer()).addReturnURL(getViewContext().getActionURL()));
         }
         return button;
     }

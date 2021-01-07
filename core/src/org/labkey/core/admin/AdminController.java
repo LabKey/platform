@@ -545,7 +545,7 @@ public class AdminController extends SpringActionController
             }
             if (returnURL != null)
             {
-                url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
+                url.addReturnURL(returnURL);
             }
             return url;
         }
@@ -560,7 +560,7 @@ public class AdminController extends SpringActionController
         {
             ActionURL url = new ActionURL(MaintenanceAction.class, ContainerManager.getRoot());
             if (returnURL != null)
-                url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
+                url.addReturnURL(returnURL);
             return url;
         }
 
@@ -606,7 +606,7 @@ public class AdminController extends SpringActionController
             ActionURL result = new ActionURL(CreateFolderAction.class, c);
             if (returnURL != null)
             {
-                result.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
+                result.addReturnURL(returnURL);
             }
             return result;
         }
@@ -5616,7 +5616,7 @@ public class AdminController extends SpringActionController
                         MenuButton adminButton = new MenuButton("Update user settings");
                         adminButton.setRequiresSelection(true);
                         for (ConfigTypeProvider provider : MessageConfigService.get().getConfigTypes())
-                            adminButton.addMenuItem("For " + provider.getName().toLowerCase(), null, "userSettings_"+provider.getName()+"(LABKEY.DataRegions.Users.getSelectionCount())" );
+                            adminButton.addMenuItem("For " + provider.getName().toLowerCase(), "userSettings_"+provider.getName()+"(LABKEY.DataRegions.Users.getSelectionCount())" );
 
                         bar.add(adminButton);
                         super.populateButtonBar(dataView, bar);

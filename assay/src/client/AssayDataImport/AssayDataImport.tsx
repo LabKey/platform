@@ -237,7 +237,7 @@ export class App extends React.Component<Props, State> {
     };
 
     handleCancel = () => {
-        const returnUrl = ActionURL.getParameter('returnUrl');
+        const returnUrl = ActionURL.getReturnUrl();
         window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
     };
 

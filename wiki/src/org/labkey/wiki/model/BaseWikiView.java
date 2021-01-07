@@ -275,7 +275,7 @@ public abstract class BaseWikiView extends JspView<Object>
         {
             // The wiki might not have been set yet -- so there is no content
             if (null != customizeURL)
-                setCustomize(new NavTree("", customizeURL.toString()));
+                setCustomize(new NavTree("", customizeURL));
         }
 
         return menu;

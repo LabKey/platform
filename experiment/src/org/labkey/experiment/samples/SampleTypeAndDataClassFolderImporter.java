@@ -98,7 +98,10 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
             {
                 if (xarFile != null)
                 {
-                    File logFile = CompressedInputStreamXarSource.getLogFileFor(xarFile);
+                    File logFile = null;
+                    // we don't need the log file in cases where the xarFile is a virtual file and not in the file system
+                    if (xarFile.exists())
+                        logFile = CompressedInputStreamXarSource.getLogFileFor(xarFile);
 
                     if (job == null)
                     {

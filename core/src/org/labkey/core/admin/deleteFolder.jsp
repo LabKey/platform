@@ -153,7 +153,7 @@
 
         <labkey:form action='<%=urlFor(DeleteFolderAction.class)%>' method="post">
             <% if (form.getReturnUrl() != null) { %>
-                <input type="hidden" name="returnUrl" value="<%=h(form.getReturnUrl())%>"/>
+            <%= generateReturnUrlFormField(form)%>
             <% } %>
             <%
             for (Container c : containersToDelete)

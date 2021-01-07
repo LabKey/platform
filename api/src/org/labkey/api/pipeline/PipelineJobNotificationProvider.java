@@ -81,6 +81,9 @@ public interface PipelineJobNotificationProvider
 
         public static Notification getJobNotification(PipelineJob job, @Nullable String msgContent)
         {
+            if (!canSendNotification(job))
+                return null;
+
             User user = job.getUser();
             PipelineJob.TaskStatus status = job.getActiveTaskStatus();
 
@@ -116,20 +119,30 @@ public interface PipelineJobNotificationProvider
             return n;
         }
 
-        public static void sendJobNotification(PipelineJob job, Notification n)
+        private static boolean canSendNotification(PipelineJob job)
         {
             User user = job.getUser();
             if (null == user || user.isServiceUser() || user.getUserId() <= 0)
-                return;
+                return false;
             if (null == job.getJobGUID())
-                return;
+                return false;
 
             // don't attempt to add a notification if the Container has been deleted or is deleting
             if (ContainerManager.getForId(job.getContainerId()) == null || ContainerManager.isDeleting(job.getContainer()))
             {
                 job.getLogger().info("Job container has been deleted or is being deleted; skipping notification for '" + StringUtils.defaultString(job.getDescription(), job.toString()) + "'");
-                return;
+                return false;
             }
+
+            return true;
+        }
+
+        public static void sendJobNotification(PipelineJob job, @Nullable Notification n)
+        {
+            if (n == null)
+                return;
+
+            User user = job.getUser();
 
             try
             {

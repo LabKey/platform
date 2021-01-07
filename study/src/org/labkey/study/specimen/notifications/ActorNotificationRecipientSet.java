@@ -19,7 +19,6 @@ package org.labkey.study.specimen.notifications;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.study.SpecimenManager;
@@ -102,11 +101,11 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
 
     public String getConfigureEmailsLinkHTML()
     {
-        URLHelper url = new ActionURL(ShowGroupMembersAction.class, getActor().getContainer());
+        ActionURL url = new ActionURL(ShowGroupMembersAction.class, getActor().getContainer());
         url.addParameter("id", Integer.toString(getActor().getRowId()));
         if (getLocation() != null)
             url.addParameter("locationId", Integer.toString(getLocation().getRowId()));
-        url.addParameter("returnUrl", HttpView.currentContext().getActionURL().getLocalURIString());
+        url.addReturnURL(HttpView.currentContext().getActionURL());
         return PageFlowUtil.textLink("Configure Addresses", url);
     }
 

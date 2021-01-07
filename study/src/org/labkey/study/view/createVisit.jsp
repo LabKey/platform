@@ -130,6 +130,6 @@ is uploaded along with the data. This form allows you to define a range of seque
         </tr>
     </table>
     <br/>
-    <input type="hidden" name="returnUrl" value="<%=h(returnURL)%>">
+    <%=generateReturnUrlFormField(returnURL)%>
     <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(returnURL) %>
 </labkey:form>
