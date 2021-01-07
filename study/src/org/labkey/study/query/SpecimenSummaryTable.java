@@ -36,12 +36,11 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.StudySchema;
-import org.labkey.api.specimen.model.SpecimenComment;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -62,7 +61,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
     public SpecimenSummaryTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), cf,true);
+        super(schema, SpecimenSchema.get().getTableInfoSpecimen(schema.getContainer()), cf,true);
         setName("SpecimenSummary");
 
         _participantidColumn = addWrapParticipantColumn("PTID");

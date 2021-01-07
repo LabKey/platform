@@ -26,6 +26,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.study.StudySchema;
@@ -57,7 +58,7 @@ public class AutoCompleteAction extends ReadOnlyApiAction<AutoCompleteAction.Aut
         }
         else if (SpecimenService.CompletionType.SpecimenGlobalUniqueId.name().equals(form.getType()))
         {
-            tinfo = StudySchema.getInstance().getTableInfoVial(container);
+            tinfo = SpecimenSchema.get().getTableInfoVial(container);
             column = "GlobalUniqueId";
             insensitiveCompare = true;
             hasContainerColumn = false;
@@ -69,7 +70,7 @@ public class AutoCompleteAction extends ReadOnlyApiAction<AutoCompleteAction.Aut
         }
         else if (SpecimenService.CompletionType.LabId.name().equals(form.getType()))
         {
-            tinfo = StudySchema.getInstance().getTableInfoSite(container);
+            tinfo = SpecimenSchema.get().getTableInfoLocation(container);
             column = "Label";
             insensitiveCompare = true;
         }

@@ -194,7 +194,7 @@ import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.StudySchedule;
 import org.labkey.study.importer.DatasetImportUtils;
-import org.labkey.study.importer.RequestabilityManager;
+import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.SchemaTsvReader;
 import org.labkey.study.importer.StudyReload.ReloadStatus;

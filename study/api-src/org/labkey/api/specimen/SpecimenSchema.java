@@ -1,6 +1,7 @@
 package org.labkey.api.specimen;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -98,6 +99,7 @@ public class SpecimenSchema
      */
     private static SpecimenTablesTemplate _specimenTablesTemplate = new DefaultSpecimenTablesTemplate();
 
+    // TODO: Template gets set globally... for ALL threads! Switch to an instance-based or at least thread local approach
     public SpecimenTablesTemplate setSpecimenTablesTemplates(SpecimenTablesTemplate template)
     {
         if (template != null)
@@ -123,6 +125,13 @@ public class SpecimenSchema
         return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.VIAL_TABLENAME);
     }
 
+    @Nullable
+    public TableInfo getTableInfoVialIfExists(Container container)
+    {
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, null, _specimenTablesTemplate);
+        return specimenTablesProvider.getTableInfoIfExists(SpecimenTablesProvider.VIAL_TABLENAME);
+    }
+
     @NotNull
     public TableInfo getTableInfoSpecimen(Container container)
     {
@@ -136,6 +145,13 @@ public class SpecimenSchema
         return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.SPECIMEN_TABLENAME);
     }
 
+    @Nullable
+    public TableInfo getTableInfoSpecimenIfExists(Container container)
+    {
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, null, _specimenTablesTemplate);
+        return specimenTablesProvider.getTableInfoIfExists(SpecimenTablesProvider.SPECIMEN_TABLENAME);
+    }
+
     @NotNull
     public TableInfo getTableInfoSpecimenEvent(Container container)
     {
@@ -147,5 +163,50 @@ public class SpecimenSchema
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
         return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.SPECIMENEVENT_TABLENAME);
+    }
+
+    @Nullable
+    public TableInfo getTableInfoSpecimenEventIfExists(Container container)
+    {
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, null, _specimenTablesTemplate);
+        return specimenTablesProvider.getTableInfoIfExists(SpecimenTablesProvider.SPECIMENEVENT_TABLENAME);
+    }
+
+    public TableInfo getTableInfoSpecimenDetail(Container container)
+    {
+        return getSchema().getTable("SpecimenDetail");
+    }
+
+    public TableInfo getTableInfoSpecimenPrimaryType(Container container)
+    {
+        return getTableInfoSpecimenPrimaryType(container, null);
+    }
+
+    public TableInfo getTableInfoSpecimenPrimaryType(Container container, User user)
+    {
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
+        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.PRIMARYTYPE_TABLENAME);
+    }
+
+    public TableInfo getTableInfoSpecimenAdditive(Container container)
+    {
+        return getTableInfoSpecimenAdditive(container, null);
+    }
+
+    public TableInfo getTableInfoSpecimenAdditive(Container container, User user)
+    {
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
+        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.ADDITIVETYPE_TABLENAME);
+    }
+
+    public TableInfo getTableInfoSpecimenDerivative(Container container)
+    {
+        return getTableInfoSpecimenDerivative(container, null);
+    }
+
+    public TableInfo getTableInfoSpecimenDerivative(Container container, User user)
+    {
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
+        return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.DERIVATIVETYPE_TABLENAME);
     }
 }

@@ -26,6 +26,7 @@ import org.labkey.api.data.TempTableInfo;
 import org.labkey.api.data.TempTableWriter;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.writer.VirtualFile;
@@ -52,7 +53,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
 
     public void setSiteLookup(String lookup)
     {
-        if (lookup.toLowerCase().equals("siteid"))
+        if (lookup.equalsIgnoreCase("siteid"))
             lookup = "RowId";
         _siteLookup = lookup;
     }
@@ -79,7 +80,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
         if (error != null)
             return error;
 
-        TableInfo site = StudySchema.getInstance().getTableInfoSite(getDatasetDefinition().getContainer());
+        TableInfo site = SpecimenSchema.get().getTableInfoLocation(getDatasetDefinition().getContainer());
         ColumnInfo col = site.getColumn(_siteLookup);
         if (col == null || _siteLookup.toLowerCase().startsWith("is"))
             return "No such column in Site table: " + _siteLookup;
@@ -112,7 +113,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
 
             TempTableWriter ttl = new TempTableWriter(loader);
             TempTableInfo tinfoTemp = ttl.loadTempTable();
-            TableInfo site = StudySchema.getInstance().getTableInfoSite(container);
+            TableInfo site = SpecimenSchema.get().getTableInfoLocation(container);
             ColumnInfo siteLookup = site.getColumn(_siteLookup);
 
             // Merge uploaded data with Study tables

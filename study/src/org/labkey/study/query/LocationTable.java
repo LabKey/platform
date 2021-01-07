@@ -40,18 +40,18 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.location.LocationCache;
+import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
-import org.labkey.api.specimen.location.LocationImpl;
-import org.labkey.study.model.StudyManager;
-import org.labkey.api.specimen.location.LocationCache;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -67,7 +67,7 @@ public class LocationTable extends BaseStudyTable
 
     public LocationTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSite(schema.getContainer()), cf);
+        super(schema, SpecimenSchema.get().getTableInfoLocation(schema.getContainer()), cf);
         // FK on Container
         var containerColumn = ContainerForeignKey.initColumn(addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container"))), schema);
         containerColumn.setHidden(true);
@@ -94,16 +94,16 @@ public class LocationTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("GoverningDistrict")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("PostalArea")));
 
-        List<FieldKey> defaultColumns = new ArrayList<>(Arrays.asList(
-                inUse.getFieldKey(),
-                FieldKey.fromParts("ExternalId"),
-                FieldKey.fromParts("Label"),
-                FieldKey.fromParts("Description"),
-                FieldKey.fromParts("Sal"),
-                FieldKey.fromParts("Repository"),
-                FieldKey.fromParts("Endpoint"),
-                FieldKey.fromParts("Clinic")
-        ));
+        List<FieldKey> defaultColumns = List.of(
+            inUse.getFieldKey(),
+            FieldKey.fromParts("ExternalId"),
+            FieldKey.fromParts("Label"),
+            FieldKey.fromParts("Description"),
+            FieldKey.fromParts("Sal"),
+            FieldKey.fromParts("Repository"),
+            FieldKey.fromParts("Endpoint"),
+            FieldKey.fromParts("Clinic")
+        );
         setDefaultVisibleColumns(defaultColumns);
     }
 
@@ -116,7 +116,7 @@ public class LocationTable extends BaseStudyTable
     @Override
     public QueryUpdateService getUpdateService()
     {
-        TableInfo dbTable = StudySchema.getInstance().getTableInfoSite(getContainer());
+        TableInfo dbTable = SpecimenSchema.get().getTableInfoLocation(getContainer());
         return new LocationQueryUpdateService(this, dbTable);
     }
 
@@ -237,7 +237,8 @@ public class LocationTable extends BaseStudyTable
 
     private SQLFragment getLocationInUseExpression(String tableAlias)
     {
-        final StudySchema schema = StudySchema.getInstance();
+        final SpecimenSchema schema = SpecimenSchema.get();
+        final StudySchema studySchema = StudySchema.getInstance();
 
         // Because Location is now provisioned, each row's container must match container in the target table to be an InUse match
         var inUseColumn = getRealTable().getColumn("InUse");
@@ -263,7 +264,7 @@ public class LocationTable extends BaseStudyTable
             .append(tableAlias)
             .append(".Container = srr.Container) OR\n")
             .append(EXISTS)
-            .append(schema.getTableInfoParticipant(), "p")
+            .append(studySchema.getTableInfoParticipant(), "p")
             .append(" WHERE (")
             .append(tableAlias)
             .append(".RowId = p.EnrollmentSiteId OR ")
@@ -272,7 +273,7 @@ public class LocationTable extends BaseStudyTable
             .append(tableAlias)
             .append(".Container = p.Container) OR\n")
             .append(EXISTS)
-            .append(schema.getTableInfoAssaySpecimen(), "a")
+            .append(studySchema.getTableInfoAssaySpecimen(), "a")
             .append(" WHERE ")
             .append(tableAlias)
             .append(".RowId = a.LocationId AND ")
@@ -286,7 +287,7 @@ public class LocationTable extends BaseStudyTable
     public static void updateLocationTableInUse(TableInfo locationTableInfo, Container container)
     {
         final String tableAlias = locationTableInfo.getSelectName();
-        StudySchema schema = StudySchema.getInstance();
+        SpecimenSchema schema = SpecimenSchema.get();
         TableInfo eventTableInfo = schema.getTableInfoSpecimenEventIfExists(container);
         TableInfo vialTableInfo = schema.getTableInfoVialIfExists(container);
         TableInfo specimentTableInfo = schema.getTableInfoSpecimenIfExists(container);
@@ -360,7 +361,7 @@ public class LocationTable extends BaseStudyTable
             {
                 Container c = ContainerManager.getForId(id);
 
-                if (null != StudyManager.getInstance().getStudy(c))
+                if (null != StudyService.get().getStudy(c))
                     studyContainers.add(c);
             }
 

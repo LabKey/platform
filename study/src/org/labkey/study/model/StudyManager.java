@@ -112,6 +112,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Cohort;
@@ -583,7 +584,7 @@ public class StudyManager
 
         try (Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
         {
-            StudySchema.getInstance().getTableInfoSite(container, user);    // This provisioned table is needed for creating the study
+            SpecimenSchema.get().getTableInfoLocation(container, user);    // This provisioned table is needed for creating the study
             study = _studyHelper.create(user, study);
 
             //note: we no longer copy the container's policy to the study upon creation
@@ -591,12 +592,12 @@ public class StudyManager
             //is changed to one of the advanced options.
 
             // Force provisioned specimen tables to be created
-            StudySchema.getInstance().getTableInfoSpecimenPrimaryType(container, user);
-            StudySchema.getInstance().getTableInfoSpecimenDerivative(container, user);
-            StudySchema.getInstance().getTableInfoSpecimenAdditive(container, user);
-            StudySchema.getInstance().getTableInfoSpecimen(container, user);
-            StudySchema.getInstance().getTableInfoVial(container, user);
-            StudySchema.getInstance().getTableInfoSpecimenEvent(container, user);
+            SpecimenSchema.get().getTableInfoSpecimenPrimaryType(container, user);
+            SpecimenSchema.get().getTableInfoSpecimenDerivative(container, user);
+            SpecimenSchema.get().getTableInfoSpecimenAdditive(container, user);
+            SpecimenSchema.get().getTableInfoSpecimen(container, user);
+            SpecimenSchema.get().getTableInfoVial(container, user);
+            SpecimenSchema.get().getTableInfoSpecimenEvent(container, user);
             transaction.commit();
         }
         QueryService.get().updateLastModified();
@@ -2798,8 +2799,8 @@ public class StudyManager
             assert deletedTables.add(StudySchema.getInstance().getSchema().getTable(StudyQuerySchema.PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME));
 
             // Specimen comments
-            Table.delete(StudySchema.getInstance().getTableInfoSpecimenComment(), containerFilter);
-            assert deletedTables.add(StudySchema.getInstance().getTableInfoSpecimenComment());
+            Table.delete(SpecimenSchema.get().getTableInfoSpecimenComment(), containerFilter);
+            assert deletedTables.add(SpecimenSchema.get().getTableInfoSpecimenComment());
 
             deleteStudyDesignData(c, user, studyDesignTables);
 

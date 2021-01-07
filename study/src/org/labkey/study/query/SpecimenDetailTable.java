@@ -66,7 +66,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
     public SpecimenDetailTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail(schema.getContainer()), cf, false, true);
+        super(schema, SpecimenSchema.get().getTableInfoSpecimenDetail(schema.getContainer()), cf, false, true);
 
         var guid = addWrapColumn(_rootTable.getColumn(GLOBAL_UNIQUE_ID_COLUMN_NAME));
         guid.setDisplayColumnFactory(ColumnInfo.NOWRAP_FACTORY);
@@ -399,8 +399,8 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
     public static SQLFragment getSpecimenAndVialFromSQL(String alias, DbSchema schema, Container container,
                                    List<DomainProperty> optionalSpecimenProperties, List<DomainProperty> optionalVialProperties)
     {
-        TableInfo vialTI = StudySchema.getInstance().getTableInfoVial(container);
-        TableInfo specimenTI = StudySchema.getInstance().getTableInfoSpecimen(container);
+        TableInfo vialTI = SpecimenSchema.get().getTableInfoVial(container);
+        TableInfo specimenTI = SpecimenSchema.get().getTableInfoSpecimen(container);
 
         SqlDialect dialect = schema.getSqlDialect();
         SQLFragment sqlf = new SQLFragment();

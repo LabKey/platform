@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
+import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.model.SpecimenRequestActor;

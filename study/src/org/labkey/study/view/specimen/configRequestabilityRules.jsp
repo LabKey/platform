@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.study.StudyUrls"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.study.importer.RequestabilityManager" %>
+<%@ page import="org.labkey.api.specimen.importer.RequestabilityManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!

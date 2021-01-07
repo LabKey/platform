@@ -35,6 +35,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.DefaultSpecimenTablesTemplate;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.importer.SpecimenColumn;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
@@ -270,7 +271,7 @@ public class SpecimenServiceImpl implements SpecimenService
     @Override
     public Set<Pair<String, Date>> getSampleInfo(Container studyContainer, User user, boolean truncateTime)
     {
-        TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(studyContainer);
+        TableInfo tableInfoSpecimen = SpecimenSchema.get().getTableInfoSpecimen(studyContainer);
 
         String dateExpr = truncateTime ? StudySchema.getInstance().getSqlDialect().getDateTimeToDateCast("DrawTimestamp") : "DrawTimestamp";
         SQLFragment sql = new SQLFragment("SELECT DISTINCT PTID, " + dateExpr + " AS DrawTimestamp FROM ");
@@ -291,7 +292,7 @@ public class SpecimenServiceImpl implements SpecimenService
     @Override
     public Set<Pair<String, Double>> getSampleInfo(Container studyContainer, User user)
     {
-        TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(studyContainer);
+        TableInfo tableInfoSpecimen = SpecimenSchema.get().getTableInfoSpecimen(studyContainer);
 
         SQLFragment sql = new SQLFragment("SELECT DISTINCT PTID, VisitValue FROM ");
         sql.append(tableInfoSpecimen.getSelectName()).append(";");
@@ -411,21 +412,21 @@ public class SpecimenServiceImpl implements SpecimenService
     @Override
     public TableInfo getTableInfoVial(Container container)
     {
-        return StudySchema.getInstance().getTableInfoVialIfExists(container);
+        return SpecimenSchema.get().getTableInfoVialIfExists(container);
     }
 
     @Nullable
     @Override
     public TableInfo getTableInfoSpecimen(Container container)
     {
-        return StudySchema.getInstance().getTableInfoSpecimenIfExists(container);
+        return SpecimenSchema.get().getTableInfoSpecimenIfExists(container);
     }
 
     @Nullable
     @Override
     public TableInfo getTableInfoSpecimenEvent(Container container)
     {
-        return StudySchema.getInstance().getTableInfoSpecimenEventIfExists(container);
+        return SpecimenSchema.get().getTableInfoSpecimenEventIfExists(container);
     }
 
     @Override

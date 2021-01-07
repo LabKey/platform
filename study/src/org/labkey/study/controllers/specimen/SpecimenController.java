@@ -132,7 +132,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.designer.MapArrayExcelWriter;
-import org.labkey.study.importer.RequestabilityManager;
+import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ExtendedSpecimenRequestView;
@@ -232,6 +232,12 @@ public class SpecimenController extends BaseStudyController
         public ActionURL getSamplesURL(Container c)
         {
             return SpecimenController.getSamplesURL(c);
+        }
+
+        @Override
+        public ActionURL getSamplesURL(Container c, boolean showVials)
+        {
+            return getSamplesURL(c).addParameter(SampleViewTypeForm.PARAMS.showVials, true);
         }
 
         @Override

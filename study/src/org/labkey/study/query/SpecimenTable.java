@@ -16,17 +16,16 @@
 package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
-import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyImpl;
 
 import java.util.ArrayList;
@@ -38,7 +37,7 @@ public class SpecimenTable extends AbstractSpecimenTable
 
     public SpecimenTable(StudyQuerySchema schema, ContainerFilter cf, boolean skipPermissionChecks, boolean allStudies)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), cf, skipPermissionChecks, true);
+        super(schema, SpecimenSchema.get().getTableInfoSpecimen(schema.getContainer()), cf, skipPermissionChecks, true);
 
         var ptidColumn = getMutableColumn(StudyService.get().getSubjectColumnName(getContainer()));
 //        addWrapColumn(getRealTable().getColumn("RowId"));

@@ -27,6 +27,7 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.security.permissions.ManageSpecimenActorsPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -35,7 +36,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -232,11 +232,11 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
 
     public static class GroupMembersBean
     {
-        private SpecimenRequestActor _actor;
-        private LocationImpl _location;
-        private User[] _members;
-        private String _ldapDomain;
-        private ActionURL _returnUrl;
+        private final SpecimenRequestActor _actor;
+        private final LocationImpl _location;
+        private final User[] _members;
+        private final String _ldapDomain;
+        private final ActionURL _returnUrl;
 
         public GroupMembersBean(SpecimenRequestActor actor, LocationImpl location, User[] members, ActionURL returnUrl)
         {

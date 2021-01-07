@@ -42,7 +42,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.study.importer.RequestabilityManager;
+import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.model.AdditiveType;
 import org.labkey.api.specimen.model.DerivativeType;
 import org.labkey.study.model.SpecimenRequest;

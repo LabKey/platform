@@ -30,7 +30,7 @@ import org.labkey.security.xml.GroupType;
 import org.labkey.security.xml.GroupsType;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.importer.RequestabilityManager;
+import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.study.model.SpecimenRequestRequirement;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.DefaultRequirementType;

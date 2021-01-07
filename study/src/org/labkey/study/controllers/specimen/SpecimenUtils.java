@@ -21,7 +21,24 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBarLineBreak;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
@@ -29,6 +46,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.specimen.SpecimenRequestStatus;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
@@ -56,7 +74,6 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
@@ -866,7 +883,7 @@ public class SpecimenUtils
     public GridView getRequestEventGridView(HttpServletRequest request, BindException errors, SimpleFilter filter)
     {
         DataRegion rgn = new DataRegion();
-        TableInfo tableInfoRequestEvent = StudySchema.getInstance().getTableInfoSampleRequestEvent();
+        TableInfo tableInfoRequestEvent = SpecimenSchema.get().getTableInfoSampleRequestEvent();
         rgn.setTable(tableInfoRequestEvent);
         rgn.setColumns(tableInfoRequestEvent.getColumns("Created", "EntryType", "Comments", "CreatedBy", "EntityId"));
         rgn.getDisplayColumn("EntityId").setVisible(false);
@@ -932,7 +949,7 @@ public class SpecimenUtils
             }
         };
 
-        TableInfo tableInfoRequestEvent = StudySchema.getInstance().getTableInfoSampleRequestEvent();
+        TableInfo tableInfoRequestEvent = SpecimenSchema.get().getTableInfoSampleRequestEvent();
         rgn.setTable(tableInfoRequestEvent);
         rgn.setColumns(tableInfoRequestEvent.getColumns("Created", "EntityId"));
         rgn.getDisplayColumn("EntityId").setVisible(false);

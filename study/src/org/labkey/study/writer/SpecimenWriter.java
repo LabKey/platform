@@ -32,14 +32,14 @@ import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.writer.VirtualFile;
-import org.labkey.api.writer.Writer;
-import org.labkey.study.StudySchema;
-import org.labkey.study.importer.SpecimenImporter;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.importer.SpecimenColumn;
 import org.labkey.api.specimen.importer.TargetTable;
+import org.labkey.api.writer.VirtualFile;
+import org.labkey.api.writer.Writer;
+import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.api.specimen.Vial;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.io.PrintWriter;
@@ -64,7 +64,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
     @Override
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
-        StudySchema schema = StudySchema.getInstance();
+        SpecimenSchema schema = SpecimenSchema.get();
         StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, ctx.getUser(), true); // to use for checking overlayed XMl metadata
         Container c = ctx.getContainer();
         SpecimenImporter specimenImporter = new SpecimenImporter(c, ctx.getUser());
@@ -225,7 +225,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         sql.append("\nORDER BY se.ExternalId");
 
         // Note: must be uncached result set -- this query can be very large
-        ResultsFactory factory = ()->new ResultsImpl(new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false), selectColumns);
+        ResultsFactory factory = ()->new ResultsImpl(new SqlSelector(schema.getSchema(), sql).getResultSet(false), selectColumns);
 
         // TSVGridWriter generates and closes the Results
         try (TSVGridWriter gridWriter = new TSVGridWriter(factory, displayColumns))

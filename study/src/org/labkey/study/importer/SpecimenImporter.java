@@ -66,6 +66,7 @@ import org.labkey.api.specimen.importer.EventVialRollup;
 import org.labkey.api.specimen.importer.FileSystemSpecimenImportFile;
 import org.labkey.api.specimen.importer.ImportTypes;
 import org.labkey.api.specimen.importer.ImportableColumn;
+import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.importer.RollupHelper;
 import org.labkey.api.specimen.importer.RollupHelper.RollupMap;
 import org.labkey.api.specimen.importer.RollupInstance;
@@ -465,25 +466,25 @@ public class SpecimenImporter
         _container = container;
         _user = user;
 
-        _tableInfoSpecimenEvent = StudySchema.getInstance().getTableInfoSpecimenEvent(_container);
-        _tableInfoVial = StudySchema.getInstance().getTableInfoVial(_container);
-        _tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(_container);
-        _tableInfoPrimaryType = StudySchema.getInstance().getTableInfoSpecimenPrimaryType(_container);
-        _tableInfoLocation = StudySchema.getInstance().getTableInfoSite(_container);
-        _tableInfoDerivative = StudySchema.getInstance().getTableInfoSpecimenDerivative(_container);
-        _tableInfoAdditive = StudySchema.getInstance().getTableInfoSpecimenAdditive(_container);
+        _tableInfoSpecimenEvent = SpecimenSchema.get().getTableInfoSpecimenEvent(_container);
+        _tableInfoVial = SpecimenSchema.get().getTableInfoVial(_container);
+        _tableInfoSpecimen = SpecimenSchema.get().getTableInfoSpecimen(_container);
+        _tableInfoPrimaryType = SpecimenSchema.get().getTableInfoSpecimenPrimaryType(_container);
+        _tableInfoLocation = SpecimenSchema.get().getTableInfoLocation(_container);
+        _tableInfoDerivative = SpecimenSchema.get().getTableInfoSpecimenDerivative(_container);
+        _tableInfoAdditive = SpecimenSchema.get().getTableInfoSpecimenAdditive(_container);
         _dialect = _tableInfoSpecimen.getSqlDialect();
 
         _specimenColumns = determineSpecimenColumns();
         _specimensTableType = new SpecimenTableType("specimens", "study.Specimen", _specimenColumns);
         _labsTableType = new SpecimenTableType("labs",
-                StudySchema.getInstance().getTableInfoSite(_container).getSelectName(), SITE_COLUMNS);
+                SpecimenSchema.get().getTableInfoLocation(_container).getSelectName(), SITE_COLUMNS);
         _additivesTableType = new SpecimenTableType("additives",
-                StudySchema.getInstance().getTableInfoSpecimenAdditive(_container).getSelectName(), ADDITIVE_COLUMNS);
+                SpecimenSchema.get().getTableInfoSpecimenAdditive(_container).getSelectName(), ADDITIVE_COLUMNS);
         _derivativesTableType = new SpecimenTableType("derivatives",
-                StudySchema.getInstance().getTableInfoSpecimenDerivative(_container).getSelectName(), DERIVATIVE_COLUMNS);
+                SpecimenSchema.get().getTableInfoSpecimenDerivative(_container).getSelectName(), DERIVATIVE_COLUMNS);
         _primaryTypesTableType = new SpecimenTableType("primary_types",
-                StudySchema.getInstance().getTableInfoSpecimenPrimaryType(_container).getSelectName(), PRIMARYTYPE_COLUMNS);
+                SpecimenSchema.get().getTableInfoSpecimenPrimaryType(_container).getSelectName(), PRIMARYTYPE_COLUMNS);
     }
 
     private Collection<SpecimenColumn> determineSpecimenColumns()
@@ -3319,9 +3320,9 @@ public class SpecimenImporter
             User user = TestContext.get().getUser();
 
             // Provisioned specimen tables need to be created in this order
-            TableInfo specimenTableInfo = StudySchema.getInstance().getTableInfoSpecimen(c, user);
-            TableInfo vialTableInfo = StudySchema.getInstance().getTableInfoVial(c, user);
-            TableInfo specimenEventTableInfo = StudySchema.getInstance().getTableInfoSpecimenEvent(c, user);
+            TableInfo specimenTableInfo = SpecimenSchema.get().getTableInfoSpecimen(c, user);
+            TableInfo vialTableInfo = SpecimenSchema.get().getTableInfoVial(c, user);
+            TableInfo specimenEventTableInfo = SpecimenSchema.get().getTableInfoSpecimenEvent(c, user);
             SpecimenImporter importer = new SpecimenImporter(c, user);
 
             for (SpecimenColumn specimenColumn : importer._specimenColumns)

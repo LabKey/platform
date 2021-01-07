@@ -45,7 +45,12 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
+import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
+import org.labkey.api.specimen.settings.DisplaySettings;
+import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HtmlString;
@@ -61,11 +66,7 @@ import org.labkey.study.controllers.specimen.SpecimenUtils;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.api.specimen.Vial;
 import org.labkey.study.reports.StudyCrosstabReport;
-import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
-import org.labkey.api.specimen.settings.DisplaySettings;
-import org.labkey.api.specimen.settings.RepositorySettings;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -635,7 +636,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
     protected static SimpleFilter addNotPreviouslyRequestedClause(SimpleFilter filter, Container container, int locationId)
     {
-        TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
+        TableInfo tableInfoVial = SpecimenSchema.get().getTableInfoVial(container);
         SQLFragment sql = new SQLFragment("SpecimenHash NOT IN (" +
                 "SELECT v.SpecimenHash from study.SampleRequestSpecimen rs join study.SampleRequest r on rs.SamplerequestId=r.RowId "
                 + "join ");

@@ -21,8 +21,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.util.Path;
-import org.labkey.study.StudySchema;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +37,7 @@ public class SpecimenWrapTable extends BaseStudyTable
 
     public SpecimenWrapTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail(schema.getContainer()), cf, true, true);
+        super(schema, SpecimenSchema.get().getTableInfoSpecimenDetail(schema.getContainer()), cf, true, true);
 
         addWrapTypeColumn("PrimaryTypeId", "PrimaryTypeId");
         addWrapTypeColumn("DerivativeTypeId", "DerivativeTypeId");
