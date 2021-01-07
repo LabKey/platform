@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
@@ -254,7 +255,8 @@ public class ReturnUrlForm
         if (HttpView.hasCurrentView())
             msg.append(" from URL: ").append(HttpView.currentContext().getRequest().getRequestURI());
         LOG.error(msg.toString());
-        throw new UnsupportedOperationException(msg.toString());
+        if (AppProps.getInstance().isDevMode())
+            throw new UnsupportedOperationException(msg.toString());
     }
 
 }
