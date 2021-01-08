@@ -90,9 +90,7 @@ public class MeasureBoxPlotAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public void addClientDependencies(Set<ClientDependency> dependencies)
     {
-        dependencies.add(ClientDependency.fromPath("vis/vis"));
-        dependencies.add(ClientDependency.fromPath("vis/ColumnVisualizationAnalytics.js"));
-        dependencies.add(ClientDependency.fromPath("vis/ColumnVisualizationAnalytics.css"));
+        dependencies.add(ClientDependency.fromPath("vis/ColumnVisualizationAnalytics"));
     }
 
     @Override
