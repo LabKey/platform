@@ -1168,13 +1168,14 @@ public class TabLoader extends DataLoader
             */
 
             String[] expectedHashes = new String[] {
-                "cc2d5fb91b180a0613dec8d9775c73b2",
-                "2e6a6fd005be65fd5815ac02704dff56",
-                "8adb150c3e23b192a804da5024cf7808",
-                "3938fc43d4f963c5cfb80a6dfab0a2ea",
-                "ab0005ee45fda4b395d2ebaca5471576",
-                "46b16984868c76dbfd0c107090f80a90",
-                "46ca16aba7768493c17f21c3a569e955"};
+                    "zC1fuRsYCgYT3sjZd1xzsg==",
+                    "Lmpv0AW+Zf1YFawCcE3/Vg==",
+                    "itsVDD4jsZKoBNpQJM94CA==",
+                    "OTj8Q9T5Y8XPuApt+rCi6g==",
+                    "qwAF7kX9pLOV0uuspUcVdg==",
+                    "RrFphIaMdtv9DBBwkPgKkA==",
+                    "RsoWq6d2hJPBfyHDpWnpVQ=="
+            };
             TabLoader tl = new TabLoader(tsvData);
             DataLoaderIterator it = (DataLoaderIterator)tl.iterator(true);
             for (int i=0 ; it.hasNext() ; i++)
