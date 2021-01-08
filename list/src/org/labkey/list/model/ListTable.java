@@ -432,7 +432,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
         // Title column setting is <AUTO> -- select the first string column that's not a lookup (see #9114)
         for (ColumnInfo column : getColumns())
-            if (column.isStringType() && null == column.getFk())
+            if (column.isStringType() && !column.isHidden() && null == column.getFk())
                 return column.getName();
 
         // No non-FK string columns -- fall back to pk (see issue #5452)
