@@ -40,6 +40,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.dataiterator.ValidatorIterator;
+import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -184,6 +185,15 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                     c.setShownInUpdateView(false);
                     addColumn(c);
                 }
+                else if (name.equalsIgnoreCase(DataIntegrationService.Columns.TransformImportHash.getColumnName()))
+                {
+                    var c = wrapColumn(baseColumn);
+                    c.setUserEditable(false);
+                    c.setShownInInsertView(false);
+                    c.setShownInUpdateView(false);
+                    c.setHidden(true);
+                    addColumn(c);
+                }
                 else if (name.equalsIgnoreCase("LastIndexed"))
                 {
                     var column = addWrapColumn(baseColumn);
@@ -231,7 +241,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                             // The column in the physical table has a "_MVIndicator" suffix, but we want to expose
                             // it with a "MVIndicator" suffix (no underscore)
                             var mvColumn = new AliasedColumn(this, col.getName() + MvColumn.MV_INDICATOR_SUFFIX,
-                                                                    StorageProvisioner.getMvIndicatorColumn(getRealTable(), pd, "No MV column found for '" + pd.getName() + "' in list '" + getName() + "'"));
+                                                                    StorageProvisioner.get().getMvIndicatorColumn(getRealTable(), pd, "No MV column found for '" + pd.getName() + "' in list '" + getName() + "'"));
                             // MV indicators are strings
                             mvColumn.setLabel(col.getLabel() + " MV Indicator");
                             mvColumn.setSqlTypeName("VARCHAR");
@@ -422,7 +432,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
         // Title column setting is <AUTO> -- select the first string column that's not a lookup (see #9114)
         for (ColumnInfo column : getColumns())
-            if (column.isStringType() && null == column.getFk())
+            if (column.isStringType() && !column.isHidden() && null == column.getFk())
                 return column.getName();
 
         // No non-FK string columns -- fall back to pk (see issue #5452)

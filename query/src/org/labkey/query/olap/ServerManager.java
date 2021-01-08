@@ -294,7 +294,7 @@ public class ServerManager
 
         if (null == rolap)
         {
-            throw new IllegalArgumentException("Unable to find cube definiton for cubeName: " + cubeName);
+            throw new IllegalArgumentException("Unable to find cube definition for cubeName: " + cubeName);
         }
 
         String cubeCacheKey = c.getId() + "/" + rolap.getName();

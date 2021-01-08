@@ -16,6 +16,8 @@
 package org.labkey.api.study;
 
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorContext;
 
 /**
  * Table backed by a {@link Dataset}
@@ -25,4 +27,5 @@ import org.labkey.api.data.TableInfo;
 public interface DatasetTable extends TableInfo
 {
     Dataset getDataset();
+    DataIterator getPrimaryKeyDataIterator(DataIterator it, DataIteratorContext context);
 }

@@ -1,0 +1,6 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="vis/ColumnVisualizationAnalytics.css"/>
+        <script path="vis/ColumnVisualizationAnalytics.js"/>
+    </library>
+</libraries>
