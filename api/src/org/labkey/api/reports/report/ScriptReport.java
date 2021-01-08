@@ -59,7 +59,7 @@ public abstract class ScriptReport extends AbstractReport
      * Create the query view used to generate the result set that this report operates on.
      */
     @Nullable
-    protected QueryView createQueryView(ViewContext context, ReportDescriptor descriptor) throws Exception
+    protected QueryView createQueryView(ViewContext context, ReportDescriptor descriptor)
     {
         final String schemaName = descriptor.getProperty(QueryParam.schemaName.toString());
         final String queryName = descriptor.getProperty(QueryParam.queryName.toString());
