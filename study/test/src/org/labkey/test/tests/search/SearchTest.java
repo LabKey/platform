@@ -135,6 +135,7 @@ public abstract class SearchTest extends StudyBaseTest
         Set<String> projects = new HashSet<>();
         projects.addAll(getSearchResultsProjects("Owlbear")); // List
         projects.addAll(getSearchResultsProjects("Urinalysis")); // Study
+        projects.addAll(getSearchResultsProjects("999320016")); // Specimens
         projects.addAll(getSearchResultsProjects(WIKI_NAME)); // Wiki
         projects.addAll(getSearchResultsProjects(ISSUE_TITLE)); // Issues
         projects.addAll(getSearchResultsProjects("acyclic")); // Files
