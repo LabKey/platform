@@ -1362,7 +1362,7 @@ public class Query
         }
     }
 
-    private static final int Rcolumns = TestDataLoader.COLUMNS.length + 8; // rowid, entityid, created, createdby, modified, modifiedby, lastindexed, container
+    private static final int Rcolumns = TestDataLoader.COLUMNS.length + 9; // rowid, entityid, created, createdby, modified, modifiedby, lastindexed, container, diimporthash
 	private static final int Rsize = 84;
 	private static final int Ssize = 84;
 

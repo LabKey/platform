@@ -113,6 +113,8 @@ public interface UpdateableTableInfo extends TableInfo
      * Try to use generic code paths to get the input data iterator to match the parameters when possible.
      *
      * This method is _NOT_ usually called directly. See TableInfo.getUpdateService(), and StandardDataIteratorBuilder.
+     *
+     * NOTE, potential for cleanup, most usages do not require a DataIteratorContext to create a DataIteratorBuilder
      */
     DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context);
 

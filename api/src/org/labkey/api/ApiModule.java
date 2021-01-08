@@ -38,6 +38,7 @@ import org.labkey.api.data.dialect.ParameterSubstitutionTest;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
 import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.DiskCachingDataIterator;
 import org.labkey.api.dataiterator.RemoveDuplicatesDataIterator;
 import org.labkey.api.dataiterator.ResultSetDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
@@ -148,6 +149,7 @@ public class ApiModule extends CodeOnlyModule
             DataIteratorUtil.TestCase.class,
             DateUtil.TestCase.class,
             DbScope.DialectTestCase.class,
+            DiskCachingDataIterator.DiskTestCase.class,
             EmailTemplate.TestCase.class,
             ExcelFactory.ExcelFactoryTestCase.class,
             ExcelLoader.ExcelLoaderTestCase.class,
@@ -257,7 +259,6 @@ public class ApiModule extends CodeOnlyModule
             StandardDialectStringHandler.TestCase.class,
             StatementDataIterator.TestCase.class,
             StatementUtils.TestCase.class,
-            StorageProvisioner.TestCase.class,
             Table.DataIteratorTestCase.class,
             Table.TestCase.class,
             TableSelectorTestCase.class,

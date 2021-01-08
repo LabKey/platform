@@ -349,7 +349,7 @@ public class UserManager
     @NotNull
     private static SchemaTableInfo getUserAuditSchemaTableInfo()
     {
-        return StorageProvisioner.getSchemaTableInfo(AuditLogService.get().getAuditProvider(USER_AUDIT_EVENT).getDomain());
+        return StorageProvisioner.get().getSchemaTableInfo(AuditLogService.get().getAuditProvider(USER_AUDIT_EVENT).getDomain());
     }
 
     public static long getRecentLoginCount(Date since)

@@ -70,11 +70,13 @@ import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.QCState;
@@ -2667,7 +2669,7 @@ public class StudyManager
         if (!ds.canDeleteDefinition(user))
             throw new IllegalStateException("Can't delete dataset: " + ds.getName());
 
-        StorageProvisioner.drop(ds.getDomain());
+        StorageProvisioner.get().drop(ds.getDomain());
 
         if (ds.getTypeURI() != null)
         {
@@ -3450,7 +3452,7 @@ public class StudyManager
     }
 
 
-    private void batchValidateExceptionToList(BatchValidationException errors, List<String> errorStrs)
+    public void batchValidateExceptionToList(BatchValidationException errors, List<String> errorStrs)
     {
         for (ValidationException rowError : errors.getRowErrors())
         {
@@ -3462,26 +3464,6 @@ public class StudyManager
         }
     }
 
-    /** @deprecated pass in a BatchValidationException, not List<String>  */
-    @Deprecated
-    public List<String> importDatasetData(User user, DatasetDefinition def, DataLoader loader, Map<String, String> columnMap,
-                                          List<String> errors, DatasetDefinition.CheckForDuplicates checkDuplicates,
-                                          QCState defaultQCState, StudyImportContext studyImportContext, Logger logger)
-            throws IOException
-    {
-        parseData(user, def, loader, columnMap);
-
-        Map<Enum, Object> options = new HashMap<>();
-        options.put(QueryUpdateService.ConfigParameters.Logger, logger);
-
-        DataIteratorContext context = new DataIteratorContext();
-        context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
-        context.setConfigParameters(options);
-
-        List<String> lsids = def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, studyImportContext, logger, false);
-        batchValidateExceptionToList(context.getErrors(), errors);
-        return lsids;
-    }
 
     public List<String> importDatasetData(User user, DatasetDefinition def, DataLoader loader, Map<String, String> columnMap,
                                           BatchValidationException errors, DatasetDefinition.CheckForDuplicates checkDuplicates,
@@ -3508,9 +3490,7 @@ public class StudyManager
             throws IOException
     {
         parseData(user, def, loader, columnMap);
-        Logger logger = null != context.getConfigParameters()
-                ? (Logger)context.getConfigParameters().get(QueryUpdateService.ConfigParameters.Logger)
-                : null;
+        Logger logger = (Logger)context.getConfigParameters().get(QueryUpdateService.ConfigParameters.Logger);
         return def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, studyImportContext, logger, false);
     }
 
@@ -3748,7 +3728,7 @@ public class StudyManager
             }
             Domain domain = domainsMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI());
             domain.setPropertyIndices(datasetImportInfo.indices);
-            StorageProvisioner.addMissingRequiredIndices(domain);
+            StorageProvisioner.get().addMissingRequiredIndices(domain);
         }
     }
 
@@ -3763,7 +3743,7 @@ public class StudyManager
             }
             Domain domain = domainsMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI());
             domain.setPropertyIndices(datasetImportInfo.indices);
-            StorageProvisioner.dropNotRequiredIndices(domain);
+            StorageProvisioner.get().dropNotRequiredIndices(domain);
         }
     }
 
@@ -4699,6 +4679,25 @@ public class StudyManager
     public Study getStudyForVisitTag(@NotNull Study study)
     {
         return getSharedStudyOrCurrent(study);
+    }
+
+
+    public static class StudyUpgradeCode implements UpgradeCode
+    {
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void addImportHashColumn(final ModuleContext context)
+        {
+            if (null!=context && context.isNewInstall())
+                return;
+            StorageProvisioner sp = StorageProvisioner.get();
+            List<DatasetDefinition> all = new TableSelector(StudySchema.getInstance().getTableInfoDataset()).getArrayList(DatasetDefinition.class);
+            for (var ds : all)
+            {
+                Domain d = ds.getDomain();
+                if (null != d && null != d.getStorageTableName())
+                    sp.ensureBaseProperties(d);
+            }
+        }
     }
 
 

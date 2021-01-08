@@ -68,7 +68,7 @@ public class ValidateDomainsPipelineJob extends PipelineJob
     {
         setStatus(TaskStatus.running);
         getLogger().info("Starting to check domains");
-        StorageProvisioner.ProvisioningReport pr = StorageProvisioner.getProvisioningReport();
+        StorageProvisioner.ProvisioningReport pr = StorageProvisioner.get().getProvisioningReport();
         getLogger().info(String.format("%d domains use Storage Provisioner", pr.getProvisionedDomains().size()));
         int errorCount = 0;
         for (StorageProvisioner.ProvisioningReport.DomainReport dr : pr.getProvisionedDomains())
