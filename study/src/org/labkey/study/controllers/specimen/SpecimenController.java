@@ -990,8 +990,8 @@ public class SpecimenController extends BaseStudyController
                 MenuButton exportMenuButton = new MenuButton("Export");
                 ActionURL exportExcelURL = context.getActionURL().clone().addParameter("export", "excel");
                 ActionURL exportTextURL = context.getActionURL().clone().addParameter("export", "tsv");
-                exportMenuButton.addMenuItem("Export all to Excel (.xls)", exportExcelURL.getLocalURIString());
-                exportMenuButton.addMenuItem("Export all to text file (.tsv)", exportTextURL.getLocalURIString());
+                exportMenuButton.addMenuItem("Export all to Excel (.xls)", exportExcelURL);
+                exportMenuButton.addMenuItem("Export all to text file (.tsv)", exportTextURL);
                 buttons.add(exportMenuButton);
                 _specimenQueryView.setShowExportButtons(false);
                 _specimenQueryView.getSettings().setAllowChooseView(false);

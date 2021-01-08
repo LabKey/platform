@@ -63,10 +63,10 @@
     ActionURL startURL = c.getStartURL(getUser()); // 30975: Return to startURL due to async view context
 
     ActionURL createProjectURL = urlProvider(AdminUrls.class).getCreateProjectURL(null);
-    createProjectURL.addParameter(ActionURL.Param.returnUrl, startURL.toString());
+    createProjectURL.addReturnURL(startURL);
 
     ActionURL createFolderURL = urlProvider(AdminUrls.class).getCreateFolderURL(c, null);
-    createFolderURL.addParameter(ActionURL.Param.returnUrl, startURL.toString());
+    createFolderURL.addReturnURL(startURL);
 
     ActionURL folderManagementURL = urlProvider(AdminUrls.class).getManageFoldersURL(c);
     if (size > 1) { // Only show the nav trail if subfolders exist

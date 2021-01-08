@@ -667,7 +667,7 @@ public class ExperimentController extends SpringActionController
                 {
                     ActionURL updateURL = new ActionURL(EditSampleTypeAction.class, _sampleType.getContainer());
                     updateURL.addParameter("RowId", _sampleType.getRowId());
-                    updateURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                    updateURL.addReturnURL(getViewContext().getActionURL());
                     ActionButton updateButton = new ActionButton(updateURL, "Edit Type", ActionButton.Action.LINK);
                     updateButton.setDisplayPermission(DesignSampleTypePermission.class);
                     updateButton.setPrimary(true);
@@ -675,7 +675,7 @@ public class ExperimentController extends SpringActionController
 
                     ActionURL deleteURL = new ActionURL(DeleteSampleTypesAction.class, _sampleType.getContainer());
                     deleteURL.addParameter("singleObjectRowId", _sampleType.getRowId());
-                    deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()).toString());
+                    deleteURL.addReturnURL(ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()));
                     ActionButton deleteButton = new ActionButton(deleteURL, "Delete Type", ActionButton.Action.LINK);
                     deleteButton.setDisplayPermission(DesignSampleTypePermission.class);
                     detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(deleteButton);
@@ -685,7 +685,7 @@ public class ExperimentController extends SpringActionController
                     ActionURL editURL = domainKind.urlEditDefinition(_sampleType.getDomain(), new ViewBackgroundInfo(_sampleType.getContainer(), getUser(), getViewContext().getActionURL()));
                     if (editURL != null)
                     {
-                        editURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                        editURL.addReturnURL(getViewContext().getActionURL());
                         ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields");
                         editTypeButton.setDisplayPermission(UpdatePermission.class);
                         detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
@@ -702,7 +702,7 @@ public class ExperimentController extends SpringActionController
                     if (importURL != null)
                     {
                         importURL = importURL.clone();
-                        importURL.replaceParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                        importURL.addReturnURL(getViewContext().getActionURL());
                         ActionButton uploadButton = new ActionButton(importURL, "Import More Samples", ActionButton.Action.LINK);
                         uploadButton.setDisplayPermission(UpdatePermission.class);
                         detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(uploadButton);
@@ -989,7 +989,7 @@ public class ExperimentController extends SpringActionController
             {
                 ActionURL updateURL = new ActionURL(EditDataClassAction.class, _dataClass.getContainer());
                 updateURL.addParameter("rowId", _dataClass.getRowId());
-                updateURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                updateURL.addReturnURL(getViewContext().getActionURL());
                 ActionButton updateButton = new ActionButton(updateURL, "Edit", ActionButton.Action.LINK);
                 updateButton.setDisplayPermission(DesignDataClassPermission.class);
                 updateButton.setPrimary(true);
@@ -997,7 +997,7 @@ public class ExperimentController extends SpringActionController
 
                 ActionURL deleteURL = new ActionURL(ExperimentController.DeleteDataClassAction.class, _dataClass.getContainer());
                 deleteURL.addParameter("singleObjectRowId", _dataClass.getRowId());
-                deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getDataClassListURL(getContainer()).toString());
+                deleteURL.addReturnURL(ExperimentUrlsImpl.get().getDataClassListURL(getContainer()));
                 ActionButton deleteButton = new ActionButton(deleteURL, "Delete", ActionButton.Action.LINK);
                 deleteButton.setDisplayPermission(DesignDataClassPermission.class);
                 bb.add(deleteButton);
@@ -6061,7 +6061,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public ActionURL getDeleteExperimentsURL(Container container, URLHelper returnURL)
         {
-            return new ActionURL(DeleteSelectedExperimentsAction.class, container).addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
+            return new ActionURL(DeleteSelectedExperimentsAction.class, container).addReturnURL(returnURL);
         }
 
         @Override
@@ -6071,7 +6071,7 @@ public class ExperimentController extends SpringActionController
             result.addParameter("singleObjectRowId", protocol.getRowId());
             if (returnURL != null)
             {
-                result.addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
+                result.addReturnURL(returnURL);
             }
             return result;
         }
