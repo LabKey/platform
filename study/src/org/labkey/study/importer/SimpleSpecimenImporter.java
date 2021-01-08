@@ -34,11 +34,17 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.importer.IteratorSpecimenImportFile;
+import org.labkey.api.specimen.importer.SpecimenColumn;
+import org.labkey.api.specimen.importer.SpecimenImportFile;
+import org.labkey.api.specimen.importer.SpecimenTableType;
+import org.labkey.api.specimen.importer.StandardSpecimenImportStrategy;
 import org.labkey.api.study.SpecimenImportStrategy;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
 import org.springframework.jdbc.BadSqlGrammarException;
 
@@ -217,12 +223,12 @@ public class SimpleSpecimenImporter extends SpecimenImporter
     {
         //Map from column name to
         Container container = getContainer();
-        Study study = StudyManager.getInstance().getStudy(container);
+        Study study = StudyService.get().getStudy(container);
         Map<String, LookupTable> lookupTables = new HashMap<>();
-        lookupTables.put("additive_type", new LookupTable(StudySchema.getInstance().getTableInfoSpecimenAdditive(container), container, _additivesTableType, "additive_type_id", "additive_id", "additive", "Additive"));
-        lookupTables.put("derivative_type", new LookupTable(StudySchema.getInstance().getTableInfoSpecimenDerivative(container), container, _derivativesTableType, "derivative_type_id", "derivative_id", "derivative", "Derivative"));
-        lookupTables.put("primary_specimen_type", new LookupTable(StudySchema.getInstance().getTableInfoSpecimenPrimaryType(container), container, _primaryTypesTableType, "primary_specimen_type_id", "primary_type_id", "primary_type", "PrimaryType"));
-        LabLookupTable labLookup =  new LabLookupTable(StudySchema.getInstance().getTableInfoSite(container), container, _labsTableType);
+        lookupTables.put("additive_type", new LookupTable(SpecimenSchema.get().getTableInfoSpecimenAdditive(container), container, _additivesTableType, "additive_type_id", "additive_id", "additive", "Additive"));
+        lookupTables.put("derivative_type", new LookupTable(SpecimenSchema.get().getTableInfoSpecimenDerivative(container), container, _derivativesTableType, "derivative_type_id", "derivative_id", "derivative", "Derivative"));
+        lookupTables.put("primary_specimen_type", new LookupTable(SpecimenSchema.get().getTableInfoSpecimenPrimaryType(container), container, _primaryTypesTableType, "primary_specimen_type_id", "primary_type_id", "primary_type", "PrimaryType"));
+        LabLookupTable labLookup =  new LabLookupTable(SpecimenSchema.get().getTableInfoLocation(container), container, _labsTableType);
         lookupTables.put("lab", labLookup);
 
         List<Map<String, Object>> specimenRows = new ArrayList<>();

@@ -18,9 +18,12 @@ package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.study.AbstractStudyCachable;
 import org.labkey.api.study.Location;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.requirements.RequirementOwner;
+import org.labkey.api.specimen.requirements.RequirementOwner;
 
 import java.util.Date;
 import java.util.List;
@@ -179,7 +182,7 @@ public class SpecimenRequest extends AbstractStudyCachable<SpecimenRequest> impl
         builder.append("Request ID ").append(_rowId);
         if (_destinationSiteId != null)
         {
-            Location destination = StudyManager.getInstance().getLocation(_container, _destinationSiteId);
+            Location destination = LocationManager.get().getLocation(_container, _destinationSiteId);
             builder.append(", destination ").append(destination.getDisplayName());
         }
         return builder.toString();

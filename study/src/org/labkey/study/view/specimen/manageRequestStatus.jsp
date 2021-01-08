@@ -22,7 +22,7 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestAction"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestBean" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestStatusAction" %>
-<%@ page import="org.labkey.study.model.SpecimenRequestStatus" %>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus" %>
 <%@ page import="org.labkey.study.specimen.notifications.ActorNotificationRecipientSet" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
