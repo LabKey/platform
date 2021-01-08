@@ -2682,6 +2682,37 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
+     * Used via SummaryStatisticsAnalyticsProvider to show a dialog of the applicable summary statistics for a column in the view.
+     * @param colFieldKey
+     */
+    LABKEY.DataRegion.prototype.showColumnStatisticsDialog = function(colFieldKey) {
+        LABKEY.requiresScript('query/ColumnSummaryStatistics', function() {
+            var regionViewName = this.viewName || "",
+                column = this.getColumn(colFieldKey);
+
+            if (column) {
+                this.getColumnAnalyticsProviders(regionViewName, colFieldKey, function(colSummaryStats) {
+                    Ext4.create('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
+                        queryConfig: this.getQueryConfig(),
+                        filterArray: LABKEY.Filter.getFiltersFromUrl(this.selectAllURL, 'query'), //Issue 26594
+                        containerPath: this.containerPath,
+                        column: column,
+                        initSelection: colSummaryStats,
+                        listeners: {
+                            scope: this,
+                            applySelection: function(win, colSummaryStatsNames) {
+                                win.getEl().mask("Applying selection...");
+                                this.setColumnSummaryStatistics(regionViewName, colFieldKey, colSummaryStatsNames);
+                                win.close();
+                            }
+                        }
+                    }).show();
+                }, this);
+            }
+        }, this);
+    };
+
+    /**
      * Remove a column from the given DataRegion query view.
      * @param viewName
      * @param colFieldKey
@@ -2828,6 +2859,7 @@ if (!LABKEY.DataRegions) {
     };
 
     var _updateAnalyticsProviderMenuItem = function(elementId, disable) {
+        // element ids include colon which needs to be escaped in the jQuery id selector
         var el = $('#' + elementId.replace(/:/g, '\\:'));
         if (disable) {
             el.addClass('disabled');
@@ -4748,44 +4780,4 @@ LABKEY.AggregateTypes = {
     AVG: 'mean'
 
     // TODO how to allow premium module additions to aggregate types?
-};
-
-LABKEY.ColumnSummaryStatistics = new function () {
-    /**
-     * Used via SummaryStatisticsAnalyticsProvider to show a dialog of the applicable summary statistics for a column in the view.
-     * @param dataRegionName
-     * @param colFieldKey
-     */
-    var showDialogFromDataRegion = function(dataRegionName, colFieldKey) {
-        LABKEY.requiresScript('query/ColumnSummaryStatistics', function() {
-            var region = LABKEY.DataRegions[dataRegionName];
-            if (region) {
-                var regionViewName = region.viewName || "",
-                        column = region.getColumn(colFieldKey);
-
-                if (column) {
-                    region.getColumnAnalyticsProviders(regionViewName, colFieldKey, function(colSummaryStats) {
-                        Ext4.create('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
-                            queryConfig: region.getQueryConfig(),
-                            filterArray: LABKEY.Filter.getFiltersFromUrl(region.selectAllURL, 'query'), //Issue 26594
-                            containerPath: region.containerPath,
-                            column: column,
-                            initSelection: colSummaryStats,
-                            listeners: {
-                                applySelection: function(win, colSummaryStatsNames) {
-                                    win.getEl().mask("Applying selection...");
-                                    region.setColumnSummaryStatistics(regionViewName, colFieldKey, colSummaryStatsNames);
-                                    win.close();
-                                }
-                            }
-                        }).show();
-                    });
-                }
-            }
-        });
-    };
-
-    return {
-        showDialogFromDataRegion: showDialogFromDataRegion
-    };
 };

@@ -18,6 +18,7 @@ package org.labkey.query.analytics;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
@@ -67,11 +68,8 @@ public class SummaryStatisticsAnalyticsProvider extends ColumnAnalyticsProvider
     @Override
     public String getScript(RenderContext ctx, QuerySettings settings, ColumnInfo col)
     {
-        // Consider: Base provider could wrap any getScript() result with addClientDependencies() set
-        return "LABKEY.ColumnSummaryStatistics.showDialogFromDataRegion(" +
-            PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "," +
-            PageFlowUtil.jsString(col.getFieldKey().toString()) +
-        ");";
+        return DataRegion.getJavaScriptObjectReference(ctx.getCurrentRegion().getName())
+            + ".showColumnStatisticsDialog(" + PageFlowUtil.jsString(col.getFieldKey().toString()) + ");";
     }
 
     @Override
