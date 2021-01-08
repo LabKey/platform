@@ -990,8 +990,8 @@ public class SpecimenController extends BaseStudyController
                 MenuButton exportMenuButton = new MenuButton("Export");
                 ActionURL exportExcelURL = context.getActionURL().clone().addParameter("export", "excel");
                 ActionURL exportTextURL = context.getActionURL().clone().addParameter("export", "tsv");
-                exportMenuButton.addMenuItem("Export all to Excel (.xls)", exportExcelURL.getLocalURIString());
-                exportMenuButton.addMenuItem("Export all to text file (.tsv)", exportTextURL.getLocalURIString());
+                exportMenuButton.addMenuItem("Export all to Excel (.xls)", exportExcelURL);
+                exportMenuButton.addMenuItem("Export all to text file (.tsv)", exportTextURL);
                 buttons.add(exportMenuButton);
                 _specimenQueryView.setShowExportButtons(false);
                 _specimenQueryView.getSettings().setAllowChooseView(false);
@@ -1671,7 +1671,7 @@ public class SpecimenController extends BaseStudyController
         private String[] _inputValues;
         private int _selectedSite;
         private BindException _errors;
-        private String _returnUrl;
+        private ActionURL _returnUrl;
 
         public NewRequestBean(ViewContext context, SpecimenUtils.RequestedSpecimens requestedSpecimens, CreateSampleRequestForm form, BindException errors) throws SQLException
         {
@@ -1681,7 +1681,7 @@ public class SpecimenController extends BaseStudyController
             _selectedSite = form.getDestinationLocation();
             _inputValues = form.getInputs();
             _container = context.getContainer();
-            _returnUrl = form.getReturnUrl();
+            _returnUrl = form.getReturnActionURL();
         }
 
         public SpecimenManager.SpecimenRequestInput[] getInputs()
@@ -1708,7 +1708,7 @@ public class SpecimenController extends BaseStudyController
             return _errors;
         }
 
-        public String getReturnUrl()
+        public ActionURL getReturnUrl()
         {
             return _returnUrl;
         }

@@ -83,7 +83,7 @@
 %>
         <td><b>Save Report</b></td>
         <td>Name:&nbsp;<input id="reportName" name="label" value="<%=h(bean.getLabel())%>">
-        <input type=hidden name=srcURL value="<%=h(getActionURL())%>">
+        <%=generateReturnUrlFormField(getActionURL())%>
 <%
     }
 %>

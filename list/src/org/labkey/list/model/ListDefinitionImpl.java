@@ -708,8 +708,8 @@ public class ListDefinitionImpl implements ListDefinition
 
         if (returnAndCancelUrl != null)
         {
-            url.addParameter(ActionURL.Param.cancelUrl, returnAndCancelUrl.getLocalURIString());
-            url.addParameter(ActionURL.Param.returnUrl, returnAndCancelUrl.getLocalURIString());
+            url.addCancelURL(returnAndCancelUrl);
+            url.addReturnURL(returnAndCancelUrl);
         }
 
         return url;

@@ -19,6 +19,7 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ResultsFactory;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
@@ -31,7 +32,6 @@ import org.labkey.study.importer.SpecimenImporter.ImportableColumn;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.PrintWriter;
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -75,10 +75,10 @@ class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo,
 
         SQLFragment sql = generateSql(ctx, tinfo, columns);
 
-        // TSVGridWriter.close() closes the ResultSet and PrintWriter
-        ResultSet rs = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false);
+        // TSVGridWriter generates and closes the Results
+        ResultsFactory factory = ()->new ResultsImpl(new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false));
 
-        try (TSVGridWriter gridWriter = new TSVGridWriter(new ResultsImpl(rs), displayColumns))
+        try (TSVGridWriter gridWriter = new TSVGridWriter(factory, displayColumns))
         {
             gridWriter.write(pw);
         }

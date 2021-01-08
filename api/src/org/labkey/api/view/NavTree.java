@@ -81,7 +81,7 @@ public class NavTree implements Collapsible
     }
 
 
-    public NavTree(String text, String href, boolean collapsed)
+    private NavTree(String text, String href, boolean collapsed)
     {
         _text = text;
         _href = href;

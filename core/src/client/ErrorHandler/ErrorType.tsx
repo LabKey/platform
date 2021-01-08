@@ -140,8 +140,8 @@ const PERMISSION_DETAILS = () => (
                     className="btn btn-primary"
                     onClick={() => {
                         const returnUrl =
-                            ActionURL.getParameter('returnUrl') !== undefined
-                                ? ActionURL.getParameter('returnUrl')
+                            ActionURL.getReturnUrl() !== undefined
+                                ? ActionURL.getReturnUrl()
                                 : ActionURL.getBaseURL(false);
                         Ajax.request({
                             url: ActionURL.buildURL('login', 'StopImpersonating', getServerContext().container.path),

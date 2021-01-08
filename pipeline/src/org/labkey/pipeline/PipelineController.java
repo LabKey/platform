@@ -38,7 +38,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.compliance.ComplianceService;
-import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -126,8 +125,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.util.PageFlowUtil.urlProvider;
-
 public class PipelineController extends SpringActionController
 {
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(PipelineController.class);
@@ -176,7 +173,7 @@ public class PipelineController extends SpringActionController
     {
         ActionURL url = new ActionURL(SetupAction.class, c);
         if (returnURL != null)
-            url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
+            url.addReturnURL(returnURL);
         if (rootSet)
             url.addParameter(Params.rootset, "1");
         if (overrideRoot)
@@ -1637,7 +1634,7 @@ public class PipelineController extends SpringActionController
                 url = getContainer().getStartURL(getUser());
 
             response.put("success", true);
-            response.put("returnUrl", url.toString());
+            response.put(ActionURL.Param.returnUrl.name(), url.toString());
 
             return response;
         }
@@ -1683,6 +1680,11 @@ public class PipelineController extends SpringActionController
             urlForm.setReturnUrl(returnUrl);
         }
 
+        public ActionURL getReturnActionURL()
+        {
+            return urlForm.getReturnActionURL();
+        }
+
         public String getPipelineTask()
         {
             return _pipelineTask;
@@ -1723,7 +1725,7 @@ public class PipelineController extends SpringActionController
             ActionURL url = new ActionURL(BrowseAction.class, container);
 
             if (null != returnUrl)
-                url.addParameter(ActionURL.Param.returnUrl, returnUrl.toString());
+                url.addReturnURL(returnUrl);
 
             if (path != null)
                 url.addParameter(Params.path, path);
@@ -1797,7 +1799,7 @@ public class PipelineController extends SpringActionController
                 url.addParameter("pipelineTask", pipelineId);
 
             if (returnUrl != null)
-                url.addParameter(ActionURL.Param.returnUrl, returnUrl.toString());
+                url.addReturnURL(returnUrl);
 
             return url;
         }

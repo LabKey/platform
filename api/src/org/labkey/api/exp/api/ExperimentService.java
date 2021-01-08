@@ -111,6 +111,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @Nullable
     ExpObject findObjectFromLSID(String lsid);
 
+    @Nullable
     ExpRun getExpRun(int rowid);
 
     List<? extends ExpRun> getExpRuns(Collection<Integer> rowIds);

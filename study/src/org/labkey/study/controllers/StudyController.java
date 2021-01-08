@@ -3303,7 +3303,7 @@ public class StudyController extends BaseStudyController
 
     public class ManageQCStatesBean extends AbstractManageQCStatesBean
     {
-        ManageQCStatesBean(String returnUrl)
+        ManageQCStatesBean(ActionURL returnUrl)
         {
             super(returnUrl);
             _qcStateHandler = new StudyQCStateHandler();
@@ -3386,7 +3386,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/api/qc/view/manageQCStates.jsp",
-                    new ManageQCStatesBean(manageQCStatesForm.getReturnUrl()), errors);
+                    new ManageQCStatesBean(manageQCStatesForm.getReturnActionURL()), errors);
         }
 
         @Override
@@ -3844,7 +3844,7 @@ public class StudyController extends BaseStudyController
             datasetURL.setAction(DatasetAction.class);
 
             String label = _def.getLabel() != null ? _def.getLabel() : "" + _def.getDatasetId();
-            root.addChild(new NavTree(label, datasetURL.getLocalURIString()));
+            root.addChild(new NavTree(label, datasetURL));
 
             root.addChild(new NavTree("View Preferences"));
         }
@@ -5709,7 +5709,7 @@ public class StudyController extends BaseStudyController
             if (_showCustomizeLink && c.hasPermissions(getViewContext().getUser(), permissions))
             {
                 ActionURL customizeURL = new ActionURL(CustomizeParticipantViewAction.class, c);
-                customizeURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());
+                customizeURL.addReturnURL(getViewContext().getActionURL());
                 customizeURL.addParameter("participantId", _currentParticipantId);
                 customizeURL.addParameter(SharedFormParameters.QCState, _encodedQcState);
                 out.print("</td><td>");
@@ -6942,7 +6942,7 @@ public class StudyController extends BaseStudyController
                             ActionURL cancelURL = new ActionURL(CancelDefineDatasetAction.class, getContainer()).addParameter("expectationDataset", form.getExpectationDataset());
 
                             redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(DatasetDefinition.DATASETKEY, form.getExpectationDataset());
-                            redirect.addParameter(ActionURL.Param.cancelUrl.name(), cancelURL.getLocalURIString());
+                            redirect.addCancelURL(cancelURL);
                             response.put("redirectUrl", redirect.getLocalURIString());
                         }
                         else
@@ -7230,10 +7230,10 @@ public class StudyController extends BaseStudyController
                 cols.add(ti.getColumn("dateoffset"));
                 SimpleFilter filter = new SimpleFilter();
                 filter.addCondition(ti.getColumn("container"), getContainer());
-                Results rs = QueryService.get().select(ti, cols, filter, new Sort("participantid"));
+                ResultsFactory factory = ()->QueryService.get().select(ti, cols, filter, new Sort("participantid"));
 
-                // NOTE: TSVGridWriter.close() closes PrintWriter and ResultSet
-                try (TSVGridWriter writer = new TSVGridWriter(rs))
+                // NOTE: TSVGridWriter closes PrintWriter and ResultSet
+                try (TSVGridWriter writer = new TSVGridWriter(factory))
                 {
                     writer.setApplyFormats(false);
                     writer.setFilenamePrefix("ParticipantTransforms");
@@ -7703,7 +7703,7 @@ public class StudyController extends BaseStudyController
                     PipelineService.get().queueJob(job);
 
                     response.put("success", true);
-                    response.put("returnUrl", PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()));
+                    response.put(ActionURL.Param.returnUrl.name(), PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()));
                 }
                 else
                 {
