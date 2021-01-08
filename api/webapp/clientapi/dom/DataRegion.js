@@ -2746,9 +2746,7 @@ if (!LABKEY.DataRegions) {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
             if (view && _viewContainsColumn(view, colFieldKey)) {
                 _addAnalyticsProviderToView.call(this, view, colFieldKey, providerName, false);
-
-                var elementId = this.name + ':' + colFieldKey + ':analytics-' + providerName;
-                _updateAnalyticsProviderMenuItem(elementId, true);
+                _updateAnalyticsProviderMenuItem(this.name + ':' + colFieldKey, providerName, true);
             }
         }, null, this);
     };
@@ -2765,9 +2763,7 @@ if (!LABKEY.DataRegions) {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
             if (view && _viewContainsColumn(view, colFieldKey)) {
                 _removeAnalyticsProviderFromView.call(this, view, colFieldKey, providerName, false);
-
-                var elementId = this.name + ':' + colFieldKey + ':analytics-' + providerName;
-                _updateAnalyticsProviderMenuItem(elementId, false);
+                _updateAnalyticsProviderMenuItem(this.name + ':' + colFieldKey, providerName, false);
             }
         }, null, this);
     };
@@ -2858,14 +2854,23 @@ if (!LABKEY.DataRegions) {
         }
     };
 
-    var _updateAnalyticsProviderMenuItem = function(elementId, disable) {
-        // element ids include colon which needs to be escaped in the jQuery id selector
-        var el = $('#' + elementId.replace(/:/g, '\\:'));
-        if (disable) {
-            el.addClass('disabled');
-        }
-        else {
-            el.removeClass('disabled');
+    /**
+     * Attempt to find a DataRegion analytics provider column menu item so that it can be either enabled to allow
+     * it to once again be selected after removal or disabled so that it can't be selected a second time.
+     * @param columnName the DataRegion column th element column-name attribute
+     * @param providerName the analytics provider name
+     * @param disable
+     * @private
+     */
+    var _updateAnalyticsProviderMenuItem = function(columnName, providerName, disable) {
+        var menuItemEl = $("th[column-name|='" + columnName + "']").find("a[onclick*='" + providerName + "']").parent();
+        if (menuItemEl) {
+            if (disable) {
+                menuItemEl.addClass('disabled');
+            }
+            else {
+                menuItemEl.removeClass('disabled');
+            }
         }
     };
 
