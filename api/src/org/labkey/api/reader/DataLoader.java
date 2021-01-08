@@ -826,6 +826,10 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     }
 
 
+
+    /* since we don't test this, let's not allow getDataIterator() to be called twice */
+    boolean hasGetDataIteratorBeenCalled = false;
+
     /**
      * It might be nice to go one level lower in the parser
      * (pre conversion, missing value) but this is a quick way to
@@ -836,6 +840,9 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     @Nullable
     public DataIterator getDataIterator(final DataIteratorContext context)
     {
+        if (hasGetDataIteratorBeenCalled)
+            throw new IllegalStateException();
+        hasGetDataIteratorBeenCalled = true;
         setInferTypes(false);
         try
         {
