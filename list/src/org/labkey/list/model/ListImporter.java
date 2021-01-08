@@ -16,7 +16,6 @@
 
 package org.labkey.list.model;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
@@ -194,9 +193,13 @@ public class ListImporter
 
                     if (tryDataDiffing)
                     {
-                        var b = DataIntegrationService.get().createReimportBuilder(user, c, ti);
+                        var b = DataIntegrationService.get().createReimportBuilder(user, c, ti, batchErrors);
                         b.setSource(loader);
-                        b.validate(batchErrors);
+                        if (deleteFromTarget)
+                            b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.DELETE,DataIntegrationService.ReimportOperations.UPDATE, DataIntegrationService.ReimportOperations.INSERT));
+                        else
+                            b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.UPDATE, DataIntegrationService.ReimportOperations.INSERT));
+                        b.validate();
                         if (batchErrors.hasErrors())
                         {
                             batchErrors.clear();
@@ -204,11 +207,7 @@ public class ListImporter
                         }
                         else
                         {
-                            if (deleteFromTarget)
-                                b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.DELETE,DataIntegrationService.ReimportOperations.UPDATE, DataIntegrationService.ReimportOperations.INSERT));
-                            else
-                                b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.UPDATE, DataIntegrationService.ReimportOperations.INSERT));
-                            b.execute(batchErrors);
+                            b.execute();
                             if (!batchErrors.hasErrors())
                             {
                                 if (0 < b.getDeleted())

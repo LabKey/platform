@@ -233,9 +233,20 @@ public class DatasetImportRunnable implements Runnable
 
             if (tryDataDiffing)
             {
-                var b = DataIntegrationService.get().createReimportBuilder(user, c, datasetTable);
+                var b = DataIntegrationService.get().createReimportBuilder(user, c, datasetTable, batchErrors);
                 b.setSource(loader);
-                b.validate(batchErrors);
+                if (_action== AbstractDatasetImportTask.Action.REPLACE)
+                {
+                    b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.DELETE, DataIntegrationService.ReimportOperations.REPLACE, DataIntegrationService.ReimportOperations.INSERT));
+                }
+                else
+                {
+                    assert _action == AbstractDatasetImportTask.Action.APPEND;
+                    b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.INSERT));
+                }
+                b.setConfigParameters(config);
+                b.validate();
+
                 if (batchErrors.hasErrors())
                 {
                     batchErrors.clear();
@@ -243,17 +254,7 @@ public class DatasetImportRunnable implements Runnable
                 }
                 else
                 {
-                    if (_action== AbstractDatasetImportTask.Action.REPLACE)
-                    {
-                        b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.DELETE, DataIntegrationService.ReimportOperations.REPLACE, DataIntegrationService.ReimportOperations.INSERT));
-                    }
-                    else
-                    {
-                        assert _action == AbstractDatasetImportTask.Action.APPEND;
-                        b.setReimportOptions(Set.of(DataIntegrationService.ReimportOperations.INSERT));
-                    }
-                    b.setConfigParameters(config);
-                    b.execute(batchErrors);
+                    b.execute();
                     if (!batchErrors.hasErrors())
                     {
                         if (0 < b.getProcessed())

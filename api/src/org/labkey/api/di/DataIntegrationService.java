@@ -97,8 +97,9 @@ public interface DataIntegrationService
         public void setConfigParameters(Map<Enum,Object> config);
 
         /** check that this Reimport configuration is valid (valid target table, valid options etc) */
-        void validate(BatchValidationException ex);
-        void execute(BatchValidationException ex);
+        void validate();
+        void execute();
+
         //void dryRun(BatchValidationException ex);
 
         // after execute() or dryRun() this method can be used
@@ -112,7 +113,7 @@ public interface DataIntegrationService
     }
 
     boolean supportsReimport(TableInfo ti);
-    ReimportDataBuilder createReimportBuilder(User user, Container container, TableInfo ti);
+    ReimportDataBuilder createReimportBuilder(User user, Container container, TableInfo ti, BatchValidationException ex);
 
     enum Columns
     {
