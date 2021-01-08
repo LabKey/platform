@@ -152,7 +152,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             }
         }
 
-        StorageProvisioner.ensureStorageTable(domain, kind, scope);
+        StorageProvisioner.get().ensureStorageTable(domain, kind, scope);
         // refetch the domain which we just updated
         domain = PropertyService.get().getDomain(domain.getTypeId());
         assert(null != domain.getStorageTableName());
@@ -294,7 +294,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         DbSchema schema = kind.getSchema();
         DbScope scope = schema.getScope();
 
-        StorageProvisioner.ensureStorageTable(domain, kind, scope);
+        StorageProvisioner.get().ensureStorageTable(domain, kind, scope);
         domain = PropertyService.get().getDomain(domain.getTypeId());
         assert(null != domain.getStorageTableName());
 
@@ -309,7 +309,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (genIdCol == null)
         {
             PropertyStorageSpec genIdProp = kind.getBaseProperties(domain).stream().filter(p -> "genId".equalsIgnoreCase(p.getName())).findFirst().orElseThrow();
-            StorageProvisioner.addStorageProperties(domain, Arrays.asList(genIdProp), true);
+            StorageProvisioner.get().addStorageProperties(domain, Arrays.asList(genIdProp), true);
             LOG.info("SampleSet '" + st.getName() + "' (" + st.getRowId() + ") added 'genId' column");
         }
 
@@ -454,7 +454,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         DbSchema schema = kind.getSchema();
         DbScope scope = kind.getSchema().getScope();
 
-        StorageProvisioner.ensureStorageTable(domain, kind, scope);
+        StorageProvisioner.get().ensureStorageTable(domain, kind, scope);
         domain = PropertyService.get().getDomain(domain.getTypeId());
         assert (null != domain && null != domain.getStorageTableName());
 
@@ -469,7 +469,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (nameCol == null)
         {
             PropertyStorageSpec nameProp = kind.getBaseProperties(domain).stream().filter(p -> "name".equalsIgnoreCase(p.getName())).findFirst().orElseThrow();
-            StorageProvisioner.addStorageProperties(domain, Arrays.asList(nameProp), true);
+            StorageProvisioner.get().addStorageProperties(domain, Arrays.asList(nameProp), true);
             LOG.info("DataSet '" + ds.getName() + "' (" + ds.getRowId() + ") added 'name' column");
         }
 
@@ -477,7 +477,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (classIdCol == null)
         {
             PropertyStorageSpec classIdProp = kind.getBaseProperties(domain).stream().filter(p -> "classId".equalsIgnoreCase(p.getName())).findFirst().orElseThrow();
-            StorageProvisioner.addStorageProperties(domain, Arrays.asList(classIdProp), true);
+            StorageProvisioner.get().addStorageProperties(domain, Arrays.asList(classIdProp), true);
             LOG.info("DataSet '" + ds.getName() + "' (" + ds.getRowId() + ") added 'classId' column");
         }
 
@@ -485,7 +485,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         //addIndex
         Set<PropertyStorageSpec.Index> newIndices =  Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(new PropertyStorageSpec.Index(true, "name", "classid"))));
-        StorageProvisioner.addOrDropTableIndices(domain, newIndices, true, TableChange.IndexSizeMode.Normal);
+        StorageProvisioner.get().addOrDropTableIndices(domain, newIndices, true, TableChange.IndexSizeMode.Normal);
         LOG.info("DataClass '" + ds.getName() + "' (" + ds.getRowId() + ") added unique constraint on 'name' and 'classId'");
     }
 

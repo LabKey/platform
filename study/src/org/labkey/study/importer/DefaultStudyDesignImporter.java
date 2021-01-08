@@ -196,7 +196,7 @@ public class DefaultStudyDesignImporter
         Container container = tablePackage.getContainer();
 
         // TODO: Why isn't tablePackage.isProjectLevel() true in STUDY_TABLE_NAME case
-        if (!StudyQuerySchema.STUDY_TABLE_NAME.equalsIgnoreCase(tableInfo.getName()) && !tablePackage.isProjectLevel())
+        if (null != tableInfo && !StudyQuerySchema.STUDY_TABLE_NAME.equalsIgnoreCase(tableInfo.getName()) && !tablePackage.isProjectLevel())
         {
             // Consider: defer to QueryUpdateService?
             deleteData(container, tableInfo);
@@ -299,8 +299,7 @@ public class DefaultStudyDesignImporter
      * Transform which manages foreign keys to the rowId of a shared table with RowId PK
      *      Adds rowId mappings for inserted rows
      */
-    protected class SharedTableMapBuilder implements MapBuilder
-
+    protected static class SharedTableMapBuilder implements MapBuilder
     {
         protected String _fieldName;
         protected Map<Object, Object> _idMap;
@@ -375,7 +374,7 @@ public class DefaultStudyDesignImporter
         protected final TableInfo _tableInfo;
         protected final SortedSet<String> _fieldNames = new TreeSet<>();    // fields to match on
         protected final String _keyName;            // key field name
-        protected final Map _keyMap;
+        protected final Map<Object,Object> _keyMap;
         protected final boolean _verifyDuplicateFieldKeys;
         protected Map<String, Object> _existingValues;
 

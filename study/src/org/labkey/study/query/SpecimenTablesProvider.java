@@ -168,14 +168,14 @@ public class SpecimenTablesProvider
     {
         Domain domain = getDomain(tableName, false);
         if (null != domain)
-            StorageProvisioner.addOrDropTableIndices(domain, null, true, null);
+            StorageProvisioner.get().addOrDropTableIndices(domain, null, true, null);
     }
 
     public void dropTableIndices(String tableName)
     {
         Domain domain = getDomain(tableName, false);
         if (null != domain)
-            StorageProvisioner.addOrDropTableIndices(domain, null, false, null);
+            StorageProvisioner.get().addOrDropTableIndices(domain, null, false, null);
     }
 
     private AbstractSpecimenDomainKind getDomainKind(String tableName)

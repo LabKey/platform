@@ -165,9 +165,9 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         }
 
         if (!toRemove.isEmpty())
-            StorageProvisioner.addOrDropTableIndices(domain, toRemove, false, TableChange.IndexSizeMode.Normal);
+            StorageProvisioner.get().addOrDropTableIndices(domain, toRemove, false, TableChange.IndexSizeMode.Normal);
         if (!newIndices.isEmpty())
-            StorageProvisioner.addOrDropTableIndices(domain, newIndices, true, TableChange.IndexSizeMode.Normal);
+            StorageProvisioner.get().addOrDropTableIndices(domain, newIndices, true, TableChange.IndexSizeMode.Normal);
     }
 
 

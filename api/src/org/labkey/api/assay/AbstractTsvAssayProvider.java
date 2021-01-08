@@ -97,7 +97,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
             Domain domain = getResultsDomain(protocol);
             if (domain != null && domain.isProvisioned())
             {
-                TableInfo tableInfo = StorageProvisioner.getSchemaTableInfo(domain);
+                TableInfo tableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
                 resultCount += new TableSelector(tableInfo).getRowCount();
             }
         }

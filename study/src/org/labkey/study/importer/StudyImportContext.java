@@ -181,6 +181,11 @@ public class StudyImportContext extends AbstractContext
         }
     }
 
+    public Map<String, Map<Object, Object>> getTableIdMapMap()
+    {
+        return _tableIdMapMap;
+    }
+
     public Map<Object, Object> getTableIdMap(String key)
     {
         Map<Object, Object> map = _tableIdMapMap.get(key);
