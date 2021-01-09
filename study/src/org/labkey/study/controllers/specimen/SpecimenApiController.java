@@ -30,10 +30,14 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.AdditiveType;
+import org.labkey.api.specimen.model.DerivativeType;
 import org.labkey.api.specimen.model.PrimaryType;
 import org.labkey.api.specimen.model.SpecimenTypeSummary;
+import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.RepositorySettings;
@@ -42,10 +46,6 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.api.specimen.importer.RequestabilityManager;
-import org.labkey.api.specimen.model.AdditiveType;
-import org.labkey.api.specimen.model.DerivativeType;
-import org.labkey.study.model.SpecimenRequest;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
@@ -183,7 +183,7 @@ public class SpecimenApiController extends BaseStudyController
         SpecimenRequestStatus status = SpecimenManager.getInstance().getRequestStatus(request.getContainer(), request.getStatusId());
         if (status != null)
             map.put("status", status.getLabel());
-        List<Vial> vials = SpecimenManager.getInstance().getRequestVials(request);
+        List<Vial> vials = request.getVials();
         map.put("vials", getSpecimenListResponse(vials));
         return map;
     }

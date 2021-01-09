@@ -84,11 +84,20 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.importer.RequestabilityManager;
+import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.ExtendedSpecimenRequestView;
 import org.labkey.api.specimen.model.SpecimenComment;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
+import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.notifications.NotificationRecipientSet;
 import org.labkey.api.specimen.pipeline.SpecimenArchive;
 import org.labkey.api.specimen.requirements.RequirementProvider;
+import org.labkey.api.specimen.requirements.SpecimenRequest;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirementType;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.specimen.security.permissions.ManageDisplaySettingsPermission;
 import org.labkey.api.specimen.security.permissions.ManageNewRequestFormPermission;
@@ -132,17 +141,10 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.designer.MapArrayExcelWriter;
-import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.ExtendedSpecimenRequestView;
-import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.SecurityType;
-import org.labkey.study.model.SpecimenRequest;
-import org.labkey.api.specimen.model.SpecimenRequestActor;
-import org.labkey.api.specimen.model.SpecimenRequestEvent;
-import org.labkey.study.model.SpecimenRequestRequirement;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
@@ -154,7 +156,6 @@ import org.labkey.study.query.SpecimenEventQueryView;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.query.SpecimenRequestQueryView;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.requirements.SpecimenRequestRequirementType;
 import org.labkey.study.specimen.SpecimenSearchWebPart;
 import org.labkey.study.specimen.SpecimenWebPart;
 import org.labkey.study.specimen.notifications.ActorNotificationRecipientSet;
@@ -977,7 +978,7 @@ public class SpecimenController extends BaseStudyController
 
         public ManageRequestBean(ViewContext context, SpecimenRequest specimenRequest, boolean forExport, Boolean submissionResult, String returnUrl)
         {
-            super(context, SpecimenManager.getInstance().getRequestVials(specimenRequest), !forExport, !forExport, forExport, false);
+            super(context, specimenRequest.getVials(), !forExport, !forExport, forExport, false);
             _submissionResult = submissionResult;
             _requestManager = context.getContainer().hasPermission(context.getUser(), ManageRequestsPermission.class);
             _specimenRequest = specimenRequest;
@@ -1163,7 +1164,7 @@ public class SpecimenController extends BaseStudyController
 
             if (form.getNewActor() != null && form.getNewActor() > 0)
             {
-                SpecimenRequestActor actor = SpecimenManager.getInstance().getRequirementsProvider().getActor(getContainer(), form.getNewActor());
+                SpecimenRequestActor actor = SpecimenRequestRequirementProvider.get().getActor(getContainer(), form.getNewActor());
                 if (actor != null)
                 {
                     // an actor is valid if a site has been provided for a per-site actor, or if no site
@@ -2107,7 +2108,7 @@ public class SpecimenController extends BaseStudyController
         public boolean handlePost(RequirementForm form, BindException errors) throws Exception
         {
             SpecimenRequestRequirement requirement =
-                    SpecimenManager.getInstance().getRequirementsProvider().getRequirement(getContainer(), form.getRequirementId());
+                    SpecimenRequestRequirementProvider.get().getRequirement(getContainer(), form.getRequirementId());
             if (requirement.getRequestId() == form.getId())
             {
                 SpecimenManager.getInstance().deleteRequestRequirement(getUser(), requirement);
@@ -2137,7 +2138,7 @@ public class SpecimenController extends BaseStudyController
         public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
             SpecimenRequestRequirement requirement =
-                    SpecimenManager.getInstance().getRequirementsProvider().getRequirement(getContainer(), form.getId());
+                    SpecimenRequestRequirementProvider.get().getRequirement(getContainer(), form.getId());
             // we should only be deleting default requirements (those without an associated request):
             if (requirement != null && requirement.getRequestId() == -1)
             {
@@ -2258,7 +2259,7 @@ public class SpecimenController extends BaseStudyController
         {
             _specimenRequest = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
             final SpecimenRequestRequirement requirement =
-                    SpecimenManager.getInstance().getRequirementsProvider().getRequirement(getContainer(), form.getRequirementId());
+                    SpecimenRequestRequirementProvider.get().getRequirement(getContainer(), form.getRequirementId());
             if (_specimenRequest == null || requirement == null || requirement.getRequestId() != form.getId())
                 throw new NotFoundException();
 
@@ -2274,7 +2275,7 @@ public class SpecimenController extends BaseStudyController
 
             _specimenRequest = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
             final SpecimenRequestRequirement requirement =
-                    SpecimenManager.getInstance().getRequirementsProvider().getRequirement(getContainer(), form.getRequirementId());
+                    SpecimenRequestRequirementProvider.get().getRequirement(getContainer(), form.getRequirementId());
             if (_specimenRequest == null || requirement == null || requirement.getRequestId() != form.getId())
                 throw new NotFoundException();
 
@@ -2489,16 +2490,16 @@ public class SpecimenController extends BaseStudyController
 
     public static class ManageReqsBean
     {
-        private SpecimenRequestRequirement[] _providerRequirements;
-        private SpecimenRequestRequirement[] _receiverRequirements;
-        private SpecimenRequestRequirement[] _generalRequirements;
-        private SpecimenRequestRequirement[] _originatorRequirements;
-        private SpecimenRequestActor[] _actors;
+        private final SpecimenRequestRequirement[] _providerRequirements;
+        private final SpecimenRequestRequirement[] _receiverRequirements;
+        private final SpecimenRequestRequirement[] _generalRequirements;
+        private final SpecimenRequestRequirement[] _originatorRequirements;
+        private final SpecimenRequestActor[] _actors;
 
         public ManageReqsBean(User user, Container container)
         {
             RequirementProvider<SpecimenRequestRequirement, SpecimenRequestActor> provider =
-                    SpecimenManager.getInstance().getRequirementsProvider();
+                    SpecimenRequestRequirementProvider.get();
             _originatorRequirements = provider.getDefaultRequirements(container,
                     SpecimenRequestRequirementType.ORIGINATING_SITE);
             _providerRequirements = provider.getDefaultRequirements(container,
@@ -2571,7 +2572,7 @@ public class SpecimenController extends BaseStudyController
                 requirement.setActorId(actorId);
                 requirement.setDescription(description);
                 requirement.setRequestId(-1);
-                SpecimenManager.getInstance().getRequirementsProvider().createDefaultRequirement(getUser(), requirement, type);
+                SpecimenRequestRequirementProvider.get().createDefaultRequirement(getUser(), requirement, type);
             }
         }
 
@@ -2811,7 +2812,7 @@ public class SpecimenController extends BaseStudyController
                     for (int i = 0; i < 3; i++)
                         ids[i] = Integer.parseInt(idStrs[i]);
                     LocationImpl originatingOrProvidingLocation = LocationManager.get().getLocation(getContainer(), ids[0]);
-                    SpecimenRequestActor notifyActor = SpecimenManager.getInstance().getRequirementsProvider().getActor(getContainer(), ids[1]);
+                    SpecimenRequestActor notifyActor = SpecimenRequestRequirementProvider.get().getActor(getContainer(), ids[1]);
                     LocationImpl notifyLocation = null;
                     if (notifyActor.isPerSite() && ids[2] >= 0)
                         notifyLocation = LocationManager.get().getLocation(getContainer(), ids[2]);
@@ -3097,9 +3098,9 @@ public class SpecimenController extends BaseStudyController
                 {
                     LocationImpl location;
                     if (_type == LabSpecimenListsBean.Type.ORIGINATING)
-                        location = SpecimenManager.getInstance().getOriginatingLocation(vial);
+                        location = LocationManager.get().getOriginatingLocation(vial);
                     else
-                        location = SpecimenManager.getInstance().getCurrentLocation(vial);
+                        location = LocationManager.get().getCurrentLocation(vial);
                     if (location != null)
                     {
                         List<Vial> current = _specimensBySiteId.get(location.getRowId());
@@ -4283,7 +4284,7 @@ public class SpecimenController extends BaseStudyController
 
     private Map<Integer, SpecimenRequestActor> getIdToRequestActorMap(Container container)
     {
-        SpecimenRequestActor[] actors = SpecimenManager.getInstance().getRequirementsProvider().getActors(container);
+        SpecimenRequestActor[] actors = SpecimenRequestRequirementProvider.get().getActors(container);
         Map<Integer, SpecimenRequestActor> idToStatus = new HashMap<>();
         for (SpecimenRequestActor actor : actors)
             idToStatus.put(actor.getRowId(), actor);
@@ -4344,7 +4345,7 @@ public class SpecimenController extends BaseStudyController
                 {
                     SpecimenRequestActor actor = new SpecimenRequestActor();
                     actor.setLabel(form.getNewLabel());
-                    SpecimenRequestActor[] actors = SpecimenManager.getInstance().getRequirementsProvider().getActors(getContainer());
+                    SpecimenRequestActor[] actors = SpecimenRequestRequirementProvider.get().getActors(getContainer());
                     actor.setSortOrder(actors.length);
                     actor.setContainer(getContainer());
                     actor.setPerSite(form.isNewPerSite());
@@ -4602,7 +4603,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
-            SpecimenRequestActor actor = SpecimenManager.getInstance().getRequirementsProvider().getActor(getContainer(), form.getId());
+            SpecimenRequestActor actor = SpecimenRequestRequirementProvider.get().getActor(getContainer(), form.getId());
             if (actor != null)
                 actor.delete();
 

@@ -21,9 +21,16 @@
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.UserManager"%>
 <%@ page import="org.labkey.api.settings.AppProps"%>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus" %>
+<%@ page import="org.labkey.api.specimen.Vial" %>
+<%@ page import="org.labkey.api.specimen.location.LocationImpl"%>
+<%@ page import="org.labkey.api.specimen.location.LocationManager" %>
+<%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
+<%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirement" %>
+<%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider" %>
 <%@ page import="org.labkey.api.study.Location" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
-<%@ page import="org.labkey.api.util.HtmlString"%>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.SafeToRender" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -44,15 +51,8 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequirementAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.RequestHistoryAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SubmitRequestAction" %>
-<%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
-<%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
-<%@ page import="org.labkey.study.model.SpecimenRequestRequirement" %>
-<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.specimen.Vial" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.specimen.location.LocationManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
@@ -74,7 +74,7 @@
         comments = "[No description provided]";
     SpecimenManager manager = SpecimenManager.getInstance();
     boolean hasExtendedRequestView = manager.getExtendedSpecimenRequestView(getViewContext()) != null;
-    SpecimenRequestActor[] actors = manager.getRequirementsProvider().getActors(c);
+    SpecimenRequestActor[] actors = SpecimenRequestRequirementProvider.get().getActors(c);
     SpecimenRequestRequirement[] requirements = manager.getRequestRequirements(bean.getSpecimenRequest());
     Location destinationLocation = bean.getDestinationSite();
     User creatingUser = UserManager.getUser(bean.getSpecimenRequest().getCreatedBy());

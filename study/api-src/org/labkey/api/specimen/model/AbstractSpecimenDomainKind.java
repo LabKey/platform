@@ -36,7 +36,9 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.importer.EventVialRollup;
+import org.labkey.api.specimen.importer.RollupHelper;
 import org.labkey.api.specimen.importer.RollupInstance;
 import org.labkey.api.specimen.importer.VialSpecimenRollup;
 import org.labkey.api.study.SpecimenTablesTemplate;
@@ -47,7 +49,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.TableType;
-import org.labkey.api.specimen.importer.RollupHelper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -115,7 +116,7 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
     @Override
     public DbScope getScope()
     {
-        return StudyService.get().getStudySchema().getScope();
+        return SpecimenSchema.get().getScope();
     }
 
     @Override

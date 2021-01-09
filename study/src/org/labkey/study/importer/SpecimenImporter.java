@@ -60,6 +60,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenEvent;
+import org.labkey.api.specimen.SpecimenEventManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.importer.EventVialRollup;
@@ -98,6 +99,7 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.api.specimen.SpecimenEventDateComparator;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.SpecimenServiceImpl;
 import org.labkey.study.StudySchema;
@@ -116,7 +118,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1138,7 +1139,6 @@ public class SpecimenImporter
         {
             final MutableInt rowCount = new MutableInt();
             final MarkableIterator<Map<String, Object>> eventIterator = new MarkableIterator<>(eventResults.iterator());
-            final Comparator<SpecimenEvent> eventComparator = SpecimenManager.getInstance().getSpecimenEventDateComparator();
 
             _iTimer.setPhase(ImportPhases.GetVialBatch);
             TableSelector vialSelector = new TableSelector(getTableInfoVial(), null, new Sort("RowId"));
@@ -1179,14 +1179,14 @@ public class SpecimenImporter
                             break;
                         }
                     }
-                    dateOrderedEvents.sort(eventComparator);
+                    dateOrderedEvents.sort(SpecimenEventDateComparator.get());
 
                     _iTimer.setPhase(ImportPhases.GetProcessingLocationId);
-                    Integer processingLocation = SpecimenManager.getInstance().getProcessingLocationId(dateOrderedEvents);
+                    Integer processingLocation = LocationManager.get().getProcessingLocationId(dateOrderedEvents);
                     _iTimer.setPhase(ImportPhases.GetFirstProcessedBy);
-                    String firstProcessedByInitials = SpecimenManager.getInstance().getFirstProcessedByInitials(dateOrderedEvents);
+                    String firstProcessedByInitials = SpecimenEventManager.get().getFirstProcessedByInitials(dateOrderedEvents);
                     _iTimer.setPhase(ImportPhases.GetCurrentLocationId);
-                    Integer currentLocation = SpecimenManager.getInstance().getCurrentLocationId(dateOrderedEvents);
+                    Integer currentLocation = LocationManager.get().getCurrentLocationId(dateOrderedEvents);
 
                     _iTimer.setPhase(ImportPhases.CalculateLocation);
                     boolean atRepository = false;
@@ -1210,9 +1210,9 @@ public class SpecimenImporter
                             atRepository = location.isRepository() != null && location.isRepository();
                     }
 
-                    // All of the additional fields (deviationCodes, Concetration, Integrity, Yield, Ratio, QualityComments, Comments) always take the latest value
+                    // All of the additional fields (deviationCodes, Concentration, Integrity, Yield, Ratio, QualityComments, Comments) always take the latest value
                     _iTimer.setPhase(ImportPhases.GetLastEvent);
-                    SpecimenEvent lastEvent = SpecimenManager.getInstance().getLastEvent(dateOrderedEvents);
+                    SpecimenEvent lastEvent = SpecimenEventManager.get().getLastEvent(dateOrderedEvents);
                     if (null == lastEvent)
                         throw new IllegalStateException("There should always be at least 1 event.");
 

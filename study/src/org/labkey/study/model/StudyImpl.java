@@ -55,6 +55,8 @@ import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
+import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -78,7 +80,6 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.StudyDesignInfo;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.api.specimen.settings.RepositorySettings;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -281,12 +282,12 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     public SpecimenRequestActor[] getSampleRequestActors()
     {
-        return SpecimenManager.getInstance().getRequirementsProvider().getActors(getContainer());
+        return SpecimenRequestRequirementProvider.get().getActors(getContainer());
     }
 
     public Set<Integer> getSampleRequestActorsInUse()
     {
-        Collection<SpecimenRequestActor> actors = SpecimenManager.getInstance().getRequirementsProvider().getActorsInUse(getContainer());
+        Collection<SpecimenRequestActor> actors = SpecimenRequestRequirementProvider.get().getActorsInUse(getContainer());
         Set<Integer> ids = new HashSet<>();
         for (SpecimenRequestActor actor : actors)
             ids.add(actor.getRowId());

@@ -63,11 +63,38 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.importer.RequestabilityManager;
+import org.labkey.api.specimen.importer.RequestabilityManager.InvalidRuleException;
+import org.labkey.api.specimen.importer.RollupHelper.RollupMap;
+import org.labkey.api.specimen.importer.RollupInstance;
+import org.labkey.api.specimen.importer.VialSpecimenRollup;
+import org.labkey.api.specimen.location.LocationCache;
+import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.AdditiveType;
+import org.labkey.api.specimen.model.DerivativeType;
+import org.labkey.api.specimen.model.ExtendedSpecimenRequestView;
+import org.labkey.api.specimen.model.PrimaryType;
+import org.labkey.api.specimen.model.SpecimenComment;
+import org.labkey.api.specimen.model.SpecimenRequestEvent;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
+import org.labkey.api.specimen.model.SpecimenTypeSummary;
+import org.labkey.api.specimen.model.SpecimenTypeSummaryRow;
 import org.labkey.api.specimen.report.RequestSummaryByVisitType;
 import org.labkey.api.specimen.report.SummaryByVisitParticipant;
 import org.labkey.api.specimen.report.SummaryByVisitType;
+import org.labkey.api.specimen.requirements.SpecimenRequest;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
+import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
+import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
+import org.labkey.api.specimen.settings.DisplaySettings;
+import org.labkey.api.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.RequestNotificationSettings;
+import org.labkey.api.specimen.settings.StatusSettings;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyCachable;
@@ -83,43 +110,13 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.api.specimen.importer.RequestabilityManager;
-import org.labkey.api.specimen.importer.RequestabilityManager.InvalidRuleException;
-import org.labkey.api.specimen.importer.RollupInstance;
-import org.labkey.api.specimen.importer.RollupHelper.RollupMap;
 import org.labkey.study.importer.SpecimenImporter;
-import org.labkey.api.specimen.importer.VialSpecimenRollup;
-import org.labkey.api.specimen.model.AdditiveType;
 import org.labkey.study.model.CohortImpl;
-import org.labkey.api.specimen.model.DerivativeType;
-import org.labkey.study.model.ExtendedSpecimenRequestView;
-import org.labkey.api.specimen.location.LocationImpl;
-import org.labkey.api.specimen.model.PrimaryType;
-import org.labkey.api.specimen.model.SpecimenComment;
-import org.labkey.api.specimen.SpecimenEvent;
-import org.labkey.study.model.SpecimenRequest;
-import org.labkey.api.specimen.model.SpecimenRequestActor;
-import org.labkey.api.specimen.model.SpecimenRequestEvent;
-import org.labkey.study.model.SpecimenRequestRequirement;
-import org.labkey.api.specimen.SpecimenRequestStatus;
-import org.labkey.api.specimen.model.SpecimenTypeSummary;
-import org.labkey.api.specimen.model.SpecimenTypeSummaryRow;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.api.specimen.Vial;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.api.specimen.requirements.RequirementProvider;
-import org.labkey.study.requirements.SpecimenRequestRequirementProvider;
-import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
-import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
-import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.study.specimen.SpecimenCommentAuditProvider;
-import org.labkey.api.specimen.settings.DisplaySettings;
-import org.labkey.api.specimen.settings.RepositorySettings;
-import org.labkey.api.specimen.settings.RequestNotificationSettings;
-import org.labkey.api.specimen.settings.StatusSettings;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
@@ -130,7 +127,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -148,9 +144,6 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     private final QueryHelper<SpecimenRequestEvent> _requestEventHelper;
     private final QueryHelper<SpecimenRequest> _requestHelper;
     private final QueryHelper<SpecimenRequestStatus> _requestStatusHelper;
-    private final RequirementProvider<SpecimenRequestRequirement, SpecimenRequestActor> _requirementProvider =
-            new SpecimenRequestRequirementProvider();
-    private final Comparator<SpecimenEvent> _specimenEventDateComparator = new SpecimenEventDateComparator();
 
     private SpecimenManager()
     {
@@ -182,12 +175,6 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         filter.addClause(new SimpleFilter.SQLClause("LOWER(ptid) = LOWER(?)", new Object[] {participantId}, FieldKey.fromParts("ptid")));
         filter.addCondition(FieldKey.fromParts("VisitValue"), visit);
         return getVials(container, user, filter);
-    }
-
-
-    public RequirementProvider<SpecimenRequestRequirement, SpecimenRequestActor> getRequirementsProvider()
-    {
-        return _requirementProvider;
     }
 
     @Override
@@ -259,219 +246,6 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         endCal.add(Calendar.DATE, 1);
         filter.addClause(new SimpleFilter.SQLClause("DrawTimestamp >= ? AND DrawTimestamp < ?", new Object[] {date, endCal.getTime()}));
         return getVials(container, user, filter);
-    }
-
-    public List<SpecimenEvent> getSpecimenEvents(@NotNull Vial vial)
-    {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("VialId"), vial.getRowId());
-        return getSpecimenEvents(vial.getContainer(), filter);
-    }
-
-    public List<SpecimenEvent> getSpecimenEvents(List<Vial> vials, boolean includeObsolete)
-    {
-        if (vials == null || vials.size() == 0)
-            return Collections.emptyList();
-        Collection<Long> vialIds = new HashSet<>();
-        Container container = null;
-        for (Vial vial : vials)
-        {
-            vialIds.add(vial.getRowId());
-            if (container == null)
-                container = vial.getContainer();
-            else if (!container.equals(vial.getContainer()))
-                throw new IllegalArgumentException("All specimens must be from the same container");
-        }
-        SimpleFilter filter = new SimpleFilter();
-        filter.addInClause(FieldKey.fromString("VialId"), vialIds);
-        if (!includeObsolete)
-            filter.addCondition(FieldKey.fromString("Obsolete"), false);
-        return getSpecimenEvents(container, filter);
-    }
-
-    private List<SpecimenEvent> getSpecimenEvents(final Container container, Filter filter)
-    {
-        final List<SpecimenEvent> specimenEvents = new ArrayList<>();
-        TableInfo tableInfo = SpecimenSchema.get().getTableInfoSpecimenEvent(container);
-
-        new TableSelector(tableInfo, filter, null).forEachMap(map -> specimenEvents.add(new SpecimenEvent(container, map)));
-
-        return specimenEvents;
-    }
-
-    private static class SpecimenEventDateComparator implements Comparator<SpecimenEvent>
-    {
-        private Date getAnyDate(SpecimenEvent event)
-        {
-            if (event.getLabReceiptDate() != null)
-                return event.getLabReceiptDate();
-            else
-            {
-                Date storageDate = event.getStorageDate();
-                if (storageDate != null)
-                    return storageDate;
-                else
-                    return event.getShipDate();
-            }
-        }
-
-        private int getTieBreakValue(SpecimenEvent event)
-        {
-            // our events have the same dates; in this case, we have to consider
-            // the date type; a shipping date always comes after a storage date,
-            // and a storage date always comes after a receipt date.
-            if (event.getLabReceiptDate() != null)
-                return 1;
-            else if (event.getStorageDate() != null)
-                return 2;
-            else if (event.getShipDate() != null)
-                return 3;
-            throw new IllegalStateException("Can only tiebreak events with at least one date present.");
-        }
-
-        @Override
-        public int compare(SpecimenEvent event1, SpecimenEvent event2)
-        {
-            // Obsolete always < non-obsolete
-            if (event1.getObsolete() != event2.getObsolete())
-                if (event1.getObsolete())
-                    return -1;
-                else
-                    return 1;
-
-            // we use any date in the event, since we assume that no two events can have
-            // overlapping date ranges:
-            Date date1 = getAnyDate(event1);
-            Date date2 = getAnyDate(event2);
-            if (date1 == null && date2 == null)
-                return compareExternalIds(event1, event2);
-            if (date1 == null)
-                return -1;
-            if (date2 == null)
-                return 1;
-            Long ms1 = date1.getTime();
-            Long ms2 = date2.getTime();
-            int comp = ms1.compareTo(ms2);
-            if (comp != 0)
-                return comp;
-            comp = getTieBreakValue(event2) - getTieBreakValue(event1);
-            if (comp != 0)
-                return comp;
-            return compareExternalIds(event1, event2);
-        }
-    }
-
-    private static int compareExternalIds(SpecimenEvent event1, SpecimenEvent event2)
-    {
-        long compExternalIds = event1.getExternalId() - event2.getExternalId();
-        if (compExternalIds < 0)
-            return -1;
-        if (compExternalIds > 0)
-            return 1;
-        return 0;
-    }
-
-    public List<SpecimenEvent> getDateOrderedEventList(Vial vial)
-    {
-        List<SpecimenEvent> eventList = new ArrayList<>();
-        List<SpecimenEvent> events = getSpecimenEvents(vial);
-        if (events == null || events.isEmpty())
-            return eventList;
-        eventList.addAll(events);
-        eventList.sort(getSpecimenEventDateComparator());
-        return eventList;
-    }
-
-    public Comparator<SpecimenEvent> getSpecimenEventDateComparator()
-    {
-        return _specimenEventDateComparator;
-    }
-
-
-    public LocationImpl getCurrentLocation(Vial vial)
-    {
-        Integer locationId = getCurrentLocationId(vial);
-        if (locationId != null)
-            return LocationManager.get().getLocation(vial.getContainer(), locationId);
-        return null;
-    }
-
-    public Integer getCurrentLocationId(Vial vial)
-    {
-        List<SpecimenEvent> events = getDateOrderedEventList(vial);
-        return getCurrentLocationId(events);
-    }
-
-    public Integer getCurrentLocationId(List<SpecimenEvent> dateOrderedEvents)
-    {
-        if (!dateOrderedEvents.isEmpty())
-        {
-            SpecimenEvent lastEvent = dateOrderedEvents.get(dateOrderedEvents.size() - 1);
-
-            if (lastEvent.getShipDate() == null &&
-                    (lastEvent.getShipBatchNumber() == null || lastEvent.getShipBatchNumber() == 0) &&
-                    (lastEvent.getShipFlag() == null || lastEvent.getShipFlag() == 0))
-            {
-                return lastEvent.getLabId();
-            }
-        }
-        return null;
-    }
-
-    private boolean skipAsProcessingLocation(SpecimenEvent event)
-    {
-        boolean allNullDates = event.getLabReceiptDate() == null && event.getStorageDate() == null && event.getShipDate() == null;
-        //
-        return allNullDates && !safeComp(event.getLabId(), event.getOriginatingLocationId());
-    }
-
-    public SpecimenEvent getFirstEvent(List<SpecimenEvent> dateOrderedEvents)
-    {
-        if (!dateOrderedEvents.isEmpty())
-        {
-            SpecimenEvent firstEvent = dateOrderedEvents.get(0);
-            // walk backwards through the events until we find an event with at least one date field filled in that isn't
-            // the first event.  Leaving all specimen event dates blank shouldn't make an event the processing location.
-            for (int i = 1; i < dateOrderedEvents.size() - 1 && skipAsProcessingLocation(firstEvent); i++)
-                firstEvent = dateOrderedEvents.get(i);
-            return firstEvent;
-        }
-        return null;
-    }
-
-    public SpecimenEvent getLastEvent(List<SpecimenEvent> dateOrderedEvents)
-    {
-        if (dateOrderedEvents.isEmpty())
-            return null;
-        return dateOrderedEvents.get(dateOrderedEvents.size() - 1);
-    }
-
-    public Integer getProcessingLocationId(List<SpecimenEvent> dateOrderedEvents)
-    {
-        SpecimenEvent firstEvent = getFirstEvent(dateOrderedEvents);
-        return firstEvent != null ? firstEvent.getLabId() : null;
-    }
-
-    public String getFirstProcessedByInitials(List<SpecimenEvent> dateOrderedEvents)
-    {
-        SpecimenEvent firstEvent = getFirstEvent(dateOrderedEvents);
-        return firstEvent != null ? firstEvent.getProcessedByInitials() : null;
-    }
-
-    public LocationImpl getOriginatingLocation(Vial vial)
-    {
-        if (vial.getOriginatingLocationId() != null)
-        {
-            LocationImpl location = LocationManager.get().getLocation(vial.getContainer(), vial.getOriginatingLocationId());
-            if (location != null)
-                return location;
-        }
-
-        List<SpecimenEvent> events = getDateOrderedEventList(vial);
-        Integer firstLabId = getProcessingLocationId(events);
-        if (firstLabId != null)
-            return LocationManager.get().getLocation(vial.getContainer(), firstLabId);
-        else
-            return null;
     }
 
     public long getMaxExternalId(Container container)
@@ -704,7 +478,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     public void createRequestRequirement(User user, SpecimenRequestRequirement requirement, boolean createEvent, boolean force) throws DuplicateFilenameException
     {
         SpecimenRequest request = getRequest(requirement.getContainer(), requirement.getRequestId());
-        SpecimenRequestRequirement newRequirement = _requirementProvider.createRequirement(user, request, requirement, force);
+        SpecimenRequestRequirement newRequirement = SpecimenRequestRequirementProvider.get().createRequirement(user, request, requirement, force);
         if (newRequirement != null && createEvent)
             createRequestEvent(user, requirement, RequestEventType.REQUIREMENT_ADDED, requirement.getRequirementSummary(), null);
     }
@@ -1371,7 +1145,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             }
 
             if (createRequirements)
-                getRequirementsProvider().generateDefaultRequirements(user, request);
+                SpecimenRequestRequirementProvider.get().generateDefaultRequirements(user, request);
 
             SpecimenRequestStatus status = getRequestStatus(request.getContainer(), request.getStatusId());
             updateSpecimenStatus(vials, user, status.isSpecimensLocked());
@@ -1453,7 +1227,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
             deleteMissingSpecimens(request);
 
-            _requirementProvider.deleteRequirements(request);
+            SpecimenRequestRequirementProvider.get().deleteRequirements(request);
 
             deleteRequestEvents(user, request);
             _requestHelper.delete(request);
@@ -1990,7 +1764,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         assert set.add(SpecimenSchema.get().getTableInfoSampleAvailabilityRule());
 
 
-        _requirementProvider.purgeContainer(c);
+        SpecimenRequestRequirementProvider.get().purgeContainer(c);
         assert set.add(SpecimenSchema.get().getTableInfoSampleRequestRequirement());
         assert set.add(SpecimenSchema.get().getTableInfoSampleRequestActor());
 

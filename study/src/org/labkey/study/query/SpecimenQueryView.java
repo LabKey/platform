@@ -60,7 +60,6 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.controllers.specimen.SpecimenUtils;
 import org.labkey.study.model.ParticipantDataset;
@@ -620,9 +619,9 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 }
                 else if (pd.getVisitDate() != null)
                 {
-                    whereClause.append(StudySchema.getInstance().getSqlDialect().getDateTimeToDateCast("DrawTimestamp"));
+                    whereClause.append(SpecimenSchema.get().getSqlDialect().getDateTimeToDateCast("DrawTimestamp"));
                     whereClause.append(" = ");
-                    whereClause.append(StudySchema.getInstance().getSqlDialect().getDateTimeToDateCast("?")).append(" AND ");
+                    whereClause.append(SpecimenSchema.get().getSqlDialect().getDateTimeToDateCast("?")).append(" AND ");
                     params.add(pd.getVisitDate());
                 }
                 whereClause.append(requireNonNull(StudyService.get()).getSubjectColumnName(getContextContainer())).append(" = ?)");

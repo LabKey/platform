@@ -26,6 +26,9 @@ import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.requirements.RequirementType;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirementType;
 import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
@@ -36,10 +39,8 @@ import org.labkey.security.xml.GroupType;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.SpecimenManager.SpecimenRequestInput;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.SpecimenRequestRequirement;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.requirements.SpecimenRequestRequirementType;
 import org.labkey.study.xml.DefaultRequirementType;
 import org.labkey.study.xml.DefaultRequirementsType;
 import org.labkey.study.xml.LegacySpecimenSettingsType;
@@ -351,7 +352,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         {
             for (DefaultRequirementType xmlReq : xmlReqs.getRequirementArray())
             {
-                List<SpecimenRequestActor> matchingActors = SpecimenManager.getInstance().getRequirementsProvider().getActorsByLabel(ctx.getContainer(), xmlReq.getActor());
+                List<SpecimenRequestActor> matchingActors = SpecimenRequestRequirementProvider.get().getActorsByLabel(ctx.getContainer(), xmlReq.getActor());
                 if (matchingActors.size() > 0)
                 {
                     SpecimenRequestRequirement requirement = new SpecimenRequestRequirement();
@@ -359,7 +360,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                     requirement.setActorId(matchingActors.get(0).getRowId());
                     requirement.setDescription(xmlReq.getDescription());
                     requirement.setRequestId(-1);
-                    SpecimenManager.getInstance().getRequirementsProvider().createDefaultRequirement(ctx.getUser(), requirement, type);
+                    SpecimenRequestRequirementProvider.get().createDefaultRequirement(ctx.getUser(), requirement, type);
                 }
                 else
                 {

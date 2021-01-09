@@ -38,6 +38,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.specimen.SpecimenEvent;
+import org.labkey.api.specimen.SpecimenEventManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.study.Study;
@@ -531,7 +532,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
     private static Map<String, Object> getLastEventMap(Container container, Vial vial)
     {
         List<Vial> vials = Collections.singletonList(vial);
-        SpecimenEvent specimenEvent = SpecimenManager.getInstance().getLastEvent(SpecimenManager.getInstance().getSpecimenEvents(vials, false));
+        SpecimenEvent specimenEvent = SpecimenEventManager.get().getLastEvent(SpecimenEventManager.get().getSpecimenEvents(vials, false));
         if (null == specimenEvent)
             throw new IllegalStateException("Expected at least one event for specimen.");
         TableInfo tableInfoSpecimenEvent = SpecimenSchema.get().getTableInfoSpecimenEvent(container);

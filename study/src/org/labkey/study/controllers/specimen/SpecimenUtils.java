@@ -53,6 +53,9 @@ import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.notifications.NotificationRecipientSet;
+import org.labkey.api.specimen.requirements.SpecimenRequest;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.security.permissions.SetSpecimenCommentsPermission;
@@ -79,8 +82,6 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.ParticipantGroupManager;
-import org.labkey.study.model.SpecimenRequest;
-import org.labkey.study.model.SpecimenRequestRequirement;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.SpecimenQueryView;
@@ -336,12 +337,12 @@ public class SpecimenUtils
         relevantSites.put(destLocation.getRowId(), destLocation);
         for (Vial vial : specimenRequest.getVials())
         {
-            LocationImpl location = SpecimenManager.getInstance().getCurrentLocation(vial);
+            LocationImpl location = LocationManager.get().getCurrentLocation(vial);
             if (location != null && !relevantSites.containsKey(location.getRowId()))
                 relevantSites.put(location.getRowId(), location);
         }
 
-        SpecimenRequestActor[] allActors = SpecimenManager.getInstance().getRequirementsProvider().getActors(specimenRequest.getContainer());
+        SpecimenRequestActor[] allActors = SpecimenRequestRequirementProvider.get().getActors(specimenRequest.getContainer());
         // add study-wide actors and actors from all relevant sites:
         for (SpecimenRequestActor actor : allActors)
         {
