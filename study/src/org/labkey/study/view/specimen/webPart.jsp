@@ -151,11 +151,11 @@
                         <table class="labkey-nav-tree-child">
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.SamplesAction.class,c).addParameter("showVials","false"))%>">By Vial Group</a>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.SpecimensAction.class,c).addParameter("showVials","false"))%>">By Vial Group</a>
                                 </td>
                             </tr>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.SamplesAction.class,c).addParameter("showVials","true"))%>">By Individual Vial</a></td>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.SpecimensAction.class,c).addParameter("showVials","true"))%>">By Individual Vial</a></td>
                             </tr>
                             </tbody>
                         </table>
@@ -226,7 +226,7 @@
                 </tbody>
             </table>
 <%
-    if (SpecimenManager.getInstance().isSampleRequestEnabled(c))
+    if (SpecimenManager.getInstance().isSpecimenRequestEnabled(c))
     {
 %>
             <table class="labkey-nav-tree" style="width: 100%;margin-top:0.5em">
@@ -245,7 +245,7 @@
                             <tbody>
                             <% if (getContainer().hasPermission(getUser(), RequestSpecimensPermission.class)) { %>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.ShowCreateSampleRequestAction.class,c))%>">Create New Request</a></td>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.ShowCreateSpecimenRequestAction.class,c))%>">Create New Request</a></td>
                             </tr>
                             <% } %>
                             <tr class="labkey-nav-tree-row labkey-header">

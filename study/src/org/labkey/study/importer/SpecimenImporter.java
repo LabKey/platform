@@ -60,6 +60,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenEvent;
+import org.labkey.api.specimen.SpecimenEventDateComparator;
 import org.labkey.api.specimen.SpecimenEventManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
@@ -99,10 +100,8 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.api.specimen.SpecimenEventDateComparator;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.SpecimenServiceImpl;
-import org.labkey.study.StudySchema;
 import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.SequenceNumImportHelper;
 import org.labkey.study.model.StudyImpl;
@@ -525,7 +524,7 @@ public class SpecimenImporter
 
     private void resyncStudy(boolean syncParticipantVisit)
     {
-        TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
+        TableInfo tableParticipant = SpecimenSchema.get().getTableInfoParticipant();
         TableInfo tableSpecimen = getTableInfoSpecimen();
 
         executeSQL(tableParticipant.getSchema(), "INSERT INTO " + tableParticipant.getSelectName() + " (Container, ParticipantId)\n" +
@@ -584,7 +583,7 @@ public class SpecimenImporter
                            boolean syncParticipantVisit, boolean editingSpecimens, boolean failForUndefinedVisits)
             throws IOException, ValidationException
     {
-        DbSchema schema = StudySchema.getInstance().getSchema();
+        DbSchema schema = SpecimenSchema.get().getSchema();
         _logger = logger;
         _job = job;
 
@@ -649,7 +648,7 @@ public class SpecimenImporter
             {
                 // Delete any orphaned specimen rows without vials
                 _iTimer.setPhase(ImportPhases.DeleteOldData);
-                executeSQL(StudySchema.getInstance().getSchema(), "DELETE FROM " + getTableInfoSpecimen().getSelectName() +
+                executeSQL(SpecimenSchema.get().getSchema(), "DELETE FROM " + getTableInfoSpecimen().getSelectName() +
                                   " WHERE RowId NOT IN (SELECT SpecimenId FROM " + getTableInfoVial().getSelectName() + ")");
             }
 
@@ -736,7 +735,7 @@ public class SpecimenImporter
         Study visitStudy = StudyManager.getInstance().getStudyForVisits(study);
         sql.add(visitStudy.getContainer().getId());
 
-        SqlSelector selector = new SqlSelector(StudySchema.getInstance().getSchema(), sql);
+        SqlSelector selector = new SqlSelector(SpecimenSchema.get().getSchema(), sql);
         List<Double> undefinedVisits = selector.getArrayList(Double.class);
         if (!undefinedVisits.isEmpty())
         {
@@ -898,7 +897,7 @@ public class SpecimenImporter
             .add(_container.getId());
 
         info("Updating hash codes for existing comments...");
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+        new SqlExecutor(SpecimenSchema.get().getSchema()).execute(sql);
         info("Complete.");
     }
 
@@ -943,7 +942,7 @@ public class SpecimenImporter
             .append(conflictedGUIDs)
             .append(");");
         info("Clearing QC flags for vials that no longer have history conflicts...");
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(deleteClearedVials);
+        new SqlExecutor(SpecimenSchema.get().getSchema()).execute(deleteClearedVials);
         info("Complete.");
 
 
@@ -964,7 +963,7 @@ public class SpecimenImporter
             .append("(SELECT GlobalUniqueId FROM study.SpecimenComment WHERE Container = ?);")
             .add(_container.getId());
         info("Setting QC flags for vials that have new history conflicts...");
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(insertPlaceholderQCComments);
+        new SqlExecutor(SpecimenSchema.get().getSchema()).execute(insertPlaceholderQCComments);
         info("Complete.");
     }
 
@@ -989,7 +988,7 @@ public class SpecimenImporter
             .add(_container.getId());
         info("Marking requested vials that have been orphaned...");
 
-        SqlExecutor executor = new SqlExecutor(StudySchema.getInstance().getSchema());
+        SqlExecutor executor = new SqlExecutor(SpecimenSchema.get().getSchema());
         executor.execute(orphanMarkerSql);
         info("Complete.");
 
@@ -1029,7 +1028,7 @@ public class SpecimenImporter
         lockedInRequestSql.add(_container.getId());
 
         info("Setting Specimen Locked in Request status...");
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(lockedInRequestSql);
+        new SqlExecutor(SpecimenSchema.get().getSchema()).execute(lockedInRequestSql);
         info("Complete.");
     }
 
@@ -1047,7 +1046,7 @@ public class SpecimenImporter
                 "\tHAVING COUNT(ProcessingLocation) = 1\n" +
                 ")");
         info("Updating processing locations on the specimen table...");
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+        new SqlExecutor(SpecimenSchema.get().getSchema()).execute(sql);
         info("Complete.");
 
         sql = new SQLFragment("UPDATE ").append(specimenTableSelectName).append(" SET FirstProcessedByInitials = (\n" +
@@ -1058,7 +1057,7 @@ public class SpecimenImporter
                 "\tHAVING COUNT(FirstProcessedByInitials) = 1\n" +
                 ")");
         info("Updating first processed by initials on the specimen table...");
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+        new SqlExecutor(SpecimenSchema.get().getSchema()).execute(sql);
         info("Complete.");
     }
 
@@ -1125,7 +1124,7 @@ public class SpecimenImporter
             .add(true)
             .add(true);
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), selectCommentsSql).forEach(SpecimenComment.class, comment -> qcCommentMap.put(comment.getGlobalUniqueId(), comment));
+        new SqlSelector(SpecimenSchema.get().getSchema(), selectCommentsSql).forEach(SpecimenComment.class, comment -> qcCommentMap.put(comment.getGlobalUniqueId(), comment));
 
 //        if (!merge)
 //            new SpecimenTablesProvider(getContainer(), getUser(), null).dropTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
@@ -1323,11 +1322,11 @@ public class SpecimenImporter
 
                 _iTimer.setPhase(ImportPhases.UpdateVials);
                 if (!vialPropertiesParams.isEmpty())
-                    Table.batchExecute(StudySchema.getInstance().getSchema(), vialPropertiesSql, vialPropertiesParams);
+                    Table.batchExecute(SpecimenSchema.get().getSchema(), vialPropertiesSql, vialPropertiesParams);
 
                 _iTimer.setPhase(ImportPhases.UpdateComments);
                 if (!commentParams.isEmpty())
-                    Table.batchExecute(StudySchema.getInstance().getSchema(), updateCommentSql, commentParams);
+                    Table.batchExecute(SpecimenSchema.get().getSchema(), updateCommentSql, commentParams);
 
                 rowCount.add(CURRENT_SITE_UPDATE_SIZE);
                 _iTimer.setPhase(ImportPhases.GetVialBatch);
@@ -1399,7 +1398,7 @@ public class SpecimenImporter
     // TODO: Pass in merge (or import strategy)?
     private SpecimenImportFile getSpecimenImportFile(Container c, VirtualFile dir, String fileName, SpecimenTableType type)
     {
-        DbSchema schema = StudySchema.getInstance().getSchema();
+        DbSchema schema = SpecimenSchema.get().getSchema();
 
         // Enumerate the import filter factories... first one to claim the file gets associated with it
         for (SpecimenImportStrategyFactory factory : SpecimenService.get().getSpecimenImportStrategyFactories())
@@ -3316,7 +3315,7 @@ public class SpecimenImporter
         public void tempTableConsistencyTest()
         {
             Container c = JunitUtil.getTestContainer();
-            DbSchema schema = StudySchema.getInstance().getSchema();
+            DbSchema schema = SpecimenSchema.get().getSchema();
             User user = TestContext.get().getUser();
 
             // Provisioned specimen tables need to be created in this order

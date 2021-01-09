@@ -30,25 +30,22 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.specimen.SpecimenCommentAuditDomainKind;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.query.SpecimenQueryView;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.specimen.SpecimenCommentAuditDomainKind.COLUMN_NAME_VIAL_ID;
+import static org.labkey.api.specimen.SpecimenCommentAuditDomainKind.SPECIMEN_COMMENT_EVENT;
 
 /**
  * User: klum
@@ -56,22 +53,15 @@ import java.util.Set;
  */
 public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
-    public static final String SPECIMEN_COMMENT_EVENT = "SpecimenCommentEvent";
-
-    public static final String COLUMN_NAME_VIAL_ID = "VialId";
-
-    static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
-
-    static {
-
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROJECT_ID));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_VIAL_ID));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
-    }
+    private static final List<FieldKey> defaultVisibleColumns = List.of(
+        FieldKey.fromParts(COLUMN_NAME_CREATED),
+        FieldKey.fromParts(COLUMN_NAME_CREATED_BY),
+        FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY),
+        FieldKey.fromParts(COLUMN_NAME_PROJECT_ID),
+        FieldKey.fromParts(COLUMN_NAME_CONTAINER),
+        FieldKey.fromParts(COLUMN_NAME_VIAL_ID),
+        FieldKey.fromParts(COLUMN_NAME_COMMENT)
+    );
 
     @Override
     protected AbstractAuditDomainKind getDomainKind()
@@ -114,7 +104,7 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
     @Override
     public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
     {
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
+        return new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
         {
             @Override
             protected void initColumn(MutableColumnInfo col)
@@ -129,49 +119,47 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
                         @Override
                         public DisplayColumn createRenderer(final ColumnInfo colInfo)
                         {
-                        return new DataColumn(colInfo)
-                        {
-                            @Override
-                            public void addQueryColumns(Set<ColumnInfo> columns)
+                            return new DataColumn(colInfo)
                             {
-                                columns.add(containerColumn);
-                                super.addQueryColumns(columns);
-                            }
-
-                            @Override
-                            public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-                            {
-                                Object containerId = containerColumn.getValue(ctx);
-                                String globalUniqueId = (String) getValue(ctx);
-                                if (globalUniqueId == null)
-                                    return;
-
-                                Container container = ContainerManager.getForId(containerId.toString());
-                                if (container == null)
+                                @Override
+                                public void addQueryColumns(Set<ColumnInfo> columns)
                                 {
-                                    out.write(globalUniqueId);
-                                    return;
+                                    columns.add(containerColumn);
+                                    super.addQueryColumns(columns);
                                 }
 
-                                ActionURL url = SpecimenController.getSamplesURL(container);
-                                url.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, true);
-                                url.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.COMMENTS.name());
-                                url.addParameter("SpecimenDetail.GlobalUniqueId~eq", globalUniqueId);
+                                @Override
+                                public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                                {
+                                    Object containerId = containerColumn.getValue(ctx);
+                                    String globalUniqueId = (String) getValue(ctx);
+                                    if (globalUniqueId == null)
+                                        return;
 
-                                out.write("<a href=\"");
-                                out.write(PageFlowUtil.filter(url.getLocalURIString()));
-                                out.write("\">");
-                                out.write(PageFlowUtil.filter(globalUniqueId));
-                                out.write("</a>");
-                            }
-                        };
+                                    Container container = ContainerManager.getForId(containerId.toString());
+                                    if (container == null)
+                                    {
+                                        out.write(globalUniqueId);
+                                        return;
+                                    }
+
+                                    ActionURL url = SpecimenController.getSpecimensURL(container);
+                                    url.addParameter(SpecimenController.SpecimenViewTypeForm.PARAMS.showVials, true);
+                                    url.addParameter(SpecimenController.SpecimenViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.COMMENTS.name());
+                                    url.addParameter("SpecimenDetail.GlobalUniqueId~eq", globalUniqueId);
+
+                                    out.write("<a href=\"");
+                                    out.write(PageFlowUtil.filter(url.getLocalURIString()));
+                                    out.write("\">");
+                                    out.write(PageFlowUtil.filter(globalUniqueId));
+                                    out.write("</a>");
+                                }
+                            };
                         }
                     });
                 }
             }
         };
-
-        return table;
     }
 
 
@@ -179,75 +167,5 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
     public List<FieldKey> getDefaultVisibleColumns()
     {
         return defaultVisibleColumns;
-    }
-
-
-    public static class SpecimenCommentAuditEvent extends AuditTypeEvent
-    {
-        private String _vialId;
-
-        public SpecimenCommentAuditEvent()
-        {
-            super();
-        }
-
-        public SpecimenCommentAuditEvent(String container, String comment)
-        {
-            super(AssayAuditProvider.ASSAY_PUBLISH_AUDIT_EVENT, container, comment);
-        }
-
-        public String getVialId()
-        {
-            return _vialId;
-        }
-
-        public void setVialId(String vialId)
-        {
-            _vialId = vialId;
-        }
-
-        @Override
-        public Map<String, Object> getAuditLogMessageElements()
-        {
-            Map<String, Object> elements = new LinkedHashMap<>();
-            elements.put("vialId", getVialId());
-            elements.putAll(super.getAuditLogMessageElements());
-            return elements;
-        }
-    }
-
-    public static class SpecimenCommentAuditDomainKind extends AbstractAuditDomainKind
-    {
-        public static final String NAME = "SpecimenCommentAuditDomain";
-        public static String NAMESPACE_PREFIX = "Audit-" + NAME;
-
-        private final Set<PropertyDescriptor> _fields;
-
-        public SpecimenCommentAuditDomainKind()
-        {
-            super(SPECIMEN_COMMENT_EVENT);
-
-            Set<PropertyDescriptor> fields = new LinkedHashSet<>();
-            fields.add(createPropertyDescriptor(COLUMN_NAME_VIAL_ID, PropertyType.STRING));
-            _fields = Collections.unmodifiableSet(fields);
-        }
-
-        @Override
-        public Set<PropertyDescriptor> getProperties()
-        {
-            return _fields;
-        }
-
-        @Override
-        protected String getNamespacePrefix()
-        {
-            return NAMESPACE_PREFIX;
-        }
-
-        @Override
-        public String getKindName()
-        {
-            return NAME;
-        }
     }
 }

@@ -167,7 +167,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
         }
     }
 
-    private PropertyMapWrapper _typeNameIdMapWrapper = null;
+    private final PropertyMapWrapper _typeNameIdMapWrapper;
 
     public BaseSpecimenPivotTable(final TableInfo tinfo, final StudyQuerySchema schema)
     {

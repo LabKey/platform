@@ -52,6 +52,7 @@ import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
+import org.labkey.api.specimen.notifications.ActorNotificationRecipientSet;
 import org.labkey.api.specimen.notifications.NotificationRecipientSet;
 import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
@@ -86,7 +87,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.specimen.notifications.ActorNotificationRecipientSet;
 import org.labkey.study.specimen.notifications.DefaultRequestNotification;
 import org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate;
 import org.springframework.validation.BindException;
@@ -204,7 +204,7 @@ public class SpecimenUtils
                 if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), RequestSpecimensPermission.class))
                 {
                     final String jsRegionObject = DataRegion.getJavaScriptObjectReference(gridView.getSettings().getDataRegionName());
-                    String createRequestURL = urlFor(SpecimenController.ShowCreateSampleRequestAction.class).addReturnURL(getViewContext().getActionURL()).toString();
+                    String createRequestURL = urlFor(SpecimenController.ShowCreateSpecimenRequestAction.class).addReturnURL(getViewContext().getActionURL()).toString();
 
                     requestMenuButton.addMenuItem("Create New Request",
                             "if (verifySelected(" + jsRegionObject + ".form, '" + createRequestURL +
@@ -223,7 +223,7 @@ public class SpecimenUtils
             else
             {
                 ActionURL endCommentsURL = getViewContext().getActionURL().clone();
-                endCommentsURL.replaceParameter(SpecimenController.SampleViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.REQUESTS.name());
+                endCommentsURL.replaceParameter(SpecimenController.SpecimenViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.REQUESTS.name());
                 requestMenuButton.addMenuItem("Enable Request Mode", endCommentsURL);
             }
 
@@ -252,7 +252,7 @@ public class SpecimenUtils
                 clearItem.setId("Comments:Clear");
 
                 ActionURL endCommentsURL = getViewContext().getActionURL().clone();
-                endCommentsURL.replaceParameter(SpecimenController.SampleViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.REQUESTS.name());
+                endCommentsURL.replaceParameter(SpecimenController.SpecimenViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.REQUESTS.name());
                 NavTree exitItem = commentsMenuButton.addMenuItem("Exit Comments " + (manualQCEnabled ? "and QC " : "") + "mode", endCommentsURL);
                 exitItem.setId("Comments:Exit");
 
@@ -295,7 +295,7 @@ public class SpecimenUtils
             else
             {
                 ActionURL enableCommentsURL = getViewContext().getActionURL().clone();
-                enableCommentsURL.replaceParameter(SpecimenController.SampleViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.COMMENTS.name());
+                enableCommentsURL.replaceParameter(SpecimenController.SpecimenViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.COMMENTS.name());
                 ActionButton commentsButton = new ActionButton("Enable Comments" + (manualQCEnabled ? "/QC" : ""), enableCommentsURL);
                 buttons.add(commentsButton);
             }
@@ -472,7 +472,7 @@ public class SpecimenUtils
         RequestNotificationSettings settings =
                 SpecimenManager.getInstance().getRequestNotificationSettings(getContainer());
 
-        SpecimenRequest specimenRequest = notification.getSampleRequest();
+        SpecimenRequest specimenRequest = notification.getSpecimenRequest();
         String specimenList = null;
         if (RequestNotificationSettings.SpecimensAttachmentEnum.InEmailBody == settings.getSpecimensAttachmentEnum())
         {
@@ -557,7 +557,7 @@ public class SpecimenUtils
 
         public int getRequestId()
         {
-            return _notification.getSampleRequest().getRowId();
+            return _notification.getSpecimenRequest().getRowId();
         }
 
         public String getModifyingUser()
@@ -567,8 +567,8 @@ public class SpecimenUtils
 
         public String getRequestingSiteName()
         {
-            Location destLocation = LocationManager.get().getLocation(_notification.getSampleRequest().getContainer(),
-                    _notification.getSampleRequest().getDestinationSiteId());
+            Location destLocation = LocationManager.get().getLocation(_notification.getSpecimenRequest().getContainer(),
+                    _notification.getSpecimenRequest().getDestinationSiteId());
             if (destLocation != null)
                 return destLocation.getDisplayName();
             else
@@ -577,14 +577,14 @@ public class SpecimenUtils
 
         public String getStatus()
         {
-            SpecimenRequestStatus status = SpecimenManager.getInstance().getRequestStatus(_notification.getSampleRequest().getContainer(),
-                    _notification.getSampleRequest().getStatusId());
+            SpecimenRequestStatus status = SpecimenManager.getInstance().getRequestStatus(_notification.getSpecimenRequest().getContainer(),
+                    _notification.getSpecimenRequest().getStatusId());
             return status != null ? status.getLabel() : "Unknown";
         }
 
         public Container getContainer()
         {
-            return _notification.getSampleRequest().getContainer();
+            return _notification.getSpecimenRequest().getContainer();
         }
 
         public String getEventDescription()
@@ -594,7 +594,7 @@ public class SpecimenUtils
 
         public String getRequestDescription()
         {
-            return _notification.getSampleRequest().getComments();
+            return _notification.getSpecimenRequest().getComments();
         }
 
         public String getSpecimenList()
@@ -671,7 +671,7 @@ public class SpecimenUtils
 
     public void ensureSpecimenRequestsConfigured(boolean checkExistingStatuses)
     {
-        if (!SpecimenManager.getInstance().isSampleRequestEnabled(getContainer(), checkExistingStatuses))
+        if (!SpecimenManager.getInstance().isSpecimenRequestEnabled(getContainer(), checkExistingStatuses))
             throw new RedirectException(new ActionURL(SpecimenController.SpecimenRequestConfigRequired.class, getContainer()));
     }
 
@@ -734,7 +734,7 @@ public class SpecimenUtils
         if (fromGroupedView)
         {
             Map<String, List<Vial>> keyToVialMap =
-                    SpecimenManager.getInstance().getVialsForSampleHashes(getContainer(), getUser(),  formValues, onlyAvailable);
+                    SpecimenManager.getInstance().getVialsForSpecimenHashes(getContainer(), getUser(),  formValues, onlyAvailable);
             List<Vial> vials = new ArrayList<>();
             for (List<Vial> vialList : keyToVialMap.values())
                 vials.addAll(vialList);
@@ -829,19 +829,19 @@ public class SpecimenUtils
     {
         Set<Long> ids = new HashSet<>();
         Arrays.stream(BaseStudyController.toLongArray(rowIds)).forEach(ids::add);
-        List<Vial> requestedSamples = SpecimenManager.getInstance().getRequestableVials(getContainer(), getUser(), ids);
-        return new RequestedSpecimens(requestedSamples);
+        List<Vial> requestedSpecimens = SpecimenManager.getInstance().getRequestableVials(getContainer(), getUser(), ids);
+        return new RequestedSpecimens(requestedSpecimens);
     }
 
     public RequestedSpecimens getRequestableByVialGlobalUniqueIds(Set<String> globalUniqueIds)
     {
-        List<Vial> requestedSamples = getSpecimensFromGlobalUniqueIds(globalUniqueIds);
-        return new RequestedSpecimens(requestedSamples);
+        List<Vial> requestedSpecimens = getSpecimensFromGlobalUniqueIds(globalUniqueIds);
+        return new RequestedSpecimens(requestedSpecimens);
     }
 
-    public RequestedSpecimens getRequestableBySampleHash(Set<String> formValues, Integer preferredLocation) throws AmbiguousLocationException
+    public RequestedSpecimens getRequestableBySpecimenHash(Set<String> formValues, Integer preferredLocation) throws AmbiguousLocationException
     {
-        Map<String, List<Vial>> vialsByHash = SpecimenManager.getInstance().getVialsForSampleHashes(getContainer(), getUser(), formValues, true);
+        Map<String, List<Vial>> vialsByHash = SpecimenManager.getInstance().getVialsForSpecimenHashes(getContainer(), getUser(), formValues, true);
 
         if (vialsByHash == null || vialsByHash.isEmpty())
             return new RequestedSpecimens(Collections.emptyList());
@@ -855,7 +855,7 @@ public class SpecimenUtils
                 throw new AmbiguousLocationException(getContainer(), preferredLocations);
         }
 
-        List<Vial> requestedSamples = new ArrayList<>(vialsByHash.size());
+        List<Vial> requestedSpecimens = new ArrayList<>(vialsByHash.size());
         Set<Integer> providingLocations = new HashSet<>();
 
         for (List<Vial> vials : vialsByHash.values())
@@ -875,10 +875,10 @@ public class SpecimenUtils
             if (selectedVial == null)
                 throw new IllegalStateException("Vial was not available from specified location " + preferredLocation);
             providingLocations.add(selectedVial.getCurrentLocation());
-            requestedSamples.add(selectedVial);
+            requestedSpecimens.add(selectedVial);
         }
 
-        return new RequestedSpecimens(requestedSamples, providingLocations);
+        return new RequestedSpecimens(requestedSpecimens, providingLocations);
     }
     
     public GridView getRequestEventGridView(HttpServletRequest request, BindException errors, SimpleFilter filter)

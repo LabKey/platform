@@ -16,6 +16,7 @@
 
 package org.labkey.study.specimen;
 
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.view.JspView;
 import org.labkey.study.model.StudyImpl;
 
@@ -24,6 +25,7 @@ import org.labkey.study.model.StudyImpl;
  * Date: Jul 28, 2006
  * Time: 10:50:05 AM
  */
+@Migrate
 public class SpecimenWebPart extends JspView<SpecimenWebPart.SpecimenWebPartBean>
 {
     public SpecimenWebPart()

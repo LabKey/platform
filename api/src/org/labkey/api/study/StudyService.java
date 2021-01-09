@@ -168,8 +168,6 @@ public interface StudyService
 
     List<SecurableResource> getSecurableResources(Container container, User user);
 
-    Set<Role> getStudyRoles();
-
     String getSubjectNounSingular(Container container);
 
     String getSubjectNounPlural(Container container);
@@ -244,4 +242,6 @@ public interface StudyService
 
     // Do any of the tables that study manages reference this location?
     boolean isLocationInUse(Location loc);
+
+    void appendLocationInUseClauses(SQLFragment sql, String locationTableAlias, String exists);
 }

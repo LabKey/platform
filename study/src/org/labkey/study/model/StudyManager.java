@@ -70,7 +70,6 @@ import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
@@ -1598,8 +1597,8 @@ public class StudyManager
 
                 for (VisitImpl visit : visits)
                 {
-                    // Delete samples first because we may need ParticipantVisit to figure out which samples
-                    SpecimenManager.getInstance().deleteSamplesForVisit(visit);
+                    // Delete specimens first because we may need ParticipantVisit to figure out which specimens
+                    SpecimenManager.getInstance().deleteSpecimensForVisit(visit);
 
                     TreatmentManager.getInstance().deleteTreatmentVisitMapForVisit(study.getContainer(), visit.getRowId());
                     deleteAssaySpecimenVisits(study.getContainer(), visit.getRowId());
@@ -2746,9 +2745,9 @@ public class StudyManager
             }
 
             //
-            // samples
+            // specimens
             //
-            SpecimenManager.getInstance().deleteAllSampleData(c, deletedTables, user);
+            SpecimenManager.getInstance().deleteAllSpecimenData(c, deletedTables, user);
 
             //
             // assay schedule

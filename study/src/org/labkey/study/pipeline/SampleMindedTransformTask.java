@@ -65,10 +65,8 @@ import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.writer.PrintWriters;
-import org.labkey.study.StudySchema;
 import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.SequenceNumImportHelper;
-import org.labkey.study.model.StudyManager;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -435,13 +433,13 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
     /* for missing visit, missing specimen, we use the existing lookup values */
     void loadLookupsFromDb(Container c)
     {
-        DbSchema study = StudySchema.getInstance().getSchema();
+        DbSchema schema = SpecimenSchema.get().getSchema();
         String primaryTypeSelectName = SpecimenSchema.get().getTableInfoSpecimenPrimaryType(c).getSelectName();
         String derivativeSelectName = SpecimenSchema.get().getTableInfoSpecimenDerivative(c).getSelectName();
         for (Location l : LocationManager.get().getLocations(c))
             _labIds.put(l.getLabel(), l.getRowId());
-        (new SqlSelector(study,"SELECT primaryType, rowId FROM " + primaryTypeSelectName + " WHERE container=?", c)).forEach(rs -> _primaryIds.put(rs.getString(1), rs.getInt(2)));
-        (new SqlSelector(study,"SELECT derivative, rowId FROM " + derivativeSelectName + " WHERE container=?", c)).forEach(rs -> _derivativeIds.put(rs.getString(1), rs.getInt(2)));
+        (new SqlSelector(schema,"SELECT primaryType, rowId FROM " + primaryTypeSelectName + " WHERE container=?", c)).forEach(rs -> _primaryIds.put(rs.getString(1), rs.getInt(2)));
+        (new SqlSelector(schema,"SELECT derivative, rowId FROM " + derivativeSelectName + " WHERE container=?", c)).forEach(rs -> _derivativeIds.put(rs.getString(1), rs.getInt(2)));
     }
 
     static void importNotDone(File source, PipelineJob job)
@@ -482,7 +480,7 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
 
     static void importXls(@NotNull TableInfo target, @NotNull File source, PipelineJob job)
     {
-        Study study = StudyManager.getInstance().getStudy(job.getContainer());
+        Study study = StudyService.get().getStudy(job.getContainer());
         if (null == study)
             return;
         DbScope scope = target.getSchema().getScope();
@@ -608,7 +606,6 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
 
             try
             {
-
                 SequenceNumImportHelper snih = new SequenceNumImportHelper(study, null);
                 ParticipantIdImportHelper piih = new ParticipantIdImportHelper(study, user, null);
 

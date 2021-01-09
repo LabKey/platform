@@ -458,12 +458,12 @@ public class DatasetQueryView extends StudyQueryView
         if (QCStateManager.getInstance().showQCStates(getContainer()))
             bar.add(createQCStateButton(_qcStateSet));
 
-        ActionURL viewSamplesURL = new ActionURL(SpecimenController.SelectedSamplesAction.class, getContainer());
-        ActionButton viewSamples = new ActionButton(viewSamplesURL, "View Specimens");
-        viewSamples.setRequiresSelection(true);
-        viewSamples.setActionType(ActionButton.Action.POST);
-        viewSamples.setDisplayPermission(ReadPermission.class);
-        bar.add(viewSamples);
+        ActionURL viewSpecimensURL = new ActionURL(SpecimenController.SelectedSpecimensAction.class, getContainer());
+        ActionButton viewSpecimens = new ActionButton(viewSpecimensURL, "View Specimens");
+        viewSpecimens.setRequiresSelection(true);
+        viewSpecimens.setActionType(ActionButton.Action.POST);
+        viewSpecimens.setDisplayPermission(ReadPermission.class);
+        bar.add(viewSpecimens);
 
         if (isAssayDataset)
         {

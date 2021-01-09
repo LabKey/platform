@@ -120,18 +120,13 @@ public class QueryHelper<K extends StudyCachable>
 
     private K get(final Container c, final Object rowId, final String rowIdColumnName)
     {
-        CacheLoader<String, Object> loader = new CacheLoader<String,Object>()
-        {
-            @Override
-            public Object load(String key, Object argument)
-            {
-                SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-                filter.addCondition(rowIdColumnName, rowId);
-                StudyCachable obj = new TableSelector(getTableInfo(), filter, null).getObject(_objectClass);
-                if (obj != null)
-                    obj.lock();
-                return obj;
-            }
+        CacheLoader<String, Object> loader = (key, argument) -> {
+            SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+            filter.addCondition(rowIdColumnName, rowId);
+            StudyCachable obj = new TableSelector(getTableInfo(), filter, null).getObject(_objectClass);
+            if (obj != null)
+                obj.lock();
+            return obj;
         };
         Object obj = StudyCache.get(getTableInfo(), c, rowId, loader);
         return (K)obj;

@@ -17,8 +17,8 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.exp.api.ExpSampleType" %>
-<%@ page import="org.labkey.api.study.SamplesUrls" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
+<%@ page import="org.labkey.api.study.SpecimenUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.experiment.api.ExpSampleTypeImpl" %>
 <%@ page import="org.labkey.experiment.api.SampleTypeServiceImpl" %>
@@ -42,7 +42,7 @@
             ActionURL url;
             boolean isStudySample = SpecimenService.SAMPLE_TYPE_NAME.equals(sampleType.getName());
             if (isStudySample)
-                url = urlProvider(SamplesUrls.class).getSamplesURL(sampleType.getContainer());
+                url = urlProvider(SpecimenUrls.class).getSpecimensURL(sampleType.getContainer());
             else
                 url = new ActionURL(ExperimentController.ShowSampleTypeAction.class, sampleType.getContainer()).replaceParameter("rowId", sampleType.getRowId());
             %>

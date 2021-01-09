@@ -67,9 +67,9 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.SpecimenDomainKind;
+import org.labkey.api.specimen.model.VialDomainKind;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
@@ -92,11 +92,9 @@ import org.labkey.study.importer.StudyImportJob;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.SecurityType;
-import org.labkey.api.specimen.model.SpecimenDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
-import org.labkey.api.specimen.model.VialDomainKind;
 import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.pipeline.StudyReloadSourceJob;
 import org.labkey.study.query.AdditiveTypeTable;
@@ -112,8 +110,6 @@ import org.labkey.study.query.SpecimenWrapTable;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.VialTable;
 import org.labkey.study.query.VisitTable;
-import org.labkey.api.specimen.security.roles.SpecimenCoordinatorRole;
-import org.labkey.api.specimen.security.roles.SpecimenRequesterRole;
 import org.springframework.validation.BindException;
 
 import java.io.File;
@@ -576,12 +572,6 @@ public class StudyServiceImpl implements StudyService
     }
 
     @Override
-    public Set<Role> getStudyRoles()
-    {
-        return RoleManager.roleSet(SpecimenCoordinatorRole.class, SpecimenRequesterRole.class);
-    }
-
-    @Override
     public String getSubjectNounSingular(Container container)
     {
         Study study = getStudy(container);
@@ -776,7 +766,7 @@ public class StudyServiceImpl implements StudyService
     @Override
     public TableInfo getSpecimenTableUnion(QuerySchema qsDefault, Set<Container> containers)
     {
-        return getSpecimenTableUnion(qsDefault, containers, new HashMap<Container, SQLFragment>(), false, true);
+        return getSpecimenTableUnion(qsDefault, containers, new HashMap<>(), false, true);
     }
 
     @Override
@@ -1233,5 +1223,27 @@ public class StudyServiceImpl implements StudyService
     {
         return LocationManager.get().isLocationInUse(loc, StudySchema.getInstance().getTableInfoParticipant(), "EnrollmentSiteId", "CurrentSiteId") ||
             LocationManager.get().isLocationInUse(loc, StudySchema.getInstance().getTableInfoAssaySpecimen(), "LocationId");
+    }
+
+    @Override
+    public void appendLocationInUseClauses(SQLFragment sql, String locationTableAlias, String exists)
+    {
+        sql
+            .append(exists)
+            .append(StudySchema.getInstance().getTableInfoParticipant(), "p")
+            .append(" WHERE (")
+            .append(locationTableAlias)
+            .append(".RowId = p.EnrollmentSiteId OR ")
+            .append(locationTableAlias)
+            .append(".RowId = p.CurrentSiteId) AND ")
+            .append(locationTableAlias)
+            .append(".Container = p.Container) OR\n")
+            .append(exists)
+            .append(StudySchema.getInstance().getTableInfoAssaySpecimen(), "a")
+            .append(" WHERE ")
+            .append(locationTableAlias)
+            .append(".RowId = a.LocationId AND ")
+            .append(locationTableAlias)
+            .append(".Container = a.Container)");
     }
 }

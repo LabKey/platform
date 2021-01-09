@@ -169,7 +169,7 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
     public void afterLoadTable(SchemaTableInfo ti, Domain domain)
     {
         // Grab the meta data for this table (event, vial, or specimen) and apply it to the provisioned table
-        DbSchema studySchema = StudyService.get().getStudySchema();
+        DbSchema studySchema = SpecimenSchema.get().getSchema();
         TableType xmlTable = studySchema.getTableXmlMap().get(getMetaDataTableName());
         ti.loadTablePropertiesFromXml(xmlTable, true);
     }

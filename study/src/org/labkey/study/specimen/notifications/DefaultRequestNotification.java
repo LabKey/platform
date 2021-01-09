@@ -85,7 +85,7 @@ public class DefaultRequestNotification
         if (RequestNotificationSettings.SpecimensAttachmentEnum.ExcelAttachment == settings.getSpecimensAttachmentEnum() ||
             RequestNotificationSettings.SpecimensAttachmentEnum.TextAttachment == settings.getSpecimensAttachmentEnum())
         {
-            ByteArrayAttachmentFile specimenListFile = null;
+            final ByteArrayAttachmentFile specimenListFile;
             List<Vial> vials = getSpecimenList();
             if (vials != null && vials.size() > 0)
             {
@@ -136,7 +136,7 @@ public class DefaultRequestNotification
         return _recipients;
     }
 
-    final public SpecimenRequest getSampleRequest()
+    final public SpecimenRequest getSpecimenRequest()
     {
         return _request;
     }

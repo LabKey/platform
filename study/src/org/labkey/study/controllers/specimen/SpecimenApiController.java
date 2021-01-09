@@ -23,6 +23,7 @@ import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -325,7 +326,7 @@ public class SpecimenApiController extends BaseStudyController
         @Override
         public ApiResponse execute(GetProvidingLocationsForm form, BindException errors)
         {
-            Map<String, List<Vial>> vialsByHash = SpecimenManager.getInstance().getVialsForSampleHashes(getContainer(), getUser(),
+            Map<String, List<Vial>> vialsByHash = SpecimenManager.getInstance().getVialsForSpecimenHashes(getContainer(), getUser(),
                     PageFlowUtil.set(form.getSpecimenHashes()), true);
             Collection<Integer> preferredLocations = SpecimenUtils.getPreferredProvidingLocations(vialsByHash.values());
             final Map<String, Object> response = new HashMap<>();
@@ -400,7 +401,7 @@ public class SpecimenApiController extends BaseStudyController
         }
     }
 
-    public static class AddSpecimenToRequestForm extends RequestIdForm
+    public static class AddSpecimensToRequestForm extends RequestIdForm
     {
         private String[] specimenHashes;
         private Integer _preferredLocation;
@@ -463,12 +464,12 @@ public class SpecimenApiController extends BaseStudyController
                 Vial vial = getVial(vialId, vialRequestForm.getIdType());
                 try
                 {
-                    SpecimenManager.getInstance().createRequestSampleMapping(getUser(), request, Collections.singletonList(vial), true, true);
+                    SpecimenManager.getInstance().createRequestSpecimenMapping(getUser(), request, Collections.singletonList(vial), true, true);
                 }
                 catch (RequestabilityManager.InvalidRuleException e)
                 {
-                    errors.reject(ERROR_MSG, "The samples could not be added because a requestability rule is configured incorrectly. " +
-                                "Please report this problem to an administrator.  Error details: "  + e.getMessage());
+                    errors.reject(ERROR_MSG, "The specimens could not be added because a requestability rule is configured incorrectly. " +
+                                "Please report this problem to an administrator. Error details: "  + e.getMessage());
                     return null;
                 }
                 catch (SpecimenManager.SpecimenRequestException e)
@@ -540,12 +541,12 @@ public class SpecimenApiController extends BaseStudyController
             {
                 try
                 {
-                    SpecimenManager.getInstance().deleteRequestSampleMappings(getUser(), request, rowIds, true);
+                    SpecimenManager.getInstance().deleteRequestSpecimenMappings(getUser(), request, rowIds, true);
                 }
                 catch (RequestabilityManager.InvalidRuleException e)
                 {
-                    errors.reject(ERROR_MSG, "The samples could not be removed because a requestability rule is configured incorrectly. " +
-                                "Please report this problem to an administrator.  Error details: "  + e.getMessage());
+                    errors.reject(ERROR_MSG, "The specimens could not be removed because a requestability rule is configured incorrectly. " +
+                                "Please report this problem to an administrator. Error details: "  + e.getMessage());
                     return null;
                 }
             }
@@ -556,26 +557,27 @@ public class SpecimenApiController extends BaseStudyController
 
     @RequiresPermission(RequestSpecimensPermission.class)
     @ApiVersion(9.1)
-    public class AddSamplesToRequestAction extends MutatingApiAction<AddSpecimenToRequestForm>
+    @Migrate // Find where LABKEY.Specimen.AddSamplesToRequest() is defined
+    public class AddSamplesToRequestAction extends MutatingApiAction<AddSpecimensToRequestForm>
     {
         @Override
-        public ApiResponse execute(AddSpecimenToRequestForm addSampleToRequestForm, BindException errors) throws Exception
+        public ApiResponse execute(AddSpecimensToRequestForm addSpecimensToRequestForm, BindException errors) throws Exception
         {
-            final SpecimenRequest request = getRequest(getUser(), getContainer(), addSampleToRequestForm.getRequestId(), true, true);
+            final SpecimenRequest request = getRequest(getUser(), getContainer(), addSpecimensToRequestForm.getRequestId(), true, true);
             Set<String> hashes = new HashSet<>();
-            Collections.addAll(hashes, addSampleToRequestForm.getSpecimenHashes());
-            SpecimenUtils.RequestedSpecimens requested = getUtils().getRequestableBySampleHash(hashes, addSampleToRequestForm.getPreferredLocation());
+            Collections.addAll(hashes, addSpecimensToRequestForm.getSpecimenHashes());
+            SpecimenUtils.RequestedSpecimens requested = getUtils().getRequestableBySpecimenHash(hashes, addSpecimensToRequestForm.getPreferredLocation());
             if (requested.getVials().size() > 0)
             {
                 List<Vial> vials = new ArrayList<>(requested.getVials());
                 try
                 {
-                    SpecimenManager.getInstance().createRequestSampleMapping(getUser(), request, vials, true, true);
+                    SpecimenManager.getInstance().createRequestSpecimenMapping(getUser(), request, vials, true, true);
                 }
                 catch (RequestabilityManager.InvalidRuleException e)
                 {
-                    errors.reject(ERROR_MSG, "The samples could not be added because a requestability rule is configured incorrectly. " +
-                                "Please report this problem to an administrator.  Error details: "  + e.getMessage());
+                    errors.reject(ERROR_MSG, "The specimens could not be added because a requestability rule is configured incorrectly. " +
+                                "Please report this problem to an administrator. Error details: "  + e.getMessage());
                     return null;
                 }
                 catch (SpecimenManager.SpecimenRequestException e)
@@ -604,7 +606,7 @@ public class SpecimenApiController extends BaseStudyController
             catch (RequestabilityManager.InvalidRuleException e)
             {
                 errors.reject(ERROR_MSG, "The request could not be deleted because a requestability rule is configured incorrectly. " +
-                            "Please report this problem to an administrator.  Error details: "  + e.getMessage());
+                            "Please report this problem to an administrator. Error details: "  + e.getMessage());
                 return null;
             }
 

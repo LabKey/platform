@@ -17,7 +17,7 @@
 package org.labkey.api.specimen.model;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.study.SamplesUrls;
+import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
@@ -96,7 +96,7 @@ public class SpecimenTypeSummary
 
         public ActionURL getURL()
         {
-            ActionURL url = PageFlowUtil.urlProvider(SamplesUrls.class).getSamplesURL(_container);
+            ActionURL url = PageFlowUtil.urlProvider(SpecimenUrls.class).getSpecimensURL(_container);
             addFilterParameters("SpecimenDetail", url);
             url.addParameter("showVials", "true");
             return url;

@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.study.SpecimenService" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus" %>
+<%@ page import="org.labkey.api.specimen.notifications.ActorNotificationRecipientSet" %>
+<%@ page import="org.labkey.api.study.SpecimenService"%>
+<%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.SpecimenManager"%>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestAction"%>
+<%@ page import="org.labkey.study.SpecimenManager" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestBean" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestStatusAction" %>
-<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus" %>
-<%@ page import="org.labkey.study.specimen.notifications.ActorNotificationRecipientSet" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -96,7 +96,7 @@
                 <input type="checkbox"
                        name="notificationIdPairs"
                        value="<%= text(possibleNotification.getFormValue()) %>"<%=disabled(!hasEmailAddresses)%>>
-                <%= text(possibleNotification.getHtmlDescriptionAndLink(hasEmailAddresses)) %><br>
+                <%=possibleNotification.getHtmlDescriptionAndLink(hasEmailAddresses, getActionURL())%><br>
                 <%
                     }
                     if (hasInactiveEmailAddress)

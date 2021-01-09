@@ -71,10 +71,10 @@ public abstract class StudyToolsWebPartFactory extends BaseWebPartFactory
             vialSearchURL.addParameter("showVials", true);
             items.add(new StudyToolsWebPart.Item("Vial Search", iconBase + "specimen_search.png", vialSearchURL));
 
-            if (SpecimenManager.getInstance().isSampleRequestEnabled(portalCtx.getContainer()))
+            if (SpecimenManager.getInstance().isSpecimenRequestEnabled(portalCtx.getContainer()))
             {
                 if (portalCtx.getContainer().hasPermission(portalCtx.getUser(), RequestSpecimensPermission.class))
-                    items.add(new StudyToolsWebPart.Item("New Request", iconBase + "specimen_request.png", new ActionURL(SpecimenController.ShowCreateSampleRequestAction.class, portalCtx.getContainer() )));
+                    items.add(new StudyToolsWebPart.Item("New Request", iconBase + "specimen_request.png", new ActionURL(SpecimenController.ShowCreateSpecimenRequestAction.class, portalCtx.getContainer() )));
             }
             items.add(new StudyToolsWebPart.Item("Specimen Reports", iconBase + "specimen_report.png", new ActionURL(SpecimenController.AutoReportListAction.class, portalCtx.getContainer() )));
 

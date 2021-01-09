@@ -109,8 +109,8 @@ public class SpecimenRequest extends AbstractStudyCachable<SpecimenRequest> impl
         TableInfo tableInfoVial = specimenSchema.getTableInfoVial(container);
         SQLFragment sql = new SQLFragment("SELECT Specimens.*, Vial.*, ? As Container FROM ");
         sql.add(container);
-        sql.append(specimenSchema.getSchema().getTable("SampleRequest").getFromSQL("request"))
-                .append(", ").append(specimenSchema.getSchema().getTable("SampleRequestSpecimen").getFromSQL("map"))
+        sql.append(specimenSchema.getTableInfoSampleRequest().getFromSQL("request"))
+                .append(", ").append(specimenSchema.getTableInfoSampleRequestSpecimen().getFromSQL("map"))
                 .append(", ").append(tableInfoSpecimen.getFromSQL("Specimens"))
                 .append(", ").append(tableInfoVial.getFromSQL("Vial"))
                 .append("\nWHERE request.RowId = map.SampleRequestId AND Vial.GlobalUniqueId = map.SpecimenGlobalUniqueId\n")
