@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.security.roles;
+package org.labkey.specimen.security.roles;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurableResource;
@@ -21,6 +21,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.AbstractRole;
 import org.labkey.api.study.StudyService;
+import org.labkey.specimen.SpecimenModule;
 
 /**
  * User: jeckels
@@ -31,7 +32,7 @@ public class AbstractSpecimenRole extends AbstractRole
     @SafeVarargs
     protected AbstractSpecimenRole(String name, String description, Class<? extends Permission>... perms)
     {
-        super(name, description, StudyService.get().getStudyModuleClass(), perms); // TODO: Switch to SpecimenModule.class
+        super(name, description, SpecimenModule.class, perms);
         excludeGuests();
     }
 

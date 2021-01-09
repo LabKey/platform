@@ -66,7 +66,6 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
@@ -77,10 +76,7 @@ import org.labkey.api.specimen.model.LocationDomainKind;
 import org.labkey.api.specimen.model.PrimaryTypeDomainKind;
 import org.labkey.api.specimen.model.SpecimenDomainKind;
 import org.labkey.api.specimen.model.SpecimenEventDomainKind;
-import org.labkey.api.specimen.model.SpecimenRequestEventType;
 import org.labkey.api.specimen.model.VialDomainKind;
-import org.labkey.api.specimen.security.roles.SpecimenCoordinatorRole;
-import org.labkey.api.specimen.security.roles.SpecimenRequesterRole;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.SpecimenService;
@@ -140,7 +136,23 @@ import org.labkey.study.importer.MissingValueImporterFactory;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.StudyImportProvider;
 import org.labkey.study.importer.StudyImporterFactory;
-import org.labkey.study.model.*;
+import org.labkey.study.model.CohortDomainKind;
+import org.labkey.study.model.ContinuousDatasetDomainKind;
+import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.DateDatasetDomainKind;
+import org.labkey.study.model.Participant;
+import org.labkey.study.model.ParticipantGroupManager;
+import org.labkey.study.model.ParticipantIdImportHelper;
+import org.labkey.study.model.ProtocolDocumentType;
+import org.labkey.study.model.SequenceNumImportHelper;
+import org.labkey.study.model.StudyDomainKind;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyLsidHandler;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.TestDatasetDomainKind;
+import org.labkey.study.model.TreatmentManager;
+import org.labkey.study.model.VisitDatasetDomainKind;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.pipeline.SampleMindedTransform;
 import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.pipeline.StudyPipeline;
@@ -288,12 +300,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         NotificationService.get().registerNotificationType(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE, "Study", "fa-users");
 
-        // Register early so these roles are available to Java code at upgrade time
-        RoleManager.registerRole(new SpecimenCoordinatorRole());
-        RoleManager.registerRole(new SpecimenRequesterRole());
-
         AttachmentService.get().registerAttachmentType(ProtocolDocumentType.get());
-        AttachmentService.get().registerAttachmentType(SpecimenRequestEventType.get());
     }
 
     @Override
