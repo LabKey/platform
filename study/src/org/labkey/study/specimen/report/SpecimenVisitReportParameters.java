@@ -19,6 +19,9 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.jsp.taglib.AutoCompleteTextTag;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.specimen.SpecimenTypeLevel;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -33,11 +36,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewForm;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.CohortImpl;
-import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
@@ -107,7 +108,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
     private boolean _excelExport;
     private int _participantGroupFilter = -1;
     private List<? extends SpecimenVisitReport> _reports;
-    private SpecimenManager.SpecimenTypeLevel _typeLevel = SpecimenManager.SpecimenTypeLevel.Derivative;
+    private SpecimenTypeLevel _typeLevel = SpecimenTypeLevel.Derivative;
 
     public SpecimenVisitReportParameters()
     {
@@ -121,10 +122,10 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     public void setTypeLevel(String typeLevel)
     {
-        _typeLevel = SpecimenManager.SpecimenTypeLevel.valueOf(typeLevel);
+        _typeLevel = SpecimenTypeLevel.valueOf(typeLevel);
     }
 
-    public SpecimenManager.SpecimenTypeLevel getTypeLevelEnum()
+    public SpecimenTypeLevel getTypeLevelEnum()
     {
         return _typeLevel;
     }
@@ -504,7 +505,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     public boolean allowsAvailabilityFilter()
     {
-        return SpecimenManager.getInstance().getRepositorySettings(getContainer()).isEnableRequests();
+        return SettingsManager.get().getRepositorySettings(getContainer()).isEnableRequests();
     }
 
     public boolean allowsParticipantAggregates()

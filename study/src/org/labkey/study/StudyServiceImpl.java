@@ -1246,4 +1246,10 @@ public class StudyServiceImpl implements StudyService
             .append(locationTableAlias)
             .append(".Container = a.Container)");
     }
+
+    @Override
+    public void clearGroupedValuesForColumn(Container c)
+    {
+        SpecimenManager.getInstance().clearGroupedValuesForColumn(c);
+    }
 }

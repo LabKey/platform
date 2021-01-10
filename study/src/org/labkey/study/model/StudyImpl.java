@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
@@ -57,6 +58,7 @@ import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.api.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -377,9 +379,10 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return SpecimenManager.getInstance().getRequestStatusIdsInUse(getContainer());
     }
 
+    @Migrate // Use SettingsManager.get().getRepositorySettings(getContainer()) instead
     public RepositorySettings getRepositorySettings()
     {
-        return SpecimenManager.getInstance().getRepositorySettings(getContainer());
+        return SettingsManager.get().getRepositorySettings(getContainer());
     }
 
     @Override

@@ -41,13 +41,14 @@ public class StudyFolderType extends MultiPortalFolderType
 {
     public static final String NAME = "Study";
 
-    private static final List<FolderTab> PAGES = Arrays.asList(
-            new StudyFolderTabs.OverviewPage("Overview"),
-            new StudyFolderTabs.ParticipantsPage("Participants"),
-            new StudyFolderTabs.DataAnalysisPage("Clinical and Assay Data"),
-            new StudyFolderTabs.SpecimensPage("Specimen Data"),
-            new StudyFolderTabs.ManagePage("Manage")
-        );
+    private static final List<FolderTab> PAGES = List.of
+    (
+        new StudyFolderTabs.OverviewPage("Overview"),
+        new StudyFolderTabs.ParticipantsPage("Participants"),
+        new StudyFolderTabs.DataAnalysisPage("Clinical and Assay Data"),
+        new StudyFolderTabs.SpecimensPage("Specimen Data"),
+        new StudyFolderTabs.ManagePage("Manage")
+    );
 
     StudyFolderType(StudyModule module, Set<Module> activeModules)
     {

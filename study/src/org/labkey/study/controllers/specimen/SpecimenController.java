@@ -84,6 +84,7 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.SpecimenRequestStatus;
+import org.labkey.api.specimen.SpecimenWebPart;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.AutoCompleteAction;
 import org.labkey.api.specimen.importer.RequestabilityManager;
@@ -93,6 +94,7 @@ import org.labkey.api.specimen.model.ExtendedSpecimenRequestView;
 import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
+import org.labkey.api.specimen.notifications.ActorNotificationRecipientSet;
 import org.labkey.api.specimen.notifications.NotificationRecipientSet;
 import org.labkey.api.specimen.pipeline.SpecimenArchive;
 import org.labkey.api.specimen.requirements.RequirementProvider;
@@ -114,6 +116,7 @@ import org.labkey.api.specimen.security.permissions.SetSpecimenCommentsPermissio
 import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.settings.StatusSettings;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.SpecimenService;
@@ -131,7 +134,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.Link;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -161,8 +163,6 @@ import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.query.SpecimenRequestQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.specimen.SpecimenSearchWebPart;
-import org.labkey.study.specimen.SpecimenWebPart;
-import org.labkey.api.specimen.notifications.ActorNotificationRecipientSet;
 import org.labkey.study.specimen.notifications.DefaultRequestNotification;
 import org.labkey.study.specimen.report.SpecimenReportExcelWriter;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
@@ -1900,7 +1900,7 @@ public class SpecimenController extends BaseStudyController
                 transaction.commit();
             }
 
-            if (!SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
+            if (!SettingsManager.get().isSpecimenShoppingCartEnabled(getContainer()))
             {
                 try
                 {
@@ -2228,7 +2228,7 @@ public class SpecimenController extends BaseStudyController
         
         public boolean isDefaultNotification(ActorNotificationRecipientSet notification)
         {
-            RequestNotificationSettings settings = SpecimenManager.getInstance().getRequestNotificationSettings(getContainer());
+            RequestNotificationSettings settings = SettingsManager.get().getRequestNotificationSettings(getContainer());
             if (settings.getDefaultEmailNotifyEnum() == RequestNotificationSettings.DefaultEmailNotifyEnum.All)
                 return true;        // All should be checked
             else if (settings.getDefaultEmailNotifyEnum() == RequestNotificationSettings.DefaultEmailNotifyEnum.None)
@@ -2705,7 +2705,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
-            if (!SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
+            if (!SettingsManager.get().isSpecimenShoppingCartEnabled(getContainer()))
                 throw new UnauthorizedException();
 
             SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
@@ -2721,7 +2721,7 @@ public class SpecimenController extends BaseStudyController
                     SpecimenManager.getInstance().updateRequest(getUser(), request);
                     SpecimenManager.getInstance().createRequestEvent(getUser(), request,
                             SpecimenManager.RequestEventType.REQUEST_STATUS_CHANGED, "Request submitted for processing.", null);
-                    if (SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
+                    if (SettingsManager.get().isSpecimenShoppingCartEnabled(getContainer()))
                     {
                         try
                         {
@@ -3351,7 +3351,7 @@ public class SpecimenController extends BaseStudyController
                 registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeCohortReportFactory());
             if (study != null)
             {
-                boolean enableSpecimenRequest = SpecimenManager.getInstance().getRepositorySettings(study.getContainer()).isEnableRequests();
+                boolean enableSpecimenRequest = SettingsManager.get().getRepositorySettings(study.getContainer()).isEnableRequests();
                 if (!study.isAncillaryStudy() && !study.isSnapshotStudy() && enableSpecimenRequest)
                 {
                     registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestReportFactory());
@@ -3832,7 +3832,7 @@ public class SpecimenController extends BaseStudyController
 
                 boolean newConflictState;
                 boolean newForceState;
-                if (commentsForm.isQualityControlFlag() != null && SpecimenManager.getInstance().getDisplaySettings(container).isEnableManualQCFlagging())
+                if (commentsForm.isQualityControlFlag() != null && SettingsManager.get().getDisplaySettings(container).isEnableManualQCFlagging())
                 {
                     // if a state has been specified in the post, we consider this to be 'forcing' the state:
                     newConflictState = commentsForm.isQualityControlFlag().booleanValue();
@@ -4147,7 +4147,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView<>("/org/labkey/study/view/specimen/manageRepositorySettings.jsp", SpecimenManager.getInstance().getRepositorySettings(getContainer()));
+            return new JspView<>("/org/labkey/study/view/specimen/manageRepositorySettings.jsp", SettingsManager.get().getRepositorySettings(getContainer()));
         }
 
         @Override
@@ -4170,11 +4170,11 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(ManageRepositorySettingsForm form, BindException errors) throws Exception
         {
-            RepositorySettings settings = SpecimenManager.getInstance().getRepositorySettings(getContainer());
+            RepositorySettings settings = SettingsManager.get().getRepositorySettings(getContainer());
             settings.setSimple(form.isSimple());
             settings.setEnableRequests(!form.isSimple() && form.isEnableRequests());
             settings.setSpecimenDataEditable(!form.isSimple() && form.isSpecimenDataEditable());
-            SpecimenManager.getInstance().saveRepositorySettings(getContainer(), settings);
+            SettingsManager.get().saveRepositorySettings(getContainer(), settings);
 
             return true;
         }
@@ -4530,11 +4530,11 @@ public class SpecimenController extends BaseStudyController
                 SpecimenManager.getInstance().createRequestStatus(getUser(), status);
             }
 
-            StatusSettings settings = SpecimenManager.getInstance().getStatusSettings(getContainer());
+            StatusSettings settings = SettingsManager.get().getStatusSettings(getContainer());
             if (settings.isUseShoppingCart() != form.isUseShoppingCart())
             {
                 settings.setUseShoppingCart(form.isUseShoppingCart());
-                SpecimenManager.getInstance().saveStatusSettings(getContainer(), settings);
+                SettingsManager.get().saveStatusSettings(getContainer(), settings);
             }
             return true;
         }
@@ -4907,7 +4907,7 @@ public class SpecimenController extends BaseStudyController
             // try to get the settings from the form, just in case this is a reshow:
             RequestNotificationSettings settings = form;
             if (settings == null || settings.getReplyTo() == null)
-                settings = SpecimenManager.getInstance().getRequestNotificationSettings(getContainer());
+                settings = SettingsManager.get().getRequestNotificationSettings(getContainer());
 
             return new JspView<>("/org/labkey/study/view/specimen/manageNotifications.jsp", settings, errors);
         }
@@ -4934,7 +4934,7 @@ public class SpecimenController extends BaseStudyController
             if (errors.hasErrors())
                 return false;
 
-            SpecimenManager.getInstance().saveRequestNotificationSettings(getContainer(), settings);
+            SettingsManager.get().saveRequestNotificationSettings(getContainer(), settings);
             return true;
         }
 
@@ -4972,7 +4972,7 @@ public class SpecimenController extends BaseStudyController
             // try to get the settings from the form, just in case this is a reshow:
             DisplaySettings settings = form.getBean();
             if (settings == null || settings.getLastVialEnum() == null)
-                settings = SpecimenManager.getInstance().getDisplaySettings(getContainer());
+                settings = SettingsManager.get().getDisplaySettings(getContainer());
 
             return new JspView<>("/org/labkey/study/view/specimen/manageDisplay.jsp", settings);
         }
@@ -4981,7 +4981,7 @@ public class SpecimenController extends BaseStudyController
         public boolean handlePost(DisplaySettingsForm form, BindException errors)
         {
             DisplaySettings settings = form.getBean();
-            SpecimenManager.getInstance().saveDisplaySettings(getContainer(), settings);
+            SettingsManager.get().saveDisplaySettings(getContainer(), settings);
 
             return true;
         }
@@ -5759,7 +5759,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(SpecimenWebPartForm form, BindException errors)
         {
-            RepositorySettings settings = SpecimenManager.getInstance().getRepositorySettings(getContainer());
+            RepositorySettings settings = SettingsManager.get().getRepositorySettings(getContainer());
             ArrayList<String[]> groupings = settings.getSpecimenWebPartGroupings();
             form.setGrouping1(groupings.get(0));
             form.setGrouping2(groupings.get(1));
@@ -5787,12 +5787,12 @@ public class SpecimenController extends BaseStudyController
             StudyImpl study = getStudy(container);
             if (study != null)
             {
-                RepositorySettings settings = SpecimenManager.getInstance().getRepositorySettings(container);
+                RepositorySettings settings = SettingsManager.get().getRepositorySettings(container);
                 ArrayList<String[]> groupings = new ArrayList<>(2);
                 groupings.add(form.getGrouping1());
                 groupings.add(form.getGrouping2());
                 settings.setSpecimenWebPartGroupings(groupings);
-                SpecimenManager.getInstance().saveRepositorySettings(container, settings);
+                SettingsManager.get().saveRepositorySettings(container, settings);
                 response.put("success", true);
                 return response;
             }

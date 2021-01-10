@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
 <%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirement" %>
 <%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider" %>
+<%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
 <%@ page import="org.labkey.api.study.Location" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
@@ -80,7 +81,7 @@
     User creatingUser = UserManager.getUser(bean.getSpecimenRequest().getCreatedBy());
     List<LocationImpl> locations = LocationManager.get().getLocations(c);
     boolean notYetSubmitted = false;
-    if (manager.isSpecimenShoppingCartEnabled(c))
+    if (SettingsManager.get().isSpecimenShoppingCartEnabled(c))
     {
         SpecimenRequestStatus cartStatus = manager.getRequestShoppingCartStatus(c, user);
         notYetSubmitted = bean.getSpecimenRequest().getStatusId() == cartStatus.getRowId();

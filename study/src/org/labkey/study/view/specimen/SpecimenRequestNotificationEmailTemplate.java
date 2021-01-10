@@ -19,11 +19,11 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.controllers.specimen.SpecimenUtils;
 import org.labkey.study.model.StudyImpl;
@@ -262,7 +262,7 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
 
         // For backwards compatibility, use the template specified in the notification management UI
         RequestNotificationSettings settings =
-                SpecimenManager.getInstance().getRequestNotificationSettings(notification.getContainer());
+                SettingsManager.get().getRequestNotificationSettings(notification.getContainer());
 
         _subjectSuffix = settings.getSubjectSuffix().replaceAll("%requestId%", "" + notification.getRequestId());
     }

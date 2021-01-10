@@ -25,6 +25,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.specimen.SpecimenWebPartFactory;
 import org.labkey.api.specimen.importer.DefaultSpecimenImportStrategyFactory;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
 import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
@@ -40,6 +41,7 @@ import org.labkey.specimen.security.roles.SpecimenRequesterRole;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 public class SpecimenModule extends CodeOnlyModule
 {
@@ -55,7 +57,9 @@ public class SpecimenModule extends CodeOnlyModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Collections.emptyList();
+        return List.of(
+            new SpecimenWebPartFactory()
+        );
     }
 
     @Override

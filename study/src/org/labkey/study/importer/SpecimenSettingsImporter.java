@@ -32,6 +32,7 @@ import org.labkey.api.specimen.requirements.SpecimenRequestRequirementType;
 import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.settings.StatusSettings;
 import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.writer.VirtualFile;
@@ -127,7 +128,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
     private void importSettings(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
     {
         Container c = ctx.getContainer();
-        RepositorySettings reposSettings = SpecimenManager.getInstance().getRepositorySettings(c);
+        RepositorySettings reposSettings = SettingsManager.get().getRepositorySettings(c);
 
         // webpart groupings
         SpecimenSettingsType.WebPartGroupings xmlWebPartGroupings = xmlSettings.getWebPartGroupings();
@@ -154,7 +155,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
             reposSettings.setEnableRequests(xmlSettings.getEnableRequests());
         if (xmlSettings.isSetEditableRepository())
             reposSettings.setSpecimenDataEditable(xmlSettings.getEditableRepository());
-        SpecimenManager.getInstance().saveRepositorySettings(c, reposSettings);
+        SettingsManager.get().saveRepositorySettings(c, reposSettings);
 
         // location types
         SpecimenSettingsType.LocationTypes xmlLocationTypes = xmlSettings.getLocationTypes();
@@ -175,11 +176,9 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         importDefaultRequirements(study, ctx, xmlSettings);
         importDisplaySettings(ctx, xmlSettings);
         importRequestForm(ctx, xmlSettings);
-        importNotifications(study, ctx, xmlSettings);
+        importNotifications(ctx, xmlSettings);
         importRequestabilityRules(ctx, xmlSettings);
     }
-
-
 
     private void importRequestStatuses(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
@@ -228,11 +227,11 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
             }
             if (xmlRequestStatuses.isSetMultipleSearch())
             {
-                StatusSettings settings = SpecimenManager.getInstance().getStatusSettings(ctx.getContainer());
+                StatusSettings settings = SettingsManager.get().getStatusSettings(ctx.getContainer());
                 if (settings.isUseShoppingCart() != xmlRequestStatuses.getMultipleSearch())
                 {
                     settings.setUseShoppingCart(xmlRequestStatuses.getMultipleSearch());
-                    SpecimenManager.getInstance().saveStatusSettings(ctx.getContainer(), settings);
+                    SettingsManager.get().saveStatusSettings(ctx.getContainer(), settings);
                 }
             }
         }
@@ -374,7 +373,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
     private void importLegacySettings(StudyImpl study, StudyImportContext ctx, LegacySpecimenSettingsType xmlSettings)
     {
         Container c = ctx.getContainer();
-        RepositorySettings reposSettings = SpecimenManager.getInstance().getRepositorySettings(c);
+        RepositorySettings reposSettings = SettingsManager.get().getRepositorySettings(c);
 
         // webpart groupings
         StudyDocument.Study.Specimens.SpecimenWebPartGroupings xmlSpecimenWebPartGroupings = xmlSettings.getSpecimenWebPartGroupings();
@@ -398,7 +397,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         boolean simple = (SpecimenRepositoryType.STANDARD == repositoryType);
         reposSettings.setSimple(simple);
         reposSettings.setEnableRequests(!simple);
-        SpecimenManager.getInstance().saveRepositorySettings(c, reposSettings);
+        SettingsManager.get().saveRepositorySettings(c, reposSettings);
 
         // location types
         if (xmlSettings.isSetAllowReqLocRepository())
@@ -431,7 +430,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                 display.setZeroVials(warnings.getZeroVials());
             }
 
-            SpecimenManager.getInstance().saveDisplaySettings(ctx.getContainer(), display);
+            SettingsManager.get().saveDisplaySettings(ctx.getContainer(), display);
         }
     }
 
@@ -477,7 +476,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         }
     }
 
-    private void importNotifications(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings)
+    private void importNotifications(StudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
         ctx.getLogger().info("Importing specimen notification settings");
         SpecimenSettingsType.Notifications xmlNotifications = xmlSettings.getNotifications();
@@ -500,7 +499,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
             if (xmlNotifications.getSpecimensAttachment() != null)
                 notifications.setSpecimensAttachment(xmlNotifications.getSpecimensAttachment());
 
-            SpecimenManager.getInstance().saveRequestNotificationSettings(ctx.getContainer(), notifications);
+            SettingsManager.get().saveRequestNotificationSettings(ctx.getContainer(), notifications);
         }
     }
 

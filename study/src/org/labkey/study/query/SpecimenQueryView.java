@@ -51,6 +51,7 @@ import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HtmlString;
@@ -377,7 +378,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         _participantVisitFiltered = participantVisitFiltered;
         _requireSequenceNum = requireSequenceNum;
 
-        RepositorySettings repositorySettings = SpecimenManager.getInstance().getRepositorySettings(schema.getContainer());
+        RepositorySettings repositorySettings = SettingsManager.get().getRepositorySettings(schema.getContainer());
         boolean isEditable = ViewType.VIALS == viewType && repositorySettings.isSpecimenDataEditable() && getContainer().hasPermission(getUser(), EditSpecimenDataPermission.class);
         setShowUpdateColumn(isEditable);
 
@@ -440,14 +441,14 @@ public class SpecimenQueryView extends BaseStudyQueryView
     public enum PARAMS
     {
         excludeRequestedBySite,
-        showRequestedBySite,
-        showCompleteRequestedBySite,
-        showRequestedByEnrollmentSite,
         showCompleteRequestedByEnrollmentSite,
-        showRequestedOnly,
+        showCompleteRequestedBySite,
         showCompleteRequestedOnly,
+        showNotCompleteRequestedOnly,
         showNotRequestedOnly,
-        showNotCompleteRequestedOnly
+        showRequestedByEnrollmentSite,
+        showRequestedBySite,
+        showRequestedOnly,
     }
 
     private static boolean hasRequestFilterParam(ViewContext context, PARAMS param)
@@ -873,7 +874,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         boolean zeroVialIndicator = false;
         if (!_disableLowVialIndicators)
         {
-            DisplaySettings settings = SpecimenManager.getInstance().getDisplaySettings(getContainer());
+            DisplaySettings settings = SettingsManager.get().getDisplaySettings(getContainer());
             oneVialIndicator = settings.getLastVialEnum() == DisplaySettings.DisplayOption.ALL_USERS ||
                     (settings.getLastVialEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY &&
                             getUser().hasRootAdminPermission());
@@ -881,12 +882,12 @@ public class SpecimenQueryView extends BaseStudyQueryView
                     (settings.getZeroVialsEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY &&
                             getUser().hasRootAdminPermission());
         }
-        RepositorySettings settings = SpecimenManager.getInstance().getRepositorySettings(getContainer());
+        RepositorySettings settings = SettingsManager.get().getRepositorySettings(getContainer());
         if (settings.isEnableRequests() && !_viewType.isForExport() && getViewContext().getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
         {
             // Only add this column if we're using advanced specimen management and not exported to email or attachment
             cols.add(0, new SpecimenRequestDisplayColumn(this, getTable(), zeroVialIndicator, oneVialIndicator,
-                    SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()) && _showRecordSelectors));
+                    SettingsManager.get().isSpecimenShoppingCartEnabled(getContainer()) && _showRecordSelectors));
         }
 
         // this column is normally hidden but we need it on the select for any specimen filters

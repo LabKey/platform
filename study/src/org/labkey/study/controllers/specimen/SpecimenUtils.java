@@ -62,6 +62,7 @@ import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.security.permissions.SetSpecimenCommentsPermission;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -158,7 +159,7 @@ public class SpecimenUtils
     public static boolean isCommentsMode(Container container, SpecimenQueryView.Mode selectedMode)
     {
         return (selectedMode == SpecimenQueryView.Mode.COMMENTS) ||
-                (selectedMode == SpecimenQueryView.Mode.DEFAULT && SpecimenManager.getInstance().getDisplaySettings(container).isDefaultToCommentsMode());
+                (selectedMode == SpecimenQueryView.Mode.DEFAULT && SettingsManager.get().getDisplaySettings(container).isDefaultToCommentsMode());
     }
 
     public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter)
@@ -166,7 +167,7 @@ public class SpecimenUtils
         boolean commentsMode = isCommentsMode(getContainer(), viewMode);
 
         SpecimenQueryView gridView;
-        RepositorySettings settings = SpecimenManager.getInstance().getRepositorySettings(getContainer());
+        RepositorySettings settings = SettingsManager.get().getRepositorySettings(getContainer());
 
         if (cachedFilterData != null)
         {
@@ -211,7 +212,7 @@ public class SpecimenUtils
                             "', 'post', 'rows')) " + jsRegionObject + ".form.submit();");
 
                     if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), ManageRequestsPermission.class) ||
-                            SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(getViewContext().getContainer()))
+                            SettingsManager.get().isSpecimenShoppingCartEnabled(getViewContext().getContainer()))
                     {
                         requestMenuButton.addMenuItem("Add To Existing Request",
                                 "if (verifySelected(" + jsRegionObject + ".form, '#', " +
@@ -232,7 +233,7 @@ public class SpecimenUtils
 
         if (getViewContext().getContainer().hasPermission(getUser(), SetSpecimenCommentsPermission.class))
         {
-            boolean manualQCEnabled = SpecimenManager.getInstance().getDisplaySettings(getViewContext().getContainer()).isEnableManualQCFlagging();
+            boolean manualQCEnabled = SettingsManager.get().getDisplaySettings(getViewContext().getContainer()).isEnableManualQCFlagging();
             if (commentsMode)
             {
                 MenuButton commentsMenuButton = new MenuButton("Comments" + (manualQCEnabled ? " and QC" : ""));
@@ -444,8 +445,7 @@ public class SpecimenUtils
 
     public void sendNewRequestNotifications(SpecimenRequest request, BindException errors) throws Exception
     {
-        RequestNotificationSettings settings =
-                SpecimenManager.getInstance().getRequestNotificationSettings(request.getContainer());
+        RequestNotificationSettings settings = SettingsManager.get().getRequestNotificationSettings(request.getContainer());
         Address[] notify = settings.getNewRequestNotifyAddresses();
         if (notify != null && notify.length > 0)
         {
@@ -469,8 +469,7 @@ public class SpecimenUtils
 
     public void sendNotification(DefaultRequestNotification notification, boolean includeInactiveUsers, BindException errors) throws Exception
     {
-        RequestNotificationSettings settings =
-                SpecimenManager.getInstance().getRequestNotificationSettings(getContainer());
+        RequestNotificationSettings settings = SettingsManager.get().getRequestNotificationSettings(getContainer());
 
         SpecimenRequest specimenRequest = notification.getSpecimenRequest();
         String specimenList = null;

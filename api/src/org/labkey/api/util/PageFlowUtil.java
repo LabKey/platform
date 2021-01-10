@@ -1516,7 +1516,7 @@ public class PageFlowUtil
             t.transform(new DOMSource(node), new StreamResult(out));
             out.close();
 
-            return new String(out.toByteArray(), StringUtilsLabKey.DEFAULT_CHARSET).trim();
+            return out.toString(StringUtilsLabKey.DEFAULT_CHARSET).trim();
         }
         catch (TransformerFactoryConfigurationError e)
         {

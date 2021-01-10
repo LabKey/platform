@@ -19,11 +19,12 @@
 <%@ page import="org.labkey.api.specimen.Vial"%>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl"%>
 <%@ page import="org.labkey.api.specimen.location.LocationManager"%>
+<%@ page import="org.labkey.api.specimen.settings.SettingsManager"%>
 <%@ page import="org.labkey.api.study.SpecimenService"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
-<%@ page import="org.labkey.api.view.template.ClientDependencies"%>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.SpecimenManager" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.CreateSpecimenRequestForm" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.HandleCreateSpecimenRequestAction" %>
@@ -48,7 +49,7 @@
     ViewContext context = getViewContext();
     Container c = getContainer();
     List<LocationImpl> locations = LocationManager.get().getValidRequestingLocations(c);
-    boolean shoppingCart = SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(c);
+    boolean shoppingCart = SettingsManager.get().isSpecimenShoppingCartEnabled(c);
     boolean hasExtendedRequestView = SpecimenManager.getInstance().getExtendedSpecimenRequestView(context) != null;
     List<Vial> vials = bean.getVials();
     SpecimenManager.SpecimenRequestInput[] inputs = bean.getInputs();

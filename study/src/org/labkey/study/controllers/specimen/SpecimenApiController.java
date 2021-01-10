@@ -42,6 +42,7 @@ import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -686,7 +687,7 @@ public class SpecimenApiController extends BaseStudyController
             // { "groupings" : [GROUP, ...]       [could be empty]
             //
             Container container = form.getViewContext().getContainer();
-            RepositorySettings settings = SpecimenManager.getInstance().getRepositorySettings(container);
+            RepositorySettings settings = SettingsManager.get().getRepositorySettings(container);
             ArrayList<String[]> groupings = settings.getSpecimenWebPartGroupings();
 
             final Map<String, Object> response = new HashMap<>();

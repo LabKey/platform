@@ -42,9 +42,9 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.CohortForeignKey;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.StudyManager;
@@ -96,7 +96,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
         addSpecimenCommentColumns(_userSchema, true);
 
-        boolean enableSpecimenRequest = SpecimenManager.getInstance().getRepositorySettings(getContainer()).isEnableRequests();
+        boolean enableSpecimenRequest = SettingsManager.get().getRepositorySettings(getContainer()).isEnableRequests();
         addWrapColumn(_rootTable.getColumn("LockedInRequest")).setHidden(!enableSpecimenRequest);
         addWrapColumn(_rootTable.getColumn("Requestable")).setHidden(!enableSpecimenRequest);
 

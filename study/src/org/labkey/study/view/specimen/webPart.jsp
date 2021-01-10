@@ -18,7 +18,8 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
-<%@ page import="org.labkey.api.specimen.security.permissions.RequestSpecimensPermission"%>
+<%@ page import="org.labkey.api.specimen.SpecimenWebPart"%>
+<%@ page import="org.labkey.api.specimen.security.permissions.RequestSpecimensPermission" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -26,7 +27,6 @@
 <%@ page import="org.labkey.study.controllers.specimen.ShowSearchAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.ShowUploadSpecimensAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
-<%@ page import="org.labkey.study.specimen.SpecimenWebPart" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     SpecimenWebPart.SpecimenWebPartBean bean = (SpecimenWebPart.SpecimenWebPartBean) HttpView.currentView().getModelBean();

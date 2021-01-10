@@ -16,12 +16,12 @@
  */
 %>
 <%@ page import="org.labkey.api.specimen.SpecimenRequestStatus"%>
+<%@ page import="org.labkey.api.specimen.settings.SettingsManager"%>
 <%@ page import="org.labkey.api.specimen.settings.StatusSettings"%>
 <%@ page import="org.labkey.api.study.StudyUrls"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.SpecimenManager" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteStatusAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusOrderAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusesAction" %>
@@ -35,7 +35,7 @@
     StudyImpl study = me.getModelBean();
     List<SpecimenRequestStatus> statuses = study.getSampleRequestStatuses(getUser());
     Set<Integer> inUseStatuses = study.getSampleRequestStatusesInUse();
-    StatusSettings settings = SpecimenManager.getInstance().getStatusSettings(study.getContainer());
+    StatusSettings settings = SettingsManager.get().getStatusSettings(study.getContainer());
     boolean showSystemStatuses = settings.isUseShoppingCart();
 %>
 <labkey:errors/>

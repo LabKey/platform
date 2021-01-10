@@ -25,6 +25,7 @@ import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
 import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.settings.StatusSettings;
 import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.study.Study;
@@ -149,7 +150,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
                 }
             }
         }
-        StatusSettings statusSettings = SpecimenManager.getInstance().getStatusSettings(study.getContainer());
+        StatusSettings statusSettings = SettingsManager.get().getStatusSettings(study.getContainer());
         if (!statusSettings.isUseShoppingCart()) // default is to use shopping cart
         {
             if (xmlRequestStatuses == null) xmlRequestStatuses = specimenSettingsType.addNewRequestStatuses();
@@ -247,7 +248,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
     private void writeDisplaySettings(SpecimenSettingsType specimenSettingsType, StudyExportContext ctx)
     {
         ctx.getLogger().info("Exporting specimen display settings");
-        DisplaySettings settings = SpecimenManager.getInstance().getDisplaySettings(ctx.getContainer());
+        DisplaySettings settings = SettingsManager.get().getDisplaySettings(ctx.getContainer());
 
         SpecimenSettingsType.DisplaySettings xmlSettings = specimenSettingsType.addNewDisplaySettings();
 
@@ -289,7 +290,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
     private void writeNotifications(SpecimenSettingsType specimenSettingsType, StudyExportContext ctx)
     {
         ctx.getLogger().info("Exporting specimen notification settings");
-        RequestNotificationSettings notifications = SpecimenManager.getInstance().getRequestNotificationSettings(ctx.getContainer());
+        RequestNotificationSettings notifications = SettingsManager.get().getRequestNotificationSettings(ctx.getContainer());
         SpecimenSettingsType.Notifications xmlNotificatons = specimenSettingsType.addNewNotifications();
 
         if (notifications.getReplyTo() != null)

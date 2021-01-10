@@ -19,6 +19,7 @@ package org.labkey.api.study;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportOptions;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -36,7 +37,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
-import org.labkey.api.security.roles.Role;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -244,4 +244,7 @@ public interface StudyService
     boolean isLocationInUse(Location loc);
 
     void appendLocationInUseClauses(SQLFragment sql, String locationTableAlias, String exists);
+
+    @Migrate // Temporary
+    void clearGroupedValuesForColumn(Container c);
 }

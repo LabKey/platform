@@ -138,9 +138,9 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.study.QueryHelper;
+import org.labkey.api.study.QueryHelper;
+import org.labkey.api.study.StudyCache;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.StudyCache;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.BaseStudyController;
@@ -2472,7 +2472,6 @@ public class StudyManager
         clearParticipantVisitCaches(def.getStudy());
     }
 
-
     public Map<VisitMapKey,Boolean> getRequiredMap(Study study)
     {
         TableInfo tableVisitMap = StudySchema.getInstance().getTableInfoVisitMap();
@@ -2483,8 +2482,6 @@ public class StudyManager
 
         return map;
     }
-
-
 
     private static final String VISITMAP_JOIN_BY_VISIT = "SELECT d.*, vm.Required\n" +
             "FROM study.Visit v, study.DataSet d, study.VisitMap vm\n" +

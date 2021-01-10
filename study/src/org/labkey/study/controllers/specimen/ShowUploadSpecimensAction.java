@@ -30,6 +30,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -71,7 +72,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
     public ModelAndView getView(UploadSpecimensForm form, boolean reshow, BindException errors)
     {
         Container container = getContainer();
-        RepositorySettings settings =  SpecimenManager.getInstance().getRepositorySettings(container);
+        RepositorySettings settings = SettingsManager.get().getRepositorySettings(container);
         if (!settings.isSimple())
             return HttpView.redirect(PageFlowUtil. urlProvider(PipelineUrls.class).urlBrowse(container));
 

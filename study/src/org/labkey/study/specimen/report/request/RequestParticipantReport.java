@@ -16,9 +16,10 @@
 package org.labkey.study.specimen.report.request;
 
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.specimen.SpecimenTypeLevel;
+import org.labkey.api.specimen.report.RequestSummaryByVisitType;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.SpecimenManager;
-import org.labkey.api.specimen.report.RequestSummaryByVisitType;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.SpecimenQueryView;
@@ -46,7 +47,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<RequestSummary
     @Override
     public Collection<Row> createRows()
     {
-        SpecimenManager.SpecimenTypeLevel level = getTypeLevelEnum();
+        SpecimenTypeLevel level = getTypeLevelEnum();
         RequestSummaryByVisitType[] countSummary =
                 SpecimenManager.getInstance().getRequestSummaryBySite(_container, getUser(), _filter,
                         isViewPtidList(), level, getBaseCustomView(), _completeRequestsOnly);
@@ -99,10 +100,10 @@ public class RequestParticipantReport extends SpecimenVisitReport<RequestSummary
         link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMinDouble());
 
         link = updateURLFilterParameter(link, "SpecimenDetail.PrimaryType/Description", summary.getPrimaryType());
-        SpecimenManager.SpecimenTypeLevel level = getTypeLevelEnum();
-        if (level == SpecimenManager.SpecimenTypeLevel.Derivative || level == SpecimenManager.SpecimenTypeLevel.Additive)
+        SpecimenTypeLevel level = getTypeLevelEnum();
+        if (level == SpecimenTypeLevel.Derivative || level == SpecimenTypeLevel.Additive)
             link = updateURLFilterParameter(link, "SpecimenDetail.DerivativeType/Description", summary.getDerivative());
-        if (level == SpecimenManager.SpecimenTypeLevel.Additive)
+        if (level == SpecimenTypeLevel.Additive)
             link = updateURLFilterParameter(link, "SpecimenDetail.AdditiveType/Description", summary.getAdditive());
         String linkHtml = link.getLocalURIString();
         if (_filter != null)

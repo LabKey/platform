@@ -31,6 +31,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -82,7 +83,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
             setTextAlign("right");
             setNoWrap(true);
             setWidth("175em");
-            _cartEnabled = SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer());
+            _cartEnabled = SettingsManager.get().isSpecimenShoppingCartEnabled(context.getContainer());
         }
 
         @Override
