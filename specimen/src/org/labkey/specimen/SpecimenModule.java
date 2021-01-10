@@ -18,15 +18,25 @@ package org.labkey.specimen;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.specimen.importer.DefaultSpecimenImportStrategyFactory;
+import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
+import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
+import org.labkey.api.specimen.model.PrimaryTypeDomainKind;
+import org.labkey.api.specimen.model.SpecimenDomainKind;
+import org.labkey.api.specimen.model.SpecimenEventDomainKind;
 import org.labkey.api.specimen.model.SpecimenRequestEventType;
+import org.labkey.api.specimen.model.VialDomainKind;
+import org.labkey.api.study.SpecimenService;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.specimen.security.roles.SpecimenCoordinatorRole;
 import org.labkey.specimen.security.roles.SpecimenRequesterRole;
-import org.labkey.api.view.WebPartFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -53,6 +63,13 @@ public class SpecimenModule extends CodeOnlyModule
     {
         addController(SpecimenController.NAME, SpecimenController.class);
 
+        PropertyService.get().registerDomainKind(new AdditiveTypeDomainKind());
+        PropertyService.get().registerDomainKind(new DerivativeTypeDomainKind());
+        PropertyService.get().registerDomainKind(new PrimaryTypeDomainKind());
+        PropertyService.get().registerDomainKind(new SpecimenDomainKind());
+        PropertyService.get().registerDomainKind(new SpecimenEventDomainKind());
+        PropertyService.get().registerDomainKind(new VialDomainKind());
+
         // Register early so these roles are available to Java code at upgrade time
         RoleManager.registerRole(new SpecimenCoordinatorRole());
         RoleManager.registerRole(new SpecimenRequesterRole());
@@ -65,6 +82,10 @@ public class SpecimenModule extends CodeOnlyModule
     {
         // add a container listener so we'll know when our container is deleted:
         ContainerManager.addContainerListener(new SpecimenContainerListener());
+
+        SpecimenService.get().registerSpecimenImportStrategyFactory(new DefaultSpecimenImportStrategyFactory());
+
+        AuditLogService.get().registerAuditType(new SpecimenCommentAuditProvider());
     }
 
     @Override

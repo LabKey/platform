@@ -69,14 +69,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
-import org.labkey.api.specimen.importer.DefaultSpecimenImportStrategyFactory;
-import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
-import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
 import org.labkey.api.specimen.model.LocationDomainKind;
-import org.labkey.api.specimen.model.PrimaryTypeDomainKind;
-import org.labkey.api.specimen.model.SpecimenDomainKind;
-import org.labkey.api.specimen.model.SpecimenEventDomainKind;
-import org.labkey.api.specimen.model.VialDomainKind;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.SpecimenService;
@@ -176,7 +169,6 @@ import org.labkey.study.reports.StudyCrosstabReport;
 import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.study.reports.StudyRReport;
 import org.labkey.study.reports.StudyReportUIProvider;
-import org.labkey.study.specimen.SpecimenCommentAuditProvider;
 import org.labkey.study.specimen.SpecimenSearchWebPart;
 import org.labkey.study.specimen.SpecimenWebPart;
 import org.labkey.study.view.DatasetsWebPartView;
@@ -247,20 +239,20 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     protected void init()
     {
+        addController("cohort", CohortController.class);
+        addController("dataset", DatasetController.class);
+        addController("participant-group", ParticipantGroupController.class);
+        addController("publish", PublishController.class);
         addController("study", StudyController.class);
-        addController("study-shared", SharedStudyController.class);
+        addController("study-definition", StudyDefinitionController.class);
+        addController("study-design", StudyDesignController.class);
+        addController("study-designer", DesignerController.class);
+        addController("study-properties", StudyPropertiesController.class);
         addController("study-reports", ReportsController.class);
         addController("study-samples", SpecimenController.class);
         addController("study-samples-api", SpecimenApiController.class);
         addController("study-security", SecurityController.class);
-        addController("study-designer", DesignerController.class);
-        addController("publish", PublishController.class);
-        addController("dataset", DatasetController.class);
-        addController("study-definition", StudyDefinitionController.class);
-        addController("cohort", CohortController.class);
-        addController("study-properties", StudyPropertiesController.class);
-        addController("participant-group", ParticipantGroupController.class);
-        addController("study-design", StudyDesignController.class);
+        addController("study-shared", SharedStudyController.class);
 
         ServiceRegistry.get().registerService(StudyService.class, StudyServiceImpl.INSTANCE);
         DefaultSchema.registerProvider(StudyQuerySchema.SCHEMA_NAME, new StudySchemaProvider(this));
@@ -271,14 +263,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new TestDatasetDomainKind());
         PropertyService.get().registerDomainKind(new CohortDomainKind());
         PropertyService.get().registerDomainKind(new StudyDomainKind());
-        PropertyService.get().registerDomainKind(new LocationDomainKind());
-        PropertyService.get().registerDomainKind(new PrimaryTypeDomainKind());
-        PropertyService.get().registerDomainKind(new DerivativeTypeDomainKind());
-        PropertyService.get().registerDomainKind(new AdditiveTypeDomainKind());
-        PropertyService.get().registerDomainKind(new SpecimenDomainKind());
-        PropertyService.get().registerDomainKind(new VialDomainKind());
-        PropertyService.get().registerDomainKind(new SpecimenEventDomainKind());
         PropertyService.get().registerDomainKind(new StudyPersonnelDomainKind());
+
+        // specimen related domain kinds
+        PropertyService.get().registerDomainKind(new LocationDomainKind());
         PropertyService.get().registerDomainKind(new SpecimenSampleTypeDomainKind());
 
         // study design domains
@@ -360,7 +348,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ContainerManager.addContainerListener(new StudyContainerListener(), ContainerManager.ContainerListener.Order.First);
         AssayPublishService.setInstance(new AssayPublishManager());
         SpecimenService.setInstance(new SpecimenServiceImpl());
-        SpecimenService.get().registerSpecimenImportStrategyFactory(new DefaultSpecimenImportStrategyFactory());
         SpecimenService.get().registerSpecimenTransform(new SampleMindedTransform());
 
         LsidManager.get().registerHandler("Study", new StudyLsidHandler());
@@ -371,7 +358,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         AuditLogService.get().registerAuditType(new AssayAuditProvider());
         AuditLogService.get().registerAuditType(new DatasetAuditProvider());
         AuditLogService.get().registerAuditType(new StudyAuditProvider());
-        AuditLogService.get().registerAuditType(new SpecimenCommentAuditProvider());
         AuditLogService.get().registerAuditType(new StudySecurityEscalationAuditProvider());
 
         ReportService.get().registerReport(new StudyController.StudyChartReport());

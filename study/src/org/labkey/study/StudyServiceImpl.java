@@ -780,7 +780,7 @@ public class StudyServiceImpl implements StudyService
     @Override
     public TableInfo getVialTableUnion(QuerySchema qsDefault, Set<Container> containers)
     {
-        return getOneOfSpecimenTablesUnion(qsDefault, containers, new HashMap<Container, SQLFragment>(), new VialDomainKind(),
+        return getOneOfSpecimenTablesUnion(qsDefault, containers, new HashMap<>(), new VialDomainKind(),
                 VialTable.class, false, true);
     }
 

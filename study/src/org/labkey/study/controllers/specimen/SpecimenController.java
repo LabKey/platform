@@ -131,6 +131,8 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.Link;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -241,6 +243,15 @@ public class SpecimenController extends BaseStudyController
         public ActionURL getSpecimensURL(Container c, boolean showVials)
         {
             return getSpecimensURL(c).addParameter(SpecimenViewTypeForm.PARAMS.showVials, true);
+        }
+
+        @Override
+        public ActionURL getCommentURL(Container c, String globalUniqueId)
+        {
+            return getSpecimensURL(c)
+                .addParameter(SpecimenController.SpecimenViewTypeForm.PARAMS.showVials, true)
+                .addParameter(SpecimenController.SpecimenViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.COMMENTS.name())
+                .addParameter("SpecimenDetail.GlobalUniqueId~eq", globalUniqueId);
         }
 
         @Override
@@ -2368,7 +2379,7 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(IdForm form, BindException errors)
         {
             _requestId = form.getId();
-            HtmlView header = new HtmlView(PageFlowUtil.textLink("View Request", new ActionURL(ManageRequestAction.class,getContainer()).addParameter("id",form.getId())));
+            HtmlView header = new HtmlView(new LinkBuilder("View Request").href(new ActionURL(ManageRequestAction.class, getContainer()).addParameter("id", form.getId())));
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), form.getId());
             GridView historyGrid = getUtils().getRequestEventGridView(getViewContext().getRequest(), errors, filter);
             return new VBox(header, historyGrid);

@@ -25,9 +25,10 @@ import org.labkey.study.model.StudyImpl;
  * Date: Jul 28, 2006
  * Time: 10:50:05 AM
  */
-@Migrate
+@Migrate // TODO: Move getRepositorySettings() to (new) SettingsManager
 public class SpecimenWebPart extends JspView<SpecimenWebPart.SpecimenWebPartBean>
 {
+    @SuppressWarnings("unused") // Invoked via reflection
     public SpecimenWebPart()
     {
         this(false, null);

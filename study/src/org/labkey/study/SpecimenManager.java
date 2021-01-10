@@ -64,6 +64,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.specimen.SpecimenCommentAuditEvent;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
@@ -116,7 +117,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.specimen.SpecimenCommentAuditEvent;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;

@@ -1,13 +1,12 @@
-package org.labkey.study.specimen;
+package org.labkey.api.specimen;
 
-import org.labkey.api.annotations.Migrate;
 import org.labkey.api.audit.AuditTypeEvent;
-import org.labkey.study.assay.query.AssayAuditProvider;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@Migrate
+import static org.labkey.api.specimen.SpecimenCommentAuditDomainKind.SPECIMEN_COMMENT_EVENT;
+
 public class SpecimenCommentAuditEvent extends AuditTypeEvent
 {
     private String _vialId;
@@ -19,8 +18,7 @@ public class SpecimenCommentAuditEvent extends AuditTypeEvent
 
     public SpecimenCommentAuditEvent(String container, String comment)
     {
-        // TODO: This looks wrong - shouldn't this be SPECIMEN_COMMENT_EVENT?!
-        super(AssayAuditProvider.ASSAY_PUBLISH_AUDIT_EVENT, container, comment);
+        super(SPECIMEN_COMMENT_EVENT, container, comment);
     }
 
     public String getVialId()
