@@ -160,7 +160,7 @@
             var renderTo = <%=q(renderId)%>,
                     reportId = <%=q(id != null ? id.toString() : null) %>,
                     canEdit = <%=canEdit%>,
-                    editUrl = <%=q(editUrl != null ? editUrl.toString() : null) %>;
+                    editUrl = <%=q(editUrl) %>;
 
             init(reportId, renderTo, canEdit, editUrl);
         });

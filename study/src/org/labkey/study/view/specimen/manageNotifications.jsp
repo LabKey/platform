@@ -20,16 +20,15 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.specimen.settings.RequestNotificationSettings" %>
+<%@ page import="org.labkey.api.specimen.settings.RequestNotificationSettings.DefaultEmailNotifyEnum" %>
+<%@ page import="org.labkey.api.specimen.settings.RequestNotificationSettings.SpecimensAttachmentEnum" %>
+<%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.specimen.settings.RequestNotificationSettings" %>
-<%@ page import="org.labkey.study.specimen.settings.RequestNotificationSettings.DefaultEmailNotifyEnum" %>
-<%@ page import="org.labkey.study.specimen.settings.RequestNotificationSettings.SpecimensAttachmentEnum" %>
 <%@ page import="org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -268,7 +267,7 @@ function setElementDisplayByCheckbox(checkbox, element)
             <th>&nbsp;</th>
             <td>
                 <%= button("Save").submit(true) %>&nbsp;
-                <%= button("Cancel").href(new ActionURL(StudyController.ManageStudyAction.class, container)) %>
+                <%= button("Cancel").href(urlProvider(StudyUrls.class).getManageStudyURL(container)) %>
             </td>
         </tr>
 

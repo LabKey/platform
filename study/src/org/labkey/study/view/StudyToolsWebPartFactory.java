@@ -37,8 +37,8 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.specimen.ShowSearchAction;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.security.permissions.ManageStudyPermission;
-import org.labkey.study.security.permissions.RequestSpecimensPermission;
+import org.labkey.api.study.security.permissions.ManageStudyPermission;
+import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -30,10 +30,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.MvColumn;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.api.ExperimentJSONConverter;
-import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
@@ -44,18 +41,17 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.URIUtil;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -212,21 +208,13 @@ public class DataIteratorUtil
             if (null == to)
             {
                 // Check to see if the column i.e. propURI has a property descriptor and vocabulary domain is present
-                if (URIUtil.hasURICharacters(from.getColumnName()) && null != container)
+                var vocabProperties = PropertyService.get().findVocabularyProperties(container, Collections.singleton(from.getColumnName()));
+                if (vocabProperties.size() > 0)
                 {
-                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(from.getColumnName(), container);
-                    if (null != pd)
-                    {
-                        List<Domain> domains = OntologyManager.getDomainsForPropertyDescriptor(container, pd);
-                        List<Domain> vocabularyDomains = domains.stream().filter(d -> d.getDomainKind().getKindName().equalsIgnoreCase(ExperimentJSONConverter.VOCABULARY_DOMAIN)).collect(Collectors.toList());
-                        if (!vocabularyDomains.isEmpty())
-                        {
-                            to = Pair.of(target.getColumn(from.getColumnName()), MatchType.propertyuri);
-                        }
-                    }
+                    to = Pair.of(target.getColumn(from.getColumnName()), MatchType.propertyuri);
                 }
             }
-            if(null != to && null == to.first)
+            if (null != to && null == to.first)
             {
                 LOG.info("Column Info is null here: - " +  from.getColumnName() + " in " + target.getName());
             }
@@ -329,7 +317,7 @@ public class DataIteratorUtil
     // this is just a point-to-point copy _without_ triggers
     public static int copy(DataIteratorContext context, DataIteratorBuilder from, TableInfo to, Container c, User user)
     {
-        StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(to, from, c, user, context);
+        StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(to, from, c, user);
         DataIteratorBuilder insert = ((UpdateableTableInfo)to).persistRows(etl, context);
         Pump pump = new Pump(insert, context);
         pump.run();

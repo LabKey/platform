@@ -51,6 +51,10 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.specimen.SpecimenRequestStatus;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -74,7 +78,7 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.StudyDesignInfo;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.RepositorySettings;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -292,7 +296,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @Override
     public List<LocationImpl> getLocations()
     {
-        return StudyManager.getInstance().getLocations(getContainer());
+        return LocationManager.get().getLocations(getContainer());
     }
 
     @Override

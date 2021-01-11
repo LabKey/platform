@@ -17,12 +17,12 @@
 %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
 <%@ page import="org.labkey.api.study.StudyService"%>
+<%@ page import="org.labkey.api.study.StudyUrls"%>
 <%@ page import="org.labkey.api.util.Pair"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.ShowSearchAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.AutoReportListAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SamplesAction" %>
@@ -43,7 +43,7 @@
     SpecimenHeaderBean bean = me.getModelBean();
     ActionURL createRequestURL = new ActionURL(ShowAPICreateSampleRequestAction.class, getContainer());
     createRequestURL.addParameter("fromGroupedView", !bean.isShowingVials());
-    createRequestURL.addParameter("returnUrl", getActionURL().toString());
+    createRequestURL.addReturnURL(getActionURL());
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(getContainer());
     String subjectNounPlural = StudyService.get().getSubjectNounPlural(getContainer());
 %>
@@ -67,7 +67,7 @@
     if (getContainer().hasPermission(getUser(), AdminPermission.class))
     {
 %>
-<%=link("Manage Study", ManageStudyAction.class)%>&nbsp;
+<%=link("Manage Study", urlProvider(StudyUrls.class).getManageStudyClass())%>&nbsp;
 <%
     }
 %>

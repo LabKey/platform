@@ -14,7 +14,7 @@
                 <bean class="org.labkey.study.pipeline.StandaloneDatasetTask$Factory"/>
                 <bean class="org.labkey.study.pipeline.StandaloneSpecimenTask$Factory"/>
 
-                <bean class="org.labkey.study.pipeline.SpecimenReloadTask$Factory"/>
+                <bean class="org.labkey.api.specimen.pipeline.SpecimenReloadTask$Factory"/>
                 <bean class="org.labkey.study.pipeline.StudyReloadSourceTask$Factory"/>
                 <bean class="org.labkey.study.pipeline.FileAnalysisDatasetTask$Factory"/>
                 <bean class="org.labkey.study.importer.StudyReloadTask$Factory"/>
@@ -75,7 +75,7 @@
                     <property name="taskProgressionSpec">
                         <list>
                             <bean id="importTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.SpecimenReloadTask</value></constructor-arg>
+                                <constructor-arg><value type="java.lang.Class">org.labkey.api.specimen.pipeline.SpecimenReloadTask</value></constructor-arg>
                             </bean>
                             <bean id="specimenReloadTask" class="org.labkey.api.pipeline.TaskId">
                                 <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StandaloneSpecimenTask</value></constructor-arg>

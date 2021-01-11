@@ -212,9 +212,7 @@
                     _partConfig["webpart.titleHref"] = _titleHref;
                 // Prefer using 'returnUrl' instead of 'returnURL'
                 if (_partConfig.returnURL) {
-                    if (LABKEY.experimental.strictReturnUrl)
-                        throw new Error("Use 'returnUrl' instead of 'returnURL'");
-                    _partConfig.returnUrl = _partConfig.returnURL;
+                    throw new Error("Use 'returnUrl' instead of 'returnURL'");
                 }
 
                 if (!_errorCallback)

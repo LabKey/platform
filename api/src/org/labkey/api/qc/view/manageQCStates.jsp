@@ -32,7 +32,7 @@
     Container container = getContainer();
     AbstractManageQCStatesBean bean = me.getModelBean();
     AbstractManageQCStatesAction manageAction = bean.getManageAction();
-    ActionURL cancelUrl = bean.getReturnUrl() != null ? new ActionURL(bean.getReturnUrl()) :
+    ActionURL cancelUrl = bean.getReturnUrl() != null ? bean.getReturnUrl() :
             new ActionURL(manageAction.getClass(), container);
     QCStateHandler qcStateHandler = bean.getQCStateHandler();
     String currentQCPanelTitle = "Currently Defined " + StringUtils.capitalize(bean.getNoun()) + " QC States";
@@ -42,7 +42,7 @@
 <labkey:errors/><br>
 <labkey:form action="<%=urlFor(manageAction.getClass())%>" name="manageQCStates" method="POST">
 <input type="hidden" name="reshowPage" value="true">
-<input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
+<%=generateReturnUrlFormField(bean.getReturnUrl())%>
     <labkey:panel title="<%=currentQCPanelTitle%>">
         <table id="qcStatesTable" class="lk-fields-table">
             <tr>
@@ -58,7 +58,7 @@
             <tr>
             </tr>
             <%
-                baseDeleteStateURL.addParameter("manageReturnUrl", bean.getReturnUrl());
+                baseDeleteStateURL.addParameter("manageReturnUrl", cancelUrl.getLocalURIString());
                 for (Object stateObj : qcStateHandler.getQCStates(container))
                 {
                     QCState state = (QCState)stateObj;

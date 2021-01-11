@@ -46,6 +46,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -126,7 +127,6 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                         condition.add(currentStudy.getContainer());
                         addCondition(condition, FieldKey.fromParts("Container"), FieldKey.fromParts(getParticipantColumnName()));
                     }
-
                 }
             }
         }
@@ -681,7 +681,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                 return;
 
             SQLFragment joinSql = new SQLFragment();
-            joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoSpecimenComment().getFromSQL(tableAlias));
+            joinSql.append(" LEFT OUTER JOIN ").append(SpecimenSchema.get().getTableInfoSpecimenComment().getFromSQL(tableAlias));
             joinSql.append(" ON ");
             joinSql.append(parentAlias).append(".GlobalUniqueId = ").append(tableAlias).append(".GlobalUniqueId AND ");
             joinSql.append(parentAlias).append(".Container = ").append(tableAlias).append(".Container\n");

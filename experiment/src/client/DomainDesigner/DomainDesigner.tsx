@@ -154,7 +154,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     navigate = () => {
         this._dirty = false;
 
-        const returnUrl = ActionURL.getParameter('returnUrl');
+        const returnUrl = ActionURL.getReturnUrl();
         window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', getServerContext().container.path);
     };
 

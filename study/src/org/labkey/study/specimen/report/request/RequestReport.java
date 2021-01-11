@@ -16,7 +16,7 @@
 package org.labkey.study.specimen.report.request;
 
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.study.SpecimenManager;
+import org.labkey.api.specimen.report.SummaryByVisitType;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.specimen.report.SpecimenTypeVisitReport;
@@ -39,7 +39,7 @@ public class RequestReport extends SpecimenTypeVisitReport
     }
 
     @Override
-    protected String getFilterQueryString(VisitImpl visit, SpecimenManager.SummaryByVisitType summary)
+    protected String getFilterQueryString(VisitImpl visit, SummaryByVisitType summary)
     {
         return super.getFilterQueryString(visit, summary)  + "&" +
                 (_completedRequestsOnly ? SpecimenQueryView.PARAMS.showCompleteRequestedOnly  : SpecimenQueryView.PARAMS.showRequestedOnly) + "=true";

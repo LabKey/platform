@@ -34,7 +34,6 @@ import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -46,6 +45,19 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.specimen.SpecimenRequestStatus;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
+import org.labkey.api.specimen.model.SpecimenRequestEvent;
+import org.labkey.api.specimen.notifications.NotificationRecipientSet;
+import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
+import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
+import org.labkey.api.specimen.security.permissions.SetSpecimenCommentsPermission;
+import org.labkey.api.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -62,31 +74,19 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.SpecimenRequest;
-import org.labkey.study.model.SpecimenRequestActor;
-import org.labkey.study.model.SpecimenRequestEvent;
 import org.labkey.study.model.SpecimenRequestRequirement;
-import org.labkey.study.model.SpecimenRequestStatus;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Vial;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.security.permissions.ManageRequestsPermission;
-import org.labkey.study.security.permissions.RequestSpecimensPermission;
-import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
 import org.labkey.study.specimen.notifications.ActorNotificationRecipientSet;
 import org.labkey.study.specimen.notifications.DefaultRequestNotification;
-import org.labkey.study.specimen.notifications.NotificationRecipientSet;
-import org.labkey.study.specimen.settings.RepositorySettings;
-import org.labkey.study.specimen.settings.RequestNotificationSettings;
 import org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
@@ -149,20 +149,9 @@ public class SpecimenUtils
         return getSpecimenQueryView(showVials, forExport, null, viewMode, cohortFilter);
     }
 
-    private String urlFor(Class<? extends Controller> action)
+    private ActionURL urlFor(Class<? extends Controller> action)
     {
-        return urlFor(action, null);
-    }
-
-    private String urlFor(Class<? extends Controller> action, Map<Enum, String> parameters)
-    {
-        ActionURL url = new ActionURL(action, getContainer());
-        if (parameters != null)
-        {
-            for (Map.Entry<Enum, String> entry : parameters.entrySet())
-                url.addParameter(entry.getKey(), entry.getValue());
-        }
-        return url.getLocalURIString();
+        return new ActionURL(action, getContainer());
     }
 
     public static boolean isCommentsMode(Container container, SpecimenQueryView.Mode selectedMode)
@@ -214,18 +203,16 @@ public class SpecimenUtils
                 if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), RequestSpecimensPermission.class))
                 {
                     final String jsRegionObject = DataRegion.getJavaScriptObjectReference(gridView.getSettings().getDataRegionName());
-                    String createRequestURL = urlFor(SpecimenController.ShowCreateSampleRequestAction.class,
-                            Collections.singletonMap(SpecimenController.CreateSampleRequestForm.PARAMS.returnUrl,
-                                    getViewContext().getActionURL().getLocalURIString()));
+                    String createRequestURL = urlFor(SpecimenController.ShowCreateSampleRequestAction.class).addReturnURL(getViewContext().getActionURL()).toString();
 
-                    requestMenuButton.addMenuItem("Create New Request", null,
+                    requestMenuButton.addMenuItem("Create New Request",
                             "if (verifySelected(" + jsRegionObject + ".form, '" + createRequestURL +
                             "', 'post', 'rows')) " + jsRegionObject + ".form.submit();");
 
                     if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), ManageRequestsPermission.class) ||
                             SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(getViewContext().getContainer()))
                     {
-                        requestMenuButton.addMenuItem("Add To Existing Request", null,
+                        requestMenuButton.addMenuItem("Add To Existing Request",
                                 "if (verifySelected(" + jsRegionObject + ".form, '#', " +
                                 "'get', 'rows')) { " + jsRegionObject + ".getSelected({success: function (data) { showRequestWindow(data.selected, '" + (showVials ? SpecimenApiController.VialRequestForm.IdTypes.RowId
                                 : SpecimenApiController.VialRequestForm.IdTypes.SpecimenHash) + "');}})}");
@@ -249,14 +236,14 @@ public class SpecimenUtils
             {
                 MenuButton commentsMenuButton = new MenuButton("Comments" + (manualQCEnabled ? " and QC" : ""));
                 final String jsRegionObject = DataRegion.getJavaScriptObjectReference(gridView.getSettings().getDataRegionName());
-                String setCommentsURL = urlFor(SpecimenController.UpdateCommentsAction.class);
-                NavTree setItem = commentsMenuButton.addMenuItem("Set Vial Comment " + (manualQCEnabled ? "or QC State " : "") + "for Selected", "#",
+                String setCommentsURL = urlFor(SpecimenController.UpdateCommentsAction.class).toString();
+                NavTree setItem = commentsMenuButton.addMenuItem("Set Vial Comment " + (manualQCEnabled ? "or QC State " : "") + "for Selected",
                         "if (verifySelected(" + jsRegionObject + ".form, '" + setCommentsURL +
                         "', 'post', 'rows')) " + jsRegionObject + ".form.submit(); return false;");
                 setItem.setId("Comments:Set");
 
-                String clearCommentsURL = urlFor(SpecimenController.ClearCommentsAction.class);
-                NavTree clearItem = commentsMenuButton.addMenuItem("Clear Vial Comments for Selected", "#",
+                String clearCommentsURL = urlFor(SpecimenController.ClearCommentsAction.class).toString();
+                NavTree clearItem = commentsMenuButton.addMenuItem("Clear Vial Comments for Selected",
                         "if (verifySelected(" + jsRegionObject + ".form, '" + clearCommentsURL +
                         "', 'post', 'rows') && confirm('This will permanently clear comments for all selected vials. " +
                                 (manualQCEnabled ? "Quality control states will remain unchanged. " : "" )+ "Continue?')) " +
@@ -345,7 +332,7 @@ public class SpecimenUtils
             throw new IllegalStateException("Request " + specimenRequest.getRowId() + " in folder " +
                     specimenRequest.getContainer().getPath() + " does not have a valid destination site id.");
         }
-        LocationImpl destLocation = StudyManager.getInstance().getLocation(specimenRequest.getContainer(), specimenRequest.getDestinationSiteId().intValue());
+        LocationImpl destLocation = LocationManager.get().getLocation(specimenRequest.getContainer(), specimenRequest.getDestinationSiteId().intValue());
         relevantSites.put(destLocation.getRowId(), destLocation);
         for (Vial vial : specimenRequest.getVials())
         {
@@ -423,7 +410,7 @@ public class SpecimenUtils
             out.write("<option value=''>&lt;Show All&gt;</option>");
             String excludeStr = ctx.getRequest().getParameter(SpecimenQueryView.PARAMS.excludeRequestedBySite.name());
             int locationId = null == StringUtils.trimToNull(excludeStr) ? 0 : Integer.parseInt(excludeStr);
-            List<LocationImpl> locations = StudyManager.getInstance().getValidRequestingLocations(ctx.getContainer());
+            List<LocationImpl> locations = LocationManager.get().getValidRequestingLocations(ctx.getContainer());
             for (LocationImpl location : locations)
             {
                 out.write("<option value=\"");
@@ -579,7 +566,7 @@ public class SpecimenUtils
 
         public String getRequestingSiteName()
         {
-            Location destLocation = StudyManager.getInstance().getLocation(_notification.getSampleRequest().getContainer(),
+            Location destLocation = LocationManager.get().getLocation(_notification.getSampleRequest().getContainer(),
                     _notification.getSampleRequest().getDestinationSiteId());
             if (destLocation != null)
                 return destLocation.getDisplayName();
@@ -783,7 +770,7 @@ public class SpecimenUtils
                 int idx = 0;
 
                 for (Integer id : _possibleLocationIds)
-                    _possibleLocations[idx++] = StudyManager.getInstance().getLocation(_container, id.intValue());
+                    _possibleLocations[idx++] = LocationManager.get().getLocation(_container, id.intValue());
             }
             return _possibleLocations;
         }
@@ -825,7 +812,7 @@ public class SpecimenUtils
                     _providingLocations = new ArrayList<>(_providingLocationIds.size());
 
                     for (Integer locationId : _providingLocationIds)
-                        _providingLocations.add(StudyManager.getInstance().getLocation(container, locationId.intValue()));
+                        _providingLocations.add(LocationManager.get().getLocation(container, locationId.intValue()));
                 }
             }
             return _providingLocations;
@@ -896,7 +883,7 @@ public class SpecimenUtils
     public GridView getRequestEventGridView(HttpServletRequest request, BindException errors, SimpleFilter filter)
     {
         DataRegion rgn = new DataRegion();
-        TableInfo tableInfoRequestEvent = StudySchema.getInstance().getTableInfoSampleRequestEvent();
+        TableInfo tableInfoRequestEvent = SpecimenSchema.get().getTableInfoSampleRequestEvent();
         rgn.setTable(tableInfoRequestEvent);
         rgn.setColumns(tableInfoRequestEvent.getColumns("Created", "EntryType", "Comments", "CreatedBy", "EntityId"));
         rgn.getDisplayColumn("EntityId").setVisible(false);
@@ -962,7 +949,7 @@ public class SpecimenUtils
             }
         };
 
-        TableInfo tableInfoRequestEvent = StudySchema.getInstance().getTableInfoSampleRequestEvent();
+        TableInfo tableInfoRequestEvent = SpecimenSchema.get().getTableInfoSampleRequestEvent();
         rgn.setTable(tableInfoRequestEvent);
         rgn.setColumns(tableInfoRequestEvent.getColumns("Created", "EntityId"));
         rgn.getDisplayColumn("EntityId").setVisible(false);
@@ -1020,23 +1007,21 @@ public class SpecimenUtils
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(specimenRequest.getContainer());
         ctx.setBaseFilter(getSpecimenListFilter(specimenRequest, srcLocation, type));
-        Results results = dr.getResults(ctx);
         List<DisplayColumn> cols = dr.getDisplayColumns();
-        TSVGridWriter tsv = new TSVGridWriter(results, cols);
+        TSVGridWriter tsv = new TSVGridWriter(()->dr.getResults(ctx), cols);
         tsv.setFilenamePrefix(getSpecimenListFileName(srcLocation, destLocation));
         return tsv;
     }
 
     public ExcelWriter getSpecimenListXlsWriter(SpecimenRequest specimenRequest, LocationImpl srcLocation,
-                                                 LocationImpl destLocation, SpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
+                                                 LocationImpl destLocation, SpecimenController.LabSpecimenListsBean.Type type)
     {
         DataRegion dr = createDataRegionForWriters(specimenRequest);
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(specimenRequest.getContainer());
         ctx.setBaseFilter(getSpecimenListFilter(specimenRequest, srcLocation, type));
-        Results results = dr.getResults(ctx);
         List<DisplayColumn> cols = dr.getDisplayColumns();
-        ExcelWriter xl = new ExcelWriter(results, cols);
+        ExcelWriter xl = new ExcelWriter(() -> dr.getResults(ctx), cols);
         xl.setFilenamePrefix(getSpecimenListFileName(srcLocation, destLocation));
         return xl;
     }

@@ -34,6 +34,8 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.Vial;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
@@ -41,14 +43,12 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudyFolderType;
-import org.labkey.study.StudySchema;
 import org.labkey.study.importer.CreateChildStudyPipelineJob;
 import org.labkey.study.importer.SpecimenSchemaImporter;
 import org.labkey.study.model.ChildStudyDefinition;
 import org.labkey.study.model.SpecimenRequest;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Vial;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -88,7 +88,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         try
         {
             // Need to set optional fields to null, or user-added metadata on those fields won't be copied over properly
-            previousTablesTemplate = StudySchema.getInstance().setSpecimenTablesTemplates(new SpecimenSchemaImporter.ImportTemplate());
+            previousTablesTemplate = SpecimenSchema.get().setSpecimenTablesTemplates(new SpecimenSchemaImporter.ImportTemplate());
             StudyImpl newStudy = createNewStudy(form);
 
             if (newStudy != null)
@@ -112,7 +112,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         finally
         {
             if (previousTablesTemplate != null)
-                StudySchema.getInstance().setSpecimenTablesTemplates(previousTablesTemplate);
+                SpecimenSchema.get().setSpecimenTablesTemplates(previousTablesTemplate);
         }
 
         return resp;

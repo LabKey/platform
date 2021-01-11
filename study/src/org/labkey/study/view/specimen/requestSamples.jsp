@@ -26,13 +26,14 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.HandleCreateSampleRequestAction"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.NewRequestBean" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ViewRequestsAction" %>
-<%@ page import="org.labkey.study.model.LocationImpl" %>
+<%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.model.Vial" %>
+<%@ page import="org.labkey.api.specimen.Vial" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.specimen.location.LocationManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -47,7 +48,7 @@
     NewRequestBean bean = me.getModelBean();
     ViewContext context = getViewContext();
     Container c = getContainer();
-    List<LocationImpl> locations = StudyManager.getInstance().getValidRequestingLocations(c);
+    List<LocationImpl> locations = LocationManager.get().getValidRequestingLocations(c);
     boolean shoppingCart = SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(c);
     boolean hasExtendedRequestView = SpecimenManager.getInstance().getExtendedSpecimenRequestView(context) != null;
     List<Vial> vials = bean.getVials();
@@ -108,7 +109,7 @@ function setDefaults()
 }
 </script>
 <labkey:form name="CreateSampleRequest" action="<%=urlFor(HandleCreateSampleRequestAction.class)%>" method="POST">
-    <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
+    <%=generateReturnUrlFormField(bean.getReturnUrl())%>
     <%
         if (vials != null)
         {
@@ -198,7 +199,7 @@ function setDefaults()
                 <input type="hidden" name="<%= h(CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name()) %>" value="false">
                 <input type="hidden" name="<%= h(CreateSampleRequestForm.PARAMS.extendedRequestUrl.name()) %>" value="false">
                 <%
-                    boolean hasReturnURL = bean.getReturnUrl() != null && !bean.getReturnUrl().isEmpty();
+                    boolean hasReturnURL = bean.getReturnUrl() != null;
                     if (hasExtendedRequestView)
                     {
                         %>

@@ -83,10 +83,10 @@ public interface SpecimenTransform
      */
     void importFromExternalSource(@Nullable PipelineJob job, ExternalImportConfig importConfig, File inputArchive) throws PipelineJobException;
 
-    public interface ExternalImportConfig
+    interface ExternalImportConfig
     {
-        public String getBaseServerUrl();
-        public String getUsername();
-        public String getPassword();
+        String getBaseServerUrl();
+        String getUsername();
+        String getPassword();
     }
 }

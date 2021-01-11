@@ -24,7 +24,7 @@ import org.labkey.api.util.element.Option;
 import org.labkey.api.util.element.Select;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.SpecimenTypeSummary;
+import org.labkey.api.specimen.model.SpecimenTypeSummary;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;

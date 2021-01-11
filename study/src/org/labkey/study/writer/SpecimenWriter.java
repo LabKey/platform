@@ -24,6 +24,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PHI;
+import org.labkey.api.data.ResultsFactory;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
@@ -31,17 +32,17 @@ import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.importer.SpecimenColumn;
+import org.labkey.api.specimen.importer.TargetTable;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
-import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
-import org.labkey.study.importer.SpecimenImporter.SpecimenColumn;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.Vial;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.io.PrintWriter;
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -63,7 +64,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
     @Override
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
-        StudySchema schema = StudySchema.getInstance();
+        SpecimenSchema schema = SpecimenSchema.get();
         StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, ctx.getUser(), true); // to use for checking overlayed XMl metadata
         Container c = ctx.getContainer();
         SpecimenImporter specimenImporter = new SpecimenImporter(c, ctx.getUser());
@@ -88,7 +89,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         SqlDialect dialect = schema.getSqlDialect();
         for (SpecimenColumn column : columns)
         {
-            SpecimenImporter.TargetTable tt = column.getTargetTable();
+            TargetTable tt = column.getTargetTable();
             TableInfo tinfo = tt.isEvents() ? tableInfoSpecimenEvent : tableInfoSpecimenDetail;
             TableInfo queryTable = tt.isEvents() ? queryTableSpecimenEvent : queryTableSpecimenDetail;
             ColumnInfo ci = tinfo.getColumn(column.getDbColumnName());
@@ -159,7 +160,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             {
                 assert column.getTargetTable().isEvents();
 
-                SpecimenImporter.TargetTable tt = column.getTargetTable();
+                TargetTable tt = column.getTargetTable();
                 TableInfo tinfo = tt.isEvents() ? tableInfoSpecimenEvent : tableInfoSpecimenDetail;
                 ColumnInfo ci = tinfo.getColumn(column.getDbColumnName());
                 sql.append("\n    ");
@@ -224,10 +225,10 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         sql.append("\nORDER BY se.ExternalId");
 
         // Note: must be uncached result set -- this query can be very large
-        ResultSet rs = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false);
+        ResultsFactory factory = ()->new ResultsImpl(new SqlSelector(schema.getSchema(), sql).getResultSet(false), selectColumns);
 
-        // TSVGridWriter.close() closes the ResultSet
-        try (TSVGridWriter gridWriter = new TSVGridWriter(new ResultsImpl(rs, selectColumns), displayColumns))
+        // TSVGridWriter generates and closes the Results
+        try (TSVGridWriter gridWriter = new TSVGridWriter(factory, displayColumns))
         {
             gridWriter.write(pw);
         }
@@ -311,8 +312,8 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             var ciRestrictedPhi = new BaseColumnInfo("test", JdbcType.OTHER);
             ciRestrictedPhi.setPHI(PHI.Restricted);
 
-            SpecimenColumn notKeyCol = new SpecimenColumn("test", "test", "INT", SpecimenImporter.TargetTable.SPECIMEN_EVENTS);
-            SpecimenColumn keyCol = new SpecimenColumn("test", "test", "INT", true, SpecimenImporter.TargetTable.SPECIMEN_EVENTS);
+            SpecimenColumn notKeyCol = new SpecimenColumn("test", "test", "INT", TargetTable.SPECIMEN_EVENTS);
+            SpecimenColumn keyCol = new SpecimenColumn("test", "test", "INT", true, TargetTable.SPECIMEN_EVENTS);
 
             // should remove if not a key column and it is at or above PHI export level
             assertTrue(shouldRemovePhi(PHI.PHI, notKeyCol, ciRestrictedPhi));
