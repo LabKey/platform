@@ -12,9 +12,9 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/views/*.*"
   },
   "dependencies": {
-    "@labkey/components": "1.12.2-fb-assay-picker.0"
+    "@labkey/components": "1.14.0"
   },
   "devDependencies": {
-    "@labkey/build": "1.0.0-fb-assay-picker.0"
+    "@labkey/build": "1.1.0"
   }
 }
