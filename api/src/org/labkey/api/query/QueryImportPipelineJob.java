@@ -125,7 +125,7 @@ public class QueryImportPipelineJob extends PipelineJob
 
         public String getJobDescription()
         {
-            return StringUtils.isEmpty(_jobDescription) ? (_schemaName + " - " + _queryName + " - " + _primaryFile.getName()) : _jobDescription;
+            return StringUtils.isEmpty(_jobDescription) ? (_queryName + " - " + _primaryFile.getName()) : _jobDescription;
         }
 
         public String getJobNotificationProvider()
@@ -220,9 +220,18 @@ public class QueryImportPipelineJob extends PipelineJob
 
         if (null != target)
         {
-            ActionURL url =  target.getGridURL(getContainer());
+            URLHelper url;
+            PipelineJobNotificationProvider notificationProvider = getNotificationProvider();
+            if (notificationProvider != null)
+            {
+                url = notificationProvider.getPipelineStatusHref(this);
+                if (url != null)
+                    return url;
+            }
+
+            url =  target.getGridURL(getContainer());
             if (_transactionAuditId > 0)
-                url.addParameter("transactionAuditId", _transactionAuditId);
+                url.addParameter("transactionAuditId", String.valueOf(_transactionAuditId));
 
             return url;
         }
@@ -274,6 +283,9 @@ public class QueryImportPipelineJob extends PipelineJob
             if (ve.hasErrors())
                 throw ve;
 
+            if (auditEvent != null)
+                _transactionAuditId = auditEvent.getRowId();
+
             setStatus(TaskStatus.complete);
             getLogger().info("Done importing " + getDescription() + ". " + importedCount + " row(s) imported.");
 
@@ -281,12 +293,8 @@ public class QueryImportPipelineJob extends PipelineJob
             {
                 Map<String, Object> results = new HashMap<>();
                 results.put("rowCount", importedCount);
-                if (auditEvent != null)
-                {
-                    _transactionAuditId = auditEvent.getRowId();
+                if (_transactionAuditId > 0)
                     results.put("transactionAuditId", _transactionAuditId);
-                }
-
 
                 notificationProvider.onJobSuccess(this, results);
             }
@@ -316,6 +324,11 @@ public class QueryImportPipelineJob extends PipelineJob
     public QueryImportAsyncContextBuilder getImportContextBuilder()
     {
         return _importContextBuilder;
+    }
+
+    public long getTransactionAuditId()
+    {
+        return _transactionAuditId;
     }
 
 }
