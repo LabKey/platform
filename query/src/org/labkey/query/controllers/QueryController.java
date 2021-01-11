@@ -5813,7 +5813,6 @@ public class QueryController extends SpringActionController
         protected Map<String, Object> getQueryProps(QueryDefinition qdef, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns, boolean useQueryDetailColumns)
         {
             Map<String, Object> qinfo = new HashMap<>();
-            qinfo.put("name", qdef.getName());
             qinfo.put("hidden", qdef.isHidden());
             qinfo.put("snapshot", qdef.isSnapshot());
             qinfo.put("inherit", qdef.canInherit());
@@ -5837,6 +5836,7 @@ public class QueryController extends SpringActionController
                 qinfo.put("viewDataUrl", viewDataUrl);
 
             String title = qdef.getName();
+            String name = qdef.getName();
             try
             {
                 //get the table info if the user requested column info
@@ -5875,6 +5875,7 @@ public class QueryController extends SpringActionController
                         if (columns.size() > 0)
                             qinfo.put("columns", columns);
                     }
+                    name = table.getPublicName();
                     if (table instanceof DatasetTable)
                         title = table.getTitle();
                 }
@@ -5885,6 +5886,7 @@ public class QueryController extends SpringActionController
             }
 
             qinfo.put("title", title);
+            qinfo.put("name", name);
             return qinfo;
         }
     }
