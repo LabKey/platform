@@ -153,6 +153,7 @@ import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;

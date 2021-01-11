@@ -77,6 +77,7 @@ import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.SpecimenForeignKey;
+import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HtmlString;
@@ -92,7 +93,6 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.DatasetDataIteratorBuilder;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.writer.StudyArchiveDataTypes;
 
 import java.util.ArrayList;
