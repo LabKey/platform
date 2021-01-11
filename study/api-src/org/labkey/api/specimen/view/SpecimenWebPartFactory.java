@@ -1,4 +1,4 @@
-package org.labkey.api.specimen;
+package org.labkey.api.specimen.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.permissions.ReadPermission;

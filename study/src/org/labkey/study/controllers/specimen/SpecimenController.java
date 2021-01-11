@@ -20,7 +20,6 @@ import org.apache.commons.io.Charsets;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
@@ -64,14 +63,10 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.SchemaKey;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -84,7 +79,7 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.SpecimenRequestStatus;
-import org.labkey.api.specimen.SpecimenWebPart;
+import org.labkey.api.specimen.view.SpecimenWebPart;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.AutoCompleteAction;
 import org.labkey.api.specimen.importer.RequestabilityManager;
@@ -139,7 +134,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
-import org.labkey.api.view.Portal.WebPart;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.SpecimenManager;
@@ -197,7 +191,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -261,6 +254,12 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
+        public ActionURL getShowCreateSpecimenRequestURL(Container c)
+        {
+            return new ActionURL(ShowCreateSpecimenRequestAction.class, c);
+        }
+
+        @Override
         public ActionURL getRequestDetailsURL(Container c, int requestId)
         {
             return new ActionURL(ManageRequestAction.class, c).addParameter("id", requestId);
@@ -276,6 +275,18 @@ public class SpecimenController extends BaseStudyController
             url.addReturnURL(returnUrl);
 
             return url;
+        }
+
+        @Override
+        public ActionURL getShowSearchURL(Container c)
+        {
+            return new ActionURL(ShowSearchAction.class, c);
+        }
+
+        @Override
+        public ActionURL getAutoReportListURL(Container c)
+        {
+            return new ActionURL(AutoReportListAction.class, c);
         }
     }
 
@@ -3329,105 +3340,6 @@ public class SpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    public static class ReportConfigurationBean
-    {
-        private static final String COUNTS_BY_DERIVATIVE_TYPE_TITLE = "Collected Vials by Type and Timepoint";
-        private static final String REQUESTS_BY_DERIVATIVE_TYPE_TITLE = "Requested Vials by Type and Timepoint";
-
-        private final Map<String, List<SpecimenVisitReportParameters>> _reportFactories = new LinkedHashMap<>();
-        private final int _uniqueId;
-        private final ViewContext _viewContext;
-
-        private boolean _listView = true;
-        private boolean _hasReports = true;
-
-        public ReportConfigurationBean(ViewContext viewContext)
-        {
-            Study study = getStudy(viewContext.getContainer());
-            _viewContext = viewContext;
-            registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeSummaryReportFactory());
-            registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeParticipantReportFactory());
-            if (StudyManager.getInstance().showCohorts(_viewContext.getContainer(), _viewContext.getUser()))
-                registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeCohortReportFactory());
-            if (study != null)
-            {
-                boolean enableSpecimenRequest = SettingsManager.get().getRepositorySettings(study.getContainer()).isEnableRequests();
-                if (!study.isAncillaryStudy() && !study.isSnapshotStudy() && enableSpecimenRequest)
-                {
-                    registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestReportFactory());
-                    registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestLocationReportFactory());
-                    registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestEnrollmentSiteReportFactory());
-                    registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestParticipantReportFactory());
-                }
-                String subjectNoun = StudyService.get().getSubjectNounSingular(viewContext.getContainer());
-                registerReportFactory("Collected Vials by " + subjectNoun + " by Timepoint", new ParticipantSummaryReportFactory());
-                registerReportFactory("Collected Vials by " + subjectNoun + " by Timepoint", new ParticipantTypeReportFactory());
-                registerReportFactory("Collected Vials by " + subjectNoun + " by Timepoint", new ParticipantSiteReportFactory());
-            }
-
-            _uniqueId = 0;
-        }
-
-        // TODO: listView parameter is always false... remove?
-        public ReportConfigurationBean(SpecimenVisitReportParameters singleFactory, boolean listView, int uniqueId)
-        {
-            _listView = listView;
-            _viewContext = singleFactory.getViewContext();
-            assert (_viewContext != null) : "Expected report factory to be instantiated by Spring.";
-            registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, singleFactory);
-            _hasReports = getStudy(_viewContext.getContainer()) != null && !singleFactory.getReports().isEmpty();
-            _uniqueId = uniqueId;
-        }
-
-        private void registerReportFactory(String category, SpecimenVisitReportParameters factory)
-        {
-            // we have to explicitly set the view context for these reports, since the factories aren't being newed-up by Spring in the usual way:
-            factory.setViewContext(_viewContext);
-            List<SpecimenVisitReportParameters> factories = _reportFactories.get(category);
-
-            if (factories == null)
-            {
-                factories = new ArrayList<>();
-                _reportFactories.put(category, factories);
-            }
-
-            factories.add(factory);
-        }
-
-        public Set<String> getCategories()
-        {
-            return _reportFactories.keySet();
-        }
-
-        public List<SpecimenVisitReportParameters> getFactories(String category)
-        {
-            return _reportFactories.get(category);
-        }
-
-        public boolean isListView()
-        {
-            return _listView;
-        }
-
-        public Map<String, CustomView> getCustomViews(ViewContext context)
-        {
-            // 13485 - Use provider to handle NULL study
-            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), SchemaKey.fromParts(StudyQuerySchema.SCHEMA_NAME));
-            QueryDefinition def = QueryService.get().createQueryDefForTable(schema, "SpecimenDetail");
-            return def.getCustomViews(context.getUser(), context.getRequest(), false, false);
-        }
-
-        public boolean hasReports()
-        {
-            return _hasReports;
-        }
-
-        public int getUniqueId()
-        {
-            return _uniqueId;
-        }
-    }
-
     @RequiresPermission(ReadPermission.class)
     public class AutoReportListAction extends SimpleViewAction
     {
@@ -4901,7 +4813,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(RequestNotificationSettings form, boolean reshow, BindException errors)
         {
-            if (!SpecimenManager.getInstance().isSpecimenRequestEnabled(getContainer(), false))
+            if (!SettingsManager.get().isSpecimenRequestEnabled(getContainer(), false))
                 throw new RedirectException(new ActionURL(SpecimenController.SpecimenRequestConfigRequired.class, getContainer()));
 
             // try to get the settings from the form, just in case this is a reshow:
@@ -5470,68 +5382,6 @@ public class SpecimenController extends BaseStudyController
             setHelpTopic("coordinateSpecimens#requestability");
             _addManageStudy(root);
             root.addChild("Configure Requestability Rules");
-        }
-    }
-
-
-
-    /** WEB PARTS **/
-
-    public static class SpecimenReportWebPartFactory extends BaseWebPartFactory
-    {
-        public static final String REPORT_TYPE_PARAMETER_NAME = "reportType";
-
-        public SpecimenReportWebPartFactory()
-        {
-            super("Specimen Report", true, true, LOCATION_BODY);
-        }
-
-        @Override
-        public WebPartView getWebPartView(@NotNull ViewContext context, @NotNull WebPart part)
-        {
-            SpecimenVisitReportParameters factory = getFactory(context, part);
-
-            JspView<SpecimenVisitReportParameters> reportView = new JspView<>("/org/labkey/study/view/specimen/specimenVisitReport.jsp", factory);
-            WebPartView configView = new JspView<>("/org/labkey/study/view/specimen/autoReportList.jsp", new ReportConfigurationBean(factory, false, part.getIndex()));
-            ActionURL url = new ActionURL(factory.getAction(), context.getContainer());
-
-            VBox outer = new VBox(configView, reportView);
-            outer.setTitleHref(url);
-            outer.setFrame(WebPartView.FrameType.PORTAL);
-            outer.setTitle("Specimen Report: " + factory.getLabel());
-
-            return outer;
-        }
-
-        private SpecimenVisitReportParameters getFactory(ViewContext context, WebPart part)
-        {
-            @Nullable String name = part.getPropertyMap().get(REPORT_TYPE_PARAMETER_NAME);
-            ReportConfigurationBean bean = new ReportConfigurationBean(context);
-            Set<String> categories = bean.getCategories();
-
-            // First element of first category is the default (should be "TypeSummary")
-            SpecimenVisitReportParameters factory = bean.getFactories(categories.iterator().next()).get(0);
-            assert "TypeSummary".equals(factory.getReportType());
-
-            if (null == name)
-                return factory;
-
-            for (String category : categories)
-            {
-                for (SpecimenVisitReportParameters candidate : bean.getFactories(category))
-                {
-                    if (candidate.getReportType().equals(name))
-                        return candidate;
-                }
-            }
-
-            return factory;
-        }
-
-        @Override
-        public HttpView getEditView(WebPart webPart, ViewContext context)
-        {
-            return new JspView<>("/org/labkey/study/view/specimen/customizeSpecimenReportWebPart.jsp", webPart);
         }
     }
 

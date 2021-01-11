@@ -1314,26 +1314,6 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         Table.delete(SpecimenSchema.get().getTableInfoSampleRequestSpecimen(), filter);
     }
 
-    public boolean isSpecimenRequestEnabled(Container container)
-    {
-        return isSpecimenRequestEnabled(container, true);
-    }
-
-    public boolean isSpecimenRequestEnabled(Container container, boolean checkExistingStatuses)
-    {
-        if (!checkExistingStatuses)
-        {
-            return SettingsManager.get().getRepositorySettings(container).isEnableRequests();
-        }
-        else
-        {
-            if (!SettingsManager.get().getRepositorySettings(container).isEnableRequests())
-                return false;
-            List<SpecimenRequestStatus> statuses = _requestStatusHelper.get(container, "SortOrder");
-            return (statuses != null && statuses.size() > 1);
-        }
-    }
-
     public List<String> getMissingSpecimens(SpecimenRequest specimenRequest)
     {
         Container container = specimenRequest.getContainer();

@@ -40,6 +40,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.api.view.FolderTab;
 import org.springframework.validation.BindException;
 
 import java.io.File;
@@ -63,8 +64,7 @@ public interface StudyService
     String SPECIMEN_SEARCH_WEBPART = "Specimen Search (Experimental)";
     String SPECIMEN_BROWSE_WEBPART = "Specimen Browse (Experimental)";
 
-    String SPECIMEN_TOOLS_WEBPART_NAME = "Specimen Tools";
-    String DATA_TOOLS_WEBPART_NAME = "Study Data Tools";
+    String STUDY_TOOLS_WEBPART_NAME = "Study Data Tools";
 
     String DATASPACE_FOLDERTYPE_NAME = "Dataspace";
 
@@ -244,6 +244,13 @@ public interface StudyService
     boolean isLocationInUse(Location loc);
 
     void appendLocationInUseClauses(SQLFragment sql, String locationTableAlias, String exists);
+
+    interface StudyTabProvider
+    {
+        void addStudyTabs(Collection<FolderTab> tabs);
+    }
+
+    void registerStudyTabProvider(StudyTabProvider provider);
 
     @Migrate // Temporary
     void clearGroupedValuesForColumn(Container c);

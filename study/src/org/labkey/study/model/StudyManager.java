@@ -545,7 +545,6 @@ public class StudyManager
         return Collections.unmodifiableSet(result);
     }
 
-
     /** @return all studies under the given root in the container hierarchy (inclusive), to which the user has at least read permission */
     @NotNull
     public Set<? extends StudyImpl> getAllStudies(@NotNull Container root, @NotNull User user)
@@ -694,7 +693,6 @@ public class StudyManager
             errors.add(ex.getMessage());
         }
     }
-
 
     /* most users should call the List<String> errors version to avoid uncaught exceptions */
     @Deprecated

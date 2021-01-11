@@ -27,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
@@ -121,6 +122,7 @@ import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.controllers.specimen.SpecimenApiController;
 import org.labkey.study.controllers.specimen.SpecimenController;
+import org.labkey.study.controllers.specimen.SpecimenReportWebPartFactory;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
@@ -170,10 +172,10 @@ import org.labkey.study.reports.StudyCrosstabReport;
 import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.study.reports.StudyRReport;
 import org.labkey.study.reports.StudyReportUIProvider;
+import org.labkey.study.view.StudyToolsWebPartFactory;
 import org.labkey.study.view.DatasetsWebPartView;
 import org.labkey.study.view.StudyListWebPartFactory;
 import org.labkey.study.view.StudySummaryWebPartFactory;
-import org.labkey.study.view.StudyToolsWebPartFactory;
 import org.labkey.study.view.SubjectDetailsWebPartFactory;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate;
@@ -207,7 +209,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public static final BaseWebPartFactory reportsPartFactory = new ReportsWebPartFactory();
     public static final WebPartFactory assayScheduleWebPartFactory = new AssayScheduleWebpartFactory();
-    public static final WebPartFactory dataToolsWebPartFactory = new StudyToolsWebPartFactory.Data();
+    public static final WebPartFactory dataToolsWebPartFactory = new StudyToolsWebPartFactory();
     public static final WebPartFactory datasetsPartFactory = new DatasetsWebPartFactory();
     public static final WebPartFactory immunizationScheduleWebpartFactory = new ImmunizationScheduleWebpartFactory();
     public static final WebPartFactory manageStudyPartFactory = new StudySummaryWebPartFactory();
@@ -219,9 +221,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final WebPartFactory subjectsWebPartFactory = new SubjectsWebPartFactory();
     public static final WebPartFactory vaccineDesignWebPartFactory = new VaccineDesignWebpartFactory();
 
-    public static final WebPartFactory specimenReportWebPartFactory = new SpecimenController.SpecimenReportWebPartFactory();
+    @Migrate
+    public static final WebPartFactory specimenReportWebPartFactory = new SpecimenReportWebPartFactory();
     public static final WebPartFactory specimenSearchWebPartFactory = new SpecimenSearchWebPartFactory(HttpView.BODY);
-    public static final WebPartFactory specimenToolsWebPartFactory = new StudyToolsWebPartFactory.Specimens();
 
     @Override
     public String getName()
@@ -317,8 +319,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             new SharedStudyController.StudyFilterWebPartFactory(),
 
             specimenReportWebPartFactory,
-            specimenSearchWebPartFactory,
-            specimenToolsWebPartFactory
+            specimenSearchWebPartFactory
         );
     }
 

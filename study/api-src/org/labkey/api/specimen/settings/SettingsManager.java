@@ -4,16 +4,23 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.specimen.SpecimenRequestStatus;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.study.QueryHelper;
 import org.labkey.api.study.StudyService;
 
+import java.util.List;
 import java.util.Map;
 
 public class SettingsManager
 {
     private static final SettingsManager INSTANCE = new SettingsManager();
 
+    private final QueryHelper<SpecimenRequestStatus> _requestStatusHelper;
+
     private SettingsManager()
     {
+        _requestStatusHelper = new QueryHelper<>(()->SpecimenSchema.get().getTableInfoSampleRequestStatus(), SpecimenRequestStatus.class);
     }
 
     public static SettingsManager get()
@@ -100,5 +107,25 @@ public class SettingsManager
         settings.populateMap(settingsMap);
         settingsMap.save();
         StudyService.get().clearGroupedValuesForColumn(container);     // May have changed groupings
+    }
+
+    public boolean isSpecimenRequestEnabled(Container container)
+    {
+        return isSpecimenRequestEnabled(container, true);
+    }
+
+    public boolean isSpecimenRequestEnabled(Container container, boolean checkExistingStatuses)
+    {
+        if (!checkExistingStatuses)
+        {
+            return getRepositorySettings(container).isEnableRequests();
+        }
+        else
+        {
+            if (!getRepositorySettings(container).isEnableRequests())
+                return false;
+            List<SpecimenRequestStatus> statuses = _requestStatusHelper.get(container, "SortOrder");
+            return (statuses != null && statuses.size() > 1);
+        }
     }
 }

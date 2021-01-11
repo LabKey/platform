@@ -126,6 +126,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * User: jgarms
@@ -1245,6 +1246,19 @@ public class StudyServiceImpl implements StudyService
             .append(".RowId = a.LocationId AND ")
             .append(locationTableAlias)
             .append(".Container = a.Container)");
+    }
+
+    private static final List<StudyTabProvider> TAB_PROVIDERS = new CopyOnWriteArrayList<>();
+
+    @Override
+    public void registerStudyTabProvider(StudyTabProvider provider)
+    {
+        TAB_PROVIDERS.add(provider);
+    }
+
+    public static List<StudyTabProvider> getStudyTabProviders()
+    {
+        return TAB_PROVIDERS;
     }
 
     @Override

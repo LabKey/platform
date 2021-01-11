@@ -35,7 +35,13 @@ public interface SpecimenUrls extends UrlProvider
 
     ActionURL getManageRequestStatusURL(Container c, int requestId);
 
+    ActionURL getShowCreateSpecimenRequestURL(Container c);
+
     ActionURL getRequestDetailsURL(Container c, int requestId);
 
     ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, ActionURL returnUrl);
+
+    ActionURL getShowSearchURL(Container c);
+
+    ActionURL getAutoReportListURL(Container c);
 }

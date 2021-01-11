@@ -670,7 +670,7 @@ public class SpecimenUtils
 
     public void ensureSpecimenRequestsConfigured(boolean checkExistingStatuses)
     {
-        if (!SpecimenManager.getInstance().isSpecimenRequestEnabled(getContainer(), checkExistingStatuses))
+        if (!SettingsManager.get().isSpecimenRequestEnabled(getContainer(), checkExistingStatuses))
             throw new RedirectException(new ActionURL(SpecimenController.SpecimenRequestConfigRequired.class, getContainer()));
     }
 

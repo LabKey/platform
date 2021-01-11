@@ -60,42 +60,6 @@ public class StudyFolderTabs
         }
     }
 
-    public static class SpecimensPage extends FolderTab.PortalPage
-    {
-        public static final String PAGE_ID = "study.SPECIMENS";
-
-        public SpecimensPage(String caption)
-        {
-            super(PAGE_ID, caption);
-        }
-
-        @Override
-        public boolean isSelectedPage(ViewContext viewContext)
-        {
-            return super.isSelectedPage(viewContext) ||
-                   "study-samples".equals(viewContext.getActionURL().getController());
-        }
-
-        @Override
-        public boolean isVisible(Container c, User user)
-        {
-            Study study = StudyService.get().getStudy(c);
-            return (study != null);
-        }
-
-        @Override
-        public List<Portal.WebPart> createWebParts()
-        {
-            List<Portal.WebPart> parts = new ArrayList<>();
-            parts.add(Portal.getPortalPart(StudyService.SPECIMEN_SEARCH_WEBPART).createWebPart());
-            parts.add(Portal.getPortalPart(StudyService.SPECIMEN_BROWSE_WEBPART).createWebPart());
-            Portal.WebPart toolsWebPart = Portal.getPortalPart(StudyService.SPECIMEN_TOOLS_WEBPART_NAME).createWebPart();
-            toolsWebPart.setLocation(WebPartFactory.LOCATION_RIGHT);
-            parts.add(toolsWebPart);
-            return parts;
-        }
-    }
-
     public static class DataAnalysisPage extends FolderTab.PortalPage
     {
         public static final String PAGE_ID = "study.DATA_ANALYSIS";
@@ -122,7 +86,7 @@ public class StudyFolderTabs
         {
             List<Portal.WebPart> parts = new ArrayList<>();
             parts.add(Portal.getPortalPart("Data Views").createWebPart());
-            Portal.WebPart toolsWebPart = Portal.getPortalPart(StudyService.DATA_TOOLS_WEBPART_NAME).createWebPart();
+            Portal.WebPart toolsWebPart = Portal.getPortalPart(StudyService.STUDY_TOOLS_WEBPART_NAME).createWebPart();
             toolsWebPart.setLocation(WebPartFactory.LOCATION_RIGHT);
             parts.add(toolsWebPart);
             return parts;
