@@ -165,12 +165,14 @@
                     });
                 }
                 else {
-                    LABKEY.requiresScript(['Ext4', 'SignSnapshotPanel.js'], function() {
-                        Ext4.onReady(function() {
-                            Ext4.create('LABKEY.Query.SignSnapshotPanel', {
-                                emailInput: '<%=h(model.getEmail())%>',
-                                params: exportParams,
-                                url: exportUrl
+                    LABKEY.requiresExt4Sandbox(function() {
+                        LABKEY.requiresScript('SignSnapshotPanel.js', function() {
+                            Ext4.onReady(function() {
+                                Ext4.create('LABKEY.Query.SignSnapshotPanel', {
+                                    emailInput: '<%=h(model.getEmail())%>',
+                                    params: exportParams,
+                                    url: exportUrl
+                                });
                             });
                         });
                     });
