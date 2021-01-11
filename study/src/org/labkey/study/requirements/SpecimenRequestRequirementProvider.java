@@ -17,9 +17,12 @@
 package org.labkey.study.requirements;
 
 import org.labkey.api.data.TableInfo;
-import org.labkey.study.StudySchema;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
+import org.labkey.api.specimen.requirements.DefaultRequirementProvider;
+import org.labkey.api.specimen.requirements.RequirementOwner;
+import org.labkey.api.specimen.requirements.RequirementType;
 import org.labkey.study.model.SpecimenRequest;
-import org.labkey.study.model.SpecimenRequestActor;
 import org.labkey.study.model.SpecimenRequestRequirement;
 
 import java.util.List;
@@ -62,13 +65,13 @@ public class SpecimenRequestRequirementProvider extends DefaultRequirementProvid
     @Override
     protected TableInfo getActorTableInfo()
     {
-        return StudySchema.getInstance().getTableInfoSampleRequestActor();
+        return SpecimenSchema.get().getTableInfoSampleRequestActor();
     }
 
     @Override
     protected TableInfo getRequirementTableInfo()
     {
-        return StudySchema.getInstance().getTableInfoSampleRequestRequirement();
+        return SpecimenSchema.get().getTableInfoSampleRequestRequirement();
     }
 
     protected SpecimenRequestRequirement createMutable(SpecimenRequestRequirement requirement)

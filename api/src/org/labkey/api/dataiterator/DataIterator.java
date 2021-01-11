@@ -33,8 +33,14 @@ import java.util.stream.Stream;
  *
  *  Column 0 is the row number, used for error reporting
  */
-public interface DataIterator extends Closeable
+public interface DataIterator extends DataIteratorBuilder, Closeable
 {
+    @Override
+    default DataIterator getDataIterator(DataIteratorContext context)
+    {
+        return this;
+    }
+
     String getDebugName();
 
     /** count of columns, columns are indexed 1-_columnCount */

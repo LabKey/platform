@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
+<%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.ShowGroupMembersAction"%>
+<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.study.controllers.specimen.ShowGroupMembersAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteActorAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorOrderAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorsAction" %>
-<%@ page import="org.labkey.study.model.LocationImpl" %>
-<%@ page import="org.labkey.study.model.SpecimenRequestActor" %>
+<%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -131,7 +131,7 @@
             <td>
                 <%= button("Save").submit(true) %>&nbsp;
                 <%= button("Done").submit(true).onClick("document.manageActors.nextPage.value=''; return true;") %>
-                <%= button("Cancel").href(new ActionURL(ManageStudyAction.class, study.getContainer())) %>&nbsp;
+                <%= button("Cancel").href(urlProvider(StudyUrls.class).getManageStudyURL(study.getContainer())) %>&nbsp;
                 <%= button("Change Order").submit(true).onClick("document.manageActors.nextPage.value=" + q(urlFor(ManageActorOrderAction.class)) + "; return true;") %>
                 <input type="hidden" name="nextPage" value="<%=h(new ActionURL(ManageActorsAction.class, study.getContainer()))%>">
             </td>

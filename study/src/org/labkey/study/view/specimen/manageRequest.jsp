@@ -44,14 +44,15 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequirementAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.RequestHistoryAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SubmitRequestAction" %>
-<%@ page import="org.labkey.study.model.LocationImpl" %>
-<%@ page import="org.labkey.study.model.SpecimenRequestActor" %>
+<%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
+<%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
 <%@ page import="org.labkey.study.model.SpecimenRequestRequirement" %>
-<%@ page import="org.labkey.study.model.SpecimenRequestStatus" %>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.model.Vial" %>
+<%@ page import="org.labkey.api.specimen.Vial" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.specimen.location.LocationManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
@@ -77,7 +78,7 @@
     SpecimenRequestRequirement[] requirements = manager.getRequestRequirements(bean.getSpecimenRequest());
     Location destinationLocation = bean.getDestinationSite();
     User creatingUser = UserManager.getUser(bean.getSpecimenRequest().getCreatedBy());
-    List<LocationImpl> locations = StudyManager.getInstance().getLocations(c);
+    List<LocationImpl> locations = LocationManager.get().getLocations(c);
     boolean notYetSubmitted = false;
     if (manager.isSpecimenShoppingCartEnabled(c))
     {

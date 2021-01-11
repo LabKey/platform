@@ -425,7 +425,7 @@ public class QueryView extends WebPartView<Object>
                 for (QueryDefinition query : getSchema().getTablesAndQueries(true))
                 {
                     String name = query.getName();
-                    NavTree item = new NavTree(name, target.clone().replaceParameter(param(QueryParam.queryName), name).getLocalURIString());
+                    NavTree item = new NavTree(name, target.clone().replaceParameter(param(QueryParam.queryName), name));
                     item.setId(getDataRegionName() + ":" + label + ":" + name);
                     // Intentionally don't set the description so we can avoid having to instantiate all of the TableInfos,
                     // which can be expensive for some schemas
@@ -1020,7 +1020,9 @@ public class QueryView extends WebPartView<Object>
         ActionButton deleteAllRows = new ActionButton("Delete All Rows");
         deleteAllRows.setDisplayPermission(AdminPermission.class);
         deleteAllRows.setActionType(ActionButton.Action.SCRIPT);
-        deleteAllRows.setScript("Ext4.Msg.confirm('Confirm Deletion', 'Are you sure you wish to delete all rows in this " + tableNoun + "? This action cannot be undone and will result in an empty " + tableNoun + ".', function(button){" +
+        deleteAllRows.setScript(
+                "LABKEY.requiresExt4Sandbox(function() {" +
+                    "Ext4.Msg.confirm('Confirm Deletion', 'Are you sure you wish to delete all rows in this " + tableNoun + "? This action cannot be undone and will result in an empty " + tableNoun + ".', function(button){" +
                         "if (button == 'yes'){" +
                             "var waitMask = Ext4.Msg.wait('Deleting Rows...', 'Delete Rows'); " +
                             "Ext4.Ajax.request({ " +
@@ -1053,7 +1055,8 @@ public class QueryView extends WebPartView<Object>
                                 "scope : this " +
                             "});" +
                         "}" +
-                    "});"
+                    "});" +
+                "});"
         );
         return deleteAllRows;
     }
@@ -1492,7 +1495,7 @@ public class QueryView extends WebPartView<Object>
             {
                 if (viewItemFilter.accept(designer.getReportType(), designer.getLabel()))
                 {
-                    NavTree item = new NavTree("Create " + designer.getLabel(), designer.getDesignerURL().getLocalURIString());
+                    NavTree item = new NavTree("Create " + designer.getLabel(), designer.getDesignerURL());
                     item.setId(getBaseMenuId() + ":Reports:Create:" + designer.getLabel());
                     item.setImageSrc(designer.getIconURL());
                     item.setImageCls(designer.getIconCls());
@@ -1534,7 +1537,7 @@ public class QueryView extends WebPartView<Object>
 
             for (ReportService.DesignerInfo designer : reportDesigners)
             {
-                NavTree item = new NavTree("Create " + designer.getLabel(), designer.getDesignerURL().getLocalURIString());
+                NavTree item = new NavTree("Create " + designer.getLabel(), designer.getDesignerURL());
                 item.setId(getBaseMenuId() + ":Charts:Create" + designer.getLabel());
                 item.setImageSrc(designer.getIconURL());
                 item.setImageCls(designer.getIconCls());
@@ -1664,12 +1667,12 @@ public class QueryView extends WebPartView<Object>
             if (ignoreUserFilter())
             {
                 url.deleteParameter(param(QueryParam.ignoreFilter));
-                item = new NavTree(label, url.toString());
+                item = new NavTree(label, url);
             }
             else
             {
                 url.replaceParameter(param(QueryParam.ignoreFilter), "1");
-                item = new NavTree(label, url.toString());
+                item = new NavTree(label, url);
                 item.setSelected(true);
             }
             item.setScript("LABKEY.DataRegions['" + getDataRegionName() + "'].clearSelected({quiet: true});");
@@ -1766,7 +1769,7 @@ public class QueryView extends WebPartView<Object>
             {
                 String label = Objects.toString(view.getLabel(), "default");
 
-                item = new NavTree(label, (String) null);
+                item = new NavTree(label, (ActionURL) null);
                 item.setScript(getChangeViewScript(""));
                 item.setId(getBaseMenuId() + ":GridViews:default");
                 if ("".equals(currentView))
@@ -1776,7 +1779,7 @@ public class QueryView extends WebPartView<Object>
             {
                 String label = view.getLabel();
 
-                item = new NavTree(label, (String) null);
+                item = new NavTree(label, (ActionURL) null);
                 item.setScript(getChangeViewScript(name));
                 item.setId(getBaseMenuId() + ":GridViews:grid-" + PageFlowUtil.filter(name));
                 if (name.equals(currentView))
@@ -1882,7 +1885,7 @@ public class QueryView extends WebPartView<Object>
             for (Report report : reports)
             {
                 String reportId = report.getDescriptor().getReportId().toString();
-                NavTree item = new NavTree(report.getDescriptor().getReportName(), (String) null);
+                NavTree item = new NavTree(report.getDescriptor().getReportName(), (ActionURL) null);
                 item.setId(getBaseMenuId() + ":Reports:" + PageFlowUtil.filter(report.getDescriptor().getReportName()));
                 if (report.getDescriptor().getReportId().equals(getSettings().getReportId()))
                     item.setStrong(true);
@@ -1940,7 +1943,7 @@ public class QueryView extends WebPartView<Object>
             for (Report chart : charts)
             {
                 String chartId = chart.getDescriptor().getReportId().toString();
-                NavTree item = new NavTree(chart.getDescriptor().getReportName(), (String) null);
+                NavTree item = new NavTree(chart.getDescriptor().getReportName(), (ActionURL) null);
                 item.setImageSrc(ReportUtil.getIconUrl(getContainer(), chart));
                 item.setImageCls(ReportUtil.getIconCls(chart));
                 item.setScript(getChangeReportScript(chartId));

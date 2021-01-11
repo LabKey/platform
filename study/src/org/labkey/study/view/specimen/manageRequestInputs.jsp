@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.study.StudyUrls"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.SpecimenManager"%>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction"%>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.HandleUpdateRequestInputsAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.HandleUpdateRequestInputsAction"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestInputsBean" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -199,5 +198,5 @@
     </table>
     <%= button("Add New Input").submit(true).onClick("return addRow();") %>
     <%= button("Save").submit(true) %>
-    <%= button("Cancel").href(new ActionURL(ManageStudyAction.class, bean.getContainer())) %>
+    <%= button("Cancel").href(urlProvider(StudyUrls.class).getManageStudyURL(bean.getContainer())) %>
 </labkey:form>

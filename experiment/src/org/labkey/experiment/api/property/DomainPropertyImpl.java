@@ -727,16 +727,16 @@ public class DomainPropertyImpl implements DomainProperty
 
                 // Drop first, so rename doesn't have to worry about it
                 if (mvDropped)
-                    StorageProvisioner.dropMvIndicator(this, _pdOld);
+                    ((StorageProvisionerImpl)StorageProvisioner.get()).dropMvIndicator(this, _pdOld);
 
                 if (propRenamed)
-                    StorageProvisioner.renameProperty(this.getDomain(), this, _pdOld, mvDropped);
+                    StorageProvisionerImpl.get().renameProperty(this.getDomain(), this, _pdOld, mvDropped);
 
                 if (propResized)
-                    StorageProvisioner.resizeProperty(this.getDomain(), this, _pdOld.getScale());
+                    StorageProvisionerImpl.get().resizeProperty(this.getDomain(), this, _pdOld.getScale());
 
                 if (mvAdded)
-                    StorageProvisioner.addMvIndicator(this);
+                    StorageProvisionerImpl.get().addMvIndicator(this);
             }
         }
         else

@@ -21,8 +21,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.util.Path;
-import org.labkey.study.StudySchema;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,13 +30,14 @@ import java.util.List;
 
 public class SpecimenWrapTable extends BaseStudyTable
 {
-    private Path _notificationKey;
-    protected List<DomainProperty> _optionalSpecimenProperties = new ArrayList<>();
-    protected List<DomainProperty> _optionalVialProperties = new ArrayList<>();
+    private final Path _notificationKey;
+
+    protected final List<DomainProperty> _optionalSpecimenProperties = new ArrayList<>();
+    protected final List<DomainProperty> _optionalVialProperties = new ArrayList<>();
 
     public SpecimenWrapTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail(schema.getContainer()), cf, true, true);
+        super(schema, SpecimenSchema.get().getTableInfoSpecimenDetail(schema.getContainer()), cf, true, true);
 
         addWrapTypeColumn("PrimaryTypeId", "PrimaryTypeId");
         addWrapTypeColumn("DerivativeTypeId", "DerivativeTypeId");
@@ -52,8 +53,6 @@ public class SpecimenWrapTable extends BaseStudyTable
                 addWrapColumn(columnInfo);
 
         // Add optional fields
-        _optionalSpecimenProperties = new ArrayList<>();
-        _optionalVialProperties = new ArrayList<>();
         SpecimenDetailTable.getOptionalSpecimenAndVialProperties(schema.getContainer(), _optionalSpecimenProperties, _optionalVialProperties);
         addOptionalColumns(_optionalVialProperties, false, null);
         addOptionalColumns(_optionalSpecimenProperties, false, null);

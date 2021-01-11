@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService.NamedParameterNotProvided;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.RConnectionHolder;
 import org.labkey.api.reports.Report;
@@ -96,8 +97,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         final VBox view = new VBox();
 
         // todo: pass inputParameters down from upper layers like we do for
-        // executeScript API below.  Currently they are still taken off the
-        // URL under the covers
+        // executeScript API below. Currently they are still taken off the URL under the covers
         renderReport(context, null, new Renderer<HttpView>()
         {
             @Override
@@ -224,7 +224,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             {
                 runScript(context, outputSubst, createInputDataFile(context), inputParameters);
             }
-            catch (ScriptException | NamedParameterNotProvided e)
+            catch (ScriptException | NamedParameterNotProvided | ValidationException e)
             {
                 boolean continueOn = renderer.handleRuntimeException(e);
 

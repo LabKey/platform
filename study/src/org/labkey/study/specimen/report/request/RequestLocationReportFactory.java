@@ -16,6 +16,8 @@
 package org.labkey.study.specimen.report.request;
 
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.study.Location;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
@@ -23,8 +25,6 @@ import org.labkey.api.util.element.Option;
 import org.labkey.api.util.element.Select;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.LocationImpl;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
 
@@ -61,7 +61,7 @@ public class RequestLocationReportFactory extends BaseRequestReportFactory
     @Override
     public String getLabel()
     {
-        Location location = _locationId != null ? StudyManager.getInstance().getLocation(getContainer(), _locationId) : null;
+        Location location = _locationId != null ? LocationManager.get().getLocation(getContainer(), _locationId) : null;
         return "Requested by Requesting Location" + (location != null ? ": " + location.getLabel() : "");
     }
 
@@ -76,7 +76,7 @@ public class RequestLocationReportFactory extends BaseRequestReportFactory
     {
         LocationImpl[] locations;
         if (getLocationId() != null)
-            locations = new LocationImpl[] { StudyManager.getInstance().getLocation(getContainer(), getLocationId()) };
+            locations = new LocationImpl[] { LocationManager.get().getLocation(getContainer(), getLocationId()) };
         else
             locations = SpecimenManager.getInstance().getSitesWithRequests(getContainer());
         if (locations == null)

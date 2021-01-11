@@ -28,6 +28,8 @@ public interface SamplesUrls extends UrlProvider
 {
     ActionURL getSamplesURL(Container c);
 
+    ActionURL getSamplesURL(Container c, boolean showVials);
+
     ActionURL getManageRequestStatusURL(Container c, int requestId);
 
     ActionURL getRequestDetailsURL(Container c, int requestId);

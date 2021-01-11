@@ -18,11 +18,14 @@ package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
+import org.labkey.api.specimen.requirements.DefaultRequirement;
 import org.labkey.api.study.StudyCachable;
 import org.labkey.api.util.MemTracker;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.StudySchema;
-import org.labkey.study.requirements.DefaultRequirement;
 
 /**
  * User: brittp
@@ -96,7 +99,7 @@ public class SpecimenRequestRequirement extends DefaultRequirement<SpecimenReque
     {
         if (_siteId == null)
             return null;
-        return StudyManager.getInstance().getLocation(_container, _siteId);
+        return LocationManager.get().getLocation(_container, _siteId);
     }
 
     public Integer getActorId()
@@ -255,6 +258,6 @@ public class SpecimenRequestRequirement extends DefaultRequirement<SpecimenReque
     @Override
     protected TableInfo getTableInfo()
     {
-        return StudySchema.getInstance().getTableInfoSampleRequestRequirement();
+        return SpecimenSchema.get().getTableInfoSampleRequestRequirement();
     }
 }

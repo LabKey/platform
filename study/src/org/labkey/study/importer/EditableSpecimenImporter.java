@@ -26,6 +26,15 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.importer.EventVialRollup;
+import org.labkey.api.specimen.importer.IteratorSpecimenImportFile;
+import org.labkey.api.specimen.importer.RollupHelper.RollupMap;
+import org.labkey.api.specimen.importer.RollupInstance;
+import org.labkey.api.specimen.importer.SpecimenColumn;
+import org.labkey.api.specimen.importer.SpecimenImportFile;
+import org.labkey.api.specimen.importer.SpecimenTableType;
+import org.labkey.api.specimen.importer.StandardSpecimenImportStrategy;
 import org.labkey.api.study.SpecimenImportStrategy;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
@@ -219,8 +228,8 @@ public class EditableSpecimenImporter extends SpecimenImporter
     private int markEventsObsolete(List<Map<String, Object>> rows)
     {
         Container container = getContainer();
-        TableInfo tableInfoSpecimenEvent = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
-        TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
+        TableInfo tableInfoSpecimenEvent = SpecimenSchema.get().getTableInfoSpecimenEvent(container);
+        TableInfo tableInfoVial = SpecimenSchema.get().getTableInfoVial(container);
 
         SQLFragment sqlPrefix = new SQLFragment();
         sqlPrefix.append("UPDATE ").append(tableInfoSpecimenEvent.getSelectName())

@@ -12,9 +12,9 @@
     "clean": "rimraf resources/web/list/gen && rimraf resources/views/gen && rimraf resources/views/*.*"
   },
   "dependencies": {
-    "@labkey/components": "1.11.2"
+    "@labkey/components": "1.12.2"
   },
   "devDependencies": {
-    "@labkey/build": "0.5.1"
+    "@labkey/build": "1.0.0"
   }
 }

@@ -91,7 +91,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     private static final Logger LOG = LogManager.getLogger(SimpleTranslator.class);
 
     private DataIterator _data;
-    private Object[] _row = null;
+    protected Object[] _row = null;
     private Container _mvContainer;
     private Map<String,String> _missingValues = Collections.emptyMap();
     private Map<String,Integer> _inputNameMap = null;

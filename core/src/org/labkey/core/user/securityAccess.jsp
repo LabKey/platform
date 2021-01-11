@@ -60,7 +60,7 @@
 
     DataRegion accessRegion = new DataRegion();
     accessRegion.setName("access");
-    URLHelper returnURL = getActionURL().clone().deleteParameter("returnUrl");
+    URLHelper returnURL = getActionURL().clone().deleteParameter(ActionURL.Param.returnUrl);
 
     int cellPadding = 3;
 %>

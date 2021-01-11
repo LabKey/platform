@@ -1373,7 +1373,7 @@ public class WikiController extends SpringActionController
         public final String createdBy;
         public final Date created;
         public final String versionLink;            //base url for different versions of this page
-        public final String compareLink;            //base url for comparing to another version
+        public final ActionURL compareLink;         //base url for comparing to another version
 
         private VersionBean(Wiki wiki, WikiVersion wikiVersion, BaseWikiPermissions perms)
         {
@@ -1391,7 +1391,7 @@ public class WikiController extends SpringActionController
             createdBy = UserManager.getDisplayName(wikiVersion.getCreatedBy(), getUser());
             created = wikiVersion.getCreated();
             versionLink = getVersionURL(wiki.getName()).toString();
-            compareLink = getCompareVersionsURL(wiki.getName()).toString();
+            compareLink = getCompareVersionsURL(wiki.getName());
         }
     }
 

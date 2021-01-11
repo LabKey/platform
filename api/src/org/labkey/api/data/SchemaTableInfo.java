@@ -25,7 +25,7 @@ import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.dataiterator.TableInsertDataIterator;
+import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -960,7 +960,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
-        return TableInsertDataIterator.create(data, this, null, context);
+        return new TableInsertDataIteratorBuilder(data, this, null);
     }
 
     @Override

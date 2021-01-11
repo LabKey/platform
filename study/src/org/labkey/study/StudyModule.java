@@ -21,6 +21,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,6 +38,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExperimentService;
@@ -67,6 +69,19 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
+import org.labkey.api.specimen.importer.DefaultSpecimenImportStrategyFactory;
+import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
+import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
+import org.labkey.api.specimen.model.LocationDomainKind;
+import org.labkey.api.specimen.model.PrimaryTypeDomainKind;
+import org.labkey.api.specimen.model.SpecimenDomainKind;
+import org.labkey.api.specimen.model.SpecimenEventDomainKind;
+import org.labkey.api.specimen.model.SpecimenRequestEventType;
+import org.labkey.api.specimen.model.VialDomainKind;
+import org.labkey.api.specimen.security.roles.SpecimenCoordinatorRole;
+import org.labkey.api.specimen.security.roles.SpecimenRequesterRole;
+import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
@@ -78,6 +93,7 @@ import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.study.security.StudySecurityEscalationAuditProvider;
+import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SystemMaintenance;
@@ -120,7 +136,6 @@ import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
-import org.labkey.study.importer.DefaultSpecimenImportStrategyFactory;
 import org.labkey.study.importer.MissingValueImporterFactory;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.StudyImportProvider;
@@ -149,14 +164,9 @@ import org.labkey.study.reports.StudyCrosstabReport;
 import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.study.reports.StudyRReport;
 import org.labkey.study.reports.StudyReportUIProvider;
-import org.labkey.study.security.permissions.ManageStudyPermission;
-import org.labkey.study.security.roles.SpecimenCoordinatorRole;
-import org.labkey.study.security.roles.SpecimenRequesterRole;
 import org.labkey.study.specimen.SpecimenCommentAuditProvider;
-import org.labkey.study.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.study.specimen.SpecimenSearchWebPart;
 import org.labkey.study.specimen.SpecimenWebPart;
-import org.labkey.study.specimen.settings.RepositorySettings;
 import org.labkey.study.view.DatasetsWebPartView;
 import org.labkey.study.view.StudyListWebPartFactory;
 import org.labkey.study.view.StudySummaryWebPartFactory;
@@ -781,6 +791,14 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         return ret;
     }
+
+
+    @Override
+    public @Nullable UpgradeCode getUpgradeCode()
+    {
+        return new StudyManager.StudyUpgradeCode();
+    }
+
 
     public static class TestCase extends Assert
     {

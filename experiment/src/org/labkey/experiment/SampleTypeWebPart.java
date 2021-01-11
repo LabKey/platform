@@ -90,7 +90,7 @@ public class SampleTypeWebPart extends QueryView
         super.populateButtonBar(view, bar);
 
         ActionURL deleteURL = new ActionURL(ExperimentController.DeleteSampleTypesAction.class, getContainer());
-        deleteURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+        deleteURL.addReturnURL(getViewContext().getActionURL());
 
         ActionButton deleteButton = new ActionButton(ExperimentController.DeleteSampleTypesAction.class, "Delete", ActionButton.Action.GET);
         deleteButton.setDisplayPermission(DesignSampleTypePermission.class);
@@ -101,7 +101,7 @@ public class SampleTypeWebPart extends QueryView
         bar.add(deleteButton);
 
         ActionURL urlInsert = new ActionURL(ExperimentController.EditSampleTypeAction.class, getContainer());
-        urlInsert.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+        urlInsert.addReturnURL(getViewContext().getActionURL());
         ActionButton createNewButton = new ActionButton(urlInsert, "New Sample Type", ActionButton.Action.LINK);
         createNewButton.setDisplayPermission(DesignSampleTypePermission.class);
         createNewButton.setURL(urlInsert);

@@ -58,7 +58,7 @@ import org.labkey.study.model.TreatmentManager;
 import org.labkey.study.model.TreatmentProductImpl;
 import org.labkey.study.model.TreatmentVisitMapImpl;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.security.permissions.ManageStudyPermission;
+import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;

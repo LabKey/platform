@@ -20,34 +20,36 @@
          */
         var showMeasureFromDataRegion = function(dataRegionName, columnName, colFieldKey, analyticsProviderName)
         {
-            var region = LABKEY.DataRegions[dataRegionName];
-            if (region)
-            {
-                var plotDivId = _appendPlotDiv(region);
-
-                _queryColumnData(region, colFieldKey, function(data)
+            LABKEY.requiresVisualization(function() {
+                var region = LABKEY.DataRegions[dataRegionName];
+                if (region)
                 {
-                    var regionViewName = region.viewName || "",
-                        regionColumnNames = $.map(region.columns, function(c) { return c.name; }),
-                        dataColumnNames = $.map(data.columnModel, function(col) { return col.dataIndex; }),
-                        colIndex = regionColumnNames.indexOf(columnName);
+                    var plotDivId = _appendPlotDiv(region);
 
-                    if (dataColumnNames.indexOf(columnName) === -1)
+                    _queryColumnData(region, colFieldKey, function(data)
                     {
-                        console.warn('Could not find column "' + columnName + '" in "' + region.schemaName + '.' + region.queryName + '".');
-                        return;
-                    }
+                        var regionViewName = region.viewName || "",
+                            regionColumnNames = $.map(region.columns, function(c) { return c.name; }),
+                            dataColumnNames = $.map(data.columnModel, function(col) { return col.dataIndex; }),
+                            colIndex = regionColumnNames.indexOf(columnName);
 
-                    var plot = getColumnBoxPlot(plotDivId, data.rows, columnName, region.columns[colIndex], true);
-                    plot.render();
+                        if (dataColumnNames.indexOf(columnName) === -1)
+                        {
+                            console.warn('Could not find column "' + columnName + '" in "' + region.schemaName + '.' + region.queryName + '".');
+                            return;
+                        }
 
-                    _handleAnalyticsProvidersForCustomView(region, plotDivId, regionViewName, colFieldKey, analyticsProviderName);
-                });
-            }
-            else
-            {
-                console.warn('Could not find data region "' + dataRegionName + '" for LABKEY.ColumnVisualizationAnalytics.showMeasureFromDataRegion() call.');
-            }
+                        var plot = getColumnBoxPlot(plotDivId, data.rows, columnName, region.columns[colIndex], true);
+                        plot.render();
+
+                        _handleAnalyticsProvidersForCustomView(region, plotDivId, regionViewName, colFieldKey, analyticsProviderName);
+                    });
+                }
+                else
+                {
+                    console.warn('Could not find data region "' + dataRegionName + '" for LABKEY.ColumnVisualizationAnalytics.showMeasureFromDataRegion() call.');
+                }
+            });
         };
 
         /**
@@ -59,48 +61,50 @@
          */
         var showDimensionFromDataRegion = function(dataRegionName, columnName, colFieldKey, analyticsProviderName)
         {
-            var region = LABKEY.DataRegions[dataRegionName];
-            if (region)
-            {
-                var plotDivId = _appendPlotDiv(region);
-
-                _queryColumnData(region, colFieldKey, function (data)
+            LABKEY.requiresVisualization(function() {
+                var region = LABKEY.DataRegions[dataRegionName];
+                if (region)
                 {
-                    var regionViewName = region.viewName || "",
-                        regionColumnNames = $.map(region.columns, function(c) { return c.name; }),
-                        dataColumnNames = $.map(data.columnModel, function(col) { return col.dataIndex; }),
-                        colIndex = regionColumnNames.indexOf(columnName),
-                        plot;
+                    var plotDivId = _appendPlotDiv(region);
 
-                    if (dataColumnNames.indexOf(columnName) === -1)
+                    _queryColumnData(region, colFieldKey, function (data)
                     {
-                        console.warn('Could not find column "' + columnName + '" in "' + region.schemaName + '.' + region.queryName + '".');
-                        return;
-                    }
+                        var regionViewName = region.viewName || "",
+                            regionColumnNames = $.map(region.columns, function(c) { return c.name; }),
+                            dataColumnNames = $.map(data.columnModel, function(col) { return col.dataIndex; }),
+                            colIndex = regionColumnNames.indexOf(columnName),
+                            plot;
 
-                    if ($('#' + plotDivId).length === 0)
-                        return;
+                        if (dataColumnNames.indexOf(columnName) === -1)
+                        {
+                            console.warn('Could not find column "' + columnName + '" in "' + region.schemaName + '.' + region.queryName + '".');
+                            return;
+                        }
 
-                    if (analyticsProviderName === 'VIS_BAR')
-                    {
-                        plot = getColumnBarPlot(plotDivId, data.rows, columnName, region.columns[colIndex], true);
-                        plot.render();
-                    }
-                    else if (analyticsProviderName === 'VIS_PIE')
-                    {
-                        plot = getColumnPieChart(plotDivId, data.rows, columnName, region.columns[colIndex], true);
-                    }
+                        if ($('#' + plotDivId).length === 0)
+                            return;
 
-                    if (plot)
-                    {
-                        _handleAnalyticsProvidersForCustomView(region, plotDivId, regionViewName, colFieldKey, analyticsProviderName);
-                    }
-                });
-            }
-            else
-            {
-                console.warn('Could not find data region "' + dataRegionName + '" for LABKEY.ColumnVisualizationAnalytics.showDimensionFromDataRegion() call.');
-            }
+                        if (analyticsProviderName === 'VIS_BAR')
+                        {
+                            plot = getColumnBarPlot(plotDivId, data.rows, columnName, region.columns[colIndex], true);
+                            plot.render();
+                        }
+                        else if (analyticsProviderName === 'VIS_PIE')
+                        {
+                            plot = getColumnPieChart(plotDivId, data.rows, columnName, region.columns[colIndex], true);
+                        }
+
+                        if (plot)
+                        {
+                            _handleAnalyticsProvidersForCustomView(region, plotDivId, regionViewName, colFieldKey, analyticsProviderName);
+                        }
+                    });
+                }
+                else
+                {
+                    console.warn('Could not find data region "' + dataRegionName + '" for LABKEY.ColumnVisualizationAnalytics.showDimensionFromDataRegion() call.');
+                }
+            });
         };
 
         var getColumnBoxPlot = function(renderTo, dataArray, columnName, fieldMetadata, showMainLabel)
