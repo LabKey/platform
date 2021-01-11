@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteDefaultRequirementAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageDefaultReqsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageReqsBean" %>
-<%@ page import="org.labkey.study.model.SpecimenRequestActor" %>
+<%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
 <%@ page import="org.labkey.study.model.SpecimenRequestRequirement" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -230,4 +230,4 @@ function verifyNewRequirement(prefix)
         </labkey:panel>
     <input type="hidden" name="nextPage" value="<%=h(urlFor(ManageDefaultReqsAction.class))%>">
 </labkey:form>
-<%= link("manage study", ManageStudyAction.class) %>
+<%= link("manage study", urlProvider(StudyUrls.class).getManageStudyClass()) %>

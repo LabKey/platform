@@ -20,13 +20,13 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
-import org.labkey.study.StudySchema;
+import org.labkey.api.specimen.SpecimenSchema;
 
 public class PrimaryTypeTable extends BaseStudyTable
 {
     public PrimaryTypeTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenPrimaryType(schema.getContainer()), cf, true);
+        super(schema, SpecimenSchema.get().getTableInfoSpecimenPrimaryType(schema.getContainer()), cf, true);
         setName("SpecimenPrimaryType");
         setPublicSchemaName("study");
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);

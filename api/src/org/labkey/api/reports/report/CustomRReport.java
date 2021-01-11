@@ -42,7 +42,7 @@ public abstract class CustomRReport extends RReport
         return _forwardParams;
     }
 
-    protected abstract QueryView getQueryView(ViewContext context) throws Exception;
+    protected abstract QueryView getQueryView(ViewContext context);
     protected abstract boolean hasRequiredParams(ViewContext context);
 
     @Override
@@ -58,7 +58,7 @@ public abstract class CustomRReport extends RReport
     }
 
     @Override
-    protected QueryView createQueryView(ViewContext context, ReportDescriptor descriptor) throws Exception
+    protected QueryView createQueryView(ViewContext context, ReportDescriptor descriptor)
     {
         QueryView view = getQueryView(context);
 

@@ -37,7 +37,7 @@ import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.LocationImpl;
+import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;

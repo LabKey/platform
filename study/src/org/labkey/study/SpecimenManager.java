@@ -63,6 +63,11 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.report.RequestSummaryByVisitType;
+import org.labkey.api.specimen.report.SummaryByVisitParticipant;
+import org.labkey.api.specimen.report.SummaryByVisitType;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyCachable;
@@ -78,42 +83,43 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.importer.RequestabilityManager;
-import org.labkey.study.importer.RequestabilityManager.InvalidRuleException;
+import org.labkey.api.specimen.importer.RequestabilityManager;
+import org.labkey.api.specimen.importer.RequestabilityManager.InvalidRuleException;
+import org.labkey.api.specimen.importer.RollupInstance;
+import org.labkey.api.specimen.importer.RollupHelper.RollupMap;
 import org.labkey.study.importer.SpecimenImporter;
-import org.labkey.study.importer.SpecimenImporter.VialSpecimenRollup;
-import org.labkey.study.model.AdditiveType;
+import org.labkey.api.specimen.importer.VialSpecimenRollup;
+import org.labkey.api.specimen.model.AdditiveType;
 import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.DerivativeType;
+import org.labkey.api.specimen.model.DerivativeType;
 import org.labkey.study.model.ExtendedSpecimenRequestView;
-import org.labkey.study.model.LocationImpl;
-import org.labkey.study.model.PrimaryType;
-import org.labkey.study.model.SpecimenComment;
-import org.labkey.study.model.SpecimenEvent;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.model.PrimaryType;
+import org.labkey.api.specimen.model.SpecimenComment;
+import org.labkey.api.specimen.SpecimenEvent;
 import org.labkey.study.model.SpecimenRequest;
-import org.labkey.study.model.SpecimenRequestActor;
-import org.labkey.study.model.SpecimenRequestEvent;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
+import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.study.model.SpecimenRequestRequirement;
-import org.labkey.study.model.SpecimenRequestStatus;
-import org.labkey.study.model.SpecimenTypeSummary;
-import org.labkey.study.model.SpecimenTypeSummaryRow;
+import org.labkey.api.specimen.SpecimenRequestStatus;
+import org.labkey.api.specimen.model.SpecimenTypeSummary;
+import org.labkey.api.specimen.model.SpecimenTypeSummaryRow;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Vial;
+import org.labkey.api.specimen.Vial;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.query.SpecimenTablesProvider;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.requirements.RequirementProvider;
+import org.labkey.api.specimen.requirements.RequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementProvider;
-import org.labkey.study.security.permissions.ManageRequestsPermission;
-import org.labkey.study.security.permissions.RequestSpecimensPermission;
-import org.labkey.study.specimen.LocationCache;
+import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
+import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
+import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.study.specimen.SpecimenCommentAuditProvider;
-import org.labkey.study.specimen.report.SpecimenCountSummary;
-import org.labkey.study.specimen.settings.DisplaySettings;
-import org.labkey.study.specimen.settings.RepositorySettings;
-import org.labkey.study.specimen.settings.RequestNotificationSettings;
-import org.labkey.study.specimen.settings.StatusSettings;
+import org.labkey.api.specimen.settings.DisplaySettings;
+import org.labkey.api.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.RequestNotificationSettings;
+import org.labkey.api.specimen.settings.StatusSettings;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
@@ -140,9 +146,6 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     private final static SpecimenManager _instance = new SpecimenManager();
 
     private final QueryHelper<SpecimenRequestEvent> _requestEventHelper;
-//    private final QueryHelper<AdditiveType> _additiveHelper;
-//    private final QueryHelper<DerivativeType> _derivativeHelper;
-//    private final QueryHelper<PrimaryType> _primaryTypeHelper;
     private final QueryHelper<SpecimenRequest> _requestHelper;
     private final QueryHelper<SpecimenRequestStatus> _requestStatusHelper;
     private final RequirementProvider<SpecimenRequestRequirement, SpecimenRequestActor> _requirementProvider =
@@ -151,31 +154,9 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     private SpecimenManager()
     {
-/*        _primaryTypeHelper = new QueryHelper<>(new TableInfoGetter()
-        {
-            public TableInfo getTableInfo()
-            {
-                return StudySchema.getInstance().getTableInfoPrimaryType();
-            }
-        }, PrimaryType.class);
-        _derivativeHelper = new QueryHelper<>(new TableInfoGetter()
-        {
-            public TableInfo getTableInfo()
-            {
-                return StudySchema.getInstance().getTableInfoDerivativeType();
-            }
-        }, DerivativeType.class);
-        _additiveHelper = new QueryHelper<>(new TableInfoGetter()
-        {
-            public TableInfo getTableInfo()
-            {
-                return StudySchema.getInstance().getTableInfoAdditiveType();
-            }
-        }, AdditiveType.class);
-*/
-        _requestEventHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoSampleRequestEvent(), SpecimenRequestEvent.class);
-        _requestHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoSampleRequest(), SpecimenRequest.class);
-        _requestStatusHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoSampleRequestStatus(), SpecimenRequestStatus.class);
+        _requestEventHelper = new QueryHelper<>(() -> SpecimenSchema.get().getTableInfoSampleRequestEvent(), SpecimenRequestEvent.class);
+        _requestHelper = new QueryHelper<>(() -> SpecimenSchema.get().getTableInfoSampleRequest(), SpecimenRequest.class);
+        _requestStatusHelper = new QueryHelper<>(() -> SpecimenSchema.get().getTableInfoSampleRequestStatus(), SpecimenRequestStatus.class);
 
         initGroupedValueAllowedColumnMap();
 
@@ -310,7 +291,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     private List<SpecimenEvent> getSpecimenEvents(final Container container, Filter filter)
     {
         final List<SpecimenEvent> specimenEvents = new ArrayList<>();
-        TableInfo tableInfo = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
+        TableInfo tableInfo = SpecimenSchema.get().getTableInfoSpecimenEvent(container);
 
         new TableSelector(tableInfo, filter, null).forEachMap(map -> specimenEvents.add(new SpecimenEvent(container, map)));
 
@@ -400,33 +381,6 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return eventList;
     }
 
-    public Map<Vial, List<SpecimenEvent>> getDateOrderedEventLists(List<Vial> vials, boolean includeObsolete)
-    {
-        List<SpecimenEvent> allEvents = getSpecimenEvents(vials, includeObsolete);
-        Map<Long, List<SpecimenEvent>> vialIdToEvents = new HashMap<>();
-
-        for (SpecimenEvent event : allEvents)
-        {
-            List<SpecimenEvent> vialEvents = vialIdToEvents.computeIfAbsent(event.getVialId(), k -> new ArrayList<>());
-            vialEvents.add(event);
-        }
-
-        Map<Vial, List<SpecimenEvent>> results = new HashMap<>();
-
-        for (Vial vial : vials)
-        {
-            List<SpecimenEvent> events = vialIdToEvents.get(vial.getRowId());
-            if (events != null && events.size() > 0)
-                events.sort(getSpecimenEventDateComparator());
-            else
-                events = Collections.emptyList();
-            results.put(vial, events);
-        }
-
-        return results;
-    }
-
-
     public Comparator<SpecimenEvent> getSpecimenEventDateComparator()
     {
         return _specimenEventDateComparator;
@@ -437,7 +391,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     {
         Integer locationId = getCurrentLocationId(vial);
         if (locationId != null)
-            return StudyManager.getInstance().getLocation(vial.getContainer(), locationId);
+            return LocationManager.get().getLocation(vial.getContainer(), locationId);
         return null;
     }
 
@@ -507,7 +461,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     {
         if (vial.getOriginatingLocationId() != null)
         {
-            LocationImpl location = StudyManager.getInstance().getLocation(vial.getContainer(), vial.getOriginatingLocationId());
+            LocationImpl location = LocationManager.get().getLocation(vial.getContainer(), vial.getOriginatingLocationId());
             if (location != null)
                 return location;
         }
@@ -515,14 +469,14 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         List<SpecimenEvent> events = getDateOrderedEventList(vial);
         Integer firstLabId = getProcessingLocationId(events);
         if (firstLabId != null)
-            return StudyManager.getInstance().getLocation(vial.getContainer(), firstLabId);
+            return LocationManager.get().getLocation(vial.getContainer(), firstLabId);
         else
             return null;
     }
 
     public long getMaxExternalId(Container container)
     {
-        TableInfo tableInfo = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
+        TableInfo tableInfo = SpecimenSchema.get().getTableInfoSpecimenEvent(container);
         SQLFragment sql = new SQLFragment("SELECT MAX(ExternalId) FROM ");
         sql.append(tableInfo.getSelectName());
         return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Long.class).get(0);
@@ -558,7 +512,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
             // update specimen states
             List<Vial> vials = request.getVials();
-            if (vials != null && vials.size() > 0)
+            if (vials.size() > 0)
             {
                 SpecimenRequestStatus status = getRequestStatus(request.getContainer(), request.getStatusId());
                 updateSpecimenStatus(vials, user, status.isSpecimensLocked());
@@ -575,7 +529,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         for (Vial vial : vials)
         {
             vial.setLockedInRequest(lockedInRequest);
-            Table.update(user, StudySchema.getInstance().getTableInfoVial(vial.getContainer()), vial.getRowMap(), vial.getRowId());
+            Table.update(user, SpecimenSchema.get().getTableInfoVial(vial.getContainer()), vial.getRowMap(), vial.getRowId());
         }
         updateRequestabilityAndCounts(vials, user);
         if (vials.size() > 0)
@@ -626,16 +580,16 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     private void updateVialCounts(Container container, User user, List<Vial> vials)
     {
-        TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(container);
-        TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
+        TableInfo tableInfoSpecimen = SpecimenSchema.get().getTableInfoSpecimen(container);
+        TableInfo tableInfoVial = SpecimenSchema.get().getTableInfoVial(container);
 
         String tableInfoSpecimenSelectName = tableInfoSpecimen.getSelectName();
         String tableInfoVialSelectName = tableInfoVial.getSelectName();
-        SpecimenImporter.RollupMap<VialSpecimenRollup> matchedRollups = SpecimenImporter.getVialToSpecimenRollups(container, user);
+        RollupMap<VialSpecimenRollup> matchedRollups = SpecimenImporter.getVialToSpecimenRollups(container, user);
 
         SQLFragment updateSql = new SQLFragment();
         updateSql.append("UPDATE ").append(tableInfoSpecimenSelectName).append(UPDATE_SPECIMEN_SETS);
-        for (List<SpecimenImporter.RollupInstance<VialSpecimenRollup>> rollupList : matchedRollups.values())
+        for (List<RollupInstance<VialSpecimenRollup>> rollupList : matchedRollups.values())
             for (Pair<String, VialSpecimenRollup> rollupItem : rollupList)
             {
                 ColumnInfo column = tableInfoSpecimen.getColumn(rollupItem.first);
@@ -653,13 +607,13 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         updateSql.add(Boolean.TRUE); // LockedInRequest case of ExpectedAvailableCount
         updateSql.add(Boolean.FALSE); // Requestable case of ExpectedAvailableCount
 
-        for (Map.Entry<String, List<SpecimenImporter.RollupInstance<VialSpecimenRollup>>> entry : matchedRollups.entrySet())
+        for (Map.Entry<String, List<RollupInstance<VialSpecimenRollup>>> entry : matchedRollups.entrySet())
         {
             ColumnInfo vialColumn = tableInfoVial.getColumn(entry.getKey());
             if (null == vialColumn)
                 throw new IllegalStateException("Expected Vial table column to exist.");
             String fromName = vialColumn.getSelectName();
-            for (SpecimenImporter.RollupInstance<VialSpecimenRollup> rollupItem : entry.getValue())
+            for (RollupInstance<VialSpecimenRollup> rollupItem : entry.getValue())
             {
                 VialSpecimenRollup rollup = rollupItem.second;
                 ColumnInfo column = tableInfoSpecimen.getColumn(rollupItem.first);
@@ -789,7 +743,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     private List<AdditiveType> getAdditiveTypes(final Container container, @Nullable SimpleFilter filter)
     {
         final List<AdditiveType> additiveTypes = new ArrayList<>();
-        new TableSelector(StudySchema.getInstance().getTableInfoSpecimenAdditive(container), filter, null).
+        new TableSelector(SpecimenSchema.get().getTableInfoSpecimenAdditive(container), filter, null).
             forEachMap(map -> additiveTypes.add(new AdditiveType(container, map)));
         return additiveTypes;
     }
@@ -812,7 +766,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     private List<DerivativeType> getDerivativeTypes(final Container container, @Nullable SimpleFilter filter)
     {
         final List<DerivativeType> derivativeTypes = new ArrayList<>();
-        new TableSelector(StudySchema.getInstance().getTableInfoSpecimenDerivative(container), filter, null).
+        new TableSelector(SpecimenSchema.get().getTableInfoSpecimenDerivative(container), filter, null).
             forEachMap(map -> derivativeTypes.add(new DerivativeType(container, map)));
         return derivativeTypes;
     }
@@ -835,7 +789,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     private List<PrimaryType> getPrimaryTypes(final Container container, @Nullable SimpleFilter filter, @Nullable Sort sort)
     {
         final List<PrimaryType> primaryTypes = new ArrayList<>();
-        new TableSelector(StudySchema.getInstance().getTableInfoSpecimenPrimaryType(container), filter, sort).
+        new TableSelector(SpecimenSchema.get().getTableInfoSpecimenPrimaryType(container), filter, sort).
             forEachMap(map -> primaryTypes.add(new PrimaryType(container, map)));
         return primaryTypes;
     }
@@ -946,7 +900,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         COMMENT_ADDED("Comment/Attachment(s) Added"),
         NOTIFICATION_SENT("Notification Sent");
 
-        private String _displayText;
+        private final String _displayText;
 
         RequestEventType(String displayText)
         {
@@ -1019,13 +973,13 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     public List<Vial> getRequestVials(SpecimenRequest request)
     {
         final Container container = request.getContainer();
-        StudySchema studySchema = StudySchema.getInstance();
-        TableInfo tableInfoSpecimen = studySchema.getTableInfoSpecimen(container);
-        TableInfo tableInfoVial = studySchema.getTableInfoVial(container);
+        SpecimenSchema specimenSchema = SpecimenSchema.get();
+        TableInfo tableInfoSpecimen = specimenSchema.getTableInfoSpecimen(container);
+        TableInfo tableInfoVial = specimenSchema.getTableInfoVial(container);
         SQLFragment sql = new SQLFragment("SELECT Specimens.*, Vial.*, ? As Container FROM ");
         sql.add(container);
-        sql.append(studySchema.getSchema().getTable("SampleRequest").getFromSQL("request"))
-                .append(", ").append(studySchema.getSchema().getTable("SampleRequestSpecimen").getFromSQL("map"))
+        sql.append(specimenSchema.getSchema().getTable("SampleRequest").getFromSQL("request"))
+                .append(", ").append(specimenSchema.getSchema().getTable("SampleRequestSpecimen").getFromSQL("map"))
                 .append(", ").append(tableInfoSpecimen.getFromSQL("Specimens"))
                 .append(", ").append(tableInfoVial.getFromSQL("Vial"))
                 .append("\nWHERE request.RowId = map.SampleRequestId AND Vial.GlobalUniqueId = map.SpecimenGlobalUniqueId\n")
@@ -1127,12 +1081,13 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     public static class SpecimenRequestInput
     {
-        private String _title;
-        private String _helpText;
+        private final String _title;
+        private final String _helpText;
+        private final int _displayOrder;
+
         private boolean _required;
         private boolean _rememberSiteValue;
         private boolean _multiLine;
-        private int _displayOrder;
         private Map<Integer,String> _locationToDefaultValue;
 
         public SpecimenRequestInput(String title, String helpText, int displayOrder, boolean multiLine, boolean required, boolean rememberSiteValue)
@@ -1410,7 +1365,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                 fields.put("Container", request.getContainer().getId());
                 fields.put("SampleRequestId", request.getRowId());
                 fields.put("SpecimenGlobalUniqueId", vial.getGlobalUniqueId());
-                Table.insert(user, StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), fields);
+                Table.insert(user, SpecimenSchema.get().getTableInfoSampleRequestSpecimen(), fields);
                 if (createEvents)
                     createRequestEvent(user, request, RequestEventType.SPECIMEN_ADDED, vial.getSampleDescription(), null);
             }
@@ -1529,7 +1484,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             SimpleFilter filter = SimpleFilter.createContainerFilter(request.getContainer());
             filter.addCondition(FieldKey.fromParts("SampleRequestId"), request.getRowId());
             filter.addInClause(FieldKey.fromParts("SpecimenGlobalUniqueId"), globalUniqueIds);
-            Table.delete(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), filter);
+            Table.delete(SpecimenSchema.get().getTableInfoSampleRequestSpecimen(), filter);
             if (createEvents)
             {
                 for (String description : descriptions)
@@ -1552,9 +1507,9 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         if (vial == null)
             return Collections.emptyList();
 
-        SQLFragment sql = new SQLFragment("SELECT SampleRequestId FROM " + StudySchema.getInstance().getTableInfoSampleRequestSpecimen() +
-                " Map, " + StudySchema.getInstance().getTableInfoSampleRequest() + " Request, " +
-                StudySchema.getInstance().getTableInfoSampleRequestStatus() + " Status WHERE SpecimenGlobalUniqueId = ? " +
+        SQLFragment sql = new SQLFragment("SELECT SampleRequestId FROM " + SpecimenSchema.get().getTableInfoSampleRequestSpecimen() +
+                " Map, " + SpecimenSchema.get().getTableInfoSampleRequest() + " Request, " +
+                SpecimenSchema.get().getTableInfoSampleRequestStatus() + " Status WHERE SpecimenGlobalUniqueId = ? " +
                 "AND Request.Container = ? AND Map.Container = Request.Container AND Status.Container = Request.Container " +
                 "AND Map.SampleRequestId = Request.RowId AND Request.StatusId = Status.RowId");
         sql.add(vial.getGlobalUniqueId());
@@ -1777,7 +1732,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         SimpleFilter filter = SimpleFilter.createContainerFilter(specimenRequest.getContainer());
         filter.addCondition(FieldKey.fromParts("SampleRequestId"), specimenRequest.getRowId());
         filter.addInClause(FieldKey.fromParts("SpecimenGlobalUniqueId"), missingSpecimens);
-        Table.delete(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), filter);
+        Table.delete(SpecimenSchema.get().getTableInfoSampleRequestSpecimen(), filter);
     }
 
     public boolean isSampleRequestEnabled(Container container)
@@ -1803,7 +1758,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     public List<String> getMissingSpecimens(SpecimenRequest specimenRequest)
     {
         Container container = specimenRequest.getContainer();
-        TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
+        TableInfo tableInfoVial = SpecimenSchema.get().getTableInfoVial(container);
         SQLFragment sql = new SQLFragment("SELECT SpecimenGlobalUniqueId FROM study.SampleRequestSpecimen WHERE SampleRequestId = ? and Container = ? and \n" +
                 "SpecimenGlobalUniqueId NOT IN (SELECT ");
         sql.add(specimenRequest.getRowId());
@@ -1839,7 +1794,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     public Map<String, Integer> getSampleCounts(Container container, Collection<String> specimenHashes)
     {
-        TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(container);
+        TableInfo tableInfoSpecimen = SpecimenSchema.get().getTableInfoSpecimen(container);
 
         SQLFragment extraClause = null;
         if (specimenHashes != null)
@@ -1867,8 +1822,8 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     public int getSampleCountForVisit(VisitImpl visit)
     {
         Container container = visit.getContainer();
-        TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(container);
-        TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
+        TableInfo tableInfoSpecimen = SpecimenSchema.get().getTableInfoSpecimen(container);
+        TableInfo tableInfoVial = SpecimenSchema.get().getTableInfoVial(container);
 
         String tableInfoSpecimenAlias = "Specimen";
         String tableInfoVialAlias = "Vial";
@@ -1892,9 +1847,9 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     public void deleteSamplesForVisit(VisitImpl visit)
     {
         Container container = visit.getContainer();
-        TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(container);
-        TableInfo tableInfoSpecimenEvent = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
-        TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
+        TableInfo tableInfoSpecimen = SpecimenSchema.get().getTableInfoSpecimen(container);
+        TableInfo tableInfoSpecimenEvent = SpecimenSchema.get().getTableInfoSpecimenEvent(container);
+        TableInfo tableInfoVial = SpecimenSchema.get().getTableInfoVial(container);
 
         String tableInfoSpecimenSelectName = tableInfoSpecimen.getSelectName();
         String tableInfoSpecimenEventSelectName = tableInfoSpecimenEvent.getSelectName();
@@ -1985,8 +1940,8 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     public void deleteSpecimen(@NotNull Vial vial, boolean clearCaches)
     {
         Container container = vial.getContainer();
-        TableInfo tableInfoSpecimenEvent = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
-        TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
+        TableInfo tableInfoSpecimenEvent = SpecimenSchema.get().getTableInfoSpecimenEvent(container);
+        TableInfo tableInfoVial = SpecimenSchema.get().getTableInfoVial(container);
         if (null == tableInfoSpecimenEvent || null == tableInfoVial)
             return;
 
@@ -2012,8 +1967,8 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         // UNDONE: use transaction?
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
 
-        Table.delete(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), containerFilter);
-        assert set.add(StudySchema.getInstance().getTableInfoSampleRequestSpecimen());
+        Table.delete(SpecimenSchema.get().getTableInfoSampleRequestSpecimen(), containerFilter);
+        assert set.add(SpecimenSchema.get().getTableInfoSampleRequestSpecimen());
         Table.delete(_requestEventHelper.getTableInfo(), containerFilter);
         assert set.add(_requestEventHelper.getTableInfo());
         Table.delete(_requestHelper.getTableInfo(), containerFilter);
@@ -2031,13 +1986,13 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         Table.delete(StudySchema.getInstance().getTableInfoSpecimenPrimaryType(), containerFilter);
         assert set.add(StudySchema.getInstance().getTableInfoSpecimenPrimaryType());
 */
-        Table.delete(StudySchema.getInstance().getTableInfoSampleAvailabilityRule(), containerFilter);
-        assert set.add(StudySchema.getInstance().getTableInfoSampleAvailabilityRule());
+        Table.delete(SpecimenSchema.get().getTableInfoSampleAvailabilityRule(), containerFilter);
+        assert set.add(SpecimenSchema.get().getTableInfoSampleAvailabilityRule());
 
 
         _requirementProvider.purgeContainer(c);
-        assert set.add(StudySchema.getInstance().getTableInfoSampleRequestRequirement());
-        assert set.add(StudySchema.getInstance().getTableInfoSampleRequestActor());
+        assert set.add(SpecimenSchema.get().getTableInfoSampleRequestRequirement());
+        assert set.add(SpecimenSchema.get().getTableInfoSampleRequestActor());
 
         DbSchema expSchema = ExperimentService.get().getSchema();
         TableInfo tinfoMaterial = expSchema.getTable("Material");
@@ -2125,91 +2080,6 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return new TableSelector(StudySchema.getInstance().getTableInfoVisit(), filter, new Sort("DisplayOrder,SequenceNumMin")).getArrayList(VisitImpl.class);
     }
 
-    public static class SummaryByVisitType extends SpecimenCountSummary
-    {
-        private String _primaryType;
-        private String _derivative;
-        private String _additive;
-        private Long _participantCount;
-        private Set<String> _participantIds;
-
-        public String getPrimaryType()
-        {
-            return _primaryType;
-        }
-
-        public void setPrimaryType(String primaryType)
-        {
-            _primaryType = primaryType;
-        }
-
-        public String getDerivative()
-        {
-            return _derivative;
-        }
-
-        public void setDerivative(String derivative)
-        {
-            _derivative = derivative;
-        }
-
-        public Long getParticipantCount()
-        {
-            return _participantCount;
-        }
-
-        public void setParticipantCount(Long participantCount)
-        {
-            _participantCount = participantCount;
-        }
-
-        public Set<String> getParticipantIds()
-        {
-            return _participantIds;
-        }
-
-        public void setParticipantIds(Set<String> participantIds)
-        {
-            _participantIds = participantIds;
-        }
-
-        public String getAdditive()
-        {
-            return _additive;
-        }
-
-        public void setAdditive(String additive)
-        {
-            _additive = additive;
-        }
-    }
-
-    public static class RequestSummaryByVisitType extends SummaryByVisitType
-    {
-        private Integer _destinationSiteId;
-        private String _siteLabel;
-
-        public Integer getDestinationSiteId()
-        {
-            return _destinationSiteId;
-        }
-
-        public void setDestinationSiteId(Integer destinationSiteId)
-        {
-            _destinationSiteId = destinationSiteId;
-        }
-
-        public String getSiteLabel()
-        {
-            return _siteLabel;
-        }
-
-        public void setSiteLabel(String siteLabel)
-        {
-            _siteLabel = siteLabel;
-        }
-    }
-
     public SummaryByVisitType[] getSpecimenSummaryByVisitType(Container container, User user, boolean includeParticipantGroups, SpecimenTypeLevel level)
     {
         return getSpecimenSummaryByVisitType(container, user, null, includeParticipantGroups, level);
@@ -2217,9 +2087,9 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     public static class SpecimenTypeBeanProperty
     {
-        private FieldKey _typeKey;
-        private String _beanProperty;
-        private SpecimenTypeLevel _level;
+        private final FieldKey _typeKey;
+        private final String _beanProperty;
+        private final SpecimenTypeLevel _level;
 
         public SpecimenTypeBeanProperty(FieldKey typeKey, String beanProperty, SpecimenTypeLevel level)
         {
@@ -2496,7 +2366,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     public LocationImpl[] getSitesWithRequests(Container container)
     {
-        TableInfo locationTableInfo = StudySchema.getInstance().getTableInfoSite(container);
+        TableInfo locationTableInfo = SpecimenSchema.get().getTableInfoLocation(container);
         SQLFragment sql = new SQLFragment("SELECT * FROM " + locationTableInfo.getSelectName() + " WHERE rowid IN\n" +
                 "(SELECT destinationsiteid FROM study.samplerequest WHERE container = ?)\n" +
                 "AND container = ? ORDER BY label", container.getId(), container.getId());
@@ -2571,41 +2441,15 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             if (rs.getObject(idColumnName) == null)
                 locations.add(null);
             else
-                locations.add(StudyManager.getInstance().getLocation(container, rs.getInt(idColumnName)));
+                locations.add(LocationManager.get().getLocation(container, rs.getInt(idColumnName)));
         });
 
         return locations;
     }
 
 
-    public static class SummaryByVisitParticipant extends SpecimenCountSummary
-    {
-        private String _participantId;
-        private String _cohort;
-
-        public String getParticipantId()
-        {
-            return _participantId;
-        }
-
-        public void setParticipantId(String participantId)
-        {
-            _participantId = participantId;
-        }
-
-        public String getCohort()
-        {
-            return _cohort;
-        }
-
-        public void setCohort(String cohort)
-        {
-            _cohort = cohort;
-        }
-    }
-
     public Collection<SummaryByVisitParticipant> getParticipantSummaryByVisitType(Container container, User user,
-                                SimpleFilter specimenDetailFilter, CustomView baseView, CohortFilter.Type cohortType)
+                                                                                  SimpleFilter specimenDetailFilter, CustomView baseView, CohortFilter.Type cohortType)
     {
         if (specimenDetailFilter == null)
             specimenDetailFilter = new SimpleFilter();
@@ -2671,7 +2515,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
         final SpecimenDetailQueryHelper sqlHelper = getSpecimenDetailQueryHelper(container, user, baseView, specimenDetailFilter, level);
 
-        TableInfo locationTableInfo = StudySchema.getInstance().getTableInfoSite(container);
+        TableInfo locationTableInfo = SpecimenSchema.get().getTableInfoLocation(container);
         String subjectCol = StudyService.get().getSubjectColumnName(container);
         String sql = "SELECT Specimen.Container,\n" +
                 "Specimen." + subjectCol + ",\n" +
@@ -2770,7 +2614,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
             filter.addInClause(FieldKey.fromParts("GlobalUniqueId"), idToVial.keySet());
 
-            new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null).forEach(SpecimenComment.class, comment -> {
+            new TableSelector(SpecimenSchema.get().getTableInfoSpecimenComment(), filter, null).forEach(SpecimenComment.class, comment -> {
                 Vial vial = idToVial.get(comment.getGlobalUniqueId());
                 result.put(vial, comment);
             });
@@ -2786,7 +2630,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("GlobalUniqueId"), globalUniqueId);
 
-        return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null).getObject(SpecimenComment.class);
+        return new TableSelector(SpecimenSchema.get().getTableInfoSpecimenComment(), filter, null).getObject(SpecimenComment.class);
     }
 
     public SpecimenComment getSpecimenCommentForVial(Vial vial)
@@ -2804,7 +2648,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         SimpleFilter hashFilter = SimpleFilter.createContainerFilter(container);
         hashFilter.addInClause(FieldKey.fromParts("SpecimenHash"), specimenHashes);
 
-        return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), hashFilter, new Sort("GlobalUniqueId")).getArray(SpecimenComment.class);
+        return new TableSelector(SpecimenSchema.get().getTableInfoSpecimenComment(), hashFilter, new Sort("GlobalUniqueId")).getArray(SpecimenComment.class);
     }
 
     private boolean safeComp(Object a, Object b)
@@ -2850,7 +2694,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     public SpecimenComment setSpecimenComment(User user, Vial vial, String commentText, boolean qualityControlFlag, boolean qualityControlFlagForced)
     {
-        TableInfo commentTable = StudySchema.getInstance().getTableInfoSpecimenComment();
+        TableInfo commentTable = SpecimenSchema.get().getTableInfoSpecimenComment();
         DbScope scope = commentTable.getSchema().getScope();
         SpecimenComment comment = getSpecimenCommentForVial(vial);
         boolean clearComment = commentText == null && !qualityControlFlag && !qualityControlFlagForced;

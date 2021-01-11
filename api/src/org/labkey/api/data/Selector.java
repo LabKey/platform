@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -157,6 +158,8 @@ public interface Selector
 
     /** Populate an existing MultiValuedMap from a two-column query; the first column is the key, the second column is the value of which there may be more than one for the key. */
     @NotNull <K, V> MultiValuedMap<K, V> fillMultiValuedMap(@NotNull final MultiValuedMap<K, V> multiMap);
+
+    @NotNull <K> Set<K> fillSet(@NotNull final Set<K> fillSet);
 
     /** Callback interface for dealing with objects streamed from the database one-by-one */
     interface ForEachBlock<T>

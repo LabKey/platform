@@ -68,6 +68,23 @@ import java.util.Set;
  */
 public class DatasetUpdateService extends AbstractQueryUpdateService
 {
+    // These are that can be passed into DatasetUpdateService via DataIteratorContext.configParameters.
+    // These used to be passed to DatasetDataIterator via
+    // DatasetDefinition.importDatasetData()->DatasetDefinition.insertData().
+    // Moving these options into DataInteratorContext allows for even more consistency and code sharing
+    // also see QueryUpdateService.ConfigParameters.Logger
+    public enum Config
+    {
+        CheckForDuplicates,     // expected: enum CheckForDuplicates
+        DefaultQCState,         // expected: class QCState
+        SkipResyncStudy,        // expected: Boolean
+
+        // NOTE: There really has to be better way to handle the functionality of StudyImportContext.getTableIdMap()
+        // NOTE: Could this be handled by a method on StudySchema or something???
+        // see StudyImportContext.getTableIdMapMap()
+        StudyImportMaps       // expected: Map<String,Map<Object,Object>>
+    }
+
     private final DatasetDefinition _dataset;
     private final Set<String> _potentiallyNewParticipants = new HashSet<>();
     private final Set<String> _potentiallyDeletedParticipants = new HashSet<>();
@@ -121,7 +138,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         int count = _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
-        if (count > 0)
+        if (count > 0 && Boolean.TRUE != context.getConfigParameterBoolean(Config.SkipResyncStudy))
         {
             StudyManager.datasetModified(_dataset, true);
             resyncStudy(user, container, null, null, true);
@@ -177,23 +194,24 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     @Override
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
-        QCState defaultQCState = StudyManager.getInstance().getDefaultQCState(_dataset.getStudy());
-        DatasetDefinition.CheckForDuplicates dupePolicy;
-        if (isBulkLoad())
+        if (null == context.getConfigParameter(Config.DefaultQCState))
         {
-            dupePolicy = DatasetDefinition.CheckForDuplicates.never;
+            context.putConfigParameter(Config.DefaultQCState, StudyManager.getInstance().getDefaultQCState(_dataset.getStudy()));
         }
-        else if (context.getInsertOption().mergeRows)
+
+        if (null == context.getConfigParameter(Config.CheckForDuplicates))
         {
-            dupePolicy = DatasetDefinition.CheckForDuplicates.sourceOnly;
+            DatasetDefinition.CheckForDuplicates dupePolicy;
+            if (isBulkLoad())
+                dupePolicy = DatasetDefinition.CheckForDuplicates.never;
+            else if (context.getInsertOption().mergeRows)
+                dupePolicy = DatasetDefinition.CheckForDuplicates.sourceOnly;
+            else
+                dupePolicy = DatasetDefinition.CheckForDuplicates.sourceAndDestination;
+            context.putConfigParameter(Config.CheckForDuplicates, dupePolicy);
         }
-        else
-        {
-            dupePolicy = DatasetDefinition.CheckForDuplicates.sourceAndDestination;
-        }
-        // for MERGE checking for duplicates within the source rows makes sense, but not against the existing rows
-        DataIteratorBuilder insert = _dataset.getInsertDataIterator(user, data, null,
-                dupePolicy, context, defaultQCState, null, false);
+
+        DataIteratorBuilder insert = _dataset.getInsertDataIterator(user, data, context);
         return insert;
     }
 

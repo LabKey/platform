@@ -22,8 +22,8 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.StudySchema;
 
 /**
  * User: klum
@@ -47,7 +47,7 @@ public class SpecimenVialCountTable extends BaseStudyTable
         addColumn(new AliasedColumn(this, "Available", _rootTable.getColumn("AvailableCount"))).setHidden(!enableSpecimenRequest);
         addColumn(new AliasedColumn(this, "ExpectedAvailable", _rootTable.getColumn("ExpectedAvailableCount"))).setHidden(!enableSpecimenRequest);
 */
-        super(schema, StudySchema.getInstance().getTableInfoVial(schema.getContainer()), cf);
+        super(schema, SpecimenSchema.get().getTableInfoVial(schema.getContainer()), cf);
         setTitle("VialCounts");
 
         addContainerColumn(true).setHidden(true);
@@ -67,7 +67,7 @@ public class SpecimenVialCountTable extends BaseStudyTable
     @Override
     public SQLFragment getFromSQL(String alias)
     {
-        TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(getContainer());
+        TableInfo tableInfoVial = SpecimenSchema.get().getTableInfoVial(getContainer());
         if (null == tableInfoVial)
             throw new IllegalStateException("Vial table not found.");
 

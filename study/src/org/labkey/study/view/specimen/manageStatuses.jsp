@@ -15,17 +15,17 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus"%>
+<%@ page import="org.labkey.api.specimen.settings.StatusSettings"%>
+<%@ page import="org.labkey.api.study.StudyUrls"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.SpecimenManager"%>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction"%>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.SpecimenManager" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteStatusAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusOrderAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusesAction" %>
-<%@ page import="org.labkey.study.model.SpecimenRequestStatus" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.study.specimen.settings.StatusSettings" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -140,5 +140,5 @@ function showSystemRows(value)
     <br/>
 
     <%= button("Done").submit(true).onClick("document.manageStatuses.nextPage.value=''; return true;")%>
-    <%= button("Cancel").href(new ActionURL(ManageStudyAction.class, study.getContainer())) %>&nbsp;
+    <%= button("Cancel").href(urlProvider(StudyUrls.class).getManageStudyURL(study.getContainer())) %>&nbsp;
 </labkey:form>

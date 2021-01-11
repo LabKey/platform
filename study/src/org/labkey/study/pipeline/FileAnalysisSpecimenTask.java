@@ -12,6 +12,7 @@ import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.specimen.pipeline.AbstractSpecimenTaskFactory;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
@@ -119,7 +120,7 @@ public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisS
         }
     }
 
-    public static class Factory extends AbstractSpecimenTaskFactory<FileAnalysisSpecimenTask.Factory>
+    public static class Factory extends AbstractSpecimenTaskFactory<Factory>
     {
         public Factory()
         {

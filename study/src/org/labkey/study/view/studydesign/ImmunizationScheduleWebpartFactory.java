@@ -29,7 +29,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.security.permissions.ManageStudyPermission;
+import org.labkey.api.study.security.permissions.ManageStudyPermission;
 
 /**
  * User: cnathe

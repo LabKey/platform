@@ -497,7 +497,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             lsid = (String)oldRow.get(objectUriCol.getName());
 
         List<PropertyDescriptor> tableProperties = new ArrayList<>();
-        if (objectUriCol != null && domain != null && domain.getProperties().isEmpty())
+        if (objectUriCol != null && domain != null && !domain.getProperties().isEmpty())
         {
             // convert "Property name"->value map into PropertyURI->value map
             Map<String, Object> newValues = new HashMap<>();

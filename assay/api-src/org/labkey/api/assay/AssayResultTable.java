@@ -164,7 +164,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                     Domain domain = schema.getProvider().getResultsDomain(schema.getProtocol());
                     PropertyDescriptor pd = domain.getPropertyByName(col.getName()).getPropertyDescriptor();
                     AliasedColumn mvColumn = new AliasedColumn(this, col.getName() + MvColumn.MV_INDICATOR_SUFFIX,
-                                                            StorageProvisioner.getMvIndicatorColumn(getRealTable(), pd, "No MV column found for '" + col.getName() + "' in list '" + getName() + "'"));
+                                                            StorageProvisioner.get().getMvIndicatorColumn(getRealTable(), pd, "No MV column found for '" + col.getName() + "' in list '" + getName() + "'"));
                     // MV indicators are strings
                     mvColumn.setLabel(col.getLabel() + " MV Indicator");
                     mvColumn.setSqlTypeName("VARCHAR");

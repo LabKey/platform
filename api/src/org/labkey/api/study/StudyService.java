@@ -28,6 +28,7 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.QuerySchema;
@@ -72,6 +73,12 @@ public interface StudyService
     {
         return ServiceRegistry.get().getService(StudyService.class);
     }
+
+    /**
+     * Useful for associating permissions and roles that live in API or other modules with the study module
+     * @return The Study module's {@code Class}
+     */
+    Class<? extends Module> getStudyModuleClass();
 
     /**
      * Get the {@link Study} for the {@link Container} if it exists.
@@ -149,6 +156,9 @@ public interface StudyService
     Set<? extends Dataset> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user);
 
     DbSchema getDatasetSchema();
+
+    @Deprecated // Use SpecimenSchema instead
+    DbSchema getStudySchema();
 
     void updateDatasetCategory(User user, @NotNull Dataset dataset, @NotNull ViewCategory category);
 
@@ -231,4 +241,7 @@ public interface StudyService
     List<StudyManagementOption> getManagementOptions();
 
     void registerManagementOption(StudyManagementOption option);
+
+    // Do any of the tables that study manages reference this location?
+    boolean isLocationInUse(Location loc);
 }

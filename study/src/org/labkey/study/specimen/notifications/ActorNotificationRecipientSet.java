@@ -18,24 +18,25 @@ package org.labkey.study.specimen.notifications;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
+import org.labkey.api.specimen.notifications.NotificationRecipientSet;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.ShowGroupMembersAction;
-import org.labkey.study.model.LocationImpl;
-import org.labkey.study.model.SpecimenRequestActor;
-import org.labkey.study.model.StudyManager;
 
 /**
  * User: brittp
-* Date: May 4, 2007
-* Time: 3:36:19 PM
-*/
+ * Date: May 4, 2007
+ * Time: 3:36:19 PM
+ */
 public class ActorNotificationRecipientSet extends NotificationRecipientSet
 {
-    private SpecimenRequestActor _actor;
-    private LocationImpl _location;
+    private final SpecimenRequestActor _actor;
+    private final LocationImpl _location;
 
     public ActorNotificationRecipientSet(SpecimenRequestActor actor, LocationImpl location)
     {
@@ -95,7 +96,7 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
         int actorId = Integer.parseInt(ids[0]);
         int locationId = Integer.parseInt(ids[1]);
         SpecimenRequestActor actor = SpecimenManager.getInstance().getRequirementsProvider().getActor(container, actorId);
-        LocationImpl location = locationId >= 0 ? StudyManager.getInstance().getLocation(container, locationId) : null;
+        LocationImpl location = locationId >= 0 ? LocationManager.get().getLocation(container, locationId) : null;
         return new ActorNotificationRecipientSet(actor, location);
     }
 

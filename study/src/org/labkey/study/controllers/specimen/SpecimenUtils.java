@@ -21,13 +21,43 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBarLineBreak;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.specimen.SpecimenRequestStatus;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
+import org.labkey.api.specimen.model.SpecimenRequestEvent;
+import org.labkey.api.specimen.notifications.NotificationRecipientSet;
+import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
+import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
+import org.labkey.api.specimen.security.permissions.SetSpecimenCommentsPermission;
+import org.labkey.api.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -44,31 +74,19 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.SpecimenRequest;
-import org.labkey.study.model.SpecimenRequestActor;
-import org.labkey.study.model.SpecimenRequestEvent;
 import org.labkey.study.model.SpecimenRequestRequirement;
-import org.labkey.study.model.SpecimenRequestStatus;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Vial;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.security.permissions.ManageRequestsPermission;
-import org.labkey.study.security.permissions.RequestSpecimensPermission;
-import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
 import org.labkey.study.specimen.notifications.ActorNotificationRecipientSet;
 import org.labkey.study.specimen.notifications.DefaultRequestNotification;
-import org.labkey.study.specimen.notifications.NotificationRecipientSet;
-import org.labkey.study.specimen.settings.RepositorySettings;
-import org.labkey.study.specimen.settings.RequestNotificationSettings;
 import org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
@@ -314,7 +332,7 @@ public class SpecimenUtils
             throw new IllegalStateException("Request " + specimenRequest.getRowId() + " in folder " +
                     specimenRequest.getContainer().getPath() + " does not have a valid destination site id.");
         }
-        LocationImpl destLocation = StudyManager.getInstance().getLocation(specimenRequest.getContainer(), specimenRequest.getDestinationSiteId().intValue());
+        LocationImpl destLocation = LocationManager.get().getLocation(specimenRequest.getContainer(), specimenRequest.getDestinationSiteId().intValue());
         relevantSites.put(destLocation.getRowId(), destLocation);
         for (Vial vial : specimenRequest.getVials())
         {
@@ -392,7 +410,7 @@ public class SpecimenUtils
             out.write("<option value=''>&lt;Show All&gt;</option>");
             String excludeStr = ctx.getRequest().getParameter(SpecimenQueryView.PARAMS.excludeRequestedBySite.name());
             int locationId = null == StringUtils.trimToNull(excludeStr) ? 0 : Integer.parseInt(excludeStr);
-            List<LocationImpl> locations = StudyManager.getInstance().getValidRequestingLocations(ctx.getContainer());
+            List<LocationImpl> locations = LocationManager.get().getValidRequestingLocations(ctx.getContainer());
             for (LocationImpl location : locations)
             {
                 out.write("<option value=\"");
@@ -548,7 +566,7 @@ public class SpecimenUtils
 
         public String getRequestingSiteName()
         {
-            Location destLocation = StudyManager.getInstance().getLocation(_notification.getSampleRequest().getContainer(),
+            Location destLocation = LocationManager.get().getLocation(_notification.getSampleRequest().getContainer(),
                     _notification.getSampleRequest().getDestinationSiteId());
             if (destLocation != null)
                 return destLocation.getDisplayName();
@@ -752,7 +770,7 @@ public class SpecimenUtils
                 int idx = 0;
 
                 for (Integer id : _possibleLocationIds)
-                    _possibleLocations[idx++] = StudyManager.getInstance().getLocation(_container, id.intValue());
+                    _possibleLocations[idx++] = LocationManager.get().getLocation(_container, id.intValue());
             }
             return _possibleLocations;
         }
@@ -794,7 +812,7 @@ public class SpecimenUtils
                     _providingLocations = new ArrayList<>(_providingLocationIds.size());
 
                     for (Integer locationId : _providingLocationIds)
-                        _providingLocations.add(StudyManager.getInstance().getLocation(container, locationId.intValue()));
+                        _providingLocations.add(LocationManager.get().getLocation(container, locationId.intValue()));
                 }
             }
             return _providingLocations;
@@ -865,7 +883,7 @@ public class SpecimenUtils
     public GridView getRequestEventGridView(HttpServletRequest request, BindException errors, SimpleFilter filter)
     {
         DataRegion rgn = new DataRegion();
-        TableInfo tableInfoRequestEvent = StudySchema.getInstance().getTableInfoSampleRequestEvent();
+        TableInfo tableInfoRequestEvent = SpecimenSchema.get().getTableInfoSampleRequestEvent();
         rgn.setTable(tableInfoRequestEvent);
         rgn.setColumns(tableInfoRequestEvent.getColumns("Created", "EntryType", "Comments", "CreatedBy", "EntityId"));
         rgn.getDisplayColumn("EntityId").setVisible(false);
@@ -931,7 +949,7 @@ public class SpecimenUtils
             }
         };
 
-        TableInfo tableInfoRequestEvent = StudySchema.getInstance().getTableInfoSampleRequestEvent();
+        TableInfo tableInfoRequestEvent = SpecimenSchema.get().getTableInfoSampleRequestEvent();
         rgn.setTable(tableInfoRequestEvent);
         rgn.setColumns(tableInfoRequestEvent.getColumns("Created", "EntityId"));
         rgn.getDisplayColumn("EntityId").setVisible(false);

@@ -39,7 +39,7 @@ import org.labkey.study.controllers.specimen.SpecimenUtils;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.security.permissions.ManageStudyPermission;
+import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.view.BaseStudyPage;
 import org.springframework.validation.BindException;
 

@@ -29,6 +29,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
@@ -122,7 +123,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             new PropertyStorageSpec(MODIFIED, JdbcType.TIMESTAMP),
             new PropertyStorageSpec(CREATED_BY, JdbcType.INTEGER),
             new PropertyStorageSpec(MODIFIED_BY, JdbcType.INTEGER),
-            new PropertyStorageSpec(DATE, JdbcType.TIMESTAMP)
+            new PropertyStorageSpec(DATE, JdbcType.TIMESTAMP),
+            new PropertyStorageSpec(DataIntegrationService.Columns.TransformImportHash.getColumnName(), JdbcType.VARCHAR, 256)
         ));
 
 
@@ -139,7 +141,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             new PropertyStorageSpec(MODIFIED, JdbcType.TIMESTAMP),
             new PropertyStorageSpec(CREATED_BY, JdbcType.INTEGER),
             new PropertyStorageSpec(MODIFIED_BY, JdbcType.INTEGER),
-            new PropertyStorageSpec(DATE, JdbcType.TIMESTAMP)
+            new PropertyStorageSpec(DATE, JdbcType.TIMESTAMP),
+            new PropertyStorageSpec(DataIntegrationService.Columns.TransformImportHash.getColumnName(), JdbcType.VARCHAR, 256)
         ));
 
         DATASPACE_PROPERTY_INDICES = new HashSet<>(Arrays.asList(
