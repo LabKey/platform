@@ -143,7 +143,7 @@ public class PipelineQueryView extends QueryView
         if (_buttonOption == PipelineService.PipelineButtonOption.Standard)
         {
             ActionURL retryURL = new ActionURL(StatusController.RetryStatusAction.class, getContainer());
-            retryURL.addParameter(ActionURL.Param.returnUrl, _returnURL.toString());
+            retryURL.addReturnURL(_returnURL);
 
             ActionButton retryStatus = new ActionButton(retryURL, "Retry");
             retryStatus.setRequiresSelection(true);
@@ -157,7 +157,7 @@ public class PipelineQueryView extends QueryView
             if (showDeleteButton())
             {
                 ActionURL deleteURL = new ActionURL(StatusController.DeleteStatusAction.class, getContainer());
-                deleteURL.addParameter(ActionURL.Param.returnUrl, _returnURL.toString());
+                deleteURL.addReturnURL(_returnURL);
                 ActionButton deleteStatus = new ActionButton(deleteURL, "Delete");
                 deleteStatus.setIconCls("trash");
                 deleteStatus.setRequiresSelection(true);
@@ -167,7 +167,7 @@ public class PipelineQueryView extends QueryView
             }
 
             ActionURL cancelURL = new ActionURL(StatusController.CancelStatusAction.class, getContainer());
-            cancelURL.addParameter(ActionURL.Param.returnUrl, _returnURL.toString());
+            cancelURL.addReturnURL(_returnURL);
             ActionButton cancelButton = new ActionButton(cancelURL, "Cancel");
             cancelButton.setRequiresSelection(true);
             cancelButton.setActionType(ActionButton.Action.POST);
@@ -188,7 +188,7 @@ public class PipelineQueryView extends QueryView
         if (_buttonOption == PipelineService.PipelineButtonOption.Standard)
         {
             ActionURL completeURL = new ActionURL(StatusController.CompleteStatusAction.class, getContainer());
-            completeURL.addParameter(ActionURL.Param.returnUrl, _returnURL.toString());
+            completeURL.addReturnURL(_returnURL);
             ActionButton completeStatus = new ActionButton(completeURL, "Complete");
             completeStatus.setRequiresSelection(true);
             completeStatus.setActionType(ActionButton.Action.POST);

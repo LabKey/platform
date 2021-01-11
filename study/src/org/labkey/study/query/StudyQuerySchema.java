@@ -82,7 +82,7 @@ import org.labkey.study.query.studydesign.StudyTreatmentProductTable;
 import org.labkey.study.query.studydesign.StudyTreatmentTable;
 import org.labkey.study.query.studydesign.StudyTreatmentVisitMapTable;
 import org.labkey.study.visualization.StudyVisualizationProvider;
-import org.labkey.study.writer.AbstractContext;
+import org.labkey.api.study.writer.AbstractContext;
 import org.springframework.validation.BindException;
 
 import java.util.Arrays;
@@ -1177,8 +1177,8 @@ public class StudyQuerySchema extends UserSchema
         return new TablePackage(tableInfo, container, isProjectLevel);
     }
 
-    private static Set<String> _dataspaceProjectLevelTables = new HashSet<>();
-    private static Set<String> _dataspaceFolderLevelTables = new HashSet<>();
+    private static final Set<String> _dataspaceProjectLevelTables = new HashSet<>();
+    private static final Set<String> _dataspaceFolderLevelTables = new HashSet<>();
     static
     {
         _dataspaceProjectLevelTables.add(STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);

@@ -27,16 +27,19 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoWriter;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
+import org.labkey.api.specimen.writer.LocationSpecimenWriter;
+import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
+import org.labkey.api.specimen.writer.StandardSpecimenWriter;
+import org.labkey.api.specimen.writer.StandardSpecimenWriter.QueryInfo;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
-import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.query.SpecimenTablesProvider;
-import org.labkey.study.writer.StandardSpecimenWriter.QueryInfo;
 import org.labkey.study.xml.StudyDocument;
 
 import java.util.ArrayList;
@@ -57,7 +60,7 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
     @Override
     public String getDataType()
     {
-        return StudyArchiveDataTypes.SPECIMENS;
+        return SpecimenArchiveDataTypes.SPECIMENS;
     }
 
     @Override
@@ -72,9 +75,9 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
             if (!zip.equals(specimensDir)) // MemoryVirtualFile doesn't add a zip archive, it just returns vf
                 specimensXml.setFile(archiveName);
 
-            StudySchema schema = StudySchema.getInstance();
+            SpecimenSchema schema = SpecimenSchema.get();
 
-            new LocationSpecimenWriter().write(new QueryInfo(schema.getTableInfoSite(ctx.getContainer()), "labs", SpecimenImporter.SITE_COLUMNS), ctx, zip);
+            new LocationSpecimenWriter().write(new QueryInfo(schema.getTableInfoLocation(ctx.getContainer()), "labs", SpecimenImporter.SITE_COLUMNS), ctx, zip);
             new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoSpecimenPrimaryType(ctx.getContainer()), "primary_types", SpecimenImporter.PRIMARYTYPE_COLUMNS), ctx, zip);
             new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoSpecimenAdditive(ctx.getContainer()), "additives", SpecimenImporter.ADDITIVE_COLUMNS), ctx, zip);
             new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoSpecimenDerivative(ctx.getContainer()), "derivatives", SpecimenImporter.DERIVATIVE_COLUMNS), ctx, zip);
@@ -134,16 +137,14 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
     private static class SpecimenTableInfoWriter extends TableInfoWriter
     {
         private final Map<String, DomainProperty> _properties = new CaseInsensitiveHashMap<>();
-        private final Domain _domain;
         private final String _name;
 
         protected SpecimenTableInfoWriter(Container c, TableInfo ti, String tableName, Domain domain, Collection<ColumnInfo> columns)
         {
             super(c, ti, columns);
-            _domain = domain;
             _name = tableName;
 
-            for (DomainProperty prop : _domain.getProperties())
+            for (DomainProperty prop : domain.getProperties())
                 _properties.put(prop.getName(), prop);
         }
 

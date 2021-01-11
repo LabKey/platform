@@ -282,7 +282,7 @@ public class ParticipantGroupManager
                     if (null != filter)
                     {
                         ActionURL enrolledURL = filter.addURLParameters(study, baseURL.clone(), dataRegionName);
-                        button.addMenuItem("Enrolled", enrolledURL.toString(), null, (selected.isEmpty() && filter.equals(cohortFilter)));
+                        button.addMenuItem("Enrolled", enrolledURL, null, (selected.isEmpty() && filter.equals(cohortFilter)));
                     }
                 }
 

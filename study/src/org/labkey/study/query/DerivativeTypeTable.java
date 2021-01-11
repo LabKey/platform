@@ -20,13 +20,14 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.study.StudySchema;
 
 public class DerivativeTypeTable extends BaseStudyTable
 {
     public DerivativeTypeTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenDerivative(schema.getContainer()), cf, true);
+        super(schema, SpecimenSchema.get().getTableInfoSpecimenDerivative(schema.getContainer()), cf, true);
         setName("SpecimenDerivative");
         setPublicSchemaName("study");
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);

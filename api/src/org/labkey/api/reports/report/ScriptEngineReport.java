@@ -46,6 +46,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.Report;
@@ -228,7 +229,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     /*
      * Create the .tsv associated with the data grid for this report.
      */
-    public File createInputDataFile(@NotNull ViewContext context) throws SQLException, IOException
+    public File createInputDataFile(@NotNull ViewContext context) throws SQLException, IOException, ValidationException
     {
         File resultFile = new File(getReportDir(context.getContainer().getId()), DATA_INPUT);
 
@@ -265,6 +266,15 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                     tsv.write(resultFile);
                 }
             }
+        }
+        catch (RuntimeException e)
+        {
+            Throwable cause = e.getCause();
+
+            if (cause instanceof ValidationException)
+                throw (ValidationException)cause;
+
+            throw e;
         }
 
         return resultFile;

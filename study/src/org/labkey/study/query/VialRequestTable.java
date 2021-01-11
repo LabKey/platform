@@ -24,7 +24,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.study.StudySchema;
+import org.labkey.api.specimen.SpecimenSchema;
 
 /**
  * User: brittp
@@ -34,7 +34,7 @@ public class VialRequestTable extends FilteredTable<StudyQuerySchema>
 {
     public VialRequestTable(final StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), schema, cf);
+        super(SpecimenSchema.get().getTableInfoSampleRequestSpecimen(), schema, cf);
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();

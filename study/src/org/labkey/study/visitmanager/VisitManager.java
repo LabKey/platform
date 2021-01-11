@@ -42,6 +42,7 @@ import org.labkey.api.exceptions.TableNotFoundException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.ContextListener;
@@ -691,7 +692,7 @@ public abstract class VisitManager
             return studyQuerySchema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
         }
         else
-            return StudySchema.getInstance().getTableInfoSpecimen(study.getContainer());
+            return SpecimenSchema.get().getTableInfoSpecimen(study.getContainer());
     }
 
 

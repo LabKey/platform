@@ -708,6 +708,12 @@
         </fk>
         <datatype>int</datatype>
       </column>
+      <column columnName="diImportHash">
+        <propertyURI>http://cpas.labkey.com/Study#diImportHash</propertyURI>
+        <isHidden>true</isHidden>
+        <shownInInsertView>false</shownInInsertView>
+        <shownInUpdateView>false</shownInUpdateView>
+      </column>
     </columns>
   </table>
   <table tableName="SampleRequestSpecimen" tableDbType="TABLE">

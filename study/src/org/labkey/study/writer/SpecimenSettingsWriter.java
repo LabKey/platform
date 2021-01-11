@@ -17,21 +17,22 @@ package org.labkey.study.writer;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.specimen.SpecimenRequestStatus;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
+import org.labkey.api.specimen.settings.DisplaySettings;
+import org.labkey.api.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.RequestNotificationSettings;
+import org.labkey.api.specimen.settings.StatusSettings;
+import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.security.xml.GroupType;
 import org.labkey.security.xml.GroupsType;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.importer.RequestabilityManager;
-import org.labkey.study.model.LocationImpl;
-import org.labkey.study.model.SpecimenRequestActor;
+import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.study.model.SpecimenRequestRequirement;
-import org.labkey.study.model.SpecimenRequestStatus;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.specimen.settings.DisplaySettings;
-import org.labkey.study.specimen.settings.RepositorySettings;
-import org.labkey.study.specimen.settings.RequestNotificationSettings;
-import org.labkey.study.specimen.settings.StatusSettings;
 import org.labkey.study.xml.DefaultRequirementType;
 import org.labkey.study.xml.DefaultRequirementsType;
 import org.labkey.study.xml.SpecimenRepositoryType;
@@ -57,7 +58,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
     @Override
     public String getDataType()
     {
-        return StudyArchiveDataTypes.SPECIMEN_SETTINGS;
+        return SpecimenArchiveDataTypes.SPECIMEN_SETTINGS;
     }
 
     @Override
@@ -193,34 +194,34 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
 
     private void writeDefaultRequirements(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx)
     {
-        SpecimenController.ManageReqsBean defRequirments = new SpecimenController.ManageReqsBean(ctx.getUser(), study.getContainer());
+        SpecimenController.ManageReqsBean defRequirements = new SpecimenController.ManageReqsBean(ctx.getUser(), study.getContainer());
         SpecimenSettingsType.DefaultRequirements xmlDefRequirements = null;
-        if (defRequirments.getOriginatorRequirements().length > 0)
+        if (defRequirements.getOriginatorRequirements().length > 0)
         {
             xmlDefRequirements = specimenSettingsType.addNewDefaultRequirements();
             DefaultRequirementsType xmlOrigLabReq = xmlDefRequirements.addNewOriginatingLab();
-            for (SpecimenRequestRequirement req : defRequirments.getOriginatorRequirements())
+            for (SpecimenRequestRequirement req : defRequirements.getOriginatorRequirements())
                 writeDefaultRequirement(xmlOrigLabReq, req);
         }
-        if (defRequirments.getProviderRequirements().length > 0)
+        if (defRequirements.getProviderRequirements().length > 0)
         {
             if (xmlDefRequirements == null) xmlDefRequirements = specimenSettingsType.addNewDefaultRequirements();
             DefaultRequirementsType xmlProviderReq = xmlDefRequirements.addNewProvidingLab();
-            for (SpecimenRequestRequirement req : defRequirments.getProviderRequirements())
+            for (SpecimenRequestRequirement req : defRequirements.getProviderRequirements())
                 writeDefaultRequirement(xmlProviderReq, req);
         }
-        if (defRequirments.getReceiverRequirements().length > 0)
+        if (defRequirements.getReceiverRequirements().length > 0)
         {
             if (xmlDefRequirements == null) xmlDefRequirements = specimenSettingsType.addNewDefaultRequirements();
             DefaultRequirementsType xmlReceiverReq = xmlDefRequirements.addNewReceivingLab();
-            for (SpecimenRequestRequirement req : defRequirments.getReceiverRequirements())
+            for (SpecimenRequestRequirement req : defRequirements.getReceiverRequirements())
                 writeDefaultRequirement(xmlReceiverReq, req);
         }
-        if (defRequirments.getGeneralRequirements().length > 0)
+        if (defRequirements.getGeneralRequirements().length > 0)
         {
             if (xmlDefRequirements == null) xmlDefRequirements = specimenSettingsType.addNewDefaultRequirements();
             DefaultRequirementsType xmlGeneralReq = xmlDefRequirements.addNewGeneral();
-            for (SpecimenRequestRequirement req : defRequirments.getGeneralRequirements())
+            for (SpecimenRequestRequirement req : defRequirements.getGeneralRequirements())
                 writeDefaultRequirement(xmlGeneralReq, req);
         }
     }

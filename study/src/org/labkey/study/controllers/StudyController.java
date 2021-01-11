@@ -135,6 +135,8 @@ import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.MasterPatientIndexService;
@@ -174,7 +176,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
@@ -193,7 +194,7 @@ import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.StudySchedule;
 import org.labkey.study.importer.DatasetImportUtils;
-import org.labkey.study.importer.RequestabilityManager;
+import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.SchemaTsvReader;
 import org.labkey.study.importer.StudyReload.ReloadStatus;
@@ -212,8 +213,8 @@ import org.labkey.study.query.StudyPropertiesQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudyQueryView;
 import org.labkey.study.reports.ReportManager;
-import org.labkey.study.security.permissions.ManageStudyPermission;
-import org.labkey.study.specimen.settings.RepositorySettings;
+import org.labkey.api.study.security.permissions.ManageStudyPermission;
+import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.visitmanager.VisitManager.VisitStatistic;
@@ -252,16 +253,16 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 public class StudyController extends BaseStudyController
 {
     private static final Logger _log = LogManager.getLogger(StudyController.class);
-
     private static final String PARTICIPANT_CACHE_PREFIX = "Study_participants/participantCache";
     private static final String EXPAND_CONTAINERS_KEY = StudyController.class.getName() + "/expandedContainers";
-
     private static final String DATASET_DATAREGION_NAME = "Dataset";
+    private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(
+        StudyController.class,
+        CreateChildStudyAction.class
+    );
+
     public static final String DATASET_REPORT_ID_PARAMETER_NAME = "Dataset.reportId";
     public static final String DATASET_VIEW_NAME_PARAMETER_NAME = "Dataset.viewName";
-    private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(
-            StudyController.class,
-            CreateChildStudyAction.class);
 
     public static class StudyUrlsImpl implements StudyUrls
     {
@@ -275,6 +276,12 @@ public class StudyController extends BaseStudyController
         public ActionURL getManageStudyURL(Container container)
         {
             return new ActionURL(ManageStudyAction.class, container);
+        }
+
+        @Override
+        public Class<? extends Controller> getManageStudyClass()
+        {
+            return ManageStudyAction.class;
         }
 
         @Override
@@ -1721,7 +1728,7 @@ public class StudyController extends BaseStudyController
                             location = location.createMutable();
                             location.setLabel(formLocation.getLabel());
                             location.setDescription(formLocation.getDescription());
-                            StudyManager.getInstance().updateSite(getUser(), location);
+                            LocationManager.get().updateLocation(getUser(), location);
                         }
                     }
                 }
@@ -1746,7 +1753,7 @@ public class StudyController extends BaseStudyController
                         location.setLdmsLabCode(Integer.parseInt(form.getNewId()));
                         location.setDescription(form.getNewDescription());
                         location.setContainer(getContainer());
-                        StudyManager.getInstance().createSite(getUser(), location);
+                        LocationManager.get().createLocation(getUser(), location);
                     }
                     catch (NumberFormatException e)
                     {
@@ -1783,9 +1790,10 @@ public class StudyController extends BaseStudyController
             {
                 if (c.hasPermission(getUser(), AdminPermission.class))
                 {
-                    for (LocationImpl loc : StudyManager.getInstance().getLocations(c))
+                    LocationManager mgr = LocationManager.get();
+                    for (LocationImpl loc : mgr.getLocations(c))
                     {
-                        if (!StudyManager.getInstance().isLocationInUse(loc))
+                        if (!mgr.isLocationInUse(loc))
                         {
                             temp.add(c.getName() + "/" + loc.getLabel());
                         }
@@ -1808,11 +1816,12 @@ public class StudyController extends BaseStudyController
             {
                 if (c.hasPermission(getUser(), AdminPermission.class))
                 {
-                    for (LocationImpl loc : StudyManager.getInstance().getLocations(c))
+                    LocationManager mgr = LocationManager.get();
+                    for (LocationImpl loc : mgr.getLocations(c))
                     {
-                        if (!StudyManager.getInstance().isLocationInUse(loc))
+                        if (!mgr.isLocationInUse(loc))
                         {
-                            StudyManager.getInstance().deleteLocation(loc);
+                            mgr.deleteLocation(loc);
                         }
                     }
                 }
@@ -3844,7 +3853,7 @@ public class StudyController extends BaseStudyController
             datasetURL.setAction(DatasetAction.class);
 
             String label = _def.getLabel() != null ? _def.getLabel() : "" + _def.getDatasetId();
-            root.addChild(new NavTree(label, datasetURL.getLocalURIString()));
+            root.addChild(new NavTree(label, datasetURL));
 
             root.addChild(new NavTree("View Preferences"));
         }
@@ -5709,7 +5718,7 @@ public class StudyController extends BaseStudyController
             if (_showCustomizeLink && c.hasPermissions(getViewContext().getUser(), permissions))
             {
                 ActionURL customizeURL = new ActionURL(CustomizeParticipantViewAction.class, c);
-                customizeURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());
+                customizeURL.addReturnURL(getViewContext().getActionURL());
                 customizeURL.addParameter("participantId", _currentParticipantId);
                 customizeURL.addParameter(SharedFormParameters.QCState, _encodedQcState);
                 out.print("</td><td>");
@@ -6942,7 +6951,7 @@ public class StudyController extends BaseStudyController
                             ActionURL cancelURL = new ActionURL(CancelDefineDatasetAction.class, getContainer()).addParameter("expectationDataset", form.getExpectationDataset());
 
                             redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(DatasetDefinition.DATASETKEY, form.getExpectationDataset());
-                            redirect.addParameter(ActionURL.Param.cancelUrl.name(), cancelURL.getLocalURIString());
+                            redirect.addCancelURL(cancelURL);
                             response.put("redirectUrl", redirect.getLocalURIString());
                         }
                         else

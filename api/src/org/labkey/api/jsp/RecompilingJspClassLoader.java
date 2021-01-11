@@ -161,7 +161,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
                     String stagingJava = classFile.getAbsolutePath()
                             .replace(jspClassesFileBuildDir.getAbsolutePath(), jspJavaFileBuildDirectory.getAbsolutePath())
                             .replaceFirst("\\.class", ".java");
-                    compileJavaFile(stagingJava, cp.getPath(), jspFileName, jspClassesFileBuildDir.getAbsolutePath());
+                    compileJavaFile(stagingJava, cp.getPath(), jspFileName, sourceFile, jspClassesFileBuildDir.getAbsolutePath());
 
                     _classLoaders.remove(finder);
 
@@ -205,31 +205,54 @@ public class RecompilingJspClassLoader extends JspClassLoader
         return ret.toString();
     }
 
-    private void compileJavaFile(String filePath, String classPath, String jspFilename, String classDirPath) throws Exception
+    private void compileJavaFile(String javaPath, String classPath, String jspFilePath, File jspFile, String classDirPath) throws Exception
     {
         ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        int ret = compiler.run(null, null, errorStream, filePath, "-cp", classPath, "-d", classDirPath, "-g");
+        int ret = compiler.run(null, null, errorStream, javaPath, "-cp", classPath, "-d", classDirPath, "-g");
 
         if (0 != ret)
-            throw new JspCompilationException(jspFilename, errorStream.toString());
+            throw new JspCompilationException(jspFilePath, jspFile, errorStream.toString());
     }
 
     private static class JspCompilationException extends ServletException implements HideConfigurationDetails
     {
-        private final String _errors;
-
-        private JspCompilationException(String jspFilename, String errors)
+        private JspCompilationException(String jspFilePath, File jspFile, String errors)
         {
-            super("Error compiling " + jspFilename);
-            _errors = errors;
+            super("Error compiling " + jspFilePath + "\n" + errors);
+            logJspPath(jspFile, errors);
+        }
+
+        // Attempt to generate and log a link to the JSP file that failed to compile. IntelliJ will render this as a
+        // single click link that navigates close to the error line.
+        private static void logJspPath(File jspSource, String errors)
+        {
+            int idx = errors.indexOf("_jsp.java:");
+            String path = "";
+            if (idx != -1)
+            {
+                int begin = idx + 10;
+                int end = errors.indexOf(":", begin);
+
+                if (end != -1)
+                {
+                    path = jspSource.getAbsolutePath() + ":" + errors.substring(begin, end) + "\n";
+                    _log.error("Error compiling JSP:\n" + path);
+                }
+            }
+        }
+
+        @Override
+        public StackTraceElement[] getStackTrace()
+        {
+            // Don't care about the stack trace
+            return new StackTraceElement[]{};
         }
 
         @Override
         public void printStackTrace(PrintWriter pw)
         {
-            // Don't care about the stack trace -- render the compile errors instead
-            pw.println(_errors);
+            // Don't care about the stack trace
         }
     }
 

@@ -119,11 +119,4 @@ class StudyXmlWriter implements InternalStudyWriter
         // export the study objectives and personnel tables
         new StudyPropertiesWriter().write(study, ctx, vf.getDir(PROPERTIES_DIRECTORY));
     }
-
-    public static StudyDocument getStudyDocument()
-    {
-        StudyDocument doc = StudyDocument.Factory.newInstance();
-        doc.addNewStudy();
-        return doc;
-    }
 }

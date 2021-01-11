@@ -17,6 +17,7 @@
 package org.labkey.study.pipeline;
 
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.specimen.pipeline.AbstractSpecimenTaskFactory;
 
 /*
 * User: adam

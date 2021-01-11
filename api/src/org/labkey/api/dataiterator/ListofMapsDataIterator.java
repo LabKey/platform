@@ -17,6 +17,7 @@ package org.labkey.api.dataiterator;
 
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
@@ -51,10 +52,18 @@ public class ListofMapsDataIterator extends AbstractDataIterator implements Scro
     {
         super(null);
         _cols.add(new BaseColumnInfo("_rowNumber", JdbcType.INTEGER));
+        if (null == colNames || colNames.isEmpty())
+        {
+            var set = Sets.newCaseInsensitiveHashSet();
+            for (var row : rows)
+                set.addAll(row.keySet());
+            colNames = set;
+        }
         for (String name : colNames)
             _cols.add(new BaseColumnInfo(name));
         _rows = initRows(rows);
     }
+
 
     @Override
     public DataIterator getDataIterator(DataIteratorContext context)

@@ -17,6 +17,7 @@ package org.labkey.study.model;
 
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.PHI;
+import org.labkey.api.specimen.Vial;
 import org.labkey.api.study.StudySnapshotType;
 
 import java.util.ArrayList;

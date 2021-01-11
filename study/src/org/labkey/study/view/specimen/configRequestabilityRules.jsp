@@ -16,10 +16,10 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.study.StudyUrls"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.template.ClientDependencies"%>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.importer.RequestabilityManager" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.specimen.importer.RequestabilityManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -395,7 +395,7 @@
     {
         Ext.Msg.hide();
         LABKEY.setDirty(false);
-        document.location = <%=q(new ActionURL(StudyController.ManageStudyAction.class, c))%>;
+        document.location = <%=q(urlProvider(StudyUrls.class).getManageStudyURL(c))%>;
     }
 
     function saveFailed(response, options)
@@ -619,7 +619,7 @@
             }, {
                 text: 'Cancel',
                 listeners: {
-                    click: function() { document.location = <%=q(new ActionURL(StudyController.ManageStudyAction.class, c))%>; }
+                    click: function() { document.location = <%=q(urlProvider(StudyUrls.class).getManageStudyURL(c))%>; }
                 }
             }]
         });
