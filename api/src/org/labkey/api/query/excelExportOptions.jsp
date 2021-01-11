@@ -169,7 +169,7 @@
                         LABKEY.requiresScript('SignSnapshotPanel.js', function() {
                             Ext4.onReady(function() {
                                 Ext4.create('LABKEY.Query.SignSnapshotPanel', {
-                                    emailInput: '<%=h(model.getEmail())%>',
+                                    emailInput: <%=q(model.getEmail())%>,
                                     params: exportParams,
                                     url: exportUrl
                                 });

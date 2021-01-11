@@ -154,7 +154,7 @@
                             Ext4.onReady(function() {
                                 Ext4.create('LABKEY.Query.SignSnapshotPanel', {
                                     url: url,
-                                    emailInput: '<%=h(model.getEmail())%>'
+                                    emailInput: <%=q(model.getEmail())%>
                                 });
                             });
                         });
