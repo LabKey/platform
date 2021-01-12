@@ -33,6 +33,8 @@ import java.util.List;
  */
 public class ListManagerTable extends FilteredTable<ListManagerSchema>
 {
+    public static final String AVAILABLE_LISTS = "Available Lists";
+
     public ListManagerTable(ListManagerSchema userSchema, TableInfo table, ContainerFilter cf)
     {
         super(table, userSchema, cf);
@@ -51,6 +53,12 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
         UserIdForeignKey.initColumn(modifiedBy);
 
         setDefaultVisibleColumns(Arrays.asList(FieldKey.fromParts("Name"), FieldKey.fromParts("Description")));
+    }
+
+    @Override
+    public String getPublicName()
+    {
+        return ListManagerSchema.LIST_MANAGER;
     }
 
     @Override
