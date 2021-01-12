@@ -108,7 +108,8 @@ public class HashDataIterator extends SimpleTranslator
             for (int i = start; i < length; i++)
             {
                 Object v = arr[i];
-                assert null == v || v instanceof String || v instanceof Number;
+                // Unfortunately, dataset import still requires inferTypes, so we have to handle parsed types here.
+                // assert null == v || v instanceof String || v instanceof Number || v instanceof Boolean;
                 sharedDigest.update(String.valueOf(v));
             }
             return sharedDigest.base64Digest();
