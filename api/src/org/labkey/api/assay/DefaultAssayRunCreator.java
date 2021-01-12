@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
+import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.data.ColumnInfo;
@@ -115,6 +116,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         DataTransformer<ProviderType> transformer = new DefaultDataTransformer<>();
         return transformer.transformAndValidate(context, run);
     }
+    @Override
+    public Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Integer batchId) throws ExperimentException, ValidationException
+    {
+        return saveExperimentRun(context, batchId, false);
+    }
 
     /**
      * Create and save an experiment run synchronously or asynchronously in a background job depending upon the assay design.
@@ -124,7 +130,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
      * @return Pair of batch and run that were inserted.  ExpBatch will not be null, but ExpRun may be null when inserting the run async.
      */
     @Override
-    public Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Integer batchId) throws ExperimentException, ValidationException
+    public Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Integer batchId, boolean forceAsync) throws ExperimentException, ValidationException
     {
         ExpExperiment exp = null;
         if (batchId != null)
@@ -139,7 +145,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
         // Check if assay protocol is configured to import in the background.
         // Issue 26811: If we don't have a view, assume that we are on a background job thread already.
-        boolean importInBackground = provider.isBackgroundUpload(protocol) && HttpView.hasCurrentView();
+        boolean importInBackground = forceAsync || (provider.isBackgroundUpload(protocol) && HttpView.hasCurrentView());
         if (!importInBackground)
         {
             File primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
@@ -187,8 +193,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 // Choose another file as the primary
                 primaryFile = context.getUploadedData().entrySet().iterator().next().getValue();
             }
+            AssayRunAsyncContext asyncContext = context.getProvider().createRunAsyncContext(context);
             final AssayUploadPipelineJob<ProviderType> pipelineJob = new AssayUploadPipelineJob<ProviderType>(
-                    context.getProvider().createRunAsyncContext(context),
+                    asyncContext,
                     info,
                     batch,
                     forceSaveBatchProps,
@@ -200,7 +207,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             ExperimentService.get().getSchema().getScope().addCommitTask(() -> {
                 try
                 {
-                    PipelineService.get().queueJob(pipelineJob);
+                    PipelineService.get().queueJob(pipelineJob, asyncContext.getJobNotificationProvider());
                 }
                 catch (PipelineValidationException e)
                 {
