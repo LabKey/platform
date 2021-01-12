@@ -43,6 +43,8 @@ public interface AssayRunCreator<ProviderType extends AssayProvider>
     Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Integer batchId)
             throws ExperimentException, ValidationException;
 
+    Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Integer batchId, boolean forceAsync)
+            throws ExperimentException, ValidationException;
     /**
      * @return the batch to which the run has been assigned
      */
