@@ -18,14 +18,14 @@ public class SettingsManager
 
     private final QueryHelper<SpecimenRequestStatus> _requestStatusHelper;
 
-    private SettingsManager()
-    {
-        _requestStatusHelper = new QueryHelper<>(()->SpecimenSchema.get().getTableInfoSampleRequestStatus(), SpecimenRequestStatus.class);
-    }
-
     public static SettingsManager get()
     {
         return INSTANCE;
+    }
+
+    private SettingsManager()
+    {
+        _requestStatusHelper = new QueryHelper<>(()->SpecimenSchema.get().getTableInfoSampleRequestStatus(), SpecimenRequestStatus.class);
     }
 
     public RequestNotificationSettings getRequestNotificationSettings(Container container)

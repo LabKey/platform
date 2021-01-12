@@ -29,6 +29,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.importer.RequestabilityManager;
@@ -258,7 +259,7 @@ public class SpecimenApiController extends BaseStudyController
                 boolean allUsers = getContainer().hasPermission(getUser(), ManageRequestsPermission.class);
                 if (requestsForm.isAllUsers() != null)
                     allUsers = requestsForm.isAllUsers();
-                List<SpecimenRequest> allUserRequests = SpecimenManager.getInstance().getRequests(container, allUsers ? null : user);
+                List<SpecimenRequest> allUserRequests = SpecimenRequestManager.get().getRequests(container, allUsers ? null : user);
                 List<SpecimenRequest> nonFinalRequests = new ArrayList<>();
                 for (SpecimenRequest request : allUserRequests)
                 {
@@ -430,7 +431,7 @@ public class SpecimenApiController extends BaseStudyController
 
     private SpecimenRequest getRequest(User user, Container container, int rowId, boolean checkOwnership, boolean checkEditability)
     {
-        SpecimenRequest request = SpecimenManager.getInstance().getRequest(container, rowId);
+        SpecimenRequest request = SpecimenRequestManager.get().getRequest(container, rowId);
         boolean admin = container.hasPermission(user, RequestSpecimensPermission.class);
         boolean adminOrOwner = request != null && (admin || request.getCreatedBy() == user.getUserId());
         if (request == null || (checkOwnership && !adminOrOwner))

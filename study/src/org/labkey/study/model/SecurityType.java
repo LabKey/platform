@@ -93,5 +93,4 @@ public enum SecurityType
 
         return sb.toString();
     }
-
 }

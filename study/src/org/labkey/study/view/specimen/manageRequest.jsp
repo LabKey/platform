@@ -54,6 +54,7 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SubmitRequestAction" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
@@ -76,7 +77,7 @@
     SpecimenManager manager = SpecimenManager.getInstance();
     boolean hasExtendedRequestView = manager.getExtendedSpecimenRequestView(getViewContext()) != null;
     SpecimenRequestActor[] actors = SpecimenRequestRequirementProvider.get().getActors(c);
-    SpecimenRequestRequirement[] requirements = manager.getRequestRequirements(bean.getSpecimenRequest());
+    SpecimenRequestRequirement[] requirements = SpecimenRequestManager.get().getRequestRequirements(bean.getSpecimenRequest());
     Location destinationLocation = bean.getDestinationSite();
     User creatingUser = UserManager.getUser(bean.getSpecimenRequest().getCreatedBy());
     List<LocationImpl> locations = LocationManager.get().getLocations(c);

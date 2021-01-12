@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput"%>
 <%@ page import="org.labkey.api.specimen.Vial"%>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl"%>
 <%@ page import="org.labkey.api.specimen.location.LocationManager"%>
@@ -23,7 +24,7 @@
 <%@ page import="org.labkey.api.study.SpecimenService"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.ViewContext"%>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.SpecimenManager" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.CreateSpecimenRequestForm" %>
@@ -52,7 +53,7 @@
     boolean shoppingCart = SettingsManager.get().isSpecimenShoppingCartEnabled(c);
     boolean hasExtendedRequestView = SpecimenManager.getInstance().getExtendedSpecimenRequestView(context) != null;
     List<Vial> vials = bean.getVials();
-    SpecimenManager.SpecimenRequestInput[] inputs = bean.getInputs();
+    SpecimenRequestInput[] inputs = bean.getInputs();
 %>
 <span class="labkey-error">
     <%
@@ -73,7 +74,7 @@ var DefaultValues = {};
     <%
     for (int i = 0; i < inputs.length; i++)
     {
-        SpecimenManager.SpecimenRequestInput input = inputs[i];
+        SpecimenRequestInput input = inputs[i];
         if (input.isRememberSiteValue())
         {
     %>
@@ -162,7 +163,7 @@ function setDefaults()
         <%
             for (int i = 0; i < inputs.length; i++)
             {
-                SpecimenManager.SpecimenRequestInput input = inputs[i];
+                SpecimenRequestInput input = inputs[i];
         %>
         <tr>
             <th align="left">

@@ -78,10 +78,12 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.SpecimenRequestManager;
+import org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput;
 import org.labkey.api.specimen.SpecimenRequestStatus;
-import org.labkey.api.specimen.view.SpecimenWebPart;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.AutoCompleteAction;
+import org.labkey.api.specimen.actions.ManageReqsBean;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
@@ -92,7 +94,6 @@ import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.notifications.ActorNotificationRecipientSet;
 import org.labkey.api.specimen.notifications.NotificationRecipientSet;
 import org.labkey.api.specimen.pipeline.SpecimenArchive;
-import org.labkey.api.specimen.requirements.RequirementProvider;
 import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
@@ -113,6 +114,7 @@ import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.settings.StatusSettings;
+import org.labkey.api.specimen.view.SpecimenWebPart;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenUrls;
@@ -133,9 +135,28 @@ import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.AjaxCompletion;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.DisplayElement;
+import org.labkey.api.view.GridView;
+import org.labkey.api.view.HBox;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.InsertView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.UpdateView;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
+import org.labkey.api.specimen.RequestEventType;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
@@ -299,7 +320,7 @@ public class SpecimenController extends BaseStudyController
             if (null == StudyService.get().getStudy(getContainer()))
                 return new HtmlView("This folder does not contain a study.");
             SpecimenSearchWebPart specimenSearch = new SpecimenSearchWebPart(true);
-            SpecimenWebPart specimenSummary = new SpecimenWebPart(true, (StudyImpl)StudyService.get().getStudy(getContainer()));
+            SpecimenWebPart specimenSummary = new SpecimenWebPart(true, StudyService.get().getStudy(getContainer()));
             return new VBox(specimenSummary, specimenSearch);
         }
 
@@ -1163,7 +1184,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(ManageRequestForm form, boolean reshow, BindException errors) throws Exception
         {
-            SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             if (request == null)
                 throw new NotFoundException();
 
@@ -1194,7 +1215,7 @@ public class SpecimenController extends BaseStudyController
             if (!getContainer().hasPermission(getUser(), ManageRequestsPermission.class))
                 throw new UnauthorizedException("You do not have permissions to create new specimen request requirements!");
 
-            SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             if (request == null)
                 throw new NotFoundException();
 
@@ -1217,7 +1238,7 @@ public class SpecimenController extends BaseStudyController
                         requirement.setActorId(form.getNewActor());
                         requirement.setDescription(form.getNewDescription());
                         requirement.setRequestId(request.getRowId());
-                        SpecimenManager.getInstance().createRequestRequirement(getUser(), requirement, true, true);
+                        SpecimenRequestManager.get().createRequestRequirement(getUser(), requirement, true, true);
                     }
                 }
             }
@@ -1259,7 +1280,7 @@ public class SpecimenController extends BaseStudyController
 
         public List<SpecimenRequestStatus> getStauses()
         {
-            return SpecimenManager.getInstance().getRequestStatuses(_context.getContainer(), _context.getUser());
+            return SpecimenRequestManager.get().getRequestStatuses(_context.getContainer(), _context.getUser());
         }
 
         public boolean isFilteredStatus(SpecimenRequestStatus status)
@@ -1314,7 +1335,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(ModifySpecimenRequestForm form, BindException errors) throws Exception
         {
-            SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             requiresEditRequestPermissions(request);
             long[] ids = toLongArray(DataRegionSelection.getSelected(getViewContext(), true));
             List<Long> specimenIds = new ArrayList<>();
@@ -1412,7 +1433,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(ManageRequestStatusForm form, boolean reshow, BindException errors)
         {
-            _specimenRequest = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            _specimenRequest = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             if (_specimenRequest == null)
                 throw new NotFoundException();
 
@@ -1423,7 +1444,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(final ManageRequestStatusForm form, BindException errors) throws Exception
         {
-            _specimenRequest = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            _specimenRequest = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             if (_specimenRequest == null)
                 throw new NotFoundException();
 
@@ -1436,7 +1457,7 @@ public class SpecimenController extends BaseStudyController
             boolean hasComments = form.getComments() != null && form.getComments().length() > 0;
             if (statusChanged || detailsChanged || hasComments || hasAttachments)
             {
-                SpecimenManager.RequestEventType changeType;
+                RequestEventType changeType;
                 String comment = "";
                 String eventSummary;
                 if (statusChanged || detailsChanged)
@@ -1464,7 +1485,7 @@ public class SpecimenController extends BaseStudyController
                     _specimenRequest.setModified(new Date());
                     try
                     {
-                        SpecimenManager.getInstance().updateRequest(getUser(), _specimenRequest);
+                        SpecimenRequestManager.get().updateRequest(getUser(), _specimenRequest);
                     }
                     catch (RequestabilityManager.InvalidRuleException e)
                     {
@@ -1472,11 +1493,11 @@ public class SpecimenController extends BaseStudyController
                                     "Please report this problem to an administrator. Error details: "  + e.getMessage());
                         return false;
                     }
-                    changeType = SpecimenManager.RequestEventType.REQUEST_STATUS_CHANGED;
+                    changeType = RequestEventType.REQUEST_STATUS_CHANGED;
                 }
                 else
                 {
-                    changeType = SpecimenManager.RequestEventType.COMMENT_ADDED;
+                    changeType = RequestEventType.COMMENT_ADDED;
                     comment = form.getComments();
                     eventSummary = "Comments added.";
                 }
@@ -1484,7 +1505,7 @@ public class SpecimenController extends BaseStudyController
                 SpecimenRequestEvent event;
                 try
                 {
-                    event = SpecimenManager.getInstance().createRequestEvent(getUser(), _specimenRequest, changeType, comment, files);
+                    event = SpecimenRequestManager.get().createRequestEvent(getUser(), _specimenRequest, changeType, comment, files);
                 }
                 catch (Exception e)
                 {
@@ -1717,7 +1738,7 @@ public class SpecimenController extends BaseStudyController
     public static class NewRequestBean extends SpecimensViewBean
     {
         private final Container _container;
-        private final SpecimenManager.SpecimenRequestInput[] _inputs;
+        private final SpecimenRequestInput[] _inputs;
         private final String[] _inputValues;
         private final int _selectedSite;
         private final BindException _errors;
@@ -1727,14 +1748,14 @@ public class SpecimenController extends BaseStudyController
         {
             super(context, requestedSpecimens != null ? requestedSpecimens.getVials() : null, false, false, false, false);
             _errors = errors;
-            _inputs = SpecimenManager.getInstance().getNewSpecimenRequestInputs(context.getContainer());
+            _inputs = SpecimenRequestManager.get().getNewSpecimenRequestInputs(context.getContainer());
             _selectedSite = form.getDestinationLocation();
             _inputValues = form.getInputs();
             _container = context.getContainer();
             _returnUrl = form.getReturnActionURL();
         }
 
-        public SpecimenManager.SpecimenRequestInput[] getInputs()
+        public SpecimenRequestInput[] getInputs()
         {
             return _inputs;
         }
@@ -1807,14 +1828,14 @@ public class SpecimenController extends BaseStudyController
             String[] inputs = form.getInputs();
             long[] specimenIds = form.getSpecimenRowIds();
             StringBuilder comments = new StringBuilder();
-            SpecimenManager.SpecimenRequestInput[] expectedInputs =
-                    SpecimenManager.getInstance().getNewSpecimenRequestInputs(getContainer());
+            SpecimenRequestInput[] expectedInputs =
+                    SpecimenRequestManager.get().getNewSpecimenRequestInputs(getContainer());
             if (inputs.length != expectedInputs.length)
                 throw new IllegalStateException("Expected a form element for each input.");
 
             for (int i = 0; i < expectedInputs.length; i++)
             {
-                SpecimenManager.SpecimenRequestInput expectedInput = expectedInputs[i];
+                SpecimenRequestInput expectedInput = expectedInputs[i];
                 if (form.getDestinationLocation() != 0 && expectedInput.isRememberSiteValue())
                     expectedInput.setDefaultSiteValue(getContainer(), form.getDestinationLocation(), inputs[i]);
                 if (i > 0)
@@ -1856,7 +1877,7 @@ public class SpecimenController extends BaseStudyController
 
                 User user = getUser();
                 Container container = getContainer();
-                _specimenRequest = SpecimenManager.getInstance().createRequest(getUser(), _specimenRequest, true);
+                _specimenRequest = SpecimenRequestManager.get().createRequest(getUser(), _specimenRequest, true);
                 List<Vial> vials;
                 if (specimenIds != null && specimenIds.length > 0)
                 {
@@ -2147,7 +2168,7 @@ public class SpecimenController extends BaseStudyController
                     SpecimenRequestRequirementProvider.get().getRequirement(getContainer(), form.getRequirementId());
             if (requirement.getRequestId() == form.getId())
             {
-                SpecimenManager.getInstance().deleteRequestRequirement(getUser(), requirement);
+                SpecimenRequestManager.get().deleteRequestRequirement(getUser(), requirement);
                 return true;
             }
 
@@ -2178,7 +2199,7 @@ public class SpecimenController extends BaseStudyController
             // we should only be deleting default requirements (those without an associated request):
             if (requirement != null && requirement.getRequestId() == -1)
             {
-                SpecimenManager.getInstance().deleteRequestRequirement(getUser(), requirement, false);
+                SpecimenRequestManager.get().deleteRequestRequirement(getUser(), requirement, false);
                 return true;
             }
 
@@ -2203,7 +2224,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
-            SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             if (request == null)
                 throw new NotFoundException("Specimen request " + form.getId() + " does not exist.");
 
@@ -2293,7 +2314,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(ManageRequirementForm form, boolean reshow, BindException errors)
         {
-            _specimenRequest = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            _specimenRequest = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             final SpecimenRequestRequirement requirement =
                     SpecimenRequestRequirementProvider.get().getRequirement(getContainer(), form.getRequirementId());
             if (_specimenRequest == null || requirement == null || requirement.getRequestId() != form.getId())
@@ -2309,14 +2330,14 @@ public class SpecimenController extends BaseStudyController
             if (!getContainer().hasPermission(getUser(), ManageRequestsPermission.class))
                 throw new UnauthorizedException("You do not have permission to update requirements!");
 
-            _specimenRequest = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            _specimenRequest = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             final SpecimenRequestRequirement requirement =
                     SpecimenRequestRequirementProvider.get().getRequirement(getContainer(), form.getRequirementId());
             if (_specimenRequest == null || requirement == null || requirement.getRequestId() != form.getId())
                 throw new NotFoundException();
 
             List<AttachmentFile> files = getAttachmentFileList();
-            SpecimenManager.RequestEventType eventType;
+            RequestEventType eventType;
             StringBuilder comment = new StringBuilder();
             comment.append(requirement.getRequirementSummary());
             String eventSummary;
@@ -2325,13 +2346,13 @@ public class SpecimenController extends BaseStudyController
                 SpecimenRequestRequirement clone = requirement.createMutable();
                 clone.setComplete(form.isComplete());
                 SpecimenManager.getInstance().updateRequestRequirement(getUser(), clone);
-                eventType = SpecimenManager.RequestEventType.REQUEST_STATUS_CHANGED;
+                eventType = RequestEventType.REQUEST_STATUS_CHANGED;
                 comment.append("\nStatus changed to ").append(form.isComplete() ? "complete" : "incomplete");
                 eventSummary = comment.toString();
             }
             else
             {
-                eventType = SpecimenManager.RequestEventType.COMMENT_ADDED;
+                eventType = RequestEventType.COMMENT_ADDED;
                 eventSummary = "Comment added.";
             }
 
@@ -2341,7 +2362,7 @@ public class SpecimenController extends BaseStudyController
             SpecimenRequestEvent event;
             try
             {
-                event = SpecimenManager.getInstance().createRequestEvent(getUser(), requirement, eventType, comment.toString(), files);
+                event = SpecimenRequestManager.get().createRequestEvent(getUser(), requirement, eventType, comment.toString(), files);
             }
             catch (Exception e)
             {
@@ -2524,54 +2545,6 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    public static class ManageReqsBean
-    {
-        private final SpecimenRequestRequirement[] _providerRequirements;
-        private final SpecimenRequestRequirement[] _receiverRequirements;
-        private final SpecimenRequestRequirement[] _generalRequirements;
-        private final SpecimenRequestRequirement[] _originatorRequirements;
-        private final SpecimenRequestActor[] _actors;
-
-        public ManageReqsBean(User user, Container container)
-        {
-            RequirementProvider<SpecimenRequestRequirement, SpecimenRequestActor> provider =
-                    SpecimenRequestRequirementProvider.get();
-            _originatorRequirements = provider.getDefaultRequirements(container,
-                    SpecimenRequestRequirementType.ORIGINATING_SITE);
-            _providerRequirements = provider.getDefaultRequirements(container,
-                    SpecimenRequestRequirementType.PROVIDING_SITE);
-            _receiverRequirements = provider.getDefaultRequirements(container,
-                    SpecimenRequestRequirementType.RECEIVING_SITE);
-            _generalRequirements = provider.getDefaultRequirements(container,
-                    SpecimenRequestRequirementType.NON_SITE_BASED);
-            _actors = provider.getActors(container);
-        }
-
-        public SpecimenRequestRequirement[] getGeneralRequirements()
-        {
-            return _generalRequirements;
-        }
-
-        public SpecimenRequestRequirement[] getReceiverRequirements()
-        {
-            return _receiverRequirements;
-        }
-
-        public SpecimenRequestRequirement[] getProviderRequirements()
-        {
-            return _providerRequirements;
-        }
-
-        public SpecimenRequestRequirement[] getOriginatorRequirements()
-        {
-            return _originatorRequirements;
-        }
-
-        public SpecimenRequestActor[] getActors()
-        {
-            return _actors;
-        }
-    }
     @RequiresPermission(ManageRequestRequirementsPermission.class)
     public class ManageDefaultReqsAction extends FormViewAction<DefaultRequirementsForm>
     {
@@ -2719,7 +2692,7 @@ public class SpecimenController extends BaseStudyController
             if (!SettingsManager.get().isSpecimenShoppingCartEnabled(getContainer()))
                 throw new UnauthorizedException();
 
-            SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             requiresEditRequestPermissions(request);
             List<Vial> vials = request.getVials();
             if (!vials.isEmpty() || SpecimenService.get().getRequestCustomizer().allowEmptyRequests())
@@ -2729,9 +2702,9 @@ public class SpecimenController extends BaseStudyController
                 request.setStatusId(newStatus.getRowId());
                 try
                 {
-                    SpecimenManager.getInstance().updateRequest(getUser(), request);
-                    SpecimenManager.getInstance().createRequestEvent(getUser(), request,
-                            SpecimenManager.RequestEventType.REQUEST_STATUS_CHANGED, "Request submitted for processing.", null);
+                    SpecimenRequestManager.get().updateRequest(getUser(), request);
+                    SpecimenRequestManager.get().createRequestEvent(getUser(), request,
+                            RequestEventType.REQUEST_STATUS_CHANGED, "Request submitted for processing.", null);
                     if (SettingsManager.get().isSpecimenShoppingCartEnabled(getContainer()))
                     {
                         try
@@ -2782,7 +2755,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
-            SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             requiresEditRequestPermissions(request);
             SpecimenRequestStatus cartStatus = SpecimenManager.getInstance().getRequestShoppingCartStatus(getContainer(), getUser());
             if (request.getStatusId() != cartStatus.getRowId())
@@ -2818,7 +2791,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(EmailSpecimenListForm form, BindException errors) throws Exception
         {
-            final SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            final SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             if (request == null)
                 throw new NotFoundException();
 
@@ -2887,8 +2860,8 @@ public class SpecimenController extends BaseStudyController
                     String header = type.getDisplay() + " location notification of specimen shipment to " + receivingLocation.getDisplayName();
                     try
                     {
-                        SpecimenRequestEvent event = SpecimenManager.getInstance().createRequestEvent(getUser(), request,
-                            SpecimenManager.RequestEventType.SPECIMEN_LIST_GENERATED, header + "\n" + content.toString(), formFiles);
+                        SpecimenRequestEvent event = SpecimenRequestManager.get().createRequestEvent(getUser(), request,
+                            RequestEventType.SPECIMEN_LIST_GENERATED, header + "\n" + content.toString(), formFiles);
 
                         final Container container = getContainer();
                         final User user = getUser();
@@ -2993,7 +2966,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(ExportSiteForm form, BindException errors) throws Exception
         {
-            SpecimenRequest specimenRequest = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            SpecimenRequest specimenRequest = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             LocationImpl sourceLocation = LocationManager.get().getLocation(getContainer(), form.getSourceSiteId());
             LocationImpl destLocation = LocationManager.get().getLocation(getContainer(), form.getDestSiteId());
             if (specimenRequest == null || sourceLocation == null || destLocation == null)
@@ -3039,7 +3012,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(LabSpecimenListsForm form, BindException errors)
         {
-            SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             if (request == null  || form.getListType() == null)
                 throw new NotFoundException();
 
@@ -4369,7 +4342,7 @@ public class SpecimenController extends BaseStudyController
             {
                 status = status.createMutable();
                 status.setSortOrder(statusOrder);
-                SpecimenManager.getInstance().updateRequestStatus(getUser(), status);
+                SpecimenRequestManager.get().updateRequestStatus(getUser(), status);
             }
         }
     }
@@ -4424,7 +4397,7 @@ public class SpecimenController extends BaseStudyController
                             status.setLabel(label);
                             status.setFinalState(isFinalState);
                             status.setSpecimensLocked(specimensLocked);
-                            SpecimenManager.getInstance().updateRequestStatus(getUser(), status);
+                            SpecimenRequestManager.get().updateRequestStatus(getUser(), status);
                         }
                     }
                 }
@@ -4434,12 +4407,12 @@ public class SpecimenController extends BaseStudyController
             {
                 SpecimenRequestStatus status = new SpecimenRequestStatus();
                 status.setLabel(form.getNewLabel());
-                List<SpecimenRequestStatus> statuses = SpecimenManager.getInstance().getRequestStatuses(getContainer(), getUser());
+                List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(getContainer(), getUser());
                 status.setSortOrder(statuses.size());
                 status.setContainer(getContainer());
                 status.setFinalState(form.isNewFinalState());
                 status.setSpecimensLocked(form.isNewSpecimensLocked());
-                SpecimenManager.getInstance().createRequestStatus(getUser(), status);
+                SpecimenRequestManager.get().createRequestStatus(getUser(), status);
             }
 
             StatusSettings settings = SettingsManager.get().getStatusSettings(getContainer());
@@ -4522,7 +4495,7 @@ public class SpecimenController extends BaseStudyController
 
     private Map<Integer, SpecimenRequestStatus> getIdToRequestStatusMap(Container container)
     {
-        List<SpecimenRequestStatus> statuses = SpecimenManager.getInstance().getRequestStatuses(container, getUser());
+        List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(container, getUser());
         Map<Integer, SpecimenRequestStatus> idToStatus = new HashMap<>();
         for (SpecimenRequestStatus status : statuses)
             idToStatus.put(status.getRowId(), status);
@@ -4565,11 +4538,11 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
-            List<SpecimenRequestStatus> statuses = SpecimenManager.getInstance().getRequestStatuses(getContainer(), getUser());
+            List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(getContainer(), getUser());
             SpecimenRequestStatus status = SpecimenManager.getInstance().getRequestStatus(getContainer(), form.getId());
             if (status != null)
             {
-                SpecimenManager.getInstance().deleteRequestStatus(getUser(), status);
+                SpecimenRequestManager.get().deleteRequestStatus(getUser(), status);
                 int[] remainingIds = new int[statuses.size() - 1];
                 int idx = 0;
                 for (SpecimenRequestStatus remainingStatus : statuses)
@@ -4600,12 +4573,12 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(ManageRequestInputsForm form, BindException errors) throws Exception
         {
-            SpecimenManager.SpecimenRequestInput[] inputs = new SpecimenManager.SpecimenRequestInput[form.getTitle().length];
+            SpecimenRequestInput[] inputs = new SpecimenRequestInput[form.getTitle().length];
             for (int i = 0; i < form.getTitle().length; i++)
             {
                 String title = form.getTitle()[i];
                 String helpText = form.getHelpText()[i];
-                inputs[i] = new SpecimenManager.SpecimenRequestInput(title, helpText, i);
+                inputs[i] = new SpecimenRequestInput(title, helpText, i);
             }
 
             if (form.getMultiline() != null)
@@ -4623,7 +4596,7 @@ public class SpecimenController extends BaseStudyController
                 for (int index : form.getRememberSiteValue())
                     inputs[index].setRememberSiteValue(true);
             }
-            SpecimenManager.getInstance().saveNewSpecimenRequestInputs(getContainer(), inputs);
+            SpecimenRequestManager.get().saveNewSpecimenRequestInputs(getContainer(), inputs);
             return true;
         }
 
@@ -4735,18 +4708,18 @@ public class SpecimenController extends BaseStudyController
 
     public static class ManageRequestInputsBean
     {
-        private SpecimenManager.SpecimenRequestInput[] _inputs;
-        private Container _container;
-        private String _contextPath;
+        private final SpecimenRequestInput[] _inputs;
+        private final Container _container;
+        private final String _contextPath;
 
         public ManageRequestInputsBean(ViewContext context) throws SQLException
         {
             _container = context.getContainer();
-            _inputs = SpecimenManager.getInstance().getNewSpecimenRequestInputs(_container);
+            _inputs = SpecimenRequestManager.get().getNewSpecimenRequestInputs(_container);
             _contextPath = context.getContextPath();
         }
 
-        public SpecimenManager.SpecimenRequestInput[] getInputs()
+        public SpecimenRequestInput[] getInputs()
         {
             return _inputs;
         }
@@ -5405,7 +5378,7 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
             initRequest(form);
-            SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), _requestId);
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), _requestId);
             if (request == null)
                 throw new NotFoundException();
 
@@ -5422,7 +5395,7 @@ public class SpecimenController extends BaseStudyController
         protected void validatePermission(User user, BindException errors)
         {
             checkPermissions();
-            SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), _requestId);
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), _requestId);
 
             if (!SpecimenManager.getInstance().hasEditRequestPermissions(getUser(), request) ||
                     SpecimenManager.getInstance().isInFinalState(request))
@@ -5471,7 +5444,7 @@ public class SpecimenController extends BaseStudyController
                 SpecimenManager specimenManager = SpecimenManager.getInstance();
                 try
                 {
-                    SpecimenRequest request = specimenManager.getRequest(getContainer(), _requestId);
+                    SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), _requestId);
                     List<Vial> vials = specimenManager.getVials(getContainer(), getUser(), globalIds);
 
                     if (vials != null && vials.size() == globalIds.length)

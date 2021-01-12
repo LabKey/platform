@@ -45,6 +45,7 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
@@ -78,6 +79,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.CohortFilter;
+import org.labkey.api.specimen.RequestEventType;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
@@ -449,8 +451,8 @@ public class SpecimenUtils
         Address[] notify = settings.getNewRequestNotifyAddresses();
         if (notify != null && notify.length > 0)
         {
-            SpecimenRequestEvent event = SpecimenManager.getInstance().createRequestEvent(getUser(), request,
-                    SpecimenManager.RequestEventType.REQUEST_CREATED, null, Collections.emptyList());
+            SpecimenRequestEvent event = SpecimenRequestManager.get().createRequestEvent(getUser(), request,
+                    RequestEventType.REQUEST_CREATED, null, Collections.emptyList());
             DefaultRequestNotification notification = new DefaultRequestNotification(request, Collections.singletonList(new NotificationRecipientSet(notify)),
                     "New Request Created", event, null, null, getViewContext());
             sendNotification(notification, true, errors);
@@ -515,11 +517,11 @@ public class SpecimenUtils
                 }
             }
             if (notification.getRequirement() != null)
-                SpecimenManager.getInstance().createRequestEvent(getUser(), notification.getRequirement(),
-                        SpecimenManager.RequestEventType.NOTIFICATION_SENT, "Notification sent to " + recipient.getLongRecipientDescription(), null);
+                SpecimenRequestManager.get().createRequestEvent(getUser(), notification.getRequirement(),
+                        RequestEventType.NOTIFICATION_SENT, "Notification sent to " + recipient.getLongRecipientDescription(), null);
             else
-                SpecimenManager.getInstance().createRequestEvent(getUser(), specimenRequest,
-                        SpecimenManager.RequestEventType.NOTIFICATION_SENT, "Notification sent to " + recipient.getLongRecipientDescription(), null);
+                SpecimenRequestManager.get().createRequestEvent(getUser(), specimenRequest,
+                        RequestEventType.NOTIFICATION_SENT, "Notification sent to " + recipient.getLongRecipientDescription(), null);
         }
     }
 

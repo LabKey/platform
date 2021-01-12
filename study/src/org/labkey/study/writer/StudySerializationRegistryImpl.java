@@ -75,7 +75,7 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
         IMPORTER_FACTORIES.add(importerFactory);
     }
 
-    // These writers are internal to study.  They have access to study internals.
+    // These writers are internal to study. They have access to study internals.
     public Collection<InternalStudyWriter> getInternalStudyWriters()
     {
         // New up the writers every time since these classes can be stateful
@@ -89,8 +89,8 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
             new ParticipantCommentWriter(),
             new ParticipantGroupWriter(),
             new ProtocolDocumentWriter(),
-            new SpecimenSettingsWriter(),
-            new SpecimenArchiveWriter(),
+//            new SpecimenSettingsWriter(),
+//            new SpecimenArchiveWriter(),
             new TreatmentDataWriter(),
             new VisitMapWriter(),
             new StudyViewsWriter(),

@@ -40,13 +40,13 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.importer.RollupHelper;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.CohortForeignKey;
 import org.labkey.study.StudySchema;
-import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.StudyManager;
 
 import java.io.IOException;
@@ -154,10 +154,10 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         getOptionalSpecimenAndVialProperties(schema.getContainer(), _optionalSpecimenProperties, _optionalVialProperties);
 
         // If multiple columns from Vial table are rolled up from the same Event column, only allow editing of one of them
-        addOptionalColumns(_optionalVialProperties, true, SpecimenImporter.getRolledupDuplicateVialColumnNames(getContainer(), schema.getUser()));
+        addOptionalColumns(_optionalVialProperties, true, RollupHelper.getRolledupDuplicateVialColumnNames(getContainer(), schema.getUser()));
 
         // any rolled up column from Specimen table should be read only
-        addOptionalColumns(_optionalSpecimenProperties, true, SpecimenImporter.getRolledupSpecimenColumnNames(getContainer(), schema.getUser()));
+        addOptionalColumns(_optionalSpecimenProperties, true, RollupHelper.getRolledupSpecimenColumnNames(getContainer(), schema.getUser()));
     }
 
     @Override

@@ -52,6 +52,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
@@ -371,7 +372,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     public List<SpecimenRequestStatus> getSampleRequestStatuses(User user)
     {
-        return SpecimenManager.getInstance().getRequestStatuses(getContainer(), user);
+        return SpecimenRequestManager.get().getRequestStatuses(getContainer(), user);
     }
 
     public Set<Integer> getSampleRequestStatusesInUse()

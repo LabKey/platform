@@ -20,7 +20,10 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.specimen.SpecimenRequestManager;
+import org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput;
 import org.labkey.api.specimen.SpecimenRequestStatus;
+import org.labkey.api.specimen.actions.ManageReqsBean;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.location.LocationImpl;
@@ -37,9 +40,6 @@ import org.labkey.api.specimen.settings.StatusSettings;
 import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.security.xml.GroupType;
-import org.labkey.study.SpecimenManager;
-import org.labkey.study.SpecimenManager.SpecimenRequestInput;
-import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.DefaultRequirementType;
@@ -191,10 +191,10 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                 // remove any existing not in-use, non-system statuses for this container before importing the new ones
                 Set<Integer> inUseStatusIds = study.getSampleRequestStatusesInUse();
                 List<String> inUseStatusLabels = new ArrayList<>();
-                for (SpecimenRequestStatus existingStatus : study.getSampleRequestStatuses(ctx.getUser()))
+                for (SpecimenRequestStatus existingStatus : SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), ctx.getUser()))
                 {
                     if (!existingStatus.isSystemStatus() && !inUseStatusIds.contains(existingStatus.getRowId()))
-                        SpecimenManager.getInstance().deleteRequestStatus(ctx.getUser(), existingStatus);
+                        SpecimenRequestManager.get().deleteRequestStatus(ctx.getUser(), existingStatus);
                     else
                         inUseStatusLabels.add(existingStatus.getLabel());
                 }
@@ -217,7 +217,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                             newStatus.setFinalState(xmlStatusArray[i].getFinalState());
                         if (xmlStatusArray[i].isSetLockSpecimens())
                             newStatus.setSpecimensLocked(xmlStatusArray[i].getLockSpecimens());
-                        SpecimenManager.getInstance().createRequestStatus(ctx.getUser(), newStatus);
+                        SpecimenRequestManager.get().createRequestStatus(ctx.getUser(), newStatus);
                     }
                     else
                     {
@@ -318,7 +318,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         if (xmlDefRequirements != null)
         {
             // remove existing default requirements for this container, full replacement
-            SpecimenController.ManageReqsBean existingDefaultReqBeans = new SpecimenController.ManageReqsBean(ctx.getUser(), study.getContainer());
+            ManageReqsBean existingDefaultReqBeans = new ManageReqsBean(ctx.getUser(), study.getContainer());
             List<SpecimenRequestRequirement> existingDefaultReqs = new ArrayList<>();
             existingDefaultReqs.addAll(Arrays.asList(existingDefaultReqBeans.getOriginatorRequirements()));
             existingDefaultReqs.addAll(Arrays.asList(existingDefaultReqBeans.getProviderRequirements()));
@@ -328,7 +328,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
             {
                 try
                 {
-                    SpecimenManager.getInstance().deleteRequestRequirement(ctx.getUser(), existingReq, false);
+                    SpecimenRequestManager.get().deleteRequestRequirement(ctx.getUser(), existingReq, false);
                 }
                 catch(AttachmentService.DuplicateFilenameException e)
                 {} // no op, this would only occur with deleteRequestRequirement when createEvent is true
@@ -440,7 +440,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         // try to merge with any existing request forms, even though there doesn't seem to be the notion of a duplicate value
         Set<String> currentInputs = new HashSet<>();
         List<SpecimenRequestInput> inputs = new ArrayList<>();
-        for (SpecimenRequestInput input : SpecimenManager.getInstance().getNewSpecimenRequestInputs(ctx.getContainer(), false))
+        for (SpecimenRequestInput input : SpecimenRequestManager.get().getNewSpecimenRequestInputs(ctx.getContainer(), false))
         {
             inputs.add(input);
             currentInputs.add(input.getTitle());
@@ -471,7 +471,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                         ctx.getLogger().info("There is currently a form with the same title: " + form.getTitle() + ", skipping this from import");
                 }
                 inputs.sort(Comparator.comparingInt(SpecimenRequestInput::getDisplayOrder));
-                SpecimenManager.getInstance().saveNewSpecimenRequestInputs(ctx.getContainer(), inputs.toArray(new SpecimenRequestInput[inputs.size()]));
+                SpecimenRequestManager.get().saveNewSpecimenRequestInputs(ctx.getContainer(), inputs.toArray(new SpecimenRequestInput[inputs.size()]));
             }
         }
     }

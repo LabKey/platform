@@ -29,17 +29,19 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
+import org.labkey.api.specimen.writer.AbstractSpecimenWriter;
 import org.labkey.api.specimen.writer.LocationSpecimenWriter;
+import org.labkey.api.specimen.writer.SimpleStudyExportContext;
 import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.specimen.writer.StandardSpecimenWriter;
 import org.labkey.api.specimen.writer.StandardSpecimenWriter.QueryInfo;
+import org.labkey.api.study.Study;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.study.importer.SpecimenImporter;
-import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.StudyDocument;
 
 import java.util.ArrayList;
@@ -64,7 +66,7 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
     }
 
     @Override
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws Exception
+    public void write(Study study, SimpleStudyExportContext ctx, VirtualFile root) throws Exception
     {
         StudyDocument.Study.Specimens specimensXml = ensureSpecimensElement(ctx);
         VirtualFile specimensDir = root.getDir(DEFAULT_DIRECTORY);

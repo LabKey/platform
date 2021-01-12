@@ -550,6 +550,12 @@ public class StudyServiceImpl implements StudyService
     }
 
     @Override
+    public UserSchema getStudyQuerySchema(Study study, User user)
+    {
+        return StudyQuerySchema.createSchema((StudyImpl)study, user, true);
+    }
+
+    @Override
     public void updateDatasetCategory(User user, @NotNull Dataset dataset, @NotNull ViewCategory category)
     {
         DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByEntityId(dataset.getStudy(), dataset.getEntityId());

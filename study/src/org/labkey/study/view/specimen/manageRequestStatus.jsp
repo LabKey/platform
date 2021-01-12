@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestManager" %>
 <%@ page import="org.labkey.api.specimen.SpecimenRequestStatus" %>
-<%@ page import="org.labkey.api.specimen.notifications.ActorNotificationRecipientSet" %>
+<%@ page import="org.labkey.api.specimen.notifications.ActorNotificationRecipientSet"%>
 <%@ page import="org.labkey.api.study.SpecimenService"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.SpecimenManager" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestBean" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestStatusAction" %>
@@ -30,7 +30,7 @@
 <%
     JspView<ManageRequestBean> me = (JspView<ManageRequestBean>) HttpView.currentView();
     ManageRequestBean bean = me.getModelBean();
-    List<SpecimenRequestStatus> statuses = SpecimenManager.getInstance().getRequestStatuses(getContainer(), getUser());
+    List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(getContainer(), getUser());
 %>
 <labkey:errors />
 <labkey:form action="<%=urlFor(ManageRequestStatusAction.class)%>" enctype="multipart/form-data" method="POST">

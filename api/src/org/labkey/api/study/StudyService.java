@@ -33,6 +33,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.SecurableResource;
@@ -159,6 +160,8 @@ public interface StudyService
 
     @Deprecated // Use SpecimenSchema instead
     DbSchema getStudySchema();
+
+    UserSchema getStudyQuerySchema(Study study, User user);
 
     void updateDatasetCategory(User user, @NotNull Dataset dataset, @NotNull ViewCategory category);
 

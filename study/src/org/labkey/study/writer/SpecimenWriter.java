@@ -32,15 +32,17 @@ import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.importer.SpecimenColumn;
 import org.labkey.api.specimen.importer.TargetTable;
+import org.labkey.api.specimen.writer.AbstractSpecimenWriter;
+import org.labkey.api.specimen.writer.SimpleStudyExportContext;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.api.writer.Writer;
 import org.labkey.study.importer.SpecimenImporter;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.query.StudyQuerySchema;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -53,7 +55,7 @@ import java.util.List;
  * Date: May 7, 2009
  * Time: 3:49:32 PM
  */
-public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
+public class SpecimenWriter extends AbstractSpecimenWriter
 {
     @Override
     public String getDataType()
@@ -62,10 +64,10 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
     }
 
     @Override
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
+    public void write(Study study, SimpleStudyExportContext ctx, VirtualFile vf) throws Exception
     {
         SpecimenSchema schema = SpecimenSchema.get();
-        StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, ctx.getUser(), true); // to use for checking overlayed XMl metadata
+        UserSchema querySchema = StudyService.get().getStudyQuerySchema(study, ctx.getUser()); // to use for checking overlayed XMl metadata
         Container c = ctx.getContainer();
         SpecimenImporter specimenImporter = new SpecimenImporter(c, ctx.getUser());
         Collection<SpecimenColumn> columns = specimenImporter.getSpecimenColumns();
@@ -79,7 +81,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         List<ColumnInfo> selectColumns = new ArrayList<>(columns.size());
         String comma = "";
 
-        TableInfo tableInfoSpecimenDetail = querySchema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
+        TableInfo tableInfoSpecimenDetail = querySchema.getTable("SpecimenWrap");
         TableInfo tableInfoSpecimenEvent = schema.getTableInfoSpecimenEvent(c);
         TableInfo queryTableSpecimenDetail = querySchema.getTable("SpecimenDetail");
         TableInfo queryTableSpecimenEvent = querySchema.getTable("SpecimenEvent");

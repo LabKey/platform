@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestManager" %>
 <%@ page import="org.labkey.api.specimen.model.SpecimenTablesProvider" %>
 <%@ page import="org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
@@ -442,7 +443,7 @@
                 <table class="lk-fields-table">
                     <tr>
                         <td class="lk-study-prop-label">Statuses</td>
-                        <td class="lk-study-prop-desc">This study defines <%= study.getSampleRequestStatuses(getUser()).size() %> specimen request
+                        <td class="lk-study-prop-desc">This study defines <%=SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), getUser()).size() %> specimen request
                             statuses</td>
                         <td><%= link("Manage Request Statuses", urlFor(ManageStatusesAction.class)) %></td>
                     </tr>

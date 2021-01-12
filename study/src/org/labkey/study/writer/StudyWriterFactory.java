@@ -29,8 +29,10 @@ import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 
 
 public class StudyWriterFactory implements FolderWriterFactory
@@ -115,7 +117,7 @@ public class StudyWriterFactory implements FolderWriterFactory
         @Override
         public Collection<Writer> getChildren(boolean sort, boolean forTemplate)
         {
-            LinkedList<Writer> children = new LinkedList<>();
+            List<Writer> children = new ArrayList<>();
             Collection<InternalStudyWriter> writers = StudySerializationRegistryImpl.get().getInternalStudyWriters();
             for (InternalStudyWriter writer : writers)
             {

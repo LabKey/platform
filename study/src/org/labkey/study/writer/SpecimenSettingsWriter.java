@@ -17,24 +17,27 @@ package org.labkey.study.writer;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.specimen.SpecimenRequestManager;
+import org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput;
 import org.labkey.api.specimen.SpecimenRequestStatus;
+import org.labkey.api.specimen.actions.ManageReqsBean;
 import org.labkey.api.specimen.importer.RequestabilityManager;
-import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.settings.StatusSettings;
+import org.labkey.api.specimen.writer.AbstractSpecimenWriter;
+import org.labkey.api.specimen.writer.SimpleStudyExportContext;
 import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
+import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.security.xml.GroupType;
 import org.labkey.security.xml.GroupsType;
-import org.labkey.study.SpecimenManager;
-import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.DefaultRequirementType;
 import org.labkey.study.xml.DefaultRequirementsType;
 import org.labkey.study.xml.SpecimenRepositoryType;
@@ -64,7 +67,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
     }
 
     @Override
-    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws Exception
+    public void write(Study study, SimpleStudyExportContext ctx, VirtualFile root) throws Exception
     {
         StudyDocument.Study.Specimens specimensXml = ensureSpecimensElement(ctx);
         specimensXml.setSettings(DEFAULT_SETTINGS_FILE);
@@ -73,18 +76,18 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
         writeSettings(study, ctx, vf);
     }
 
-    private void writeSettings(StudyImpl study, StudyExportContext ctx, VirtualFile dir) throws Exception
+    private void writeSettings(Study study, SimpleStudyExportContext ctx, VirtualFile dir) throws Exception
     {
         SpecimensDocument xmlSettingsDoc = SpecimensDocument.Factory.newInstance();
         SpecimenSettingsType xmlSettings = xmlSettingsDoc.addNewSpecimens();
+        RepositorySettings repositorySettings = SettingsManager.get().getRepositorySettings(study.getContainer());
 
-        writeRepositoryType(xmlSettings, study);
+        writeRepositoryType(xmlSettings, repositorySettings);
         writeLocationTypes(xmlSettings, study);
-        writeSpecimenGroupings(xmlSettings, study);
+        writeSpecimenGroupings(xmlSettings, repositorySettings);
         writeDisplaySettings(xmlSettings, ctx);
 
         // these settings only apply if repository type is Advanced and specimen requests are enabled
-        RepositorySettings repositorySettings = study.getRepositorySettings();
         if (!repositorySettings.isSimple() && repositorySettings.isEnableRequests())
         {
             writeRequestStatuses(xmlSettings, study, ctx);
@@ -99,10 +102,8 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
         dir.saveXmlBean(DEFAULT_SETTINGS_FILE, xmlSettingsDoc);
     }
 
-    private void writeRepositoryType(SpecimenSettingsType specimenSettingsType, StudyImpl study)
+    private void writeRepositoryType(SpecimenSettingsType specimenSettingsType, RepositorySettings repositorySettings)
     {
-        RepositorySettings repositorySettings = study.getRepositorySettings();
-
         specimenSettingsType.setRepositoryType(repositorySettings.isSimple() ? SpecimenRepositoryType.STANDARD : SpecimenRepositoryType.ADVANCED);
         specimenSettingsType.setEnableRequests(repositorySettings.isEnableRequests());
         specimenSettingsType.setEditableRepository(repositorySettings.isSpecimenDataEditable());
@@ -117,9 +118,8 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
         xmlLocationTypes.addNewEndpointLab().setAllowRequests(study.isAllowReqLocEndpoint());
     }
 
-    private void writeSpecimenGroupings(SpecimenSettingsType specimenSettingsType, StudyImpl study)
+    private void writeSpecimenGroupings(SpecimenSettingsType specimenSettingsType, RepositorySettings repositorySettings)
     {
-        RepositorySettings repositorySettings = study.getRepositorySettings();
         ArrayList<String[]> groupings = repositorySettings.getSpecimenWebPartGroupings();
         if (groupings.size() > 0)
         {
@@ -132,10 +132,10 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
         }
     }
 
-    private void writeRequestStatuses(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx)
+    private void writeRequestStatuses(SpecimenSettingsType specimenSettingsType, Study study, SimpleStudyExportContext ctx)
     {
         SpecimenSettingsType.RequestStatuses xmlRequestStatuses = null;
-        List<SpecimenRequestStatus> statuses = study.getSampleRequestStatuses(ctx.getUser());
+        List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), ctx.getUser());
         if (statuses.size() > 0)
         {
             for (SpecimenRequestStatus status : statuses)
@@ -158,9 +158,9 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
         }
     }
 
-    private void writeActorsAndGroups(SpecimenSettingsType specimenSettingsType, StudyImpl study)
+    private void writeActorsAndGroups(SpecimenSettingsType specimenSettingsType, Study study)
     {
-        SpecimenRequestActor[] actors = study.getSampleRequestActors();
+        SpecimenRequestActor[] actors = SpecimenRequestRequirementProvider.get().getActors(study.getContainer());
         if (actors != null && actors.length > 0)
         {
             SpecimenSettingsType.RequestActors xmlRequestActors = specimenSettingsType.addNewRequestActors();
@@ -181,7 +181,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
                 }
                 else
                 {
-                    for (LocationImpl location : study.getLocations())
+                    for (Location location : study.getLocations())
                     {
                         if (actor.getMembers(location).length > 0)
                         {
@@ -194,9 +194,9 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
         }
     }
 
-    private void writeDefaultRequirements(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx)
+    private void writeDefaultRequirements(SpecimenSettingsType specimenSettingsType, Study study, SimpleStudyExportContext ctx)
     {
-        SpecimenController.ManageReqsBean defRequirements = new SpecimenController.ManageReqsBean(ctx.getUser(), study.getContainer());
+        ManageReqsBean defRequirements = new ManageReqsBean(ctx.getUser(), study.getContainer());
         SpecimenSettingsType.DefaultRequirements xmlDefRequirements = null;
         if (defRequirements.getOriginatorRequirements().length > 0)
         {
@@ -235,7 +235,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
         xmlReq.setDescription(req.getDescription());
     }
 
-    private void writeActorGroup(SpecimenRequestActor actor, @Nullable LocationImpl location, GroupType xmlGroupType)
+    private void writeActorGroup(SpecimenRequestActor actor, @Nullable Location location, GroupType xmlGroupType)
     {
         // Note: these actor groups only currently have Users (no groups within groups)
         GroupManager.exportGroupMembers(actor.getGroup(location), Collections.emptyList(), Arrays.asList(actor.getMembers(location)), xmlGroupType);
@@ -245,7 +245,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
         xmlGroupType.setName(location != null ? location.getLabel() : actor.getLabel());
     }
 
-    private void writeDisplaySettings(SpecimenSettingsType specimenSettingsType, StudyExportContext ctx)
+    private void writeDisplaySettings(SpecimenSettingsType specimenSettingsType, SimpleStudyExportContext ctx)
     {
         ctx.getLogger().info("Exporting specimen display settings");
         DisplaySettings settings = SettingsManager.get().getDisplaySettings(ctx.getContainer());
@@ -263,15 +263,15 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
             warnings.setZeroVials(settings.getZeroVials());
     }
 
-    private void writeRequestForm(SpecimenSettingsType specimenSettingsType, StudyExportContext ctx) throws SQLException
+    private void writeRequestForm(SpecimenSettingsType specimenSettingsType, SimpleStudyExportContext ctx) throws SQLException
     {
         ctx.getLogger().info("Exporting specimen request forms");
-        SpecimenManager.SpecimenRequestInput[] inputs = SpecimenManager.getInstance().getNewSpecimenRequestInputs(ctx.getContainer());
+        SpecimenRequestInput[] inputs = SpecimenRequestManager.get().getNewSpecimenRequestInputs(ctx.getContainer());
 
         if (inputs != null && inputs.length > 0)
         {
             SpecimenSettingsType.RequestForms forms = specimenSettingsType.addNewRequestForms();
-            for (SpecimenManager.SpecimenRequestInput input : inputs)
+            for (SpecimenRequestInput input : inputs)
             {
                 SpecimenSettingsType.RequestForms.Form requestForm = forms.addNewForm();
 
@@ -287,29 +287,29 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
         }
     }
 
-    private void writeNotifications(SpecimenSettingsType specimenSettingsType, StudyExportContext ctx)
+    private void writeNotifications(SpecimenSettingsType specimenSettingsType, SimpleStudyExportContext ctx)
     {
         ctx.getLogger().info("Exporting specimen notification settings");
         RequestNotificationSettings notifications = SettingsManager.get().getRequestNotificationSettings(ctx.getContainer());
-        SpecimenSettingsType.Notifications xmlNotificatons = specimenSettingsType.addNewNotifications();
+        SpecimenSettingsType.Notifications xmlNotifications = specimenSettingsType.addNewNotifications();
 
         if (notifications.getReplyTo() != null)
-            xmlNotificatons.setReplyTo(notifications.getReplyTo());
+            xmlNotifications.setReplyTo(notifications.getReplyTo());
         if (notifications.getSubjectSuffix() != null)
-            xmlNotificatons.setSubjectSuffix(notifications.getSubjectSuffix());
-        xmlNotificatons.setNewRequestNotifyCheckbox(notifications.isNewRequestNotifyCheckbox());
+            xmlNotifications.setSubjectSuffix(notifications.getSubjectSuffix());
+        xmlNotifications.setNewRequestNotifyCheckbox(notifications.isNewRequestNotifyCheckbox());
         if (notifications.getNewRequestNotify() != null)
-            xmlNotificatons.setNewRequestNotify(notifications.getNewRequestNotify());
-        xmlNotificatons.setCcCheckbox(notifications.isCcCheckbox());
+            xmlNotifications.setNewRequestNotify(notifications.getNewRequestNotify());
+        xmlNotifications.setCcCheckbox(notifications.isCcCheckbox());
         if (notifications.getCc() != null)
-            xmlNotificatons.setCc(notifications.getCc());
+            xmlNotifications.setCc(notifications.getCc());
         if (notifications.getDefaultEmailNotify() != null)
-            xmlNotificatons.setDefaultEmailNotify(notifications.getDefaultEmailNotify());
+            xmlNotifications.setDefaultEmailNotify(notifications.getDefaultEmailNotify());
         if (notifications.getSpecimensAttachment() != null)
-            xmlNotificatons.setSpecimensAttachment(notifications.getSpecimensAttachment());
+            xmlNotifications.setSpecimensAttachment(notifications.getSpecimensAttachment());
     }
 
-    private void writeRequestabilityRules(SpecimenSettingsType specimenSettingsType, StudyExportContext ctx)
+    private void writeRequestabilityRules(SpecimenSettingsType specimenSettingsType, SimpleStudyExportContext ctx)
     {
         ctx.getLogger().info("Exporting specimen requestability rules");
         List<RequestabilityManager.RequestableRule> rules = RequestabilityManager.getInstance().getRules(ctx.getContainer());

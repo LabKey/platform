@@ -76,7 +76,6 @@ import org.labkey.api.specimen.importer.SpecimenColumn;
 import org.labkey.api.specimen.importer.SpecimenImportFile;
 import org.labkey.api.specimen.importer.SpecimenTableType;
 import org.labkey.api.specimen.importer.TargetTable;
-import org.labkey.api.specimen.importer.VialSpecimenRollup;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenComment;
@@ -202,8 +201,6 @@ public class SpecimenImporter
     }
 
     protected static final String GLOBAL_UNIQUE_ID_TSV_COL = "global_unique_specimen_id";
-
-    public static final String BINARY_TYPE = SpecimenSchema.get().getSqlDialect().getBinaryDataType();
 
     private static final String LAB_ID_TSV_COL = "lab_id";
     private static final String SPEC_NUMBER_TSV_COL = "specimen_number";
@@ -3393,69 +3390,5 @@ public class SpecimenImporter
     {
         debug(sql);
         return new SqlExecutor(schema).execute(sql);
-    }
-
-    public static List<String> getRolledupDuplicateVialColumnNames(Container container, User user)
-    {
-        // Return names of columns where column is 2nd thru nth column rolled up on same Event column
-        List<String> rolledupNames = new ArrayList<>();
-        RollupMap<EventVialRollup> eventToVialRollups = getEventToVialRollups(container, user);
-        for (List<RollupInstance<EventVialRollup>> rollupList : eventToVialRollups.values())
-        {
-            boolean duplicate = false;
-            for (RollupInstance<EventVialRollup> rollupItem : rollupList)
-            {
-                if (duplicate)
-                    rolledupNames.add(rollupItem.first.toLowerCase());
-                duplicate = true;
-            }
-        }
-        return rolledupNames;
-    }
-
-    public static RollupMap<EventVialRollup> getEventToVialRollups(Container container, User user)
-    {
-        List<EventVialRollup> rollups = RollupHelper.getEventVialRollups();
-        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
-
-        Domain fromDomain = specimenTablesProvider.getDomain("SpecimenEvent", true);
-        if (null == fromDomain)
-            throw new IllegalStateException("Expected SpecimenEvent table to already be created.");
-
-        Domain toDomain = specimenTablesProvider.getDomain("Vial", true);
-        if (null == toDomain)
-            throw new IllegalStateException("Expected Vial table to already be created.");
-
-        return RollupHelper.getRollups(fromDomain, toDomain, rollups);
-    }
-
-    public static List<String> getRolledupSpecimenColumnNames(Container container, User user)
-    {
-        List<String> rolledupNames = new ArrayList<>();
-        RollupMap<VialSpecimenRollup> vialToSpecimenRollups = getVialToSpecimenRollups(container, user);
-        for (List<RollupInstance<VialSpecimenRollup>> rollupList : vialToSpecimenRollups.values())
-        {
-            for (RollupInstance<VialSpecimenRollup> rollupItem : rollupList)
-            {
-                rolledupNames.add(rollupItem.first.toLowerCase());
-            }
-        }
-        return rolledupNames;
-    }
-
-    public static RollupMap<VialSpecimenRollup> getVialToSpecimenRollups(Container container, User user)
-    {
-        List<VialSpecimenRollup> rollups = RollupHelper.getVialSpecimenRollups();
-        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
-
-        Domain fromDomain = specimenTablesProvider.getDomain("Vial", true);
-        if (null == fromDomain)
-            throw new IllegalStateException("Expected Vial table to already be created.");
-
-        Domain toDomain = specimenTablesProvider.getDomain("Specimen", true);
-        if (null == toDomain)
-            throw new IllegalStateException("Expected Specimen table to already be created.");
-
-        return RollupHelper.getRollups(fromDomain, toDomain, rollups);
     }
 }
