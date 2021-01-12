@@ -1020,7 +1020,9 @@ public class QueryView extends WebPartView<Object>
         ActionButton deleteAllRows = new ActionButton("Delete All Rows");
         deleteAllRows.setDisplayPermission(AdminPermission.class);
         deleteAllRows.setActionType(ActionButton.Action.SCRIPT);
-        deleteAllRows.setScript("Ext4.Msg.confirm('Confirm Deletion', 'Are you sure you wish to delete all rows in this " + tableNoun + "? This action cannot be undone and will result in an empty " + tableNoun + ".', function(button){" +
+        deleteAllRows.setScript(
+                "LABKEY.requiresExt4Sandbox(function() {" +
+                    "Ext4.Msg.confirm('Confirm Deletion', 'Are you sure you wish to delete all rows in this " + tableNoun + "? This action cannot be undone and will result in an empty " + tableNoun + ".', function(button){" +
                         "if (button == 'yes'){" +
                             "var waitMask = Ext4.Msg.wait('Deleting Rows...', 'Delete Rows'); " +
                             "Ext4.Ajax.request({ " +
@@ -1053,7 +1055,8 @@ public class QueryView extends WebPartView<Object>
                                 "scope : this " +
                             "});" +
                         "}" +
-                    "});"
+                    "});" +
+                "});"
         );
         return deleteAllRows;
     }
