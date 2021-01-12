@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/study/gen && rimraf resources/views/gen && rimraf resources/views/datasetDesigner*"
   },
   "dependencies": {
-    "@labkey/components": "1.14.1-fb-fieldEditorRowSelection-8012-2.0"
+    "@labkey/components": "1.14.1-fb-fieldEditorRowSelection-8012-2.2"
   },
   "devDependencies": {
     "@labkey/build": "1.1.1"
