@@ -144,6 +144,16 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     void uploadComplete(ExpRun run) throws ExperimentException;
 
+    default String getJobDescription()
+    {
+        return null;
+    }
+
+    default String getJobNotificationProvider()
+    {
+        return null;
+    }
+
     @Nullable
     Logger getLogger();
 
@@ -184,6 +194,8 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected List<Map<String, Object>> _rawData;
         protected Map<String, AssayPlateMetadataService.MetadataLayer> _rawPlateMetadata;
         protected Map<String, File> _uploadedData;
+        protected String _jobDescription;
+        protected String _jobNotificationProvider;
 
         public Factory(
                 @NotNull ExpProtocol protocol,
@@ -315,6 +327,18 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         public FACTORY setRawPlateMetadata(Map<String, AssayPlateMetadataService.MetadataLayer> rawPlateMetadata)
         {
             _rawPlateMetadata = rawPlateMetadata;
+            return self();
+        }
+
+        public FACTORY setJobDescription(String jobDescription)
+        {
+            _jobDescription = jobDescription;
+            return self();
+        }
+
+        public FACTORY setJobNotificationProvider(String jobNotificationProvider)
+        {
+            _jobNotificationProvider = jobNotificationProvider;
             return self();
         }
 

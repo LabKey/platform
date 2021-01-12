@@ -2519,7 +2519,7 @@ public class SecurityManager
 
                 SecurityManager.setVerification(email, null);
 
-                String password = createTempPassword();
+                String password = generateStrongPassword();
                 SecurityManager.setPassword(email, password);
 
                 User user2 = AuthenticationManager.authenticate(ViewServlet.mockRequest("GET", new ActionURL(), null, null, null), rawEmail, password);
@@ -2532,6 +2532,10 @@ public class SecurityManager
             }
         }
 
+        private String generateStrongPassword()
+        {
+            return createTempPassword() + "Az9!";
+        }
 
         @Test
         public void testACLS()
