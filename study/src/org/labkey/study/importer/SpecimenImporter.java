@@ -209,7 +209,7 @@ public class SpecimenImporter
 
     private static final String GENERAL_JOB_STATUS_MSG = "PROCESSING SPECIMENS";
 
-    // SpecimenEvent columns that form a psuedo-unqiue constraint
+    // SpecimenEvent columns that form a psuedo-unique constraint
     private static final SpecimenColumn GLOBAL_UNIQUE_ID, LAB_ID, SHIP_DATE, STORAGE_DATE, LAB_RECEIPT_DATE, DRAW_TIMESTAMP;
     private static final SpecimenColumn VISIT_VALUE;
 
