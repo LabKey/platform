@@ -33,8 +33,6 @@ import java.util.List;
  */
 public class ListManagerTable extends FilteredTable<ListManagerSchema>
 {
-    public static final String AVAILABLE_LISTS = "Available Lists";
-
     public ListManagerTable(ListManagerSchema userSchema, TableInfo table, ContainerFilter cf)
     {
         super(table, userSchema, cf);

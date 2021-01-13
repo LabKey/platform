@@ -41,8 +41,6 @@ import org.labkey.api.util.Pair;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.labkey.announcements.query.AnnouncementSchema.ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME;
-
 /**
  * User: jeckels
  * Date: Feb 6, 2012
@@ -72,7 +70,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
     @Override
     public String getPublicName()
     {
-        return ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME;
+        return AnnouncementSchema.ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME;
     }
 
     @Override

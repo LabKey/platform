@@ -43,9 +43,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.labkey.announcements.query.AnnouncementSchema.ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME;
-import static org.labkey.announcements.query.AnnouncementSchema.FORUM_SUBSCRIPTION_TABLE_NAME;
-
 /**
  * User: jeckels
  * Date: Feb 6, 2012
@@ -84,7 +81,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
     @Override
     public String getPublicName()
     {
-        return FORUM_SUBSCRIPTION_TABLE_NAME;
+        return AnnouncementSchema.FORUM_SUBSCRIPTION_TABLE_NAME;
     }
 
     @Override
