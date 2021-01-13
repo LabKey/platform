@@ -76,7 +76,8 @@
 %>
 <style type="text/css">
     #log-container {
-        height: 30em;
+        /* viewport height minus a bit for the panel header and log controls and body margin-bottom (50px) */
+        height: calc(100vh - 10em - 50px);
         overflow: auto;
     }
     td.split-job-status {
@@ -559,6 +560,8 @@
                     logDataEl = document.getElementById('log-data');
                 }
 
+                const scrolledToBottom = logContainerEl.scrollHeight - logContainerEl.scrollTop === logContainerEl.clientHeight;
+
                 if (log.success) {
                     // successfully read the status log file
                     if (log.records && log.records.length > 0) {
@@ -585,7 +588,13 @@
                     }
                 }
 
-                scrollLog(true);
+                const selection = window.getSelection();
+                const hasSelection = selection && !selection.isCollapsed;
+
+                // scroll if we are at the bottom of the scrollable pane and nothing is selected
+                if (scrolledToBottom && !hasSelection) {
+                    scrollLog(true);
+                }
             }
         }
 
