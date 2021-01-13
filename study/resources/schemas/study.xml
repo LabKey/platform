@@ -600,6 +600,7 @@
         <nullable>false</nullable>
         <importAliases>
             <importAlias>ptid</importAlias>
+            <importAlias>participantid</importAlias>
         </importAliases>
       </column>
       <column columnName="datasetid">
