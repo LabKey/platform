@@ -156,7 +156,10 @@ public class ListImporter
                     throw new IllegalStateException("Table information not available for list: " + def.getName());
                 }
 
-                loader.setInferTypes(false);
+                // infer columns (default) is needed because in resolveDomainChanges() we auto-add columns.
+                // However Don't infer types if xmlmetadata is available. Fix for Issue 35760: List Archive Imports change numbers into scientific notation on text fields
+                if(hasXmlMetadata)
+                    loader.setInferTypes(false);
                 loader.setKnownColumns(ti.getColumns());
 
                 if (!hasXmlMetadata && !resolveDomainChanges(c, user, loader, def, log, errors))
@@ -164,6 +167,10 @@ public class ListImporter
                     log.warn("Skipping filed-based import of '" + def.getName() + "' due to domain resolution errors.");
                     return false;
                 }
+
+                // after we call resolveDomainChange() we may need a new TableInfo!
+                ti = def.getTable(user);
+                tableName =  ListManager.get().getListTableName(ti);
 
                 boolean supportAI = false;
 

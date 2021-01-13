@@ -97,6 +97,9 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         String runFilePath;
         String moduleName;
         List<Map<String, Object>> rawData = null;
+        String jobDescription;
+        String jobNotificationProvider;
+        boolean forceAsync;
 
         // TODO: support additional input/output data/materials
         Map<Object, String> inputData = new HashMap<>();
@@ -122,6 +125,10 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             batchId = json.optInt(AssayJSONConverter.BATCH_ID);
             name = json.optString(ExperimentJSONConverter.NAME, null);
             comments = json.optString(ExperimentJSONConverter.COMMENT, null);
+            forceAsync = json.optBoolean("forceAsync");
+            jobDescription = json.optString("jobDescription", null);
+            jobNotificationProvider = json.optString("jobNotificationProvider", null);
+
             runProperties = json.optJSONObject(ExperimentJSONConverter.PROPERTIES);
             if (runProperties != null)
                 runProperties = new CaseInsensitiveHashMap<>(runProperties);
@@ -157,6 +164,10 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             JSONArray dataRows = form.getDataRows();
             if (dataRows != null)
                 rawData = dataRows.toMapList();
+
+            forceAsync = form.isForceAsync();
+            jobDescription = form.getJobDescription();
+            jobNotificationProvider = form.getJobNotificationProvider();
         }
 
         // Import the file at runFilePath if it is available, otherwise AssayRunUploadContextImpl.getUploadedData() will use the multi-part form POSTed file
@@ -206,7 +217,9 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 .setBatchProperties(batchProperties)
                 .setTargetStudy(targetStudy)
                 .setReRunId(reRunId)
-                .setLogger(LOG);
+                .setLogger(LOG)
+                .setJobDescription(jobDescription)
+                .setJobNotificationProvider(jobNotificationProvider);
 
         if (file != null && rawData != null)
             throw new ExperimentException("Either file or " + AssayJSONConverter.DATA_ROWS + " is allowed, but not both");
@@ -272,7 +285,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
         try
         {
-            Pair<ExpExperiment, ExpRun> result = provider.getRunCreator().saveExperimentRun(uploadContext, batchId);
+            Pair<ExpExperiment, ExpRun> result = provider.getRunCreator().saveExperimentRun(uploadContext, batchId, forceAsync);
             ExpRun run = result.second;
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -320,6 +333,10 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         private String _module;
         private boolean _saveDataAsFile;
         private JSONObject _plateMetadata;
+
+        private String _jobDescription;
+        private String _jobNotificationProvider;
+        private boolean _forceAsync;
 
         public JSONObject getJson()
         {
@@ -460,6 +477,37 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         {
             _saveDataAsFile = saveDataAsFile;
         }
+
+        public String getJobDescription()
+        {
+            return _jobDescription;
+        }
+
+        public void setJobDescription(String jobDescription)
+        {
+            _jobDescription = jobDescription;
+        }
+
+        public String getJobNotificationProvider()
+        {
+            return _jobNotificationProvider;
+        }
+
+        public void setJobNotificationProvider(String jobNotificationProvider)
+        {
+            _jobNotificationProvider = jobNotificationProvider;
+        }
+
+        public boolean isForceAsync()
+        {
+            return _forceAsync;
+        }
+
+        public void setForceAsync(boolean forceAsync)
+        {
+            _forceAsync = forceAsync;
+        }
+
     }
 
 }

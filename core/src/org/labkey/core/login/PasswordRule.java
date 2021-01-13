@@ -16,7 +16,6 @@
 package org.labkey.core.login;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,7 +36,7 @@ public enum PasswordRule
 {
     Weak
     {
-        private Pattern passwordPattern = Pattern.compile("^\\S{6,}$");  // At least six, non-whitespace characters
+        private final Pattern passwordPattern = Pattern.compile("^\\S{6,}$");  // At least six, non-whitespace characters
 
         @NotNull
         @Override
@@ -86,11 +85,11 @@ public enum PasswordRule
 
     Strong
     {
-        private Pattern passwordPattern = Pattern.compile("^\\S{8,}$");  // At least eight, non-whitespace characters
-        private Pattern lowerCase = Pattern.compile("[A-Z]");
-        private Pattern upperCase = Pattern.compile("[a-z]");
-        private Pattern digit = Pattern.compile("\\d");
-        private Pattern nonWord = Pattern.compile("[^A-Za-z\\d]");
+        private final Pattern passwordPattern = Pattern.compile("^\\S{8,}$");  // At least eight, non-whitespace characters
+        private final Pattern lowerCase = Pattern.compile("[A-Z]");
+        private final Pattern upperCase = Pattern.compile("[a-z]");
+        private final Pattern digit = Pattern.compile("\\d");
+        private final Pattern nonWord = Pattern.compile("[^A-Za-z\\d]");
 
         @NotNull
         @Override
