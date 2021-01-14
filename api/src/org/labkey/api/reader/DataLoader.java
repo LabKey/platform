@@ -928,7 +928,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             return ret;
         }
 
-        private ArrayListMap.FindMap<String> _findMap = null;
+        private ArrayListMap.FindMap<String> _findMap = new ArrayListMap.FindMap<>(new CaseInsensitiveHashMap<>());
 
         @Override
         public boolean next()
