@@ -28,9 +28,11 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -82,7 +84,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
             setTextAlign("right");
             setNoWrap(true);
             setWidth("175em");
-            _cartEnabled = SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(context.getContainer());
+            _cartEnabled = SettingsManager.get().isSpecimenShoppingCartEnabled(context.getContainer());
         }
 
         @Override
@@ -110,7 +112,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
                 {
                     if (_shoppingCartStatusRowId == null)
                     {
-                        SpecimenRequestStatus cartStatus = SpecimenManager.getInstance().getRequestShoppingCartStatus(ctx.getContainer(),
+                        SpecimenRequestStatus cartStatus = SpecimenRequestManager.get().getRequestShoppingCartStatus(ctx.getContainer(),
                                 ctx.getViewContext().getUser());
                         _shoppingCartStatusRowId = cartStatus.getRowId();
                     }

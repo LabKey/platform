@@ -48,7 +48,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.study.StudySchema;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -221,29 +220,28 @@ public class LocationTable extends BaseStudyTable
 
     private class LocationInUseExpressionColumn extends ExprColumn
     {
-        public LocationInUseExpressionColumn(TableInfo parent)
+        public LocationInUseExpressionColumn(TableInfo locationTable)
         {
-            super(parent, "In Use", null, JdbcType.BOOLEAN);
+            super(locationTable, "In Use", null, JdbcType.BOOLEAN);
         }
 
         @Override
-        public SQLFragment getValueSql(String tableAlias)
+        public SQLFragment getValueSql(String locationTableAlias)
         {
-            return getLocationInUseExpression(tableAlias);
+            return getLocationInUseExpression(locationTableAlias);
         }
     }
 
     private static final String EXISTS = "    EXISTS(SELECT 1 FROM ";
 
-    private SQLFragment getLocationInUseExpression(String tableAlias)
+    private SQLFragment getLocationInUseExpression(String locationTableAlias)
     {
         final SpecimenSchema schema = SpecimenSchema.get();
-        final StudySchema studySchema = StudySchema.getInstance();
 
         // Because Location is now provisioned, each row's container must match container in the target table to be an InUse match
         var inUseColumn = getRealTable().getColumn("InUse");
         SQLFragment existsSQL = new SQLFragment();
-        existsSQL.append(inUseColumn.getValueSql(tableAlias));
+        existsSQL.append(inUseColumn.getValueSql(locationTableAlias));
         if (schema.getSqlDialect().isSqlServer())
             existsSQL.append(" = 1");
 
@@ -252,33 +250,19 @@ public class LocationTable extends BaseStudyTable
             .append(EXISTS)
             .append(schema.getTableInfoSampleRequest(), "sr")
             .append(" WHERE ")
-            .append(tableAlias)
+            .append(locationTableAlias)
             .append(".RowId = sr.DestinationSiteId AND ")
-            .append(tableAlias)
+            .append(locationTableAlias)
             .append(".Container = sr.Container) OR\n")
             .append(EXISTS)
             .append(schema.getTableInfoSampleRequestRequirement(), "srr")
             .append(" WHERE ")
-            .append(tableAlias)
+            .append(locationTableAlias)
             .append(".RowId = srr.SiteId AND ")
-            .append(tableAlias)
-            .append(".Container = srr.Container) OR\n")
-            .append(EXISTS)
-            .append(studySchema.getTableInfoParticipant(), "p")
-            .append(" WHERE (")
-            .append(tableAlias)
-            .append(".RowId = p.EnrollmentSiteId OR ")
-            .append(tableAlias)
-            .append(".RowId = p.CurrentSiteId) AND ")
-            .append(tableAlias)
-            .append(".Container = p.Container) OR\n")
-            .append(EXISTS)
-            .append(studySchema.getTableInfoAssaySpecimen(), "a")
-            .append(" WHERE ")
-            .append(tableAlias)
-            .append(".RowId = a.LocationId AND ")
-            .append(tableAlias)
-            .append(".Container = a.Container)");
+            .append(locationTableAlias)
+            .append(".Container = srr.Container) OR\n");
+
+        StudyService.get().appendLocationInUseClauses(existsSQL, locationTableAlias, EXISTS);
 
         // Wrap the EXISTS expression as needed for this dialect
         return schema.getSqlDialect().wrapExistsExpression(existsSQL);

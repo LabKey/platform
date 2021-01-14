@@ -16,13 +16,13 @@
 package org.labkey.study.specimen.report;
 
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.specimen.SpecimenTypeLevel;
+import org.labkey.api.specimen.report.SummaryByVisitType;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.SpecimenManager.SpecimenTypeLevel;
-import org.labkey.api.specimen.report.SummaryByVisitType;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.VisitImpl;
 
@@ -115,8 +115,8 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SummaryByVisitT
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";
-        ActionURL link = SpecimenController.getSamplesURL(_container);
-        link.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
+        ActionURL link = SpecimenController.getSpecimensURL(_container);
+        link.addParameter(SpecimenController.SpecimenViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
         link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMinDouble());
 
         link = updateURLFilterParameter(link, "SpecimenDetail.PrimaryType/Description", summary.getPrimaryType());

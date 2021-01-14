@@ -22,6 +22,9 @@ import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
+import org.labkey.api.specimen.writer.SimpleStudyExportContext;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.writer.BaseStudyWriter;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.folder.xml.FolderDocument;
@@ -29,8 +32,9 @@ import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
+import java.util.List;
 
 
 public class StudyWriterFactory implements FolderWriterFactory
@@ -115,9 +119,13 @@ public class StudyWriterFactory implements FolderWriterFactory
         @Override
         public Collection<Writer> getChildren(boolean sort, boolean forTemplate)
         {
-            LinkedList<Writer> children = new LinkedList<>();
-            Collection<InternalStudyWriter> writers = StudySerializationRegistryImpl.get().getInternalStudyWriters();
-            for (InternalStudyWriter writer : writers)
+            List<Writer> children = new ArrayList<>();
+            for (BaseStudyWriter<Study, SimpleStudyExportContext> writer : StudySerializationRegistryImpl.get().getRegisteredStudyWriters())
+            {
+                if (!forTemplate || writer.includeWithTemplate())
+                    children.add(writer);
+            }
+            for (InternalStudyWriter writer : StudySerializationRegistryImpl.get().getInternalStudyWriters())
             {
                 if (!forTemplate || writer.includeWithTemplate())
                     children.add(writer);

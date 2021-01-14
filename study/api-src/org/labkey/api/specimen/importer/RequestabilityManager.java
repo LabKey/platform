@@ -39,7 +39,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.study.SamplesUrls;
+import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
@@ -209,7 +209,7 @@ public class RequestabilityManager
             @Override
             public ActionURL getDefaultTestURL(Container container)
             {
-                ActionURL testURL = PageFlowUtil.urlProvider(SamplesUrls.class).getSamplesURL(container, true);
+                ActionURL testURL = PageFlowUtil.urlProvider(SpecimenUrls.class).getSpecimensURL(container, true);
                 testURL.addFilter("SpecimenDetail", FieldKey.fromParts("Requestable"), CompareType.NONBLANK, null);
                 return testURL;
             }
@@ -243,7 +243,7 @@ public class RequestabilityManager
             @Override
             public ActionURL getDefaultTestURL(Container container)
             {
-                ActionURL testURL = PageFlowUtil.urlProvider(SamplesUrls.class).getSamplesURL(container, true);
+                ActionURL testURL = PageFlowUtil.urlProvider(SpecimenUrls.class).getSpecimensURL(container, true);
                 testURL.addFilter("SpecimenDetail", FieldKey.fromParts("AtRepository"), CompareType.EQUAL, Boolean.FALSE);
                 return testURL;
 
@@ -278,7 +278,7 @@ public class RequestabilityManager
             @Override
             public ActionURL getDefaultTestURL(Container container)
             {
-                ActionURL testURL = PageFlowUtil.urlProvider(SamplesUrls.class).getSamplesURL(container, true);
+                ActionURL testURL = PageFlowUtil.urlProvider(SpecimenUrls.class).getSpecimensURL(container, true);
                 testURL.addFilter("SpecimenDetail", FieldKey.fromParts("LockedInRequest"), CompareType.EQUAL, Boolean.TRUE);
                 return testURL;
 

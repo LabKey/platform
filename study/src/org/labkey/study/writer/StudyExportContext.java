@@ -19,15 +19,13 @@ import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PHI;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.writer.SimpleStudyExportContext;
 import org.labkey.api.study.Dataset;
-import org.labkey.api.study.writer.AbstractContext;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.api.specimen.Vial;
 import org.labkey.study.xml.StudyDocument;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,7 +37,7 @@ import java.util.function.Consumer;
  * Date: May 16, 2009
  * Time: 2:43:07 PM
  */
-public class StudyExportContext extends AbstractContext
+public class StudyExportContext extends SimpleStudyExportContext
 {
     private final List<DatasetDefinition> _datasets = new LinkedList<>();
     private final Set<Integer> _datasetIds = new HashSet<>();
@@ -47,9 +45,6 @@ public class StudyExportContext extends AbstractContext
     private final boolean _maskClinic;
     private final ParticipantMapper _participantMapper;
 
-    private Set<Integer> _visitIds = null;
-    private List<String> _participants = new ArrayList<>();
-    private List<Vial> _vials = null;
     private Consumer<StudyDocument.Study> _studyXmlModifier = study -> {};  // By default, make no changes to exported study XML
 
     public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, LoggerGetter logger)
@@ -156,36 +151,6 @@ public class StudyExportContext extends AbstractContext
     public ParticipantMapper getParticipantMapper()
     {
         return _participantMapper;
-    }
-
-    public Set<Integer> getVisitIds()
-    {
-        return _visitIds;
-    }
-
-    public void setVisitIds(Set<Integer> visits)
-    {
-        _visitIds = visits;
-    }
-
-    public List<String> getParticipants()
-    {
-        return _participants;
-    }
-
-    public void setParticipants(List<String> participants)
-    {
-        _participants = participants;
-    }
-
-    public List<Vial> getVials()
-    {
-        return _vials;
-    }
-
-    public void setVials(List<Vial> vials)
-    {
-        _vials = vials;
     }
 
     public Consumer<StudyDocument.Study> getStudyXmlModifier()

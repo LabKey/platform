@@ -11,7 +11,10 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenEvent;
+import org.labkey.api.specimen.SpecimenEventManager;
 import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.Vial;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
@@ -192,5 +195,58 @@ public class LocationManager
         {
             throw new ValidationException("Locations currently in use cannot be deleted");
         }
+    }
+
+    public LocationImpl getOriginatingLocation(Vial vial)
+    {
+        if (vial.getOriginatingLocationId() != null)
+        {
+            LocationImpl location = LocationManager.get().getLocation(vial.getContainer(), vial.getOriginatingLocationId());
+            if (location != null)
+                return location;
+        }
+
+        List<SpecimenEvent> events = SpecimenEventManager.get().getDateOrderedEventList(vial);
+        Integer firstLabId = getProcessingLocationId(events);
+        if (firstLabId != null)
+            return LocationManager.get().getLocation(vial.getContainer(), firstLabId);
+        else
+            return null;
+    }
+
+    public LocationImpl getCurrentLocation(Vial vial)
+    {
+        Integer locationId = getCurrentLocationId(vial);
+        if (locationId != null)
+            return LocationManager.get().getLocation(vial.getContainer(), locationId);
+        return null;
+    }
+
+    private Integer getCurrentLocationId(Vial vial)
+    {
+        List<SpecimenEvent> events = SpecimenEventManager.get().getDateOrderedEventList(vial);
+        return getCurrentLocationId(events);
+    }
+
+    public Integer getCurrentLocationId(List<SpecimenEvent> dateOrderedEvents)
+    {
+        if (!dateOrderedEvents.isEmpty())
+        {
+            SpecimenEvent lastEvent = dateOrderedEvents.get(dateOrderedEvents.size() - 1);
+
+            if (lastEvent.getShipDate() == null &&
+                    (lastEvent.getShipBatchNumber() == null || lastEvent.getShipBatchNumber() == 0) &&
+                    (lastEvent.getShipFlag() == null || lastEvent.getShipFlag() == 0))
+            {
+                return lastEvent.getLabId();
+            }
+        }
+        return null;
+    }
+
+    public Integer getProcessingLocationId(List<SpecimenEvent> dateOrderedEvents)
+    {
+        SpecimenEvent firstEvent = SpecimenEventManager.get().getFirstEvent(dateOrderedEvents);
+        return firstEvent != null ? firstEvent.getLabId() : null;
     }
 }

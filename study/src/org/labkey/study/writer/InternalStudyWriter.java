@@ -16,7 +16,7 @@
 
 package org.labkey.study.writer;
 
-import org.labkey.api.writer.Writer;
+import org.labkey.api.study.writer.BaseStudyWriter;
 import org.labkey.study.model.StudyImpl;
 
 /*
@@ -24,8 +24,9 @@ import org.labkey.study.model.StudyImpl;
 * Date: Aug 26, 2009
 * Time: 1:53:21 PM
 */
-public interface InternalStudyWriter extends Writer<StudyImpl, StudyExportContext>
+public interface InternalStudyWriter extends BaseStudyWriter<StudyImpl, StudyExportContext>
 {
+    @Override
     default boolean includeWithTemplate()
     {
         return true;

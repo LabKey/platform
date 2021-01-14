@@ -15,12 +15,12 @@
  */
 package org.labkey.study.specimen.report.specimentype;
 
+import org.labkey.api.specimen.SpecimenTypeLevel;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.element.Option;
 import org.labkey.api.util.element.Select;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 
 import java.util.ArrayList;
@@ -44,13 +44,13 @@ public abstract class TypeReportFactory extends SpecimenVisitReportParameters
             Select.SelectBuilder builder = new Select.SelectBuilder();
             builder.name(PARAMS.typeLevel.name());
 
-            for (SpecimenManager.SpecimenTypeLevel level : SpecimenManager.SpecimenTypeLevel.values())
+            for (SpecimenTypeLevel level : SpecimenTypeLevel.values())
             {
                 builder.addOption(new Option.OptionBuilder()
-                        .value(level.name())
-                        .label("Show results by: " + level.getLabel())
-                        .selected(getTypeLevelEnum() == level)
-                        .build()
+                    .value(level.name())
+                    .label("Show results by: " + level.getLabel())
+                    .selected(getTypeLevelEnum() == level)
+                    .build()
                 );
             }
             inputs.add(new Pair<>("Type breakdown", unsafe(builder.toString())));
