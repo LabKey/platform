@@ -235,13 +235,13 @@ public class ReportManager implements DatasetManager.DatasetListener
             // any specimen views
             if ("SpecimenDetail".equals(view.getQueryName()))
             {
-                return SpecimenController.getSamplesURL(c).
+                return SpecimenController.getSpecimensURL(c).
                         addParameter("showVials", "true").
                         addParameter("SpecimenDetail." + QueryParam.viewName, view.getName());
             }
             else if ("SpecimenSummary".equals(view.getQueryName()))
             {
-                return SpecimenController.getSamplesURL(c).
+                return SpecimenController.getSpecimensURL(c).
                         addParameter("SpecimenSummary." + QueryParam.viewName, view.getName());
             }
 

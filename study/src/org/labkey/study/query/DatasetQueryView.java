@@ -65,6 +65,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -79,7 +80,6 @@ import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
@@ -458,12 +458,12 @@ public class DatasetQueryView extends StudyQueryView
         if (QCStateManager.getInstance().showQCStates(getContainer()))
             bar.add(createQCStateButton(_qcStateSet));
 
-        ActionURL viewSamplesURL = new ActionURL(SpecimenController.SelectedSamplesAction.class, getContainer());
-        ActionButton viewSamples = new ActionButton(viewSamplesURL, "View Specimens");
-        viewSamples.setRequiresSelection(true);
-        viewSamples.setActionType(ActionButton.Action.POST);
-        viewSamples.setDisplayPermission(ReadPermission.class);
-        bar.add(viewSamples);
+        ActionURL viewSpecimensURL = new ActionURL(SpecimenController.SelectedSpecimensAction.class, getContainer());
+        ActionButton viewSpecimens = new ActionButton(viewSpecimensURL, "View Specimens");
+        viewSpecimens.setRequiresSelection(true);
+        viewSpecimens.setActionType(ActionButton.Action.POST);
+        viewSpecimens.setDisplayPermission(ReadPermission.class);
+        bar.add(viewSpecimens);
 
         if (isAssayDataset)
         {

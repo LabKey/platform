@@ -70,7 +70,6 @@ import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
@@ -139,9 +138,9 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.study.QueryHelper;
+import org.labkey.api.study.QueryHelper;
+import org.labkey.api.study.StudyCache;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.StudyCache;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.BaseStudyController;
@@ -546,7 +545,6 @@ public class StudyManager
         return Collections.unmodifiableSet(result);
     }
 
-
     /** @return all studies under the given root in the container hierarchy (inclusive), to which the user has at least read permission */
     @NotNull
     public Set<? extends StudyImpl> getAllStudies(@NotNull Container root, @NotNull User user)
@@ -695,7 +693,6 @@ public class StudyManager
             errors.add(ex.getMessage());
         }
     }
-
 
     /* most users should call the List<String> errors version to avoid uncaught exceptions */
     @Deprecated
@@ -1598,8 +1595,8 @@ public class StudyManager
 
                 for (VisitImpl visit : visits)
                 {
-                    // Delete samples first because we may need ParticipantVisit to figure out which samples
-                    SpecimenManager.getInstance().deleteSamplesForVisit(visit);
+                    // Delete specimens first because we may need ParticipantVisit to figure out which specimens
+                    SpecimenManager.getInstance().deleteSpecimensForVisit(visit);
 
                     TreatmentManager.getInstance().deleteTreatmentVisitMapForVisit(study.getContainer(), visit.getRowId());
                     deleteAssaySpecimenVisits(study.getContainer(), visit.getRowId());
@@ -2473,7 +2470,6 @@ public class StudyManager
         clearParticipantVisitCaches(def.getStudy());
     }
 
-
     public Map<VisitMapKey,Boolean> getRequiredMap(Study study)
     {
         TableInfo tableVisitMap = StudySchema.getInstance().getTableInfoVisitMap();
@@ -2484,8 +2480,6 @@ public class StudyManager
 
         return map;
     }
-
-
 
     private static final String VISITMAP_JOIN_BY_VISIT = "SELECT d.*, vm.Required\n" +
             "FROM study.Visit v, study.DataSet d, study.VisitMap vm\n" +
@@ -2746,9 +2740,9 @@ public class StudyManager
             }
 
             //
-            // samples
+            // specimens
             //
-            SpecimenManager.getInstance().deleteAllSampleData(c, deletedTables, user);
+            SpecimenManager.getInstance().deleteAllSpecimenData(c, deletedTables, user);
 
             //
             // assay schedule

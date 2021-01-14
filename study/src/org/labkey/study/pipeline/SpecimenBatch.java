@@ -22,7 +22,7 @@ import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.study.StudyFolderTabs;
+import org.labkey.api.specimen.SpecimensPage;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -76,7 +76,7 @@ public class SpecimenBatch extends StudyBatch implements Serializable, StudyJobS
     @Override
     public ActionURL getStatusHref()
     {
-        return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(getInfo().getContainer(), StudyFolderTabs.SpecimensPage.PAGE_ID);
+        return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(getInfo().getContainer(), SpecimensPage.PAGE_ID);
     }
 
     @Override

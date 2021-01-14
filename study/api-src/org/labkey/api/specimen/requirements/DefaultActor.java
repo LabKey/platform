@@ -26,6 +26,7 @@ import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.StudyService;
@@ -173,7 +174,7 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
     @Override
     public void delete()
     {
-        DbScope scope = StudyService.get().getStudySchema().getScope();
+        DbScope scope = SpecimenSchema.get().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             deleteAllGroups();

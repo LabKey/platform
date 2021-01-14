@@ -59,11 +59,11 @@ public class ImportableColumn
         switch (databaseType)
         {
             case ImportTypes.DURATION_TYPE:
-                _dbType = SpecimenSchema.get().getSchema().getSqlDialect().getDefaultDateTimeDataType();
+                _dbType = SpecimenSchema.get().getSqlDialect().getDefaultDateTimeDataType();
                 _javaClass = TimeOnlyDate.class;
                 break;
             case ImportTypes.DATETIME_TYPE:
-                _dbType = SpecimenSchema.get().getSchema().getSqlDialect().getDefaultDateTimeDataType();
+                _dbType = SpecimenSchema.get().getSqlDialect().getDefaultDateTimeDataType();
                 _javaClass = Date.class;
                 break;
             default:
