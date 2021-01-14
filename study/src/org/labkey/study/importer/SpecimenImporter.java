@@ -60,6 +60,7 @@ import org.labkey.api.specimen.SpecimenColumns;
 import org.labkey.api.specimen.SpecimenEvent;
 import org.labkey.api.specimen.SpecimenEventDateComparator;
 import org.labkey.api.specimen.SpecimenEventManager;
+import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.SpecimenTableManager;
 import org.labkey.api.specimen.Vial;
@@ -76,6 +77,7 @@ import org.labkey.api.specimen.importer.TargetTable;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenComment;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.SpecimenImportStrategy;
 import org.labkey.api.study.SpecimenImportStrategyFactory;
@@ -1101,7 +1103,7 @@ public class SpecimenImporter extends SpecimenTableManager
         _iTimer.setPhase(ImportPhases.UpdateVialCounts);
         info("Updating cached vial counts...");
 
-        SpecimenManager.getInstance().updateVialCounts(getContainer(), getUser());
+        SpecimenRequestManager.get().updateVialCounts(getContainer(), getUser());
 
         info("Vial count update complete.");
     }
@@ -2477,7 +2479,7 @@ public class SpecimenImporter extends SpecimenTableManager
 
     protected void checkForConflictingSpecimens(DbSchema schema, String tempTable, List<SpecimenColumn> loadedColumns)
     {
-        if (!StudyManager.getInstance().getStudy(getContainer()).getRepositorySettings().isSpecimenDataEditable())
+        if (!SettingsManager.get().getRepositorySettings(getContainer()).isSpecimenDataEditable())
         {
             info("Checking for conflicting specimens before merging...");
 

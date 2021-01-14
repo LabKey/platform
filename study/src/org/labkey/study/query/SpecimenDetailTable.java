@@ -360,7 +360,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
     @Override
     public QueryUpdateService getUpdateService()
     {
-        if (_userSchema.getStudy().getRepositorySettings().isSpecimenDataEditable())
+        if (SettingsManager.get().getRepositorySettings(_userSchema.getStudy().getContainer()).isSpecimenDataEditable())
             return new SpecimenUpdateService(this);
         return null;
     }

@@ -31,6 +31,7 @@
 <%@ page import="org.labkey.api.specimen.SpecimenRequestManager" %>
 <%@ page import="org.labkey.api.specimen.model.SpecimenTablesProvider" %>
 <%@ page import="org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission" %>
+<%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.study.SpecimenTransform" %>
@@ -373,7 +374,7 @@
                 <table class="lk-fields-table">
                     <tr>
                         <td class="lk-study-prop-label">Repository Type</td>
-                        <td class="lk-study-prop-desc">This study uses the <%=text(study.getRepositorySettings().isSimple() ? "standard" : "advanced")%> specimen repository</td>
+                        <td class="lk-study-prop-desc">This study uses the <%=text(SettingsManager.get().getRepositorySettings(study.getContainer()).isSimple() ? "standard" : "advanced")%> specimen repository</td>
                         <td><%=link("Change Repository Type", ShowManageRepositorySettingsAction.class)%></td>
                     </tr>
                     <tr>
@@ -436,7 +437,7 @@
 
     if (c.hasPermission(user, ManageRequestSettingsPermission.class))
     {
-        if (study.getRepositorySettings().isEnableRequests())
+        if (SettingsManager.get().getRepositorySettings(getContainer()).isEnableRequests())
         {
     %>
             <labkey:panel title="Specimen Request Settings">

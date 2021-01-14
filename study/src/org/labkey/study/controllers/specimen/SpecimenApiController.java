@@ -29,6 +29,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.Vial;
@@ -183,7 +184,7 @@ public class SpecimenApiController extends BaseStudyController
         map.put("createdBy", userMap);
         map.put("destination", request.getDestinationSiteId() != null ? getLocation(getContainer(), request.getDestinationSiteId().intValue()) : null);
         map.put("statusId", request.getStatusId());
-        SpecimenRequestStatus status = SpecimenManager.getInstance().getRequestStatus(request.getContainer(), request.getStatusId());
+        SpecimenRequestStatus status = SpecimenRequestManager.get().getRequestStatus(request.getContainer(), request.getStatusId());
         if (status != null)
             map.put("status", status.getLabel());
         List<Vial> vials = request.getVials();
@@ -252,7 +253,7 @@ public class SpecimenApiController extends BaseStudyController
         {
             Container container = requestsForm.getViewContext().getContainer();
             User user = requestsForm.getViewContext().getUser();
-            SpecimenRequestStatus shoppingCartStatus = SpecimenManager.getInstance().getRequestShoppingCartStatus(container, user);
+            SpecimenRequestStatus shoppingCartStatus = SpecimenRequestManager.get().getRequestShoppingCartStatus(container, user);
             final Map<String, Object> response = new HashMap<>();
             if (user != null && shoppingCartStatus != null)
             {
@@ -263,7 +264,7 @@ public class SpecimenApiController extends BaseStudyController
                 List<SpecimenRequest> nonFinalRequests = new ArrayList<>();
                 for (SpecimenRequest request : allUserRequests)
                 {
-                    if (SpecimenManager.getInstance().hasEditRequestPermissions(getUser(), request) && !SpecimenManager.getInstance().isInFinalState(request))
+                    if (SpecimenRequestManager.get().hasEditRequestPermissions(getUser(), request) && !SpecimenRequestManager.get().isInFinalState(request))
                     {
                         nonFinalRequests.add(request);
                     }
@@ -357,7 +358,7 @@ public class SpecimenApiController extends BaseStudyController
                     List<Vial> vials = SpecimenManager.getInstance().getVials(container, form.getViewContext().getUser(), form.getRowIds());
                     vialList = getSpecimenListResponse(vials);
                 }
-                catch (SpecimenManager.SpecimenRequestException e)
+                catch (SpecimenRequestException e)
                 {
                     errors.reject(ERROR_MSG, e.getMessage());
                     vialList = Collections.emptyList();
@@ -440,12 +441,12 @@ public class SpecimenApiController extends BaseStudyController
         {
             if (admin)
             {
-                if (SpecimenManager.getInstance().isInFinalState(request))
+                if (SpecimenRequestManager.get().isInFinalState(request))
                     throw new RuntimeException("Request " + rowId + " is in a final state and cannot be modified.");
             }
             else
             {
-                SpecimenRequestStatus cartStatus = SpecimenManager.getInstance().getRequestShoppingCartStatus(container, user);
+                SpecimenRequestStatus cartStatus = SpecimenRequestManager.get().getRequestShoppingCartStatus(container, user);
                 if (cartStatus == null || request.getStatusId() != cartStatus.getRowId())
                     throw new RuntimeException("Request " + rowId + " has been submitted and can only be modified by an administrator.");
             }
@@ -466,7 +467,7 @@ public class SpecimenApiController extends BaseStudyController
                 Vial vial = getVial(vialId, vialRequestForm.getIdType());
                 try
                 {
-                    SpecimenManager.getInstance().createRequestSpecimenMapping(getUser(), request, Collections.singletonList(vial), true, true);
+                    SpecimenRequestManager.get().createRequestSpecimenMapping(getUser(), request, Collections.singletonList(vial), true, true);
                 }
                 catch (RequestabilityManager.InvalidRuleException e)
                 {
@@ -474,7 +475,7 @@ public class SpecimenApiController extends BaseStudyController
                                 "Please report this problem to an administrator. Error details: "  + e.getMessage());
                     return null;
                 }
-                catch (SpecimenManager.SpecimenRequestException e)
+                catch (SpecimenRequestException e)
                 {
                     errors.reject(ERROR_MSG, RequestabilityManager.makeSpecimenUnavailableMessage(vial, null));
                     return null;
@@ -543,7 +544,7 @@ public class SpecimenApiController extends BaseStudyController
             {
                 try
                 {
-                    SpecimenManager.getInstance().deleteRequestSpecimenMappings(getUser(), request, rowIds, true);
+                    SpecimenRequestManager.get().deleteRequestSpecimenMappings(getUser(), request, rowIds, true);
                 }
                 catch (RequestabilityManager.InvalidRuleException e)
                 {
@@ -574,7 +575,7 @@ public class SpecimenApiController extends BaseStudyController
                 List<Vial> vials = new ArrayList<>(requested.getVials());
                 try
                 {
-                    SpecimenManager.getInstance().createRequestSpecimenMapping(getUser(), request, vials, true, true);
+                    SpecimenRequestManager.get().createRequestSpecimenMapping(getUser(), request, vials, true, true);
                 }
                 catch (RequestabilityManager.InvalidRuleException e)
                 {
@@ -582,7 +583,7 @@ public class SpecimenApiController extends BaseStudyController
                                 "Please report this problem to an administrator. Error details: "  + e.getMessage());
                     return null;
                 }
-                catch (SpecimenManager.SpecimenRequestException e)
+                catch (SpecimenRequestException e)
                 {
                     errors.reject(ERROR_MSG, "A vial that was available for request has become unavailable.");
                     return null;
@@ -603,7 +604,7 @@ public class SpecimenApiController extends BaseStudyController
             SpecimenRequest request = getRequest(getUser(), getContainer(), deleteRequestForm.getRequestId(), true, true);
             try
             {
-                SpecimenManager.getInstance().deleteRequest(getUser(), request);
+                SpecimenRequestManager.get().deleteRequest(getUser(), request);
             }
             catch (RequestabilityManager.InvalidRuleException e)
             {

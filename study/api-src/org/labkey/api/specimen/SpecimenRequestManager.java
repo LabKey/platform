@@ -1,5 +1,6 @@
 package org.labkey.api.specimen;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.annotations.Migrate;
 import org.labkey.api.attachments.AttachmentFile;
@@ -11,13 +12,16 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -29,19 +33,27 @@ import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
+import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
+import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.QueryHelper;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.NotFoundException;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class SpecimenRequestManager
 {
@@ -83,6 +95,61 @@ public class SpecimenRequestManager
             statuses = _requestStatusHelper.get(c, "SortOrder");
         }
         return statuses;
+    }
+
+    public SpecimenRequestStatus getRequestShoppingCartStatus(Container c, User user)
+    {
+        List<SpecimenRequestStatus> statuses = getRequestStatuses(c, user);
+        if (statuses.get(0).getSortOrder() != -1)
+            throw new IllegalStateException("Shopping cart status should be created automatically.");
+        return statuses.get(0);
+    }
+
+    public SpecimenRequestStatus getInitialRequestStatus(Container c, User user, boolean nonCart)
+    {
+        List<SpecimenRequestStatus> statuses = getRequestStatuses(c, user);
+        if (!nonCart && SettingsManager.get().isSpecimenShoppingCartEnabled(c))
+            return statuses.get(0);
+        else
+            return statuses.get(1);
+    }
+
+    public boolean hasEditRequestPermissions(User user, SpecimenRequest request)
+    {
+        if (request == null)
+            return false;
+        Container container = request.getContainer();
+        if (!container.hasPermission(user, RequestSpecimensPermission.class))
+            return false;
+        if (container.hasPermission(user, ManageRequestsPermission.class))
+            return true;
+
+        if (SettingsManager.get().isSpecimenShoppingCartEnabled(container))
+        {
+            SpecimenRequestStatus cartStatus = getRequestShoppingCartStatus(container, user);
+            if (cartStatus.getRowId() == request.getStatusId() && request.getCreatedBy() == user.getUserId())
+                return true;
+        }
+        return false;
+    }
+
+    public Set<Integer> getRequestStatusIdsInUse(Container c)
+    {
+        List<SpecimenRequest> requests = _requestHelper.get(c);
+        Set<Integer> uniqueStatuses = new HashSet<>();
+        for (SpecimenRequest request : requests)
+            uniqueStatuses.add(request.getStatusId());
+        return uniqueStatuses;
+    }
+
+    public List<SpecimenRequestEvent> getRequestEvents(Container c)
+    {
+        return _requestEventHelper.get(c);
+    }
+
+    public SpecimenRequestEvent getRequestEvent(Container c, int rowId)
+    {
+        return _requestEventHelper.get(c, rowId);
     }
 
     public static class SpecimenRequestInput
@@ -398,6 +465,16 @@ public class SpecimenRequestManager
         requirement.update(user);
     }
 
+    public boolean isInFinalState(SpecimenRequest request)
+    {
+        return getRequestStatus(request.getContainer(), request.getStatusId()).isFinalState();
+    }
+
+    public SpecimenRequestStatus getRequestStatus(Container c, int rowId)
+    {
+        return _requestStatusHelper.get(c, rowId);
+    }
+
     private SpecimenRequestEvent createRequestEvent(User user, SpecimenRequestEvent event)
     {
         return _requestEventHelper.create(user, event);
@@ -482,9 +559,45 @@ public class SpecimenRequestManager
         }
     }
 
-    public SpecimenRequestStatus getRequestStatus(Container c, int rowId)
+    private static final ReentrantLock REQUEST_ADDITION_LOCK = new ReentrantLock();
+
+    public void createRequestSpecimenMapping(User user, SpecimenRequest request, List<Vial> vials, boolean createEvents, boolean createRequirements)
+            throws RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException, SpecimenRequestException
     {
-        return _requestStatusHelper.get(c, rowId);
+        if (vials == null || vials.size() == 0)
+            return;
+
+        DbScope scope = SpecimenSchema.get().getScope();
+        try (DbScope.Transaction transaction = scope.ensureTransaction(REQUEST_ADDITION_LOCK))
+        {
+            for (Vial vial : vials)
+            {
+                if (!request.getContainer().getId().equals(vial.getContainer().getId()))
+                    throw new IllegalStateException("Mismatched containers.");
+
+                if (!vial.isAvailable())
+                    throw new SpecimenRequestException("Vial unavailable.");
+            }
+
+            for (Vial vial : vials)
+            {
+                Map<String, Object> fields = new HashMap<>();
+                fields.put("Container", request.getContainer().getId());
+                fields.put("SampleRequestId", request.getRowId());
+                fields.put("SpecimenGlobalUniqueId", vial.getGlobalUniqueId());
+                Table.insert(user, SpecimenSchema.get().getTableInfoSampleRequestSpecimen(), fields);
+                if (createEvents)
+                    SpecimenRequestManager.get().createRequestEvent(user, request, RequestEventType.SPECIMEN_ADDED, vial.getSpecimenDescription(), null);
+            }
+
+            if (createRequirements)
+                SpecimenRequestRequirementProvider.get().generateDefaultRequirements(user, request);
+
+            SpecimenRequestStatus status = getRequestStatus(request.getContainer(), request.getStatusId());
+            updateSpecimenStatus(vials, user, status.isSpecimensLocked());
+
+            transaction.commit();
+        }
     }
 
     /**
@@ -678,6 +791,172 @@ public class SpecimenRequestManager
 
         String cacheKey = getGroupedValuesCacheKey(container);
         _groupedValuesCache.remove(cacheKey);
+    }
+
+    public void deleteRequest(User user, SpecimenRequest request) throws RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException
+    {
+        DbScope scope = SpecimenSchema.get().getScope();
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
+            List<Vial> vials = request.getVials();
+            List<Long> specimenIds = new ArrayList<>(vials.size());
+            for (Vial vial : vials)
+                specimenIds.add(vial.getRowId());
+
+            deleteRequestSpecimenMappings(user, request, specimenIds, false);
+
+            deleteMissingSpecimens(request);
+
+            SpecimenRequestRequirementProvider.get().deleteRequirements(request);
+
+            deleteRequestEvents(user, request);
+            _requestHelper.delete(request);
+
+            transaction.commit();
+        }
+    }
+
+    public void deleteRequestSpecimenMappings(User user, SpecimenRequest request, List<Long> vialIds, boolean createEvents)
+            throws RequestabilityManager.InvalidRuleException, AttachmentService.DuplicateFilenameException
+    {
+        if (vialIds == null || vialIds.size() == 0)
+            return;
+
+        Set<Long> vialRowIds = new HashSet<>(vialIds);
+        List<Vial> vials = getVials(request.getContainer(), user, vialRowIds);
+        List<String> globalUniqueIds = new ArrayList<>(vials.size());
+        List<String> descriptions = new ArrayList<>();
+        for (Vial vial : vials)
+        {
+            globalUniqueIds.add(vial.getGlobalUniqueId());
+            descriptions.add(vial.getSpecimenDescription());
+        }
+
+        DbScope scope = SpecimenSchema.get().getScope();
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
+            SimpleFilter filter = SimpleFilter.createContainerFilter(request.getContainer());
+            filter.addCondition(FieldKey.fromParts("SampleRequestId"), request.getRowId());
+            filter.addInClause(FieldKey.fromParts("SpecimenGlobalUniqueId"), globalUniqueIds);
+            Table.delete(SpecimenSchema.get().getTableInfoSampleRequestSpecimen(), filter);
+            if (createEvents)
+            {
+                for (String description : descriptions)
+                    SpecimenRequestManager.get().createRequestEvent(user, request, RequestEventType.SPECIMEN_REMOVED, description, null);
+            }
+
+            updateSpecimenStatus(vials, user, false);
+
+            transaction.commit();
+        }
+    }
+
+    public void deleteMissingSpecimens(SpecimenRequest specimenRequest)
+    {
+        List<String> missingSpecimens = getMissingSpecimens(specimenRequest);
+        if (missingSpecimens.isEmpty())
+            return;
+        SimpleFilter filter = SimpleFilter.createContainerFilter(specimenRequest.getContainer());
+        filter.addCondition(FieldKey.fromParts("SampleRequestId"), specimenRequest.getRowId());
+        filter.addInClause(FieldKey.fromParts("SpecimenGlobalUniqueId"), missingSpecimens);
+        Table.delete(SpecimenSchema.get().getTableInfoSampleRequestSpecimen(), filter);
+    }
+
+    public List<String> getMissingSpecimens(SpecimenRequest specimenRequest)
+    {
+        Container container = specimenRequest.getContainer();
+        TableInfo tableInfoVial = SpecimenSchema.get().getTableInfoVial(container);
+        SQLFragment sql = new SQLFragment("SELECT SpecimenGlobalUniqueId FROM study.SampleRequestSpecimen WHERE SampleRequestId = ? and Container = ? and \n" +
+                "SpecimenGlobalUniqueId NOT IN (SELECT ");
+        sql.add(specimenRequest.getRowId());
+        sql.add(container);
+        sql.append(tableInfoVial.getColumn("GlobalUniqueId").getValueSql("Vial"))
+                .append(" FROM ").append(tableInfoVial.getFromSQL("Vial")).append(")");
+
+        return new SqlSelector(SpecimenSchema.get().getSchema(), sql).getArrayList(String.class);
+    }
+
+    public @NotNull List<Integer> getRequestIdsForSpecimen(Vial vial)
+    {
+        return getRequestIdsForSpecimen(vial, false);
+    }
+
+    public @NotNull List<Integer> getRequestIdsForSpecimen(Vial vial, boolean lockingRequestsOnly)
+    {
+        if (vial == null)
+            return Collections.emptyList();
+
+        SQLFragment sql = new SQLFragment("SELECT SampleRequestId FROM " + SpecimenSchema.get().getTableInfoSampleRequestSpecimen() +
+                " Map, " + SpecimenSchema.get().getTableInfoSampleRequest() + " Request, " +
+                SpecimenSchema.get().getTableInfoSampleRequestStatus() + " Status WHERE SpecimenGlobalUniqueId = ? " +
+                "AND Request.Container = ? AND Map.Container = Request.Container AND Status.Container = Request.Container " +
+                "AND Map.SampleRequestId = Request.RowId AND Request.StatusId = Status.RowId");
+        sql.add(vial.getGlobalUniqueId());
+        sql.add(vial.getContainer().getId());
+
+        if (lockingRequestsOnly)
+        {
+            sql.append(" AND Status.SpecimensLocked = ?");
+            sql.add(Boolean.TRUE);
+        }
+
+        return new SqlSelector(SpecimenSchema.get().getSchema(), sql).getArrayList(Integer.class);
+    }
+
+    private void deleteRequestEvents(User user, SpecimenRequest request)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), request.getRowId());
+        List<SpecimenRequestEvent> events = _requestEventHelper.get(request.getContainer(), filter);
+        for (SpecimenRequestEvent event : events)
+        {
+            AttachmentService.get().deleteAttachments(event);
+            _requestEventHelper.delete(event);
+        }
+    }
+
+    @Migrate // Move back to SpecimenManager?
+    public List<Vial> getVials(Container container, User user, Set<Long> vialRowIds)
+    {
+        // Take a set to eliminate dups - issue 26940
+
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addInClause(FieldKey.fromParts("RowId"), vialRowIds);
+        List<Vial> vials = getVials(container, user, filter);
+        if (vials.size() != vialRowIds.size())
+        {
+            List<Long> unmatchedRowIds = new ArrayList<>(vialRowIds);
+            for (Vial vial : vials)
+            {
+                unmatchedRowIds.remove(vial.getRowId());
+            }
+            throw new SpecimenRequestException("One or more specimen RowIds had no matching specimen: " + unmatchedRowIds);
+        }
+        return vials;
+    }
+
+    @Migrate // Move back to SpecimenManager?
+    public List<Vial> getVials(final Container container, final User user, SimpleFilter filter)
+    {
+        // TODO: LinkedList?
+        final List<Vial> vials = new ArrayList<>();
+
+        getSpecimensSelector(container, user, filter)
+            .forEachMap(map -> vials.add(new Vial(container, map)));
+
+        return vials;
+    }
+
+    @Migrate // Move back to SpecimenManager?
+    public TableSelector getSpecimensSelector(final Container container, final User user, SimpleFilter filter)
+    {
+        Study study = StudyService.get().getStudy(container);
+        if (study == null)
+        {
+            throw new NotFoundException("No study in container " + container.getPath());
+        }
+        UserSchema schema = SpecimenQuerySchema.get(study, user);
+        TableInfo specimenTable = schema.getTable(SpecimenQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
+        return new TableSelector(specimenTable, filter, null);
     }
 }
 

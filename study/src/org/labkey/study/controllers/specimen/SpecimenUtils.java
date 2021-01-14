@@ -578,7 +578,7 @@ public class SpecimenUtils
 
         public String getStatus()
         {
-            SpecimenRequestStatus status = SpecimenManager.getInstance().getRequestStatus(_notification.getSpecimenRequest().getContainer(),
+            SpecimenRequestStatus status = SpecimenRequestManager.get().getRequestStatus(_notification.getSpecimenRequest().getContainer(),
                     _notification.getSpecimenRequest().getStatusId());
             return status != null ? status.getLabel() : "Unknown";
         }

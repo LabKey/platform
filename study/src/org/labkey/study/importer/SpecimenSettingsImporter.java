@@ -189,7 +189,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
             if (xmlStatusArray.length > 0)
             {
                 // remove any existing not in-use, non-system statuses for this container before importing the new ones
-                Set<Integer> inUseStatusIds = study.getSampleRequestStatusesInUse();
+                Set<Integer> inUseStatusIds = SpecimenRequestManager.get().getRequestStatusIdsInUse(study.getContainer());
                 List<String> inUseStatusLabels = new ArrayList<>();
                 for (SpecimenRequestStatus existingStatus : SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), ctx.getUser()))
                 {

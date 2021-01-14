@@ -28,6 +28,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
@@ -111,7 +112,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
                 {
                     if (_shoppingCartStatusRowId == null)
                     {
-                        SpecimenRequestStatus cartStatus = SpecimenManager.getInstance().getRequestShoppingCartStatus(ctx.getContainer(),
+                        SpecimenRequestStatus cartStatus = SpecimenRequestManager.get().getRequestShoppingCartStatus(ctx.getContainer(),
                                 ctx.getViewContext().getUser());
                         _shoppingCartStatusRowId = cartStatus.getRowId();
                     }

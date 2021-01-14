@@ -35,7 +35,7 @@
     JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
     StudyImpl study = me.getModelBean();
     List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), getUser());
-    Set<Integer> inUseStatuses = study.getSampleRequestStatusesInUse();
+    Set<Integer> inUseStatuses = SpecimenRequestManager.get().getRequestStatusIdsInUse(study.getContainer());
     StatusSettings settings = SettingsManager.get().getStatusSettings(study.getContainer());
     boolean showSystemStatuses = settings.isUseShoppingCart();
 %>

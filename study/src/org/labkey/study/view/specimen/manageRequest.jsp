@@ -74,8 +74,7 @@
     String comments = bean.getSpecimenRequest().getComments();
     if (comments == null)
         comments = "[No description provided]";
-    SpecimenManager manager = SpecimenManager.getInstance();
-    boolean hasExtendedRequestView = manager.getExtendedSpecimenRequestView(getViewContext()) != null;
+    boolean hasExtendedRequestView = SpecimenManager.getInstance().getExtendedSpecimenRequestView(getViewContext()) != null;
     SpecimenRequestActor[] actors = SpecimenRequestRequirementProvider.get().getActors(c);
     SpecimenRequestRequirement[] requirements = SpecimenRequestManager.get().getRequestRequirements(bean.getSpecimenRequest());
     Location destinationLocation = bean.getDestinationSite();
@@ -84,13 +83,13 @@
     boolean notYetSubmitted = false;
     if (SettingsManager.get().isSpecimenShoppingCartEnabled(c))
     {
-        SpecimenRequestStatus cartStatus = manager.getRequestShoppingCartStatus(c, user);
+        SpecimenRequestStatus cartStatus = SpecimenRequestManager.get().getRequestShoppingCartStatus(c, user);
         notYetSubmitted = bean.getSpecimenRequest().getStatusId() == cartStatus.getRowId();
     }
 
-    SafeToRender specimenSearchButton = manager.hasEditRequestPermissions(user, bean.getSpecimenRequest()) ?
+    SafeToRender specimenSearchButton = SpecimenRequestManager.get().hasEditRequestPermissions(user, bean.getSpecimenRequest()) ?
         button("Specimen Search").href(urlFor(ShowSearchAction.class).addParameter("showVials", "true")) : HtmlString.EMPTY_STRING;
-    SafeToRender importVialIdsButton = manager.hasEditRequestPermissions(user, bean.getSpecimenRequest()) ?
+    SafeToRender importVialIdsButton = SpecimenRequestManager.get().hasEditRequestPermissions(user, bean.getSpecimenRequest()) ?
         button("Upload Specimen Ids").href(urlFor(ImportVialIdsAction.class).addParameter("id", bean.getSpecimenRequest().getRowId())) : HtmlString.EMPTY_STRING;
 
     String availableStudyName = ContainerManager.getAvailableChildContainerName(c, "New Study");
@@ -323,7 +322,7 @@
         <tr>
             <td class="labkey-form-label"><span class="labkey-error"><b>This request has not been submitted yet.</b></span>
 <%
-        if (manager.hasEditRequestPermissions(user, bean.getSpecimenRequest()))
+        if (SpecimenRequestManager.get().hasEditRequestPermissions(user, bean.getSpecimenRequest()))
         {
 %>
             <div style="padding-bottom: 0.5em">

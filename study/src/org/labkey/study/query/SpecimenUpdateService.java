@@ -39,6 +39,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.specimen.SpecimenEvent;
 import org.labkey.api.specimen.SpecimenEventManager;
+import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.study.Study;
@@ -130,7 +131,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             errors.addRowError(e);
             throw errors;
         }
-        catch (SpecimenManager.SpecimenRequestException e)
+        catch (SpecimenRequestException e)
         {
             errors.addRowError(new ValidationException(e.getMessage()));
             throw errors;
@@ -365,7 +366,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             errors.addRowError(e);
             throw errors;
         }
-        catch (SpecimenManager.SpecimenRequestException e)
+        catch (SpecimenRequestException e)
         {
             errors.addRowError(new ValidationException(e.getMessage()));
             throw errors;
