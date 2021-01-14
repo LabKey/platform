@@ -15,6 +15,6 @@
     "@labkey/components": "1.14.1-fb-fieldEditorRowSelection-8012-2.2"
   },
   "devDependencies": {
-    "@labkey/build": "1.1.1"
+    "@labkey/build": "1.1.2"
   }
 }
