@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/query/gen && rimraf resources/views/gen  && rimraf resources/views/queryMetadataEditor*"
   },
   "dependencies": {
-    "@labkey/components": "1.14.1-fb-fieldEditorRowSelection-8012-2.3"
+    "@labkey/components": "1.15.0"
   },
   "devDependencies": {
     "@labkey/build": "1.1.1"
