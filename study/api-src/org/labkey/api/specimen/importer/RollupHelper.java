@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 // Methods extracted from SpecimenImporter to allow migrating AbstractSpecimenDomainKind, et al
-// TODO: Consider combining this back with SpecimenImporter or move some of its rollup methods here
+// TODO: Consider combining this back with SpecimenImporter or move some of its other rollup methods here
 public class RollupHelper
 {
     public static class RollupMap<K extends Rollup> extends CaseInsensitiveHashMap<List<RollupInstance<K>>>

@@ -26,6 +26,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenColumns;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.importer.EventVialRollup;
 import org.labkey.api.specimen.importer.IteratorSpecimenImportFile;
@@ -245,7 +246,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
         ArrayList<String> guids = new ArrayList<>();
         for (Map<String, Object> row : rows)
         {
-            String guid = (String)row.get(GLOBAL_UNIQUE_ID_TSV_COL);
+            String guid = (String)row.get(SpecimenColumns.GLOBAL_UNIQUE_ID_TSV_COL);
             if (null == guid)
             {
                 noGuidRowCount++;

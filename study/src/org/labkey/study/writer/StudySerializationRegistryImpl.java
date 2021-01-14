@@ -17,7 +17,13 @@ package org.labkey.study.writer;
 
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
+import org.labkey.api.annotations.Migrate;
+import org.labkey.api.specimen.writer.SimpleStudyExportContext;
+import org.labkey.api.specimen.writer.SpecimenArchiveWriter;
+import org.labkey.api.specimen.writer.SpecimenSettingsWriter;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudySerializationRegistry;
+import org.labkey.api.study.writer.BaseStudyWriter;
 import org.labkey.study.importer.AssayScheduleImporter;
 import org.labkey.study.importer.CohortImporter;
 import org.labkey.study.importer.DatasetCohortAssigner;
@@ -40,6 +46,7 @@ import org.labkey.study.importer.VisitImporter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class StudySerializationRegistryImpl implements StudySerializationRegistry
@@ -79,7 +86,7 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
     public Collection<InternalStudyWriter> getInternalStudyWriters()
     {
         // New up the writers every time since these classes can be stateful
-        return Arrays.asList(
+        return List.of(
             new AssayDatasetWriter(),
             new AssayScheduleWriter(),
             new ViewCategoryWriter(),
@@ -89,12 +96,21 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
             new ParticipantCommentWriter(),
             new ParticipantGroupWriter(),
             new ProtocolDocumentWriter(),
-//            new SpecimenSettingsWriter(),
-//            new SpecimenArchiveWriter(),
             new TreatmentDataWriter(),
             new VisitMapWriter(),
             new StudyViewsWriter(),
             new StudyXmlWriter()  // Note: Must be the last study writer since it writes out the study.xml file (to which other writers contribute)
+        );
+    }
+
+    // These writers serialize into the study archive, but are registered by other modules
+    @Migrate // Add a registration mechanism
+    public Collection<BaseStudyWriter<Study, SimpleStudyExportContext>> getRegisteredStudyWriters()
+    {
+        // New up the writers every time since these classes can be stateful
+        return List.of(
+            new SpecimenSettingsWriter(),
+            new SpecimenArchiveWriter()
         );
     }
 

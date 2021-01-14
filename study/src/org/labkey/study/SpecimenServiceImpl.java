@@ -35,6 +35,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.DefaultSpecimenTablesTemplate;
+import org.labkey.api.specimen.SpecimenColumns;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.AutoCompleteAction;
@@ -52,7 +53,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.importer.SimpleSpecimenImporter;
-import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.pipeline.SpecimenReloadJob;
 
 import java.io.IOException;
@@ -453,7 +453,7 @@ public class SpecimenServiceImpl implements SpecimenService
     public Map<String, String> getSpecimenImporterTsvColumnMap()
     {
         Map<String, String> colNameMap = new HashMap<>();
-        for (SpecimenColumn specimenColumn : SpecimenImporter.BASE_SPECIMEN_COLUMNS)
+        for (SpecimenColumn specimenColumn : SpecimenColumns.BASE_SPECIMEN_COLUMNS)
         {
             colNameMap.put(specimenColumn.getDbColumnName(), specimenColumn.getPrimaryTsvColumnName());
         }

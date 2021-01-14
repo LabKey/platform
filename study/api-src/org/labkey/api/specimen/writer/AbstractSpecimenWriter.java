@@ -15,22 +15,21 @@
  */
 package org.labkey.api.specimen.writer;
 
-import org.labkey.api.annotations.Migrate;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.writer.AbstractContext;
-import org.labkey.api.writer.Writer;
+import org.labkey.api.study.writer.BaseStudyWriter;
 import org.labkey.study.xml.StudyDocument;
 
 /**
  * User: kevink
  * Date: 6/13/13
  */
-@Migrate // TODO: Restore to package private after migration
-public abstract class AbstractSpecimenWriter implements Writer<Study, SimpleStudyExportContext>
+abstract class AbstractSpecimenWriter implements BaseStudyWriter<Study, SimpleStudyExportContext>
 {
     protected static final String DEFAULT_DIRECTORY = "specimens";
 
-    protected boolean includeWithTemplate()
+    @Override
+    public boolean includeWithTemplate()
     {
         return true;
     }
