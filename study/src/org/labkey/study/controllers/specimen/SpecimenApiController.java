@@ -67,7 +67,6 @@ import java.util.TreeMap;
  * Date: Dec 18, 2008
  * Time: 11:57:24 AM
  */
-
 @SuppressWarnings("UnusedDeclaration")
 public class SpecimenApiController extends BaseStudyController
 {
@@ -694,10 +693,9 @@ public class SpecimenApiController extends BaseStudyController
 
             final Map<String, Object> response = new HashMap<>();
 
-            SpecimenManager specimenManager = SpecimenManager.getInstance();
             List<Map<String, Object>> groupingsJSON = new ArrayList<>();
 
-            Map<String, Map<String, Object>> groupingMap = specimenManager.getGroupedValuesForColumn(getContainer(), getUser(), groupings);
+            Map<String, Map<String, Object>> groupingMap = SpecimenRequestManager.get().getGroupedValuesForColumn(getContainer(), getUser(), groupings);
             for (String[] grouping: groupings)
             {
                 if (null != StringUtils.trimToNull(grouping[0]))        // Do nothing if no columns were specified

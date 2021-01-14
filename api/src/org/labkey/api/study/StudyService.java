@@ -19,7 +19,6 @@ package org.labkey.api.study;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportOptions;
-import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -254,7 +253,4 @@ public interface StudyService
     }
 
     void registerStudyTabProvider(StudyTabProvider provider);
-
-    @Migrate // Temporary
-    void clearGroupedValuesForColumn(Container c);
 }

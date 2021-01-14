@@ -4,10 +4,10 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.study.QueryHelper;
-import org.labkey.api.study.StudyService;
 
 import java.util.List;
 import java.util.Map;
@@ -106,7 +106,7 @@ public class SettingsManager
                 container, "SpecimenRepositorySettings", true);
         settings.populateMap(settingsMap);
         settingsMap.save();
-        StudyService.get().clearGroupedValuesForColumn(container);     // May have changed groupings
+        SpecimenRequestManager.get().clearGroupedValuesForColumn(container);     // May have changed groupings
     }
 
     public boolean isSpecimenRequestEnabled(Container container)

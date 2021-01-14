@@ -4543,7 +4543,7 @@ public class SpecimenController extends BaseStudyController
             SpecimenRequestStatus status = SpecimenRequestManager.get().getRequestStatus(getContainer(), form.getId());
             if (status != null)
             {
-                SpecimenRequestManager.get().deleteRequestStatus(getUser(), status);
+                SpecimenRequestManager.get().deleteRequestStatus(status);
                 int[] remainingIds = new int[statuses.size() - 1];
                 int idx = 0;
                 for (SpecimenRequestStatus remainingStatus : statuses)
@@ -5587,7 +5587,7 @@ public class SpecimenController extends BaseStudyController
             ArrayList<String[]> groupings = settings.getSpecimenWebPartGroupings();
             form.setGrouping1(groupings.get(0));
             form.setGrouping2(groupings.get(1));
-            form.setColumns(SpecimenManager.getInstance().getGroupedValueAllowedColumns());
+            form.setColumns(SpecimenRequestManager.get().getGroupedValueAllowedColumns());
             return new JspView<>("/org/labkey/study/view/specimen/manageSpecimenWebPart.jsp", form);
         }
 

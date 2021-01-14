@@ -194,7 +194,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                 for (SpecimenRequestStatus existingStatus : SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), ctx.getUser()))
                 {
                     if (!existingStatus.isSystemStatus() && !inUseStatusIds.contains(existingStatus.getRowId()))
-                        SpecimenRequestManager.get().deleteRequestStatus(ctx.getUser(), existingStatus);
+                        SpecimenRequestManager.get().deleteRequestStatus(existingStatus);
                     else
                         inUseStatusLabels.add(existingStatus.getLabel());
                 }

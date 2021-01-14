@@ -1266,10 +1266,4 @@ public class StudyServiceImpl implements StudyService
     {
         return TAB_PROVIDERS;
     }
-
-    @Override
-    public void clearGroupedValuesForColumn(Container c)
-    {
-        SpecimenManager.getInstance().clearGroupedValuesForColumn(c);
-    }
 }
