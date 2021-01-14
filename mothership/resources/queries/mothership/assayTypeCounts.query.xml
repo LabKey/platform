@@ -1,0 +1,12 @@
+<tables xmlns="http://labkey.org/data/xml">
+    <table tableName="assayTypeCounts" tableDbType="NOT_IN_DB">
+        <columns>
+            <column columnName="ServerSessionId">
+                <fk>
+                    <fkDbSchema>mothership</fkDbSchema>
+                    <fkTable>ServerSessions</fkTable>
+                </fk>
+            </column>
+        </columns>
+    </table>
+</tables>
