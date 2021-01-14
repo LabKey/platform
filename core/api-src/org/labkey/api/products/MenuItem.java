@@ -26,9 +26,20 @@ public class MenuItem
     private Integer _orderNum; // ordinal for producing the primary sort order of the items
     private Boolean _requiresLogin = false; // indicates if link should be shown if not logged in.
     private String _productId = null; // indicates the product/application this link should direct to.  Can (should?) be null if the current application is to be used.
-    private String _iconCls; // the optional font icon class to be displayed with menu label
 
-    public MenuItem(String label, String url, Integer id, String key, Integer orderNum, String productId, String iconCls)
+    public boolean isHasActiveJob()
+    {
+        return _hasActiveJob;
+    }
+
+    public void setHasActiveJob(boolean hasActiveJob)
+    {
+        _hasActiveJob = hasActiveJob;
+    }
+
+    private boolean _hasActiveJob; // if there is an active pipeline job associated with this item
+
+    public MenuItem(String label, String url, Integer id, String key, Integer orderNum, String productId, boolean hasActiveJob)
     {
         _label = label;
         _id = id;
@@ -36,12 +47,12 @@ public class MenuItem
         _url = url;
         _orderNum = orderNum == null ? -1 : orderNum;
         _productId = productId;
-        _iconCls = iconCls;
+        _hasActiveJob = hasActiveJob;
     }
 
     public MenuItem(String label, String url, Integer id, String key, Integer orderNum, String productId)
     {
-        this(label, url, id, key, orderNum, productId, null);
+        this(label, url, id, key, orderNum, productId, false);
     }
 
     public MenuItem(String label, ActionURL url, Integer id, Integer orderNum, String productId)
@@ -127,16 +138,6 @@ public class MenuItem
     public void setRequiresLogin(Boolean requiresLogin)
     {
         _requiresLogin = requiresLogin;
-    }
-
-    public String getIconCls()
-    {
-        return _iconCls;
-    }
-
-    public void setIconCls(String iconCls)
-    {
-        _iconCls = iconCls;
     }
 
 }
