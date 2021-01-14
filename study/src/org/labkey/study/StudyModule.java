@@ -240,11 +240,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     protected void init()
     {
+        addController("study", StudyController.class);  // Default controller for this module -- must be registered first
         addController("cohort", CohortController.class);
         addController("dataset", DatasetController.class);
         addController("participant-group", ParticipantGroupController.class);
         addController("publish", PublishController.class);
-        addController("study", StudyController.class);
         addController("study-definition", StudyDefinitionController.class);
         addController("study-design", StudyDesignController.class);
         addController("study-designer", DesignerController.class);

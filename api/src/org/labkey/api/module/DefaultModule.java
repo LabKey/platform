@@ -264,6 +264,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         else _resourcePath = "/" + getClass().getPackage().getName().replaceAll("\\.", "/");
     }
 
+    // Note: First controller registered in a module is special: getTabURL() treats it as the "default controller", e.g.
     protected void addController(String primaryName, Class<? extends Controller> cl, String... aliases)
     {
         if (!Controller.class.isAssignableFrom(cl))
@@ -416,9 +417,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         Map<String, Class<? extends Controller>> map = getControllerNameToClass();
 
-        // Handle modules that have no controllers (e.g., BigIron)
+        // Some modules have no controllers (e.g., BigIron)
         if (!map.isEmpty())
         {
+            // Note: First registered controller is special -- its BeginAction becomes the tab URL for the module
             Map.Entry<String, Class<? extends Controller>> entry = map.entrySet().iterator().next();
             Controller controller = getController(null, entry.getValue());
             if (controller instanceof SpringActionController)
