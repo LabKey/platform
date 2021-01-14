@@ -24,6 +24,7 @@ import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
@@ -49,7 +50,9 @@ public abstract class AbstractXarImporter
     {
         if (declaredType != null && !ExpData.DEFAULT_CPAS_TYPE.equals(declaredType))
         {
-            _job.getLogger().warn("Unrecognized CpasType '" + declaredType + "' loaded for Data object.");
+            // check if this is a reference to a data class
+            if (ExperimentService.get().getDataClass(declaredType) == null)
+                _job.getLogger().warn("Unrecognized CpasType '" + declaredType + "' loaded for Data object.");
         }
     }
 

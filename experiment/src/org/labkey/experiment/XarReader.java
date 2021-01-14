@@ -1393,11 +1393,15 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
-           // TODO: Allow creating the Data in a DataClass
             Data data = new Data();
             data.setLSID(dataLSID);
             data.setName(trimString(xbData.getName()));
             data.setCpasType(declaredType);
+            for (ExpDataClass dataClass : _loadedDataClasses)
+            {
+                if (dataClass.getLSID().equals(declaredType))
+                    data.setClassId(dataClass.getRowId());
+            }
 
             // This existing hack is that newData has the source URL, but the dest container
             // We change to set it with the source container here -- Handler must change the container along with the dataFileURL (Dave 2/15/18)

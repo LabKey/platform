@@ -85,16 +85,17 @@ public class StudyDatasetIndexTest extends StudyBaseTest
             colSizeIndex = 6;
         }
 
+        // related BUG https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=42229
         // Verify size column specified in datasets_metadata
-        assertTableRowInNonDataRegionTable(METADATA, "sharedcolumn", 33, colNameIndex);
-        assertTableRowInNonDataRegionTable(METADATA, "20", 33, colSizeIndex);
+        assertTableRowInNonDataRegionTable(METADATA, "sharedcolumn", 34, colNameIndex);
+        assertTableRowInNonDataRegionTable(METADATA, "20", 34, colSizeIndex);
 
         // Verify default sizes
-        assertTableRowInNonDataRegionTable(METADATA, "multilinecolumn", 31, colNameIndex);
-        assertTableRowInNonDataRegionTable(METADATA, "4000", 31, colSizeIndex);
-
-        assertTableRowInNonDataRegionTable(METADATA, "flagcolumn", 32, colNameIndex);
+        assertTableRowInNonDataRegionTable(METADATA, "multilinecolumn", 32, colNameIndex);
         assertTableRowInNonDataRegionTable(METADATA, "4000", 32, colSizeIndex);
+
+        assertTableRowInNonDataRegionTable(METADATA, "flagcolumn", 33, colNameIndex);
+        assertTableRowInNonDataRegionTable(METADATA, "4000", 33, colSizeIndex);
 
         beginAt("/query/" + getProjectName() + "/" + getFolderName()  + "/schema.view?schemaName=study");
         selectQuery("study", "DEM-2");

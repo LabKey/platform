@@ -954,6 +954,12 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 }
                 else
                 {
+                    if (null == _findMap)
+                    {
+                        _findMap = new ArrayListMap.FindMap<>(new CaseInsensitiveHashMap<>());
+                        for (ColumnDescriptor cd : _columns)
+                            _findMap.put(cd.getColumnName(),_findMap.size());
+                    }
                     _row = new ArrayListMap<>(_findMap);
                     _row.putAll(nextRow);
                 }

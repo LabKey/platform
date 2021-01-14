@@ -2383,24 +2383,32 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class UpdateDatasetVisitMappingAction extends FormViewAction<DatasetForm>
     {
-        DatasetDefinition _def;
+        private DatasetDefinition _def;
 
         @Override
         public void validateCommand(DatasetForm form, Errors errors)
         {
-            if (form.getDatasetId() < 1)
-                errors.reject(SpringActionController.ERROR_MSG, "DatasetId must be greater than zero.");
+            if (null == form.getDatasetId() || form.getDatasetId() < 1)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "DatasetId must be a positive integer.");
+            }
+            else
+            {
+                _def = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), form.getDatasetId());
+                if (null == _def)
+                    errors.reject(SpringActionController.ERROR_MSG, "Dataset not found.");
+            }
         }
 
         @Override
         public ModelAndView getView(DatasetForm form, boolean reshow, BindException errors) throws Exception
         {
-            _def = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), form.getDatasetId());
+            validateCommand(form, errors);
 
-            if (_def == null)
+            if (errors.hasErrors())
             {
-                BeginAction action = (BeginAction)initAction(this, new BeginAction());
-                return action.getView(form, errors);
+                getPageConfig().setTemplate(PageConfig.Template.Dialog);
+                return new SimpleErrorView(errors);
             }
 
             return new JspView<>("/org/labkey/study/view/updateDatasetVisitMapping.jsp", _def, errors);
@@ -2409,8 +2417,7 @@ public class StudyController extends BaseStudyController
         @Override
         public boolean handlePost(DatasetForm form, BindException errors)
         {
-            DatasetDefinition original = StudyManager.getInstance().getDatasetDefinition(getStudyThrowIfNull(), form.getDatasetId());
-            DatasetDefinition modified = original.createMutable();
+            DatasetDefinition modified = _def.createMutable();
             if (null != form.getVisitRowIds())
             {
                 for (int i = 0; i < form.getVisitRowIds().length; i++)

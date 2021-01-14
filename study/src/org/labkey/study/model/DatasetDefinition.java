@@ -192,7 +192,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         // they're used by import ('replace') or are commonly used/confused synonyms for built-in column names
         "replace",
         "visit",
-        "participant"
+        "participant",
+        DataIntegrationService.Columns.TransformImportHash.getColumnName()
     };
 
     private static final String[] DEFAULT_ABSOLUTE_DATE_FIELD_NAMES_ARRAY = new String[]
@@ -221,7 +222,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         "lsid",
         "dsrowid",
         "Dataset",
-        "ParticipantSequenceNum"
+        "ParticipantSequenceNum",
+        DataIntegrationService.Columns.TransformImportHash.getColumnName()
     };
 
     static final Set<String> DEFAULT_ABSOLUTE_DATE_FIELDS;
