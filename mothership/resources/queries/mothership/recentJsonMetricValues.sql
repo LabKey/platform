@@ -1,12 +1,12 @@
 WITH metrics AS (
     SELECT
-        NULL AS Key,
+        CAST(NULL AS VARCHAR) AS Key,
         JsonMetrics AS Value,
         CAST('object' AS VARCHAR) AS type,
-        NULL as DisplayKey,
+        CAST(NULL AS VARCHAR) AS DisplayKey,
         NULL as SelectKey,
         ServerSessionId
-    FROM mothership.ServerSessions
+    FROM mothership.ServerSessions WHERE ServerSessionId IN (SELECT MAX(ServerSessionId) FROM mothership.ServerSessions WHERE LastKnownTime >= timestampadd('SQL_TSI_DAY', -14, curdate()) GROUP BY ServerInstallationId)
 
     UNION ALL
 
