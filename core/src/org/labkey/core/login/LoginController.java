@@ -736,8 +736,10 @@ public class LoginController extends SpringActionController
         public Object execute(Object o, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("full", DbLoginManager.getPasswordRule().getFullRuleHTML());
-            response.put("summary", DbLoginManager.getPasswordRule().getSummaryRuleHTML());
+            PasswordRule passwordRule = DbLoginManager.getPasswordRule();
+
+            response.put("full", passwordRule.getFullRuleHTML());
+            response.put("summary", passwordRule.getSummaryRuleHTML());
             return response;
         }
     }

@@ -205,7 +205,7 @@ public class AuthenticationConfigurationCache
         return null;
     }
 
-    static void clear()
+    public static void clear()
     {
         CACHE.remove(CACHE_KEY);
     }
