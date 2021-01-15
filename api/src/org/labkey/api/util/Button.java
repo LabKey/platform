@@ -233,10 +233,23 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         String submitId = GUID.makeGUID();
         final HtmlString tip = (null != tooltip ? HtmlString.of(tooltip) : (!iconOnly ? null : html));
         String hrefValue = (null == getHref()) ? "#" : getHref();
+        String onClick = generateOnClick(submitId);
+        // For accessibility, allow space keystroke on focus to trigger onClick
+        String onkeypress = String.format("if (event.keyCode == 32) { %s };", onClick);
 
         var attrs = at(attributes)
             .id(getId())
-            .at(Attribute.href, hrefValue, title, tip, onclick, generateOnClick(submitId), Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget(), tabindex, 0)
+            .at(
+                    Attribute.href, hrefValue,
+                    title, tip,
+                    onclick, onClick,
+                    Attribute.rel, getRel(),
+                    Attribute.name, getName(),
+                    Attribute.style, getStyle(),
+                    Attribute.target, getTarget(),
+                    tabindex, 0,
+                    Attribute.onkeypress, onkeypress
+            )
             .data("tt", (HtmlString.isBlank(tip) ? null : "tooltip"))
             .data("placement", "top")
             .cl(CLS, typeCls, getCssClass())
