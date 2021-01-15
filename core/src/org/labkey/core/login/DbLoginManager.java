@@ -19,12 +19,15 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.security.AuthenticationConfigurationCache;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSettingsAuditEvent;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.core.login.LoginController.SaveDbLoginPropertiesForm;
 
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -36,31 +39,24 @@ public class DbLoginManager
 {
     // TODO: Move Logins table operations here
 
+    public static DbLoginConfiguration getConfiguration()
+    {
+        Collection<DbLoginConfiguration> configurations = AuthenticationManager.getActiveConfigurations(DbLoginConfiguration.class);
+        if (configurations.size() != 1)
+            throw new IllegalStateException("Expected exactly one DbAuthenticationConfiguration, but was: " + configurations.size());
+
+        return configurations.iterator().next();
+    }
+
     public static PasswordRule getPasswordRule()
     {
-        String strength = getProperty(Key.Strength, PasswordRule.Weak);  // TODO: Change to strong -- new installs will use this
-
-        return PasswordRule.valueOf(strength);
+        return getConfiguration().getPasswordRule();
     }
 
     public static PasswordExpiration getPasswordExpiration()
     {
-        String expiration = getProperty(Key.Expiration, PasswordExpiration.Never);
-
-        PasswordExpiration pe;
-
-        try
-        {
-            pe = PasswordExpiration.valueOf(expiration);
-        }
-        catch (IllegalArgumentException e)
-        {
-            pe = PasswordExpiration.Never;
-        }
-
-        return pe;
+        return getConfiguration().getExpiration();
     }
-
 
     static final String DATABASE_AUTHENTICATION_CATEGORY_KEY = "DatabaseAuthentication";
 
@@ -75,6 +71,7 @@ public class DbLoginManager
         map.put(Key.Strength.toString(), form.getStrength());
         map.put(Key.Expiration.toString(), form.getExpiration());
         map.save();
+        AuthenticationConfigurationCache.clear();
 
         String changes = StringUtilsLabKey.getMapDifference(oldProperties, map);
 
@@ -86,20 +83,8 @@ public class DbLoginManager
         }
     }
 
-    private static @NotNull Map<String, String> getProperties()
+    static @NotNull Map<String, String> getProperties()
     {
         return PropertyManager.getProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY);
-    }
-
-    private static String getProperty(Key key, Enum defaultValue)
-    {
-        Map<String, String> props = getProperties();
-
-        String value = props.get(key.toString());
-
-        if (null != value)
-            return value;
-        else
-            return defaultValue.toString();
     }
 }

@@ -2523,7 +2523,7 @@ public class SecurityManager
                 SecurityManager.setPassword(email, password);
 
                 User user2 = AuthenticationManager.authenticate(ViewServlet.mockRequest("GET", new ActionURL(), null, null, null), rawEmail, password);
-                assertNotNull(rawEmail + " failed to authenticate; check labkey.log around timestamp " + DateUtil.formatDateTime(new Date(), "HH:mm:ss,SSS") + " for the reason", user2);
+                assertNotNull("\"" + rawEmail + "\" failed to authenticate with password \"" + password + "\"; check labkey.log around timestamp " + DateUtil.formatDateTime(new Date(), "HH:mm:ss,SSS") + " for the reason", user2);
                 assertEquals(user, user2);
             }
             finally

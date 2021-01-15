@@ -16,6 +16,7 @@
 
 package org.labkey.assay;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
@@ -25,9 +26,9 @@ import org.json.JSONObject;
 import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -87,7 +88,10 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.DataExchangeHandler;
@@ -148,6 +152,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -622,42 +627,107 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(DesignAssayPermission.class)
-    public class ChooseAssayTypeAction extends FormViewAction<CreateAssayForm>
+    public class AssayProviderBean
     {
-        private Container _createIn;
+        String name;
+        String description;
+        List<String> fileTypes;
 
-        @Override
-        public void validateCommand(CreateAssayForm form, Errors errors)
+        public String getName()
         {
+            return name;
         }
 
-        @Override
-        public boolean handlePost(CreateAssayForm form, BindException errors)
+        public void setName(String name)
         {
-            if (form.getProviderName() == null || PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), form.getProviderName(), null) == null)
+            this.name = name;
+        }
+
+        public String getDescription()
+        {
+            return description;
+        }
+
+        public void setDescription(String description)
+        {
+            this.description = description;
+        }
+
+        public List<String> getFileTypes()
+        {
+            return fileTypes;
+        }
+
+        public void setFileTypes(List<String> fileTypes)
+        {
+            this.fileTypes = fileTypes;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(DesignAssayPermission.class)
+    public class GetAssayTypeSelectOptionsAction extends ReadOnlyApiAction<Object>
+    {
+        private List<AssayProviderBean> getProviders()
+        {
+            List<AssayProvider> providers = new ArrayList<>(AssayService.get().getAssayProviders());
+
+            // Remove AssayProviders without a designer action
+            providers.removeIf(provider -> provider.getDesignerAction() == null);
+
+            FileContentService fileContentService = FileContentService.get();
+            boolean isCloudRoot = fileContentService != null && fileContentService.isCloudRoot(getContainer());
+
+            List<AssayProviderBean> beans = new ArrayList<>();
+            AssayProviderBean bean;
+            for (AssayProvider provider : providers)
             {
-                errors.addError(new LabKeyError("Please select an assay type."));
-                return false;
+                // Is cloud setup and assay doesn't support cloud, then do not include
+                if(isCloudRoot && null != provider.getPipelineProvider() && !provider.getPipelineProvider().supportsCloud())
+                    continue;
+
+                bean = new AssayProviderBean();
+                bean.setName(provider.getName());
+                bean.setDescription(provider.getDescription());
+                bean.setFileTypes(provider.getDataType().getFileType().getSuffixes());
+                beans.add(bean);
             }
-            _createIn = form.getCreateContainer();
 
-            return true;
+            beans.sort(Comparator.comparing(AssayProviderBean::getName));
+            return beans;
         }
 
         @Override
-        public ActionURL getSuccessURL(CreateAssayForm form)
+        public ApiResponse execute(Object o, BindException errors)
         {
-            ActionURL returnURL = form.getReturnActionURL();
-            return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(_createIn, form.getProviderName(), returnURL);
-        }
+            ApiSimpleResponse response = new ApiSimpleResponse();
 
+            response.put("providers", getProviders());
+
+            Map<String, String> locations = new LinkedHashMap<>();
+            String defaultLocation = null;
+            for (Pair<Container, String> entry : AssayService.get().getLocationOptions(getContainer(), getUser()))
+            {
+                locations.put(entry.getKey().getPath(), entry.getValue());
+                if (defaultLocation == null)
+                    defaultLocation = entry.getKey().getPath();
+            }
+
+            response.put("defaultLocation", defaultLocation);
+            response.put("locations", locations);
+
+            return response;
+        }
+    }
+
+    @RequiresPermission(DesignAssayPermission.class)
+    public class ChooseAssayTypeAction extends SimpleViewAction<Object>
+    {
         @Override
-        public ModelAndView getView(CreateAssayForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            ChooseAssayBean bean = new ChooseAssayBean();
-            bean._actionURL = form.getReturnActionURL();
-            return new JspView<>("/org/labkey/assay/view/chooseAssayType.jsp", bean, errors);
+            ModuleHtmlView view = ModuleHtmlView.get(ModuleLoader.getInstance().getModule("assay"), ModuleHtmlView.getGeneratedViewPath("assayTypeSelect"));
+            return view;
         }
 
         @Override

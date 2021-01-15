@@ -130,6 +130,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.core.login.DbLoginConfiguration;
+import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
@@ -2000,11 +2001,7 @@ public class UserController extends SpringActionController
         {
             try
             {
-                Collection<DbLoginConfiguration> configurations = AuthenticationManager.getActiveConfigurations(DbLoginConfiguration.class);
-                if (configurations.size() != 1)
-                    throw new IllegalStateException("Expected exactly one DbAuthenticationConfiguration, but was: " + configurations.size());
-
-                DbLoginConfiguration configuration = configurations.iterator().next();
+                DbLoginConfiguration configuration = DbLoginManager.getConfiguration();
                 return configuration.getAuthenticationProvider().authenticate(configuration, email, password, returnUrlHelper).isAuthenticated();
             }
             catch (ValidEmail.InvalidEmailException e)
