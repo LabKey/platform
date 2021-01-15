@@ -2136,7 +2136,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
      */
     public DataIteratorBuilder getInsertDataIterator(User user, DataIteratorBuilder in, DataIteratorContext context)
     {
-        return getInsertDataIterator(user, in, null, null, null, null, null, false);
+        return getInsertDataIterator(user, in, null, null, context, null, null, false);
     }
 
     /**
