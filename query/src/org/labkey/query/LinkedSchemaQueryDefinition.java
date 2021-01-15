@@ -40,7 +40,6 @@ import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.sql.Query;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -92,11 +91,11 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     }
 
     @Override
-    public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata, boolean skipSuggestedColumns, boolean allowDuplicateColumns)
+    public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata, boolean skipSuggestedColumns)
     {
         // Parse/resolve the wrapped query in the context of the original source schema
         UserSchema sourceSchema = getSchema().getSourceSchema();
-        return super.getQuery(sourceSchema, errors, parent, includeMetadata, skipSuggestedColumns, allowDuplicateColumns);
+        return super.getQuery(sourceSchema, errors, parent, includeMetadata, skipSuggestedColumns);
     }
 
     @Override

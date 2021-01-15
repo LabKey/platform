@@ -215,6 +215,8 @@ public class ContainerTable extends FilteredTable<UserSchema>
         @Override
         protected String transformValue(Integer rawValue)
         {
+            if (rawValue == null)
+                return "";
             int rowId = rawValue.intValue();
             Container c = ContainerManager.getForRowId(rowId);
             if (c == null)

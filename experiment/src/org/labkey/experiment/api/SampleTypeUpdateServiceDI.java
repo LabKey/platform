@@ -141,7 +141,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         DataIteratorBuilder dib = super.createImportDIB(user, container, data, context);
-        if (InventoryService.get() != null && ExperimentalFeatureService.get().isFeatureEnabled("experimental_freezerManagement"))
+        if (InventoryService.get() != null)
         {
             ExpSampleType sampleType = ((ExpMaterialTableImpl) getQueryTable()).getSampleType();
             UserSchema userSchema = getQueryTable().getUserSchema();

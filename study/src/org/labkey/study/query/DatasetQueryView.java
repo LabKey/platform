@@ -687,11 +687,11 @@ public class DatasetQueryView extends StudyQueryView
                 }
                 sortLabels(labels);
 
-                msg.append("<div><span class=\"labkey-strong\">Selected Studies:</span>&nbsp;");
+                msg.append("Selected Studies: ");
                 String comma = "";
                 for (String label : labels)
                 {
-                    msg.append(comma).append(PageFlowUtil.filter(label));
+                    msg.append(comma).append(label);
                     comma = ", ";
                 }
             }
@@ -702,25 +702,11 @@ public class DatasetQueryView extends StudyQueryView
                 if (sessionGroup != null)
                 {
                     if (msg.length() > 0)
-                        msg.append("&nbsp;&nbsp;");
-                    msg.append("<span class=\"labkey-strong\">Selected " + PageFlowUtil.filter(dqs.getStudy().getSubjectNounPlural()) + ":</span>&nbsp;");
+                        msg.append("  ");
+                    msg.append("Selected " + dqs.getStudy().getSubjectNounPlural() + ": ");
                     msg.append(sessionGroup.getParticipantIds().length);
                 }
-
-                if (msg.length() != 0)
-                {
-                    // HACK -- link to immport/studyFinder.view
-                    Module immport = ModuleLoader.getInstance().getModule("immport");
-                    Container project = ctx.getContainer().getProject();
-                    if (immport != null && project != null && project.getActiveModules().contains(immport))
-                    {
-                        ActionURL finderURL = new ActionURL("immport", "dataFinderRedirect.view", project);
-                        msg.append("&nbsp;&nbsp;").append(PageFlowUtil.button("Edit").href(finderURL.toString()));
-                    }
-                    msg.append("</div>");
-
-                    headerMessage.append(msg);
-                }
+                headerMessage.append(msg);
             }
         }
     }

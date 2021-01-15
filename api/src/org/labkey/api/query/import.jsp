@@ -77,6 +77,10 @@
     .lk-import-expando .labkey-button {
         padding: 0 5px;
     }
+
+    .x4-field-label-cell a:focus {
+        outline: none;
+    }
 </style>
 <div id="<%=text(errorDivId)%>" class="labkey-error">
 <labkey:errors/>&nbsp;
