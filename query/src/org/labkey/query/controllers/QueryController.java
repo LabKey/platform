@@ -5876,8 +5876,7 @@ public class QueryController extends SpringActionController
                             qinfo.put("columns", columns);
                     }
                     name = table.getPublicName();
-                    if (table instanceof DatasetTable)
-                        title = table.getTitle();
+                    title = table.getTitle();
                 }
             }
             catch(Exception e)
