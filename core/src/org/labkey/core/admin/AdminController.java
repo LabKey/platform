@@ -545,7 +545,7 @@ public class AdminController extends SpringActionController
             }
             if (returnURL != null)
             {
-                url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
+                url.addReturnURL(returnURL);
             }
             return url;
         }
@@ -560,7 +560,7 @@ public class AdminController extends SpringActionController
         {
             ActionURL url = new ActionURL(MaintenanceAction.class, ContainerManager.getRoot());
             if (returnURL != null)
-                url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
+                url.addReturnURL(returnURL);
             return url;
         }
 
@@ -606,7 +606,7 @@ public class AdminController extends SpringActionController
             ActionURL result = new ActionURL(CreateFolderAction.class, c);
             if (returnURL != null)
             {
-                result.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
+                result.addReturnURL(returnURL);
             }
             return result;
         }
@@ -3895,7 +3895,7 @@ public class AdminController extends SpringActionController
 
                     LOG.info("Checking consistency of provisioned storage"); // Debugging test timeout
                     contentBuilder.append("\n<br/><br/>Checking Consistency of Provisioned Storage...\n");
-                    StorageProvisioner.ProvisioningReport pr = StorageProvisioner.getProvisioningReport();
+                    StorageProvisioner.ProvisioningReport pr = StorageProvisioner.get().getProvisioningReport();
                     contentBuilder.append(String.format("%d domains use Storage Provisioner", pr.getProvisionedDomains().size()));
                     for (StorageProvisioner.ProvisioningReport.DomainReport dr : pr.getProvisionedDomains())
                     {
@@ -4694,7 +4694,7 @@ public class AdminController extends SpringActionController
             {
                 registeredFolderWriters.add(dataType);
 
-                // for each Writer also determine if their are related children Writers, if so include them also
+                // for each Writer also determine if there are related children Writers, if so include them also
                 Collection<org.labkey.api.writer.Writer> childWriters = writer.getChildren(true, true);
                 if (childWriters != null && childWriters.size() > 0)
                 {
@@ -5616,7 +5616,7 @@ public class AdminController extends SpringActionController
                         MenuButton adminButton = new MenuButton("Update user settings");
                         adminButton.setRequiresSelection(true);
                         for (ConfigTypeProvider provider : MessageConfigService.get().getConfigTypes())
-                            adminButton.addMenuItem("For " + provider.getName().toLowerCase(), null, "userSettings_"+provider.getName()+"(LABKEY.DataRegions.Users.getSelectionCount())" );
+                            adminButton.addMenuItem("For " + provider.getName().toLowerCase(), "userSettings_"+provider.getName()+"(LABKEY.DataRegions.Users.getSelectionCount())" );
 
                         bar.add(adminButton);
                         super.populateButtonBar(dataView, bar);

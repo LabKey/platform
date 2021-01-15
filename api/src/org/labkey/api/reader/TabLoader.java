@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
+import org.labkey.api.dataiterator.HashDataIterator;
 import org.labkey.api.iterator.BeanIterator;
 import org.labkey.api.iterator.CloseableFilteredIterator;
 import org.labkey.api.iterator.CloseableIterator;
@@ -49,6 +50,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -512,11 +514,17 @@ public class TabLoader extends DataLoader
     @Override
     public @NotNull CloseableIterator<Map<String, Object>> iterator()
     {
+        return iterator(false);
+    }
+
+    @Override
+    public @NotNull CloseableIterator<Map<String, Object>> iterator(boolean includeRowHash)
+    {
         TabLoaderIterator iter;
         try
         {
             ensureInitialized(Collections.emptyMap());
-            iter = new TabLoaderIterator();
+            iter = new TabLoaderIterator(includeRowHash);
         }
         catch (IOException e)
         {
@@ -649,9 +657,9 @@ public class TabLoader extends DataLoader
     {
         private final TabBufferedReader reader;
 
-        protected TabLoaderIterator() throws IOException
+        protected TabLoaderIterator(boolean includeRowHash) throws IOException
         {
-            super(_commentLines + _skipLines);
+            super(_commentLines + _skipLines, includeRowHash);
             assert _skipLines != -1;
 
             reader = getReader();
@@ -733,6 +741,16 @@ public class TabLoader extends DataLoader
                 "# foo\n" +
                 "\n" +
                 "#";
+        /* same data in a different order */
+        String tsvDataReordered =
+                "date\tscan\ttime\tmz\taccurateMZ\tmass\tintensity\tcharge\tchargeStates\tkl\tbackground\tmedian\tpeaks\tscanFirst\tscanLast\tscanCount\ttotalIntensity\tdescription\n" +
+                "1/2/06\t249\t1724.5541\t773.42175\tFALSE\t1544.829\t5.9057474\t2\t1\t0.5105971\t0.67020833\t1.4744527\t2\t246\t250\t5\t29.369175\t\n"+
+                /*empty date*/  "\t25\t1460.2411\t745.39404\tFALSE\t744.3868\t1114.4303\t1\t1\t0.020280406\t15.826528\t12.413276\t4\t17\t41\t25\t13456.231\tdes,crip,tion\n" +
+                "2-Jan-06\t89\t1535.602\t970.9579\tFALSE\t1939.9012\t823.70984\t2\t1\t0.0228055\t10.497823\t2.5962036\t5\t81\t103\t23\t9500.36\t\n" +
+                "January 2, 2006\t224\t1695.389\t725.39404\tFALSE\t2173.1604\t6.278867\t3\t1\t0.2767084\t1.6497655\t1.2496755\t3\t221\t229\t9\t55.546417\t\n" +
+                /*empty int*/   "2/Jan/2006\t100\t1560.348\t858.37555\tFALSE\t1714.7366\t1168.3536\t2\t1\t0.033085547\t63.493385\t8.771278\t5\t101\t119\t19\t17977.979\tdesc\"ion\n" +
+                "1/2/2006\t96\t1543.3401\t858.3246\tFALSE\t1714.6346\t2029.6295\t2\t1\t0.19630894\t26.471083\t12.982442\t4\t92\t100\t9\t20248.762\tdescription\n" +
+                "2 January 2006\t164\t1624.442\t783.8968\tFALSE\t1565.779\t771.20935\t2\t1\t0.024676466\t11.3547325\t3.3645654\t5\t156\t187\t32\t12656.351\t\n";
 
         private File _createTempFile(String data, String ext) throws IOException
         {
@@ -1137,6 +1155,41 @@ public class TabLoader extends DataLoader
         public void testTransform()
         {
             // UNDONE
+        }
+
+        @Test
+        public void testHash()
+        {
+            /* NOTE hashes hard coded so we know if implementation has changed.  Uncomment this block to print out hashes to update code *
+            TabLoader tl = new TabLoader(tsvData);
+            DataLoaderIterator it = (DataLoaderIterator)tl.iterator(true);
+            while (it.hasNext())
+                System.err.println("\"" + it.next().get(HashDataIterator.HASH_COLUMN_NAME) + "\",");
+            */
+
+            String[] expectedHashes = new String[] {
+                    "zC1fuRsYCgYT3sjZd1xzsg==",
+                    "Lmpv0AW+Zf1YFawCcE3/Vg==",
+                    "itsVDD4jsZKoBNpQJM94CA==",
+                    "OTj8Q9T5Y8XPuApt+rCi6g==",
+                    "qwAF7kX9pLOV0uuspUcVdg==",
+                    "RrFphIaMdtv9DBBwkPgKkA==",
+                    "RsoWq6d2hJPBfyHDpWnpVQ=="
+            };
+            TabLoader tl = new TabLoader(tsvData);
+            DataLoaderIterator it = (DataLoaderIterator)tl.iterator(true);
+            for (int i=0 ; it.hasNext() ; i++)
+                assertEquals(expectedHashes[i], it.next().get(HashDataIterator.HASH_COLUMN_NAME));
+
+            HashSet<String> set1 = new HashSet<>();
+            DataLoaderIterator it1 = (DataLoaderIterator)new TabLoader(tsvData).iterator(true);
+            while (it1.hasNext())
+                set1.add((String)it1.next().get(HashDataIterator.HASH_COLUMN_NAME));
+            HashSet<String> set2 = new HashSet<>();
+            DataLoaderIterator it2 = (DataLoaderIterator)new TabLoader(tsvDataReordered).iterator(true);
+            while (it2.hasNext())
+                set2.add((String)it2.next().get(HashDataIterator.HASH_COLUMN_NAME));
+            assert(set1.equals(set2));
         }
     }
 

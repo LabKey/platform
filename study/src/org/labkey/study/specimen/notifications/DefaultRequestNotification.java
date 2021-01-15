@@ -24,14 +24,15 @@ import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.TSVWriter;
+import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.model.SpecimenRequestEvent;
+import org.labkey.api.specimen.notifications.NotificationRecipientSet;
+import org.labkey.api.specimen.requirements.SpecimenRequest;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
+import org.labkey.api.specimen.settings.RequestNotificationSettings;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.SpecimenManager;
-import org.labkey.study.model.SpecimenRequest;
-import org.labkey.study.model.SpecimenRequestEvent;
-import org.labkey.study.model.SpecimenRequestRequirement;
-import org.labkey.study.model.Vial;
 import org.labkey.study.query.SpecimenQueryView;
-import org.labkey.study.specimen.settings.RequestNotificationSettings;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -80,11 +81,11 @@ public class DefaultRequestNotification
 
     private void addSpecimenListFileIfNeeded(ViewContext context) throws Exception
     {
-        RequestNotificationSettings settings = SpecimenManager.getInstance().getRequestNotificationSettings(_request.getContainer());
+        RequestNotificationSettings settings = SettingsManager.get().getRequestNotificationSettings(_request.getContainer());
         if (RequestNotificationSettings.SpecimensAttachmentEnum.ExcelAttachment == settings.getSpecimensAttachmentEnum() ||
             RequestNotificationSettings.SpecimensAttachmentEnum.TextAttachment == settings.getSpecimensAttachmentEnum())
         {
-            ByteArrayAttachmentFile specimenListFile = null;
+            final ByteArrayAttachmentFile specimenListFile;
             List<Vial> vials = getSpecimenList();
             if (vials != null && vials.size() > 0)
             {
@@ -135,7 +136,7 @@ public class DefaultRequestNotification
         return _recipients;
     }
 
-    final public SpecimenRequest getSampleRequest()
+    final public SpecimenRequest getSpecimenRequest()
     {
         return _request;
     }

@@ -30,6 +30,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -44,7 +45,7 @@ import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.RepositorySettings;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -71,7 +72,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
     public ModelAndView getView(UploadSpecimensForm form, boolean reshow, BindException errors)
     {
         Container container = getContainer();
-        RepositorySettings settings =  SpecimenManager.getInstance().getRepositorySettings(container);
+        RepositorySettings settings = SettingsManager.get().getRepositorySettings(container);
         if (!settings.isSimple())
             return HttpView.redirect(PageFlowUtil. urlProvider(PipelineUrls.class).urlBrowse(container));
 
@@ -308,7 +309,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         {
             ActionURL homeLink = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer());
             ActionURL samplesLink = new ActionURL(SpecimenController.BeginAction.class, getContainer());
-            samplesLink.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
+            samplesLink.addParameter(SpecimenController.SpecimenViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
             return new HtmlView("Specimens uploaded successfully.<br><br>" +
                     PageFlowUtil.textLink("study home", homeLink) + " " +
                     PageFlowUtil.textLink("specimens", samplesLink));

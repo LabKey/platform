@@ -45,7 +45,6 @@ import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.HttpView;
 
 import javax.servlet.ServletOutputStream;
@@ -170,7 +169,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     protected static final String SHEET_IMAGE_SIZES = "~~excel-sheet-image-sizes~~";
     protected static final String SHEET_IMAGE_PICTURES = "~~excel-sheet-image-pictures~~";
 
-    protected Results _rs;
+    private ResultsFactory _factory;
 
     protected final ExcelDocumentType _docType;
 
@@ -193,7 +192,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     private CellStyle _wrappingTextFormat = null;
     private CellStyle _nonWrappingTextFormat = null;
 
-    private Map<ExcelColumn.ExcelFormatDescriptor, CellStyle> _formatters = new HashMap<>();
+    private final Map<ExcelColumn.ExcelFormatDescriptor, CellStyle> _formatters = new HashMap<>();
 
     /** Total number of data rows exported so far, which may span multiple sheets */
     private int _totalDataRows = 0;
@@ -220,16 +219,16 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         _workbook = workbook == null ? docType.createWorkbook() : workbook;
     }
 
-    public ExcelWriter(Results rs, List<DisplayColumn> displayColumns, ExcelDocumentType docType)
+    public ExcelWriter(@NotNull ResultsFactory factory, List<DisplayColumn> displayColumns, ExcelDocumentType docType)
     {
         this(docType);
-        setResults(rs);
+        setResultsFactory(factory);
         addDisplayColumns(displayColumns);
     }
 
-    public ExcelWriter(Results rs, List<DisplayColumn> displayColumns)
+    public ExcelWriter(@NotNull ResultsFactory factory, List<DisplayColumn> displayColumns)
     {
-        this(rs, displayColumns, ExcelDocumentType.xls);
+        this(factory, displayColumns, ExcelDocumentType.xls);
     }
 
     public void setCaptionType(ColumnHeaderType type)
@@ -292,19 +291,9 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         setColumns(cols);
     }
 
-    public void setResults(Results rs)
+    public void setResultsFactory(@NotNull ResultsFactory factory)
     {
-        // CDSExportQueryView and ExportExcelReport build up multi-sheet workbooks by repeatedly setting Results and rendering
-        // sheets. Need close any previously used ResultSet before overwriting.
-        if (_rs != null)
-        {
-            try
-            {
-                _rs.close();
-            }
-            catch (SQLException ignored) {}
-        }
-        _rs = rs;
+        _factory = factory;
     }
 
     // Sheet names must be 31 characters or shorter, and must not contain \:/[]? or *
@@ -315,7 +304,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     }
 
 
-    private static final Pattern badSheetNameChars = Pattern.compile("[\\\\:/\\[\\]\\?\\*\\|]");
+    private static final Pattern badSheetNameChars = Pattern.compile("[\\\\:/\\[\\]?*|]");
 
     public static String cleanSheetName(String sheetName)
     {
@@ -593,12 +582,10 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         return null;
     }
 
-
     public int getCurrentRow()
     {
         return _currentRow;
     }
-
 
     public void setCurrentRow(int currentRow) throws MaxRowsExceededException
     {
@@ -606,15 +593,13 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         checkCurrentRow();
     }
 
-
     protected void incrementRow() throws MaxRowsExceededException
     {
         _currentRow++;
         checkCurrentRow();
     }
 
-
-    private void checkCurrentRow()  throws MaxRowsExceededException
+    private void checkCurrentRow() throws MaxRowsExceededException
     {
         if (_currentRow > _docType.getMaxRows())
             throw new MaxRowsExceededException();
@@ -692,9 +677,9 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
                 hf.setRight("Page &P/&N");
             }
         }
-        catch (SQLException e)
+        catch (Exception e)
         {
-            ExceptionUtil.logExceptionToMothership(null, e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -707,12 +692,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         {
             ((ExcelColumn) visibleColumns.get(column)).adjustWidth(ctx, sheet, column, 0, _totalDataRows);
         }
-    }
-
-    public void renderGrid(Sheet sheet, Results rs) throws SQLException, MaxRowsExceededException
-    {
-        RenderContext ctx = new RenderContext(HttpView.currentContext());
-        renderGrid(ctx, sheet, getVisibleColumns(ctx), rs);
     }
 
     // Initialize non-wrapping text format for this worksheet
@@ -838,31 +817,24 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
-
-    public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException
+    protected void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException, IOException
     {
-        renderGrid(ctx, sheet, visibleColumns, _rs);
-    }
-
-
-    public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns, Results rs) throws SQLException, MaxRowsExceededException
-    {
-        if (null == rs)
-            return;
-
-        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
-        ctx.setResults(rs);
-
-        // Output all the rows, but don't exceed the document's maximum number of rows
-        while (rs.next() && _currentRow <= _docType.getMaxRows())
+        try (Results results = _factory.get())
         {
-            ctx.setRow(factory.getRowMap(rs));
-            renderGridRow(sheet, ctx, visibleColumns);
+            if (null == results)
+                return;
+
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
+            ctx.setResults(results);
+
+            // Output all the rows, but don't exceed the document's maximum number of rows
+            while (results.next() && _currentRow <= _docType.getMaxRows())
+            {
+                ctx.setRow(factory.getRowMap(results));
+                renderGridRow(sheet, ctx, visibleColumns);
+            }
         }
-
-        // Note: No need to close() the ResultSet; ExcelWriter.close() handles that
     }
-
 
     protected void renderGridRow(Sheet sheet, RenderContext ctx, List<ExcelColumn> columns) throws MaxRowsExceededException
     {
@@ -924,6 +896,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     @Override
     public void close()
     {
-        ResultSetUtil.close(_rs);
+        // No-op: Results are closed via try-with-resources at render time
     }
 }

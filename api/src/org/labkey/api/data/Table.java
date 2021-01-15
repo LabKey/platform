@@ -39,6 +39,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.TableInsertDataIterator;
+import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
@@ -917,7 +918,17 @@ public class Table
             }
 
             if (!fields.containsKey(column.getName()))
+            {
+                // CONSIDER column.isImportHash()
+                if (DataIntegrationService.Columns.TransformImportHash.getColumnName().equals(column.getName()))
+                {
+                    setSQL.append(comma);
+                    setSQL.append(column.getSelectName());
+                    setSQL.append("=NULL");
+                    comma = ", ";
+                }
                 continue;
+            }
 
             Object value = fields.get(column.getName());
             setSQL.append(comma);

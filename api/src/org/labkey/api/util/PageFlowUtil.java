@@ -1419,7 +1419,7 @@ public class PageFlowUtil
         return '"';
     }
 
-    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 35 usages.
+    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 33 usages.
     public static String textLink(String text, URLHelper url)
     {
         return link(text).href(url).toString();
@@ -1516,7 +1516,7 @@ public class PageFlowUtil
             t.transform(new DOMSource(node), new StreamResult(out));
             out.close();
 
-            return new String(out.toByteArray(), StringUtilsLabKey.DEFAULT_CHARSET).trim();
+            return out.toString(StringUtilsLabKey.DEFAULT_CHARSET).trim();
         }
         catch (TransformerFactoryConfigurationError e)
         {
@@ -2109,7 +2109,6 @@ public class PageFlowUtil
         experimental.put("useExperimentalCoreUI", useExperimentalCoreUI());
         experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP));
         experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER));
-        experimental.put(AppProps.EXPERIMENTAL_STRICT_RETURN_URL, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_STRICT_RETURN_URL));
         experimental.put(AppProps.EXPERIMENTAL_NO_GUESTS, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS));
         json.put("experimental", experimental);
 
@@ -2195,7 +2194,7 @@ public class PageFlowUtil
             HttpServletRequest request = viewContext.getRequest();
             if (request != null)
             {
-                json.put("login", AuthenticationManager.getLoginPageConfiguration(getTermsOfUseProject(project, request.getParameter("returnUrl"))));
+                json.put("login", AuthenticationManager.getLoginPageConfiguration(getTermsOfUseProject(project, request.getParameter(ActionURL.Param.returnUrl.name()))));
                 if (includePostParameters && "post".equalsIgnoreCase(request.getMethod()))
                     json.put("postParameters", request.getParameterMap());
                 String tok = CSRFUtil.getExpectedToken(request, null);

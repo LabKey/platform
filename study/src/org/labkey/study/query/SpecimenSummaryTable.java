@@ -35,11 +35,13 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.model.SpecimenComment;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.StudySchema;
-import org.labkey.study.model.SpecimenComment;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -60,7 +62,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
     public SpecimenSummaryTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), cf,true);
+        super(schema, SpecimenSchema.get().getTableInfoSpecimen(schema.getContainer()), cf,true);
         setName("SpecimenSummary");
 
         _participantidColumn = addWrapParticipantColumn("PTID");
@@ -81,7 +83,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         _participantSequenceNumColumn.setIsUnselectable(true);
         addColumn(_participantSequenceNumColumn);
 
-        boolean enableSpecimenRequest = SpecimenManager.getInstance().getRepositorySettings(getContainer()).isEnableRequests();
+        boolean enableSpecimenRequest = SettingsManager.get().getRepositorySettings(getContainer()).isEnableRequests();
         addWrapColumn(_rootTable.getColumn("TotalVolume"));
         addWrapColumn(_rootTable.getColumn("AvailableVolume")).setHidden(!enableSpecimenRequest);
         addWrapColumn(_rootTable.getColumn("VolumeUnits"));
@@ -113,7 +115,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         // summary table; derivative and additive types are required as well.  We use this number so we know if additional
         // (more expensive) queries are required to check for actual comments in the DB for each row.
         SQLFragment sqlFragComments = new SQLFragment("(SELECT CAST(COUNT(*) AS VARCHAR(5)) FROM " +
-                StudySchema.getInstance().getTableInfoSpecimenComment() +
+                SpecimenSchema.get().getTableInfoSpecimenComment() +
                 " WHERE SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash" +
                 " AND Container = ?)");
         sqlFragComments.add(getContainer().getId());
@@ -135,7 +137,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         // use sql aggregates to 'OR' together the conflict bits of the vials associated with this specimen hash:
         SQLFragment sqlFragConflicts = new SQLFragment("(SELECT CASE WHEN COUNT(QualityControlFlag) = 0 OR " +
                 "SUM(CAST(QualityControlFlag AS INT)) = 0 THEN ? ELSE ? END FROM " +
-                StudySchema.getInstance().getTableInfoSpecimenComment() +
+                SpecimenSchema.get().getTableInfoSpecimenComment() +
                 " WHERE SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash" +
                 " AND Container = ?)");
         sqlFragConflicts.add(Boolean.FALSE);

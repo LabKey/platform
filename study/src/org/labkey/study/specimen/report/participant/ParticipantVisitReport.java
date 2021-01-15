@@ -21,11 +21,11 @@ import org.labkey.api.util.DemoMode;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.SpecimenManager.SummaryByVisitParticipant;
+import org.labkey.api.specimen.report.SummaryByVisitParticipant;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.specimen.report.SpecimenReportTitle;
+import org.labkey.api.specimen.report.SpecimenReportTitle;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 
@@ -109,8 +109,8 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";
-        ActionURL link = SpecimenController.getSamplesURL(_container);
-        link.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
+        ActionURL link = SpecimenController.getSpecimensURL(_container);
+        link.addParameter(SpecimenController.SpecimenViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
         link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMinDouble());
         link = updateURLFilterParameter(link, "SpecimenDetail." + StudyService.get().getSubjectColumnName(getContainer()), summary.getParticipantId());
         String linkHtml = link.getLocalURIString();

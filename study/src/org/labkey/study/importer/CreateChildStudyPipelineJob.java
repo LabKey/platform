@@ -37,10 +37,13 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.MemoryVirtualFile;
@@ -50,13 +53,11 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.model.ChildStudyDefinition;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantCategoryImpl;
-import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudySnapshot;
-import org.labkey.study.model.Vial;
 import org.labkey.study.pipeline.StudyImportDatasetTask;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.writer.ParticipantGroupWriter;
@@ -377,7 +378,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
         if (form.isIncludeSpecimens())
         {
-            dataTypes.add(StudyArchiveDataTypes.SPECIMENS);
+            dataTypes.add(SpecimenArchiveDataTypes.SPECIMENS);
         }
 
         return dataTypes;

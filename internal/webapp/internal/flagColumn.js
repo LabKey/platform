@@ -97,8 +97,8 @@ Ext4.define('LABKEY.internal.FlagColumn', {
                             for (var i=0; i < lsids.length; i++) {
                                 lsid = lsids[i];
                                 flagIcons = Ext4.DomQuery.select("i[flagId='" + lsid + "']");
-                                if (!Ext4.isEmpty(flagIcons)) {
-                                    el = Ext4.get(flagIcons[0]);
+                                for (var j = 0; j < flagIcons.length; j++) {
+                                    el = Ext4.get(flagIcons[j]);
                                     if (comment) {
                                         el.set({title: comment});
                                         if (this.flagDisabledCls && this.flagEnabledCls) {

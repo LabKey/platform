@@ -56,10 +56,10 @@
 
    <br><input type=checkbox id="resetFolderDefault" name="resetFolderDefault" onclick="toggleOptions();"><b> Reset</b> - Reset to folder default setting<br>
 
-    <br><input type=hidden name="srcUrl" value="<%=h(srcURL)%>"/>
+    <br><%=generateReturnUrlFormField(returnUrl)%>
     <br><input type=hidden name="srcIdentifier" value="<%=h(srcIdentifier)%>"/>
     <%= button("Update").submit(true) %>
-    <% if (null != StringUtils.trimToNull(srcURL)) { %>
-        <%= button((message == null ? "Cancel" : "Done")).href(srcURL) %>
+    <% if (null != returnUrl) { %>
+        <%= button((message == null ? "Cancel" : "Done")).href(returnUrl) %>
     <% } %>
 </labkey:form>

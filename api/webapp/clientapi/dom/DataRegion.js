@@ -2682,6 +2682,37 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
+     * Used via SummaryStatisticsAnalyticsProvider to show a dialog of the applicable summary statistics for a column in the view.
+     * @param colFieldKey
+     */
+    LABKEY.DataRegion.prototype.showColumnStatisticsDialog = function(colFieldKey) {
+        LABKEY.requiresScript('query/ColumnSummaryStatistics', function() {
+            var regionViewName = this.viewName || "",
+                column = this.getColumn(colFieldKey);
+
+            if (column) {
+                this.getColumnAnalyticsProviders(regionViewName, colFieldKey, function(colSummaryStats) {
+                    Ext4.create('LABKEY.ext4.ColumnSummaryStatisticsDialog', {
+                        queryConfig: this.getQueryConfig(),
+                        filterArray: LABKEY.Filter.getFiltersFromUrl(this.selectAllURL, 'query'), //Issue 26594
+                        containerPath: this.containerPath,
+                        column: column,
+                        initSelection: colSummaryStats,
+                        listeners: {
+                            scope: this,
+                            applySelection: function(win, colSummaryStatsNames) {
+                                win.getEl().mask("Applying selection...");
+                                this.setColumnSummaryStatistics(regionViewName, colFieldKey, colSummaryStatsNames);
+                                win.close();
+                            }
+                        }
+                    }).show();
+                }, this);
+            }
+        }, this);
+    };
+
+    /**
      * Remove a column from the given DataRegion query view.
      * @param viewName
      * @param colFieldKey
@@ -2715,11 +2746,7 @@ if (!LABKEY.DataRegions) {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
             if (view && _viewContainsColumn(view, colFieldKey)) {
                 _addAnalyticsProviderToView.call(this, view, colFieldKey, providerName, false);
-
-                var elementId = this.name + ':' + colFieldKey + ':analytics-' + providerName;
-                Ext4.each(Ext4.ComponentQuery.query('menuitem[elementId=' + elementId + ']'), function(menuItem) {
-                    menuItem.disable();
-                });
+                _updateAnalyticsProviderMenuItem(this.name + ':' + colFieldKey, providerName, true);
             }
         }, null, this);
     };
@@ -2736,11 +2763,7 @@ if (!LABKEY.DataRegions) {
             var view = _getViewFromQueryDetails(queryDetails, viewName);
             if (view && _viewContainsColumn(view, colFieldKey)) {
                 _removeAnalyticsProviderFromView.call(this, view, colFieldKey, providerName, false);
-
-                var elementId = this.name + ':' + colFieldKey + ':analytics-' + providerName;
-                Ext4.each(Ext4.ComponentQuery.query('menuitem[elementId=' + elementId + ']'), function(menuItem) {
-                    menuItem.enable();
-                });
+                _updateAnalyticsProviderMenuItem(this.name + ':' + colFieldKey, providerName, false);
             }
         }, null, this);
     };
@@ -2828,6 +2851,26 @@ if (!LABKEY.DataRegions) {
         if (indexToRemove != null) {
             view.analyticsProviders.splice(indexToRemove, 1);
             _updateSessionCustomView.call(this, view, isSummaryStatistic);
+        }
+    };
+
+    /**
+     * Attempt to find a DataRegion analytics provider column menu item so that it can be either enabled to allow
+     * it to once again be selected after removal or disabled so that it can't be selected a second time.
+     * @param columnName the DataRegion column th element column-name attribute
+     * @param providerName the analytics provider name
+     * @param disable
+     * @private
+     */
+    var _updateAnalyticsProviderMenuItem = function(columnName, providerName, disable) {
+        var menuItemEl = $("th[column-name|='" + columnName + "']").find("a[onclick*='" + providerName + "']").parent();
+        if (menuItemEl) {
+            if (disable) {
+                menuItemEl.addClass('disabled');
+            }
+            else {
+                menuItemEl.removeClass('disabled');
+            }
         }
     };
 

@@ -230,12 +230,15 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
 
     protected class _DataIteratorBuilder implements DataIteratorBuilder
     {
-        DataIteratorContext _context;
         final DataIteratorBuilder _in;
 
-        public _DataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context)
+        public _DataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext unused)
         {
-            _context = context;
+            _in = in;
+        }
+
+        public _DataIteratorBuilder(@NotNull DataIteratorBuilder in)
+        {
             _in = in;
         }
 

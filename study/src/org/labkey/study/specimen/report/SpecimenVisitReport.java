@@ -22,14 +22,16 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenTypeLevel;
+import org.labkey.api.specimen.report.SpecimenReportCellData;
+import org.labkey.api.specimen.report.SpecimenReportTitle;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.study.CohortFilter;
-import org.labkey.study.SpecimenManager;
-import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
@@ -49,19 +51,19 @@ import java.util.Map;
 public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellData>
 {
     private final List<VisitImpl> _visits;
-    protected final SimpleFilter _filter;
     private final SpecimenVisitReportParameters _parameters;
-    protected final Container _container;
-
     private final boolean _viewParticipantCount;
     private final boolean _viewVolume;
     private final boolean _viewPtidList;
     private final boolean _viewVialCount;
     private final String _title;
+    private final Map<Integer, Integer> _nonEmptyColumns = new HashMap<>();
+
+    protected final Container _container;
+    protected final SimpleFilter _filter;
 
     private Collection<Row> _rows;
     private List<VisitImpl> _nonEmptyVisits;
-    private Map<Integer, Integer> _nonEmptyColumns = new HashMap<>();
 
     public SpecimenVisitReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
@@ -393,7 +395,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         return _parameters.getBaseCustomViewName();
     }
 
-    protected SpecimenManager.SpecimenTypeLevel getTypeLevelEnum()
+    protected SpecimenTypeLevel getTypeLevelEnum()
     {
         return _parameters.getTypeLevelEnum();
     }

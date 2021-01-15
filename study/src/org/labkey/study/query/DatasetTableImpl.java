@@ -41,6 +41,8 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -75,6 +77,7 @@ import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.SpecimenForeignKey;
+import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HtmlString;
@@ -87,8 +90,10 @@ import org.labkey.data.xml.TableType;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.importer.StudyImportContext;
+import org.labkey.study.model.DatasetDataIteratorBuilder;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.ParticipantGroup;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -596,6 +601,18 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     public Dataset getDataset()
     {
         return _dsd;
+    }
+
+    @Override
+    public DataIterator getPrimaryKeyDataIterator(DataIterator dit, DataIteratorContext context)
+    {
+        // this needs to return the LSID for the dataset, OR the separate PK parts (ParticipantId,SequenceNum,extra)
+        // easiest thing to do is just use DataSetDataIterator
+        StudyImportContext sic = new StudyImportContext(getUserSchema().getUser(), getUserSchema().getContainer(), Set.of(StudyArchiveDataTypes.DATASET_DATA), () -> LOG);
+        DatasetDataIteratorBuilder builder = new DatasetDataIteratorBuilder((DatasetDefinition) getDataset(), getUserSchema().getUser(), false, null, sic);
+        // why isn't this part of the constructor?
+        builder.setInput(dit);
+        return builder.getDataIterator(context);
     }
 
     @Override

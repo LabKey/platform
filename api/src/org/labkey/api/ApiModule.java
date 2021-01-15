@@ -38,6 +38,7 @@ import org.labkey.api.data.dialect.ParameterSubstitutionTest;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
 import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.DiskCachingDataIterator;
 import org.labkey.api.dataiterator.RemoveDuplicatesDataIterator;
 import org.labkey.api.dataiterator.ResultSetDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
@@ -148,6 +149,7 @@ public class ApiModule extends CodeOnlyModule
             DataIteratorUtil.TestCase.class,
             DateUtil.TestCase.class,
             DbScope.DialectTestCase.class,
+            DiskCachingDataIterator.DiskTestCase.class,
             EmailTemplate.TestCase.class,
             ExcelFactory.ExcelFactoryTestCase.class,
             ExcelLoader.ExcelLoaderTestCase.class,
@@ -197,9 +199,9 @@ public class ApiModule extends CodeOnlyModule
     }
 
     @Override
-    public @NotNull Collection<Factory<Class>> getIntegrationTestFactories()
+    public @NotNull Collection<Factory<Class<?>>> getIntegrationTestFactories()
     {
-        List<Factory<Class>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        List<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
         //TODO: No test cases.
         //list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
         return list;
@@ -257,7 +259,6 @@ public class ApiModule extends CodeOnlyModule
             StandardDialectStringHandler.TestCase.class,
             StatementDataIterator.TestCase.class,
             StatementUtils.TestCase.class,
-            StorageProvisioner.TestCase.class,
             Table.DataIteratorTestCase.class,
             Table.TestCase.class,
             TableSelectorTestCase.class,

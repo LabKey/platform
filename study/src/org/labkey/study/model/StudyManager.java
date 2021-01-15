@@ -75,6 +75,7 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.QCState;
@@ -112,11 +113,12 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DataspaceContainerFilter;
-import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -136,9 +138,9 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.study.QueryHelper;
+import org.labkey.api.study.QueryHelper;
+import org.labkey.api.study.StudyCache;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.StudyCache;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.BaseStudyController;
@@ -150,7 +152,6 @@ import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.StudySnapshot.SnapshotSettings;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.specimen.LocationCache;
 import org.labkey.study.visitmanager.AbsoluteDateVisitManager;
 import org.labkey.study.visitmanager.RelativeDateVisitManager;
 import org.labkey.study.visitmanager.SequenceVisitManager;
@@ -544,7 +545,6 @@ public class StudyManager
         return Collections.unmodifiableSet(result);
     }
 
-
     /** @return all studies under the given root in the container hierarchy (inclusive), to which the user has at least read permission */
     @NotNull
     public Set<? extends StudyImpl> getAllStudies(@NotNull Container root, @NotNull User user)
@@ -584,7 +584,7 @@ public class StudyManager
 
         try (Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
         {
-            StudySchema.getInstance().getTableInfoSite(container, user);    // This provisioned table is needed for creating the study
+            SpecimenSchema.get().getTableInfoLocation(container, user);    // This provisioned table is needed for creating the study
             study = _studyHelper.create(user, study);
 
             //note: we no longer copy the container's policy to the study upon creation
@@ -592,12 +592,12 @@ public class StudyManager
             //is changed to one of the advanced options.
 
             // Force provisioned specimen tables to be created
-            StudySchema.getInstance().getTableInfoSpecimenPrimaryType(container, user);
-            StudySchema.getInstance().getTableInfoSpecimenDerivative(container, user);
-            StudySchema.getInstance().getTableInfoSpecimenAdditive(container, user);
-            StudySchema.getInstance().getTableInfoSpecimen(container, user);
-            StudySchema.getInstance().getTableInfoVial(container, user);
-            StudySchema.getInstance().getTableInfoSpecimenEvent(container, user);
+            SpecimenSchema.get().getTableInfoSpecimenPrimaryType(container, user);
+            SpecimenSchema.get().getTableInfoSpecimenDerivative(container, user);
+            SpecimenSchema.get().getTableInfoSpecimenAdditive(container, user);
+            SpecimenSchema.get().getTableInfoSpecimen(container, user);
+            SpecimenSchema.get().getTableInfoVial(container, user);
+            SpecimenSchema.get().getTableInfoSpecimenEvent(container, user);
             transaction.commit();
         }
         QueryService.get().updateLastModified();
@@ -693,7 +693,6 @@ public class StudyManager
             errors.add(ex.getMessage());
         }
     }
-
 
     /* most users should call the List<String> errors version to avoid uncaught exceptions */
     @Deprecated
@@ -1596,8 +1595,8 @@ public class StudyManager
 
                 for (VisitImpl visit : visits)
                 {
-                    // Delete samples first because we may need ParticipantVisit to figure out which samples
-                    SpecimenManager.getInstance().deleteSamplesForVisit(visit);
+                    // Delete specimens first because we may need ParticipantVisit to figure out which specimens
+                    SpecimenManager.getInstance().deleteSpecimensForVisit(visit);
 
                     TreatmentManager.getInstance().deleteTreatmentVisitMapForVisit(study.getContainer(), visit.getRowId());
                     deleteAssaySpecimenVisits(study.getContainer(), visit.getRowId());
@@ -1660,163 +1659,6 @@ public class StudyManager
                 participant,
                 new Object[]{participant.getContainer().getId(), participant.getParticipantId()}
         );
-    }
-
-    public List<LocationImpl> getLocations(Container container)
-    {
-        return LocationCache.getLocations(container);
-    }
-
-    public List<LocationImpl> getValidRequestingLocations(Container container)
-    {
-        Study study = getStudy(container);
-        List<LocationImpl> validLocations = new ArrayList<>();
-        List<LocationImpl> locations = getLocations(container);
-        for (LocationImpl location : locations)
-        {
-            if (isSiteValidRequestingLocation(study, location))
-            {
-                validLocations.add(location);
-            }
-        }
-        return validLocations;
-    }
-
-    public boolean isSiteValidRequestingLocation(Container container, int id)
-    {
-        Study study = getStudy(container);
-        LocationImpl location = getLocation(container, id);
-        return isSiteValidRequestingLocation(study, location);
-    }
-
-    private boolean isSiteValidRequestingLocation(Study study, LocationImpl location)
-    {
-        if (null == location)
-            return false;
-
-        if (location.isRepository() && study.isAllowReqLocRepository())
-        {
-            return true;
-        }
-        if (location.isClinic() && study.isAllowReqLocClinic())
-        {
-            return true;
-        }
-        if (location.isSal() && study.isAllowReqLocSal())
-        {
-            return true;
-        }
-        if (location.isEndpoint() && study.isAllowReqLocEndpoint())
-        {
-            return true;
-        }
-        // If it has no location type, allow it
-        return !location.isRepository() && !location.isClinic() && !location.isSal() && !location.isEndpoint();
-    }
-
-    @Nullable
-    public LocationImpl getLocation(Container container, int id)
-    {
-        // If a default ID has been registered, just use that
-        Integer defaultSiteId = SpecimenService.get().getRequestCustomizer().getDefaultDestinationSiteId();
-
-        if (defaultSiteId != null && id == defaultSiteId.intValue())
-        {
-            LocationImpl location = new LocationImpl(container, "User Request");
-            location.setRowId(defaultSiteId);
-            location.setDescription("User requested location.");
-            return location;
-        }
-
-        return LocationCache.getForRowId(container, id);
-    }
-
-    public void createSite(User user, LocationImpl location)
-    {
-        Table.insert(user, getTableInfoLocations(location.getContainer()), location);
-        LocationCache.clear(location.getContainer());
-    }
-
-    public void updateSite(User user, LocationImpl location)
-    {
-        Table.update(user, getTableInfoLocations(location.getContainer()), location, location.getRowId());
-        LocationCache.clear(location.getContainer());
-    }
-
-    private boolean isLocationInUse(LocationImpl loc, TableInfo table, String... columnNames)
-    {
-        List<Object> params = new ArrayList<>();
-        params.add(loc.getContainer().getId());
-
-        StringBuilder cols = new StringBuilder("(");
-        String or = "";
-        for (String columnName : columnNames)
-        {
-            cols.append(or).append(columnName).append(" = ?");
-            params.add(loc.getRowId());
-            or = " OR ";
-        }
-        cols.append(")");
-
-        String containerColumn = " = ? AND ";
-        if (table.getName().contains("_vial") || table.getName().equals("_specimenevent"))
-        {
-            //vials and events use a column called fr_container instead of normal container.
-            containerColumn = "FR_Container" + containerColumn;
-        }
-        else if (table.getName().contains("_specimen"))
-        {
-            params.remove(0);
-            containerColumn = "";
-        }
-        else
-        {
-            containerColumn = "Container" + containerColumn;
-        }
-        return new SqlSelector(StudySchema.getInstance().getSchema(), new SQLFragment("SELECT * FROM " +
-                table + " WHERE " + containerColumn + cols.toString(), params)).exists();
-    }
-
-    public boolean isLocationInUse(LocationImpl loc)
-    {
-        return isLocationInUse(loc, StudySchema.getInstance().getTableInfoSampleRequest(), "DestinationSiteId") ||
-                isLocationInUse(loc, StudySchema.getInstance().getTableInfoSampleRequestRequirement(), "SiteId") ||
-                isLocationInUse(loc, StudySchema.getInstance().getTableInfoParticipant(), "EnrollmentSiteId", "CurrentSiteId") ||
-                isLocationInUse(loc, StudySchema.getInstance().getTableInfoAssaySpecimen(), "LocationId") ||
-                isLocationInUse(loc, StudySchema.getInstance().getTableInfoVial(loc.getContainer()), "CurrentLocation", "ProcessingLocation") ||
-                //vials and events use a column called fr_container instead of normal container.
-                isLocationInUse(loc, StudySchema.getInstance().getTableInfoSpecimen(loc.getContainer()), "originatinglocationid", "ProcessingLocation") ||
-                //Doesn't have a container or fr_container column
-                isLocationInUse(loc, StudySchema.getInstance().getTableInfoSpecimenEvent(loc.getContainer()), "LabId", "OriginatingLocationId");
-        //vials and events use a column called fr_container instead of normal container.
-    }
-
-    public void deleteLocation(LocationImpl location) throws ValidationException
-    {
-        StudySchema schema = StudySchema.getInstance();
-        if (!isLocationInUse(location))
-        {
-            try (Transaction transaction = schema.getSchema().getScope().ensureTransaction())
-            {
-                Container container = location.getContainer();
-
-                TreatmentManager.getInstance().deleteTreatmentVisitMapForCohort(container, location.getRowId());
-
-                Table.delete(getTableInfoLocations(container), new SimpleFilter(FieldKey.fromString("RowId"), location.getRowId()));
-                LocationCache.clear(container);
-
-                transaction.commit();
-            }
-        }
-        else
-        {
-            throw new ValidationException("Locations currently in use cannot be deleted");
-        }
-    }
-
-    private TableInfo getTableInfoLocations(Container container)
-    {
-        return StudySchema.getInstance().getTableInfoSite(container);
     }
 
     public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(Container container, String sortCol)
@@ -2628,7 +2470,6 @@ public class StudyManager
         clearParticipantVisitCaches(def.getStudy());
     }
 
-
     public Map<VisitMapKey,Boolean> getRequiredMap(Study study)
     {
         TableInfo tableVisitMap = StudySchema.getInstance().getTableInfoVisitMap();
@@ -2639,8 +2480,6 @@ public class StudyManager
 
         return map;
     }
-
-
 
     private static final String VISITMAP_JOIN_BY_VISIT = "SELECT d.*, vm.Required\n" +
             "FROM study.Visit v, study.DataSet d, study.VisitMap vm\n" +
@@ -2824,7 +2663,7 @@ public class StudyManager
         if (!ds.canDeleteDefinition(user))
             throw new IllegalStateException("Can't delete dataset: " + ds.getName());
 
-        StorageProvisioner.drop(ds.getDomain());
+        StorageProvisioner.get().drop(ds.getDomain());
 
         if (ds.getTypeURI() != null)
         {
@@ -2901,9 +2740,9 @@ public class StudyManager
             }
 
             //
-            // samples
+            // specimens
             //
-            SpecimenManager.getInstance().deleteAllSampleData(c, deletedTables, user);
+            SpecimenManager.getInstance().deleteAllSpecimenData(c, deletedTables, user);
 
             //
             // assay schedule
@@ -2956,8 +2795,8 @@ public class StudyManager
             assert deletedTables.add(StudySchema.getInstance().getSchema().getTable(StudyQuerySchema.PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME));
 
             // Specimen comments
-            Table.delete(StudySchema.getInstance().getTableInfoSpecimenComment(), containerFilter);
-            assert deletedTables.add(StudySchema.getInstance().getTableInfoSpecimenComment());
+            Table.delete(SpecimenSchema.get().getTableInfoSpecimenComment(), containerFilter);
+            assert deletedTables.add(SpecimenSchema.get().getTableInfoSpecimenComment());
 
             deleteStudyDesignData(c, user, studyDesignTables);
 
@@ -3607,7 +3446,7 @@ public class StudyManager
     }
 
 
-    private void batchValidateExceptionToList(BatchValidationException errors, List<String> errorStrs)
+    public void batchValidateExceptionToList(BatchValidationException errors, List<String> errorStrs)
     {
         for (ValidationException rowError : errors.getRowErrors())
         {
@@ -3619,26 +3458,6 @@ public class StudyManager
         }
     }
 
-    /** @deprecated pass in a BatchValidationException, not List<String>  */
-    @Deprecated
-    public List<String> importDatasetData(User user, DatasetDefinition def, DataLoader loader, Map<String, String> columnMap,
-                                          List<String> errors, DatasetDefinition.CheckForDuplicates checkDuplicates,
-                                          QCState defaultQCState, StudyImportContext studyImportContext, Logger logger)
-            throws IOException
-    {
-        parseData(user, def, loader, columnMap);
-
-        Map<Enum, Object> options = new HashMap<>();
-        options.put(QueryUpdateService.ConfigParameters.Logger, logger);
-
-        DataIteratorContext context = new DataIteratorContext();
-        context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
-        context.setConfigParameters(options);
-
-        List<String> lsids = def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, studyImportContext, logger, false);
-        batchValidateExceptionToList(context.getErrors(), errors);
-        return lsids;
-    }
 
     public List<String> importDatasetData(User user, DatasetDefinition def, DataLoader loader, Map<String, String> columnMap,
                                           BatchValidationException errors, DatasetDefinition.CheckForDuplicates checkDuplicates,
@@ -3665,9 +3484,7 @@ public class StudyManager
             throws IOException
     {
         parseData(user, def, loader, columnMap);
-        Logger logger = null != context.getConfigParameters()
-                ? (Logger)context.getConfigParameters().get(QueryUpdateService.ConfigParameters.Logger)
-                : null;
+        Logger logger = (Logger)context.getConfigParameters().get(QueryUpdateService.ConfigParameters.Logger);
         return def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, studyImportContext, logger, false);
     }
 
@@ -3905,7 +3722,7 @@ public class StudyManager
             }
             Domain domain = domainsMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI());
             domain.setPropertyIndices(datasetImportInfo.indices);
-            StorageProvisioner.addMissingRequiredIndices(domain);
+            StorageProvisioner.get().addMissingRequiredIndices(domain);
         }
     }
 
@@ -3920,7 +3737,7 @@ public class StudyManager
             }
             Domain domain = domainsMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI());
             domain.setPropertyIndices(datasetImportInfo.indices);
-            StorageProvisioner.dropNotRequiredIndices(domain);
+            StorageProvisioner.get().dropNotRequiredIndices(domain);
         }
     }
 
@@ -4856,6 +4673,25 @@ public class StudyManager
     public Study getStudyForVisitTag(@NotNull Study study)
     {
         return getSharedStudyOrCurrent(study);
+    }
+
+
+    public static class StudyUpgradeCode implements UpgradeCode
+    {
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void addImportHashColumn(final ModuleContext context)
+        {
+            if (null!=context && context.isNewInstall())
+                return;
+            StorageProvisioner sp = StorageProvisioner.get();
+            List<DatasetDefinition> all = new TableSelector(StudySchema.getInstance().getTableInfoDataset()).getArrayList(DatasetDefinition.class);
+            for (var ds : all)
+            {
+                Domain d = ds.getDomain();
+                if (null != d && null != d.getStorageTableName())
+                    sp.ensureBaseProperties(d);
+            }
+        }
     }
 
 

@@ -17,11 +17,8 @@
 package org.labkey.study.specimen;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.security.User;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -30,9 +27,7 @@ import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: brittp
@@ -44,10 +39,6 @@ public class SpecimenSearchBean
     private List<DisplayColumn> _displayColumns;
     private ActionURL _baseViewURL;
     private String _dataRegionName;
-    private Container _container;
-    private User _user;
-    private Map<String, DisplayColumnInfo> _defaultDetailCols;
-    private Map<String, DisplayColumnInfo> _defaultSummaryCols;
     private boolean _inWebPart;
     private int _webPartId = 0;
     private boolean _advancedExpanded;
@@ -119,7 +110,6 @@ public class SpecimenSearchBean
 
     public SpecimenSearchBean()
     {
-
     }
 
     public SpecimenSearchBean(ViewContext context, boolean detailsView, boolean inWebPart)
@@ -130,8 +120,6 @@ public class SpecimenSearchBean
     public void init(ViewContext context, boolean detailsView, boolean inWebPart)
     {
         _inWebPart = inWebPart;
-        _container = context.getContainer();
-        _user = context.getUser();
         _detailsView = detailsView;
         SpecimenQueryView view = SpecimenQueryView.createView(context, detailsView ? SpecimenQueryView.ViewType.VIALS :
                 SpecimenQueryView.ViewType.SUMMARY);
@@ -143,33 +131,12 @@ public class SpecimenSearchBean
         _dataRegionName = view.getDataRegionName();
         _baseViewURL = view.getBaseViewURL();
 
-        _defaultDetailCols = new HashMap<>();
-        _defaultDetailCols.put("PrimaryType", new DisplayColumnInfo(true, true));
-        _defaultDetailCols.put("AdditiveType", new DisplayColumnInfo(true, true));
         DisplayColumnInfo visitInfo = new DisplayColumnInfo(true, true);
         visitInfo.setOrderBy("DisplayOrder");
-        _defaultDetailCols.put("Visit", visitInfo);
-        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(_container), context.getUser(), true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(context.getContainer()), context.getUser(), true);
         TableInfo simpleSpecimenTable = schema.createTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
-
         DisplayColumnInfo participantColInfo = new DisplayColumnInfo(true, true, true, DemoMode.isDemoMode(context), simpleSpecimenTable);
         participantColInfo.setOrderBy("PTID");
-        _defaultDetailCols.put(StudyService.get().getSubjectColumnName(context.getContainer()), participantColInfo);
-        _defaultDetailCols.put("Available", new DisplayColumnInfo(true, true));
-        _defaultDetailCols.put("DerivativeType", new DisplayColumnInfo(true, true));
-        _defaultDetailCols.put("VolumeUnits", new DisplayColumnInfo(false, true, false, false, simpleSpecimenTable));
-        _defaultDetailCols.put("GlobalUniqueId", new DisplayColumnInfo(true, false));
-        _defaultDetailCols.put("Clinic", new DisplayColumnInfo(true, true));
-
-        _defaultSummaryCols = new HashMap<>();
-        _defaultSummaryCols.put("PrimaryType", new DisplayColumnInfo(true, true));
-        _defaultSummaryCols.put("AdditiveType", new DisplayColumnInfo(true, true));
-        _defaultSummaryCols.put("DerivativeType", new DisplayColumnInfo(true, true));
-        _defaultSummaryCols.put("Visit", visitInfo);
-        _defaultSummaryCols.put(StudyService.get().getSubjectColumnName(context.getContainer()), participantColInfo);
-        _defaultSummaryCols.put("Available", new DisplayColumnInfo(true, false));
-        _defaultSummaryCols.put("VolumeUnits", new DisplayColumnInfo(false, true, false, false, simpleSpecimenTable));
-        _defaultSummaryCols.put("Clinic", new DisplayColumnInfo(true, true));
     }
 
     public List<DisplayColumn> getDisplayColumns()
@@ -192,38 +159,6 @@ public class SpecimenSearchBean
         return _dataRegionName;
     }
 
-/*    private @Nullable DisplayColumnInfo getDisplayColumnInfo(ColumnInfo info)
-    {
-        Map<String, DisplayColumnInfo> defaultColumns = isDetailsView() ? _defaultDetailCols : _defaultSummaryCols;
-        return defaultColumns.get(info.getName());
-    }
-
-    public boolean isDefaultColumn(ColumnInfo info)
-    {
-        DisplayColumnInfo colInfo = getDisplayColumnInfo(info);
-        return colInfo != null && colInfo.isDisplayByDefault();
-    }
-
-    public boolean isPickListColumn(ColumnInfo info)
-    {
-        DisplayColumnInfo colInfo = getDisplayColumnInfo(info);
-        return colInfo != null && colInfo.isDisplayAsPickList();
-    }
-
-    public List<String> getPickListValues(ColumnInfo info) throws SQLException
-    {
-        DisplayColumnInfo colInfo = getDisplayColumnInfo(info);
-        assert colInfo != null : info.getName() + " is not a picklist column.";
-        return SampleManager.getInstance().getDistinctColumnValues(_container, _user, info, colInfo.isForceDistinctQuery(), colInfo.getOrderBy(), colInfo.getTableInfo());
-    }
-
-    public boolean shouldObfuscate(ColumnInfo info) throws SQLException
-    {
-        DisplayColumnInfo colInfo = getDisplayColumnInfo(info);
-        assert colInfo != null : info.getName() + " is not a picklist column.";
-        return colInfo.shouldObfuscate();
-    }
-*/
     public boolean isInWebPart()
     {
         return _inWebPart;

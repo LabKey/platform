@@ -157,6 +157,11 @@ public final class DomainDescriptor
         return _domainKind;
     }
 
+    public void setDomainKind(DomainKind kind)
+    {
+        _domainKind = kind;
+    }
+
     public DomainDescriptor.Builder edit()
     {
         return new Builder(this);

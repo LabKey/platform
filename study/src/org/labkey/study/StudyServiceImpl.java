@@ -48,6 +48,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -66,9 +67,11 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.SpecimenDomainKind;
+import org.labkey.api.specimen.model.VialDomainKind;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyManagementOption;
 import org.labkey.api.study.StudyReloadSource;
@@ -89,11 +92,9 @@ import org.labkey.study.importer.StudyImportJob;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.SecurityType;
-import org.labkey.study.model.SpecimenDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
-import org.labkey.study.model.VialDomainKind;
 import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.pipeline.StudyReloadSourceJob;
 import org.labkey.study.query.AdditiveTypeTable;
@@ -109,8 +110,6 @@ import org.labkey.study.query.SpecimenWrapTable;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.VialTable;
 import org.labkey.study.query.VisitTable;
-import org.labkey.study.security.roles.SpecimenCoordinatorRole;
-import org.labkey.study.security.roles.SpecimenRequesterRole;
 import org.springframework.validation.BindException;
 
 import java.io.File;
@@ -127,6 +126,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * User: jgarms
@@ -134,10 +134,17 @@ import java.util.concurrent.ConcurrentHashMap;
 public class StudyServiceImpl implements StudyService
 {
     public static final StudyServiceImpl INSTANCE = new StudyServiceImpl();
+    private static final List<StudyManagementOption> _managementOptions = new ArrayList<>();
+
     private final Map<String, StudyReloadSource> _reloadSourceMap = new ConcurrentHashMap<>();
-    private static List<StudyManagementOption> _managementOptions = new ArrayList<>();
 
     private StudyServiceImpl() {}
+
+    @Override
+    public Class<? extends Module> getStudyModuleClass()
+    {
+        return StudyModule.class;
+    }
 
     @Override
     public StudyImpl getStudy(Container container)
@@ -537,6 +544,18 @@ public class StudyServiceImpl implements StudyService
     }
 
     @Override
+    public DbSchema getStudySchema()
+    {
+        return StudySchema.getInstance().getSchema();
+    }
+
+    @Override
+    public UserSchema getStudyQuerySchema(Study study, User user)
+    {
+        return StudyQuerySchema.createSchema((StudyImpl)study, user, true);
+    }
+
+    @Override
     public void updateDatasetCategory(User user, @NotNull Dataset dataset, @NotNull ViewCategory category)
     {
         DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByEntityId(dataset.getStudy(), dataset.getEntityId());
@@ -557,12 +576,6 @@ public class StudyServiceImpl implements StudyService
             return Collections.emptyList();
         else
             return Collections.singletonList(study);
-    }
-
-    @Override
-    public Set<Role> getStudyRoles()
-    {
-        return RoleManager.roleSet(SpecimenCoordinatorRole.class, SpecimenRequesterRole.class);
     }
 
     @Override
@@ -760,7 +773,7 @@ public class StudyServiceImpl implements StudyService
     @Override
     public TableInfo getSpecimenTableUnion(QuerySchema qsDefault, Set<Container> containers)
     {
-        return getSpecimenTableUnion(qsDefault, containers, new HashMap<Container, SQLFragment>(), false, true);
+        return getSpecimenTableUnion(qsDefault, containers, new HashMap<>(), false, true);
     }
 
     @Override
@@ -774,7 +787,7 @@ public class StudyServiceImpl implements StudyService
     @Override
     public TableInfo getVialTableUnion(QuerySchema qsDefault, Set<Container> containers)
     {
-        return getOneOfSpecimenTablesUnion(qsDefault, containers, new HashMap<Container, SQLFragment>(), new VialDomainKind(),
+        return getOneOfSpecimenTablesUnion(qsDefault, containers, new HashMap<>(), new VialDomainKind(),
                 VialTable.class, false, true);
     }
 
@@ -1210,5 +1223,47 @@ public class StudyServiceImpl implements StudyService
     public void registerManagementOption(StudyManagementOption option)
     {
         _managementOptions.add(option);
+    }
+
+    @Override
+    public boolean isLocationInUse(Location loc)
+    {
+        return LocationManager.get().isLocationInUse(loc, StudySchema.getInstance().getTableInfoParticipant(), "EnrollmentSiteId", "CurrentSiteId") ||
+            LocationManager.get().isLocationInUse(loc, StudySchema.getInstance().getTableInfoAssaySpecimen(), "LocationId");
+    }
+
+    @Override
+    public void appendLocationInUseClauses(SQLFragment sql, String locationTableAlias, String exists)
+    {
+        sql
+            .append(exists)
+            .append(StudySchema.getInstance().getTableInfoParticipant(), "p")
+            .append(" WHERE (")
+            .append(locationTableAlias)
+            .append(".RowId = p.EnrollmentSiteId OR ")
+            .append(locationTableAlias)
+            .append(".RowId = p.CurrentSiteId) AND ")
+            .append(locationTableAlias)
+            .append(".Container = p.Container) OR\n")
+            .append(exists)
+            .append(StudySchema.getInstance().getTableInfoAssaySpecimen(), "a")
+            .append(" WHERE ")
+            .append(locationTableAlias)
+            .append(".RowId = a.LocationId AND ")
+            .append(locationTableAlias)
+            .append(".Container = a.Container)");
+    }
+
+    private static final List<StudyTabProvider> TAB_PROVIDERS = new CopyOnWriteArrayList<>();
+
+    @Override
+    public void registerStudyTabProvider(StudyTabProvider provider)
+    {
+        TAB_PROVIDERS.add(provider);
+    }
+
+    public static List<StudyTabProvider> getStudyTabProviders()
+    {
+        return TAB_PROVIDERS;
     }
 }

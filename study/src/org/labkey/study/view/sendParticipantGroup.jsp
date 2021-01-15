@@ -78,7 +78,7 @@
 
     <input type="hidden" name="rowId" value="<%=h(bean.getRowId())%>">
     <input type="hidden" name="label" value="<%=h(bean.getLabel())%>">
-    <input type="hidden" name="returnUrl" value="<%=h(bean.getReturnUrl())%>">
+    <%=generateReturnUrlFormField(bean)%>
     
     <%= button("Submit").submit(true) %>
     <%= button("Cancel").href(returnUrl) %>

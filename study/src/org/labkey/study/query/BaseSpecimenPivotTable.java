@@ -27,12 +27,12 @@ import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.PrimaryType;
+import org.labkey.api.specimen.model.SpecimenTypeSummary;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.model.LocationImpl;
-import org.labkey.study.model.PrimaryType;
-import org.labkey.study.model.SpecimenTypeSummary;
-import org.labkey.study.model.StudyManager;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -59,8 +59,8 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     {
         // Map of names to normalized and legalized names
         // If normalized name is duplicated, it is added to the Duplicated set
-        private HashMap<String, String> _nameToNormalName = new HashMap<>();
-        private HashSet<String> _normalNameDuplicated = new HashSet<>();
+        private final HashMap<String, String> _nameToNormalName = new HashMap<>();
+        private final HashSet<String> _normalNameDuplicated = new HashSet<>();
 
         public void putName(String key)
         {
@@ -102,7 +102,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
 
     }
 
-    protected class NameLabelPair
+    protected static class NameLabelPair
     {
         public String _name;
         public String _label;
@@ -118,7 +118,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     // a unique id to ensure uniqueness in the queries we create
     private static final String CATEGORY_NAME = "TypeNameToUniqueIdPropertyMap";
 
-    private class PropertyMapWrapper
+    private static class PropertyMapWrapper
     {
         private Map<String, String> _typeNameIdMap;
         final private Container _container;
@@ -167,7 +167,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
         }
     }
 
-    private PropertyMapWrapper _typeNameIdMapWrapper = null;
+    private final PropertyMapWrapper _typeNameIdMapWrapper;
 
     public BaseSpecimenPivotTable(final TableInfo tinfo, final StudyQuerySchema schema)
     {
@@ -310,7 +310,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     {
         Map<Integer, NameLabelPair> siteMap = new HashMap<>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
-        List<LocationImpl> locations = StudyManager.getInstance().getLocations(container);
+        List<LocationImpl> locations = LocationManager.get().getLocations(container);
 
         for (LocationImpl location : locations)
         {

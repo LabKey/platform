@@ -34,6 +34,7 @@ import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -189,7 +190,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      */
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
-        StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user, context);
+        StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user);
 
         DataIteratorBuilder dib = ((UpdateableTableInfo)getQueryTable()).persistRows(etl, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
@@ -389,7 +390,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
         else
         {
-            colNames = new CaseInsensitiveHashSet();
+            // Preserve casing by using wrapped CaseInsensitiveHashMap instead of CaseInsensitiveHashSet
+            colNames = Sets.newCaseInsensitiveHashSet();
             for (Map<String,Object> row : rows)
                 colNames.addAll(row.keySet());
         }

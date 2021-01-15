@@ -51,6 +51,10 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -69,12 +73,10 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.StudyDesignInfo;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.specimen.settings.RepositorySettings;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -277,12 +279,12 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     public SpecimenRequestActor[] getSampleRequestActors()
     {
-        return SpecimenManager.getInstance().getRequirementsProvider().getActors(getContainer());
+        return SpecimenRequestRequirementProvider.get().getActors(getContainer());
     }
 
     public Set<Integer> getSampleRequestActorsInUse()
     {
-        Collection<SpecimenRequestActor> actors = SpecimenManager.getInstance().getRequirementsProvider().getActorsInUse(getContainer());
+        Collection<SpecimenRequestActor> actors = SpecimenRequestRequirementProvider.get().getActorsInUse(getContainer());
         Set<Integer> ids = new HashSet<>();
         for (SpecimenRequestActor actor : actors)
             ids.add(actor.getRowId());
@@ -292,7 +294,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @Override
     public List<LocationImpl> getLocations()
     {
-        return StudyManager.getInstance().getLocations(getContainer());
+        return LocationManager.get().getLocations(getContainer());
     }
 
     @Override
@@ -360,21 +362,6 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public List<ParticipantCategoryImpl> getParticipantCategories(User user)
     {
         return ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), user);
-    }
-
-    public List<SpecimenRequestStatus> getSampleRequestStatuses(User user)
-    {
-        return SpecimenManager.getInstance().getRequestStatuses(getContainer(), user);
-    }
-
-    public Set<Integer> getSampleRequestStatusesInUse()
-    {
-        return SpecimenManager.getInstance().getRequestStatusIdsInUse(getContainer());
-    }
-
-    public RepositorySettings getRepositorySettings()
-    {
-        return SpecimenManager.getInstance().getRepositorySettings(getContainer());
     }
 
     @Override

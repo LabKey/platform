@@ -437,10 +437,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                 .setImportLookupByAlternateKey(_importLookupByAlternateKey)
                                 .setImportIdentity(_importIdentity)
                                 .setHasLineageColumns(hasLineageColumns())
-                                .setJobDescription(getQueryImportDescription());
+                                .setJobDescription(getQueryImportDescription())
+                                .setJobNotificationProvider(getQueryImportJobNotificationProviderName());
 
                             QueryImportPipelineJob job = new QueryImportPipelineJob(getQueryImportProviderName(), info, root, importContextBuilder);
-                            PipelineService.get().queueJob(job);
+                            PipelineService.get().queueJob(job, getQueryImportJobNotificationProviderName());
 
                             JSONObject response = new JSONObject();
                             response.put("success", true);
@@ -556,6 +557,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     }
 
     protected String getQueryImportDescription()
+    {
+        return null;
+    }
+
+    protected String getQueryImportJobNotificationProviderName()
     {
         return null;
     }

@@ -46,6 +46,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -126,7 +127,6 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                         condition.add(currentStudy.getContainer());
                         addCondition(condition, FieldKey.fromParts("Container"), FieldKey.fromParts(getParticipantColumnName()));
                     }
-
                 }
             }
         }
@@ -411,32 +411,6 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         }
     }
 
-
-/*
-    private static class DateVisitColumn extends ExprColumn
-    {
-        private static final String DATE_VISIT_JOIN_ALIAS = "DateVisitJoin";
-        public DateVisitColumn(TableInfo parent)
-        {
-            super(parent, "Visit", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$" + DATE_VISIT_JOIN_ALIAS + ".SequenceNumMin"), JdbcType.VARCHAR);
-        }
-
-        @Override
-        public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
-        {
-            String pvAlias = parentAlias + "$PV";
-            String dateVisitJoinAlias = parentAlias + "$" + DATE_VISIT_JOIN_ALIAS;
-            SQLFragment join = new SQLFragment();
-            join.append(" LEFT OUTER JOIN " + StudySchema.getInstance().getTableInfoParticipantVisit() + " " + pvAlias + " ON\n" +
-                    parentAlias + ".ParticipantSequenceNum = " + pvAlias + ".ParticipantSequenceNum AND\n" +
-                    parentAlias + ".Container = " + pvAlias + ".Container\n");
-            join.append("LEFT OUTER JOIN " + StudySchema.getInstance().getTableInfoVisit() + " " + dateVisitJoinAlias +
-                    " ON " + dateVisitJoinAlias + ".RowId = " + pvAlias + ".VisitRowId");
-            map.put(DATE_VISIT_JOIN_ALIAS, join);
-        }
-    }
-*/
-
     protected void addVialCommentsColumn(final boolean joinBackToSpecimens)
     {
         var commentsColumn = new AliasedColumn(this, "VialComments", _rootTable.getColumn("GlobalUniqueId"));
@@ -453,14 +427,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         commentsFK.addJoin(FieldKey.fromParts("Container"), "Folder", false);
         commentsColumn.setFk(commentsFK);
         commentsColumn.setDescription("");
-        commentsColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new CommentDisplayColumn(colInfo);
-            }
-        });
+        commentsColumn.setDisplayColumnFactory(CommentDisplayColumn::new);
         commentsColumn.setUserEditable(false);
         addColumn(commentsColumn);
     }
@@ -681,7 +648,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                 return;
 
             SQLFragment joinSql = new SQLFragment();
-            joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoSpecimenComment().getFromSQL(tableAlias));
+            joinSql.append(" LEFT OUTER JOIN ").append(SpecimenSchema.get().getTableInfoSpecimenComment().getFromSQL(tableAlias));
             joinSql.append(" ON ");
             joinSql.append(parentAlias).append(".GlobalUniqueId = ").append(tableAlias).append(".GlobalUniqueId AND ");
             joinSql.append(parentAlias).append(".Container = ").append(tableAlias).append(".Container\n");

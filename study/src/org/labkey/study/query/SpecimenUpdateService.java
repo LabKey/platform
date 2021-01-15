@@ -37,15 +37,17 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.specimen.SpecimenEvent;
+import org.labkey.api.specimen.SpecimenEventManager;
+import org.labkey.api.specimen.SpecimenRequestException;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.Vial;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.StudySchema;
 import org.labkey.study.importer.EditableSpecimenImporter;
-import org.labkey.study.model.SpecimenEvent;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Vial;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -129,7 +131,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             errors.addRowError(e);
             throw errors;
         }
-        catch (SpecimenManager.SpecimenRequestException e)
+        catch (SpecimenRequestException e)
         {
             errors.addRowError(new ValidationException(e.getMessage()));
             throw errors;
@@ -193,7 +195,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
     @Override
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
-        Study study = StudyManager.getInstance().getStudy(container);
+        Study study = StudyService.get().getStudy(container);
         if (null == study)
             throw new IllegalStateException("No study found.");
 
@@ -277,7 +279,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
             throws ValidationException
     {
-        Study study = StudyManager.getInstance().getStudy(container);
+        Study study = StudyService.get().getStudy(container);
         if (null == study)
             throw new IllegalStateException("No study found.");
         String subjectColumnName = study.getSubjectColumnName();
@@ -364,7 +366,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             errors.addRowError(e);
             throw errors;
         }
-        catch (SpecimenManager.SpecimenRequestException e)
+        catch (SpecimenRequestException e)
         {
             errors.addRowError(new ValidationException(e.getMessage()));
             throw errors;
@@ -499,11 +501,11 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
     private void checkEditability(Container container, Vial vial) throws ValidationException
     {
-        SQLFragment sql = new SQLFragment("SELECT COUNT(FinalState) FROM " + StudySchema.getInstance().getTableInfoSampleRequestStatus() +
-                " WHERE FinalState = " + StudySchema.getInstance().getSqlDialect().getBooleanFALSE());
+        SQLFragment sql = new SQLFragment("SELECT COUNT(FinalState) FROM " + SpecimenSchema.get().getTableInfoSampleRequestStatus() +
+                " WHERE FinalState = " + SpecimenSchema.get().getSqlDialect().getBooleanFALSE());
         sql.append(" AND RowId IN (")
-                .append("SELECT StatusId FROM " + StudySchema.getInstance().getTableInfoSampleRequest() + " WHERE RowId IN (")
-                .append("SELECT SampleRequestId FROM " + StudySchema.getInstance().getTableInfoSampleRequestSpecimen() + " WHERE Container = ? ");
+                .append("SELECT StatusId FROM " + SpecimenSchema.get().getTableInfoSampleRequest() + " WHERE RowId IN (")
+                .append("SELECT SampleRequestId FROM " + SpecimenSchema.get().getTableInfoSampleRequestSpecimen() + " WHERE Container = ? ");
         sql.add(container.getId());
         sql.append(" AND SpecimenGlobalUniqueId = ?").add(vial.getGlobalUniqueId());
         sql.append(")) GROUP BY FinalState");
@@ -517,7 +519,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
     private void checkDeletability(Container container, Vial vial) throws ValidationException
     {
-        SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM " + StudySchema.getInstance().getTableInfoSampleRequestSpecimen() + " WHERE Container = ? ");
+        SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM " + SpecimenSchema.get().getTableInfoSampleRequestSpecimen() + " WHERE Container = ? ");
         sql.add(container.getId());
         sql.append(" AND SpecimenGlobalUniqueId = ?").add(vial.getGlobalUniqueId());
 
@@ -531,10 +533,10 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
     private static Map<String, Object> getLastEventMap(Container container, Vial vial)
     {
         List<Vial> vials = Collections.singletonList(vial);
-        SpecimenEvent specimenEvent = SpecimenManager.getInstance().getLastEvent(SpecimenManager.getInstance().getSpecimenEvents(vials, false));
+        SpecimenEvent specimenEvent = SpecimenEventManager.get().getLastEvent(SpecimenEventManager.get().getSpecimenEvents(vials, false));
         if (null == specimenEvent)
             throw new IllegalStateException("Expected at least one event for specimen.");
-        TableInfo tableInfoSpecimenEvent = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
+        TableInfo tableInfoSpecimenEvent = SpecimenSchema.get().getTableInfoSpecimenEvent(container);
 
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromString("RowId"), specimenEvent.getRowId());

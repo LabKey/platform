@@ -42,13 +42,10 @@ import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.list.ListImportProgress;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.DefaultSchema;
@@ -59,6 +56,28 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenColumns;
+import org.labkey.api.specimen.SpecimenEvent;
+import org.labkey.api.specimen.SpecimenEventDateComparator;
+import org.labkey.api.specimen.SpecimenEventManager;
+import org.labkey.api.specimen.SpecimenRequestManager;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.SpecimenTableManager;
+import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.importer.EventVialRollup;
+import org.labkey.api.specimen.importer.FileSystemSpecimenImportFile;
+import org.labkey.api.specimen.importer.ImportTypes;
+import org.labkey.api.specimen.importer.ImportableColumn;
+import org.labkey.api.specimen.importer.RequestabilityManager;
+import org.labkey.api.specimen.importer.RollupInstance;
+import org.labkey.api.specimen.importer.SpecimenColumn;
+import org.labkey.api.specimen.importer.SpecimenImportFile;
+import org.labkey.api.specimen.importer.SpecimenTableType;
+import org.labkey.api.specimen.importer.TargetTable;
+import org.labkey.api.specimen.location.LocationCache;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.SpecimenComment;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.SpecimenImportStrategy;
 import org.labkey.api.study.SpecimenImportStrategyFactory;
@@ -77,21 +96,14 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.util.TimeOnlyDate;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.SpecimenServiceImpl;
-import org.labkey.study.StudySchema;
 import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.SequenceNumImportHelper;
-import org.labkey.study.model.SpecimenComment;
-import org.labkey.study.model.SpecimenEvent;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Vial;
 import org.labkey.study.query.LocationTable;
-import org.labkey.study.query.SpecimenTablesProvider;
-import org.labkey.study.specimen.LocationCache;
 import org.labkey.study.visitmanager.VisitManager;
 
 import java.io.BufferedReader;
@@ -102,15 +114,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -119,13 +128,25 @@ import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.specimen.SpecimenColumns.DRAW_TIMESTAMP;
+import static org.labkey.api.specimen.SpecimenColumns.GLOBAL_UNIQUE_ID;
+import static org.labkey.api.specimen.SpecimenColumns.GLOBAL_UNIQUE_ID_TSV_COL;
+import static org.labkey.api.specimen.SpecimenColumns.LAB_ID;
+import static org.labkey.api.specimen.SpecimenColumns.LAB_RECEIPT_DATE;
+import static org.labkey.api.specimen.SpecimenColumns.SHIP_DATE;
+import static org.labkey.api.specimen.SpecimenColumns.SITE_COLUMNS;
+import static org.labkey.api.specimen.SpecimenColumns.SPEC_NUMBER_TSV_COL;
+import static org.labkey.api.specimen.SpecimenColumns.STORAGE_DATE;
+import static org.labkey.api.specimen.SpecimenColumns.VISIT_COL;
+import static org.labkey.api.specimen.SpecimenColumns.VISIT_VALUE;
+
 /**
  * User: brittp
  * Date: Mar 13, 2006
  * Time: 2:18:48
  */
 @SuppressWarnings({"ConstantConditions"})
-public class SpecimenImporter
+public class SpecimenImporter extends SpecimenTableManager
 {
     private enum ImportPhases {UpdateCommentSpecimenHashes, MarkOrphanedRequestVials, SetLockedInRequest, VialUpdatePreLoopPrep,
         GetVialBatch, GetDateOrderedEvents, GetSpecimenComments, GetProcessingLocationId, GetFirstProcessedBy, GetCurrentLocationId,
@@ -135,421 +156,6 @@ public class SpecimenImporter
         PopulateTempTable, PopulateLabs, SpecimenTypes, DeleteOldData, PrepareQcComments, NotifyChanged}
 
     private static final MultiPhaseCPUTimer<ImportPhases> TIMER = new MultiPhaseCPUTimer<>(ImportPhases.class, ImportPhases.values());
-
-    public static class ImportableColumn
-    {
-        protected final String _dbType;
-
-        private final String _tsvColumnName;
-        private final Collection<String> _tsvColumnAliases;
-        private final String _dbColumnName;
-        private final boolean _maskOnExport;
-        private final boolean _unique;
-        private final int _size;
-        private final Class _javaClass;
-        private final JdbcType _jdbcType;
-        private Object _defaultValue = null;
-
-        public ImportableColumn(String tsvColumnName, String dbColumnName, String databaseType)
-        {
-            this(tsvColumnName, dbColumnName, databaseType, false);
-        }
-
-        public ImportableColumn(String tsvColumnName, String dbColumnName, String databaseType, Object defaultValue)
-        {
-            this(tsvColumnName, dbColumnName, databaseType, false);
-            _defaultValue = defaultValue;
-        }
-
-        public ImportableColumn(String tsvColumnName, String dbColumnName, String databaseType, boolean unique)
-        {
-            this(tsvColumnName, dbColumnName, databaseType, unique, false);
-        }
-
-        public ImportableColumn(String tsvColumnName, String dbColumnName, String databaseType, boolean unique, boolean maskOnExport)
-        {
-            this(tsvColumnName, Collections.emptyList(), dbColumnName, databaseType, unique, maskOnExport);
-        }
-
-        public ImportableColumn(String tsvColumnName, Collection<String> tsvColumnAliases, String dbColumnName, String databaseType, boolean unique, boolean maskOnExport)
-        {
-            _tsvColumnName = tsvColumnName;
-            _tsvColumnAliases = List.copyOf(tsvColumnAliases);
-            _dbColumnName = dbColumnName;
-            _unique = unique;
-            _maskOnExport = maskOnExport;
-
-            switch (databaseType)
-            {
-                case DURATION_TYPE:
-                    _dbType = StudySchema.getInstance().getSqlDialect().getDefaultDateTimeDataType();
-                    _javaClass = TimeOnlyDate.class;
-                    break;
-                case DATETIME_TYPE:
-                    _dbType = StudySchema.getInstance().getSqlDialect().getDefaultDateTimeDataType();
-                    _javaClass = Date.class;
-                    break;
-                default:
-                    _dbType = databaseType.toUpperCase();
-                    _javaClass = determineJavaType(_dbType);
-                    break;
-            }
-
-            _jdbcType = JdbcType.valueOf(getJavaClass());
-
-            if (_dbType.startsWith("VARCHAR("))
-            {
-                assert _dbType.charAt(_dbType.length() - 1) == ')' : "Unexpected VARCHAR type format: " + _dbType;
-                String sizeStr = _dbType.substring(8, _dbType.length() - 1);
-                _size = Integer.parseInt(sizeStr);
-            }
-            else
-            {
-                _size = -1;
-            }
-        }
-
-        // Can't use standard JdbcType.valueOf() method since this uses contains()
-        private static Class determineJavaType(String dbType)
-        {
-            if (dbType.contains(DATETIME_TYPE))
-                throw new IllegalStateException("Java types for DateTime/Timestamp columns should be previously initialized.");
-
-            if (dbType.contains("VARCHAR"))
-                return String.class;
-            else if (dbType.contains("FLOAT") || dbType.contains("DOUBLE") || dbType.contains(NUMERIC_TYPE))
-                return Double.class;
-            else if (dbType.contains("BIGINT"))
-                return Long.class;
-            else if (dbType.contains("INT"))
-                return Integer.class;
-            else if (dbType.contains(BOOLEAN_TYPE))
-                return Boolean.class;
-            else if (dbType.contains(BINARY_TYPE))
-                return byte[].class;
-            else if (dbType.contains("DATE"))
-                return Date.class;
-            else if (dbType.contains("TIME"))
-                return Date.class;
-            else
-                throw new UnsupportedOperationException("Unrecognized sql type: " + dbType);
-        }
-
-        public ColumnDescriptor getColumnDescriptor()
-        {
-            return new ColumnDescriptor(_tsvColumnName, getJavaClass());
-        }
-
-        public String getDbColumnName()
-        {
-            return _dbColumnName;
-        }
-
-        private String _legalDbColumnName;
-
-        public String getLegalDbColumnName(SqlDialect dialect)
-        {
-            if (null == _legalDbColumnName)
-                _legalDbColumnName = PropertyDescriptor.getLegalSelectNameFromStorageName(dialect, getDbColumnName());
-            return _legalDbColumnName;
-        }
-
-        // Preferred TSV column name. For example, the name that gets exported.
-        public String getPrimaryTsvColumnName()
-        {
-            return _tsvColumnName;
-        }
-
-        public Collection<String> getImportAliases()
-        {
-            return _tsvColumnAliases;
-        }
-
-        public boolean isUnique()
-        {
-            return _unique;
-        }
-
-        public Class getJavaClass()
-        {
-            return _javaClass;
-        }
-
-        public JdbcType getJdbcType()
-        {
-            return _jdbcType;
-        }
-
-        public int getMaxSize()
-        {
-            return _size;
-        }
-
-        public boolean isMaskOnExport()
-        {
-            return _maskOnExport;
-        }
-
-        public @Nullable Object getDefaultValue()
-        {
-            return _defaultValue;
-        }
-    }
-
-    public enum TargetTable
-    {
-        SPECIMEN_EVENTS
-        {
-            @Override
-            public List<String> getTableNames()
-            {
-                List<String> names = new ArrayList<>(1);
-                names.add("SpecimenEvent");
-                return names;
-            }
-
-            @Override
-            public boolean isEvents()
-            {
-                return true;
-            }
-
-            @Override
-            public boolean isSpecimens()
-            {
-                return false;
-            }
-
-            @Override
-            public boolean isVials()
-            {
-                return false;
-            }
-        },
-        SPECIMENS
-        {
-            @Override
-            public List<String> getTableNames()
-            {
-                List<String> names = new ArrayList<>(1);
-                names.add("Specimen");
-                return names;
-            }
-
-            @Override
-            public boolean isEvents()
-            {
-                return false;
-            }
-
-            @Override
-            public boolean isSpecimens()
-            {
-                return true;
-            }
-
-            @Override
-            public boolean isVials()
-            {
-                return false;
-            }
-        },
-        VIALS
-        {
-            @Override
-            public List<String> getTableNames()
-            {
-                List<String> names = new ArrayList<>(1);
-                names.add("Vial");
-                return names;
-            }
-
-            @Override
-            public boolean isEvents()
-            {
-                return false;
-            }
-
-            @Override
-            public boolean isSpecimens()
-            {
-                return false;
-            }
-
-            @Override
-            public boolean isVials()
-            {
-                return true;
-            }
-        },
-        SPECIMENS_AND_SPECIMEN_EVENTS
-        {
-            @Override
-            public List<String> getTableNames()
-            {
-                List<String> names = new ArrayList<>(1);
-                names.add("Specimen");
-                names.add("SpecimenEvent");
-                return names;
-            }
-
-            @Override
-            public boolean isEvents()
-            {
-                return true;
-            }
-
-            @Override
-            public boolean isSpecimens()
-            {
-                return true;
-            }
-
-            @Override
-            public boolean isVials()
-            {
-                return false;
-            }
-        },
-        VIALS_AND_SPECIMEN_EVENTS
-        {
-            @Override
-            public List<String> getTableNames()
-            {
-                List<String> names = new ArrayList<>(1);
-                names.add("Vial");
-                names.add("SpecimenEvent");
-                return names;
-            }
-
-            @Override
-            public boolean isEvents()
-            {
-                return true;
-            }
-
-            @Override
-            public boolean isSpecimens()
-            {
-                return false;
-            }
-
-            @Override
-            public boolean isVials()
-            {
-                return true;
-            }
-        };
-
-        public abstract boolean isEvents();
-        public abstract boolean isVials();
-        public abstract boolean isSpecimens();
-        public abstract List<String> getTableNames();
-    }
-
-    public static class SpecimenColumn extends ImportableColumn
-    {
-        private final TargetTable _targetTable;
-
-        private String _fkTable;
-        private String _joinType;
-        private String _fkColumn;
-        private String _aggregateEventFunction;
-        private boolean _isKeyColumn = false;
-
-        public SpecimenColumn(String tsvColumnName, Collection<String> tsvColumnAliases, String dbColumnName, String databaseType, TargetTable eventColumn, boolean unique)
-        {
-            super(tsvColumnName, tsvColumnAliases, dbColumnName, databaseType, unique, false);
-            _targetTable = eventColumn;
-        }
-
-        public SpecimenColumn(String tsvColumnName, String dbColumnName, String databaseType, TargetTable eventColumn, boolean unique)
-        {
-            this(tsvColumnName, Collections.emptyList(), dbColumnName, databaseType, eventColumn, unique);
-        }
-
-        public SpecimenColumn(String tsvColumnName, String dbColumnName, String databaseType, boolean isKeyColumn, TargetTable eventColumn, boolean unique)
-        {
-            this(tsvColumnName, dbColumnName, databaseType, eventColumn, unique);
-            _isKeyColumn = isKeyColumn;
-        }
-
-        public SpecimenColumn(String tsvColumnName, String dbColumnName, String databaseType, boolean isKeyColumn, TargetTable eventColumn)
-        {
-            this(tsvColumnName, dbColumnName, databaseType, eventColumn, false);
-            _isKeyColumn = isKeyColumn;
-        }
-
-        public SpecimenColumn(String tsvColumnName, String dbColumnName, String databaseType, TargetTable eventColumn)
-        {
-            this(tsvColumnName, dbColumnName, databaseType, eventColumn, false);
-        }
-
-        public SpecimenColumn(String tsvColumnName, Collection<String> tsvColumnAliases, String dbColumnName, String databaseType, TargetTable eventColumn)
-        {
-            this(tsvColumnName, tsvColumnAliases, dbColumnName, databaseType, eventColumn, false);
-        }
-
-        public SpecimenColumn(String tsvColumnName, String dbColumnName, String databaseType, TargetTable eventColumn, String aggregateEventFunction)
-        {
-            this(tsvColumnName, dbColumnName, databaseType, eventColumn, false);
-            _aggregateEventFunction = aggregateEventFunction;
-        }
-
-        public SpecimenColumn(String tsvColumnName, String dbColumnName, String databaseType,
-                              TargetTable eventColumn, String fkTable, String fkColumn, String joinType)
-        {
-            this(tsvColumnName, dbColumnName, databaseType, eventColumn, false);
-            _fkColumn = fkColumn;
-            _fkTable = fkTable;
-            _joinType = joinType;
-        }
-
-        public TargetTable getTargetTable()
-        {
-            return _targetTable;
-        }
-
-        public String getFkColumn()
-        {
-            return _fkColumn;
-        }
-
-        public String getFkTable()
-        {
-            return _fkTable;
-        }
-
-        public String getJoinType()
-        {
-            return _joinType;
-        }
-
-        public String getDbType()
-        {
-            return _dbType;
-        }
-
-        public String getAggregateEventFunction()
-        {
-            return _aggregateEventFunction;
-        }
-
-        public boolean isKeyColumn()
-        {
-            return _isKeyColumn;
-        }
-
-        public String getFkTableAlias()
-        {
-            return getDbColumnName() + "Lookup";
-        }
-
-        public boolean isDateType()
-        {
-            return getDbType() != null && (getDbType().equals("DATETIME") || getDbType().equals("TIMESTAMP")) && !getJavaClass().equals(TimeOnlyDate.class);
-        }
-    }
 
     private static class SpecimenLoadInfo
     {
@@ -604,494 +210,10 @@ public class SpecimenImporter
         }
     }
 
-    /**
-     * Rollups from one table to another. Patterns specify what the To table must be to match,
-     * where '%' is the full name of the From field name.
-     */
-    public interface Rollup
-    {
-        List<String> getPatterns();
-        boolean isTypeConstraintMet(JdbcType from, JdbcType to);
-        boolean match(PropertyDescriptor from, PropertyDescriptor to, boolean allowTypeMismatch);
-    }
-
-    public enum EventVialRollup implements Rollup
-    {
-        EventVialLatest
-        {
-            @Override
-            public List<String> getPatterns()
-            {
-                return Arrays.asList("%", "Latest%");
-            }
-            @Override
-            public Object getRollupResult(List<SpecimenEvent> events, String eventColName, JdbcType fromType, JdbcType toType)
-            {
-                // Input is SpecimenEvent list
-                if (null == events || events.isEmpty())
-                    return null;
-                if (!(events.get(0) instanceof SpecimenEvent))
-                    throw new IllegalStateException("Expected SpecimenEvents.");
-                return SpecimenManager.getInstance().getLastEvent(events).get(eventColName);
-            }
-            @Override
-            public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
-            {
-                return from.equals(to) || canPromoteNumeric(from, to);
-            }
-        },
-        EventVialFirst
-        {
-            @Override
-            public List<String> getPatterns()
-            {
-                return Arrays.asList("First%");
-            }
-            @Override
-            public Object getRollupResult(List<SpecimenEvent> events, String eventColName, JdbcType fromType, JdbcType toType)
-            {
-                // Input is SpecimenEvent list
-                if (null == events || events.isEmpty())
-                    return null;
-                if (!(events.get(0) instanceof SpecimenEvent))
-                    throw new IllegalStateException("Expected SpecimenEvents.");
-                return SpecimenManager.getInstance().getFirstEvent(events).get(eventColName);
-            }
-            @Override
-            public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
-            {
-                return from.equals(to) || canPromoteNumeric(from, to);
-            }
-        },
-        EventVialLatestNonBlank
-        {
-            @Override
-            public List<String> getPatterns()
-            {
-                return Arrays.asList("LatestNonBlank%");
-            }
-            @Override
-            public Object getRollupResult(List<SpecimenEvent> events, String eventColName, JdbcType fromType, JdbcType toType)
-            {
-                // Input is SpecimenEvent list
-                if (null == events || events.isEmpty())
-                    return null;
-                if (!(events.get(0) instanceof SpecimenEvent))
-                    throw new IllegalStateException("Expected SpecimenEvents.");
-                ListIterator<SpecimenEvent> iterator = events.listIterator(events.size());
-                Object result = null;
-                while (iterator.hasPrevious())
-                {
-                    SpecimenEvent event = iterator.previous();
-                    if (null == event)
-                        continue;
-                    result = event.get(eventColName);
-                    if (null == result)
-                        continue;
-                    if (result instanceof String && StringUtils.isBlank((String)result))
-                        continue;
-                    break;
-                }
-                return result;
-            }
-            @Override
-            public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
-            {
-                return from.equals(to) || canPromoteNumeric(from, to);
-            }
-        },
-        EventVialCombineAll
-        {
-            @Override
-            public List<String> getPatterns()
-            {
-                return Arrays.asList("Combine%");
-            }
-            @Override
-            public Object getRollupResult(List<SpecimenEvent> events, String eventColName, JdbcType fromType, JdbcType toType)
-            {
-                // Input is SpecimenEvent list
-                if (null == events || events.isEmpty())
-                    return null;
-                if (!(events.get(0) instanceof SpecimenEvent))
-                    throw new IllegalStateException("Expected SpecimenEvents.");
-                Object result = null;
-
-                if (toType.isText())
-                {
-                    for (SpecimenEvent event : events)
-                    {
-                        if (null != event)
-                        {
-                            Object value = event.get(eventColName);
-                            if (null != value)
-                            {
-                                if (value instanceof String)
-                                {
-                                    if (!StringUtils.isBlank((String)value))
-                                    {
-                                        if (null == result)
-                                            result = value;
-                                        else
-                                            result = result + ", " + value;
-                                    }
-                                }
-                                else
-                                {
-                                    throw new IllegalStateException("Expected String type.");
-                                }
-                            }
-                        }
-                    }
-                }
-                else if (toType.isNumeric())
-                {
-                    for (SpecimenEvent event : events)
-                    {
-                        if (null != event)
-                        {
-                            Object value = event.get(eventColName);
-                            if (null != value)
-                            {
-                                if (null == result)
-                                    result = value;
-                                else
-                                    result = JdbcType.add (result, value, toType);
-                            }
-                        }
-                    }
-                }
-                else
-                    throw new IllegalStateException("CombineAll rollup is supported on String or Numeric types only.");
-
-                return result;
-            }
-
-            @Override
-            public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
-            {
-                return (from.equals(to) || canPromoteNumeric(from, to)) && (from.isNumeric() || from.isText());
-            }
-        };
-
-        // Gets the field value from a particular object in the list (used for event -> vial rollups)
-        public abstract Object getRollupResult(List<SpecimenEvent> objs, String colName, JdbcType fromType, JdbcType toType);
-
-        @Override
-        public boolean match(PropertyDescriptor from, PropertyDescriptor to, boolean allowTypeMismatch)
-        {
-            for (String pattern : getPatterns())
-            {
-                if (pattern.replace("%", from.getName()).equalsIgnoreCase(to.getName()) && (allowTypeMismatch || isTypeConstraintMet(from.getJdbcType(), to.getJdbcType())))
-                    return true;
-            }
-            return false;
-        }
-    }
-
-    public enum VialSpecimenRollup implements Rollup
-    {
-        VialSpecimenCount
-        {
-            @Override
-            public List<String> getPatterns()
-            {
-                return Arrays.asList("Count%", "%Count");
-            }
-            @Override
-            public SQLFragment getRollupSql(String fromColName, String toColName)
-            {
-                SQLFragment sql = new SQLFragment("SUM(CASE ");
-                sql.append(fromColName).append(" WHEN ? THEN 1 ELSE 0 END) AS ").append(toColName);
-                sql.add(Boolean.TRUE);
-                return sql;
-            }
-            @Override
-            public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
-            {
-                return JdbcType.BOOLEAN.equals(from) && to.isInteger();
-            }
-        },
-        VialSpecimenTotal
-        {
-            @Override
-            public List<String> getPatterns()
-            {
-                return Arrays.asList("Total%", "%Total", "SumOf%");
-            }
-            @Override
-            public SQLFragment getRollupSql(String fromColName, String toColName)
-            {
-                SQLFragment sql = new SQLFragment("SUM(");
-                sql.append(fromColName).append(") AS ").append(toColName);
-                return sql;
-            }
-            @Override
-            public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
-            {
-                return from.isNumeric() && to.isNumeric();
-            }
-        },
-        VialSpecimenMaximum
-        {
-            @Override
-            public List<String> getPatterns()
-            {
-                return Arrays.asList("Max%", "%Max");
-            }
-            @Override
-            public SQLFragment getRollupSql(String fromColName, String toColName)
-            {
-                SQLFragment sql = new SQLFragment("MAX(");
-                sql.append(fromColName).append(") AS ").append(toColName);
-                return sql;
-            }
-            @Override
-            public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
-            {
-                return !JdbcType.BOOLEAN.equals(from) &&
-                        (from.equals(to) || canPromoteNumeric(from, to));
-            }
-        },
-        VialSpecimenMinimum
-        {
-            @Override
-            public List<String> getPatterns()
-            {
-                return Arrays.asList("Min%", "%Min");
-            }
-            @Override
-            public SQLFragment getRollupSql(String fromColName, String toColName)
-            {
-                SQLFragment sql = new SQLFragment("MIN(");
-                sql.append(fromColName).append(") AS ").append(toColName);
-                return sql;
-            }
-            @Override
-            public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
-            {
-                return !JdbcType.BOOLEAN.equals(from) &&
-                        (from.equals(to) || canPromoteNumeric(from, to));
-            }
-        };
-
-        // Gets SQL to calculate rollup (used for vial -> specimen rollups)
-        public abstract SQLFragment getRollupSql(String fromColName, String toColName);
-
-        @Override
-        public boolean match(PropertyDescriptor from, PropertyDescriptor to, boolean allowTypeMismtach)
-        {
-            for (String pattern : getPatterns())
-            {
-                if (pattern.replace("%", from.getName()).equalsIgnoreCase(to.getName()) && (allowTypeMismtach || isTypeConstraintMet(from.getJdbcType(), to.getJdbcType())))
-                    return true;
-            }
-            return false;
-        }
-    }
-
-    private static boolean canPromoteNumeric(JdbcType from, JdbcType to)
-    {
-        return (from.isNumeric() && to.isNumeric() && JdbcType.promote(from, to) == to);
-    }
-
-    public static class RollupInstance<K extends Rollup> extends Pair<String, K>
-    {
-        private final JdbcType _fromType;
-        private final JdbcType _toType;
-
-        public RollupInstance(String first, K second, JdbcType fromType, JdbcType toType)
-        {
-            super(first.toLowerCase(), second);
-            _fromType = fromType;
-            _toType = toType;
-        }
-
-        public JdbcType getFromType()
-        {
-            return _fromType;
-        }
-
-        public JdbcType getToType()
-        {
-            return _toType;
-        }
-
-        public boolean isTypeConstraintMet()
-        {
-            return second.isTypeConstraintMet(_fromType, _toType);
-        }
-    }
-
-    public static class RollupMap<K extends Rollup> extends CaseInsensitiveHashMap<List<RollupInstance<K>>>
-    {
-    }
-
-    private static final List<EventVialRollup> _eventVialRollups = Arrays.asList(EventVialRollup.values());
-    private static final List<VialSpecimenRollup> _vialSpecimenRollups = Arrays.asList(VialSpecimenRollup.values());
-
-    public static List<VialSpecimenRollup> getVialSpecimenRollups()
-    {
-        return _vialSpecimenRollups;
-    }
-
-    public static List<EventVialRollup> getEventVialRollups()
-    {
-        return _eventVialRollups;
-    }
-
-    private static final CaseInsensitiveHashSet _eventFieldNamesDisallowedForRollups = new CaseInsensitiveHashSet(
-        "RowId", "VialId", "LabId", "PTID", "PrimaryTypeId", "AdditiveTypeId", "DerivativeTypeId", "DerivativeTypeId2", "OriginatingLocationId"
-    );
-
-    private static final CaseInsensitiveHashSet _vialFieldNamesDisallowedForRollups = new CaseInsensitiveHashSet(
-        "RowId", "SpecimenId"
-    );
-
-    public static CaseInsensitiveHashSet getEventFieldNamesDisallowedForRollups()
-    {
-        return _eventFieldNamesDisallowedForRollups;
-    }
-
-    public static CaseInsensitiveHashSet getVialFieldNamesDisallowedForRollups()
-    {
-        return _vialFieldNamesDisallowedForRollups;
-    }
-
-    protected static final String GLOBAL_UNIQUE_ID_TSV_COL = "global_unique_specimen_id";
-
-    private static final String DATETIME_TYPE = "SpecimenImporter/DateTime";
-    private static final String DURATION_TYPE = "SpecimenImporter/TimeOnlyDate";
-    private static final String NUMERIC_TYPE = "NUMERIC(15,4)";
-    private static final String BOOLEAN_TYPE = StudySchema.getInstance().getSqlDialect().getBooleanDataType();
-    private static final String BINARY_TYPE = StudySchema.getInstance().getSqlDialect().getBinaryDataType();
-    private static final String LAB_ID_TSV_COL = "lab_id";
-    private static final String SPEC_NUMBER_TSV_COL = "specimen_number";
-    private static final String EVENT_ID_COL = "record_id";
-    private static final String VISIT_COL = "visit_value";
-
     private static final String GENERAL_JOB_STATUS_MSG = "PROCESSING SPECIMENS";
-
-    // SpecimenEvent columns that form a psuedo-unqiue constraint
-    private static final SpecimenColumn GLOBAL_UNIQUE_ID, LAB_ID, SHIP_DATE, STORAGE_DATE, LAB_RECEIPT_DATE, DRAW_TIMESTAMP;
-    private static final SpecimenColumn VISIT_VALUE;
-
-    public static final List<SpecimenColumn> BASE_SPECIMEN_COLUMNS = List.of(
-        new SpecimenColumn(EVENT_ID_COL, "ExternalId", "BIGINT NOT NULL", TargetTable.SPECIMEN_EVENTS, true),
-        new SpecimenColumn("record_source", "RecordSource", "VARCHAR(20)", TargetTable.SPECIMEN_EVENTS),
-        GLOBAL_UNIQUE_ID = new SpecimenColumn(GLOBAL_UNIQUE_ID_TSV_COL, "GlobalUniqueId", "VARCHAR(50)", true, TargetTable.VIALS, true),
-        LAB_ID = new SpecimenColumn(LAB_ID_TSV_COL, "LabId", "INT", TargetTable.SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER") {
-            @Override
-            public boolean isUnique() { return true; }
-        },
-        new SpecimenColumn("originating_location", "OriginatingLocationId", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER"),
-        new SpecimenColumn("unique_specimen_id", "UniqueSpecimenId", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("ptid", "Ptid", "VARCHAR(32)", true, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-        new SpecimenColumn("parent_specimen_id", "ParentSpecimenId", "INT", TargetTable.SPECIMEN_EVENTS),
-        DRAW_TIMESTAMP = new SpecimenColumn("draw_timestamp", "DrawTimestamp", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-        new SpecimenColumn("sal_receipt_date", "SalReceiptDate", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-        new SpecimenColumn(SPEC_NUMBER_TSV_COL, "SpecimenNumber", "VARCHAR(50)", true, TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("class_id", "ClassId", "VARCHAR(20)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-        VISIT_VALUE = new SpecimenColumn(VISIT_COL, "VisitValue", NUMERIC_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-        new SpecimenColumn("protocol_number", "ProtocolNumber", "VARCHAR(20)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-        new SpecimenColumn("visit_description", "VisitDescription", "VARCHAR(10)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-        new SpecimenColumn("other_specimen_id", "OtherSpecimenId", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("volume", "Volume", "FLOAT", TargetTable.VIALS_AND_SPECIMEN_EVENTS, "MAX"),
-        new SpecimenColumn("volume_units", "VolumeUnits", "VARCHAR(20)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-        new SpecimenColumn("stored", "Stored", "INT", TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("storage_flag", "storageFlag", "INT", TargetTable.SPECIMEN_EVENTS),
-        STORAGE_DATE = new SpecimenColumn("storage_date", "StorageDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS, true),
-        new SpecimenColumn("ship_flag", "ShipFlag", "INT", TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("ship_batch_number", "ShipBatchNumber", "INT", TargetTable.SPECIMEN_EVENTS),
-        SHIP_DATE = new SpecimenColumn("ship_date", "ShipDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS, true),
-        new SpecimenColumn("imported_batch_number", "ImportedBatchNumber", "INT", TargetTable.SPECIMEN_EVENTS),
-        LAB_RECEIPT_DATE = new SpecimenColumn("lab_receipt_date", "LabReceiptDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS, true),
-        new SpecimenColumn("expected_time_value", "ExpectedTimeValue", "FLOAT", TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("expected_time_unit", "ExpectedTimeUnit", "VARCHAR(15)", TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("group_protocol", "GroupProtocol", "INT", TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("sub_additive_derivative", "SubAdditiveDerivative", "VARCHAR(50)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-        new SpecimenColumn("comments", "Comments", "VARCHAR(500)", TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("primary_specimen_type_id", "PrimaryTypeId", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "SpecimenPrimaryType", "ExternalId", "LEFT OUTER"),
-        new SpecimenColumn("derivative_type_id", "DerivativeTypeId", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "SpecimenDerivative", "ExternalId", "LEFT OUTER"),
-        new SpecimenColumn("derivative_type_id_2", "DerivativeTypeId2", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "SpecimenDerivative", "ExternalId", "LEFT OUTER"),
-        new SpecimenColumn("additive_type_id", "AdditiveTypeId", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "SpecimenAdditive", "ExternalId", "LEFT OUTER"),
-        new SpecimenColumn("specimen_condition", "SpecimenCondition", "VARCHAR(30)", TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("sample_number", "SampleNumber", "INT", TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("x_sample_origin", "XSampleOrigin", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("external_location", "ExternalLocation", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("update_timestamp", "UpdateTimestamp", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("requestable", "Requestable", BOOLEAN_TYPE, TargetTable.VIALS),
-        new SpecimenColumn("shipped_from_lab", "ShippedFromLab", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("shipped_to_lab", "ShippedtoLab", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("frozen_time", "FrozenTime", DURATION_TYPE, TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("primary_volume", "PrimaryVolume", "FLOAT", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
-        new SpecimenColumn("primary_volume_units", "PrimaryVolumeUnits", "VARCHAR(20)", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
-        new SpecimenColumn("processed_by_initials", "ProcessedByInitials", "VARCHAR(32)", TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("processing_date", "ProcessingDate", DATETIME_TYPE, TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("processing_time", "ProcessingTime", DURATION_TYPE, TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("quality_comments", "QualityComments", "VARCHAR(500)", TargetTable.SPECIMEN_EVENTS),
-        new SpecimenColumn("total_cell_count", "TotalCellCount", "FLOAT", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
-        new SpecimenColumn("tube_type", "TubeType", "VARCHAR(64)", TargetTable.VIALS_AND_SPECIMEN_EVENTS),
-        new SpecimenColumn("input_hash", "InputHash", BINARY_TYPE, TargetTable.SPECIMEN_EVENTS)   // Not pulled from file... maybe this should be a ComputedColumn
-    );
-
-    public static final Collection<ImportableColumn> ADDITIVE_COLUMNS = List.of(
-        new ImportableColumn("additive_id", "ExternalId", "INT NOT NULL", true),
-        new ImportableColumn("ldms_additive_code", "LdmsAdditiveCode", "VARCHAR(30)"),
-        new ImportableColumn("labware_additive_code", "LabwareAdditiveCode", "VARCHAR(20)"),
-        new ImportableColumn("additive", "Additive", "VARCHAR(100)")
-    );
-
-    public static final Collection<ImportableColumn> DERIVATIVE_COLUMNS = Arrays.asList(
-        new ImportableColumn("derivative_id", "ExternalId", "INT NOT NULL", true),
-        new ImportableColumn("ldms_derivative_code", "LdmsDerivativeCode", "VARCHAR(30)"),
-        new ImportableColumn("labware_derivative_code", "LabwareDerivativeCode", "VARCHAR(20)"),
-        new ImportableColumn("derivative", "Derivative", "VARCHAR(100)")
-    );
-
-    public static final Collection<ImportableColumn> SITE_COLUMNS = List.of(
-        new ImportableColumn("lab_id", "ExternalId", "INT NOT NULL", true),
-        new ImportableColumn("ldms_lab_code", "LdmsLabCode", "INT"),
-        new ImportableColumn("labware_lab_code", "LabwareLabCode", "VARCHAR(20)", false, true),
-        new ImportableColumn("lab_name", "Label", "VARCHAR(200)", false, true),
-        new ImportableColumn("lab_upload_code", "LabUploadCode", "VARCHAR(10)"),
-        new ImportableColumn("is_sal", "Sal", BOOLEAN_TYPE, Boolean.FALSE),
-        new ImportableColumn("is_repository", "Repository", BOOLEAN_TYPE, Boolean.FALSE),
-        new ImportableColumn("is_clinic", "Clinic", BOOLEAN_TYPE, Boolean.FALSE),
-        new ImportableColumn("is_endpoint", "Endpoint", BOOLEAN_TYPE, Boolean.FALSE),
-        new ImportableColumn("street_address", "StreetAddress", "VARCHAR(200)", false, true),
-        new ImportableColumn("city", "City", "VARCHAR(200)", false, true),
-        new ImportableColumn("governing_district", "GoverningDistrict", "VARCHAR(200)", false, true),
-        new ImportableColumn("country", "Country", "VARCHAR(200)", false, true),
-        new ImportableColumn("postal_area", "PostalArea", "VARCHAR(50)", false, true),
-        new ImportableColumn("description", "Description", "VARCHAR(500)", false, true)
-    );
-
-    public static final Collection<ImportableColumn> PRIMARYTYPE_COLUMNS = List.of(
-        new ImportableColumn("primary_type_id", "ExternalId", "INT NOT NULL", true),
-        new ImportableColumn("primary_type_ldms_code", "PrimaryTypeLdmsCode", "VARCHAR(5)"),
-        new ImportableColumn("primary_type_labware_code", "PrimaryTypeLabwareCode", "VARCHAR(5)"),
-        new ImportableColumn("primary_type", "PrimaryType", "VARCHAR(100)")
-    );
 
     private static final SpecimenColumn DRAW_DATE = new SpecimenColumn("", "DrawDate", "DATE", TargetTable.SPECIMENS);
     private static final SpecimenColumn DRAW_TIME = new SpecimenColumn("", "DrawTime", "TIME", TargetTable.SPECIMENS);
-
-    private static final Map<JdbcType, String> JDBCtoIMPORTER_TYPE = new HashMap<>();
-    static
-    {
-        JDBCtoIMPORTER_TYPE.put(JdbcType.DATE, DATETIME_TYPE);
-        JDBCtoIMPORTER_TYPE.put(JdbcType.TIMESTAMP, DATETIME_TYPE);
-        JDBCtoIMPORTER_TYPE.put(JdbcType.TIME, DURATION_TYPE);
-        JDBCtoIMPORTER_TYPE.put(JdbcType.DECIMAL, NUMERIC_TYPE);
-        JDBCtoIMPORTER_TYPE.put(JdbcType.BOOLEAN, BOOLEAN_TYPE);
-        JDBCtoIMPORTER_TYPE.put(JdbcType.BINARY, BINARY_TYPE);
-        JDBCtoIMPORTER_TYPE.put(JdbcType.BIGINT, "BIGINT");
-        JDBCtoIMPORTER_TYPE.put(JdbcType.INTEGER, "INT");
-        JDBCtoIMPORTER_TYPE.put(JdbcType.REAL, "FLOAT");
-        JDBCtoIMPORTER_TYPE.put(JdbcType.DOUBLE, null);
-        JDBCtoIMPORTER_TYPE.put(JdbcType.VARCHAR, "VARCHAR");
-    }
 
     private List<SpecimenColumn> _specimenCols;
     private List<SpecimenColumn> _vialCols;
@@ -1105,35 +227,6 @@ public class SpecimenImporter
     protected int _generateGlobalUniqueIds = 0;
 
     private static final int SQL_BATCH_SIZE = 100;
-
-    public static class SpecimenTableType
-    {
-        private final String _name;
-        private final String _tableName;
-        private final Collection<? extends ImportableColumn> _columns;
-
-        public SpecimenTableType(String name, String tableName, Collection<? extends ImportableColumn> columns)
-        {
-            _name = name;
-            _tableName = tableName;
-            _columns = columns;
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public String getTableName()
-        {
-            return _tableName;
-        }
-
-        public Collection<? extends ImportableColumn> getColumns()
-        {
-            return _columns;
-        }
-    }
 
     protected final SpecimenTableType _labsTableType;
     protected final SpecimenTableType _additivesTableType;
@@ -1151,99 +244,7 @@ public class SpecimenImporter
         return null;
     }
 
-    private String getTypeName(PropertyDescriptor property, SqlDialect dialect)
-    {
-        StudySchema.getInstance().getScope().getSqlDialect();
-        String typeName = JDBCtoIMPORTER_TYPE.get(property.getJdbcType());
-        if (null == typeName)
-            typeName = dialect.getSqlTypeName(property.getJdbcType());
-        if (null == typeName)
-            throw new UnsupportedOperationException("Unsupported JdbcType: " + property.getJdbcType().toString());
-        if ("VARCHAR".equals(typeName))
-            typeName = String.format("VARCHAR(%d)", property.getScale());
-        return typeName;
-    }
-
-    // Event -> Vial Rollup map
-    private final RollupMap<EventVialRollup> _eventToVialRollups = new RollupMap<>();
-    private final Container _container;
-    private final User _user;
-
-    // Provisioned specimen tables
-    private final TableInfo _tableInfoSpecimen;
-    private final TableInfo _tableInfoVial;
-    private final TableInfo _tableInfoSpecimenEvent;
-    private final TableInfo _tableInfoLocation;
-    private final TableInfo _tableInfoPrimaryType;
-    private final TableInfo _tableInfoDerivative;
-    private final TableInfo _tableInfoAdditive;
-    private final SqlDialect _dialect;
-
     private MultiPhaseCPUTimer.InvocationTimer<ImportPhases> _iTimer;
-
-    private TableInfo getTableInfoSpecimen()
-    {
-        return _tableInfoSpecimen;
-    }
-
-    private TableInfo getTableInfoVial()
-    {
-        return _tableInfoVial;
-    }
-
-    private TableInfo getTableInfoSpecimenEvent()
-    {
-        return _tableInfoSpecimenEvent;
-    }
-
-    private TableInfo getTableInfoPrimaryType()
-    {
-        return _tableInfoPrimaryType;
-    }
-    private TableInfo getTableInfoLocation()
-    {
-        return _tableInfoLocation;
-    }
-
-    private TableInfo getTableInfoDerivative()
-    {
-        return _tableInfoDerivative;
-    }
-
-    private TableInfo getTableInfoAdditive()
-    {
-        return _tableInfoAdditive;
-    }
-
-    public TableInfo getTableInfoFromFkTableName(String fkTableName)
-    {
-        if ("Site".equalsIgnoreCase(fkTableName))
-            return getTableInfoLocation();
-        if ("SpecimenPrimaryType".equalsIgnoreCase(fkTableName))
-            return getTableInfoPrimaryType();
-        if ("SpecimenDerivative".equalsIgnoreCase(fkTableName))
-            return getTableInfoDerivative();
-        if ("SpecimenAdditive".equalsIgnoreCase(fkTableName))
-            return getTableInfoAdditive();
-        throw new IllegalStateException("Unexpected table name.");
-    }
-
-    protected Container getContainer()
-    {
-        return _container;
-    }
-
-    protected User getUser()
-    {
-        return _user;
-    }
-
-    protected final Collection<SpecimenColumn> _specimenColumns;
-
-    public Collection<SpecimenColumn> getSpecimenColumns()
-    {
-        return _specimenColumns;
-    }
 
     /**
      * Constructor
@@ -1252,81 +253,36 @@ public class SpecimenImporter
      */
     public SpecimenImporter(Container container, User user)
     {
-        _container = container;
-        _user = user;
+        super(container, user);
 
-        _tableInfoSpecimenEvent = StudySchema.getInstance().getTableInfoSpecimenEvent(_container);
-        _tableInfoVial = StudySchema.getInstance().getTableInfoVial(_container);
-        _tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(_container);
-        _tableInfoPrimaryType = StudySchema.getInstance().getTableInfoSpecimenPrimaryType(_container);
-        _tableInfoLocation = StudySchema.getInstance().getTableInfoSite(_container);
-        _tableInfoDerivative = StudySchema.getInstance().getTableInfoSpecimenDerivative(_container);
-        _tableInfoAdditive = StudySchema.getInstance().getTableInfoSpecimenAdditive(_container);
-        _dialect = _tableInfoSpecimen.getSqlDialect();
-
-        _specimenColumns = determineSpecimenColumns();
-        _specimensTableType = new SpecimenTableType("specimens", "study.Specimen", _specimenColumns);
+        // The following could move to SpecimenTableManager, but they're only used by the importers
+        _specimensTableType = new SpecimenTableType("specimens", "study.Specimen", getSpecimenColumns());
         _labsTableType = new SpecimenTableType("labs",
-                StudySchema.getInstance().getTableInfoSite(_container).getSelectName(), SITE_COLUMNS);
+                SpecimenSchema.get().getTableInfoLocation(getContainer()).getSelectName(), SITE_COLUMNS);
         _additivesTableType = new SpecimenTableType("additives",
-                StudySchema.getInstance().getTableInfoSpecimenAdditive(_container).getSelectName(), ADDITIVE_COLUMNS);
+                SpecimenSchema.get().getTableInfoSpecimenAdditive(getContainer()).getSelectName(), SpecimenColumns.ADDITIVE_COLUMNS);
         _derivativesTableType = new SpecimenTableType("derivatives",
-                StudySchema.getInstance().getTableInfoSpecimenDerivative(_container).getSelectName(), DERIVATIVE_COLUMNS);
+                SpecimenSchema.get().getTableInfoSpecimenDerivative(getContainer()).getSelectName(), SpecimenColumns.DERIVATIVE_COLUMNS);
         _primaryTypesTableType = new SpecimenTableType("primary_types",
-                StudySchema.getInstance().getTableInfoSpecimenPrimaryType(_container).getSelectName(), PRIMARYTYPE_COLUMNS);
-    }
-
-    private Collection<SpecimenColumn> determineSpecimenColumns()
-    {
-        Collection<SpecimenColumn> specimenColumns = new ArrayList<>(BASE_SPECIMEN_COLUMNS);
-
-        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(_container, _user, null);
-
-        Domain vialDomain = specimenTablesProvider.getDomain("Vial", true);
-        if (null == vialDomain)
-            throw new IllegalStateException("Expected Vial domain to already be created.");
-
-        List<PropertyDescriptor> vialProperties = new ArrayList<>();
-        for (DomainProperty domainProperty : vialDomain.getNonBaseProperties())
-            vialProperties.add(domainProperty.getPropertyDescriptor());
-
-        Domain specimenEventDomain = specimenTablesProvider.getDomain("SpecimenEvent", true);
-        if (null == specimenEventDomain)
-            throw new IllegalStateException("Expected SpecimenEvent domain to already be created.");
-
-        SqlDialect dialect = getTableInfoSpecimen().getSqlDialect();
-
-        Set<DomainProperty> eventBaseProperties = specimenEventDomain.getBaseProperties();
-        for (DomainProperty domainProperty : specimenEventDomain.getProperties())
-        {
-            PropertyDescriptor property = domainProperty.getPropertyDescriptor();
-            if (!eventBaseProperties.contains(domainProperty))
-            {
-                SpecimenColumn specimenColumn = new SpecimenColumn(property.getName().toLowerCase(), property.getImportAliasSet(), property.getStorageColumnName(), getTypeName(property, dialect), TargetTable.SPECIMEN_EVENTS);
-                specimenColumns.add(specimenColumn);
-            }
-            findRollups(_eventToVialRollups, property, vialProperties, _eventVialRollups, false);
-        }
-
-        return specimenColumns;
+                SpecimenSchema.get().getTableInfoSpecimenPrimaryType(getContainer()).getSelectName(), SpecimenColumns.PRIMARYTYPE_COLUMNS);
     }
 
     private void resyncStudy(boolean syncParticipantVisit)
     {
-        TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
+        TableInfo tableParticipant = SpecimenSchema.get().getTableInfoParticipant();
         TableInfo tableSpecimen = getTableInfoSpecimen();
 
         executeSQL(tableParticipant.getSchema(), "INSERT INTO " + tableParticipant.getSelectName() + " (Container, ParticipantId)\n" +
             "SELECT DISTINCT ?, ptid AS ParticipantId\n" +
             "FROM " + tableSpecimen.getSelectName() + "\n" +
             "WHERE ptid IS NOT NULL AND " +
-            "ptid NOT IN (SELECT ParticipantId FROM " + tableParticipant.getSelectName() + " WHERE Container = ?)", _container, _container);
+            "ptid NOT IN (SELECT ParticipantId FROM " + tableParticipant.getSelectName() + " WHERE Container = ?)", getContainer(), getContainer());
 
         if (syncParticipantVisit)
         {
-            StudyImpl study = StudyManager.getInstance().getStudy(_container);
+            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             info("Updating study-wide subject/visit information...");
-            StudyManager.getInstance().getVisitManager(study).updateParticipantVisitsFromSpecimenImport(_user, _logger);
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisitsFromSpecimenImport(getUser(), _logger);
             info("Subject/visit update complete.");
         }
 
@@ -1372,7 +328,7 @@ public class SpecimenImporter
                            boolean syncParticipantVisit, boolean editingSpecimens, boolean failForUndefinedVisits)
             throws IOException, ValidationException
     {
-        DbSchema schema = StudySchema.getInstance().getSchema();
+        DbSchema schema = SpecimenSchema.get().getSchema();
         _logger = logger;
         _job = job;
 
@@ -1392,7 +348,7 @@ public class SpecimenImporter
                 }
                 finally
                 {
-                    LocationCache.clear(_container);
+                    LocationCache.clear(getContainer());
                 }
             }
 
@@ -1423,7 +379,7 @@ public class SpecimenImporter
             SpecimenImportFile specimenFile = sifMap.get(_specimensTableType);
             SpecimenLoadInfo loadInfo = populateTempSpecimensTable(specimenFile, merge);
 
-            StudyImpl study = StudyManager.getInstance().getStudy(_container);
+            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             if (loadInfo.getRowCount() > 0 && failForUndefinedVisits && study.getTimepointType() == TimepointType.VISIT)
                 checkForUndefinedVisits(loadInfo, study);
 
@@ -1437,7 +393,7 @@ public class SpecimenImporter
             {
                 // Delete any orphaned specimen rows without vials
                 _iTimer.setPhase(ImportPhases.DeleteOldData);
-                executeSQL(StudySchema.getInstance().getSchema(), "DELETE FROM " + getTableInfoSpecimen().getSelectName() +
+                executeSQL(SpecimenSchema.get().getSchema(), "DELETE FROM " + getTableInfoSpecimen().getSelectName() +
                                   " WHERE RowId NOT IN (SELECT SpecimenId FROM " + getTableInfoVial().getSelectName() + ")");
             }
 
@@ -1451,9 +407,9 @@ public class SpecimenImporter
             ensureNotCanceled();
             _iTimer.setPhase(ImportPhases.SetLastSpecimenLoad);
             // Set LastSpecimenLoad to now... we'll check this before snapshot study specimen refresh
-            study = StudyManager.getInstance().getStudy(_container).createMutable();
+            study = StudyManager.getInstance().getStudy(getContainer()).createMutable();
             study.setLastSpecimenLoad(new Date());
-            StudyManager.getInstance().updateStudy(_user, study);
+            StudyManager.getInstance().updateStudy(getUser(), study);
 
             _iTimer.setPhase(ImportPhases.DropTempTable);
 
@@ -1468,7 +424,7 @@ public class SpecimenImporter
             // notify listeners that specimens have changed in this container
             setStatus(GENERAL_JOB_STATUS_MSG);
             _iTimer.setPhase(ImportPhases.NotifyChanged);
-            ((SpecimenServiceImpl) SpecimenService.get()).fireSpecimensChanged(_container, _user, _logger);
+            ((SpecimenServiceImpl) SpecimenService.get()).fireSpecimensChanged(getContainer(), getUser(), _logger);
 
             _iTimer.setPhase(ImportPhases.CommitTransaction);
             transaction.commit();
@@ -1481,8 +437,8 @@ public class SpecimenImporter
                 if (commitSuccessfully)
                 {
                     _iTimer.setPhase(ImportPhases.ClearCaches);
-                    StudyManager.getInstance().clearCaches(_container, false);
-                    SpecimenManager.getInstance().clearCaches(_container);
+                    StudyManager.getInstance().clearCaches(getContainer(), false);
+                    SpecimenManager.getInstance().clearCaches(getContainer());
 
                     info(_iTimer.getTimings("Timings for each phase of this import are listed below:", Order.HighToLow, "|"));
                 }
@@ -1507,7 +463,7 @@ public class SpecimenImporter
         if (tempTablesHolder.getSelectInsertTempTableInfo().isTracking())      // If no specimens we will not have created this table
             tempTablesHolder.getSelectInsertTempTableInfo().delete();
 
-        return new SpecimenLoadInfo(_user, _container, DbSchema.getTemp(), columns, rowCount, tempTablesHolder.getTempTableInfo());
+        return new SpecimenLoadInfo(getUser(), getContainer(), DbSchema.getTemp(), columns, rowCount, tempTablesHolder.getTempTableInfo());
     }
 
     private void checkForUndefinedVisits(SpecimenLoadInfo info, StudyImpl study) throws ValidationException
@@ -1524,7 +480,7 @@ public class SpecimenImporter
         Study visitStudy = StudyManager.getInstance().getStudyForVisits(study);
         sql.add(visitStudy.getContainer().getId());
 
-        SqlSelector selector = new SqlSelector(StudySchema.getInstance().getSchema(), sql);
+        SqlSelector selector = new SqlSelector(SpecimenSchema.get().getSchema(), sql);
         List<Double> undefinedVisits = selector.getArrayList(Double.class);
         if (!undefinedVisits.isEmpty())
         {
@@ -1661,12 +617,12 @@ public class SpecimenImporter
             .append("\nWHERE GlobalUniqueId = ?")
             .add(vial.getGlobalUniqueId());
 
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+        new SqlExecutor(SpecimenSchema.get().getSchema()).execute(sql);
     }
 
     private void updateCommentSpecimenHashes()
     {
-        TableInfo commentTable = StudySchema.getInstance().getTableInfoSpecimenComment();
+        TableInfo commentTable = SpecimenSchema.get().getTableInfoSpecimenComment();
         String commentTableSelectName = commentTable.getSelectName();
         TableInfo vialTable = getTableInfoVial();
         String vialTableSelectName = vialTable.getSelectName();
@@ -1683,10 +639,10 @@ public class SpecimenImporter
             .append(")\nWHERE ")
             .append(commentTable.getColumn("Container").getValueSql(commentTableSelectName))
             .append(" = ?")
-            .add(_container.getId());
+            .add(getContainer().getId());
 
         info("Updating hash codes for existing comments...");
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+        new SqlExecutor(SpecimenSchema.get().getSchema()).execute(sql);
         info("Complete.");
     }
 
@@ -1722,7 +678,7 @@ public class SpecimenImporter
 
         // Delete comments that were holding QC state (and nothing more) for vials that do not currently have any conflicts
         SQLFragment deleteClearedVials = new SQLFragment("DELETE FROM study.SpecimenComment WHERE Container = ? ")
-            .add(_container.getId())
+            .add(getContainer().getId())
             .append("AND Comment IS NULL AND QualityControlFlag = ? ")
             .add(Boolean.TRUE)
             .append("AND QualityControlFlagForced = ? ")
@@ -1731,7 +687,7 @@ public class SpecimenImporter
             .append(conflictedGUIDs)
             .append(");");
         info("Clearing QC flags for vials that no longer have history conflicts...");
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(deleteClearedVials);
+        new SqlExecutor(SpecimenSchema.get().getSchema()).execute(deleteClearedVials);
         info("Complete.");
 
 
@@ -1740,19 +696,19 @@ public class SpecimenImporter
         SQLFragment insertPlaceholderQCComments = new SQLFragment("INSERT INTO study.SpecimenComment ")
             .append("(GlobalUniqueId, Container, QualityControlFlag, QualityControlFlagForced, Created, CreatedBy, Modified, ModifiedBy) ")
             .append("SELECT GlobalUniqueId, ?, ?, ?, ?, ?, ?, ? ")
-            .add(_container.getId())
+            .add(getContainer().getId())
             .add(Boolean.TRUE)
             .add(Boolean.FALSE)
             .add(new Date())
-            .add(_user.getUserId())
+            .add(getUser().getUserId())
             .add(new Date())
-            .add(_user.getUserId())
+            .add(getUser().getUserId())
             .append(" FROM (\n").append(conflictedGUIDs).append(") ConflictedVials\n")
             .append("WHERE GlobalUniqueId NOT IN ")
             .append("(SELECT GlobalUniqueId FROM study.SpecimenComment WHERE Container = ?);")
-            .add(_container.getId());
+            .add(getContainer().getId());
         info("Setting QC flags for vials that have new history conflicts...");
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(insertPlaceholderQCComments);
+        new SqlExecutor(SpecimenSchema.get().getSchema()).execute(insertPlaceholderQCComments);
         info("Complete.");
     }
 
@@ -1774,10 +730,10 @@ public class SpecimenImporter
             .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName))
             .append(" IS NULL AND\n")
             .append("\t\tstudy.SampleRequestSpecimen.Container = ?);")
-            .add(_container.getId());
+            .add(getContainer().getId());
         info("Marking requested vials that have been orphaned...");
 
-        SqlExecutor executor = new SqlExecutor(StudySchema.getInstance().getSchema());
+        SqlExecutor executor = new SqlExecutor(SpecimenSchema.get().getSchema());
         executor.execute(orphanMarkerSql);
         info("Complete.");
 
@@ -1797,7 +753,7 @@ public class SpecimenImporter
             .append("\t\tstudy.SampleRequestSpecimen.Orphaned = ? AND\n")
             .add(Boolean.TRUE)
             .append("\t\tstudy.SampleRequestSpecimen.Container = ?);")
-            .add(_container.getId());
+            .add(getContainer().getId());
         info("Marking requested vials that have been de-orphaned...");
         executor.execute(deorphanMarkerSql);
         info("Complete.");
@@ -1814,10 +770,10 @@ public class SpecimenImporter
                 .append(vialTable.getColumn("GlobalUniqueId").getValueSql(vialTableSelectName)).append(" = study.LockedSpecimens.GlobalUniqueId)");
 
         lockedInRequestSql.add(Boolean.TRUE);
-        lockedInRequestSql.add(_container.getId());
+        lockedInRequestSql.add(getContainer().getId());
 
         info("Setting Specimen Locked in Request status...");
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(lockedInRequestSql);
+        new SqlExecutor(SpecimenSchema.get().getSchema()).execute(lockedInRequestSql);
         info("Complete.");
     }
 
@@ -1835,7 +791,7 @@ public class SpecimenImporter
                 "\tHAVING COUNT(ProcessingLocation) = 1\n" +
                 ")");
         info("Updating processing locations on the specimen table...");
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+        new SqlExecutor(SpecimenSchema.get().getSchema()).execute(sql);
         info("Complete.");
 
         sql = new SQLFragment("UPDATE ").append(specimenTableSelectName).append(" SET FirstProcessedByInitials = (\n" +
@@ -1846,7 +802,7 @@ public class SpecimenImporter
                 "\tHAVING COUNT(FirstProcessedByInitials) = 1\n" +
                 ")");
         info("Updating first processed by initials on the specimen table...");
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+        new SqlExecutor(SpecimenSchema.get().getSchema()).execute(sql);
         info("Complete.");
     }
 
@@ -1871,14 +827,14 @@ public class SpecimenImporter
 
         _iTimer.setPhase(ImportPhases.VialUpdatePreLoopPrep);
         // clear caches before determining current sites:
-        SpecimenManager.getInstance().clearCaches(_container);
+        SpecimenManager.getInstance().clearCaches(getContainer());
         final Map<Integer, Location> siteMap = new HashMap<>();
 
         TableInfo vialTable = getTableInfoVial();
         StringBuilder vialPropertiesSB = new StringBuilder("UPDATE ").append(vialTable.getSelectName())
             .append(" SET CurrentLocation = CAST(? AS INTEGER), ProcessingLocation = CAST(? AS INTEGER), FirstProcessedByInitials = ?, AtRepository = ?, LatestComments = ?, LatestQualityComments = ? ");
 
-        for (List<RollupInstance<EventVialRollup>> rollupList : _eventToVialRollups.values())
+        for (List<RollupInstance<EventVialRollup>> rollupList : getEventToVialRollups().values())
         {
             for (RollupInstance<EventVialRollup> rollup : rollupList)
             {
@@ -1897,7 +853,7 @@ public class SpecimenImporter
 
         _iTimer.setPhase(ImportPhases.HandleComments);
 
-        TableInfo commentTable = StudySchema.getInstance().getTableInfoSpecimenComment();
+        TableInfo commentTable = SpecimenSchema.get().getTableInfoSpecimenComment();
         final String updateCommentSql = "UPDATE " + commentTable + " SET QualityControlComments = ? WHERE GlobalUniqueId = ?";
 
         // Populate a GlobalUniqueId -> SpecimenEvent map containing all quality control vial comments in this container
@@ -1913,7 +869,7 @@ public class SpecimenImporter
             .add(true)
             .add(true);
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), selectCommentsSql).forEach(SpecimenComment.class, comment -> qcCommentMap.put(comment.getGlobalUniqueId(), comment));
+        new SqlSelector(SpecimenSchema.get().getSchema(), selectCommentsSql).forEach(SpecimenComment.class, comment -> qcCommentMap.put(comment.getGlobalUniqueId(), comment));
 
 //        if (!merge)
 //            new SpecimenTablesProvider(getContainer(), getUser(), null).dropTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
@@ -1927,7 +883,6 @@ public class SpecimenImporter
         {
             final MutableInt rowCount = new MutableInt();
             final MarkableIterator<Map<String, Object>> eventIterator = new MarkableIterator<>(eventResults.iterator());
-            final Comparator<SpecimenEvent> eventComparator = SpecimenManager.getInstance().getSpecimenEventDateComparator();
 
             _iTimer.setPhase(ImportPhases.GetVialBatch);
             TableSelector vialSelector = new TableSelector(getTableInfoVial(), null, new Sort("RowId"));
@@ -1942,7 +897,7 @@ public class SpecimenImporter
                 final List<Vial> vials = new ArrayList<>(CURRENT_SITE_UPDATE_SIZE);
 
                 for (Map<String, Object> map : vialBatch)
-                    vials.add(new Vial(_container, map));
+                    vials.add(new Vial(getContainer(), map));
 
                 List<List<?>> vialPropertiesParams = new ArrayList<>(CURRENT_SITE_UPDATE_SIZE);
                 List<List<?>> commentParams = new ArrayList<>();
@@ -1960,7 +915,7 @@ public class SpecimenImporter
 
                         if (vialId == (Long) map.get("VialId"))
                         {
-                            dateOrderedEvents.add(new SpecimenEvent(_container, map));
+                            dateOrderedEvents.add(new SpecimenEvent(getContainer(), map));
                         }
                         else
                         {
@@ -1968,14 +923,14 @@ public class SpecimenImporter
                             break;
                         }
                     }
-                    dateOrderedEvents.sort(eventComparator);
+                    dateOrderedEvents.sort(SpecimenEventDateComparator.get());
 
                     _iTimer.setPhase(ImportPhases.GetProcessingLocationId);
-                    Integer processingLocation = SpecimenManager.getInstance().getProcessingLocationId(dateOrderedEvents);
+                    Integer processingLocation = LocationManager.get().getProcessingLocationId(dateOrderedEvents);
                     _iTimer.setPhase(ImportPhases.GetFirstProcessedBy);
-                    String firstProcessedByInitials = SpecimenManager.getInstance().getFirstProcessedByInitials(dateOrderedEvents);
+                    String firstProcessedByInitials = SpecimenEventManager.get().getFirstProcessedByInitials(dateOrderedEvents);
                     _iTimer.setPhase(ImportPhases.GetCurrentLocationId);
-                    Integer currentLocation = SpecimenManager.getInstance().getCurrentLocationId(dateOrderedEvents);
+                    Integer currentLocation = LocationManager.get().getCurrentLocationId(dateOrderedEvents);
 
                     _iTimer.setPhase(ImportPhases.CalculateLocation);
                     boolean atRepository = false;
@@ -1986,7 +941,7 @@ public class SpecimenImporter
 
                         if (!siteMap.containsKey(currentLocation))
                         {
-                            location = StudyManager.getInstance().getLocation(_container, currentLocation);
+                            location = LocationManager.get().getLocation(getContainer(), currentLocation);
                             if (location != null)
                                 siteMap.put(currentLocation, location);
                         }
@@ -1999,9 +954,9 @@ public class SpecimenImporter
                             atRepository = location.isRepository() != null && location.isRepository();
                     }
 
-                    // All of the additional fields (deviationCodes, Concetration, Integrity, Yield, Ratio, QualityComments, Comments) always take the latest value
+                    // All of the additional fields (deviationCodes, Concentration, Integrity, Yield, Ratio, QualityComments, Comments) always take the latest value
                     _iTimer.setPhase(ImportPhases.GetLastEvent);
-                    SpecimenEvent lastEvent = SpecimenManager.getInstance().getLastEvent(dateOrderedEvents);
+                    SpecimenEvent lastEvent = SpecimenEventManager.get().getLastEvent(dateOrderedEvents);
                     if (null == lastEvent)
                         throw new IllegalStateException("There should always be at least 1 event.");
 
@@ -2021,7 +976,7 @@ public class SpecimenImporter
 
                     if (!updateVial)
                     {
-                        for (Map.Entry<String, List<RollupInstance<EventVialRollup>>> rollupEntry : _eventToVialRollups.entrySet())
+                        for (Map.Entry<String, List<RollupInstance<EventVialRollup>>> rollupEntry : getEventToVialRollups().entrySet())
                         {
                             String eventColName = rollupEntry.getKey();
                             ColumnInfo column = getTableInfoSpecimenEvent().getColumn(eventColName);
@@ -2055,7 +1010,7 @@ public class SpecimenImporter
                         params.add(lastEvent.getComments());
                         params.add(lastEvent.getQualityComments());
 
-                        for (Map.Entry<String, List<RollupInstance<EventVialRollup>>> rollupEntry : _eventToVialRollups.entrySet())
+                        for (Map.Entry<String, List<RollupInstance<EventVialRollup>>> rollupEntry : getEventToVialRollups().entrySet())
                         {
                             String eventColName = rollupEntry.getKey();
                             ColumnInfo column = getTableInfoSpecimenEvent().getColumn(eventColName);
@@ -2112,11 +1067,11 @@ public class SpecimenImporter
 
                 _iTimer.setPhase(ImportPhases.UpdateVials);
                 if (!vialPropertiesParams.isEmpty())
-                    Table.batchExecute(StudySchema.getInstance().getSchema(), vialPropertiesSql, vialPropertiesParams);
+                    Table.batchExecute(SpecimenSchema.get().getSchema(), vialPropertiesSql, vialPropertiesParams);
 
                 _iTimer.setPhase(ImportPhases.UpdateComments);
                 if (!commentParams.isEmpty())
-                    Table.batchExecute(StudySchema.getInstance().getSchema(), updateCommentSql, commentParams);
+                    Table.batchExecute(SpecimenSchema.get().getSchema(), updateCommentSql, commentParams);
 
                 rowCount.add(CURRENT_SITE_UPDATE_SIZE);
                 _iTimer.setPhase(ImportPhases.GetVialBatch);
@@ -2138,7 +1093,7 @@ public class SpecimenImporter
         _iTimer.setPhase(ImportPhases.UpdateRequestability);
         try
         {
-            RequestabilityManager.getInstance().updateRequestability(_container, _user, false, editingSpecimens, _logger);
+            RequestabilityManager.getInstance().updateRequestability(getContainer(), getUser(), false, editingSpecimens, _logger);
         }
         catch (RequestabilityManager.InvalidRuleException e)
         {
@@ -2148,7 +1103,7 @@ public class SpecimenImporter
         _iTimer.setPhase(ImportPhases.UpdateVialCounts);
         info("Updating cached vial counts...");
 
-        SpecimenManager.getInstance().updateVialCounts(_container, _user);
+        SpecimenRequestManager.get().updateVialCounts(getContainer(), getUser());
 
         info("Vial count update complete.");
     }
@@ -2178,7 +1133,7 @@ public class SpecimenImporter
                 SpecimenTableType type = getForName(canonicalName);
 
                 if (null != type)
-                    fileNameMap.put(type, getSpecimenImportFile(_container, dir, fileName, type));
+                    fileNameMap.put(type, getSpecimenImportFile(getContainer(), dir, fileName, type));
             }
         }
 
@@ -2188,7 +1143,7 @@ public class SpecimenImporter
     // TODO: Pass in merge (or import strategy)?
     private SpecimenImportFile getSpecimenImportFile(Container c, VirtualFile dir, String fileName, SpecimenTableType type)
     {
-        DbSchema schema = StudySchema.getInstance().getSchema();
+        DbSchema schema = SpecimenSchema.get().getSchema();
 
         // Enumerate the import filter factories... first one to claim the file gets associated with it
         for (SpecimenImportStrategyFactory factory : SpecimenService.get().getSpecimenImportStrategyFactories())
@@ -2254,7 +1209,7 @@ public class SpecimenImporter
             StringBuilder cols = new StringBuilder();
             for (SpecimenColumn col : getSpecimenCols(availableColumns))
             {
-                cols.append(sep).append(col.getLegalDbColumnName(_dialect));
+                cols.append(sep).append(col.getLegalDbColumnName(getSqlDialect()));
                 sep = ",\n   ";
             }
             if (!seenVisitValue)
@@ -2287,7 +1242,7 @@ public class SpecimenImporter
             StringBuilder cols = new StringBuilder();
             for (SpecimenColumn col : getVialCols(availableColumns))
             {
-                cols.append(sep).append(col.getLegalDbColumnName(_dialect));
+                cols.append(sep).append(col.getLegalDbColumnName(getSqlDialect()));
                 sep = ",\n   ";
             }
             _vialColsSql = cols.toString();
@@ -2318,7 +1273,7 @@ public class SpecimenImporter
             StringBuilder cols = new StringBuilder();
             for (SpecimenColumn col : getSpecimenEventCols(availableColumns))
             {
-                cols.append(sep).append(col.getLegalDbColumnName(_dialect));
+                cols.append(sep).append(col.getLegalDbColumnName(getSqlDialect()));
                 sep = ",\n    ";
             }
             _vialEventColsSql = cols.toString();
@@ -2368,7 +1323,7 @@ public class SpecimenImporter
 
         String insertMaterialSQL = "INSERT INTO exp.Material (RowId, LSID, Name, ObjectId, Container, CpasType, Created)  \n" +
                 "SELECT ? + (ROW_NUMBER() OVER (ORDER BY ObjectId)), LSID, Name, ObjectId, Container, CpasType, Created FROM\n" +
-                "(SELECT DISTINCT T.LSID, T." + columnName + " AS Name, (SELECT ObjectId FROM exp.Object O where O.ObjectURI=T.LSID) AS ObjectId, ? AS Container, ? AS CpasType, CAST(? AS " + _dialect.getDefaultDateTimeDataType()+ ") AS Created\n" +
+                "(SELECT DISTINCT T.LSID, T." + columnName + " AS Name, (SELECT ObjectId FROM exp.Object O where O.ObjectURI=T.LSID) AS ObjectId, ? AS Container, ? AS CpasType, CAST(? AS " + getSqlDialect().getDefaultDateTimeDataType()+ ") AS Created\n" +
                 " FROM " + info.getTempTableName() + " T LEFT OUTER JOIN exp.Material M ON T.LSID = M.LSID\n" +
                 " WHERE M.LSID IS NULL) X\n";
 
@@ -2464,7 +1419,7 @@ public class SpecimenImporter
         {
             columnList.append(prefix);
             prefix = ", ";
-            columnList.append("\n    ").append(info.getTempTableName()).append(".").append(col.getLegalDbColumnName(_dialect));
+            columnList.append("\n    ").append(info.getTempTableName()).append(".").append(col.getLegalDbColumnName(getSqlDialect()));
         }
         return columnList.toString();
     }
@@ -2474,7 +1429,7 @@ public class SpecimenImporter
                                             @Nullable SpecimenColumn castColumn)
     {
         // If castColumn no null, then we still count col, but then cast col's value to castColumn's type and name it castColumn's name
-        String selectCol = tempTableName + "." + col.getLegalDbColumnName(_dialect);
+        String selectCol = tempTableName + "." + col.getLegalDbColumnName(getSqlDialect());
 
         if (col.getAggregateEventFunction() != null)
         {
@@ -2494,7 +1449,7 @@ public class SpecimenImporter
             {
                 if (null != castColumn)
                 {
-                    sql.append(" COUNT(DISTINCT(").append(tempTableName).append(".").append(castColumn.getLegalDbColumnName(_dialect)).append(")) = 1 THEN ");
+                    sql.append(" COUNT(DISTINCT(").append(tempTableName).append(".").append(castColumn.getLegalDbColumnName(getSqlDialect())).append(")) = 1 THEN ");
                     sql.append("CAST(MIN(").append(selectCol).append(") AS ").append(castColumn.getDbType()).append(")");
                 }
                 else
@@ -2508,9 +1463,9 @@ public class SpecimenImporter
         sql.append(" AS ");
 
         if (null != castColumn)
-            sql.append(castColumn.getLegalDbColumnName(_dialect));
+            sql.append(castColumn.getLegalDbColumnName(getSqlDialect()));
         else
-            sql.append(col.getLegalDbColumnName(_dialect));
+            sql.append(col.getLegalDbColumnName(getSqlDialect()));
     }
 
 
@@ -2663,7 +1618,7 @@ public class SpecimenImporter
             .add(Boolean.TRUE);
 
         for (SpecimenColumn col : getVialCols(info.getAvailableColumns()))
-            insertSelectSql.append(prefix).append("VialList.").append(col.getLegalDbColumnName(_dialect));
+            insertSelectSql.append(prefix).append("VialList.").append(col.getLegalDbColumnName(getSqlDialect()));
 
         insertSelectSql
             .append(" FROM (").append(getVialListFromTempTableSql(info, false, seenVisitValue))
@@ -2689,7 +1644,7 @@ public class SpecimenImporter
             cols.add(new SpecimenColumn("RowId", "RowId", "INT NOT NULL", TargetTable.VIALS, false));
             cols.add(new SpecimenColumn("SpecimenId", "SpecimenId", "INT NOT NULL", TargetTable.VIALS, false));
             cols.add(new SpecimenColumn("SpecimenHash", "SpecimenHash", "VARCHAR(256)", TargetTable.VIALS, false));
-            cols.add(new SpecimenColumn("Available", "Available", BOOLEAN_TYPE, TargetTable.VIALS, false));
+            cols.add(new SpecimenColumn("Available", "Available", ImportTypes.BOOLEAN_TYPE, TargetTable.VIALS, false));
             cols.addAll(getVialCols(info.getAvailableColumns()));
 
             // Insert or update the vials from in the temp table.
@@ -2933,8 +1888,8 @@ public class SpecimenImporter
             keyColumns = null;
 
         DataIteratorBuilder specimenIter = new SpecimenImportBuilder(new DataIteratorBuilder.Wrapper(iter), potentialColumns, Collections.singletonList(idCol));
-        DataIteratorBuilder std = StandardDataIteratorBuilder.forInsert(target, specimenIter, _container, getUser(), dix);
-        DataIteratorBuilder tableIter = new TableInsertDataIteratorBuilder(std, target, _container)
+        DataIteratorBuilder std = StandardDataIteratorBuilder.forInsert(target, specimenIter, getContainer(), getUser(), dix);
+        DataIteratorBuilder tableIter = new TableInsertDataIteratorBuilder(std, target, getContainer())
             .setKeyColumns(keyColumns)
             .setAddlSkipColumns(skipColumns)
             .setDontUpdate(dontUpdate);
@@ -2994,7 +1949,7 @@ public class SpecimenImporter
 
         assert !_specimensTableType.getTableName().equalsIgnoreCase(tableName);
         if (hasContainerColumn)
-            executeSQL(schema, "DELETE FROM " + tableName + " WHERE Container = ?", _container.getId());
+            executeSQL(schema, "DELETE FROM " + tableName + " WHERE Container = ?", getContainer().getId());
         else
             executeSQL(schema, "DELETE FROM " + tableName);
 
@@ -3072,7 +2027,7 @@ public class SpecimenImporter
             //DataIteratorBuilder asyncIn = new AsyncDataIterator.Builder(tsv);
             DataIteratorBuilder asyncIn = tsv;
             DataIteratorBuilder specimenWrapped = new SpecimenImportBuilder(asyncIn, file.getTableType().getColumns(), computedColumns);
-            DataIteratorBuilder standardEtl = StandardDataIteratorBuilder.forInsert(target, specimenWrapped, _container, getUser(), dix);
+            DataIteratorBuilder standardEtl = StandardDataIteratorBuilder.forInsert(target, specimenWrapped, getContainer(), getUser(), dix);
             DataIteratorBuilder persist = ((UpdateableTableInfo)target).persistRows(standardEtl, dix);
             Pump pump = new Pump(persist, dix);
             pump.setProgress(new ListImportProgress()
@@ -3337,7 +2292,7 @@ public class SpecimenImporter
                     throw new ValidationException("GlobalUniqueId is required but was not supplied");
                 }
 
-                Lsid lsid = SpecimenService.get().getSpecimenMaterialLsid(_container, id);
+                Lsid lsid = SpecimenService.get().getSpecimenMaterialLsid(getContainer(), id);
                 return lsid.toString();
             }
         };
@@ -3355,9 +2310,9 @@ public class SpecimenImporter
                 _participantIdCol = sc;
         }
 
-        final Study study = StudyManager.getInstance().getStudy(_container);
+        final Study study = StudyManager.getInstance().getStudy(getContainer());
         final SequenceNumImportHelper h = new SequenceNumImportHelper(study, null);
-        final ParticipantIdImportHelper piih = new ParticipantIdImportHelper(study, _user, null);
+        final ParticipantIdImportHelper piih = new ParticipantIdImportHelper(study, getUser(), null);
         final SpecimenColumn visitCol = _visitCol;
         final SpecimenColumn dateCol = DRAW_TIMESTAMP;
         final SpecimenColumn participantIdCol = _participantIdCol;
@@ -3486,10 +2441,10 @@ public class SpecimenImporter
         {
             if (col.getFkTable() != null)
             {
-                remapExternalIdsSql.append(sep).append(col.getLegalDbColumnName(_dialect)).append(" = (SELECT RowId FROM ")
+                remapExternalIdsSql.append(sep).append(col.getLegalDbColumnName(getSqlDialect())).append(" = (SELECT RowId FROM ")
                         .append(getTableInfoFromFkTableName(col.getFkTable()).getSelectName()).append(" ").append(col.getFkTableAlias())
                         .append(" WHERE ").append("(").append(tempTable).append(".")
-                        .append(col.getLegalDbColumnName(_dialect)).append(" = ").append(col.getFkTableAlias()).append(".").append(col.getFkColumn())
+                        .append(col.getLegalDbColumnName(getSqlDialect())).append(" = ").append(col.getFkTableAlias()).append(".").append(col.getFkColumn())
                         .append("))");
                 sep = ",\n\t";
             }
@@ -3505,7 +2460,7 @@ public class SpecimenImporter
 
     private void updateTempTableVisits(DbSchema schema, String tempTable)
     {
-        Study study = StudyManager.getInstance().getStudy(_container);
+        Study study = StudyManager.getInstance().getStudy(getContainer());
         if (study.getTimepointType() != TimepointType.VISIT)
         {
             info("Updating visit values to match draw timestamps (date-based studies only)...");
@@ -3524,7 +2479,7 @@ public class SpecimenImporter
 
     protected void checkForConflictingSpecimens(DbSchema schema, String tempTable, List<SpecimenColumn> loadedColumns)
     {
-        if (!StudyManager.getInstance().getStudy(_container).getRepositorySettings().isSpecimenDataEditable())
+        if (!SettingsManager.get().getRepositorySettings(getContainer()).isSpecimenDataEditable())
         {
             info("Checking for conflicting specimens before merging...");
 
@@ -3535,7 +2490,7 @@ public class SpecimenImporter
                 if (col.getTargetTable().isSpecimens() && col.getAggregateEventFunction() == null)
                 {
                     hashCols.append(",\n\t");
-                    hashCols.append(col.getLegalDbColumnName(_dialect));
+                    hashCols.append(col.getLegalDbColumnName(getSqlDialect()));
                 }
             }
             hashCols.append("\n");
@@ -3662,7 +2617,7 @@ public class SpecimenImporter
             if (col.getTargetTable().isSpecimens())
             {
                 conflictResolvingSubselect.append(",\n\t");
-                String selectCol = tempTableName + "." + col.getLegalDbColumnName(_dialect);
+                String selectCol = tempTableName + "." + col.getLegalDbColumnName(getSqlDialect());
 
                 if (col.getAggregateEventFunction() != null)
                     conflictResolvingSubselect.append(col.getAggregateEventFunction()).append("(").append(selectCol).append(")");
@@ -3684,13 +2639,13 @@ public class SpecimenImporter
                     conflictResolvingSubselect.append(singletonAggregate);
                     conflictResolvingSubselect.append(" ELSE NULL END");
                 }
-                conflictResolvingSubselect.append(" AS ").append(col.getLegalDbColumnName(_dialect));
+                conflictResolvingSubselect.append(" AS ").append(col.getLegalDbColumnName(getSqlDialect()));
             }
         }
         conflictResolvingSubselect.append("\nFROM ").append(tempTableName).append("\nGROUP BY GlobalUniqueId");
 
         SQLFragment updateHashSql = new SQLFragment("SELECT (");
-        makeUpdateSpecimenHashSql(schema, _container, loadedColumns, "InnerTable.", updateHashSql);
+        makeUpdateSpecimenHashSql(schema, getContainer(), loadedColumns, "InnerTable.", updateHashSql);
         updateHashSql.append(") AS SpecimenHash, ")
             .append("InnerTable.GlobalUniqueId")
             .append("\n\tINTO ")
@@ -3731,7 +2686,7 @@ public class SpecimenImporter
 
         Map<String, SpecimenColumn> loadedColumnMap = new HashMap<>();
         loadedColumns.forEach(col -> loadedColumnMap.put(col.getPrimaryTsvColumnName(), col));
-        BASE_SPECIMEN_COLUMNS.forEach(col -> {
+        SpecimenColumns.BASE_SPECIMEN_COLUMNS.forEach(col -> {
             if (col.getTargetTable().isSpecimens())
             {
                 if (loadedColumnMap.isEmpty() || loadedColumnMap.containsKey(col.getPrimaryTsvColumnName()))
@@ -3819,7 +2774,7 @@ public class SpecimenImporter
 
         for (SpecimenColumn col : _specimenColumns)
         {
-            String name = col.getLegalDbColumnName(_dialect);
+            String name = col.getLegalDbColumnName(getSqlDialect());
             sql.append(",\n    ").append(name).append(" ").append(col.getDbType());
             BaseColumnInfo colInfo = new BaseColumnInfo(name, col.getJdbcType(), col.getMaxSize(), true);
             Collection<String> aliases = col.getImportAliases();
@@ -3876,7 +2831,7 @@ public class SpecimenImporter
     private List<String> getValidGlobalUniqueIds(int count)
     {
         List<String> uniqueIds = new ArrayList<>();
-        DbSequence sequence = DbSequenceManager.get(_container, SPECIMEN_SEQUENCE_NAME);
+        DbSequence sequence = DbSequenceManager.get(getContainer(), SPECIMEN_SEQUENCE_NAME);
         sequence.ensureMinimum(70000);
 
         Sort sort = new Sort();
@@ -4105,13 +3060,13 @@ public class SpecimenImporter
         public void tempTableConsistencyTest()
         {
             Container c = JunitUtil.getTestContainer();
-            DbSchema schema = StudySchema.getInstance().getSchema();
+            DbSchema schema = SpecimenSchema.get().getSchema();
             User user = TestContext.get().getUser();
 
             // Provisioned specimen tables need to be created in this order
-            TableInfo specimenTableInfo = StudySchema.getInstance().getTableInfoSpecimen(c, user);
-            TableInfo vialTableInfo = StudySchema.getInstance().getTableInfoVial(c, user);
-            TableInfo specimenEventTableInfo = StudySchema.getInstance().getTableInfoSpecimenEvent(c, user);
+            TableInfo specimenTableInfo = SpecimenSchema.get().getTableInfoSpecimen(c, user);
+            TableInfo vialTableInfo = SpecimenSchema.get().getTableInfoVial(c, user);
+            TableInfo specimenEventTableInfo = SpecimenSchema.get().getTableInfoSpecimenEvent(c, user);
             SpecimenImporter importer = new SpecimenImporter(c, user);
 
             for (SpecimenColumn specimenColumn : importer._specimenColumns)
@@ -4131,15 +3086,15 @@ public class SpecimenImporter
                         checkConsistency(tableInfo, tableName, specimenColumn);
                 }
             }
-            for (ImportableColumn importableColumn : ADDITIVE_COLUMNS)
+            for (ImportableColumn importableColumn : SpecimenColumns.ADDITIVE_COLUMNS)
             {
                 checkConsistency(schema, "SpecimenAdditive", importableColumn);
             }
-            for (ImportableColumn importableColumn : DERIVATIVE_COLUMNS)
+            for (ImportableColumn importableColumn : SpecimenColumns.DERIVATIVE_COLUMNS)
             {
                 checkConsistency(schema, "SpecimenDerivative", importableColumn);
             }
-            for (ImportableColumn importableColumn : PRIMARYTYPE_COLUMNS)
+            for (ImportableColumn importableColumn : SpecimenColumns.PRIMARYTYPE_COLUMNS)
             {
                 checkConsistency(schema, "SpecimenPrimaryType", importableColumn);
             }
@@ -4183,136 +3138,5 @@ public class SpecimenImporter
     {
         debug(sql);
         return new SqlExecutor(schema).execute(sql);
-    }
-
-    public static List<String> getRolledupDuplicateVialColumnNames(Container container, User user)
-    {
-        // Return names of columns where column is 2nd thru nth column rolled up on same Event column
-        List<String> rolledupNames = new ArrayList<>();
-        RollupMap<EventVialRollup> eventToVialRollups = getEventToVialRollups(container, user);
-        for (List<RollupInstance<EventVialRollup>> rollupList : eventToVialRollups.values())
-        {
-            boolean duplicate = false;
-            for (RollupInstance<EventVialRollup> rollupItem : rollupList)
-            {
-                if (duplicate)
-                    rolledupNames.add(rollupItem.first.toLowerCase());
-                duplicate = true;
-            }
-        }
-        return rolledupNames;
-    }
-
-    public static RollupMap<EventVialRollup> getEventToVialRollups(Container container, User user)
-    {
-        List<EventVialRollup> rollups = SpecimenImporter.getEventVialRollups();
-        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
-
-        Domain fromDomain = specimenTablesProvider.getDomain("SpecimenEvent", true);
-        if (null == fromDomain)
-            throw new IllegalStateException("Expected SpecimenEvent table to already be created.");
-
-        Domain toDomain = specimenTablesProvider.getDomain("Vial", true);
-        if (null == toDomain)
-            throw new IllegalStateException("Expected Vial table to already be created.");
-
-        return getRollups(fromDomain, toDomain, rollups);
-    }
-
-    public static List<String> getRolledupSpecimenColumnNames(Container container, User user)
-    {
-        List<String> rolledupNames = new ArrayList<>();
-        RollupMap<VialSpecimenRollup> vialToSpecimenRollups = getVialToSpecimenRollups(container, user);
-        for (List<RollupInstance<VialSpecimenRollup>> rollupList : vialToSpecimenRollups.values())
-        {
-            for (RollupInstance<VialSpecimenRollup> rollupItem : rollupList)
-            {
-                rolledupNames.add(rollupItem.first.toLowerCase());
-            }
-        }
-        return rolledupNames;
-    }
-
-    public static RollupMap<VialSpecimenRollup> getVialToSpecimenRollups(Container container, User user)
-    {
-        List<VialSpecimenRollup> rollups = getVialSpecimenRollups();
-        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
-
-        Domain fromDomain = specimenTablesProvider.getDomain("Vial", true);
-        if (null == fromDomain)
-            throw new IllegalStateException("Expected Vial table to already be created.");
-
-        Domain toDomain = specimenTablesProvider.getDomain("Specimen", true);
-        if (null == toDomain)
-            throw new IllegalStateException("Expected Specimen table to already be created.");
-
-        return getRollups(fromDomain, toDomain, rollups);
-    }
-
-    private static <K extends Rollup> RollupMap<K> getRollups(Domain fromDomain, Domain toDomain, List<K> considerRollups)
-    {
-        RollupMap<K> matchedRollups = new RollupMap<>();
-        List<PropertyDescriptor> toProperties = new ArrayList<>();
-
-        for (DomainProperty domainProperty : toDomain.getNonBaseProperties())
-            toProperties.add(domainProperty.getPropertyDescriptor());
-
-        for (DomainProperty domainProperty : fromDomain.getProperties())
-        {
-            PropertyDescriptor property = domainProperty.getPropertyDescriptor();
-            findRollups(matchedRollups, property, toProperties, considerRollups, false);
-        }
-        return matchedRollups;
-    }
-
-    public static <K extends Rollup> void findRollups(RollupMap<K> resultRollups, PropertyDescriptor fromProperty,
-                                   List<PropertyDescriptor> toProperties, List<K> considerRollups, boolean allowTypeMismatch)
-    {
-        for (K rollup : considerRollups)
-        {
-            for (PropertyDescriptor toProperty : toProperties)
-            {
-                if (rollup.match(fromProperty, toProperty, allowTypeMismatch))
-                {
-                    List<RollupInstance<K>> matches = resultRollups.computeIfAbsent(fromProperty.getName(), k -> new ArrayList<>());
-                    matches.add(new RollupInstance<>(toProperty.getName(), rollup, fromProperty.getJdbcType(), toProperty.getJdbcType()));
-                }
-            }
-        }
-    }
-
-    public static Map<String, Pair<String, RollupInstance<EventVialRollup>>> getVialToEventNameMap(List<PropertyDescriptor> vialProps, List<PropertyDescriptor> eventProps)
-    {
-        return getRollupNameMap(vialProps, eventProps, SpecimenImporter.getEventVialRollups());
-    }
-
-    public static Map<String, Pair<String, RollupInstance<VialSpecimenRollup>>> getSpecimenToVialNameMap(List<PropertyDescriptor> vialProps, List<PropertyDescriptor> eventProps)
-    {
-        return getRollupNameMap(vialProps, eventProps, SpecimenImporter.getVialSpecimenRollups());
-    }
-
-    // Build a map that indicates for a property in Vial or Specimen, which property in Event or Vial, respectively will rollup to it
-    private static <K extends Rollup> Map<String, Pair<String, RollupInstance<K>>> getRollupNameMap(List<PropertyDescriptor> toProps,
-                                                              List<PropertyDescriptor> fromProps, List<K> considerRollups)
-    {
-        RollupMap<K> matchedRollups = new RollupMap<>();
-        for (PropertyDescriptor property : fromProps)
-        {
-            SpecimenImporter.findRollups(matchedRollups, property, toProps, considerRollups, true);
-        }
-
-        Map<String, Pair<String, RollupInstance<K>>> resultMap = new HashMap<>();
-        for (PropertyDescriptor fromProp : fromProps)
-        {
-            List<RollupInstance<K>> rollupInstances = matchedRollups.get(fromProp.getName());
-            if (null != rollupInstances)
-            {
-                for (RollupInstance<K> rollupInstance : rollupInstances)
-                {
-                    resultMap.put(rollupInstance.getKey().toLowerCase(), new Pair<>(fromProp.getName(), rollupInstance));
-                }
-            }
-        }
-        return resultMap;
     }
 }

@@ -24,11 +24,11 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.FileType;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
@@ -104,7 +104,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             if (hasSpecimenSchemasToImport)
             {
                 // if specimen schemas will be imported, don't create optional specimen table fields
-                previousTablesTemplate = StudySchema.getInstance().setSpecimenTablesTemplates(new SpecimenSchemaImporter.ImportTemplate());
+                previousTablesTemplate = SpecimenSchema.get().setSpecimenTablesTemplates(new SpecimenSchemaImporter.ImportTemplate());
             }
 
             // Create the study if it doesn't exist... otherwise, modify the existing properties
@@ -172,7 +172,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
         finally
         {
             if (previousTablesTemplate != null)
-                StudySchema.getInstance().setSpecimenTablesTemplates(previousTablesTemplate);
+                SpecimenSchema.get().setSpecimenTablesTemplates(previousTablesTemplate);
         }
     }
 

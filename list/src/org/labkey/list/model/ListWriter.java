@@ -31,7 +31,6 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.Results;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
@@ -165,10 +164,8 @@ public class ListWriter
                     // Sort the data rows by PK, #11261
                     Sort sort = ti.getPkColumnNames().size() != 1 ? null : new Sort(ti.getPkColumnNames().get(0));
 
-                    Results rs = QueryService.get().select(ti, columns, null, sort);
-
-                    // NOTE: TSVGridWriter closes PrintWriter and ResultSet
-                    try (TSVGridWriter tsvWriter = new TSVGridWriter(rs, displayColumns))
+                    // NOTE: TSVGridWriter generates and closes Results
+                    try (TSVGridWriter tsvWriter = new TSVGridWriter(()->QueryService.get().select(ti, columns, null, sort), displayColumns))
                     {
                         tsvWriter.setApplyFormats(false);
                         tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead

@@ -15,11 +15,12 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestManager"%>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusOrderAction"%>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusesAction"%>
-<%@ page import="org.labkey.study.model.SpecimenRequestStatus"%>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusesAction" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -27,7 +28,7 @@
 <%
     JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
     StudyImpl study = me.getModelBean();
-    List<SpecimenRequestStatus> statuses = study.getSampleRequestStatuses(getUser());
+    List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), getUser());
 %>
 <labkey:errors/>
 <script type="text/javascript">

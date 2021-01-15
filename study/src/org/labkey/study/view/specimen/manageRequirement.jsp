@@ -15,18 +15,18 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.specimen.notifications.ActorNotificationRecipientSet"%>
+<%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirement"%>
 <%@ page import="org.labkey.api.study.Location"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.template.ClientDependencies"%>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteRequirementAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestStatusAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequirementAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequirementBean" %>
-<%@ page import="org.labkey.study.model.SpecimenRequestRequirement" %>
-<%@ page import="org.labkey.study.specimen.notifications.ActorNotificationRecipientSet" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -162,7 +162,7 @@
                                    name="notificationIdPairs"
                                    value="<%= text(possibleNotification.getFormValue()) %>" <%=disabled(!hasEmailAddresses) %>
                                    <%=checked(hasEmailAddresses && bean.isDefaultNotification(possibleNotification)) %>>
-                            <%= text(possibleNotification.getHtmlDescriptionAndLink(hasEmailAddresses)) %><br>
+                            <%=possibleNotification.getHtmlDescriptionAndLink(hasEmailAddresses, getActionURL())%><br>
                             <%
                                 }
                                 if (hasInactiveEmailAddress)

@@ -78,6 +78,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -2518,12 +2519,12 @@ public class SecurityManager
 
                 SecurityManager.setVerification(email, null);
 
-                String password = createTempPassword();
+                String password = generateStrongPassword();
                 SecurityManager.setPassword(email, password);
 
                 User user2 = AuthenticationManager.authenticate(ViewServlet.mockRequest("GET", new ActionURL(), null, null, null), rawEmail, password);
-                assertNotNull("login", user2);
-                assertEquals("login", user, user2);
+                assertNotNull("\"" + rawEmail + "\" failed to authenticate with password \"" + password + "\"; check labkey.log around timestamp " + DateUtil.formatDateTime(new Date(), "HH:mm:ss,SSS") + " for the reason", user2);
+                assertEquals(user, user2);
             }
             finally
             {
@@ -2531,6 +2532,10 @@ public class SecurityManager
             }
         }
 
+        private String generateStrongPassword()
+        {
+            return createTempPassword() + "Az9!";
+        }
 
         @Test
         public void testACLS()

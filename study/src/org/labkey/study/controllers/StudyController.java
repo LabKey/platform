@@ -51,6 +51,7 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.annotations.RemoveIn21_7;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.attachments.AttachmentFile;
@@ -134,6 +135,12 @@ import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.specimen.view.SpecimenWebPartFactory;
+import org.labkey.api.specimen.importer.RequestabilityManager;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.MasterPatientIndexService;
@@ -146,6 +153,8 @@ import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.model.ParticipantGroup;
+import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
@@ -171,16 +180,13 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
-import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.MasterPatientIndexMaintenanceTask;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
@@ -192,7 +198,6 @@ import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.StudySchedule;
 import org.labkey.study.importer.DatasetImportUtils;
-import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.SchemaTsvReader;
 import org.labkey.study.importer.StudyReload.ReloadStatus;
@@ -211,8 +216,6 @@ import org.labkey.study.query.StudyPropertiesQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudyQueryView;
 import org.labkey.study.reports.ReportManager;
-import org.labkey.study.security.permissions.ManageStudyPermission;
-import org.labkey.study.specimen.settings.RepositorySettings;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.visitmanager.VisitManager.VisitStatistic;
@@ -251,16 +254,17 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 public class StudyController extends BaseStudyController
 {
     private static final Logger _log = LogManager.getLogger(StudyController.class);
-
     private static final String PARTICIPANT_CACHE_PREFIX = "Study_participants/participantCache";
     private static final String EXPAND_CONTAINERS_KEY = StudyController.class.getName() + "/expandedContainers";
-
     private static final String DATASET_DATAREGION_NAME = "Dataset";
+
+    private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(
+        StudyController.class,
+        CreateChildStudyAction.class
+    );
+
     public static final String DATASET_REPORT_ID_PARAMETER_NAME = "Dataset.reportId";
     public static final String DATASET_VIEW_NAME_PARAMETER_NAME = "Dataset.viewName";
-    private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(
-            StudyController.class,
-            CreateChildStudyAction.class);
 
     public static class StudyUrlsImpl implements StudyUrls
     {
@@ -274,6 +278,12 @@ public class StudyController extends BaseStudyController
         public ActionURL getManageStudyURL(Container container)
         {
             return new ActionURL(ManageStudyAction.class, container);
+        }
+
+        @Override
+        public Class<? extends Controller> getManageStudyClass()
+        {
+            return ManageStudyAction.class;
         }
 
         @Override
@@ -390,26 +400,6 @@ public class StudyController extends BaseStudyController
             root.addChild(_study == null ? "No Study In Folder" : _study.getLabel());
         }
     }
-
-
-	class SimpleTemplate extends HttpView
-	{
-		SimpleTemplate(HttpView body, HttpView right)
-		{
-			setBody(body);
-			setView(WebPartFactory.LOCATION_RIGHT, right);
-		}
-
-		@Override
-		protected void renderInternal(Object model, PrintWriter out) throws Exception
-		{
-			out.print("<table width=100%><tr><td align=left valign=top class=labkey-body-panel><img height=1 width=400 src=\"" + getViewContext().getContextPath() + "/_.gif\"><br>");
-			include(getBody());
-			out.print("</td><td align=left valign=top class=labkey-side-panel><img height=1 width=240 src=\"" + getViewContext().getContextPath() + "/_.gif\"><br>");
-			include(getView(WebPartFactory.LOCATION_RIGHT));
-			out.print("</td></tr></table>");
-		}
-	}
 
     @RequiresPermission(AdminPermission.class)
     public class DefineDatasetTypeAction extends SimpleViewAction<Object>
@@ -1389,11 +1379,11 @@ public class StudyController extends BaseStudyController
 
     private static void updateRepositorySettings(Container c, boolean simple)
     {
-        RepositorySettings reposSettings = SpecimenManager.getInstance().getRepositorySettings(c);
+        RepositorySettings reposSettings = SettingsManager.get().getRepositorySettings(c);
         reposSettings.setSimple(simple);
         reposSettings.setEnableRequests(!simple);
         reposSettings.setSpecimenDataEditable(false);
-        SpecimenManager.getInstance().saveRepositorySettings(c, reposSettings);
+        SettingsManager.get().saveRepositorySettings(c, reposSettings);
     }
 
     @RequiresPermission(ManageStudyPermission.class)
@@ -1720,7 +1710,7 @@ public class StudyController extends BaseStudyController
                             location = location.createMutable();
                             location.setLabel(formLocation.getLabel());
                             location.setDescription(formLocation.getDescription());
-                            StudyManager.getInstance().updateSite(getUser(), location);
+                            LocationManager.get().updateLocation(getUser(), location);
                         }
                     }
                 }
@@ -1745,7 +1735,7 @@ public class StudyController extends BaseStudyController
                         location.setLdmsLabCode(Integer.parseInt(form.getNewId()));
                         location.setDescription(form.getNewDescription());
                         location.setContainer(getContainer());
-                        StudyManager.getInstance().createSite(getUser(), location);
+                        LocationManager.get().createLocation(getUser(), location);
                     }
                     catch (NumberFormatException e)
                     {
@@ -1782,9 +1772,10 @@ public class StudyController extends BaseStudyController
             {
                 if (c.hasPermission(getUser(), AdminPermission.class))
                 {
-                    for (LocationImpl loc : StudyManager.getInstance().getLocations(c))
+                    LocationManager mgr = LocationManager.get();
+                    for (LocationImpl loc : mgr.getLocations(c))
                     {
-                        if (!StudyManager.getInstance().isLocationInUse(loc))
+                        if (!mgr.isLocationInUse(loc))
                         {
                             temp.add(c.getName() + "/" + loc.getLabel());
                         }
@@ -1807,11 +1798,12 @@ public class StudyController extends BaseStudyController
             {
                 if (c.hasPermission(getUser(), AdminPermission.class))
                 {
-                    for (LocationImpl loc : StudyManager.getInstance().getLocations(c))
+                    LocationManager mgr = LocationManager.get();
+                    for (LocationImpl loc : mgr.getLocations(c))
                     {
-                        if (!StudyManager.getInstance().isLocationInUse(loc))
+                        if (!mgr.isLocationInUse(loc))
                         {
-                            StudyManager.getInstance().deleteLocation(loc);
+                            mgr.deleteLocation(loc);
                         }
                     }
                 }
@@ -2391,24 +2383,32 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class UpdateDatasetVisitMappingAction extends FormViewAction<DatasetForm>
     {
-        DatasetDefinition _def;
+        private DatasetDefinition _def;
 
         @Override
         public void validateCommand(DatasetForm form, Errors errors)
         {
-            if (form.getDatasetId() < 1)
-                errors.reject(SpringActionController.ERROR_MSG, "DatasetId must be greater than zero.");
+            if (null == form.getDatasetId() || form.getDatasetId() < 1)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "DatasetId must be a positive integer.");
+            }
+            else
+            {
+                _def = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), form.getDatasetId());
+                if (null == _def)
+                    errors.reject(SpringActionController.ERROR_MSG, "Dataset not found.");
+            }
         }
 
         @Override
         public ModelAndView getView(DatasetForm form, boolean reshow, BindException errors) throws Exception
         {
-            _def = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), form.getDatasetId());
+            validateCommand(form, errors);
 
-            if (_def == null)
+            if (errors.hasErrors())
             {
-                BeginAction action = (BeginAction)initAction(this, new BeginAction());
-                return action.getView(form, errors);
+                getPageConfig().setTemplate(PageConfig.Template.Dialog);
+                return new SimpleErrorView(errors);
             }
 
             return new JspView<>("/org/labkey/study/view/updateDatasetVisitMapping.jsp", _def, errors);
@@ -2417,8 +2417,7 @@ public class StudyController extends BaseStudyController
         @Override
         public boolean handlePost(DatasetForm form, BindException errors)
         {
-            DatasetDefinition original = StudyManager.getInstance().getDatasetDefinition(getStudyThrowIfNull(), form.getDatasetId());
-            DatasetDefinition modified = original.createMutable();
+            DatasetDefinition modified = _def.createMutable();
             if (null != form.getVisitRowIds())
             {
                 for (int i = 0; i < form.getVisitRowIds().length; i++)
@@ -3302,7 +3301,7 @@ public class StudyController extends BaseStudyController
 
     public class ManageQCStatesBean extends AbstractManageQCStatesBean
     {
-        ManageQCStatesBean(String returnUrl)
+        ManageQCStatesBean(ActionURL returnUrl)
         {
             super(returnUrl);
             _qcStateHandler = new StudyQCStateHandler();
@@ -3385,7 +3384,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/api/qc/view/manageQCStates.jsp",
-                    new ManageQCStatesBean(manageQCStatesForm.getReturnUrl()), errors);
+                    new ManageQCStatesBean(manageQCStatesForm.getReturnActionURL()), errors);
         }
 
         @Override
@@ -3843,7 +3842,7 @@ public class StudyController extends BaseStudyController
             datasetURL.setAction(DatasetAction.class);
 
             String label = _def.getLabel() != null ? _def.getLabel() : "" + _def.getDatasetId();
-            root.addChild(new NavTree(label, datasetURL.getLocalURIString()));
+            root.addChild(new NavTree(label, datasetURL));
 
             root.addChild(new NavTree("View Preferences"));
         }
@@ -5631,9 +5630,10 @@ public class StudyController extends BaseStudyController
 
     /**
      * We don't need to render this report as of 19.1 but we need to be able to register an instance of it so
-     * it can be converted to a javascript report. This class can be deleted in the 21.2 release.
+     * it can be converted to a javascript report. This class can be deleted in the 21.7 release.
      */
     @Deprecated
+    @RemoveIn21_7
     public static class StudyChartReport extends ChartQueryReport
     {
         public static final String TYPE = "Study.chartReport";
@@ -5707,7 +5707,7 @@ public class StudyController extends BaseStudyController
             if (_showCustomizeLink && c.hasPermissions(getViewContext().getUser(), permissions))
             {
                 ActionURL customizeURL = new ActionURL(CustomizeParticipantViewAction.class, c);
-                customizeURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());
+                customizeURL.addReturnURL(getViewContext().getActionURL());
                 customizeURL.addParameter("participantId", _currentParticipantId);
                 customizeURL.addParameter(SharedFormParameters.QCState, _encodedQcState);
                 out.print("</td><td>");
@@ -5992,7 +5992,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return StudyModule.samplesPartFactory.getWebPartView(getViewContext(), StudyModule.samplesPartFactory.createWebPart());
+            return new SpecimenWebPartFactory().getWebPartView(getViewContext(), new SpecimenWebPartFactory().createWebPart());
         }
 
         @Override
@@ -6940,7 +6940,7 @@ public class StudyController extends BaseStudyController
                             ActionURL cancelURL = new ActionURL(CancelDefineDatasetAction.class, getContainer()).addParameter("expectationDataset", form.getExpectationDataset());
 
                             redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(DatasetDefinition.DATASETKEY, form.getExpectationDataset());
-                            redirect.addParameter(ActionURL.Param.cancelUrl.name(), cancelURL.getLocalURIString());
+                            redirect.addCancelURL(cancelURL);
                             response.put("redirectUrl", redirect.getLocalURIString());
                         }
                         else
@@ -7228,10 +7228,10 @@ public class StudyController extends BaseStudyController
                 cols.add(ti.getColumn("dateoffset"));
                 SimpleFilter filter = new SimpleFilter();
                 filter.addCondition(ti.getColumn("container"), getContainer());
-                Results rs = QueryService.get().select(ti, cols, filter, new Sort("participantid"));
+                ResultsFactory factory = ()->QueryService.get().select(ti, cols, filter, new Sort("participantid"));
 
-                // NOTE: TSVGridWriter.close() closes PrintWriter and ResultSet
-                try (TSVGridWriter writer = new TSVGridWriter(rs))
+                // NOTE: TSVGridWriter closes PrintWriter and ResultSet
+                try (TSVGridWriter writer = new TSVGridWriter(factory))
                 {
                     writer.setApplyFormats(false);
                     writer.setFilenamePrefix("ParticipantTransforms");
@@ -7701,7 +7701,7 @@ public class StudyController extends BaseStudyController
                     PipelineService.get().queueJob(job);
 
                     response.put("success", true);
-                    response.put("returnUrl", PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()));
+                    response.put(ActionURL.Param.returnUrl.name(), PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()));
                 }
                 else
                 {

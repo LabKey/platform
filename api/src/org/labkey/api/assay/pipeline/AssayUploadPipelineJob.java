@@ -15,6 +15,7 @@
  */
 package org.labkey.api.assay.pipeline;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayProvider;
@@ -26,13 +27,15 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobNotificationProvider;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Pipeline job for completing the final steps of the assay upload wizard in the background.
@@ -44,6 +47,7 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
 {
     private int _batchId;
     private AssayRunAsyncContext<ProviderType> _context;
+
     private File _primaryFile;
     private boolean _forceSaveBatchProps;
     private ExpRun _run;
@@ -86,6 +90,10 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
     public String getDescription()
     {
         // Generate a description that matches what the run's name/ID will be
+        if (!StringUtils.isEmpty(_context.getJobDescription()))
+        {
+            return _context.getJobDescription();
+        }
         if (_context.getName() != null)
         {
             return _context.getName();
@@ -100,12 +108,17 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
     @Override
     public void run()
     {
+        PipelineJobNotificationProvider notificationProvider = getNotificationProvider();
+
         try
         {
             _context.setLogger(getLogger());
 
             setStatus(TaskStatus.running);
             getLogger().info("Starting assay upload");
+
+            if (notificationProvider != null)
+                notificationProvider.onJobStart(this);
 
             if (_context.getReRunId() != null)
             {
@@ -136,9 +149,22 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
             }
 
             // Do all the real work of the import
-            _context.getProvider().getRunCreator().saveExperimentRun(_context, batch, _run, _forceSaveBatchProps);
+            ExpExperiment result = _context.getProvider().getRunCreator().saveExperimentRun(_context, batch, _run, _forceSaveBatchProps);
             setStatus(TaskStatus.complete);
             getLogger().info("Finished assay upload");
+
+            if (notificationProvider != null)
+            {
+                Map<String, Object> results = new HashMap<>();
+
+                results.put("provider", _context.getProvider().getName());
+                results.put("assayId", _context.getProtocol().getRowId());
+                results.put("assayName", _context.getProtocol().getName());
+                results.put("batchId", result.getRowId());
+                results.put("runId", _run.getRowId());
+
+                notificationProvider.onJobSuccess(this, results);
+            }
         }
         catch (Exception e)
         {
@@ -165,6 +191,26 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
                 }
             }
             getLogger().info("Error StackTrace", e);
+
+            if (notificationProvider != null)
+                notificationProvider.onJobError(this, e.getMessage());
         }
     }
+
+    private PipelineJobNotificationProvider getNotificationProvider()
+    {
+        return PipelineService.get().getPipelineJobNotificationProvider(getJobNotificationProvider(), this);
+    }
+
+    @Override
+    protected String getJobNotificationProvider()
+    {
+        return _context._jobNotificationProvider;
+    }
+
+    public File getPrimaryFile()
+    {
+        return _primaryFile;
+    }
+
 }

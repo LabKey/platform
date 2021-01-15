@@ -24,12 +24,12 @@ import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.study.writer.AbstractContext;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.writer.AbstractContext;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
@@ -51,10 +51,10 @@ public class StudyImportContext extends AbstractContext
     public static final String ALLOW_DOMAIN_UPDATES = "allowDomainUpdates";
 
     private File _studyXml;
-    private HashMap<String, String> _props = new HashMap<>();
+    private final HashMap<String, String> _props = new HashMap<>();
 
     // Study design table maps (primarily in Dataspace case) to help map dataset FKs
-    private Map<String, Map<Object, Object>> _tableIdMapMap = new CaseInsensitiveHashMap<>();
+    private final Map<String, Map<Object, Object>> _tableIdMapMap = new CaseInsensitiveHashMap<>();
 
     // Required for xstream serialization on Java 7
     @SuppressWarnings({"UnusedDeclaration"})
@@ -179,6 +179,11 @@ public class StudyImportContext extends AbstractContext
         {
             return null;
         }
+    }
+
+    public Map<String, Map<Object, Object>> getTableIdMapMap()
+    {
+        return _tableIdMapMap;
     }
 
     public Map<Object, Object> getTableIdMap(String key)

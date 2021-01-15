@@ -50,6 +50,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.actions.UploadWizardAction;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
@@ -250,6 +251,7 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.exp.query.ExpSchema.TableType.DataInputs;
+import static org.labkey.api.query.QueryImportPipelineJob.QUERY_IMPORT_NOTIFICATION_PROVIDER_PARAM;
 import static org.labkey.api.query.QueryImportPipelineJob.QUERY_IMPORT_PIPELINE_DESCRIPTION_PARAM;
 import static org.labkey.api.query.QueryImportPipelineJob.QUERY_IMPORT_PIPELINE_PROVIDER_PARAM;
 import static org.labkey.api.util.DOM.A;
@@ -665,7 +667,7 @@ public class ExperimentController extends SpringActionController
                 {
                     ActionURL updateURL = new ActionURL(EditSampleTypeAction.class, _sampleType.getContainer());
                     updateURL.addParameter("RowId", _sampleType.getRowId());
-                    updateURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                    updateURL.addReturnURL(getViewContext().getActionURL());
                     ActionButton updateButton = new ActionButton(updateURL, "Edit Type", ActionButton.Action.LINK);
                     updateButton.setDisplayPermission(DesignSampleTypePermission.class);
                     updateButton.setPrimary(true);
@@ -673,7 +675,7 @@ public class ExperimentController extends SpringActionController
 
                     ActionURL deleteURL = new ActionURL(DeleteSampleTypesAction.class, _sampleType.getContainer());
                     deleteURL.addParameter("singleObjectRowId", _sampleType.getRowId());
-                    deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()).toString());
+                    deleteURL.addReturnURL(ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()));
                     ActionButton deleteButton = new ActionButton(deleteURL, "Delete Type", ActionButton.Action.LINK);
                     deleteButton.setDisplayPermission(DesignSampleTypePermission.class);
                     detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(deleteButton);
@@ -683,7 +685,7 @@ public class ExperimentController extends SpringActionController
                     ActionURL editURL = domainKind.urlEditDefinition(_sampleType.getDomain(), new ViewBackgroundInfo(_sampleType.getContainer(), getUser(), getViewContext().getActionURL()));
                     if (editURL != null)
                     {
-                        editURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                        editURL.addReturnURL(getViewContext().getActionURL());
                         ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields");
                         editTypeButton.setDisplayPermission(UpdatePermission.class);
                         detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
@@ -700,7 +702,7 @@ public class ExperimentController extends SpringActionController
                     if (importURL != null)
                     {
                         importURL = importURL.clone();
-                        importURL.replaceParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                        importURL.addReturnURL(getViewContext().getActionURL());
                         ActionButton uploadButton = new ActionButton(importURL, "Import More Samples", ActionButton.Action.LINK);
                         uploadButton.setDisplayPermission(UpdatePermission.class);
                         detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(uploadButton);
@@ -987,7 +989,7 @@ public class ExperimentController extends SpringActionController
             {
                 ActionURL updateURL = new ActionURL(EditDataClassAction.class, _dataClass.getContainer());
                 updateURL.addParameter("rowId", _dataClass.getRowId());
-                updateURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                updateURL.addReturnURL(getViewContext().getActionURL());
                 ActionButton updateButton = new ActionButton(updateURL, "Edit", ActionButton.Action.LINK);
                 updateButton.setDisplayPermission(DesignDataClassPermission.class);
                 updateButton.setPrimary(true);
@@ -995,7 +997,7 @@ public class ExperimentController extends SpringActionController
 
                 ActionURL deleteURL = new ActionURL(ExperimentController.DeleteDataClassAction.class, _dataClass.getContainer());
                 deleteURL.addParameter("singleObjectRowId", _dataClass.getRowId());
-                deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getDataClassListURL(getContainer()).toString());
+                deleteURL.addReturnURL(ExperimentUrlsImpl.get().getDataClassListURL(getContainer()));
                 ActionButton deleteButton = new ActionButton(deleteURL, "Delete", ActionButton.Action.LINK);
                 deleteButton.setDisplayPermission(DesignDataClassPermission.class);
                 bb.add(deleteButton);
@@ -3728,6 +3730,13 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
+        protected String getQueryImportJobNotificationProviderName()
+        {
+            PropertyValue pv = _form.getInitParameters().getPropertyValue(QUERY_IMPORT_NOTIFICATION_PROVIDER_PARAM);
+            return pv == null ? null : (String) pv.getValue();
+        }
+
+        @Override
         protected boolean isBackgroundImportSupported()
         {
             return true;
@@ -3785,119 +3794,6 @@ public class ExperimentController extends SpringActionController
             root.addChild("Import Data");
         }
 
-    }
-
-    @RequiresPermission(InsertPermission.class)
-    public class ShowAddXarFileAction extends FormViewAction<Object>
-    {
-        @Override
-        public URLHelper getSuccessURL(Object o)
-        {
-            return PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer());
-        }
-
-        @Override
-        public void validateCommand(Object target, Errors errors)
-        {
-        }
-
-        @Override
-        public ModelAndView getView(Object o, boolean reshow, BindException errors)
-        {
-            if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
-            {
-                return new NoPipelineRootSetView(getContainer(), "upload a XAR");
-            }
-
-            return new JspView<>("/org/labkey/experiment/addXarFile.jsp", null, errors);
-        }
-
-        @Override
-        public boolean handlePost(Object o, BindException errors) throws Exception
-        {
-            if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
-                throw new BadRequestException("Expected MultipartHttpServletRequest when posting files.");
-
-            if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
-            {
-                return false;
-            }
-
-            MultipartFile formFile = getFileMap().get("uploadFile");
-            if (formFile == null)
-            {
-                errors.addError(new LabKeyError("No file was posted by the browser."));
-                return false;
-            }
-
-            byte[] bytes = formFile.getBytes();
-            if (bytes.length == 0)
-            {
-                errors.addError(new LabKeyError("No file was posted by the browser."));
-                return false;
-            }
-
-            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
-            File systemDir = pipeRoot.ensureSystemDirectory();
-            File uploadDir = new File(systemDir, "UploadedXARs");
-            uploadDir.mkdirs();
-            if (!uploadDir.isDirectory())
-            {
-                errors.addError(new LabKeyError("Unable to create a 'system/UploadedXARs' directory under the pipeline root"));
-                return false;
-            }
-            String userDirName = getUser().getEmail();
-            if (userDirName == null || userDirName.length() == 0)
-            {
-                userDirName = GUEST_DIRECTORY_NAME;
-            }
-            File userDir = new File(uploadDir, userDirName);
-            userDir.mkdirs();
-            if (!userDir.isDirectory())
-            {
-                errors.addError(new LabKeyError("Unable to create an 'UploadedXARs/" + userDirName + "' directory under the pipeline root"));
-                return false;
-            }
-
-            File xarFile = new File(userDir, formFile.getOriginalFilename());
-            OutputStream out = null;
-            try
-            {
-                out = new BufferedOutputStream(new FileOutputStream(xarFile));
-                out.write(bytes);
-            }
-            catch (IOException e)
-            {
-                errors.addError(new LabKeyError("Unable to write uploaded XAR file to " + xarFile.getPath()));
-                return false;
-            }
-            finally
-            {
-                if (out != null)
-                { //noinspection EmptyCatchBlock
-                    try
-                    {
-                        out.close();
-                    }
-                    catch (IOException e)
-                    {
-                    }
-                }
-            }
-
-            ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), xarFile,
-                    "Uploaded file", true, pipeRoot);
-            PipelineService.get().queueJob(job);
-
-            return true;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            addRootNavTrail(root);
-            root.addChild("Upload a .xar or .xar.xml file from your browser");
-        }
     }
 
     @RequiresPermission(UpdatePermission.class)
@@ -5884,6 +5780,94 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @RequiresPermission(DesignAssayPermission.class)
+    public class AssayXarFileAction extends MutatingApiAction<Object>
+    {
+
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
+                throw new BadRequestException("Expected MultipartHttpServletRequest when posting files.");
+
+            if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
+            {
+                return false;
+            }
+
+            MultipartFile formFile = getFileMap().get("file");
+            if (formFile == null)
+            {
+                errors.reject(ERROR_MSG, "No file was posted by the browser.");
+                return false;
+            }
+
+            byte[] bytes = formFile.getBytes();
+            if (bytes.length == 0)
+            {
+                errors.reject(ERROR_MSG, "No file was posted by the browser.");
+                return false;
+            }
+
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
+            File systemDir = pipeRoot.ensureSystemDirectory();
+            File uploadDir = new File(systemDir, "UploadedXARs");
+            uploadDir.mkdirs();
+            if (!uploadDir.isDirectory())
+            {
+                errors.reject(ERROR_MSG, "Unable to create a 'system/UploadedXARs' directory under the pipeline root");
+                return false;
+            }
+            String userDirName = getUser().getEmail();
+            if (userDirName == null || userDirName.length() == 0)
+            {
+                userDirName = GUEST_DIRECTORY_NAME;
+            }
+            File userDir = new File(uploadDir, userDirName);
+            userDir.mkdirs();
+            if (!userDir.isDirectory())
+            {
+                errors.reject(ERROR_MSG, "Unable to create an 'UploadedXARs/" + userDirName + "' directory under the pipeline root");
+                return false;
+            }
+
+            File xarFile = new File(userDir, formFile.getOriginalFilename());
+            OutputStream out = null;
+            try
+            {
+                out = new BufferedOutputStream(new FileOutputStream(xarFile));
+                out.write(bytes);
+            }
+            catch (IOException e)
+            {
+                errors.reject(ERROR_MSG, "Unable to write uploaded XAR file to " + xarFile.getPath());
+                return false;
+            }
+            finally
+            {
+                if (out != null)
+                { //noinspection EmptyCatchBlock
+                    try
+                    {
+                        out.close();
+                    }
+                    catch (IOException e)
+                    {
+                    }
+                }
+            }
+
+            ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), xarFile,
+                    "Uploaded file", true, pipeRoot);
+            PipelineService.get().queueJob(job);
+            
+            response.put("success", true);
+            return response;
+        }
+    }
+
     @RequiresPermission(InsertPermission.class)
     public class ImportXarFileAction extends FormHandlerAction<ImportXarForm>
     {
@@ -6077,7 +6061,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public ActionURL getDeleteExperimentsURL(Container container, URLHelper returnURL)
         {
-            return new ActionURL(DeleteSelectedExperimentsAction.class, container).addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
+            return new ActionURL(DeleteSelectedExperimentsAction.class, container).addReturnURL(returnURL);
         }
 
         @Override
@@ -6087,7 +6071,7 @@ public class ExperimentController extends SpringActionController
             result.addParameter("singleObjectRowId", protocol.getRowId());
             if (returnURL != null)
             {
-                result.addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
+                result.addReturnURL(returnURL);
             }
             return result;
         }
@@ -6339,7 +6323,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public ActionURL getUploadXARURL(Container container)
         {
-            return new ActionURL(ShowAddXarFileAction.class, container);
+            return new ActionURL("assay", "chooseAssayType", container).addParameter("tab", "import");
         }
 
         @Override

@@ -24,6 +24,8 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.InsertView;
@@ -31,9 +33,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UpdateView;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.InsertUpdateAction;
-import org.labkey.study.model.SpecimenComment;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.Vial;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 

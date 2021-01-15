@@ -51,6 +51,7 @@ import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
@@ -282,7 +283,7 @@ public class ParticipantGroupManager
                     if (null != filter)
                     {
                         ActionURL enrolledURL = filter.addURLParameters(study, baseURL.clone(), dataRegionName);
-                        button.addMenuItem("Enrolled", enrolledURL.toString(), null, (selected.isEmpty() && filter.equals(cohortFilter)));
+                        button.addMenuItem("Enrolled", enrolledURL, null, (selected.isEmpty() && filter.equals(cohortFilter)));
                     }
                 }
 

@@ -43,6 +43,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
+import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -135,6 +136,9 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> implements Cloneable, Dataset<DatasetDefinition>, InitializingBean
 {
+    // DatasetQueryUpdateService
+
+
     // standard string to use in URLs etc.
     public static final String DATASETKEY = "datasetId";
 //    static final Object MANAGED_KEY_LOCK = new Object();
@@ -188,7 +192,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         // they're used by import ('replace') or are commonly used/confused synonyms for built-in column names
         "replace",
         "visit",
-        "participant"
+        "participant",
+        DataIntegrationService.Columns.TransformImportHash.getColumnName()
     };
 
     private static final String[] DEFAULT_ABSOLUTE_DATE_FIELD_NAMES_ARRAY = new String[]
@@ -217,7 +222,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         "lsid",
         "dsrowid",
         "Dataset",
-        "ParticipantSequenceNum"
+        "ParticipantSequenceNum",
+        DataIntegrationService.Columns.TransformImportHash.getColumnName()
     };
 
     static final Set<String> DEFAULT_ABSOLUTE_DATE_FIELDS;
@@ -1298,7 +1304,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             // base columns
 
-            for (String name : Arrays.asList("Container", "lsid", "ParticipantSequenceNum", "sourcelsid", "Created", "CreatedBy", "Modified", "ModifiedBy", "dsrowid"))
+            for (String name : Arrays.asList("Container", "lsid", "ParticipantSequenceNum", "sourcelsid", "Created", "CreatedBy", "Modified", "ModifiedBy", "dsrowid", DataIntegrationService.Columns.TransformImportHash.getColumnName()))
             {
                 var col = getStorageColumn(name);
                 if (null == col) continue;
@@ -1404,7 +1410,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
                 if (p.isMvEnabled())
                 {
-                    var baseColumn = StorageProvisioner.getMvIndicatorColumn(_storage, pd,
+                    var baseColumn = StorageProvisioner.get().getMvIndicatorColumn(_storage, pd,
                                                 "No MV column found for '" + col.getName() + "' in dataset '" + getName() + "'");
                     var mvColumn = newDatasetColumnInfo(this, baseColumn, p.getPropertyDescriptor().getPropertyURI());
                     mvColumn.setName(p.getName() + MvColumn.MV_INDICATOR_SUFFIX);
@@ -1723,11 +1729,10 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
     private static String uriForName(String name)
     {
-        final String StudyURI = getStudyBaseURI();
-        assert "container".equalsIgnoreCase(name)  || getStandardPropertiesMap().get(name).getPropertyURI().equalsIgnoreCase(StudyURI + name);
+        assert null != getStandardPropertiesMap().get(name);
+        assert "container".equalsIgnoreCase(name)  || getStandardPropertiesMap().get(name).getPropertyURI().equalsIgnoreCase(getStudyBaseURI() + name);
         return getStandardPropertiesMap().get(name).getPropertyURI();
     }
-
 
     public static String getKeyURI()
     {
@@ -2088,9 +2093,19 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
      * Iterator is running.  This is asserted in the code, but it would be nice to move the
      * locking into the iterator itself.
      */
+    public DataIteratorBuilder getInsertDataIterator(User user, DataIteratorBuilder in, DataIteratorContext context)
+    {
+        return getInsertDataIterator(user, in, null, null, null, null, null, false);
+    }
+
+    /**
+     * NOTE Currently the caller is still responsible for locking MANAGED_KEY_LOCK while this
+     * Iterator is running.  This is asserted in the code, but it would be nice to move the
+     * locking into the iterator itself.
+     */
     public DataIteratorBuilder getInsertDataIterator(User user, DataIteratorBuilder in,
         @Nullable List<String> lsids,
-        CheckForDuplicates checkDuplicates, DataIteratorContext context, QCState defaultQCState,
+        @Nullable CheckForDuplicates checkDuplicates, DataIteratorContext context, QCState defaultQCState,
         @Nullable StudyImportContext studyImportContext, boolean forUpdate)
     {
         TableInfo table = getTableInfo(user, false);
@@ -2102,13 +2117,15 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 defaultQCState,
                 studyImportContext);
         b.setInput(in);
-        b.setCheckDuplicates(checkDuplicates);
+
+        if (null != checkDuplicates)
+            b.setCheckDuplicates(checkDuplicates);
         b.setForUpdate(forUpdate);
         b.setUseImportAliases(!forUpdate);
         b.setKeyList(lsids);
 
         Container target = getDataSharingEnum() == DataSharing.NONE ? getContainer() : getDefinitionContainer();
-        StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
+        DataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(table, b, target, user);
         return ((UpdateableTableInfo)table).persistRows(etl, context);
     }
 

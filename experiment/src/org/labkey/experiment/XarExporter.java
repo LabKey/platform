@@ -394,6 +394,8 @@ public class XarExporter
                     dataLSID.setDataFileUrl(url);
                 }
             }
+            else
+                dataLSID.setCpasType(data.getCpasType());
         }
 
         List<Material> inputMaterial = ExperimentServiceImpl.get().getMaterialInputReferencesForApplication(application.getRowId());
@@ -440,8 +442,9 @@ public class XarExporter
             {
                 // Issue 31727: When data is imported via the API, no file is created for the data.  We want to
                 // include a file path in the export, though.  We use "Data" + rowId of the data object as the file name
-                // to ensure that the path won't collide with other output data from exported runs in the xar archive.
-                if (data.getDataFileUrl() == null && data.isFinalRunOutput())
+                // to ensure that the path won't collide with other output data from exported runs in the xar archive,
+                // but we don't want to include data classes as part of this behavior.
+                if (data.getDataFileUrl() == null && data.isFinalRunOutput() && (data.getDataClass(null) == null))
                     data.setDataFileURI(run.getFilePathRootPath().resolve("Data" + data.getRowId()).toUri());
                 DataBaseType xData = outputDataObjects.addNewData();
                 populateData(xData, data, null, run);
@@ -550,11 +553,6 @@ public class XarExporter
 
     private void addSampleType(String cpasType) throws ExperimentException
     {
-        if (_sampleSetLSIDs.contains(cpasType))
-        {
-            return;
-        }
-        _sampleSetLSIDs.add(cpasType);
         ExpSampleType sampleType = SampleTypeService.get().getSampleType(cpasType);
         addSampleType(sampleType);
     }
@@ -563,10 +561,13 @@ public class XarExporter
     {
         final String PLACEHOLDER_SUFFIX = "sfx";
 
-        if (sampleType == null)
+        if (sampleType == null || _sampleSetLSIDs.contains(sampleType.getLSID()))
         {
             return;
         }
+
+        _sampleSetLSIDs.add(sampleType.getLSID());
+
         if (_archive.getSampleSets() == null)
         {
             _archive.addNewSampleSets();

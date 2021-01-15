@@ -23,8 +23,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.RenderContext;
@@ -40,13 +38,15 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.importer.RollupHelper;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
+import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.CohortForeignKey;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
-import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.StudyManager;
 
 import java.io.IOException;
@@ -66,7 +66,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
     public SpecimenDetailTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail(schema.getContainer()), cf, false, true);
+        super(schema, SpecimenSchema.get().getTableInfoSpecimenDetail(schema.getContainer()), cf, false, true);
 
         var guid = addWrapColumn(_rootTable.getColumn(GLOBAL_UNIQUE_ID_COLUMN_NAME));
         guid.setDisplayColumnFactory(ColumnInfo.NOWRAP_FACTORY);
@@ -96,7 +96,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
         addSpecimenCommentColumns(_userSchema, true);
 
-        boolean enableSpecimenRequest = SpecimenManager.getInstance().getRepositorySettings(getContainer()).isEnableRequests();
+        boolean enableSpecimenRequest = SettingsManager.get().getRepositorySettings(getContainer()).isEnableRequests();
         addWrapColumn(_rootTable.getColumn("LockedInRequest")).setHidden(!enableSpecimenRequest);
         addWrapColumn(_rootTable.getColumn("Requestable")).setHidden(!enableSpecimenRequest);
 
@@ -109,14 +109,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                 return new LocationTable(_userSchema, cf);
             }
         });
-        siteNameColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new SiteNameDisplayColumn(colInfo);
-            }
-        });
+        siteNameColumn.setDisplayColumnFactory(SiteNameDisplayColumn::new);
         addColumn(siteNameColumn);
 
         var siteLdmsCodeColumn = wrapColumn("SiteLdmsCode", getRealTable().getColumn("CurrentLocation"));
@@ -161,10 +154,10 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         getOptionalSpecimenAndVialProperties(schema.getContainer(), _optionalSpecimenProperties, _optionalVialProperties);
 
         // If multiple columns from Vial table are rolled up from the same Event column, only allow editing of one of them
-        addOptionalColumns(_optionalVialProperties, true, SpecimenImporter.getRolledupDuplicateVialColumnNames(getContainer(), schema.getUser()));
+        addOptionalColumns(_optionalVialProperties, true, RollupHelper.getRolledupDuplicateVialColumnNames(getContainer(), schema.getUser()));
 
         // any rolled up column from Specimen table should be read only
-        addOptionalColumns(_optionalSpecimenProperties, true, SpecimenImporter.getRolledupSpecimenColumnNames(getContainer(), schema.getUser()));
+        addOptionalColumns(_optionalSpecimenProperties, true, RollupHelper.getRolledupSpecimenColumnNames(getContainer(), schema.getUser()));
     }
 
     @Override
@@ -200,7 +193,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                 return;
 
             SQLFragment joinSql = new SQLFragment();
-            joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoSpecimenComment(), tableAlias);
+            joinSql.append(" LEFT OUTER JOIN ").append(SpecimenSchema.get().getTableInfoSpecimenComment(), tableAlias);
             joinSql.append(" ON ");
             joinSql.append(parentAlias).append(".GlobalUniqueId = ").append(tableAlias).append(".GlobalUniqueId AND ");
             joinSql.append(tableAlias).append(".Container = ").append(parentAlias).append(".Container");
@@ -367,7 +360,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
     @Override
     public QueryUpdateService getUpdateService()
     {
-        if (_userSchema.getStudy().getRepositorySettings().isSpecimenDataEditable())
+        if (SettingsManager.get().getRepositorySettings(_userSchema.getStudy().getContainer()).isSpecimenDataEditable())
             return new SpecimenUpdateService(this);
         return null;
     }
@@ -406,8 +399,8 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
     public static SQLFragment getSpecimenAndVialFromSQL(String alias, DbSchema schema, Container container,
                                    List<DomainProperty> optionalSpecimenProperties, List<DomainProperty> optionalVialProperties)
     {
-        TableInfo vialTI = StudySchema.getInstance().getTableInfoVial(container);
-        TableInfo specimenTI = StudySchema.getInstance().getTableInfoSpecimen(container);
+        TableInfo vialTI = SpecimenSchema.get().getTableInfoVial(container);
+        TableInfo specimenTI = SpecimenSchema.get().getTableInfoSpecimen(container);
 
         SqlDialect dialect = schema.getSqlDialect();
         SQLFragment sqlf = new SQLFragment();

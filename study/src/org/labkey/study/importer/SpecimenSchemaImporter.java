@@ -29,6 +29,7 @@ import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.XmlBeansUtil;
@@ -37,10 +38,9 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
-import org.labkey.study.model.DefaultSpecimenTablesTemplate;
-import org.labkey.study.query.SpecimenTablesProvider;
-import org.labkey.study.writer.SpecimenArchiveWriter;
-import org.labkey.study.writer.StudyArchiveDataTypes;
+import org.labkey.api.specimen.DefaultSpecimenTablesTemplate;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
+import org.labkey.api.specimen.writer.SpecimenArchiveWriter;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
@@ -67,7 +67,7 @@ public class SpecimenSchemaImporter implements InternalStudyImporter
     @Override
     public String getDataType()
     {
-        return StudyArchiveDataTypes.SPECIMENS;
+        return SpecimenArchiveDataTypes.SPECIMENS;
     }
 
     public static boolean containsSchemasToImport(StudyImportContext ctx) throws ImportException

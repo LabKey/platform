@@ -19,7 +19,6 @@ package org.labkey.api.action;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.admin.AdminUrls;
@@ -119,6 +118,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
     public static final String ERROR_REQUIRED = "requiredError";
     public static final String ERROR_UNIQUE = "uniqueConstraint";
 
+    /** HTTP parameter name for clients to specify a preferred response format. See supported values in ApiResponseWriter.Format */
+    public static final String RESPONSE_FORMAT_PARAMETER_NAME = "respFormat";
+
     private static final Map<Class<? extends Controller>, ActionDescriptor> _classToDescriptor = new HashMap<>();
 
     private static final Logger _log = LogManager.getLogger(SpringActionController.class);
@@ -135,28 +137,30 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     protected static void registerAction(ActionDescriptor ad)
     {
-        _classToDescriptor.put(ad.getActionClass(), ad);
+        ActionDescriptor prev = _classToDescriptor.put(ad.getActionClass(), ad);
+        assert null == prev || prev == ad;
     }
 
-    @NotNull
+    @Nullable
     static ActionDescriptor getActionDescriptor(Class<? extends Controller> actionClass)
     {
-        ActionDescriptor ad = _classToDescriptor.get(actionClass);
-
-        if (null == ad)
-            throw new IllegalStateException("Action class '" + actionClass + "' has not been registered with a controller");
-
-        return ad;
+        return _classToDescriptor.get(actionClass);
     }
 
     public static String getControllerName(Class<? extends Controller> actionClass)
     {
-        return getActionDescriptor(actionClass).getControllerName();
+        var ad = getActionDescriptor(actionClass);
+        if (null == ad)
+            throw new IllegalStateException("Action class '" + actionClass + "' has not been registered with a controller");
+        return ad.getControllerName();
     }
 
     public static String getActionName(Class<? extends Controller> actionClass)
     {
-        return getActionDescriptor(actionClass).getPrimaryName();
+        var ad = getActionDescriptor(actionClass);
+        if (null == ad)
+            throw new IllegalStateException("Action class '" + actionClass + "' has not been registered with a controller");
+        return ad.getPrimaryName();
     }
 
     public static Collection<ActionDescriptor> getRegisteredActionDescriptors()
@@ -401,6 +405,16 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             PermissionCheckable checkable = (PermissionCheckable)controller;
 
+            ApiResponseWriter.Format responseFormat = ApiResponseWriter.Format.getFormatByName(request.getParameter(RESPONSE_FORMAT_PARAMETER_NAME), null);
+            if (responseFormat == null)
+            {
+                responseFormat = checkable.getDefaultResponseFormat();
+            }
+            if (responseFormat != null)
+            {
+                ApiResponseWriter.setResponseFormat(request, responseFormat);
+            }
+
             ActionURL redirectURL = getUpgradeMaintenanceRedirect(request, controller);
 
             if (null != redirectURL)
@@ -416,6 +430,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             Container c = context.getContainer();
             if (null == c)
             {
+
                 String containerPath = context.getActionURL().getExtraPath();
                 if (containerPath != null && containerPath.contains("/"))
                 {
@@ -847,7 +862,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             HTMLFileActionDescriptor htmlDescriptor = createFileActionDescriptor(module, actionName);
             _nameToDescriptor.put(actionName, htmlDescriptor);
-            registerAction(htmlDescriptor);
 
             return htmlDescriptor.createController(actionController);
         }
@@ -859,13 +873,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         protected class HTMLFileActionDescriptor extends BaseActionDescriptor
         {
-            private final Module _module;
+            private final String _moduleName;
             private final String _primaryName;
             private final List<String> _allNames;
 
             protected HTMLFileActionDescriptor(Module module, String primaryName)
             {
-                _module = module;
+                _moduleName = module.getName();
                 _primaryName = primaryName;
                 _allNames = Collections.singletonList(_primaryName);
             }
@@ -897,8 +911,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
             @Override
             public Controller createController(Controller actionController)
             {
-                Path path = ModuleHtmlView.getViewPath(_module, getPrimaryName());
-                return new SimpleAction(_module, path);
+                Module m = ModuleLoader.getInstance().getModule(_moduleName);
+                if (null == m)
+                    return null;
+                Path path = ModuleHtmlView.getViewPath(m, getPrimaryName());
+                return new SimpleAction(m, path);
             }
         }
 
@@ -999,7 +1016,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
         @Override
         public void addTime(Controller action, long elapsedTime)
         {
-            getActionDescriptor(action.getClass()).addTime(elapsedTime);
+            ActionDescriptor ad = getActionDescriptor(action.getClass());
+            if (null != ad)
+                ad.addTime(elapsedTime);
         }
 
 

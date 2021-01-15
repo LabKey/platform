@@ -45,7 +45,13 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.EditSpecimenDataPermission;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
+import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
+import org.labkey.api.specimen.settings.DisplaySettings;
+import org.labkey.api.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HtmlString;
@@ -55,17 +61,12 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.controllers.specimen.SpecimenUtils;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Vial;
 import org.labkey.study.reports.StudyCrosstabReport;
-import org.labkey.study.security.permissions.RequestSpecimensPermission;
-import org.labkey.study.specimen.settings.DisplaySettings;
-import org.labkey.study.specimen.settings.RepositorySettings;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -96,11 +97,11 @@ public class SpecimenQueryView extends BaseStudyQueryView
         DEFAULT
     }
 
-    private boolean _requireSequenceNum;
+    private final boolean _requireSequenceNum;
 
     private static class SpecimenDataRegion extends DataRegion
     {
-        private Map<String, ColumnInfo> _requiredColumns = new HashMap<>();
+        private final Map<String, ColumnInfo> _requiredColumns = new HashMap<>();
 
         @Override
         protected boolean isErrorRow(RenderContext ctx, int rowIndex)
@@ -211,8 +212,8 @@ public class SpecimenQueryView extends BaseStudyQueryView
     protected static String getHistoryLinkBase(ViewContext ctx, String containerId)
     {
         Container container = null != containerId ? ContainerManager.getForId(containerId) : ctx.getContainer();
-        ActionURL historyLink = new ActionURL(SpecimenController.SampleEventsAction.class, container);
-        historyLink.addParameter(ActionURL.Param.returnUrl, ctx.getActionURL().getLocalURIString());
+        ActionURL historyLink = new ActionURL(SpecimenController.SpecimenEventsAction.class, container);
+        historyLink.addReturnURL(ctx.getActionURL());
         return historyLink.toString() + "&id=";
     }
 
@@ -266,7 +267,6 @@ public class SpecimenQueryView extends BaseStudyQueryView
         }
     }
 
-    private ViewType _viewType;
     private boolean _showHistoryLinks;
     private boolean _disableLowVialIndicators;
     private boolean _showRecordSelectors;
@@ -274,89 +274,91 @@ public class SpecimenQueryView extends BaseStudyQueryView
     private Map<String, String> _hiddenFormFields;
     // key of _availableSpecimenCounts is a specimen hash, which includes ptid, type, etc.
     private Map<String, Integer> _availableSpecimenCounts;
+
     private final boolean _participantVisitFiltered;
+    private final ViewType _viewType;
 
 
     public enum ViewType
     {
         SUMMARY()
-                {
-                    @Override
-                    public String getQueryName()
-                    {
-                        return "SpecimenSummary";
-                    }
+        {
+            @Override
+            public String getQueryName()
+            {
+                return "SpecimenSummary";
+            }
 
-                    @Override
-                    public String getViewName()
-                    {
-                        return null;
-                    }
+            @Override
+            public String getViewName()
+            {
+                return null;
+            }
 
-                    @Override
-                    public boolean isVialView()
-                    {
-                        return false;
-                    }
+            @Override
+            public boolean isVialView()
+            {
+                return false;
+            }
 
-                    @Override
-                    public boolean isForExport()
-                    {
-                        return false;
-                    }
-                },
+            @Override
+            public boolean isForExport()
+            {
+                return false;
+            }
+        },
         VIALS()
-                {
-                    @Override
-                    public String getQueryName()
-                    {
-                        return "SpecimenDetail";
-                    }
+        {
+            @Override
+            public String getQueryName()
+            {
+                return "SpecimenDetail";
+            }
 
-                    @Override
-                    public String getViewName()
-                    {
-                        return null;
-                    }
+            @Override
+            public String getViewName()
+            {
+                return null;
+            }
 
-                    @Override
-                    public boolean isVialView()
-                    {
-                        return true;
-                    }
+            @Override
+            public boolean isVialView()
+            {
+                return true;
+            }
 
-                    @Override
-                    public boolean isForExport()
-                    {
-                        return false;
-                    }
-                },
+            @Override
+            public boolean isForExport()
+            {
+                return false;
+            }
+        },
         VIALS_EMAIL()
-                {
-                    @Override
-                    public String getQueryName()
-                    {
-                        return "SpecimenDetail";
-                    }
+        {
+            @Override
+            public String getQueryName()
+            {
+                return "SpecimenDetail";
+            }
 
-                    @Override
-                    public String getViewName()
-                    {
-                        return "SpecimenEmail";
-                    }
+            @Override
+            public String getViewName()
+            {
+                return "SpecimenEmail";
+            }
 
-                    @Override
-                    public boolean isVialView()
-                    {
-                        return true;
-                    }
+            @Override
+            public boolean isVialView()
+            {
+                return true;
+            }
 
-                    @Override
-                    public boolean isForExport()
-                    {
-                        return true;
-                    }
-                };
+            @Override
+            public boolean isForExport()
+            {
+                return true;
+            }
+        };
 
         public abstract String getQueryName();
 
@@ -376,7 +378,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         _participantVisitFiltered = participantVisitFiltered;
         _requireSequenceNum = requireSequenceNum;
 
-        RepositorySettings repositorySettings = SpecimenManager.getInstance().getRepositorySettings(schema.getContainer());
+        RepositorySettings repositorySettings = SettingsManager.get().getRepositorySettings(schema.getContainer());
         boolean isEditable = ViewType.VIALS == viewType && repositorySettings.isSpecimenDataEditable() && getContainer().hasPermission(getUser(), EditSpecimenDataPermission.class);
         setShowUpdateColumn(isEditable);
 
@@ -439,14 +441,14 @@ public class SpecimenQueryView extends BaseStudyQueryView
     public enum PARAMS
     {
         excludeRequestedBySite,
-        showRequestedBySite,
-        showCompleteRequestedBySite,
-        showRequestedByEnrollmentSite,
         showCompleteRequestedByEnrollmentSite,
-        showRequestedOnly,
+        showCompleteRequestedBySite,
         showCompleteRequestedOnly,
+        showNotCompleteRequestedOnly,
         showNotRequestedOnly,
-        showNotCompleteRequestedOnly
+        showRequestedByEnrollmentSite,
+        showRequestedBySite,
+        showRequestedOnly,
     }
 
     private static boolean hasRequestFilterParam(ViewContext context, PARAMS param)
@@ -618,9 +620,9 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 }
                 else if (pd.getVisitDate() != null)
                 {
-                    whereClause.append(StudySchema.getInstance().getSqlDialect().getDateTimeToDateCast("DrawTimestamp"));
+                    whereClause.append(SpecimenSchema.get().getSqlDialect().getDateTimeToDateCast("DrawTimestamp"));
                     whereClause.append(" = ");
-                    whereClause.append(StudySchema.getInstance().getSqlDialect().getDateTimeToDateCast("?")).append(" AND ");
+                    whereClause.append(SpecimenSchema.get().getSqlDialect().getDateTimeToDateCast("?")).append(" AND ");
                     params.add(pd.getVisitDate());
                 }
                 whereClause.append(requireNonNull(StudyService.get()).getSubjectColumnName(getContextContainer())).append(" = ?)");
@@ -634,7 +636,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
     protected static SimpleFilter addNotPreviouslyRequestedClause(SimpleFilter filter, Container container, int locationId)
     {
-        TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
+        TableInfo tableInfoVial = SpecimenSchema.get().getTableInfoVial(container);
         SQLFragment sql = new SQLFragment("SpecimenHash NOT IN (" +
                 "SELECT v.SpecimenHash from study.SampleRequestSpecimen rs join study.SampleRequest r on rs.SamplerequestId=r.RowId "
                 + "join ");
@@ -872,7 +874,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         boolean zeroVialIndicator = false;
         if (!_disableLowVialIndicators)
         {
-            DisplaySettings settings = SpecimenManager.getInstance().getDisplaySettings(getContainer());
+            DisplaySettings settings = SettingsManager.get().getDisplaySettings(getContainer());
             oneVialIndicator = settings.getLastVialEnum() == DisplaySettings.DisplayOption.ALL_USERS ||
                     (settings.getLastVialEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY &&
                             getUser().hasRootAdminPermission());
@@ -880,12 +882,12 @@ public class SpecimenQueryView extends BaseStudyQueryView
                     (settings.getZeroVialsEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY &&
                             getUser().hasRootAdminPermission());
         }
-        RepositorySettings settings = SpecimenManager.getInstance().getRepositorySettings(getContainer());
+        RepositorySettings settings = SettingsManager.get().getRepositorySettings(getContainer());
         if (settings.isEnableRequests() && !_viewType.isForExport() && getViewContext().getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
         {
             // Only add this column if we're using advanced specimen management and not exported to email or attachment
             cols.add(0, new SpecimenRequestDisplayColumn(this, getTable(), zeroVialIndicator, oneVialIndicator,
-                    SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()) && _showRecordSelectors));
+                    SettingsManager.get().isSpecimenShoppingCartEnabled(getContainer()) && _showRecordSelectors));
         }
 
         // this column is normally hidden but we need it on the select for any specimen filters

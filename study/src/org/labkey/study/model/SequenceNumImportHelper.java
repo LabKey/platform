@@ -49,7 +49,6 @@ public class SequenceNumImportHelper
     final CaseInsensitiveHashMap<String> _translateMap = new CaseInsensitiveHashMap<>();
     final SequenceVisitMap _sequenceNumMap;
 
-
     public SequenceNumImportHelper(@NotNull Study study, @Nullable DatasetDefinition def)
     {
         _timetype = study.getTimepointType();

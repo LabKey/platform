@@ -754,11 +754,11 @@ public class StudyTest extends StudyBaseTest
     protected void verifySpecimens()
     {
         clickFolder(getFolderName());
+        _containerHelper.enableModule("Specimen");
         portalHelper.addWebPart("Specimens");
         waitForText("Blood (Whole)");
         clickAndWait(Locator.linkWithText("Blood (Whole)"));
         specimenUrl = getCurrentRelativeURL();
-
 
         log("verify presence of \"create new request\" button");
         BootstrapMenu menu = BootstrapMenu.find(getDriver(),"Request Options");

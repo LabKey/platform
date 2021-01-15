@@ -69,7 +69,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
     @Override
     public ActionURL getSuccessURL(SearchForm form)
     {
-        ActionURL url = SpecimenController.getSamplesURL(getContainer());
+        ActionURL url = SpecimenController.getSpecimensURL(getContainer());
         url.addParameter("showVials", Boolean.toString(form.isShowVials()));
         for (ShowSearchAction.SearchForm.SearchParam param : form.getSearchParams())
         {
