@@ -40,7 +40,7 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.api.specimen.DefaultSpecimenTablesTemplate;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
-import org.labkey.study.writer.SpecimenArchiveWriter;
+import org.labkey.api.specimen.writer.SpecimenArchiveWriter;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 

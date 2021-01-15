@@ -24,12 +24,12 @@ import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.study.writer.AbstractContext;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.api.study.writer.AbstractContext;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;

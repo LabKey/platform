@@ -67,6 +67,5 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("ClassId"));
         addWrapColumn(_rootTable.getColumn("ProtocolNumber"));
     }
-
 }
 

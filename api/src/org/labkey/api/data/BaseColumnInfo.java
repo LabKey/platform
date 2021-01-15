@@ -71,8 +71,6 @@ import java.util.Set;
 /**
  * Represents a column (be it a real column in a table or a calculated expression) that's part of
  * a {@link TableInfo}. Knows how to generate SQL to get its own value.
- *
- * TODO consider also a MutableColumnInfo interface
  */
 public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements MutableColumnInfo
 {

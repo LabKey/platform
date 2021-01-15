@@ -48,6 +48,7 @@ import org.labkey.api.dataiterator.BeanDataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
@@ -70,10 +71,10 @@ import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
@@ -139,9 +140,9 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.study.QueryHelper;
+import org.labkey.api.study.QueryHelper;
+import org.labkey.api.study.StudyCache;
 import org.labkey.study.SpecimenManager;
-import org.labkey.study.StudyCache;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.BaseStudyController;
@@ -546,7 +547,6 @@ public class StudyManager
         return Collections.unmodifiableSet(result);
     }
 
-
     /** @return all studies under the given root in the container hierarchy (inclusive), to which the user has at least read permission */
     @NotNull
     public Set<? extends StudyImpl> getAllStudies(@NotNull Container root, @NotNull User user)
@@ -695,7 +695,6 @@ public class StudyManager
             errors.add(ex.getMessage());
         }
     }
-
 
     /* most users should call the List<String> errors version to avoid uncaught exceptions */
     @Deprecated
@@ -1598,8 +1597,8 @@ public class StudyManager
 
                 for (VisitImpl visit : visits)
                 {
-                    // Delete samples first because we may need ParticipantVisit to figure out which samples
-                    SpecimenManager.getInstance().deleteSamplesForVisit(visit);
+                    // Delete specimens first because we may need ParticipantVisit to figure out which specimens
+                    SpecimenManager.getInstance().deleteSpecimensForVisit(visit);
 
                     TreatmentManager.getInstance().deleteTreatmentVisitMapForVisit(study.getContainer(), visit.getRowId());
                     deleteAssaySpecimenVisits(study.getContainer(), visit.getRowId());
@@ -2473,7 +2472,6 @@ public class StudyManager
         clearParticipantVisitCaches(def.getStudy());
     }
 
-
     public Map<VisitMapKey,Boolean> getRequiredMap(Study study)
     {
         TableInfo tableVisitMap = StudySchema.getInstance().getTableInfoVisitMap();
@@ -2484,8 +2482,6 @@ public class StudyManager
 
         return map;
     }
-
-
 
     private static final String VISITMAP_JOIN_BY_VISIT = "SELECT d.*, vm.Required\n" +
             "FROM study.Visit v, study.DataSet d, study.VisitMap vm\n" +
@@ -2746,9 +2742,9 @@ public class StudyManager
             }
 
             //
-            // samples
+            // specimens
             //
-            SpecimenManager.getInstance().deleteAllSampleData(c, deletedTables, user);
+            SpecimenManager.getInstance().deleteAllSpecimenData(c, deletedTables, user);
 
             //
             // assay schedule
@@ -3467,19 +3463,22 @@ public class StudyManager
 
     public List<String> importDatasetData(User user, DatasetDefinition def, DataLoader loader, Map<String, String> columnMap,
                                           BatchValidationException errors, DatasetDefinition.CheckForDuplicates checkDuplicates,
-                                          QCState defaultQCState, QueryUpdateService.InsertOption insertOption, StudyImportContext studyImportContext, Logger logger, boolean importLookupByAlternateKey)
+                                          QCState defaultQCState, QueryUpdateService.InsertOption insertOption, StudyImportContext studyImportContext, Logger logger, boolean importLookupByAlternateKey, @Nullable AuditBehaviorType auditBehaviorType)
             throws IOException
     {
         parseData(user, def, loader, columnMap);
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setInsertOption(insertOption);
         context.setAllowImportLookupByAlternateKey(importLookupByAlternateKey);
+        Map<Enum, Object> options = new HashMap<>();
+        options.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
+
         if (logger != null)
         {
-            Map<Enum, Object> options = new HashMap<>();
             options.put(QueryUpdateService.ConfigParameters.Logger, logger);
-            context.setConfigParameters(options);
         }
+
+        context.setConfigParameters(options);
         return def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, studyImportContext, logger, false);
     }
 
@@ -5259,7 +5258,7 @@ public class StudyManager
             StudyManager.getInstance().importDatasetData(
                     _context.getUser(),
                     (DatasetDefinition) def, dl, columnMap,
-                    errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, null, QueryUpdateService.InsertOption.IMPORT, null, logger, false);
+                    errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, null, QueryUpdateService.InsertOption.IMPORT, null, logger, false, null);
 
             if (expectedErrors == null)
             {

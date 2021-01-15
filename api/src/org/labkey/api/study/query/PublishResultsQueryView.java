@@ -989,7 +989,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             // issue 41982 : look for an alternate date column if the standard assay date field does not exist
             List<ColumnInfo> dateCols = selectColumns.stream()
                     .filter(c -> JdbcType.TIMESTAMP.equals(c.getJdbcType()) &&
-                            (!c.getName().equalsIgnoreCase("CreatedBy") && !c.getName().equalsIgnoreCase("ModifiedBy")))
+                            (!c.getName().equalsIgnoreCase("Created") && !c.getName().equalsIgnoreCase("Modified")))
                     .collect(Collectors.toList());
 
             if (dateCols.size() == 1)

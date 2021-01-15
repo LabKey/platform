@@ -26,9 +26,11 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenColumns;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.importer.EventVialRollup;
 import org.labkey.api.specimen.importer.IteratorSpecimenImportFile;
+import org.labkey.api.specimen.importer.RollupHelper;
 import org.labkey.api.specimen.importer.RollupHelper.RollupMap;
 import org.labkey.api.specimen.importer.RollupInstance;
 import org.labkey.api.specimen.importer.SpecimenColumn;
@@ -194,7 +196,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
             _specialColumnNameMap.put("latestqualitycomments", "qualitycomments");
 
             // Add any rollups from optionals whose names are not matching
-            RollupMap<EventVialRollup> matchedRollups = SpecimenImporter.getEventToVialRollups(getContainer(), getUser());
+            RollupMap<EventVialRollup> matchedRollups = RollupHelper.getEventToVialRollups(getContainer(), getUser());
             for (Map.Entry<String, List<RollupInstance<EventVialRollup>>> entry : matchedRollups.entrySet())
             {
                 String fromName = entry.getKey();
@@ -244,7 +246,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
         ArrayList<String> guids = new ArrayList<>();
         for (Map<String, Object> row : rows)
         {
-            String guid = (String)row.get(GLOBAL_UNIQUE_ID_TSV_COL);
+            String guid = (String)row.get(SpecimenColumns.GLOBAL_UNIQUE_ID_TSV_COL);
             if (null == guid)
             {
                 noGuidRowCount++;

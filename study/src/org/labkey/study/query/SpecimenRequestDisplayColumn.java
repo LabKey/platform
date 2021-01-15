@@ -28,11 +28,11 @@ import java.util.Set;
 
 public class SpecimenRequestDisplayColumn extends SimpleDisplayColumn
 {
-    private boolean _showOneVialIndicator;
-    private boolean _showZeroVialIndicator;
-    private TableInfo _table;
-    private boolean _showCartLinks;
-    private SpecimenQueryView _specimenQueryView;
+    private final boolean _showOneVialIndicator;
+    private final boolean _showZeroVialIndicator;
+    private final TableInfo _table;
+    private final boolean _showCartLinks;
+    private final SpecimenQueryView _specimenQueryView;
 
     public SpecimenRequestDisplayColumn(SpecimenQueryView specimenQueryView, TableInfo table, boolean showOneVialIndicator,
                                         boolean showZeroVialIndicator, boolean showCartLinks)
@@ -60,7 +60,6 @@ public class SpecimenRequestDisplayColumn extends SimpleDisplayColumn
             if (c != null)
                 count = c.intValue();
         }
-
 
         boolean vialView = _specimenQueryView.isShowingVials();
         boolean available = (!vialView && count > 0) || (vialView && SpecimenUtils.isFieldTrue(ctx, "Available"));

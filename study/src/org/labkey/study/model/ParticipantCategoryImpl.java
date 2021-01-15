@@ -19,6 +19,7 @@ import org.json.JSONObject;
 import org.labkey.api.data.AbstractParticipantCategory;
 import org.labkey.api.data.AbstractParticipantGroup;
 import org.labkey.api.study.ParticipantCategory;
+import org.labkey.api.study.model.ParticipantGroup;
 
 
 /**

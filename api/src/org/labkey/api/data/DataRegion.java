@@ -181,7 +181,12 @@ public class DataRegion extends DisplayElement
     }
     private List<GroupTable> _groupTables = new ArrayList<>();
 
-    /** HTML message to show the user attached to the region. Caller is responsible for HTML encoding as needed */
+    /**
+     * Messages that are displayed to the user and included in Query API responses.
+     * These messages' content should NOT be HTML encoded as the responsibility
+     * for encoding is left to the caller.
+     * See https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=42017
+     */
     public static class Message
     {
         private String _area;
@@ -205,6 +210,7 @@ public class DataRegion extends DisplayElement
             return _area;
         }
 
+        /** Caller is responsible for HTML encoding. */
         public String getContent()
         {
             return _content;
@@ -974,7 +980,7 @@ public class DataRegion extends DisplayElement
                     _errorCreatingResults = true;
                     _showPagination = false;
                     _allowHeaderLock = false;
-                    addMessage(new Message("<span class=\"labkey-error\">" + PageFlowUtil.filter(x.getMessage()) + "</span><br>", MessageType.ERROR, MessagePart.header));
+                    addMessage(new Message(x.getMessage(), MessageType.ERROR, MessagePart.header));
                 }
             }
 
@@ -1152,7 +1158,7 @@ public class DataRegion extends DisplayElement
                 if (isThemed)
                     out.write("<div class=\"alert alert-" + (isError ? "danger" : "warning") + "\">");
 
-                out.write(message.getContent());
+                out.write(PageFlowUtil.filter(message.getContent()));
 
                 if (isThemed)
                     out.write("</div>");
@@ -1277,7 +1283,7 @@ public class DataRegion extends DisplayElement
             captions.append(".");
             content.append(captions.toString());
 
-            msg = new Message(PageFlowUtil.filter(content.toString()), MessageType.WARNING, MessagePart.header);
+            msg = new Message(content.toString(), MessageType.WARNING, MessagePart.header);
         }
 
         return msg;
@@ -2561,7 +2567,7 @@ public class DataRegion extends DisplayElement
                     msg.append(" because they do not exist.");
                 }
 
-                addMessage(new Message(PageFlowUtil.filter(msg.toString()), MessageType.WARNING, "filter"));
+                addMessage(new Message(msg.toString(), MessageType.WARNING, "filter"));
             }
 
             SimpleFilter filter = getValidFilter(ctx);
@@ -2612,7 +2618,7 @@ public class DataRegion extends DisplayElement
         {
             String msg = prepareConditionalFormats(dc);
             if (msg != null)
-                addMessage(new Message(PageFlowUtil.filter(msg), MessageType.WARNING, "filter"));
+                addMessage(new Message(msg, MessageType.WARNING, "filter"));
         }
     }
 

@@ -23,9 +23,9 @@ public interface ParticipantCategory
 {
     String SEND_PARTICIPANT_GROUP_TYPE = "Study.SendParticipantGroup";
 
-    public static int OWNER_SHARED = -1;
+    int OWNER_SHARED = -1;
 
-    public enum Type {
+    enum Type {
         manual,
         list,
         query,

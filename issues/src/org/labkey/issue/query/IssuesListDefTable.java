@@ -117,7 +117,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
     private void addAllColumns()
     {
         setDescription("Contains one row for each issue list");
-        setName("Issue List Definitions");
+        setTitle("Issue List Definitions");
 
         addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("RowId"))).setHidden(true);
 
