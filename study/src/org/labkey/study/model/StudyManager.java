@@ -48,6 +48,7 @@ import org.labkey.api.dataiterator.BeanDataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
@@ -73,6 +74,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
@@ -3461,19 +3463,22 @@ public class StudyManager
 
     public List<String> importDatasetData(User user, DatasetDefinition def, DataLoader loader, Map<String, String> columnMap,
                                           BatchValidationException errors, DatasetDefinition.CheckForDuplicates checkDuplicates,
-                                          QCState defaultQCState, QueryUpdateService.InsertOption insertOption, StudyImportContext studyImportContext, Logger logger, boolean importLookupByAlternateKey)
+                                          QCState defaultQCState, QueryUpdateService.InsertOption insertOption, StudyImportContext studyImportContext, Logger logger, boolean importLookupByAlternateKey, @Nullable AuditBehaviorType auditBehaviorType)
             throws IOException
     {
         parseData(user, def, loader, columnMap);
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setInsertOption(insertOption);
         context.setAllowImportLookupByAlternateKey(importLookupByAlternateKey);
+        Map<Enum, Object> options = new HashMap<>();
+        options.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
+
         if (logger != null)
         {
-            Map<Enum, Object> options = new HashMap<>();
             options.put(QueryUpdateService.ConfigParameters.Logger, logger);
-            context.setConfigParameters(options);
         }
+
+        context.setConfigParameters(options);
         return def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, studyImportContext, logger, false);
     }
 
@@ -5253,7 +5258,7 @@ public class StudyManager
             StudyManager.getInstance().importDatasetData(
                     _context.getUser(),
                     (DatasetDefinition) def, dl, columnMap,
-                    errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, null, QueryUpdateService.InsertOption.IMPORT, null, logger, false);
+                    errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, null, QueryUpdateService.InsertOption.IMPORT, null, logger, false, null);
 
             if (expectedErrors == null)
             {

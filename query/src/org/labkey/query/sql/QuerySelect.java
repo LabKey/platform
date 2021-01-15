@@ -458,6 +458,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
                     }
                     while (fieldKeys.containsKey(uniqueKey));
                     column._key = uniqueKey;
+                    reportWarning("Automatically creating alias for duplicate column: " + name, column._node);
                 }
                 else
                 {
