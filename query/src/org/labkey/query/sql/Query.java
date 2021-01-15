@@ -1770,7 +1770,12 @@ public class Query
         new SqlTest("SELECT regr_slope(seven, d), day FROM R GROUP BY day", 2, 7),
         new SqlTest("SELECT regr_sxx(seven, d), day FROM R GROUP BY day", 2, 7),
         new SqlTest("SELECT regr_sxy(seven, d), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT regr_syy(seven, d), day FROM R GROUP BY day", 2, 7)
+        new SqlTest("SELECT regr_syy(seven, d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT 'similar' WHERE similar_to('abc','abc')", 1, 1),
+        new SqlTest("SELECT 'similar' WHERE similar_to('abc','a')", 1, 0),
+        new SqlTest("SELECT 'similar' WHERE similar_to('abc','%(b|d)%')", 1, 1),
+        new SqlTest("SELECT 'similar' WHERE similar_to('abc','(b|c)%')", 1, 0),
+        new SqlTest("SELECT 'similar' WHERE similar_to('abc|','abc\\|', '\\')", 1, 1),
     };
 
 
