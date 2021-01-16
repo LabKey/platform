@@ -662,10 +662,10 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
         var canEdit = this.canEdit();
 
-        // enabled for named editable views that exist; additionally overridable module based view is not deletable.
-        var deleteEnabled = canEdit && this.customView.deletable && this.customView.name && !this.customView.doesNotExist;
+        // Enabled for named editable views that exist; additionally overridable module based view is not deletable. And user must have delete permissions, Issue 41601.
+        var deleteEnabled = canEdit && this.customView.deletable && this.customView.name && !this.customView.doesNotExist && LABKEY.user.canDelete;
 
-        // enabled for saved (non-session) editable views or customized default or overridable module based view (not new) views.
+        // Enabled for saved (non-session) editable views or customized default or overridable module based view (not new) views.
         var revertEnabled = canEdit && (this.customView.revertable || this.customView.session || (!this.customView.name && !this.customView.doesNotExist));
 
         var items = [{
