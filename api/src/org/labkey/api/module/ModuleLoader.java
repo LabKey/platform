@@ -66,12 +66,14 @@ import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
@@ -141,6 +143,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
     public static final String LABKEY_DATA_SOURCE = "labkeyDataSource";
     public static final String CPAS_DATA_SOURCE = "cpasDataSource";
     public static final Object SCRIPT_RUNNING_LOCK = new Object();
+
+    private static volatile List<String> _missingViews = Collections.emptyList();
 
     private static ModuleLoader _instance = null;
     private static Throwable _startupFailure = null;
@@ -1342,6 +1346,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             runDropScripts();
             runCreateScripts();
         }
+        refreshMissingViews();
     }
 
     // Runs the drop and create scripts in a single module
@@ -1604,6 +1609,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     // performedUpgrade is true if any module required upgrading
     private void afterUpgrade(boolean performedUpgrade)
     {
+        verifyDatabaseViews();
         setUpgradeState(UpgradeState.UpgradeComplete);
 
         if (performedUpgrade)
@@ -1616,6 +1622,33 @@ public class ModuleLoader implements Filter, MemTrackerListener
         verifyRequiredModules();
     }
 
+    // Register an admin warning that reports if any database views are missing, Issue 40187
+    private void verifyDatabaseViews()
+    {
+        // This is a "dynamic" warning because the RecreateViewsAction can correct the problem at runtime
+        WarningService.get().register(new WarningProvider()
+        {
+            @Override
+            public void addDynamicWarnings(Warnings warnings, ViewContext context)
+            {
+                if (WarningService.get().showAllWarnings() || !_missingViews.isEmpty())
+                    warnings.add(HtmlStringBuilder.of("The following required database views are not present: " + _missingViews + ". This is a serious problem that indicates the LabKey database schemas did not upgrade correctly and are in a bad state."));
+            }
+        });
+        refreshMissingViews();
+    }
+
+    // Determine if any module database views are missing
+    private void refreshMissingViews()
+    {
+        _missingViews = DbSchema.getAllSchemasToTest().stream()
+            .flatMap(s -> s.getTableXmlMap().entrySet().stream()
+                .filter(e -> "VIEW".equalsIgnoreCase(e.getValue().getTableDbType()))
+                .filter(e -> s.getTable(e.getKey()).getTableType() == DatabaseTableType.NOT_IN_DB)
+                .map(e -> s.getName() + "." + e.getValue().getTableName())
+            )
+            .collect(Collectors.toList());
+    }
 
     // If the "requiredModules" parameter is present in labkey.xml then fail startup if any specified module is missing.
     // Particularly interesting for compliant deployments, e.g., <Parameter name="requiredModules" value="Compliance"/>

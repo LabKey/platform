@@ -16,6 +16,7 @@
 package org.labkey.api.view.template;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
 
 import java.util.List;
@@ -29,6 +30,12 @@ public interface Warnings
             public void add(HtmlString warning)
             {
                 collection.add(warning);
+            }
+
+            @Override
+            public void add(HasHtmlString warningBuilder)
+            {
+                collection.add(warningBuilder.getHtmlString());
             }
 
             @Override
@@ -46,6 +53,7 @@ public interface Warnings
     }
 
     void add(HtmlString warning);
+    void add(HasHtmlString warningBuilder);
     boolean isEmpty();
     List<HtmlString> getMessages();
 }

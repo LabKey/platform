@@ -88,16 +88,8 @@ public class SettingsManager
 
     public RepositorySettings getRepositorySettings(Container container)
     {
-        Map<String,String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser(),
-                container, "SpecimenRepositorySettings");
-        if (settingsMap.isEmpty())
-        {
-            RepositorySettings defaults = RepositorySettings.getDefaultSettings(container);
-            saveRepositorySettings(container, defaults);
-            return defaults;
-        }
-        else
-            return new RepositorySettings(container, settingsMap);
+        Map<String,String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser(), container, "SpecimenRepositorySettings");
+        return settingsMap.isEmpty() ? RepositorySettings.getDefaultSettings(container) : new RepositorySettings(container, settingsMap);
     }
 
     public void saveRepositorySettings(Container container, RepositorySettings settings)
