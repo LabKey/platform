@@ -78,7 +78,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.AmbiguousLocationException;
 import org.labkey.api.specimen.RequestEventType;
+import org.labkey.api.specimen.RequestedSpecimens;
 import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
@@ -1705,13 +1707,13 @@ public class SpecimenController extends BaseStudyController
             _specimenIds = specimenIds;
         }
 
-        public SpecimenUtils.RequestedSpecimens getSelectedSpecimens(SpecimenUtils utils) throws SpecimenUtils.AmbiguousLocationException
+        public RequestedSpecimens getSelectedSpecimens(SpecimenUtils utils) throws AmbiguousLocationException
         {
             // first check for explicitly listed specimen row ids (this is the case when posting the final
             // specimen request form):
             List<Vial> requestedSpecimens = utils.getSpecimensFromRowIds(getSpecimenRowIds());
             if (requestedSpecimens != null && requestedSpecimens.size() > 0)
-                return new SpecimenUtils.RequestedSpecimens(requestedSpecimens);
+                return new RequestedSpecimens(requestedSpecimens);
 
             Set<String> ids;
             if ("post".equalsIgnoreCase(utils.getViewContext().getRequest().getMethod()) &&
@@ -1746,7 +1748,7 @@ public class SpecimenController extends BaseStudyController
         private final BindException _errors;
         private final ActionURL _returnUrl;
 
-        public NewRequestBean(ViewContext context, SpecimenUtils.RequestedSpecimens requestedSpecimens, CreateSpecimenRequestForm form, BindException errors) throws SQLException
+        public NewRequestBean(ViewContext context, RequestedSpecimens requestedSpecimens, CreateSpecimenRequestForm form, BindException errors) throws SQLException
         {
             super(context, requestedSpecimens != null ? requestedSpecimens.getVials() : null, false, false, false, false);
             _errors = errors;
@@ -2008,13 +2010,13 @@ public class SpecimenController extends BaseStudyController
     {
         getUtils().ensureSpecimenRequestsConfigured(true);
         
-        SpecimenUtils.RequestedSpecimens requested;
+        RequestedSpecimens requested;
 
         try
         {
             requested = form.getSelectedSpecimens(getUtils());
         }
-        catch (SpecimenUtils.AmbiguousLocationException e)
+        catch (AmbiguousLocationException e)
         {
             // Even though this method (getCreateSpecimenRequestView) is used from multiple places, only HandleCreateSpecimenRequestAction
             // receives a post; therefore, it's safe to say that the selectSpecimenProvider.jsp form should always post to

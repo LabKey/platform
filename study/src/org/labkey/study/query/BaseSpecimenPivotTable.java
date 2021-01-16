@@ -27,12 +27,12 @@ import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.PrimaryType;
 import org.labkey.api.specimen.model.SpecimenTypeSummary;
 import org.labkey.api.study.StudyService;
-import org.labkey.study.SpecimenManager;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -236,7 +236,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     {
         Map<Integer, NameLabelPair> typeMap = new HashMap<>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
-        SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(container, getUserSchema().getUser());
+        SpecimenTypeSummary summary = SpecimenManagerNew.get().getSpecimenTypeSummary(container, getUserSchema().getUser());
         List<? extends SpecimenTypeSummary.TypeCount> primaryTypes = summary.getPrimaryTypes();
 
         for (SpecimenTypeSummary.TypeCount type : primaryTypes)
@@ -263,7 +263,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     {
         Map<Integer, NameLabelPair> typeMap = new HashMap<>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
-        List<PrimaryType> primaryTypes = SpecimenManager.getInstance().getPrimaryTypes(container);
+        List<PrimaryType> primaryTypes = SpecimenManagerNew.get().getPrimaryTypes(container);
 
         for (PrimaryType type : primaryTypes)
         {
@@ -285,7 +285,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     {
         Map<Integer, NameLabelPair> typeMap = new HashMap<>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
-        SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(container, getUserSchema().getUser());
+        SpecimenTypeSummary summary = SpecimenManagerNew.get().getSpecimenTypeSummary(container, getUserSchema().getUser());
         List<? extends SpecimenTypeSummary.TypeCount> types = summary.getDerivatives();
 
         for (SpecimenTypeSummary.TypeCount type : types)

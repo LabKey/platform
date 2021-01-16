@@ -70,8 +70,6 @@ public class SpecimenModule extends CodeOnlyModule
     @Override
     protected void init()
     {
-        addController(SpecimenController.NAME, SpecimenController.class);
-
         PropertyService.get().registerDomainKind(new AdditiveTypeDomainKind());
         PropertyService.get().registerDomainKind(new DerivativeTypeDomainKind());
         PropertyService.get().registerDomainKind(new PrimaryTypeDomainKind());

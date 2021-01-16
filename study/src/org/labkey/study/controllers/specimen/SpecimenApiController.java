@@ -29,6 +29,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.RequestedSpecimens;
 import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
@@ -49,7 +50,6 @@ import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.BaseStudyController;
 import org.springframework.validation.BindException;
 
@@ -139,21 +139,21 @@ public class SpecimenApiController extends BaseStudyController
             vialProperties.put("primaryTypeId", vial.getPrimaryTypeId());
             if (vial.getPrimaryTypeId() != null)
             {
-                PrimaryType primaryType = SpecimenManager.getInstance().getPrimaryType(vial.getContainer(), vial.getPrimaryTypeId());
+                PrimaryType primaryType = SpecimenManagerNew.get().getPrimaryType(vial.getContainer(), vial.getPrimaryTypeId());
                 if (primaryType != null)
                     vialProperties.put("primaryType", primaryType.getPrimaryType());
             }
             vialProperties.put("derivativeTypeId", vial.getDerivativeTypeId());
             if (vial.getDerivativeTypeId() != null)
             {
-                DerivativeType derivativeType = SpecimenManager.getInstance().getDerivativeType(vial.getContainer(), vial.getDerivativeTypeId());
+                DerivativeType derivativeType = SpecimenManagerNew.get().getDerivativeType(vial.getContainer(), vial.getDerivativeTypeId());
                 if (derivativeType != null)
                     vialProperties.put("derivativeType", derivativeType.getDerivative());
             }
             vialProperties.put("additiveTypeId", vial.getAdditiveTypeId());
             if (vial.getAdditiveTypeId() != null)
             {
-                AdditiveType additiveType = SpecimenManager.getInstance().getAdditiveType(vial.getContainer(), vial.getAdditiveTypeId());
+                AdditiveType additiveType = SpecimenManagerNew.get().getAdditiveType(vial.getContainer(), vial.getAdditiveTypeId());
                 if (additiveType != null)
                     vialProperties.put("additiveType", additiveType.getAdditive());
             }
@@ -329,7 +329,7 @@ public class SpecimenApiController extends BaseStudyController
         @Override
         public ApiResponse execute(GetProvidingLocationsForm form, BindException errors)
         {
-            Map<String, List<Vial>> vialsByHash = SpecimenManager.getInstance().getVialsForSpecimenHashes(getContainer(), getUser(),
+            Map<String, List<Vial>> vialsByHash = SpecimenManagerNew.get().getVialsForSpecimenHashes(getContainer(), getUser(),
                     PageFlowUtil.set(form.getSpecimenHashes()), true);
             Collection<Integer> preferredLocations = SpecimenUtils.getPreferredProvidingLocations(vialsByHash.values());
             final Map<String, Object> response = new HashMap<>();
@@ -560,7 +560,7 @@ public class SpecimenApiController extends BaseStudyController
 
     @RequiresPermission(RequestSpecimensPermission.class)
     @ApiVersion(9.1)
-    @Migrate // TODO: Find where LABKEY.Specimen.AddSamplesToRequest() is defined
+    @Migrate // TODO: Rename and adjust LABKEY.Specimen.AddSamplesToRequest() in labkey-api-js, then rename this action
     public class AddSamplesToRequestAction extends MutatingApiAction<AddSpecimensToRequestForm>
     {
         @Override
@@ -569,7 +569,7 @@ public class SpecimenApiController extends BaseStudyController
             final SpecimenRequest request = getRequest(getUser(), getContainer(), addSpecimensToRequestForm.getRequestId(), true, true);
             Set<String> hashes = new HashSet<>();
             Collections.addAll(hashes, addSpecimensToRequestForm.getSpecimenHashes());
-            SpecimenUtils.RequestedSpecimens requested = getUtils().getRequestableBySpecimenHash(hashes, addSpecimensToRequestForm.getPreferredLocation());
+            RequestedSpecimens requested = getUtils().getRequestableBySpecimenHash(hashes, addSpecimensToRequestForm.getPreferredLocation());
             if (requested.getVials().size() > 0)
             {
                 List<Vial> vials = new ArrayList<>(requested.getVials());
@@ -647,7 +647,7 @@ public class SpecimenApiController extends BaseStudyController
         public ApiResponse execute(SpecimenApiForm form, BindException errors)
         {
             Container container = form.getViewContext().getContainer();
-            SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(container, getUser());
+            SpecimenTypeSummary summary = SpecimenManagerNew.get().getSpecimenTypeSummary(container, getUser());
             final Map<String, Object> response = new HashMap<>();
 
             List<Map<String, Object>> primaryTypes = new ArrayList<>();

@@ -45,7 +45,9 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.specimen.AmbiguousLocationException;
 import org.labkey.api.specimen.RequestEventType;
+import org.labkey.api.specimen.RequestedSpecimens;
 import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
@@ -81,7 +83,6 @@ import org.labkey.api.view.GridView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
@@ -631,7 +632,7 @@ public class SpecimenUtils
     }
 
     @NotNull
-    public static <T> Set<T> intersect(@NotNull Set<T> left, @NotNull Set<T> right)
+    private static <T> Set<T> intersect(@NotNull Set<T> left, @NotNull Set<T> right)
     {
         Set<T> intersection = new HashSet<>();
         for (T item : left)
@@ -736,7 +737,7 @@ public class SpecimenUtils
         if (fromGroupedView)
         {
             Map<String, List<Vial>> keyToVialMap =
-                    SpecimenManager.getInstance().getVialsForSpecimenHashes(getContainer(), getUser(),  formValues, onlyAvailable);
+                    SpecimenManagerNew.get().getVialsForSpecimenHashes(getContainer(), getUser(),  formValues, onlyAvailable);
             List<Vial> vials = new ArrayList<>();
             for (List<Vial> vialList : keyToVialMap.values())
                 vials.addAll(vialList);
@@ -747,91 +748,11 @@ public class SpecimenUtils
         return selectedVials;
     }
 
-    public static class AmbiguousLocationException extends Exception
-    {
-        private final Container _container;
-        private final Collection<Integer> _possibleLocationIds;
-
-        private LocationImpl[] _possibleLocations = null;
-
-        public AmbiguousLocationException(Container container, Collection<Integer> possibleLocationIds)
-        {
-            _container = container;
-            _possibleLocationIds = possibleLocationIds;
-        }
-
-        public Collection<Integer> getPossibleLocationIds()
-        {
-            return _possibleLocationIds;
-        }
-
-        public LocationImpl[] getPossibleLocations()
-        {
-            if (_possibleLocations == null)
-            {
-                _possibleLocations = new LocationImpl[_possibleLocationIds.size()];
-                int idx = 0;
-
-                for (Integer id : _possibleLocationIds)
-                    _possibleLocations[idx++] = LocationManager.get().getLocation(_container, id.intValue());
-            }
-            return _possibleLocations;
-        }
-    }
-
-    public static class RequestedSpecimens
-    {
-        private final Collection<Integer> _providingLocationIds;
-        private final List<Vial> _vials;
-
-        private List<Location> _providingLocations;
-
-        public RequestedSpecimens(List<Vial> vials, Collection<Integer> providingLocationIds)
-        {
-            _vials = vials;
-            _providingLocationIds = providingLocationIds;
-        }
-
-        public RequestedSpecimens(List<Vial> vials)
-        {
-            _vials = vials;
-            _providingLocationIds = new HashSet<>();
-            if (vials != null)
-            {
-                for (Vial vial : vials)
-                    _providingLocationIds.add(vial.getCurrentLocation());
-            }
-        }
-
-        public List<Location> getProvidingLocations()
-        {
-            if (_providingLocations == null)
-            {
-                if (_vials == null || _vials.size() == 0)
-                    _providingLocations = Collections.emptyList();
-                else
-                {
-                    Container container = _vials.get(0).getContainer();
-                    _providingLocations = new ArrayList<>(_providingLocationIds.size());
-
-                    for (Integer locationId : _providingLocationIds)
-                        _providingLocations.add(LocationManager.get().getLocation(container, locationId.intValue()));
-                }
-            }
-            return _providingLocations;
-        }
-
-        public List<Vial> getVials()
-        {
-            return _vials;
-        }
-    }
-
     public RequestedSpecimens getRequestableByVialRowIds(Set<String> rowIds)
     {
         Set<Long> ids = new HashSet<>();
         Arrays.stream(BaseStudyController.toLongArray(rowIds)).forEach(ids::add);
-        List<Vial> requestedSpecimens = SpecimenManager.getInstance().getRequestableVials(getContainer(), getUser(), ids);
+        List<Vial> requestedSpecimens = SpecimenManagerNew.get().getRequestableVials(getContainer(), getUser(), ids);
         return new RequestedSpecimens(requestedSpecimens);
     }
 
@@ -843,7 +764,7 @@ public class SpecimenUtils
 
     public RequestedSpecimens getRequestableBySpecimenHash(Set<String> formValues, Integer preferredLocation) throws AmbiguousLocationException
     {
-        Map<String, List<Vial>> vialsByHash = SpecimenManager.getInstance().getVialsForSpecimenHashes(getContainer(), getUser(), formValues, true);
+        Map<String, List<Vial>> vialsByHash = SpecimenManagerNew.get().getVialsForSpecimenHashes(getContainer(), getUser(), formValues, true);
 
         if (vialsByHash == null || vialsByHash.isEmpty())
             return new RequestedSpecimens(Collections.emptyList());
@@ -882,7 +803,7 @@ public class SpecimenUtils
 
         return new RequestedSpecimens(requestedSpecimens, providingLocations);
     }
-    
+
     public GridView getRequestEventGridView(HttpServletRequest request, BindException errors, SimpleFilter filter)
     {
         DataRegion rgn = new DataRegion();

@@ -63,7 +63,7 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
         return INSTANCE;
     }
 
-    // These importers are defined and registered by other modules.  They have no knowledge of study internals, other
+    // These importers are defined and registered by other modules. They have no knowledge of study internals, other
     // than being able to read elements from study.xml.
     public Collection<FolderImporter> getRegisteredStudyImporters()
     {

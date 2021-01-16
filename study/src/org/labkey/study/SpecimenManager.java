@@ -47,7 +47,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenCommentAuditEvent;
 import org.labkey.api.specimen.SpecimenDetailQueryHelper;
-import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSchema;
@@ -57,14 +56,9 @@ import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
-import org.labkey.api.specimen.model.AdditiveType;
-import org.labkey.api.specimen.model.DerivativeType;
 import org.labkey.api.specimen.model.ExtendedSpecimenRequestView;
-import org.labkey.api.specimen.model.PrimaryType;
 import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
-import org.labkey.api.specimen.model.SpecimenTypeSummary;
-import org.labkey.api.specimen.model.SpecimenTypeSummaryRow;
 import org.labkey.api.specimen.report.RequestSummaryByVisitType;
 import org.labkey.api.specimen.report.SummaryByVisitParticipant;
 import org.labkey.api.specimen.report.SummaryByVisitType;
@@ -113,175 +107,6 @@ public class SpecimenManager
         SQLFragment sql = new SQLFragment("SELECT MAX(ExternalId) FROM ");
         sql.append(tableInfo.getSelectName());
         return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Long.class).get(0);
-    }
-
-    @Nullable
-    public AdditiveType getAdditiveType(Container c, int rowId)
-    {
-        List<AdditiveType> additiveTypes = getAdditiveTypes(c, new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
-        if (!additiveTypes.isEmpty())
-            return additiveTypes.get(0);
-        return null;
-    }
-
-    private List<AdditiveType> getAdditiveTypes(final Container container, @Nullable SimpleFilter filter)
-    {
-        final List<AdditiveType> additiveTypes = new ArrayList<>();
-        new TableSelector(SpecimenSchema.get().getTableInfoSpecimenAdditive(container), filter, null).
-            forEachMap(map -> additiveTypes.add(new AdditiveType(container, map)));
-        return additiveTypes;
-    }
-
-    public DerivativeType getDerivativeType(Container c, int rowId)
-    {
-        List<DerivativeType> derivativeTypes = getDerivativeTypes(c, new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
-        if (!derivativeTypes.isEmpty())
-            return derivativeTypes.get(0);
-        return null;
-    }
-
-    private List<DerivativeType> getDerivativeTypes(final Container container, @Nullable SimpleFilter filter)
-    {
-        final List<DerivativeType> derivativeTypes = new ArrayList<>();
-        new TableSelector(SpecimenSchema.get().getTableInfoSpecimenDerivative(container), filter, null).
-            forEachMap(map -> derivativeTypes.add(new DerivativeType(container, map)));
-        return derivativeTypes;
-    }
-
-    public PrimaryType getPrimaryType(Container c, int rowId)
-    {
-        List<PrimaryType> primaryTypes = getPrimaryTypes(c, new SimpleFilter(FieldKey.fromParts("RowId"), rowId), null);
-        if (!primaryTypes.isEmpty())
-            return primaryTypes.get(0);
-        return null;
-    }
-
-    public List<PrimaryType> getPrimaryTypes(Container c)
-    {
-        return getPrimaryTypes(c, null, new Sort("ExternalId"));
-    }
-
-    private List<PrimaryType> getPrimaryTypes(final Container container, @Nullable SimpleFilter filter, @Nullable Sort sort)
-    {
-        final List<PrimaryType> primaryTypes = new ArrayList<>();
-        new TableSelector(SpecimenSchema.get().getTableInfoSpecimenPrimaryType(container), filter, sort).
-            forEachMap(map -> primaryTypes.add(new PrimaryType(container, map)));
-        return primaryTypes;
-    }
-
-    public List<Vial> getRequestableVials(Container container, User user, Set<Long> vialRowIds)
-    {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addInClause(FieldKey.fromParts("RowId"), vialRowIds).addCondition(FieldKey.fromString("available"), true);
-        return SpecimenManagerNew.get().getVials(container, user, filter);
-    }
-
-    public SpecimenTypeSummary getSpecimenTypeSummary(Container container, @NotNull User user)
-    {
-        UserSchema querySchema = SpecimenQuerySchema.get(StudyService.get().getStudy(container), user);
-        TableInfo tableInfoSpecimenWrap = querySchema.getTable(SpecimenQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
-        if (null == tableInfoSpecimenWrap)
-            throw new IllegalStateException("SpecimenDetail table not found.");
-
-        TableInfo additiveTableInfo = querySchema.getTable(SpecimenQuerySchema.SPECIMEN_ADDITIVE_TABLE_NAME);
-        TableInfo derivativeTableInfo = querySchema.getTable(SpecimenQuerySchema.SPECIMEN_DERIVATIVE_TABLE_NAME);
-        TableInfo primaryTypeTableInfo = querySchema.getTable(SpecimenQuerySchema.SPECIMEN_PRIMARY_TYPE_TABLE_NAME);
-        String tableInfoSelectName = "SpecimenWrap";
-
-        // TODO: consider caching
-
-        Study study = StudyService.get().getStudy(container);
-        if (study == null)
-            return null;
-
-        SQLFragment specimenTypeSummarySQL = new SQLFragment("SELECT\n" +
-            "\tPrimaryType,\n" +
-            "\tPrimaryTypeId,\n" +
-            "\tDerivative,\n" +
-            "\tDerivativeTypeId,\n" +
-            "\tAdditive,\n" +
-            "\tAdditiveTypeId,\n" +
-            "\tSUM(VialCount) AS VialCount\n" +
-            "FROM (\n" +
-            "\tSELECT\n" +
-            "\tPT.PrimaryType AS PrimaryType,\n" +
-            "\tPrimaryTypeId,\n" +
-            "\tDT.Derivative AS Derivative,\n" +
-            "\tDerivativeTypeId,\n" +
-            "\tAT.Additive AS Additive,\n" +
-            "\tAdditiveTypeId,\n" +
-            "\tSpecimens.VialCount\n" +
-            "\tFROM\n");
-
-        SQLFragment sqlPtidFilter = new SQLFragment();
-        if (study.isAncillaryStudy())
-        {
-/*            StudyQuerySchema sourceStudySchema = StudyQuerySchema.createSchema(study.getSourceStudy(), null, false);
-            SpecimenWrapTable sourceStudyTableInfo = (SpecimenWrapTable)sourceStudySchema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
-            tableInfoSpecimenWrap.setUnionTable(sourceStudyTableInfo);
-
-            String[] ptids = StudyManager.getInstance().getParticipantIds(study);
-            sqlPtidFilter.append("\t\t\tWHERE ").append(tableInfoSpecimenWrap.getColumn("PTID").getValueSql(tableInfoSelectName)).append(" IN (");
-            if (ptids == null || ptids.length == 0)
-                sqlPtidFilter.append("NULL");
-            else
-            {
-                String comma = "";
-                for (String ptid : ptids)
-                {
-                    sqlPtidFilter.append(comma).append("?");
-                    sqlPtidFilter.add(ptid);
-                    comma = ", ";
-                }
-            }
-            sqlPtidFilter.append(")\n");  */
-        }
-
-        specimenTypeSummarySQL.append("\t\t(SELECT ")
-            .append(tableInfoSpecimenWrap.getColumn("PrimaryTypeId").getValueSql(tableInfoSelectName)).append(",")
-            .append(tableInfoSpecimenWrap.getColumn("DerivativeTypeId").getValueSql(tableInfoSelectName)).append(",")
-            .append(tableInfoSpecimenWrap.getColumn("AdditiveTypeId").getValueSql(tableInfoSelectName)).append(",")
-            .append("\n\t\t\tSUM(").append(tableInfoSpecimenWrap.getColumn("VialCount").getValueSql(tableInfoSelectName))
-            .append(") AS VialCount\n")
-            .append("\n\t\tFROM ").append(tableInfoSpecimenWrap.getFromSQL(tableInfoSelectName)).append("\n");
-        specimenTypeSummarySQL.append(sqlPtidFilter);
-        specimenTypeSummarySQL.append("\t\tGROUP BY ")
-            .append(tableInfoSpecimenWrap.getColumn("PrimaryTypeId").getValueSql(tableInfoSelectName)).append(",")
-            .append(tableInfoSpecimenWrap.getColumn("DerivativeTypeId").getValueSql(tableInfoSelectName)).append(",")
-            .append(tableInfoSpecimenWrap.getColumn("AdditiveTypeId").getValueSql(tableInfoSelectName))
-            .append("\t\t\t) Specimens\n").append(
-                "\tLEFT OUTER JOIN ").append(primaryTypeTableInfo.getFromSQL("PT")).append(  " ON\n" +
-                "\t\tPT.RowId = Specimens.PrimaryTypeId\n" +
-                "\tLEFT OUTER JOIN ").append(derivativeTableInfo.getFromSQL("DT")).append(" ON\n" +
-                "\t\tDT.RowId = Specimens.DerivativeTypeId\n" +
-                "\tLEFT OUTER JOIN ").append(additiveTableInfo.getFromSQL("AT")).append(" ON\n" +
-                "\t\tAT.RowId = Specimens.AdditiveTypeId\n" +
-                ") ContainerTotals\n" +
-                "GROUP BY PrimaryType, PrimaryTypeId, Derivative, DerivativeTypeId, Additive, AdditiveTypeId\n" +
-                "ORDER BY PrimaryType, Derivative, Additive"
-            );
-
-        SpecimenTypeSummaryRow[] rows = new SqlSelector(SpecimenSchema.get().getSchema(), specimenTypeSummarySQL).getArray(SpecimenTypeSummaryRow.class);
-
-        return new SpecimenTypeSummary(container, rows);
-    }
-
-    public Map<String,List<Vial>> getVialsForSpecimenHashes(Container container, User user, Collection<String> hashes, boolean onlyAvailable)
-    {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addInClause(FieldKey.fromParts("SpecimenHash"), hashes);
-        if (onlyAvailable)
-            filter.addCondition(FieldKey.fromParts("Available"), true);
-        List<Vial> vials = SpecimenManagerNew.get().getVials(container, user, filter);
-        Map<String, List<Vial>> map = new HashMap<>();
-        for (Vial vial : vials)
-        {
-            String hash = vial.getSpecimenHash();
-            List<Vial> keyVials = map.computeIfAbsent(hash, k -> new ArrayList<>());
-            keyVials.add(vial);
-        }
-
-        return map;
     }
 
     public Map<String, Integer> getSampleCounts(Container container, Collection<String> specimenHashes)

@@ -17,6 +17,7 @@ package org.labkey.study.specimen.report.participant;
 
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
@@ -125,7 +126,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
 
     protected List<? extends SpecimenTypeSummary.TypeCount> getSelectedTypes()
     {
-        SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(getContainer(), getUser());
+        SpecimenTypeSummary summary = SpecimenManagerNew.get().getSpecimenTypeSummary(getContainer(), getUser());
         if (_selectedType == null || _selectedType.equals(ALL_PRIMARY_TYPES_FORM_VALUE))
             return summary.getPrimaryTypes();
         if (_selectedType.equals(ALL_DERIVATIVE_TYPES_FORM_VALUE))
@@ -170,7 +171,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
     protected Pair<String, HtmlString> getSpecimenTypePicker()
     {
         Select.SelectBuilder select = new Select.SelectBuilder();
-        SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(getContainer(), getUser());
+        SpecimenTypeSummary summary = SpecimenManagerNew.get().getSpecimenTypeSummary(getContainer(), getUser());
         select.name("selectedType");
 
         select.addOption(new Option.OptionBuilder()
@@ -180,16 +181,16 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
             .build());
 
         select.addOption(new Option.OptionBuilder()
-                .value(ALL_DERIVATIVE_TYPES_FORM_VALUE)
-                .label("One report per derivative type")
-                .selected(ALL_DERIVATIVE_TYPES_FORM_VALUE.equals(_selectedType))
-                .build());
+            .value(ALL_DERIVATIVE_TYPES_FORM_VALUE)
+            .label("One report per derivative type")
+            .selected(ALL_DERIVATIVE_TYPES_FORM_VALUE.equals(_selectedType))
+            .build());
 
         select.addOption(new Option.OptionBuilder()
-                .value(ALL_ADDITIVE_TYPES_FORM_VALUE)
-                .label("One report per additive type")
-                .selected(ALL_ADDITIVE_TYPES_FORM_VALUE.equals(_selectedType))
-                .build());
+            .value(ALL_ADDITIVE_TYPES_FORM_VALUE)
+            .label("One report per additive type")
+            .selected(ALL_ADDITIVE_TYPES_FORM_VALUE.equals(_selectedType))
+            .build());
 
         appendOptions(summary.getPrimaryTypes(), select, null, _selectedType, 0);
         return new Pair<>("Specimen type", unsafe(select.toString()));
