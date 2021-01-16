@@ -17,13 +17,9 @@ package org.labkey.study.writer;
 
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
-import org.labkey.api.annotations.Migrate;
-import org.labkey.api.specimen.writer.SimpleStudyExportContext;
-import org.labkey.api.specimen.writer.SpecimenArchiveWriter;
-import org.labkey.api.specimen.writer.SpecimenSettingsWriter;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.StudySerializationRegistry;
-import org.labkey.api.study.writer.BaseStudyWriter;
+import org.labkey.api.study.writer.SimpleStudyWriter;
+import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
 import org.labkey.study.importer.AssayScheduleImporter;
 import org.labkey.study.importer.CohortImporter;
 import org.labkey.study.importer.DatasetCohortAssigner;
@@ -103,15 +99,10 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
         );
     }
 
-    // These writers serialize into the study archive, but are registered by other modules
-    @Migrate // Add a registration mechanism
-    public Collection<BaseStudyWriter<Study, SimpleStudyExportContext>> getRegisteredStudyWriters()
+    // These writers are related to study and serialize into the study archive, but are registered by other modules
+    public Collection<SimpleStudyWriter> getRegisteredStudyWriters()
     {
-        // New up the writers every time since these classes can be stateful
-        return List.of(
-            new SpecimenSettingsWriter(),
-            new SpecimenArchiveWriter()
-        );
+        return SimpleStudyWriterRegistry.getSimpleStudyWriters();
     }
 
     public Collection<InternalStudyImporter> getInternalStudyImporters()

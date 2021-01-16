@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.writer;
+package org.labkey.specimen.writer;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,8 +30,10 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.specimen.SpecimenColumns;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
-import org.labkey.api.specimen.writer.StandardSpecimenWriter.QueryInfo;
+import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
+import org.labkey.specimen.writer.StandardSpecimenWriter.QueryInfo;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.writer.SimpleStudyExportContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
@@ -52,8 +54,6 @@ import java.util.Map;
  */
 public class SpecimenArchiveWriter extends AbstractSpecimenWriter
 {
-    public static final String SCHEMA_FILENAME = "specimens_metadata.xml";
-
     @Override
     public String getDataType()
     {
@@ -117,7 +117,7 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
             SpecimenTableInfoWriter xmlWriter = new SpecimenTableInfoWriter(ctx.getContainer(), table, entry.getKey(), domain, columns);
             xmlWriter.writeTable(tableXml);
         }
-        specimensDir.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
+        specimensDir.saveXmlBean(SpecimenArchiveDataTypes.SCHEMA_FILENAME, tablesDoc);
     }
 
     private static boolean shouldRemovePhi(PHI exportPhiLevel, ColumnInfo column)

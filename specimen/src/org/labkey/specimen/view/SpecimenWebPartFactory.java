@@ -1,7 +1,8 @@
-package org.labkey.api.specimen.view;
+package org.labkey.specimen.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.view.SpecimenWebPart;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.DefaultWebPartFactory;

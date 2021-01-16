@@ -135,12 +135,12 @@ import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.specimen.view.SpecimenWebPartFactory;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.MasterPatientIndexService;
@@ -184,7 +184,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.api.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.MasterPatientIndexMaintenanceTask;
 import org.labkey.study.StudyModule;
@@ -5995,25 +5994,6 @@ public class StudyController extends BaseStudyController
         {
             _addNavTrail(root);
             root.addChild("Datasets");
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class SamplesAction extends SimpleViewAction<Object>
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return new SpecimenWebPartFactory().getWebPartView(getViewContext(), new SpecimenWebPartFactory().createWebPart());
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            Study study = getStudy();
-            if (study != null)
-                root.addChild(study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
-            root.addChild("Samples");
         }
     }
 

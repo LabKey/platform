@@ -172,10 +172,10 @@ import org.labkey.study.reports.StudyCrosstabReport;
 import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.study.reports.StudyRReport;
 import org.labkey.study.reports.StudyReportUIProvider;
-import org.labkey.study.view.StudyToolsWebPartFactory;
 import org.labkey.study.view.DatasetsWebPartView;
 import org.labkey.study.view.StudyListWebPartFactory;
 import org.labkey.study.view.StudySummaryWebPartFactory;
+import org.labkey.study.view.StudyToolsWebPartFactory;
 import org.labkey.study.view.SubjectDetailsWebPartFactory;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate;
@@ -185,7 +185,6 @@ import org.labkey.study.view.studydesign.VaccineDesignWebpartFactory;
 import org.labkey.study.writer.DatasetDataWriter;
 import org.labkey.study.writer.DefaultStudyDesignWriter;
 import org.labkey.study.writer.MissingValueWriterFactory;
-import org.labkey.api.specimen.writer.SpecimenWriter;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.writer.StudyWriterFactory;
 
@@ -240,7 +239,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     protected void init()
     {
-        addController("study", StudyController.class);  // Default controller for this module -- must be registered first
+        addController("study", StudyController.class);  // Default controller for this module -- must be registered first!
         addController("cohort", CohortController.class);
         addController("dataset", DatasetController.class);
         addController("participant-group", ParticipantGroupController.class);
@@ -712,8 +711,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             DefaultStudyDesignWriter.TestCase.class,
             ParticipantIdImportHelper.ParticipantIdTest.class,
             SampleMindedTransformTask.TestCase.class,
-            SequenceNumImportHelper.SequenceNumTest.class,
-            SpecimenWriter.TestCase.class
+            SequenceNumImportHelper.SequenceNumTest.class
         );
     }
 

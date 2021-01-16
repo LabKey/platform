@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.writer;
+package org.labkey.specimen.writer;
 
-import org.labkey.api.study.Study;
 import org.labkey.api.study.writer.AbstractContext;
-import org.labkey.api.study.writer.BaseStudyWriter;
+import org.labkey.api.study.writer.SimpleStudyWriter;
 import org.labkey.study.xml.StudyDocument;
 
 /**
  * User: kevink
  * Date: 6/13/13
  */
-abstract class AbstractSpecimenWriter implements BaseStudyWriter<Study, SimpleStudyExportContext>
+abstract class AbstractSpecimenWriter implements SimpleStudyWriter
 {
     protected static final String DEFAULT_DIRECTORY = "specimens";
 

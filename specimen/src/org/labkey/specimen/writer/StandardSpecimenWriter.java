@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.writer;
+package org.labkey.specimen.writer;
 
 import org.labkey.api.admin.ImportContext;
-import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
@@ -42,9 +41,7 @@ import java.util.List;
  * Date: May 7, 2009
  * Time: 9:51:36 AM
  */
-@Migrate
-// TODO: Switch back to package-local after specimen migration? SpecimenArchiveWriter needs to move to study-api first.
-public class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo, ImportContext<StudyDocument.Study>>
+class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo, ImportContext<StudyDocument.Study>>
 {
     @Override
     public String getDataType()

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.writer;
+package org.labkey.specimen.writer;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -40,6 +40,7 @@ import org.labkey.api.specimen.importer.SpecimenColumn;
 import org.labkey.api.specimen.importer.TargetTable;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.writer.SimpleStudyExportContext;
 import org.labkey.api.writer.VirtualFile;
 
 import java.io.PrintWriter;

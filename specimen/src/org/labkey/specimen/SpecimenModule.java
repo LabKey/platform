@@ -36,9 +36,13 @@ import org.labkey.api.specimen.model.SpecimenEventDomainKind;
 import org.labkey.api.specimen.model.SpecimenRequestEventType;
 import org.labkey.api.specimen.model.VialDomainKind;
 import org.labkey.api.specimen.view.SpecimenToolsWebPartFactory;
-import org.labkey.api.specimen.view.SpecimenWebPartFactory;
+import org.labkey.specimen.view.SpecimenWebPartFactory;
+import org.labkey.specimen.writer.SpecimenArchiveWriter;
+import org.labkey.specimen.writer.SpecimenSettingsWriter;
+import org.labkey.specimen.writer.SpecimenWriter;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.specimen.security.roles.SpecimenCoordinatorRole;
 import org.labkey.specimen.security.roles.SpecimenRequesterRole;
@@ -46,6 +50,7 @@ import org.labkey.specimen.security.roles.SpecimenRequesterRole;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class SpecimenModule extends CodeOnlyModule
 {
@@ -94,6 +99,11 @@ public class SpecimenModule extends CodeOnlyModule
         SpecimenService.get().registerSpecimenImportStrategyFactory(new DefaultSpecimenImportStrategyFactory());
 
         AuditLogService.get().registerAuditType(new SpecimenCommentAuditProvider());
+
+        SimpleStudyWriterRegistry.registerSimpleStudyWriterProvider(() -> List.of(
+            new SpecimenSettingsWriter(),
+            new SpecimenArchiveWriter()
+        ));
     }
 
     @Override
@@ -101,5 +111,14 @@ public class SpecimenModule extends CodeOnlyModule
     public Collection<String> getSummary(Container c)
     {
         return Collections.emptyList();
+    }
+
+    @Override
+    @NotNull
+    public Set<Class> getUnitTests()
+    {
+        return Set.of(
+            SpecimenWriter.TestCase.class
+        );
     }
 }

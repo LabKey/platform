@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.writer;
+package org.labkey.specimen.writer;
 
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.SQLFragment;
@@ -44,8 +44,8 @@ public class LocationSpecimenWriter extends StandardSpecimenWriter
             sql.append(comma);
 
             // when masking, use generic label for clinics and remove the LabwareLabCode, Description, and Address fields for clinics
-            if (ctx.isMaskClinic() && column.getDbColumnName().toLowerCase().equals("label"))
-                sql.append("CASE WHEN Clinic = " + d.getBooleanTRUE() + " THEN ").appendStringLiteral("Clinic").append(" ELSE Label END AS Label");
+            if (ctx.isMaskClinic() && column.getDbColumnName().equalsIgnoreCase("label"))
+                sql.append("CASE WHEN Clinic = ").append(d.getBooleanTRUE()).append(" THEN ").appendStringLiteral("Clinic").append(" ELSE Label END AS Label");
             else if (ctx.isMaskClinic() && column.isMaskOnExport())
                 sql.append(getMaskClinicSql(d, column.getDbColumnName()));
             else

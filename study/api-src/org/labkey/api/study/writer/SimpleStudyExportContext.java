@@ -1,11 +1,10 @@
-package org.labkey.api.specimen.writer;
+package org.labkey.api.study.writer;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.study.writer.AbstractContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.xml.StudyDocument;
 

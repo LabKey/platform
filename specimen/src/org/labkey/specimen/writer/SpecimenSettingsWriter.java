@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.writer;
+package org.labkey.specimen.writer;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.annotations.Migrate;
@@ -31,8 +31,10 @@ import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.settings.StatusSettings;
+import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.writer.SimpleStudyExportContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.security.xml.GroupType;
 import org.labkey.security.xml.GroupsType;
@@ -53,7 +55,7 @@ import java.util.List;
  * User: kevink
  * Date: 6/13/13
  */
-@Migrate // Move to specimen module. Move specimen.xsd from api to specimen module.
+@Migrate // Move specimen.xsd from api to specimen module once SpecimenSettingsImporter is moved
 public class SpecimenSettingsWriter extends AbstractSpecimenWriter
 {
     private static final String DEFAULT_SETTINGS_FILE = "specimen_settings.xml";
