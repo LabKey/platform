@@ -175,8 +175,7 @@ public class QueryHelper<K extends StudyCachable>
             return "~ALL";
         else
         {
-            String cacheId = filter.toSQLString(StudyService.get().getStudySchema().getSqlDialect());
-            return cacheId;
+            return filter.toSQLString(StudyService.get().getStudySchema().getSqlDialect());
         }
     }
 }

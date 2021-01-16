@@ -24,6 +24,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.study.StudyService;
@@ -66,7 +67,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
             Container container = getContainer();
             for (int rowId : form.getVialCommentsToClear())
             {
-                Vial vial = SpecimenManager.getInstance().getVial(container, user, rowId);
+                Vial vial = SpecimenManagerNew.get().getVial(container, user, rowId);
                 if (vial != null)
                 {
                     SpecimenComment comment = SpecimenManager.getInstance().getSpecimenCommentForVial(vial);

@@ -29,6 +29,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
@@ -354,7 +355,7 @@ public class SpecimenApiController extends BaseStudyController
             {
                 try
                 {
-                    List<Vial> vials = SpecimenManager.getInstance().getVials(container, form.getViewContext().getUser(), form.getRowIds());
+                    List<Vial> vials = SpecimenManagerNew.get().getVials(container, form.getViewContext().getUser(), form.getRowIds());
                     vialList = getSpecimenListResponse(vials);
                 }
                 catch (SpecimenRequestException e)
@@ -490,13 +491,13 @@ public class SpecimenApiController extends BaseStudyController
     {
         Vial vial;
         if (VialRequestForm.IdTypes.GlobalUniqueId.name().equals(idType))
-            vial = SpecimenManager.getInstance().getVial(getContainer(), getUser(), vialId);
+            vial = SpecimenManagerNew.get().getVial(getContainer(), getUser(), vialId);
         else if (VialRequestForm.IdTypes.RowId.name().equals(idType))
         {
             try
             {
                 int id = Integer.parseInt(vialId);
-                vial = SpecimenManager.getInstance().getVial(getContainer(), getUser(), id);
+                vial = SpecimenManagerNew.get().getVial(getContainer(), getUser(), id);
             }
             catch (NumberFormatException e)
             {

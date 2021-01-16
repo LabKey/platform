@@ -79,6 +79,7 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.RequestEventType;
+import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput;
@@ -117,6 +118,7 @@ import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.settings.StatusSettings;
 import org.labkey.api.specimen.view.SpecimenWebPart;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenUrls;
@@ -156,7 +158,6 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
-import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
@@ -789,7 +790,7 @@ public class SpecimenController extends BaseStudyController
         {
             if (form.getId() != null && form.getTargetStudy() != null)
             {
-                Vial vial = SpecimenManager.getInstance().getVial(form.getTargetStudy(), getUser(), form.getId());
+                Vial vial = SpecimenManagerNew.get().getVial(form.getTargetStudy(), getUser(), form.getId());
                 if (vial != null)
                 {
                     ActionURL url = new ActionURL(SpecimenEventsAction.class, form.getTargetStudy()).addParameter("id", vial.getRowId());
@@ -818,7 +819,7 @@ public class SpecimenController extends BaseStudyController
                 throw new NotFoundException("Folder does not have a study.");
             }
             _showingSelectedSpecimens = viewEventForm.isSelected();
-            Vial vial = SpecimenManager.getInstance().getVial(getContainer(), getUser(), viewEventForm.getId());
+            Vial vial = SpecimenManagerNew.get().getVial(getContainer(), getUser(), viewEventForm.getId());
             if (vial == null)
                 throw new NotFoundException("Specimen " + viewEventForm.getId() + " does not exist.");
 
@@ -1885,7 +1886,7 @@ public class SpecimenController extends BaseStudyController
                     vials = new ArrayList<>();
                     for (long specimenId : specimenIds)
                     {
-                        Vial vial = SpecimenManager.getInstance().getVial(container, user, specimenId);
+                        Vial vial = SpecimenManagerNew.get().getVial(container, user, specimenId);
                         if (vial != null)
                         {
                             boolean isAvailable = vial.isAvailable();
@@ -2874,7 +2875,7 @@ public class SpecimenController extends BaseStudyController
                             protected List<Vial> getSpecimenList()
                             {
                                 SimpleFilter filter = getUtils().getSpecimenListFilter(getSpecimenRequest(), originatingOrProvidingLocation, type);
-                                return SpecimenManager.getInstance().getVials(container, user, filter);
+                                return SpecimenManagerNew.get().getVials(container, user, filter);
 //                                return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenDetail(container), filter, null).getArrayList(Specimen.class);
                             }
 
@@ -3644,7 +3645,7 @@ public class SpecimenController extends BaseStudyController
                 {
                     try
                     {
-                        List<Vial> vials = SpecimenManager.getInstance().getVials(getContainer(), getUser(), rowId);
+                        List<Vial> vials = SpecimenManagerNew.get().getVials(getContainer(), getUser(), rowId);
                         selectedVials = new ArrayList<>(vials);
                     }
                     catch (SpecimenRequestException e)
@@ -3670,7 +3671,7 @@ public class SpecimenController extends BaseStudyController
             Container container = getContainer();
             List<Vial> vials = new ArrayList<>();
             for (int rowId : commentsForm.getRowId())
-                vials.add(SpecimenManager.getInstance().getVial(container, user, rowId));
+                vials.add(SpecimenManagerNew.get().getVial(container, user, rowId));
 
             Map<Vial, SpecimenComment> currentComments = SpecimenManager.getInstance().getSpecimenComments(vials);
 
@@ -3679,7 +3680,7 @@ public class SpecimenController extends BaseStudyController
             {
                 if (commentsForm.getCopySampleId() != -1)
                 {
-                    Vial vial = SpecimenManager.getInstance().getVial(container, user, commentsForm.getCopySampleId());
+                    Vial vial = SpecimenManagerNew.get().getVial(container, user, commentsForm.getCopySampleId());
                     if (vial != null)
                     {
                         _successUrl = new ActionURL(CopyParticipantCommentAction.class, container).
@@ -3790,7 +3791,7 @@ public class SpecimenController extends BaseStudyController
             }
 
             ImportSpecimensBean bean = new ImportSpecimensBean(getContainer(), archives, form.getPath(), form.getFile(), errors);
-            boolean isEmpty = SpecimenManager.getInstance().isSpecimensEmpty(getContainer(), getUser());
+            boolean isEmpty = SpecimenManagerNew.get().isSpecimensEmpty(getContainer(), getUser());
             if (isEmpty)
             {
                 bean.setNoSpecimens(true);
@@ -3815,8 +3816,6 @@ public class SpecimenController extends BaseStudyController
             root.addChild("Import Study Batch - " + msg);
         }
     }
-
-
 
     @RequiresPermission(AdminPermission.class)
     public class SubmitSpecimenBatchImport extends FormHandlerAction<PipelineForm>
@@ -5442,11 +5441,11 @@ public class SpecimenController extends BaseStudyController
             {
                 // Get all the specimen objects. If it throws an exception then there was an error and we'll
                 // root around to figure out what to report
-                SpecimenManager specimenManager = SpecimenManager.getInstance();
+                SpecimenManagerNew specimenManager = SpecimenManagerNew.get();
                 try
                 {
                     SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), _requestId);
-                    List<Vial> vials = specimenManager.getVials(getContainer(), getUser(), globalIds);
+                    List<Vial> vials = SpecimenManagerNew.get().getVials(getContainer(), getUser(), globalIds);
 
                     if (vials != null && vials.size() == globalIds.length)
                     {

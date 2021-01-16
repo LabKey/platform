@@ -24,10 +24,10 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.DisplayElement;
-import org.labkey.study.CohortFilter;
 
 import java.util.List;
 

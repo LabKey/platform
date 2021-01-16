@@ -19,12 +19,13 @@ package org.labkey.study.specimen;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.specimen.SpecimenQuerySchema;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.SpecimenQueryView;
-import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -133,8 +134,8 @@ public class SpecimenSearchBean
 
         DisplayColumnInfo visitInfo = new DisplayColumnInfo(true, true);
         visitInfo.setOrderBy("DisplayOrder");
-        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(context.getContainer()), context.getUser(), true);
-        TableInfo simpleSpecimenTable = schema.createTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
+        UserSchema schema = SpecimenQuerySchema.get(StudyService.get().getStudy(context.getContainer()), context.getUser());
+        TableInfo simpleSpecimenTable = schema.getTable(SpecimenQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
         DisplayColumnInfo participantColInfo = new DisplayColumnInfo(true, true, true, DemoMode.isDemoMode(context), simpleSpecimenTable);
         participantColInfo.setOrderBy("PTID");
     }

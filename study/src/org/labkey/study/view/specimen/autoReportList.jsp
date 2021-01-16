@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.query.CustomView" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.study.CohortFilter" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.model.ParticipantGroup" %>
@@ -27,7 +28,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
-<%@ page import="org.labkey.study.CohortFilter" %>
 <%@ page import="org.labkey.study.CohortFilterFactory" %>
 <%@ page import="org.labkey.study.controllers.specimen.ReportConfigurationBean" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>

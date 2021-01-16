@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
@@ -1757,7 +1758,7 @@ public class StudyManager
         return getVisits(study, null, null, order);
     }
 
-    public List<VisitImpl> getVisits(Study study, @Nullable CohortImpl cohort, @Nullable User user, Visit.Order order)
+    public List<VisitImpl> getVisits(Study study, @Nullable Cohort cohort, @Nullable User user, Visit.Order order)
     {
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
             return Collections.emptyList();
@@ -2160,7 +2161,7 @@ public class StudyManager
     }
 
 
-    public List<DatasetDefinition> getDatasetDefinitions(Study study, @Nullable CohortImpl cohort, String... types)
+    public List<DatasetDefinition> getDatasetDefinitions(Study study, @Nullable Cohort cohort, String... types)
     {
         List<DatasetDefinition> local = getDatasetDefinitionsLocal(study, cohort, types);
         List<DatasetDefinition> shared = Collections.emptyList();
@@ -2262,7 +2263,7 @@ public class StudyManager
     }
 
 
-    public List<DatasetDefinition> getDatasetDefinitionsLocal(Study study, @Nullable CohortImpl cohort, String... types)
+    public List<DatasetDefinition> getDatasetDefinitionsLocal(Study study, @Nullable Cohort cohort, String... types)
     {
         SimpleFilter filter = null;
         if (cohort != null)
@@ -3898,19 +3899,20 @@ public class StudyManager
         return DatasetDomainKind.generateDomainURI(name, id, c);
     }
 
-
     @NotNull
-    public VisitManager getVisitManager(StudyImpl study)
+    public VisitManager getVisitManager(Study study)
     {
+        @Migrate // TODO: Switch VisitManager() to take Study and get rid of cast
+        StudyImpl studyImpl = (StudyImpl)study;
         switch (study.getTimepointType())
         {
             case VISIT:
-                return new SequenceVisitManager(study);
+                return new SequenceVisitManager(studyImpl);
             case CONTINUOUS:
-                return new AbsoluteDateVisitManager(study);
+                return new AbsoluteDateVisitManager(studyImpl);
             case DATE:
             default:
-                return new RelativeDateVisitManager(study);
+                return new RelativeDateVisitManager(studyImpl);
         }
     }
 

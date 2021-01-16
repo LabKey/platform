@@ -45,6 +45,8 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.specimen.RequestEventType;
+import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.SpecimenSchema;
@@ -64,6 +66,7 @@ import org.labkey.api.specimen.security.permissions.SetSpecimenCommentsPermissio
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -78,8 +81,6 @@ import org.labkey.api.view.GridView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.CohortFilter;
-import org.labkey.api.specimen.RequestEventType;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
@@ -686,7 +687,7 @@ public class SpecimenUtils
             List<Vial> vials = new ArrayList<>();
             for (long requestedSampleId : requestedSampleIds)
             {
-                Vial current = SpecimenManager.getInstance().getVial(getContainer(), getUser(), requestedSampleId);
+                Vial current = SpecimenManagerNew.get().getVial(getContainer(), getUser(), requestedSampleId);
                 if (current != null)
                     vials.add(current);
             }
@@ -707,7 +708,7 @@ public class SpecimenUtils
             List<Vial> vials = new ArrayList<>();
             for (String globalUniqueId : globalUniqueIds)
             {
-                Vial match = SpecimenManager.getInstance().getVial(container, user, globalUniqueId);
+                Vial match = SpecimenManagerNew.get().getVial(container, user, globalUniqueId);
                 if (match != null)
                     vials.add(match);
             }

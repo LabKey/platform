@@ -23,6 +23,7 @@ import org.labkey.api.specimen.SpecimenTypeLevel;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Cohort;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.model.ParticipantGroup;
@@ -35,11 +36,9 @@ import org.labkey.api.util.element.Option.OptionBuilder;
 import org.labkey.api.util.element.Select;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewForm;
-import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyManager;
@@ -135,7 +134,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         return _cohortFilter;
     }
 
-    public CohortImpl getCohort()
+    public Cohort getCohort()
     {
         return _cohortFilter != null ? _cohortFilter.getCohort(getContainer(), getUser()) : null;
     }

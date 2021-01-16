@@ -39,7 +39,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.specimen.SpecimenEvent;
 import org.labkey.api.specimen.SpecimenEventManager;
+import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestException;
+import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.study.Study;
@@ -108,7 +110,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             else
                 throw new IllegalArgumentException("RowId not found for a row.");
         }
-        List<Vial> vials = SpecimenManager.getInstance().getVials(container, user, rowIds);
+        List<Vial> vials = SpecimenManagerNew.get().getVials(container, user, rowIds);
         if (vials.size() != keys.size())
             throw new IllegalStateException("Specimens should be same size as rows.");
 
@@ -120,7 +122,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
             for (Vial vial : vials)
                 SpecimenManager.getInstance().deleteSpecimen(vial, false);
-            SpecimenManager.getInstance().clearCaches(container);
+            SpecimenRequestManager.get().clearCaches(container);
 
             // Force recalculation of requestability and specimen table
             EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, false);
@@ -153,7 +155,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, ValidationException
     {
         long rowId = keyFromMap(oldRow);
-        Vial vial = SpecimenManager.getInstance().getVial(container, user, rowId);
+        Vial vial = SpecimenManagerNew.get().getVial(container, user, rowId);
 
         if (null == vial)
             throw new IllegalArgumentException("No specimen found for rowId: " + rowId);
@@ -349,7 +351,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             uniqueRows.put(rowId, row);
         }
         Map<Long, Vial> vials = new HashMap<>();
-        for (Vial vial : SpecimenManager.getInstance().getVials(container, user, rowIds))
+        for (Vial vial : SpecimenManagerNew.get().getVials(container, user, rowIds))
         {
             vials.put(vial.getRowId(), vial);
         }
@@ -414,7 +416,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, ValidationException
     {
         long rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
-        Vial vial = SpecimenManager.getInstance().getVial(container, user, rowId);
+        Vial vial = SpecimenManagerNew.get().getVial(container, user, rowId);
         if (vial == null)
             throw new IllegalArgumentException("No specimen found for rowId: " + rowId);
 

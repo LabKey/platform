@@ -1266,4 +1266,10 @@ public class StudyServiceImpl implements StudyService
     {
         return TAB_PROVIDERS;
     }
+
+    @Override
+    public Collection<? extends Study> getAncillaryStudies(Container sourceStudyContainer)
+    {
+        return StudyManager.getInstance().getAncillaryStudies(sourceStudyContainer);
+    }
 }

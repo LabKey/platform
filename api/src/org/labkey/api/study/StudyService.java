@@ -253,4 +253,6 @@ public interface StudyService
     }
 
     void registerStudyTabProvider(StudyTabProvider provider);
+
+    Collection<? extends Study> getAncillaryStudies(Container sourceStudyContainer);
 }

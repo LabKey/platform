@@ -4,12 +4,12 @@ import org.apache.commons.collections4.comparators.ComparableComparator;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.annotations.Migrate;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
@@ -20,7 +20,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableResultSet;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
@@ -50,12 +49,13 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NotFoundException;
 
+import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -65,7 +65,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class SpecimenRequestManager
+public class SpecimenRequestManager implements ContainerManager.ContainerListener
 {
     private static final SpecimenRequestManager INSTANCE = new SpecimenRequestManager();
 
@@ -85,6 +85,37 @@ public class SpecimenRequestManager
         _requestHelper = new QueryHelper<>(() -> SpecimenSchema.get().getTableInfoSampleRequest(), SpecimenRequest.class);
 
         initGroupedValueAllowedColumnMap();
+    }
+
+    @Override
+    public void containerCreated(Container c, User user)
+    {
+        clearCaches(c);
+    }
+
+    @Override
+    public void containerDeleted(Container c, User user)
+    {
+        clearCaches(c);
+    }
+
+    @Override
+    public void containerMoved(Container c, Container oldParent, User user)
+    {
+        clearCaches(c);
+    }
+
+    @NotNull
+    @Override
+    public Collection<String> canMove(Container c, Container newParent, User user)
+    {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt)
+    {
+        clearCaches((Container)evt.getSource());
     }
 
     public List<SpecimenRequestStatus> getRequestStatuses(Container c, User user)
@@ -768,14 +799,13 @@ public class SpecimenRequestManager
         updateVialCounts(container, user, null);
     }
 
-    @Migrate // Enable ancillary study cache clearing
     public void clearCaches(Container c)
     {
         _requestEventHelper.clearCache(c);
         _requestHelper.clearCache(c);
         _requestStatusHelper.clearCache(c);
-//        for (StudyImpl study : StudyManager.getInstance().getAncillaryStudies(c))
-//            clearCaches(study.getContainer());
+        for (Study study : StudyService.get().getAncillaryStudies(c))
+            clearCaches(study.getContainer());
 
         clearGroupedValuesForColumn(c);
     }
@@ -1139,7 +1169,7 @@ public class SpecimenRequestManager
 
             SpecimenRequestRequirementProvider.get().deleteRequirements(request);
 
-            deleteRequestEvents(user, request);
+            deleteRequestEvents(request);
             _requestHelper.delete(request);
 
             transaction.commit();
@@ -1153,7 +1183,7 @@ public class SpecimenRequestManager
             return;
 
         Set<Long> vialRowIds = new HashSet<>(vialIds);
-        List<Vial> vials = getVials(request.getContainer(), user, vialRowIds);
+        List<Vial> vials = SpecimenManagerNew.get().getVials(request.getContainer(), user, vialRowIds);
         List<String> globalUniqueIds = new ArrayList<>(vials.size());
         List<String> descriptions = new ArrayList<>();
         for (Vial vial : vials)
@@ -1233,7 +1263,7 @@ public class SpecimenRequestManager
         return new SqlSelector(SpecimenSchema.get().getSchema(), sql).getArrayList(Integer.class);
     }
 
-    private void deleteRequestEvents(User user, SpecimenRequest request)
+    private void deleteRequestEvents(SpecimenRequest request)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), request.getRowId());
         List<SpecimenRequestEvent> events = _requestEventHelper.get(request.getContainer(), filter);
@@ -1242,51 +1272,6 @@ public class SpecimenRequestManager
             AttachmentService.get().deleteAttachments(event);
             _requestEventHelper.delete(event);
         }
-    }
-
-    @Migrate // Move back to SpecimenManager?
-    public List<Vial> getVials(Container container, User user, Set<Long> vialRowIds)
-    {
-        // Take a set to eliminate dups - issue 26940
-
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addInClause(FieldKey.fromParts("RowId"), vialRowIds);
-        List<Vial> vials = getVials(container, user, filter);
-        if (vials.size() != vialRowIds.size())
-        {
-            List<Long> unmatchedRowIds = new ArrayList<>(vialRowIds);
-            for (Vial vial : vials)
-            {
-                unmatchedRowIds.remove(vial.getRowId());
-            }
-            throw new SpecimenRequestException("One or more specimen RowIds had no matching specimen: " + unmatchedRowIds);
-        }
-        return vials;
-    }
-
-    @Migrate // Move back to SpecimenManager?
-    public List<Vial> getVials(final Container container, final User user, SimpleFilter filter)
-    {
-        // TODO: LinkedList?
-        final List<Vial> vials = new ArrayList<>();
-
-        getSpecimensSelector(container, user, filter)
-            .forEachMap(map -> vials.add(new Vial(container, map)));
-
-        return vials;
-    }
-
-    @Migrate // Move back to SpecimenManager?
-    public TableSelector getSpecimensSelector(final Container container, final User user, SimpleFilter filter)
-    {
-        Study study = StudyService.get().getStudy(container);
-        if (study == null)
-        {
-            throw new NotFoundException("No study in container " + container.getPath());
-        }
-        UserSchema schema = SpecimenQuerySchema.get(study, user);
-        TableInfo specimenTable = schema.getTable(SpecimenQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
-        return new TableSelector(specimenTable, filter, null);
     }
 }
 

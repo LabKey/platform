@@ -36,6 +36,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.DefaultSpecimenTablesTemplate;
 import org.labkey.api.specimen.SpecimenColumns;
+import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.AutoCompleteAction;
@@ -211,7 +212,7 @@ public class SpecimenServiceImpl implements SpecimenService
     @Override
     public ParticipantVisit getSampleInfo(Container studyContainer, User user, String sampleId)
     {
-        Vial match = SpecimenManager.getInstance().getVial(studyContainer, user, sampleId);
+        Vial match = SpecimenManagerNew.get().getVial(studyContainer, user, sampleId);
         if (match != null)
             return new StudyParticipantVisit(studyContainer, sampleId, match.getPtid(), match.getVisitValue(), match.getDrawTimestamp());
         else
@@ -223,7 +224,7 @@ public class SpecimenServiceImpl implements SpecimenService
     {
         if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != date)
         {
-            List<Vial> matches = SpecimenManager.getInstance().getVials(studyContainer, user, participantId, date);
+            List<Vial> matches = SpecimenManagerNew.get().getVials(studyContainer, user, participantId, date);
             if (matches.size() > 0)
             {
                 Set<ParticipantVisit> result = new HashSet<>();
@@ -243,7 +244,7 @@ public class SpecimenServiceImpl implements SpecimenService
     {
         if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != visit)
         {
-            List<Vial> matches = SpecimenManager.getInstance().getVials(studyContainer, user, participantId, visit);
+            List<Vial> matches = SpecimenManagerNew.get().getVials(studyContainer, user, participantId, visit);
             if (matches.size() > 0)
             {
                 Set<ParticipantVisit> result = new HashSet<>();

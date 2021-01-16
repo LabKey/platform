@@ -16,12 +16,13 @@
 package org.labkey.study.specimen.report.specimentype;
 
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.study.Cohort;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.element.Input;
 import org.labkey.api.util.element.Option;
 import org.labkey.api.util.element.Select;
-import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.SingleCohortFilter;
 import org.labkey.study.SpecimenManager;
@@ -99,7 +100,7 @@ public class TypeCohortReportFactory extends TypeReportFactory
         List<SpecimenVisitReport> reports = new ArrayList<>();
         for (CohortFilter cohortFilter : reportCohorts)
         {
-            CohortImpl cohort = cohortFilter.getCohort(getContainer(), getUser());
+            Cohort cohort = cohortFilter.getCohort(getContainer(), getUser());
             String title = cohort != null ? cohort.getLabel() : "[No cohort assigned]";
             SimpleFilter filter = new SimpleFilter();
             addBaseFilters(filter);
@@ -114,7 +115,7 @@ public class TypeCohortReportFactory extends TypeReportFactory
     public String getLabel()
     {
         CohortFilter filter = getCohortFilter();
-        CohortImpl cohort = filter != null ? filter.getCohort(getContainer(), getUser()) : null;
+        Cohort cohort = filter != null ? filter.getCohort(getContainer(), getUser()) : null;
         return cohort != null ? cohort.getLabel() : "Type by Cohort";
     }
 

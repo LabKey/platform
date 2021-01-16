@@ -221,4 +221,9 @@ public class SpecimenSchema
     {
         return getSchema().getTable("Participant");
     }
+
+    public TableInfo getTableInfoVisit()
+    {
+        return getSchema().getTable("Visit");
+    }
 }

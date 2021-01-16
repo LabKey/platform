@@ -97,7 +97,6 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.SpecimenServiceImpl;
 import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.SequenceNumImportHelper;
@@ -438,7 +437,7 @@ public class SpecimenImporter extends SpecimenTableManager
                 {
                     _iTimer.setPhase(ImportPhases.ClearCaches);
                     StudyManager.getInstance().clearCaches(getContainer(), false);
-                    SpecimenManager.getInstance().clearCaches(getContainer());
+                    SpecimenRequestManager.get().clearCaches(getContainer());
 
                     info(_iTimer.getTimings("Timings for each phase of this import are listed below:", Order.HighToLow, "|"));
                 }
@@ -827,7 +826,7 @@ public class SpecimenImporter extends SpecimenTableManager
 
         _iTimer.setPhase(ImportPhases.VialUpdatePreLoopPrep);
         // clear caches before determining current sites:
-        SpecimenManager.getInstance().clearCaches(getContainer());
+        SpecimenRequestManager.get().clearCaches(getContainer());
         final Map<Integer, Location> siteMap = new HashMap<>();
 
         TableInfo vialTable = getTableInfoVial();

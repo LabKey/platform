@@ -25,7 +25,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.specimen.view.SpecimenWebPartFactory;
+import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimensPage;
 import org.labkey.api.specimen.importer.DefaultSpecimenImportStrategyFactory;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
@@ -36,6 +36,7 @@ import org.labkey.api.specimen.model.SpecimenEventDomainKind;
 import org.labkey.api.specimen.model.SpecimenRequestEventType;
 import org.labkey.api.specimen.model.VialDomainKind;
 import org.labkey.api.specimen.view.SpecimenToolsWebPartFactory;
+import org.labkey.api.specimen.view.SpecimenWebPartFactory;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.WebPartFactory;
@@ -88,8 +89,7 @@ public class SpecimenModule extends CodeOnlyModule
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
-        // add a container listener so we'll know when our container is deleted:
-        ContainerManager.addContainerListener(new SpecimenContainerListener());
+        ContainerManager.addContainerListener(SpecimenRequestManager.get());
 
         StudyService.get().registerStudyTabProvider(tabs ->tabs.add(new SpecimensPage("Specimen Data")));
 
