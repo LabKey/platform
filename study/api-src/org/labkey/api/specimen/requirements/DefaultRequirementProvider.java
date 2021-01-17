@@ -25,12 +25,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.requirements.Requirement;
-import org.labkey.api.specimen.requirements.RequirementActor;
-import org.labkey.api.specimen.requirements.RequirementOwner;
-import org.labkey.api.specimen.requirements.RequirementProvider;
-import org.labkey.api.specimen.requirements.RequirementType;
-import org.labkey.api.study.StudyService;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.util.GUID;
 
 import java.lang.reflect.Array;
@@ -184,7 +179,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
     public void deleteRequirements(RequirementOwner owner)
     {
         R[] requirements = getRequirements(owner);
-        DbScope scope = StudyService.get().getStudySchema().getScope();
+        DbScope scope = SpecimenSchema.get().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             for (R requirement : requirements)

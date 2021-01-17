@@ -17,13 +17,13 @@ package org.labkey.api.query;
 
 
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
@@ -76,15 +76,6 @@ public class ReportDataRegion extends DataRegion
     {
         _request = request;
         _response = response;
-
-        String name = _report.getDescriptor().getReportName();
-        String source = StringUtils.defaultIfEmpty(_report.getDescriptor().getProperty(ReportDescriptor.Prop.viewName), "default");
-
-        String msg = "<span class=\"labkey-strong\">Name:</span>&nbsp;" + PageFlowUtil.filter(name);
-        msg += "&nbsp;";
-        msg += "<span class=\"labkey-strong\" style=\"padding-left: 30px;\">Source:</span>&nbsp;" + PageFlowUtil.filter(source);
-
-        addMessage(new Message(msg, MessageType.INFO, "report"));
         super.render(ctx, request, response);
     }
 
@@ -131,5 +122,21 @@ public class ReportDataRegion extends DataRegion
     protected boolean useTableWrap()
     {
         return false;
+    }
+
+    @Override
+    protected JSONObject toJSON(RenderContext ctx)
+    {
+        var json = super.toJSON(ctx);
+        var descriptor = _report.getDescriptor();
+
+        var reportJson = new JSONObject();
+        reportJson.put("id", descriptor.getReportId().toString());
+        reportJson.put("name", descriptor.getReportName());
+        reportJson.put("source", StringUtils.defaultIfEmpty(descriptor.getProperty(ReportDescriptor.Prop.viewName), "default"));
+
+        json.put("report", reportJson);
+
+        return json;
     }
 }

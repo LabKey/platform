@@ -1419,7 +1419,7 @@ public class PageFlowUtil
         return '"';
     }
 
-    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 35 usages.
+    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 33 usages.
     public static String textLink(String text, URLHelper url)
     {
         return link(text).href(url).toString();
@@ -1516,7 +1516,7 @@ public class PageFlowUtil
             t.transform(new DOMSource(node), new StreamResult(out));
             out.close();
 
-            return new String(out.toByteArray(), StringUtilsLabKey.DEFAULT_CHARSET).trim();
+            return out.toString(StringUtilsLabKey.DEFAULT_CHARSET).trim();
         }
         catch (TransformerFactoryConfigurationError e)
         {

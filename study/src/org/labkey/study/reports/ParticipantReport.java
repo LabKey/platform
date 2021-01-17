@@ -28,6 +28,7 @@ import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
@@ -40,7 +41,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.ParticipantCategoryImpl;
-import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyManager;
 

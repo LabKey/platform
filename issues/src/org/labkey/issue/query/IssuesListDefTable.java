@@ -108,10 +108,16 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         return null;
     }
 
+    @Override
+    public String getPublicName()
+    {
+        return IssuesQuerySchema.TableType.IssueListDef.name();
+    }
+
     private void addAllColumns()
     {
         setDescription("Contains one row for each issue list");
-        setName("Issue List Definitions");
+        setTitle("Issue List Definitions");
 
         addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("RowId"))).setHidden(true);
 

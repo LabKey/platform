@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.study.model.ParticipantGroup" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -28,10 +29,9 @@
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page import="org.labkey.study.CohortFilter" %>
 <%@ page import="org.labkey.study.CohortFilterFactory" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
+<%@ page import="org.labkey.study.controllers.specimen.ReportConfigurationBean" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.ParticipantCategoryImpl" %>
-<%@ page import="org.labkey.study.model.ParticipantGroup" %>
 <%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.specimen.report.SpecimenVisitReportParameters" %>
@@ -40,8 +40,8 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpecimenController.ReportConfigurationBean> me = (JspView<SpecimenController.ReportConfigurationBean>) HttpView.currentView();
-    SpecimenController.ReportConfigurationBean bean = me.getModelBean();
+    JspView<ReportConfigurationBean> me = (JspView<ReportConfigurationBean>) HttpView.currentView();
+    ReportConfigurationBean bean = me.getModelBean();
     Container container = getContainer();
     User user = getUser();
     boolean showCohorts = StudyManager.getInstance().showCohorts(container, user);

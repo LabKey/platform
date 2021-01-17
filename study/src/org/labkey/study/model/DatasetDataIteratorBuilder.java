@@ -202,12 +202,14 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
                 {
                     // Use rowId mapping tables or extra column if necessary to map FKs
                     FieldKey extraColumnFieldKey = DefaultStudyDesignWriter.getExtraForeignKeyColumnFieldKey(match, match.getFk());
-                    Map<Object, Object> dataspaceTableIdMap = Collections.emptyMap();
+                    Map<Object, Object> dataspaceTableIdMap = null;
                     if (null != match.getFk())
                     {
                         String lookupTableName = match.getFk().getLookupTableName();
                         dataspaceTableIdMap = _tableIdMapMap.get(lookupTableName);
                     }
+                    if (null == dataspaceTableIdMap)
+                        dataspaceTableIdMap = Collections.emptyMap();
                     out = it.addSharedTableLookupColumn(in, extraColumnFieldKey, match.getFk(),
                             dataspaceTableIdMap);
                 }

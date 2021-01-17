@@ -109,8 +109,8 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";
-        ActionURL link = SpecimenController.getSamplesURL(_container);
-        link.addParameter(SpecimenController.SampleViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
+        ActionURL link = SpecimenController.getSpecimensURL(_container);
+        link.addParameter(SpecimenController.SpecimenViewTypeForm.PARAMS.showVials, Boolean.TRUE.toString());
         link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMinDouble());
         link = updateURLFilterParameter(link, "SpecimenDetail." + StudyService.get().getSubjectColumnName(getContainer()), summary.getParticipantId());
         String linkHtml = link.getLocalURIString();

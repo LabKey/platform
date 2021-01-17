@@ -869,7 +869,12 @@ public class IssuesController extends SpringActionController
                 CustomColumnConfiguration ccc = new CustomColumnConfigurationImpl(getContainer(), getUser(), issueListDef);
                 IssueValidation.validateRequiredFields(issueListDef, ccc, issuesForm, getUser(), errors);
                 IssueValidation.validateNotifyList(issuesForm, errors);
-                IssueValidation.validateAssignedTo(issuesForm, getContainer(), errors);
+                // don't validate the assigned to field if we are in the process
+                // of closing it and we are assigning it to the guest user (otherwise validate)
+                if (action != IssuesApiForm.action.close || UserManager.getGuestUser().getUserId() != issuesForm.getBean().getAssignedTo())
+                {
+                    IssueValidation.validateAssignedTo(issuesForm, getContainer(), errors);
+                }
                 IssueValidation.validateStringFields(issuesForm, ccc, errors);
                 IssueValidation.validateComments(issuesForm, errors);
             }
