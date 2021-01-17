@@ -1272,4 +1272,16 @@ public class StudyServiceImpl implements StudyService
     {
         return StudyManager.getInstance().getAncillaryStudies(sourceStudyContainer);
     }
+
+    @Override
+    public Study getStudyForVisits(@NotNull Study study)
+    {
+        return StudyManager.getInstance().getStudyForVisits(study);
+    }
+
+    @Override
+    public boolean showCohorts(Container container, @Nullable User user)
+    {
+        return StudyManager.getInstance().showCohorts(container, user);
+    }
 }

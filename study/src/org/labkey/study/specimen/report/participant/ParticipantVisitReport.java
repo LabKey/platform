@@ -45,7 +45,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
     public ParticipantVisitReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
         super(titlePrefix, visits, filter, parameters);
-        _showCohorts = StudyManager.getInstance().showCohorts(_container, getUser());
+        _showCohorts = StudyService.get().showCohorts(_container, getUser());
     }
 
     @Override

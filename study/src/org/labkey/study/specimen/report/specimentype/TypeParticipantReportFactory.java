@@ -105,7 +105,7 @@ public class TypeParticipantReportFactory extends TypeReportFactory
         }
         List<SpecimenVisitReport> reports = new ArrayList<>();
         Map<Integer, List<VisitImpl>> visitListCache = new HashMap<>(); // cohort rowId -> visits
-        boolean showCohorts = StudyManager.getInstance().showCohorts(getContainer(), getUser());
+        boolean showCohorts = StudyService.get().showCohorts(getContainer(), getUser());
         List<VisitImpl> allVisits = null;
         Study study = StudyManager.getInstance().getStudy(getContainer());
         for (String participantId : participantIds)

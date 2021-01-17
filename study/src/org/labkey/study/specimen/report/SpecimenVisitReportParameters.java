@@ -141,7 +141,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     public void setCohortFilter(CohortFilter cohortFilter)
     {
-        if (StudyManager.getInstance().showCohorts(getContainer(), getUser()))
+        if (StudyService.get().showCohorts(getContainer(), getUser()))
             _cohortFilter = cohortFilter;
     }
 
@@ -499,7 +499,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     public boolean allowsCohortFilter()
     {
-        return StudyManager.getInstance().showCohorts(getContainer(), getUser());
+        return StudyService.get().showCohorts(getContainer(), getUser());
     }
 
     public boolean allowsAvailabilityFilter()

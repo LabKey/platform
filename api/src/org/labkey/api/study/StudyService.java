@@ -157,11 +157,6 @@ public interface StudyService
 
     DbSchema getDatasetSchema();
 
-    @Deprecated // Use SpecimenSchema instead
-    DbSchema getStudySchema();
-
-    UserSchema getStudyQuerySchema(Study study, User user);
-
     void updateDatasetCategory(User user, @NotNull Dataset dataset, @NotNull ViewCategory category);
 
     void addAssayRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user);
@@ -240,6 +235,16 @@ public interface StudyService
 
     List<StudyManagementOption> getManagementOptions();
 
+    /**
+     *  Methods below are needed only for modules that depend on study-api (currently just specimen). Consider moving
+     *  these to a separate interface that lives in study-api.
+     */
+
+    @Deprecated // Use SpecimenSchema instead
+    DbSchema getStudySchema();
+
+    UserSchema getStudyQuerySchema(Study study, User user);
+
     void registerManagementOption(StudyManagementOption option);
 
     // Do any of the tables that study manages reference this location?
@@ -255,4 +260,8 @@ public interface StudyService
     void registerStudyTabProvider(StudyTabProvider provider);
 
     Collection<? extends Study> getAncillaryStudies(Container sourceStudyContainer);
+
+    Study getStudyForVisits(@NotNull Study study);
+
+    boolean showCohorts(Container container, @Nullable User user);
 }

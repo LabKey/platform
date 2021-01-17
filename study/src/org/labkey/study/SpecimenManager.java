@@ -73,7 +73,6 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 
 import java.lang.reflect.InvocationTargetException;
@@ -344,7 +343,8 @@ public class SpecimenManager
 
     public List<VisitImpl> getVisitsWithSpecimens(Container container, User user, Cohort cohort)
     {
-        UserSchema schema = SpecimenQuerySchema.get(StudyService.get().getStudy(container), user);
+        Study study = StudyService.get().getStudy(container);
+        UserSchema schema = SpecimenQuerySchema.get(study, user);
         TableInfo tinfo = schema.getTable(SpecimenQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
 
         FieldKey visitKey = FieldKey.fromParts("Visit");
@@ -364,7 +364,7 @@ public class SpecimenManager
         List<Integer> visitIds = new SqlSelector(SpecimenSchema.get().getSchema(), visitIdSQL).getArrayList(Integer.class);
 
         // Get shared visit study
-        Study visitStudy = StudyManager.getInstance().getStudyForVisits(StudyService.get().getStudy(container));
+        Study visitStudy = StudyService.get().getStudyForVisits(study);
 
         SimpleFilter filter = SimpleFilter.createContainerFilter(visitStudy.getContainer());
         filter.addInClause(FieldKey.fromParts("RowId"), visitIds);
@@ -400,7 +400,7 @@ public class SpecimenManager
         columns.add(FieldKey.fromParts("LockedInRequest"));
         columns.add(FieldKey.fromParts("GlobalUniqueId"));
         columns.add(FieldKey.fromParts(StudyService.get().getSubjectColumnName(container)));
-        if (StudyManager.getInstance().showCohorts(container, schema.getUser()))
+        if (StudyService.get().showCohorts(container, schema.getUser()))
             columns.add(FieldKey.fromParts("CollectionCohort"));
         columns.add(FieldKey.fromParts("Volume"));
         if (level != null)

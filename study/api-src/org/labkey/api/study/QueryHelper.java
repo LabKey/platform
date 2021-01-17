@@ -175,7 +175,7 @@ public class QueryHelper<K extends StudyCachable>
             return "~ALL";
         else
         {
-            return filter.toSQLString(StudyService.get().getStudySchema().getSqlDialect());
+            return filter.toSQLString(getTableInfo().getSqlDialect());
         }
     }
 }

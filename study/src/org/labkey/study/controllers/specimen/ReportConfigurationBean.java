@@ -48,7 +48,7 @@ public class ReportConfigurationBean
         _viewContext = viewContext;
         registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeSummaryReportFactory());
         registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeParticipantReportFactory());
-        if (StudyManager.getInstance().showCohorts(_viewContext.getContainer(), _viewContext.getUser()))
+        if (StudyService.get().showCohorts(_viewContext.getContainer(), _viewContext.getUser()))
             registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeCohortReportFactory());
         if (study != null)
         {

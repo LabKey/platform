@@ -407,7 +407,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
 
     protected CohortFilter getCohortFilter()
     {
-        if (StudyManager.getInstance().showCohorts(_container, getUser()))
+        if (StudyService.get().showCohorts(_container, getUser()))
             return _parameters.getCohortFilter();
         return null;
     }
