@@ -18,6 +18,7 @@ package org.labkey.study.specimen.report.request;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.specimen.SpecimenTypeLevel;
 import org.labkey.api.specimen.report.RequestSummaryByVisitType;
+import org.labkey.api.study.Visit;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
@@ -38,7 +39,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<RequestSummary
 {
     private final boolean _completeRequestsOnly;
 
-    public RequestParticipantReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, RequestParticipantReportFactory parameters)
+    public RequestParticipantReport(String titlePrefix, List<? extends Visit> visits, SimpleFilter filter, RequestParticipantReportFactory parameters)
     {
         super(titlePrefix, visits, filter, parameters);
         _completeRequestsOnly = parameters.isCompletedRequestsOnly();
@@ -74,7 +75,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<RequestSummary
     }
 
     @Override
-    protected String[] getCellExcelText(VisitImpl visit, RequestSummaryByVisitType summary)
+    protected String[] getCellExcelText(Visit visit, RequestSummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return new String[] {};
@@ -91,7 +92,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<RequestSummary
     }
 
     @Override
-    protected String getCellHtml(VisitImpl visit, RequestSummaryByVisitType summary)
+    protected String getCellHtml(Visit visit, RequestSummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";
@@ -112,7 +113,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<RequestSummary
     }
 
     @Override
-    protected String getFilterQueryString(VisitImpl visit, RequestSummaryByVisitType summary)
+    protected String getFilterQueryString(Visit visit, RequestSummaryByVisitType summary)
     {
         return super.getFilterQueryString(visit, summary)  + "&" +
                 (_completeRequestsOnly ? SpecimenQueryView.PARAMS.showCompleteRequestedBySite : SpecimenQueryView.PARAMS.showRequestedBySite)

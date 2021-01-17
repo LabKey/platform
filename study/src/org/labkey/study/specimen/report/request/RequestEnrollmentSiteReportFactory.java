@@ -20,6 +20,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.study.Location;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.study.SpecimenManager;
@@ -89,7 +90,7 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
         }
 
         List<SpecimenVisitReport> reports = new ArrayList<>();
-        List<VisitImpl> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
+        List<? extends Visit> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
 
         SQLFragment baseSql = SpecimenQueryView.getBaseRequestedEnrollmentSql(getContainer(), getUser(), isCompletedRequestsOnly());
 

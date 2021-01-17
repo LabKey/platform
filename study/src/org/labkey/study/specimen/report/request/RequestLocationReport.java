@@ -17,7 +17,7 @@ package org.labkey.study.specimen.report.request;
 
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.specimen.report.SummaryByVisitType;
-import org.labkey.study.model.VisitImpl;
+import org.labkey.api.study.Visit;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.specimen.report.SpecimenTypeVisitReport;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
@@ -33,7 +33,7 @@ public class RequestLocationReport extends SpecimenTypeVisitReport
     private final int _locationId;
     private final boolean _completeRequestsOnly;
 
-    public RequestLocationReport(String titlePrefix, SimpleFilter filter, SpecimenVisitReportParameters parameters, List<VisitImpl> visits, int locationId, boolean completeRequestsOnly)
+    public RequestLocationReport(String titlePrefix, SimpleFilter filter, SpecimenVisitReportParameters parameters, List<? extends Visit> visits, int locationId, boolean completeRequestsOnly)
     {
         super(titlePrefix, visits, filter, parameters);
         _locationId = locationId;
@@ -41,7 +41,7 @@ public class RequestLocationReport extends SpecimenTypeVisitReport
     }
 
     @Override
-    protected String getFilterQueryString(VisitImpl visit, SummaryByVisitType summary)
+    protected String getFilterQueryString(Visit visit, SummaryByVisitType summary)
     {
         return super.getFilterQueryString(visit, summary)  + "&" +
                 (_completeRequestsOnly ? SpecimenQueryView.PARAMS.showCompleteRequestedBySite : SpecimenQueryView.PARAMS.showRequestedBySite) + "=" + _locationId;

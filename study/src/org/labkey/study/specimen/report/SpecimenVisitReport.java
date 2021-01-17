@@ -28,6 +28,7 @@ import org.labkey.api.specimen.report.SpecimenReportTitle;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -50,7 +51,7 @@ import java.util.Map;
  */
 public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellData>
 {
-    private final List<VisitImpl> _visits;
+    private final List<? extends Visit> _visits;
     private final SpecimenVisitReportParameters _parameters;
     private final boolean _viewParticipantCount;
     private final boolean _viewVolume;
@@ -63,9 +64,9 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     protected final SimpleFilter _filter;
 
     private Collection<Row> _rows;
-    private List<VisitImpl> _nonEmptyVisits;
+    private List<Visit> _nonEmptyVisits;
 
-    public SpecimenVisitReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
+    public SpecimenVisitReport(String titlePrefix, List<? extends Visit> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
         _visits = visits;
         _filter = filter;
@@ -104,7 +105,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         return url;
     }
 
-    public List<VisitImpl> getVisits()
+    public List<? extends Visit> getVisits()
     {
         // ensure rows and non-empty columns have been generated
         getRows();
@@ -114,10 +115,10 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         {
             if (_nonEmptyVisits == null)
             {
-                List<VisitImpl> visits = new ArrayList<>();
-                for (VisitImpl visit : _visits)
+                List<Visit> visits = new ArrayList<>();
+                for (Visit visit : _visits)
                 {
-                    if (_nonEmptyColumns.containsKey(visit.getRowId()))
+                    if (_nonEmptyColumns.containsKey(visit.getId()))
                         visits.add(visit);
                 }
                 _nonEmptyVisits = new ArrayList<>(visits);
@@ -132,9 +133,9 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
             _nonEmptyColumns.put(visit, visit);
     }
 
-    protected abstract String getCellHtml(VisitImpl visit, CELLDATA summary);
+    protected abstract String getCellHtml(Visit visit, CELLDATA summary);
 
-    protected abstract String[] getCellExcelText(VisitImpl visit, CELLDATA summary);
+    protected abstract String[] getCellExcelText(Visit visit, CELLDATA summary);
 
     public boolean isNumericData()
     {
@@ -188,7 +189,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
             _parameters.getCohortFilter().addURLParameters(study, url, null);
     }
 
-    protected String getFilterQueryString(VisitImpl visit, CELLDATA summary)
+    protected String getFilterQueryString(Visit visit, CELLDATA summary)
     {
         ActionURL url = new ActionURL();
         if (_parameters.getBaseCustomViewName() != null && _parameters.getBaseCustomViewName().length() > 0)
@@ -335,7 +336,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         return false;
     }
 
-    protected String buildCellHtml(VisitImpl visit, CELLDATA summary, String linkHtml)
+    protected String buildCellHtml(Visit visit, CELLDATA summary, String linkHtml)
     {
         String[] summaryString = getCellExcelText(visit, summary);
         StringBuilder cellHtml = new StringBuilder();

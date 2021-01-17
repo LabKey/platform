@@ -18,15 +18,15 @@ package org.labkey.study.specimen.report.participant;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.specimen.SpecimenManagerNew;
+import org.labkey.api.specimen.model.SpecimenTypeSummary;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.element.Option;
 import org.labkey.api.util.element.Select;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.api.specimen.model.SpecimenTypeSummary;
-import org.labkey.study.model.VisitImpl;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 
@@ -48,7 +48,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
     protected List<? extends SpecimenVisitReport> createReports()
     {
         List<? extends SpecimenTypeSummary.TypeCount> types = getSelectedTypes();
-        List<VisitImpl> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
+        List<? extends Visit> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
         List<ParticipantVisitReport> reports = new ArrayList<>();
         for (SpecimenTypeSummary.TypeCount type : types)
         {

@@ -19,6 +19,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.study.Location;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.element.Option;
@@ -82,7 +83,7 @@ public class RequestLocationReportFactory extends BaseRequestReportFactory
         if (locations == null)
             return Collections.emptyList();
         List<SpecimenVisitReport> reports = new ArrayList<>();
-        List<VisitImpl> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
+        List<? extends Visit> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
         for (LocationImpl location : locations)
         {
             SimpleFilter filter = new SimpleFilter();

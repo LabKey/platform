@@ -18,6 +18,7 @@ package org.labkey.study.specimen.report.specimentype;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.CohortFilter;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.element.Input;
@@ -105,7 +106,7 @@ public class TypeCohortReportFactory extends TypeReportFactory
             SimpleFilter filter = new SimpleFilter();
             addBaseFilters(filter);
             addCohortFilter(filter, cohortFilter);
-            List<VisitImpl> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), cohort);
+            List<? extends Visit> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), cohort);
             reports.add(new TypeCohortReport(title, visits, filter, this, cohortFilter));
         }
         return reports;

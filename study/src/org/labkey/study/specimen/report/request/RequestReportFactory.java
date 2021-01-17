@@ -17,6 +17,7 @@ package org.labkey.study.specimen.report.request;
 
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.study.Location;
+import org.labkey.api.study.Visit;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.VisitImpl;
@@ -57,7 +58,7 @@ public class RequestReportFactory extends BaseRequestReportFactory
         if (locations == null)
             return Collections.emptyList();
         List<SpecimenVisitReport> reports = new ArrayList<>();
-        List<VisitImpl> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
+        List<? extends Visit> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
         SimpleFilter filter = new SimpleFilter();
         if (isCompletedRequestsOnly())
         {

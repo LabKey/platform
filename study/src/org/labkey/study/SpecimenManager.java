@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -69,6 +70,7 @@ import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
@@ -87,6 +89,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+@Migrate // Get rid of single reference to VisitImpl and move
 public class SpecimenManager
 {
     private final static SpecimenManager _instance = new SpecimenManager();
@@ -135,7 +138,7 @@ public class SpecimenManager
         return map;
     }
 
-    public int getSampleCountForVisit(VisitImpl visit)
+    public int getSampleCountForVisit(Visit visit)
     {
         Container container = visit.getContainer();
         TableInfo tableInfoSpecimen = SpecimenSchema.get().getTableInfoSpecimen(container);
@@ -159,7 +162,7 @@ public class SpecimenManager
         return results.get(0);
     }
 
-    public void deleteSpecimensForVisit(VisitImpl visit)
+    public void deleteSpecimensForVisit(Visit visit)
     {
         Container container = visit.getContainer();
         TableInfo tableInfoSpecimen = SpecimenSchema.get().getTableInfoSpecimen(container);
@@ -211,7 +214,7 @@ public class SpecimenManager
     }
 
     @Nullable
-    private SQLFragment getVisitRangeSql(VisitImpl visit, TableInfo tinfoSpecimen, String specimenAlias)
+    private SQLFragment getVisitRangeSql(Visit visit, TableInfo tinfoSpecimen, String specimenAlias)
     {
         // Return null only in the case where there are 0 participant visits for the given visit
         Study study = StudyService.get().getStudy(visit.getContainer());
@@ -233,7 +236,7 @@ public class SpecimenManager
         {
             // For date-based we need to get the range from ParticipantVisit
             ColumnInfo columnInfo = SpecimenSchema.get().getTableInfoParticipantVisit().getColumn("SequenceNum");
-            Filter filter = new SimpleFilter(FieldKey.fromString("VisitRowId"), visit.getRowId());
+            Filter filter = new SimpleFilter(FieldKey.fromString("VisitRowId"), visit.getId());
             Sort sort = new Sort();
             sort.insertSortColumn(FieldKey.fromString("SequenceNum"), Sort.SortDirection.ASC);
             ArrayList<Double> visitValues = new TableSelector(columnInfo, filter, sort).getArrayList(Double.class);
@@ -336,12 +339,12 @@ public class SpecimenManager
         SpecimenRequestManager.get().clearGroupedValuesForColumn(c);
     }
 
-    public List<VisitImpl> getVisitsWithSpecimens(Container container, User user)
+    public List<? extends Visit> getVisitsWithSpecimens(Container container, User user)
     {
         return getVisitsWithSpecimens(container, user, null);
     }
 
-    public List<VisitImpl> getVisitsWithSpecimens(Container container, User user, Cohort cohort)
+    public List<? extends Visit> getVisitsWithSpecimens(Container container, User user, Cohort cohort)
     {
         Study study = StudyService.get().getStudy(container);
         UserSchema schema = SpecimenQuerySchema.get(study, user);

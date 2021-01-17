@@ -20,11 +20,11 @@ import org.labkey.api.specimen.report.SpecimenReportTitle;
 import org.labkey.api.specimen.report.SummaryByVisitParticipant;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
@@ -42,7 +42,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
 {
     private final boolean _showCohorts;
 
-    public ParticipantVisitReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
+    public ParticipantVisitReport(String titlePrefix, List<? extends Visit> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
         super(titlePrefix, visits, filter, parameters);
         _showCohorts = StudyService.get().showCohorts(_container, getUser());
@@ -87,7 +87,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
     }
 
     @Override
-    protected String[] getCellExcelText(VisitImpl visit, SummaryByVisitParticipant summary)
+    protected String[] getCellExcelText(Visit visit, SummaryByVisitParticipant summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return new String[] {};
@@ -105,7 +105,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
     }
 
     @Override
-    protected String getCellHtml(VisitImpl visit, SummaryByVisitParticipant summary)
+    protected String getCellHtml(Visit visit, SummaryByVisitParticipant summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";

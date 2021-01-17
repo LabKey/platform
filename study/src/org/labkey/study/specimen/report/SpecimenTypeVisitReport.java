@@ -18,13 +18,13 @@ package org.labkey.study.specimen.report;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.specimen.SpecimenTypeLevel;
 import org.labkey.api.specimen.report.SummaryByVisitType;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.VisitImpl;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -38,7 +38,7 @@ import java.util.TreeMap;
  */
 public class SpecimenTypeVisitReport extends SpecimenVisitReport<SummaryByVisitType>
 {
-    public SpecimenTypeVisitReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
+    public SpecimenTypeVisitReport(String titlePrefix, List<? extends Visit> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
         super(titlePrefix, visits, filter, parameters);
     }
@@ -91,7 +91,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SummaryByVisitT
     }
 
     @Override
-    protected String[] getCellExcelText(VisitImpl visit, SummaryByVisitType summary)
+    protected String[] getCellExcelText(Visit visit, SummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return new String[] {};
@@ -111,7 +111,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SummaryByVisitT
     }
 
     @Override
-    protected String getCellHtml(VisitImpl visit, SummaryByVisitType summary)
+    protected String getCellHtml(Visit visit, SummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";

@@ -111,7 +111,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
         }
 
         List<SpecimenVisitReport> reports = new ArrayList<>();
-        Map<Integer, List<VisitImpl>> visitListCache = new HashMap<>(); // cohort rowId -> visit
+        Map<Integer, List<? extends Visit>> visitListCache = new HashMap<>(); // cohort rowId -> visit
         boolean showCohorts = StudyService.get().showCohorts(getContainer(), getUser());
         List<VisitImpl> allVisits = null;
         Study study = StudyManager.getInstance().getStudy(getContainer());
@@ -119,7 +119,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
         {
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(StudyService.get().getSubjectColumnName(getContainer())), participantId);
             addBaseFilters(filter);
-            List<VisitImpl> visits = null;
+            List<? extends Visit> visits = null;
             if (showCohorts)
             {
                 CohortImpl cohort = StudyManager.getInstance().getCurrentCohortForParticipant(getContainer(), getUser(), participantId);

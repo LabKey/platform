@@ -17,7 +17,7 @@ package org.labkey.study.specimen.report.request;
 
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.specimen.report.SummaryByVisitType;
-import org.labkey.study.model.VisitImpl;
+import org.labkey.api.study.Visit;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.specimen.report.SpecimenTypeVisitReport;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
@@ -30,16 +30,16 @@ import java.util.List;
  */
 public class RequestReport extends SpecimenTypeVisitReport
 {
-    private boolean _completedRequestsOnly;
+    private final boolean _completedRequestsOnly;
 
-    public RequestReport(String titlePrefix, SimpleFilter filter, SpecimenVisitReportParameters parameters, List<VisitImpl> visits, boolean completedRequestsOnly)
+    public RequestReport(String titlePrefix, SimpleFilter filter, SpecimenVisitReportParameters parameters, List<? extends Visit> visits, boolean completedRequestsOnly)
     {
         super(titlePrefix, visits, filter, parameters);
         _completedRequestsOnly = completedRequestsOnly;
     }
 
     @Override
-    protected String getFilterQueryString(VisitImpl visit, SummaryByVisitType summary)
+    protected String getFilterQueryString(Visit visit, SummaryByVisitType summary)
     {
         return super.getFilterQueryString(visit, summary)  + "&" +
                 (_completedRequestsOnly ? SpecimenQueryView.PARAMS.showCompleteRequestedOnly  : SpecimenQueryView.PARAMS.showRequestedOnly) + "=true";
