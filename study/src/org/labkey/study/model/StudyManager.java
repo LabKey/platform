@@ -3916,13 +3916,6 @@ public class StudyManager
         }
     }
 
-    //Create a fixed point number encoding the date.
-    public static double sequenceNumFromDate(Date d)
-    {
-        Calendar cal = DateUtil.newCalendar(d.getTime());
-        return cal.get(Calendar.YEAR) * 10000 + (cal.get(Calendar.MONTH) + 1) * 100 + cal.get(Calendar.DAY_OF_MONTH);
-    }
-
     public static SQLFragment sequenceNumFromDateSQL(String dateColumnName)
     {
         // Returns a SQL statement that produces a single number from a date, in the form of YYYYMMDD.

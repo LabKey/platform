@@ -274,13 +274,13 @@ public class SpecimenServiceImpl implements SpecimenService
     {
         TableInfo tableInfoSpecimen = SpecimenSchema.get().getTableInfoSpecimen(studyContainer);
 
-        String dateExpr = truncateTime ? StudySchema.getInstance().getSqlDialect().getDateTimeToDateCast("DrawTimestamp") : "DrawTimestamp";
+        String dateExpr = truncateTime ? tableInfoSpecimen.getSqlDialect().getDateTimeToDateCast("DrawTimestamp") : "DrawTimestamp";
         SQLFragment sql = new SQLFragment("SELECT DISTINCT PTID, " + dateExpr + " AS DrawTimestamp FROM ");
         sql.append(tableInfoSpecimen.getSelectName()).append(";");
 
         final Set<Pair<String, Date>> sampleInfo = new HashSet<>();
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(rs -> {
+        new SqlSelector(tableInfoSpecimen.getSchema(), sql).forEach(rs -> {
             String participantId = rs.getString("PTID");
             Date drawDate = rs.getDate("DrawTimestamp");
             if (participantId != null && drawDate != null)
@@ -300,7 +300,7 @@ public class SpecimenServiceImpl implements SpecimenService
 
         final Set<Pair<String, Double>> sampleInfo = new HashSet<>();
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(rs -> {
+        new SqlSelector(tableInfoSpecimen.getSchema(), sql).forEach(rs -> {
             String participantId = rs.getString("PTID");
             double visit = rs.getDouble("VisitValue");    // Never returns null
             if (participantId != null)
@@ -401,6 +401,7 @@ public class SpecimenServiceImpl implements SpecimenService
         _changeListeners.add(listener);
     }
 
+    @Override
     public void fireSpecimensChanged(Container c, User user, Logger logger)
     {
         for (SpecimenChangeListener l : _changeListeners)

@@ -97,7 +97,6 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.study.SpecimenServiceImpl;
 import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.SequenceNumImportHelper;
 import org.labkey.study.model.StudyImpl;
@@ -279,7 +278,7 @@ public class SpecimenImporter extends SpecimenTableManager
 
         if (syncParticipantVisit)
         {
-            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+            Study study = StudyService.get().getStudy(getContainer());
             info("Updating study-wide subject/visit information...");
             StudyManager.getInstance().getVisitManager(study).updateParticipantVisitsFromSpecimenImport(getUser(), _logger);
             info("Subject/visit update complete.");
@@ -423,7 +422,7 @@ public class SpecimenImporter extends SpecimenTableManager
             // notify listeners that specimens have changed in this container
             setStatus(GENERAL_JOB_STATUS_MSG);
             _iTimer.setPhase(ImportPhases.NotifyChanged);
-            ((SpecimenServiceImpl) SpecimenService.get()).fireSpecimensChanged(getContainer(), getUser(), _logger);
+            SpecimenService.get().fireSpecimensChanged(getContainer(), getUser(), _logger);
 
             _iTimer.setPhase(ImportPhases.CommitTransaction);
             transaction.commit();
@@ -465,7 +464,7 @@ public class SpecimenImporter extends SpecimenTableManager
         return new SpecimenLoadInfo(getUser(), getContainer(), DbSchema.getTemp(), columns, rowCount, tempTablesHolder.getTempTableInfo());
     }
 
-    private void checkForUndefinedVisits(SpecimenLoadInfo info, StudyImpl study) throws ValidationException
+    private void checkForUndefinedVisits(SpecimenLoadInfo info, Study study) throws ValidationException
     {
         SQLFragment sql = new SQLFragment()
             .append("SELECT DISTINCT VisitValue FROM ")

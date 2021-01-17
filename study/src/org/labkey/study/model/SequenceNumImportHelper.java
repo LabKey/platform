@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.DateUtil;
@@ -184,7 +185,7 @@ translateToDouble:
             if (!_timetype.isVisitBased())
             {
                 if (null != date)
-                    sequencenum = StudyManager.sequenceNumFromDate(date);
+                    sequencenum = StudyUtils.sequenceNumFromDate(date);
                 else
                     sequencenum =  VisitImpl.DEMOGRAPHICS_VISIT;
                 return sequencenum;
