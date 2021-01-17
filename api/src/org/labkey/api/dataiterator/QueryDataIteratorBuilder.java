@@ -134,6 +134,7 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
 
         qd.setSql(sql);
         ArrayList<QueryException> qerrors = new ArrayList<>();
+        // Issue 42242: Don't include suggested columns in QueryDataIterator
         TableInfo t = qd.getTable((UserSchema)_schema, qerrors, true, true);
 
         Collection<ColumnInfo> selectCols = t.getColumns();
