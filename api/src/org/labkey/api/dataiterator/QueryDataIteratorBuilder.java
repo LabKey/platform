@@ -134,7 +134,7 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
 
         qd.setSql(sql);
         ArrayList<QueryException> qerrors = new ArrayList<>();
-        TableInfo t = qd.getTable(qerrors, true);
+        TableInfo t = qd.getTable((UserSchema)_schema, qerrors, true, true);
 
         Collection<ColumnInfo> selectCols = t.getColumns();
         if (null != _columns && !_columns.isEmpty())
