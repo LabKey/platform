@@ -683,11 +683,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         if (file != null)
         {
             data = ExperimentService.get().getExpDataByURL(file, c);
+            if (data != null)
+                LOG.debug("found existing exp.data for file, rowId=" + data.getRowId() + ", datafileurl=" + data.getDataFileUrl());
         }
         if (!reuseExistingDatas && data != null && data.getRun() != null)
         {
             // There's an existing data, but it's already marked as being created by another run, so create a new one
             // for the same path so the new run claim it as its own
+            LOG.debug("data is already owned by another run, so create a new one. run=" + data.getRun().getName());
             data = null;
         }
         if (data == null)
@@ -695,6 +698,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (dataType == null)
                 dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
 
+            LOG.debug("creating assay exp.data for file. dataType=" + dataType.getNamespacePrefix() + ", file=" + file);
             data = ExperimentService.get().createData(c, dataType, name);
             data.setLSID(ExperimentService.get().generateGuidLSID(c, dataType));
             if (file != null)
@@ -707,7 +711,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (dataType != null && !dataType.matches(new Lsid(data.getLSID())))
             {
                 // Reset its LSID so that it's the correct type
-                data.setLSID(ExperimentService.get().generateGuidLSID(c, dataType));
+                String newLsid = ExperimentService.get().generateGuidLSID(c, dataType);
+                LOG.debug("LSID doesn't match desired type. Changed the LSID from '" + data.getLSID() + "' to '" + newLsid + "'");
+                data.setLSID(newLsid);
             }
         }
         return data;
@@ -796,14 +802,17 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         AssayDataType dataType;
         for (Map.Entry<String, File> entry : files.entrySet())
         {
-            if (entry.getKey().equals(AssayDataCollector.PLATE_METADATA_FILE))
+            String key = entry.getKey();
+            File file = entry.getValue();
+
+            if (key.equals(AssayDataCollector.PLATE_METADATA_FILE))
                 dataType = PlateMetadataDataHandler.DATA_TYPE;
             else
                 dataType = context.getProvider().getDataType();
 
-            ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), entry.getValue(), entry.getValue().getName(), dataType, context.getReRunId() == null);
+            ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), file, file.getName(), dataType, context.getReRunId() == null);
             String role = ExpDataRunInput.DEFAULT_ROLE;
-            if (dataType != null && dataType.getFileType().isType(entry.getValue()))
+            if (dataType != null && dataType.getFileType().isType(file))
             {
                 if (dataType.getRole() != null)
                 {
