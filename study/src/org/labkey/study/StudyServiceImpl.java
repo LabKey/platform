@@ -40,6 +40,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -67,6 +68,7 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenDomainKind;
 import org.labkey.api.specimen.model.VialDomainKind;
@@ -78,6 +80,7 @@ import org.labkey.api.study.StudyReloadSource;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.UnionTable;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -95,6 +98,7 @@ import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.pipeline.StudyReloadSourceJob;
 import org.labkey.study.query.AdditiveTypeTable;
@@ -1283,5 +1287,27 @@ public class StudyServiceImpl implements StudyService
     public boolean showCohorts(Container container, @Nullable User user)
     {
         return StudyManager.getInstance().showCohorts(container, user);
+    }
+
+    @Override
+    public Date getLastSpecimenLoad(@NotNull Study study)
+    {
+        return ((StudyImpl)study).getLastSpecimenLoad();
+    }
+
+    @Override
+    public void setLastSpecimenLoad(@NotNull Study study, User user, Date lastSpecimenLoad)
+    {
+        StudyImpl studyImpl = ((StudyImpl)study).createMutable();
+        studyImpl.setLastSpecimenLoad(new Date());
+        StudyManager.getInstance().updateStudy(user, studyImpl);
+    }
+
+    @Override
+    public List<? extends Visit> getVisits(Study study, SimpleFilter filter, Sort sort)
+    {
+        SimpleFilter queryFilter = SimpleFilter.createContainerFilter(study.getContainer());
+        queryFilter.addAllClauses(filter);
+        return new TableSelector(SpecimenSchema.get().getTableInfoVisit(), filter, new Sort("DisplayOrder,SequenceNumMin")).getArrayList(VisitImpl.class);
     }
 }

@@ -16,13 +16,12 @@
 package org.labkey.study.specimen.report.request;
 
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenTypeLevel;
 import org.labkey.api.specimen.report.RequestSummaryByVisitType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
 
@@ -50,7 +49,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<RequestSummary
     {
         SpecimenTypeLevel level = getTypeLevelEnum();
         RequestSummaryByVisitType[] countSummary =
-                SpecimenManager.getInstance().getRequestSummaryBySite(_container, getUser(), _filter,
+                SpecimenManager.get().getRequestSummaryBySite(_container, getUser(), _filter,
                         isViewPtidList(), level, getBaseCustomView(), _completeRequestsOnly);
         Map<String, Row> rows = new TreeMap<>();
         for (RequestSummaryByVisitType count : countSummary)

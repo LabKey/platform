@@ -81,6 +81,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.AmbiguousLocationException;
 import org.labkey.api.specimen.RequestEventType;
 import org.labkey.api.specimen.RequestedSpecimens;
+import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
@@ -161,7 +162,6 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.study.CohortFilterFactory;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.DatasetController;
@@ -2072,7 +2072,7 @@ public class SpecimenController extends BaseStudyController
         {
             VBox vbox = new VBox();
 
-            ExtendedSpecimenRequestView view = SpecimenManager.getInstance().getExtendedSpecimenRequestView(getViewContext());
+            ExtendedSpecimenRequestView view = SpecimenManager.get().getExtendedSpecimenRequestView(getViewContext());
             if (view != null && view.isActive())
             {
                 HtmlView requestView = new HtmlView(view.getBody());
@@ -3489,7 +3489,7 @@ public class SpecimenController extends BaseStudyController
         {
             super(context, vials, false, false, true, true);
             _referrer = referrer;
-            Map<Vial, SpecimenComment> currentComments = SpecimenManager.getInstance().getSpecimenComments(vials);
+            Map<Vial, SpecimenComment> currentComments = SpecimenManager.get().getSpecimenComments(vials);
             boolean mixedComments = false;
             boolean mixedFlagState = false;
             SpecimenComment prevComment = currentComments.get(vials.get(0));
@@ -3600,10 +3600,10 @@ public class SpecimenController extends BaseStudyController
                 {
                     // use the currently saved history conflict state; if it's been forced before, this will prevent it
                     // from being cleared.
-                    SpecimenComment comment = SpecimenManager.getInstance().getSpecimenCommentForVial(vial);
+                    SpecimenComment comment = SpecimenManager.get().getSpecimenCommentForVial(vial);
                     if (comment != null)
                     {
-                        SpecimenManager.getInstance().setSpecimenComment(getUser(), vial, null,
+                        SpecimenManager.get().setSpecimenComment(getUser(), vial, null,
                                 comment.isQualityControlFlag(), comment.isQualityControlFlagForced());
                     }
                 }
@@ -3675,7 +3675,7 @@ public class SpecimenController extends BaseStudyController
             for (int rowId : commentsForm.getRowId())
                 vials.add(SpecimenManagerNew.get().getVial(container, user, rowId));
 
-            Map<Vial, SpecimenComment> currentComments = SpecimenManager.getInstance().getSpecimenComments(vials);
+            Map<Vial, SpecimenComment> currentComments = SpecimenManager.get().getSpecimenComments(vials);
 
             // copying or moving vial comments to participant level comments
             if (commentsForm.isCopyToParticipant())
@@ -3705,7 +3705,7 @@ public class SpecimenController extends BaseStudyController
                 {
                     for (Vial vial : vials)
                     {
-                        SpecimenComment comment = SpecimenManager.getInstance().getSpecimenCommentForVial(vial);
+                        SpecimenComment comment = SpecimenManager.get().getSpecimenCommentForVial(vial);
                         if (comment != null)
                         {
                             _successUrl.addParameter(ParticipantCommentForm.params.vialCommentsToClear, vial.getRowId());
@@ -3736,12 +3736,12 @@ public class SpecimenController extends BaseStudyController
                 
                 if (previousComment == null || commentsForm.getConflictResolveEnum() == CommentsConflictResolution.REPLACE)
                 {
-                    SpecimenManager.getInstance().setSpecimenComment(getUser(), vial, commentsForm.getComments(),
+                    SpecimenManager.get().setSpecimenComment(getUser(), vial, commentsForm.getComments(),
                             newConflictState, newForceState);
                 }
                 else if (commentsForm.getConflictResolveEnum() == CommentsConflictResolution.APPEND)
                 {
-                    SpecimenManager.getInstance().setSpecimenComment(getUser(), vial, previousComment.getComment() + "\n" + commentsForm.getComments(),
+                    SpecimenManager.get().setSpecimenComment(getUser(), vial, previousComment.getComment() + "\n" + commentsForm.getComments(),
                             newConflictState, newForceState);
                 }
                 // If we haven't updated by now, our user has selected CommentsConflictResolution.SKIP and previousComments is non-null

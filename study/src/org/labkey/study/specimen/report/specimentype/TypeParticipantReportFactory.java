@@ -17,13 +17,13 @@ package org.labkey.study.specimen.report.specimentype;
 
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.Participant;
@@ -121,7 +121,7 @@ public class TypeParticipantReportFactory extends TypeReportFactory
                     visits = visitListCache.get(cohort.getRowId());
                     if (visits == null)
                     {
-                        visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), cohort);
+                        visits = SpecimenManager.get().getVisitsWithSpecimens(getContainer(), getUser(), cohort);
                         visitListCache.put(cohort.getRowId(), visits);
                     }
                 }

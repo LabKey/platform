@@ -23,6 +23,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -47,6 +49,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -264,4 +267,12 @@ public interface StudyService
     Study getStudyForVisits(@NotNull Study study);
 
     boolean showCohorts(Container container, @Nullable User user);
+
+    /**
+     * Unfortunately, LastSpecimenLoad is stored in study.Study
+     */
+    Date getLastSpecimenLoad(@NotNull Study study);
+    void setLastSpecimenLoad(@NotNull Study study, User user, Date lastSpecimenLoad);
+
+    List<? extends Visit> getVisits(Study study, SimpleFilter filter, Sort sort);
 }

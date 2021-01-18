@@ -16,6 +16,7 @@
 package org.labkey.study.specimen.report.participant;
 
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.report.SpecimenReportTitle;
 import org.labkey.api.specimen.report.SummaryByVisitParticipant;
 import org.labkey.api.study.CohortFilter;
@@ -23,9 +24,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.VisitImpl;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 
@@ -53,7 +52,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
     {
         CohortFilter.Type cohortType = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
         Collection<SummaryByVisitParticipant> countSummary =
-                SpecimenManager.getInstance().getParticipantSummaryByVisitType(_container, getUser(), _filter, getBaseCustomView(), cohortType);
+                SpecimenManager.get().getParticipantSummaryByVisitType(_container, getUser(), _filter, getBaseCustomView(), cohortType);
         Map<String, Row> rows = new TreeMap<>();
         for (SummaryByVisitParticipant count : countSummary)
         {

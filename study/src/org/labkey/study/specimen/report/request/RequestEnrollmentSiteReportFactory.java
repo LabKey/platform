@@ -18,16 +18,14 @@ package org.labkey.study.specimen.report.request;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.specimen.SpecimenManager;
+import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.api.specimen.location.LocationImpl;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
 
@@ -84,13 +82,13 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
         }
         else
         {
-            locations = SpecimenManager.getInstance().getEnrollmentSitesWithRequests(getContainer(), getUser());
+            locations = SpecimenManager.get().getEnrollmentSitesWithRequests(getContainer(), getUser());
             // add null to the set so we can search for ptid without an enrollment site:
             locations.add(null);
         }
 
         List<SpecimenVisitReport> reports = new ArrayList<>();
-        List<? extends Visit> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
+        List<? extends Visit> visits = SpecimenManager.get().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
 
         SQLFragment baseSql = SpecimenQueryView.getBaseRequestedEnrollmentSql(getContainer(), getUser(), isCompletedRequestsOnly());
 
@@ -123,7 +121,7 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
     public List<Pair<String, HtmlString>> getAdditionalFormInputHtml()
     {
         List<Pair<String, HtmlString>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
-        Set<LocationImpl> locations = SpecimenManager.getInstance().getEnrollmentSitesWithRequests(getContainer(), getUser());
+        Set<LocationImpl> locations = SpecimenManager.get().getEnrollmentSitesWithRequests(getContainer(), getUser());
         // add null to the set so we can search for ptid without an enrollment site:
         locations.add(null);
         inputs.add(getEnrollmentSitePicker("enrollmentSiteId", locations, _enrollmentSiteId));

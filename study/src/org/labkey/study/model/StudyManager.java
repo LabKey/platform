@@ -116,13 +116,16 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DataspaceContainerFilter;
+import org.labkey.api.study.QueryHelper;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyCache;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -141,9 +144,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.api.study.QueryHelper;
-import org.labkey.api.study.StudyCache;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.BaseStudyController;
@@ -170,7 +170,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -1599,7 +1598,7 @@ public class StudyManager
                 for (VisitImpl visit : visits)
                 {
                     // Delete specimens first because we may need ParticipantVisit to figure out which specimens
-                    SpecimenManager.getInstance().deleteSpecimensForVisit(visit);
+                    SpecimenManager.get().deleteSpecimensForVisit(visit);
 
                     TreatmentManager.getInstance().deleteTreatmentVisitMapForVisit(study.getContainer(), visit.getRowId());
                     deleteAssaySpecimenVisits(study.getContainer(), visit.getRowId());
@@ -2745,7 +2744,7 @@ public class StudyManager
             //
             // specimens
             //
-            SpecimenManager.getInstance().deleteAllSpecimenData(c, deletedTables, user);
+            SpecimenManager.get().deleteAllSpecimenData(c, deletedTables, user);
 
             //
             // assay schedule
@@ -3914,17 +3913,6 @@ public class StudyManager
             default:
                 return new RelativeDateVisitManager(studyImpl);
         }
-    }
-
-    public static SQLFragment sequenceNumFromDateSQL(String dateColumnName)
-    {
-        // Returns a SQL statement that produces a single number from a date, in the form of YYYYMMDD.
-        SqlDialect dialect = StudySchema.getInstance().getSqlDialect();
-        SQLFragment sql = new SQLFragment();
-        sql.append("(10000 * ").append(dialect.getDatePart(Calendar.YEAR, dateColumnName)).append(") + ");
-        sql.append("(100 * ").append(dialect.getDatePart(Calendar.MONTH, dateColumnName)).append(") + ");
-        sql.append("(").append(dialect.getDatePart(Calendar.DAY_OF_MONTH, dateColumnName)).append(")");
-        return sql;
     }
 
     public static SQLFragment timePortionFromDateSQL(String dateColumnName)

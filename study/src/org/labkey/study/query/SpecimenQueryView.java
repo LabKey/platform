@@ -45,6 +45,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
@@ -52,6 +53,7 @@ import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HtmlString;
@@ -59,8 +61,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.study.CohortFilter;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.controllers.specimen.SpecimenUtils;
 import org.labkey.study.model.ParticipantDataset;
@@ -545,19 +545,19 @@ public class SpecimenQueryView extends BaseStudyQueryView
                         specimenHashes.add(rs.getString("SpecimenHash"));
                         if (specimenHashes.size() > 150)
                         {
-                            _availableSpecimenCounts.putAll(SpecimenManager.getInstance().getSampleCounts(ctx.getContainer(), specimenHashes));
+                            _availableSpecimenCounts.putAll(SpecimenManager.get().getSpecimenCounts(ctx.getContainer(), specimenHashes));
                             specimenHashes = new HashSet<>();
                         }
                     }
                     while (rs.next());
                     if (!specimenHashes.isEmpty())
                     {
-                        _availableSpecimenCounts.putAll(SpecimenManager.getInstance().getSampleCounts(ctx.getContainer(), specimenHashes));
+                        _availableSpecimenCounts.putAll(SpecimenManager.get().getSpecimenCounts(ctx.getContainer(), specimenHashes));
                     }
                 }
                 else
                 {
-                    _availableSpecimenCounts.putAll(SpecimenManager.getInstance().getSampleCounts(ctx.getContainer(), null));
+                    _availableSpecimenCounts.putAll(SpecimenManager.get().getSpecimenCounts(ctx.getContainer(), null));
                 }
                 rs.absolute(originalRow);
             }

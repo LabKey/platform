@@ -84,6 +84,7 @@ import org.labkey.api.study.SpecimenImportStrategyFactory;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
@@ -99,7 +100,6 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.SequenceNumImportHelper;
-import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.LocationTable;
 import org.labkey.study.visitmanager.VisitManager;
@@ -377,7 +377,7 @@ public class SpecimenImporter extends SpecimenTableManager
             SpecimenImportFile specimenFile = sifMap.get(_specimensTableType);
             SpecimenLoadInfo loadInfo = populateTempSpecimensTable(specimenFile, merge);
 
-            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+            Study study = StudyService.get().getStudy(getContainer());
             if (loadInfo.getRowCount() > 0 && failForUndefinedVisits && study.getTimepointType() == TimepointType.VISIT)
                 checkForUndefinedVisits(loadInfo, study);
 
@@ -405,9 +405,7 @@ public class SpecimenImporter extends SpecimenTableManager
             ensureNotCanceled();
             _iTimer.setPhase(ImportPhases.SetLastSpecimenLoad);
             // Set LastSpecimenLoad to now... we'll check this before snapshot study specimen refresh
-            study = StudyManager.getInstance().getStudy(getContainer()).createMutable();
-            study.setLastSpecimenLoad(new Date());
-            StudyManager.getInstance().updateStudy(getUser(), study);
+            StudyService.get().setLastSpecimenLoad( StudyService.get().getStudy(getContainer()), getUser(), new Date());
 
             _iTimer.setPhase(ImportPhases.DropTempTable);
 
@@ -475,7 +473,7 @@ public class SpecimenImporter extends SpecimenTableManager
             .append("\nWHERE tt.VisitValue IS NOT NULL AND v.RowId IS NULL");
 
         // shared visit container
-        Study visitStudy = StudyManager.getInstance().getStudyForVisits(study);
+        Study visitStudy = StudyService.get().getStudyForVisits(study);
         sql.add(visitStudy.getContainer().getId());
 
         SqlSelector selector = new SqlSelector(SpecimenSchema.get().getSchema(), sql);
@@ -2308,7 +2306,7 @@ public class SpecimenImporter extends SpecimenTableManager
                 _participantIdCol = sc;
         }
 
-        final Study study = StudyManager.getInstance().getStudy(getContainer());
+        final Study study = StudyService.get().getStudy(getContainer());
         final SequenceNumImportHelper h = new SequenceNumImportHelper(study, null);
         final ParticipantIdImportHelper piih = new ParticipantIdImportHelper(study, getUser(), null);
         final SpecimenColumn visitCol = _visitCol;
@@ -2458,7 +2456,7 @@ public class SpecimenImporter extends SpecimenTableManager
 
     private void updateTempTableVisits(DbSchema schema, String tempTable)
     {
-        Study study = StudyManager.getInstance().getStudy(getContainer());
+        Study study = StudyService.get().getStudy(getContainer());
         if (study.getTimepointType() != TimepointType.VISIT)
         {
             info("Updating visit values to match draw timestamps (date-based studies only)...");
@@ -2466,7 +2464,7 @@ public class SpecimenImporter extends SpecimenTableManager
                 .append("UPDATE ")
                 .append(tempTable)
                 .append(" SET VisitValue = (")
-                .append(StudyManager.sequenceNumFromDateSQL("DrawTimestamp"))
+                .append(StudyUtils.sequenceNumFromDateSQL("DrawTimestamp"))
                 .append(");");
             if (DEBUG)
                 info(visitValueSql.toDebugString());

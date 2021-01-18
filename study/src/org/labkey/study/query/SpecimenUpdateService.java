@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.converters.LongConverter;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
@@ -39,6 +40,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.specimen.SpecimenEvent;
 import org.labkey.api.specimen.SpecimenEventManager;
+import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
@@ -48,7 +50,6 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.importer.EditableSpecimenImporter;
 
 import java.io.IOException;
@@ -66,6 +67,7 @@ import java.util.Set;
  * Date: 6/11/13
  * Time: 2:33 PM
  */
+@Migrate // Depends only on EditableSpecimenImporter
 public class SpecimenUpdateService extends AbstractQueryUpdateService
 {
     Logger _logger = null;
@@ -121,7 +123,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
                 checkDeletability(container, vial);
 
             for (Vial vial : vials)
-                SpecimenManager.getInstance().deleteSpecimen(vial, false);
+                SpecimenManager.get().deleteSpecimen(vial, false);
             SpecimenRequestManager.get().clearCaches(container);
 
             // Force recalculation of requestability and specimen table
@@ -161,7 +163,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throw new IllegalArgumentException("No specimen found for rowId: " + rowId);
 
         checkDeletability(container, vial);
-        SpecimenManager.getInstance().deleteSpecimen(vial, true);
+        SpecimenManager.get().deleteSpecimen(vial, true);
         List<Map<String, Object>> rows = new ArrayList<>(1);
 
         try
@@ -377,7 +379,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, false);
         List<Map<String, Object>> newKeys = new ArrayList<>(uniqueRows.size());
         List<Map<String, Object>> newRows = new ArrayList<>(uniqueRows.size());
-        long externalId = SpecimenManager.getInstance().getMaxExternalId(container) + 1;
+        long externalId = SpecimenManager.get().getMaxExternalId(container) + 1;
         for (Map.Entry<Long, Map<String, Object>> row : uniqueRows.entrySet())
         {
             Vial vial = vials.get(row.getKey());
@@ -423,7 +425,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         checkEditability(container, vial);
 
         EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, false);
-        long externalId = SpecimenManager.getInstance().getMaxExternalId(container) + 1;
+        long externalId = SpecimenManager.get().getMaxExternalId(container) + 1;
         Map<String, Object> rowMap = prepareRowMap(container, row, vial, importer, externalId);
 
         // TODO: this is a hack to best deal with Requestable being Null until a better fix can be accomplished

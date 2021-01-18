@@ -397,7 +397,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         SystemMaintenance.addTask(new PurgeParticipantsMaintenanceTask());
-        SystemMaintenance.addTask(new SpecimenRefreshMaintainanceTask());
+        SystemMaintenance.addTask(new SpecimenRefreshMaintenanceTask());
         SystemMaintenance.addTask(new DefragmentParticipantVisitIndexesTask());
         SystemMaintenance.addTask(new MasterPatientIndexMaintenanceTask());
 
