@@ -154,6 +154,16 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         return null;
     }
 
+    default String getPipelineJobGUID()
+    {
+        return null;
+    }
+
+    default void setPipelineJobGUID(String jobGUID)
+    {
+
+    }
+
     @Nullable
     Logger getLogger();
 

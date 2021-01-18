@@ -16,6 +16,7 @@
 
 package org.labkey.assay.actions;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -296,6 +297,10 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             // Run id may be null if the import is performed in a background job
             if (run != null)
                 resp.put("runId", run.getRowId());
+
+            String asyncJobGUID = uploadContext.getPipelineJobGUID();
+            if (!StringUtils.isEmpty(asyncJobGUID))
+                resp.put("jobId", PipelineService.get().getJobId(getUser(), getContainer(), asyncJobGUID));
 
             return resp;
         }
