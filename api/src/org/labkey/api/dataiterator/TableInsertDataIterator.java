@@ -160,7 +160,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     protected TableInsertDataIterator(DataIterator data, TableInfo table, Container c, DataIteratorContext context,
                                       @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
     {
-        super(data, context);
+        super(table.getSqlDialect(), data, context);
         setDebugName(table.getName());
 
         _table = table;
@@ -262,7 +262,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
                 stmt = getInsertStatement(constants);
             }
 
-            if (_context.getInsertOption().batch && null == _rowIdIndex && null == _objectIdIndex)
+            if (_table.getSqlDialect().allowAsynchronousExecute() && _context.getInsertOption().batch && null == _rowIdIndex && null == _objectIdIndex)
             {
                 _stmts = new ParameterMapStatement[]{stmt, stmt.copy()};
                 setUseAsynchronousExecute(true);
