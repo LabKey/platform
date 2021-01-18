@@ -68,6 +68,12 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
     }
 
     @Override
+    public String getPublicName()
+    {
+        return AnnouncementSchema.ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME;
+    }
+
+    @Override
     protected void applyContainerFilter(ContainerFilter filter)
     {
         // We need to filter on the announcement's container, since we don't have a container column directly on userlist
