@@ -45,6 +45,7 @@ import org.labkey.api.study.QueryHelper;
 import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUtils;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -60,6 +61,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1272,6 +1274,48 @@ public class SpecimenRequestManager implements ContainerManager.ContainerListene
             AttachmentService.get().deleteAttachments(event);
             _requestEventHelper.delete(event);
         }
+    }
+
+    public RequestedSpecimens getRequestableBySpecimenHash(Container c, User user, Set<String> formValues, Integer preferredLocation) throws AmbiguousLocationException
+    {
+        Map<String, List<Vial>> vialsByHash = SpecimenManagerNew.get().getVialsForSpecimenHashes(c, user, formValues, true);
+
+        if (vialsByHash == null || vialsByHash.isEmpty())
+            return new RequestedSpecimens(Collections.emptyList());
+
+        if (preferredLocation == null)
+        {
+            Collection<Integer> preferredLocations = StudyUtils.getPreferredProvidingLocations(vialsByHash.values());
+            if (preferredLocations.size() == 1)
+                preferredLocation = preferredLocations.iterator().next();
+            else if (preferredLocations.size() > 1)
+                throw new AmbiguousLocationException(c, preferredLocations);
+        }
+
+        List<Vial> requestedSpecimens = new ArrayList<>(vialsByHash.size());
+        Set<Integer> providingLocations = new HashSet<>();
+
+        for (List<Vial> vials : vialsByHash.values())
+        {
+            Vial selectedVial = null;
+            if (preferredLocation == null)
+                selectedVial = vials.get(0);
+            else
+            {
+                for (Iterator<Vial> it = vials.iterator(); it.hasNext() && selectedVial == null;)
+                {
+                    Vial vial = it.next();
+                    if (vial.getCurrentLocation() != null && vial.getCurrentLocation().intValue() == preferredLocation.intValue())
+                        selectedVial = vial;
+                }
+            }
+            if (selectedVial == null)
+                throw new IllegalStateException("Vial was not available from specified location " + preferredLocation);
+            providingLocations.add(selectedVial.getCurrentLocation());
+            requestedSpecimens.add(selectedVial);
+        }
+
+        return new RequestedSpecimens(requestedSpecimens, providingLocations);
     }
 }
 

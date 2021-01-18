@@ -19,6 +19,7 @@ package org.labkey.study.controllers.specimen;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.ActionButton;
@@ -72,6 +73,7 @@ import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUtils;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MailHelper;
@@ -631,47 +633,6 @@ public class SpecimenUtils
         }
     }
 
-    @NotNull
-    private static <T> Set<T> intersect(@NotNull Set<T> left, @NotNull Set<T> right)
-    {
-        Set<T> intersection = new HashSet<>();
-        for (T item : left)
-        {
-            if (right.contains(item))
-                intersection.add(item);
-        }
-        return intersection;
-    }
-
-    @NotNull
-    public static Collection<Integer> getPreferredProvidingLocations(Collection<List<Vial>> specimensBySample)
-    {
-        Set<Integer> locationIntersection = null;
-
-        for (List<Vial> vials : specimensBySample)
-        {
-            Set<Integer> currentLocations = new HashSet<>();
-            for (Vial vial : vials)
-            {
-                if (vial.getCurrentLocation() != null)
-                    currentLocations.add(vial.getCurrentLocation());
-            }
-            if (locationIntersection == null)
-                locationIntersection = currentLocations;
-            else
-            {
-                locationIntersection = intersect(locationIntersection, currentLocations);
-                if (locationIntersection.isEmpty())
-                    return locationIntersection;
-            }
-        }
-
-        if (null != locationIntersection)
-            return locationIntersection;
-
-        return Collections.emptySet();
-    }
-
     public void ensureSpecimenRequestsConfigured(boolean checkExistingStatuses)
     {
         if (!SettingsManager.get().isSpecimenRequestEnabled(getContainer(), checkExistingStatuses))
@@ -762,46 +723,10 @@ public class SpecimenUtils
         return new RequestedSpecimens(requestedSpecimens);
     }
 
+    @Migrate // TODO: Refactor SpecimenUtils and callers should use SpecimenRequestManager directly
     public RequestedSpecimens getRequestableBySpecimenHash(Set<String> formValues, Integer preferredLocation) throws AmbiguousLocationException
     {
-        Map<String, List<Vial>> vialsByHash = SpecimenManagerNew.get().getVialsForSpecimenHashes(getContainer(), getUser(), formValues, true);
-
-        if (vialsByHash == null || vialsByHash.isEmpty())
-            return new RequestedSpecimens(Collections.emptyList());
-
-        if (preferredLocation == null)
-        {
-            Collection<Integer> preferredLocations = getPreferredProvidingLocations(vialsByHash.values());
-            if (preferredLocations.size() == 1)
-                preferredLocation = preferredLocations.iterator().next();
-            else if (preferredLocations.size() > 1)
-                throw new AmbiguousLocationException(getContainer(), preferredLocations);
-        }
-
-        List<Vial> requestedSpecimens = new ArrayList<>(vialsByHash.size());
-        Set<Integer> providingLocations = new HashSet<>();
-
-        for (List<Vial> vials : vialsByHash.values())
-        {
-            Vial selectedVial = null;
-            if (preferredLocation == null)
-                selectedVial = vials.get(0);
-            else
-            {
-                for (Iterator<Vial> it = vials.iterator(); it.hasNext() && selectedVial == null;)
-                {
-                    Vial vial = it.next();
-                    if (vial.getCurrentLocation() != null && vial.getCurrentLocation().intValue() == preferredLocation.intValue())
-                        selectedVial = vial;
-                }
-            }
-            if (selectedVial == null)
-                throw new IllegalStateException("Vial was not available from specified location " + preferredLocation);
-            providingLocations.add(selectedVial.getCurrentLocation());
-            requestedSpecimens.add(selectedVial);
-        }
-
-        return new RequestedSpecimens(requestedSpecimens, providingLocations);
+        return SpecimenRequestManager.get().getRequestableBySpecimenHash(getContainer(), getUser(), formValues, preferredLocation);
     }
 
     public GridView getRequestEventGridView(HttpServletRequest request, BindException errors, SimpleFilter filter)

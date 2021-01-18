@@ -23,6 +23,7 @@ import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.RequiresPermission;
@@ -47,10 +48,10 @@ import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
+import org.labkey.api.study.StudyUtils;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.controllers.BaseStudyController;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
@@ -69,7 +70,8 @@ import java.util.TreeMap;
  * Time: 11:57:24 AM
  */
 @SuppressWarnings("UnusedDeclaration")
-public class SpecimenApiController extends BaseStudyController
+@Migrate // Move to study-api
+public class SpecimenApiController extends SpringActionController
 {
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(SpecimenApiController.class);
 
@@ -331,7 +333,7 @@ public class SpecimenApiController extends BaseStudyController
         {
             Map<String, List<Vial>> vialsByHash = SpecimenManagerNew.get().getVialsForSpecimenHashes(getContainer(), getUser(),
                     PageFlowUtil.set(form.getSpecimenHashes()), true);
-            Collection<Integer> preferredLocations = SpecimenUtils.getPreferredProvidingLocations(vialsByHash.values());
+            Collection<Integer> preferredLocations = StudyUtils.getPreferredProvidingLocations(vialsByHash.values());
             final Map<String, Object> response = new HashMap<>();
             List<Map<String, Object>> locations = new ArrayList<>();
             for (Integer locationId : preferredLocations)
@@ -569,7 +571,7 @@ public class SpecimenApiController extends BaseStudyController
             final SpecimenRequest request = getRequest(getUser(), getContainer(), addSpecimensToRequestForm.getRequestId(), true, true);
             Set<String> hashes = new HashSet<>();
             Collections.addAll(hashes, addSpecimensToRequestForm.getSpecimenHashes());
-            RequestedSpecimens requested = getUtils().getRequestableBySpecimenHash(hashes, addSpecimensToRequestForm.getPreferredLocation());
+            RequestedSpecimens requested = SpecimenRequestManager.get().getRequestableBySpecimenHash(getContainer(), getUser(), hashes, addSpecimensToRequestForm.getPreferredLocation());
             if (requested.getVials().size() > 0)
             {
                 List<Vial> vials = new ArrayList<>(requested.getVials());
