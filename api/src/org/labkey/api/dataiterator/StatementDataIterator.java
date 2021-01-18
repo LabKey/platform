@@ -58,6 +58,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -664,9 +665,12 @@ public class StatementDataIterator extends AbstractDataIterator
                 int x = ((Number)result.get("X")).intValue();
                 int y = ((Number)result.get("Y")).intValue();
                 assertEquals(rowCount, x+y);
-                if (0 == rowCount % (2*batchSize))
-                    assertEquals(x,y);
-                assertTrue(Math.abs(x-y) <= batchSize);
+                if (scope.getSqlDialect().allowAsynchronousExecute())
+                {
+                    if (0 == rowCount % (2 * batchSize))
+                        assertEquals(x, y);
+                    assertTrue(Math.abs(x - y) <= batchSize);
+                }
             }
             finally
             {
@@ -777,6 +781,13 @@ public class StatementDataIterator extends AbstractDataIterator
             public PkMetaDataReader getPkMetaDataReader(ResultSet rs)
             {
                 return null;
+            }
+
+            @NotNull
+            @Override
+            protected Set<String> getReservedWords()
+            {
+                return Set.of();
             }
 
             @Override
