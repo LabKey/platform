@@ -27,7 +27,6 @@ import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -35,16 +34,11 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
-import org.springframework.mock.web.MockHttpServletRequest;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.labkey.api.security.SecurityManager.TRANSFORM_SESSION_ID;
 
 /**
  * User: Karl Lum
@@ -64,6 +58,13 @@ public class RReportJob extends PipelineJob implements Serializable
 
     // For serialization
     protected RReportJob() {}
+
+    public RReportJob(PipelineJob parent,  ReportIdentifier reportId)
+    {
+        super(parent);
+        _reportId = reportId;
+        init(this.getContainerId());
+    }
 
     public RReportJob(String provider, ViewBackgroundInfo info, ReportIdentifier reportId, PipeRoot root)
     {
