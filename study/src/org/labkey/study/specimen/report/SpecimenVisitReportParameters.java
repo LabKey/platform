@@ -424,16 +424,15 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     protected Pair<String, HtmlString> getParticipantPicker(String inputName, String selectedParticipantId)
     {
-        Study study = StudyManager.getInstance().getStudy(getContainer());
+        Study study = StudyService.get().getStudy(getContainer());
         Select.SelectBuilder builder = new Select.SelectBuilder();
-
 
         String allString = getAllString();
         Collection<Participant> participants = StudyManager.getInstance().getParticipants(study);
         HtmlString particpantPickerValues;
         if (participants.size() <= 200)
         {
-            // select the previously selected option or the first non-all option.  We don't want to select 'all participants'
+            // select the previously selected option or the first non-all option. We don't want to select 'all participants'
             // by default, since these reports are extremely expensive to generate.
             builder.name(inputName)
                 .addOption(new OptionBuilder()

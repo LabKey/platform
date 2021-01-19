@@ -248,9 +248,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         addController("study-designer", DesignerController.class);
         addController("study-properties", StudyPropertiesController.class);
         addController("study-reports", ReportsController.class);
-        addController("study-samples", SpecimenController.class);
         addController("study-security", SecurityController.class);
         addController("study-shared", SharedStudyController.class);
+
+        // @Migrate
+        addController("study-samples", SpecimenController.class);
 
         ServiceRegistry.get().registerService(StudyService.class, StudyServiceImpl.INSTANCE);
         DefaultSchema.registerProvider(StudyQuerySchema.SCHEMA_NAME, new StudySchemaProvider(this));
@@ -593,12 +595,14 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         public SubjectsWebPartFactory()
         {
-            super("Subject List", SubjectsWebPart.class,
-                    WebPartFactory.LOCATION_BODY,
-                    WebPartFactory.LOCATION_RIGHT,
-                    Participant.class.getName() + ":" + WebPartFactory.LOCATION_BODY,
-                    Participant.class.getName() + ":" + WebPartFactory.LOCATION_RIGHT
-                    );
+            super(
+                "Subject List",
+                SubjectsWebPart.class,
+                WebPartFactory.LOCATION_BODY,
+                WebPartFactory.LOCATION_RIGHT,
+                Participant.class.getName() + ":" + WebPartFactory.LOCATION_BODY,
+                Participant.class.getName() + ":" + WebPartFactory.LOCATION_RIGHT
+            );
         }
 
         @Override

@@ -25,6 +25,7 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -498,8 +499,9 @@ public class SpecimenApiController extends SpringActionController
 
     @RequiresPermission(RequestSpecimensPermission.class)
     @ApiVersion(9.1)
-    @Migrate // TODO: Rename and adjust LABKEY.Specimen.AddSamplesToRequest() in labkey-api-js, then rename this action
-    public class AddSamplesToRequestAction extends MutatingApiAction<AddSpecimensToRequestForm>
+    @Migrate // TODO: Rename and adjust LABKEY.Specimen.AddSamplesToRequest() in labkey-api-js, then remove @ActionNames annotation
+    @ActionNames("addSpecimensToRequest,addSamplesToRequest")
+    public class AddSpecimensToRequestAction extends MutatingApiAction<AddSpecimensToRequestForm>
     {
         @Override
         public ApiResponse execute(AddSpecimensToRequestForm addSpecimensToRequestForm, BindException errors) throws Exception

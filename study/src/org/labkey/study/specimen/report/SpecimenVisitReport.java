@@ -21,7 +21,9 @@ import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenTypeLevel;
 import org.labkey.api.specimen.report.SpecimenReportCellData;
 import org.labkey.api.specimen.report.SpecimenReportTitle;
@@ -34,10 +36,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.study.model.ParticipantGroupManager;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.SpecimenQueryView;
-import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -201,7 +200,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
             url.addParameter("SpecimenDetail.ignoreFilter", "1");
 
 
-        Study study = StudyManager.getInstance().getStudy(visit.getContainer());
+        Study study = StudyService.get().getStudy(visit.getContainer());
         if (null != study)
             addCohortURLFilter(study, url);
 
@@ -258,7 +257,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     public class Row
     {
         private final SpecimenReportTitle[] _titleHierarchy;
-        private Map<Integer, CELLDATA> _visitData = new HashMap<>();
+        private final Map<Integer, CELLDATA> _visitData = new HashMap<>();
 
         public Row(String[] stringHierarchy)
         {
@@ -270,22 +269,22 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
             _titleHierarchy = titleHierarchy;
         }
 
-        public String getCellHtml(VisitImpl visit)
+        public String getCellHtml(Visit visit)
         {
-            CELLDATA summary = _visitData.get(visit.getRowId());
+            CELLDATA summary = _visitData.get(visit.getId());
             return SpecimenVisitReport.this.getCellHtml(visit, summary);
         }
 
-        public String[] getCellExcelText(VisitImpl visit)
+        public String[] getCellExcelText(Visit visit)
         {
-            CELLDATA summary = _visitData.get(visit.getRowId());
+            CELLDATA summary = _visitData.get(visit.getId());
             return SpecimenVisitReport.this.getCellExcelText(visit, summary);
         }
 
-        public int getMaxExcelRowHeight(List<VisitImpl> visits)
+        public int getMaxExcelRowHeight(List<Visit> visits)
         {
             int max = 1;
-            for (VisitImpl visit : visits)
+            for (Visit visit : visits)
             {
                 int currentHeight = getCellExcelText(visit).length;
                 if (currentHeight > max)
@@ -417,7 +416,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     {
         if (_parameters.getBaseCustomViewName() == null)
             return null;
-        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(_container), _parameters.getUser(), true);
+        UserSchema schema = SpecimenQuerySchema.get(StudyService.get().getStudy(_container), _parameters.getUser());
         QueryDefinition def = QueryService.get().createQueryDefForTable(schema, "SpecimenDetail");
         String customViewName = _parameters.getBaseCustomViewName();
         if (SpecimenVisitReportParameters.DEFAULT_VIEW_ID.equals(customViewName))

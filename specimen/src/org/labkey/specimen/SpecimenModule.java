@@ -89,7 +89,7 @@ public class SpecimenModule extends CodeOnlyModule
 
         AttachmentService.get().registerAttachmentType(SpecimenRequestEventType.get());
 
-        addController("study-samples-api", SpecimenApiController.class);
+        addController("specimen-api", SpecimenApiController.class, "study-samples-api");
     }
 
     @Override
