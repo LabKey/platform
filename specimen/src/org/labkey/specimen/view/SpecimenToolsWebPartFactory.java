@@ -1,4 +1,4 @@
-package org.labkey.api.specimen.view;
+package org.labkey.specimen.view;
 
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.SettingsManager;
@@ -15,9 +15,11 @@ import org.labkey.api.view.WebPartFactory;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.labkey.api.specimen.SpecimensPage.SPECIMEN_TOOLS_WEBPART_NAME;
+
 public class SpecimenToolsWebPartFactory extends ToolsWebPartFactory
 {
-    public static final String SPECIMEN_TOOLS_WEBPART_NAME = "Specimen Tools";
+//    public static final String SPECIMEN_TOOLS_WEBPART_NAME = "Specimen Tools";  TODO: Remove from SpecimenPage and uncomment
 
     public SpecimenToolsWebPartFactory()
     {
