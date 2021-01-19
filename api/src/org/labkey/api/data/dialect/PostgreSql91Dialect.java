@@ -1867,4 +1867,10 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     {
         return true;
     }
+
+    @Override
+    public boolean allowAsynchronousExecute()
+    {
+        return true;
+    }
 }
