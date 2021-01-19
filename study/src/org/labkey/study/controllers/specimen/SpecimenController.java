@@ -343,7 +343,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ActionURL getInsertSpecimenQueryRowURL(Container c, String schemaName, TableInfo table)
         {
-            ActionURL url = new ActionURL(UpdateSpecimenQueryRowAction.class, c);
+            ActionURL url = new ActionURL(InsertSpecimenQueryRowAction.class, c);
             url.addParameter("schemaName", schemaName);
             url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
 
