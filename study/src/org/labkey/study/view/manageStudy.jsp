@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.admin.AdminUrls"%>
+<%@ page import="com.google.common.collect.Iterables"%>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.compliance.ComplianceService" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
@@ -27,7 +28,13 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestManager" %>
+<%@ page import="org.labkey.api.specimen.model.SpecimenTablesProvider" %>
+<%@ page import="org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission" %>
+<%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
+<%@ page import="org.labkey.api.study.SpecimenService" %>
+<%@ page import="org.labkey.api.study.SpecimenTransform" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyManagementOption" %>
 <%@ page import="org.labkey.api.study.StudyReloadSource" %>
@@ -35,9 +42,11 @@
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.study.model.ParticipantGroup" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.CohortController.ManageCohortsAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ChooseImporterAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ConfigureMasterPatientSettingsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DeleteStudyAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DemoModeAction" %>
@@ -52,7 +61,6 @@
 <%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.SnapshotSettingsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.StudyScheduleAction" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ChooseImporterAction" %>
 <%@ page import="org.labkey.study.controllers.StudyDefinitionController.EditStudyDefinitionAction" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController.ManageStudyProductsAction" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController.BeginAction" %>
@@ -67,19 +75,13 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusesAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ShowManageRepositorySettingsAction" %>
 <%@ page import="org.labkey.study.model.ParticipantCategoryImpl" %>
-<%@ page import="org.labkey.study.model.ParticipantGroup" %>
 <%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.StudySnapshot" %>
-<%@ page import="org.labkey.api.specimen.model.SpecimenTablesProvider" %>
-<%@ page import="org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission" %>
-<%@ page import="com.google.common.collect.Iterables" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.study.SpecimenTransform" %>
-<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -372,7 +374,7 @@
                 <table class="lk-fields-table">
                     <tr>
                         <td class="lk-study-prop-label">Repository Type</td>
-                        <td class="lk-study-prop-desc">This study uses the <%=text(study.getRepositorySettings().isSimple() ? "standard" : "advanced")%> specimen repository</td>
+                        <td class="lk-study-prop-desc">This study uses the <%=text(SettingsManager.get().getRepositorySettings(study.getContainer()).isSimple() ? "standard" : "advanced")%> specimen repository</td>
                         <td><%=link("Change Repository Type", ShowManageRepositorySettingsAction.class)%></td>
                     </tr>
                     <tr>
@@ -435,14 +437,14 @@
 
     if (c.hasPermission(user, ManageRequestSettingsPermission.class))
     {
-        if (study.getRepositorySettings().isEnableRequests())
+        if (SettingsManager.get().getRepositorySettings(getContainer()).isEnableRequests())
         {
     %>
             <labkey:panel title="Specimen Request Settings">
                 <table class="lk-fields-table">
                     <tr>
                         <td class="lk-study-prop-label">Statuses</td>
-                        <td class="lk-study-prop-desc">This study defines <%= study.getSampleRequestStatuses(getUser()).size() %> specimen request
+                        <td class="lk-study-prop-desc">This study defines <%=SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), getUser()).size() %> specimen request
                             statuses</td>
                         <td><%= link("Manage Request Statuses", urlFor(ManageStatusesAction.class)) %></td>
                     </tr>

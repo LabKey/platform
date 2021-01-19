@@ -1414,7 +1414,7 @@ public class DbScope
                     }
                     addScope(dsName, dataSources.get(dsName), dsPropertiesBean);
                 }
-                catch (Exception e)
+                catch (Throwable e)
                 {
                     // Server can't start up if it can't connect to the labkey data source
                     if (dsName.equals(labkeyDsName))

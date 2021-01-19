@@ -54,6 +54,12 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
     }
 
     @Override
+    public String getPublicName()
+    {
+        return ListManagerSchema.LIST_MANAGER;
+    }
+
+    @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         return _userSchema.getContainer().hasPermission(this.getClass().getName() + " " + getName(), user, perm);

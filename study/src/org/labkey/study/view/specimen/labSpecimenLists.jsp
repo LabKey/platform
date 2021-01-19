@@ -17,14 +17,14 @@
 %>
 <%@ page import="org.labkey.api.specimen.Vial"%>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl"%>
+<%@ page import="org.labkey.api.specimen.notifications.ActorNotificationRecipientSet"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DownloadSpecimenListAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.EmailLabSpecimenListsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.LabSpecimenListsBean" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestAction" %>
-<%@ page import="org.labkey.study.specimen.notifications.ActorNotificationRecipientSet" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -118,7 +118,7 @@
                                value="<%= location.getRowId() %>,<%= h(possibleNotification.getFormValue()) %>"<%=disabled(!hasEmailAddresses)%>>
                     </td>
                     <td valign="middle">
-                        <%= text(possibleNotification.getHtmlDescriptionAndLink(hasEmailAddresses)) %>
+                        <%=possibleNotification.getHtmlDescriptionAndLink(hasEmailAddresses, getActionURL())%>
                     </td>
                     <td valign="middle">
                         <%= text(notifyLocation != null && notifyLocation.getRowId() == bean.getSpecimenRequest().getDestinationSiteId() ? "Requesting&nbsp;Location&nbsp;" : "") %>

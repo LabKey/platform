@@ -289,6 +289,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
         jsonObj.put("exception", e.getMessage() != null ? e.getMessage() : e.getClass().getName());
         jsonObj.put("exceptionClass", e.getClass().getName());
         jsonObj.put("stackTrace", e.getStackTrace());
+        jsonObj.put("success", status == HttpServletResponse.SC_OK);
 
         try
         {

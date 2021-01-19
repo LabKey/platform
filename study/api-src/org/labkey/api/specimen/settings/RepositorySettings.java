@@ -41,15 +41,15 @@ public class RepositorySettings
         return "SpecWebPart_Group" + grouping.toString() + "." + groupBy.toString();
     }
 
+    private final String[][] _specWebPartColumnGroup = new String[2][3];      // 2 groupings; 3 groupBys within each
+    private final Map<String, String> _mapOldNamesToNewNames = new HashMap<>();     // TODO: needed for any studies saved between 1/20/2013 and 2/1/2013
+    private final Container _container;
+
     private boolean _simple;
     private boolean _enableRequests;
     private boolean _specimenDataEditable;
-    private String[][] _specWebPartColumnGroup = new String[2][3];      // 2 groupings; 3 groupBys within each
-    private Map<String, String> _mapOldNamesToNewNames = new HashMap<>();     // TODO: needed for any studies saved between 1/20/2013 and 2/1/2013
 
-    private Container _container;
-
-    public RepositorySettings(Container container)
+    private RepositorySettings(Container container)
     {
         _container = container;
         setSpecimenWebPartGroupingDefaults();

@@ -18,8 +18,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal.WebPart" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ReportConfigurationBean" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SpecimenReportWebPartFactory" %>
+<%@ page import="org.labkey.study.controllers.specimen.ReportConfigurationBean" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenReportWebPartFactory" %>
 <%@ page import="org.labkey.study.specimen.report.SpecimenVisitReportParameters" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>

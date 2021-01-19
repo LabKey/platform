@@ -17,9 +17,9 @@ package org.labkey.study.writer;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.ParticipantCategoryImpl;
-import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.StudyImpl;

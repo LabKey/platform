@@ -27,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
@@ -66,22 +67,12 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
-import org.labkey.api.specimen.importer.DefaultSpecimenImportStrategyFactory;
-import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
-import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
 import org.labkey.api.specimen.model.LocationDomainKind;
-import org.labkey.api.specimen.model.PrimaryTypeDomainKind;
-import org.labkey.api.specimen.model.SpecimenDomainKind;
-import org.labkey.api.specimen.model.SpecimenEventDomainKind;
-import org.labkey.api.specimen.model.SpecimenRequestEventType;
-import org.labkey.api.specimen.model.VialDomainKind;
-import org.labkey.api.specimen.security.roles.SpecimenCoordinatorRole;
-import org.labkey.api.specimen.security.roles.SpecimenRequesterRole;
 import org.labkey.api.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
@@ -131,6 +122,7 @@ import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.controllers.specimen.SpecimenApiController;
 import org.labkey.study.controllers.specimen.SpecimenController;
+import org.labkey.study.controllers.specimen.SpecimenReportWebPartFactory;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
@@ -140,7 +132,23 @@ import org.labkey.study.importer.MissingValueImporterFactory;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.StudyImportProvider;
 import org.labkey.study.importer.StudyImporterFactory;
-import org.labkey.study.model.*;
+import org.labkey.study.model.CohortDomainKind;
+import org.labkey.study.model.ContinuousDatasetDomainKind;
+import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.DateDatasetDomainKind;
+import org.labkey.study.model.Participant;
+import org.labkey.study.model.ParticipantGroupManager;
+import org.labkey.study.model.ParticipantIdImportHelper;
+import org.labkey.study.model.ProtocolDocumentType;
+import org.labkey.study.model.SequenceNumImportHelper;
+import org.labkey.study.model.StudyDomainKind;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyLsidHandler;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.TestDatasetDomainKind;
+import org.labkey.study.model.TreatmentManager;
+import org.labkey.study.model.VisitDatasetDomainKind;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.pipeline.SampleMindedTransform;
 import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.pipeline.StudyPipeline;
@@ -164,13 +172,10 @@ import org.labkey.study.reports.StudyCrosstabReport;
 import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.study.reports.StudyRReport;
 import org.labkey.study.reports.StudyReportUIProvider;
-import org.labkey.study.specimen.SpecimenCommentAuditProvider;
-import org.labkey.study.specimen.SpecimenSearchWebPart;
-import org.labkey.study.specimen.SpecimenWebPart;
+import org.labkey.study.view.StudyToolsWebPartFactory;
 import org.labkey.study.view.DatasetsWebPartView;
 import org.labkey.study.view.StudyListWebPartFactory;
 import org.labkey.study.view.StudySummaryWebPartFactory;
-import org.labkey.study.view.StudyToolsWebPartFactory;
 import org.labkey.study.view.SubjectDetailsWebPartFactory;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate;
@@ -180,7 +185,7 @@ import org.labkey.study.view.studydesign.VaccineDesignWebpartFactory;
 import org.labkey.study.writer.DatasetDataWriter;
 import org.labkey.study.writer.DefaultStudyDesignWriter;
 import org.labkey.study.writer.MissingValueWriterFactory;
-import org.labkey.study.writer.SpecimenWriter;
+import org.labkey.api.specimen.writer.SpecimenWriter;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.writer.StudyWriterFactory;
 
@@ -203,22 +208,22 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final String MODULE_NAME = "Study";
 
     public static final BaseWebPartFactory reportsPartFactory = new ReportsWebPartFactory();
-    public static final WebPartFactory samplesPartFactory = new SamplesWebPartFactory();
-    public static final WebPartFactory subjectsWebPartFactory = new SubjectsWebPartFactory();
-    public static final WebPartFactory sampleSearchPartFactory = new SampleSearchWebPartFactory(HttpView.BODY);
+    public static final WebPartFactory assayScheduleWebPartFactory = new AssayScheduleWebpartFactory();
+    public static final WebPartFactory dataToolsWebPartFactory = new StudyToolsWebPartFactory();
     public static final WebPartFactory datasetsPartFactory = new DatasetsWebPartFactory();
+    public static final WebPartFactory immunizationScheduleWebpartFactory = new ImmunizationScheduleWebpartFactory();
     public static final WebPartFactory manageStudyPartFactory = new StudySummaryWebPartFactory();
-    public static final WebPartFactory studyDesignsWebPartFactory = new StudyDesignsWebPartFactory();
     public static final WebPartFactory studyDesignSummaryWebPartFactory = new StudyDesignSummaryWebPartFactory();
-    public static final WebPartFactory subjectDetailsWebPartFactory = new SubjectDetailsWebPartFactory();
+    public static final WebPartFactory studyDesignsWebPartFactory = new StudyDesignsWebPartFactory();
     public static final WebPartFactory studyListWebPartFactory = new StudyListWebPartFactory();
     public static final WebPartFactory studyScheduleWebPartFactory = new StudyScheduleWebPartFactory();
-    public static final WebPartFactory dataToolsWebPartFactory = new StudyToolsWebPartFactory.Data();
-    public static final WebPartFactory specimenToolsWebPartFactory = new StudyToolsWebPartFactory.Specimens();
-    public static final WebPartFactory specimenReportWebPartFactory = new SpecimenController.SpecimenReportWebPartFactory();
-    public static final WebPartFactory assayScheduleWebPartFactory = new AssayScheduleWebpartFactory();
+    public static final WebPartFactory subjectDetailsWebPartFactory = new SubjectDetailsWebPartFactory();
+    public static final WebPartFactory subjectsWebPartFactory = new SubjectsWebPartFactory();
     public static final WebPartFactory vaccineDesignWebPartFactory = new VaccineDesignWebpartFactory();
-    public static final WebPartFactory immunizationScheduleWebpartFactory = new ImmunizationScheduleWebpartFactory();
+
+    @Migrate
+    public static final WebPartFactory specimenReportWebPartFactory = new SpecimenReportWebPartFactory();
+    public static final WebPartFactory specimenSearchWebPartFactory = new SpecimenSearchWebPartFactory(HttpView.BODY);
 
     @Override
     public String getName()
@@ -235,20 +240,20 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     protected void init()
     {
-        addController("study", StudyController.class);
-        addController("study-shared", SharedStudyController.class);
+        addController("study", StudyController.class);  // Default controller for this module -- must be registered first
+        addController("cohort", CohortController.class);
+        addController("dataset", DatasetController.class);
+        addController("participant-group", ParticipantGroupController.class);
+        addController("publish", PublishController.class);
+        addController("study-definition", StudyDefinitionController.class);
+        addController("study-design", StudyDesignController.class);
+        addController("study-designer", DesignerController.class);
+        addController("study-properties", StudyPropertiesController.class);
         addController("study-reports", ReportsController.class);
         addController("study-samples", SpecimenController.class);
         addController("study-samples-api", SpecimenApiController.class);
         addController("study-security", SecurityController.class);
-        addController("study-designer", DesignerController.class);
-        addController("publish", PublishController.class);
-        addController("dataset", DatasetController.class);
-        addController("study-definition", StudyDefinitionController.class);
-        addController("cohort", CohortController.class);
-        addController("study-properties", StudyPropertiesController.class);
-        addController("participant-group", ParticipantGroupController.class);
-        addController("study-design", StudyDesignController.class);
+        addController("study-shared", SharedStudyController.class);
 
         ServiceRegistry.get().registerService(StudyService.class, StudyServiceImpl.INSTANCE);
         DefaultSchema.registerProvider(StudyQuerySchema.SCHEMA_NAME, new StudySchemaProvider(this));
@@ -259,14 +264,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new TestDatasetDomainKind());
         PropertyService.get().registerDomainKind(new CohortDomainKind());
         PropertyService.get().registerDomainKind(new StudyDomainKind());
-        PropertyService.get().registerDomainKind(new LocationDomainKind());
-        PropertyService.get().registerDomainKind(new PrimaryTypeDomainKind());
-        PropertyService.get().registerDomainKind(new DerivativeTypeDomainKind());
-        PropertyService.get().registerDomainKind(new AdditiveTypeDomainKind());
-        PropertyService.get().registerDomainKind(new SpecimenDomainKind());
-        PropertyService.get().registerDomainKind(new VialDomainKind());
-        PropertyService.get().registerDomainKind(new SpecimenEventDomainKind());
         PropertyService.get().registerDomainKind(new StudyPersonnelDomainKind());
+
+        // specimen-related domain kinds
+        PropertyService.get().registerDomainKind(new LocationDomainKind());
         PropertyService.get().registerDomainKind(new SpecimenSampleTypeDomainKind());
 
         // study design domains
@@ -288,12 +289,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         NotificationService.get().registerNotificationType(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE, "Study", "fa-users");
 
-        // Register early so these roles are available to Java code at upgrade time
-        RoleManager.registerRole(new SpecimenCoordinatorRole());
-        RoleManager.registerRole(new SpecimenRequesterRole());
-
         AttachmentService.get().registerAttachmentType(ProtocolDocumentType.get());
-        AttachmentService.get().registerAttachmentType(SpecimenRequestEventType.get());
     }
 
     @Override
@@ -306,15 +302,24 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return List.of(reportsPartFactory, samplesPartFactory,
-            datasetsPartFactory, manageStudyPartFactory,
-            studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
-            subjectDetailsWebPartFactory, studyListWebPartFactory, sampleSearchPartFactory,
-            subjectsWebPartFactory, dataToolsWebPartFactory,
-            specimenToolsWebPartFactory,
-            specimenReportWebPartFactory, studyScheduleWebPartFactory,
-            assayScheduleWebPartFactory, vaccineDesignWebPartFactory, immunizationScheduleWebpartFactory,
-            new SharedStudyController.StudyFilterWebPartFactory()
+        return List.of(
+            assayScheduleWebPartFactory,
+            dataToolsWebPartFactory,
+            datasetsPartFactory,
+            immunizationScheduleWebpartFactory,
+            manageStudyPartFactory,
+            reportsPartFactory,
+            studyDesignSummaryWebPartFactory,
+            studyDesignsWebPartFactory,
+            studyListWebPartFactory,
+            studyScheduleWebPartFactory,
+            subjectDetailsWebPartFactory,
+            subjectsWebPartFactory,
+            vaccineDesignWebPartFactory,
+            new SharedStudyController.StudyFilterWebPartFactory(),
+
+            specimenReportWebPartFactory,
+            specimenSearchWebPartFactory
         );
     }
 
@@ -340,7 +345,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             return Collections.emptyList();
     }
 
-
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
@@ -353,7 +357,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ContainerManager.addContainerListener(new StudyContainerListener(), ContainerManager.ContainerListener.Order.First);
         AssayPublishService.setInstance(new AssayPublishManager());
         SpecimenService.setInstance(new SpecimenServiceImpl());
-        SpecimenService.get().registerSpecimenImportStrategyFactory(new DefaultSpecimenImportStrategyFactory());
         SpecimenService.get().registerSpecimenTransform(new SampleMindedTransform());
 
         LsidManager.get().registerHandler("Study", new StudyLsidHandler());
@@ -364,7 +367,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         AuditLogService.get().registerAuditType(new AssayAuditProvider());
         AuditLogService.get().registerAuditType(new DatasetAuditProvider());
         AuditLogService.get().registerAuditType(new StudyAuditProvider());
-        AuditLogService.get().registerAuditType(new SpecimenCommentAuditProvider());
         AuditLogService.get().registerAuditType(new StudySecurityEscalationAuditProvider());
 
         ReportService.get().registerReport(new StudyController.StudyChartReport());
@@ -449,7 +451,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 StudyManager.getInstance().getAllStudies().stream()
                     .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), false))
                     .forEach(schema->{
-                        RepositorySettings settings = SpecimenManager.getInstance().getRepositorySettings(schema.getContainer());
+                        RepositorySettings settings = SettingsManager.get().getRepositorySettings(schema.getContainer());
 
                         if (settings.isSimple())
                         {
@@ -587,47 +589,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             }
 
             return view;
-        }
-    }
-
-    private static class SamplesWebPartFactory extends DefaultWebPartFactory
-    {
-        public SamplesWebPartFactory()
-        {
-            super("Specimens", SpecimenWebPart.class, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT);
-            addLegacyNames("Specimen Browse (Experimental)");
-        }
-
-        @Override
-        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
-        {
-            if (!portalCtx.hasPermission(ReadPermission.class))
-                return new HtmlView("Specimens", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
-
-            StudyImpl study = StudyManager.getInstance().getStudy(portalCtx.getContainer());
-            if (null == study)
-                return new HtmlView("Specimens", "This folder does not contain a study.");
-            return new SpecimenWebPart(webPart.getLocation().equals(HttpView.BODY), study);
-        }
-    }
-
-    private static class SampleSearchWebPartFactory extends DefaultWebPartFactory
-    {
-        public SampleSearchWebPartFactory(String position)
-        {
-            super("Specimen Search", SpecimenSearchWebPart.class, position);
-            addLegacyNames("Specimen Search (Experimental)");
-        }
-
-        @Override
-        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
-        {
-            if (!portalCtx.hasPermission(ReadPermission.class))
-                return new HtmlView("Specimens", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
-
-            if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
-                return new HtmlView("Specimens", "This folder does not contain a study.");
-            return new SpecimenSearchWebPart(true);
         }
     }
 

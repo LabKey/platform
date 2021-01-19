@@ -19,7 +19,6 @@ package org.labkey.api.action;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.admin.AdminUrls;
@@ -118,6 +117,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
     public static final String ERROR_CONVERSION = "typeMismatch";
     public static final String ERROR_REQUIRED = "requiredError";
     public static final String ERROR_UNIQUE = "uniqueConstraint";
+
+    /** HTTP parameter name for clients to specify a preferred response format. See supported values in ApiResponseWriter.Format */
+    public static final String RESPONSE_FORMAT_PARAMETER_NAME = "respFormat";
 
     private static final Map<Class<? extends Controller>, ActionDescriptor> _classToDescriptor = new HashMap<>();
 
@@ -403,6 +405,16 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             PermissionCheckable checkable = (PermissionCheckable)controller;
 
+            ApiResponseWriter.Format responseFormat = ApiResponseWriter.Format.getFormatByName(request.getParameter(RESPONSE_FORMAT_PARAMETER_NAME), null);
+            if (responseFormat == null)
+            {
+                responseFormat = checkable.getDefaultResponseFormat();
+            }
+            if (responseFormat != null)
+            {
+                ApiResponseWriter.setResponseFormat(request, responseFormat);
+            }
+
             ActionURL redirectURL = getUpgradeMaintenanceRedirect(request, controller);
 
             if (null != redirectURL)
@@ -418,6 +430,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             Container c = context.getContainer();
             if (null == c)
             {
+
                 String containerPath = context.getActionURL().getExtraPath();
                 if (containerPath != null && containerPath.contains("/"))
                 {

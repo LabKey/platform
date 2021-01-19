@@ -85,7 +85,7 @@ public interface CohortFilter
 //        };
 
 
-        private String _title;
+        private final String _title;
 
         Type(String title)
         {

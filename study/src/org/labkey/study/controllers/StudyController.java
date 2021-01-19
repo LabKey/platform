@@ -135,8 +135,12 @@ import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.specimen.view.SpecimenWebPartFactory;
+import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.MasterPatientIndexService;
@@ -149,6 +153,8 @@ import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.model.ParticipantGroup;
+import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
@@ -174,7 +180,6 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
-import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
@@ -182,7 +187,6 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.MasterPatientIndexMaintenanceTask;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
@@ -194,7 +198,6 @@ import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.StudySchedule;
 import org.labkey.study.importer.DatasetImportUtils;
-import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.SchemaTsvReader;
 import org.labkey.study.importer.StudyReload.ReloadStatus;
@@ -213,8 +216,6 @@ import org.labkey.study.query.StudyPropertiesQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudyQueryView;
 import org.labkey.study.reports.ReportManager;
-import org.labkey.api.study.security.permissions.ManageStudyPermission;
-import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.visitmanager.VisitManager.VisitStatistic;
@@ -256,6 +257,7 @@ public class StudyController extends BaseStudyController
     private static final String PARTICIPANT_CACHE_PREFIX = "Study_participants/participantCache";
     private static final String EXPAND_CONTAINERS_KEY = StudyController.class.getName() + "/expandedContainers";
     private static final String DATASET_DATAREGION_NAME = "Dataset";
+
     private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(
         StudyController.class,
         CreateChildStudyAction.class
@@ -398,26 +400,6 @@ public class StudyController extends BaseStudyController
             root.addChild(_study == null ? "No Study In Folder" : _study.getLabel());
         }
     }
-
-
-	class SimpleTemplate extends HttpView
-	{
-		SimpleTemplate(HttpView body, HttpView right)
-		{
-			setBody(body);
-			setView(WebPartFactory.LOCATION_RIGHT, right);
-		}
-
-		@Override
-		protected void renderInternal(Object model, PrintWriter out) throws Exception
-		{
-			out.print("<table width=100%><tr><td align=left valign=top class=labkey-body-panel><img height=1 width=400 src=\"" + getViewContext().getContextPath() + "/_.gif\"><br>");
-			include(getBody());
-			out.print("</td><td align=left valign=top class=labkey-side-panel><img height=1 width=240 src=\"" + getViewContext().getContextPath() + "/_.gif\"><br>");
-			include(getView(WebPartFactory.LOCATION_RIGHT));
-			out.print("</td></tr></table>");
-		}
-	}
 
     @RequiresPermission(AdminPermission.class)
     public class DefineDatasetTypeAction extends SimpleViewAction<Object>
@@ -1397,11 +1379,11 @@ public class StudyController extends BaseStudyController
 
     private static void updateRepositorySettings(Container c, boolean simple)
     {
-        RepositorySettings reposSettings = SpecimenManager.getInstance().getRepositorySettings(c);
+        RepositorySettings reposSettings = SettingsManager.get().getRepositorySettings(c);
         reposSettings.setSimple(simple);
         reposSettings.setEnableRequests(!simple);
         reposSettings.setSpecimenDataEditable(false);
-        SpecimenManager.getInstance().saveRepositorySettings(c, reposSettings);
+        SettingsManager.get().saveRepositorySettings(c, reposSettings);
     }
 
     @RequiresPermission(ManageStudyPermission.class)
@@ -2401,24 +2383,32 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class UpdateDatasetVisitMappingAction extends FormViewAction<DatasetForm>
     {
-        DatasetDefinition _def;
+        private DatasetDefinition _def;
 
         @Override
         public void validateCommand(DatasetForm form, Errors errors)
         {
-            if (form.getDatasetId() < 1)
-                errors.reject(SpringActionController.ERROR_MSG, "DatasetId must be greater than zero.");
+            if (null == form.getDatasetId() || form.getDatasetId() < 1)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "DatasetId must be a positive integer.");
+            }
+            else
+            {
+                _def = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), form.getDatasetId());
+                if (null == _def)
+                    errors.reject(SpringActionController.ERROR_MSG, "Dataset not found.");
+            }
         }
 
         @Override
         public ModelAndView getView(DatasetForm form, boolean reshow, BindException errors) throws Exception
         {
-            _def = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), form.getDatasetId());
+            validateCommand(form, errors);
 
-            if (_def == null)
+            if (errors.hasErrors())
             {
-                BeginAction action = (BeginAction)initAction(this, new BeginAction());
-                return action.getView(form, errors);
+                getPageConfig().setTemplate(PageConfig.Template.Dialog);
+                return new SimpleErrorView(errors);
             }
 
             return new JspView<>("/org/labkey/study/view/updateDatasetVisitMapping.jsp", _def, errors);
@@ -2427,8 +2417,7 @@ public class StudyController extends BaseStudyController
         @Override
         public boolean handlePost(DatasetForm form, BindException errors)
         {
-            DatasetDefinition original = StudyManager.getInstance().getDatasetDefinition(getStudyThrowIfNull(), form.getDatasetId());
-            DatasetDefinition modified = original.createMutable();
+            DatasetDefinition modified = _def.createMutable();
             if (null != form.getVisitRowIds())
             {
                 for (int i = 0; i < form.getVisitRowIds().length; i++)
@@ -2519,11 +2508,13 @@ public class StudyController extends BaseStudyController
                 return new HtmlView("Error", HtmlString.of("Cannot insert dataset data in this folder.  Use a sub-study to import data."));
 
             if (_def.getTypeURI() == null)
-            throw new NotFoundException("Dataset is not yet defined.");
+                throw new NotFoundException("Dataset is not yet defined.");
 
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
                 return new RequirePipelineView(_study, true, errors);
 
+            setShowImportOptions(true);
+            setSuccessMessageSuffix("imported");  //Works for when the merge option is selected (may include updates) vs default "inserted"
             return getDefaultImportView(form, errors);
         }
 
@@ -2547,8 +2538,7 @@ public class StudyController extends BaseStudyController
                 columnMap.put(_form.getSequenceNum(), column);
             }
 
-            Pair<List<String>, UploadLog> result;
-            result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, _importLookupByAlternateKey, file, originalName, columnMap, errors);
+            Pair<List<String>, UploadLog> result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, _importLookupByAlternateKey, file, originalName, columnMap, errors, _form.getInsertOption(), auditBehaviorType);
 
             if (!result.getKey().isEmpty())
             {
@@ -5748,6 +5738,7 @@ public class StudyController extends BaseStudyController
         private String _participantId;
         private String _sequenceNum;
         private String _name;
+        private QueryUpdateService.InsertOption _insertOption = QueryUpdateService.InsertOption.IMPORT;
 
         public int getDatasetId()
         {
@@ -5817,6 +5808,16 @@ public class StudyController extends BaseStudyController
         public void setName(String name)
         {
             _name = name;
+        }
+
+        public QueryUpdateService.InsertOption getInsertOption()
+        {
+            return _insertOption;
+        }
+
+        public void setInsertOption(QueryUpdateService.InsertOption insertOption)
+        {
+            _insertOption = insertOption;
         }
     }
 
@@ -6003,7 +6004,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return StudyModule.samplesPartFactory.getWebPartView(getViewContext(), StudyModule.samplesPartFactory.createWebPart());
+            return new SpecimenWebPartFactory().getWebPartView(getViewContext(), new SpecimenWebPartFactory().createWebPart());
         }
 
         @Override

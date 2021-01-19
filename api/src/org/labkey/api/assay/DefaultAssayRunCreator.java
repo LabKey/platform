@@ -202,6 +202,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     PipelineService.get().getPipelineRootSetting(context.getContainer()),
                     primaryFile);
 
+            context.setPipelineJobGUID(pipelineJob.getJobGUID());
+
             // Don't queue the job until the transaction is committed, since otherwise the thread
             // that's running the job might start before it can access the job's row in the database.
             ExperimentService.get().getSchema().getScope().addCommitTask(() -> {

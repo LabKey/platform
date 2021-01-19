@@ -499,6 +499,7 @@ if (!LABKEY.DataRegions) {
             _initHeaderLocking.call(this);
             _initCustomViews.call(this);
             _initPanes.call(this);
+            _initReport.call(this);
         }
         // else the user needs to call render
 
@@ -2297,6 +2298,23 @@ if (!LABKEY.DataRegions) {
                 config.cb.call(config.scope || me, me);
             });
             delete _paneCache[this.name];
+        }
+    };
+
+    /**
+     * @private
+     */
+    var _initReport = function() {
+        if (LABKEY.Utils.isObject(this.report)) {
+            this.addMessage({
+                html: [
+                    '<span class="labkey-strong">Name:</span>',
+                    LABKEY.Utils.encodeHtml(this.report.name),
+                    '<span class="labkey-strong" style="padding-left: 30px;">Source:</span>',
+                    LABKEY.Utils.encodeHtml(this.report.source)
+                ].join('&nbsp;'),
+                part: 'report',
+            });
         }
     };
 

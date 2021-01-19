@@ -57,7 +57,7 @@ public class Vial extends AbstractStudyCachable<Vial>
         return _rowMap.get(key);
     }
 
-    public Map getRowMap()
+    public Map<String, Object> getRowMap()
     {
         return _rowMap;
     }
@@ -173,7 +173,7 @@ public class Vial extends AbstractStudyCachable<Vial>
         return (Integer)get("currentlocation");
     }
 
-    public String getSampleDescription()
+    public String getSpecimenDescription()
     {
         StringBuilder builder = new StringBuilder();
         builder.append("Global ID ").append(getGlobalUniqueId());

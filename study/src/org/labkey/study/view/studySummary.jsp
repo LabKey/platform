@@ -22,13 +22,14 @@
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission" %>
+<%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page import="org.labkey.study.view.StudySummaryWebPartFactory" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -154,7 +155,7 @@
                     %><p><%=link("Manage Files", pipelineUrl)%></p><%
                 }
                 else if (c.hasPermission(user, ManageRequestSettingsPermission.class) &&
-                        bean.getStudy().getRepositorySettings().isEnableRequests())
+                        SettingsManager.get().getRepositorySettings(bean.getStudy().getContainer()).isEnableRequests())
                 {
                     %><p><%=link("Manage Specimen Request Settings", url.setAction(StudyController.ManageStudyAction.class))%></p><%
                 }

@@ -44,6 +44,7 @@ import java.util.List;
 public class SpecimenReportExcelWriter
 {
     private final SpecimenVisitReportParameters _parameters;
+
     private WritableCellFormat _headerFormat;
 
     public SpecimenReportExcelWriter(SpecimenVisitReportParameters parameters)
@@ -70,11 +71,7 @@ public class SpecimenReportExcelWriter
             for (SpecimenVisitReport report : _parameters.getReports())
                 writeReport(workbook, report);
         }
-        catch (WriteException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch (IOException e)
+        catch (WriteException | IOException e)
         {
             throw new RuntimeException(e);
         }
@@ -87,16 +84,12 @@ public class SpecimenReportExcelWriter
                     workbook.write();
                     workbook.close();
 
-                    // Flush the outpustream
+                    // Flush the OutputStream
                     ostream.flush();
-                    // Finally, close the outputstream
+                    // Finally, close the OutputStream
                     ostream.close();
                 }
-                catch (WriteException e)
-                {
-                    ExceptionUtil.logExceptionToMothership(null, e);
-                }
-                catch (IOException e)
+                catch (WriteException | IOException e)
                 {
                     ExceptionUtil.logExceptionToMothership(null, e);
                 }

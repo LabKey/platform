@@ -32,14 +32,15 @@ import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
-import org.labkey.api.security.roles.Role;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.api.view.FolderTab;
 import org.springframework.validation.BindException;
 
 import java.io.File;
@@ -63,8 +64,7 @@ public interface StudyService
     String SPECIMEN_SEARCH_WEBPART = "Specimen Search (Experimental)";
     String SPECIMEN_BROWSE_WEBPART = "Specimen Browse (Experimental)";
 
-    String SPECIMEN_TOOLS_WEBPART_NAME = "Specimen Tools";
-    String DATA_TOOLS_WEBPART_NAME = "Study Data Tools";
+    String STUDY_TOOLS_WEBPART_NAME = "Study Data Tools";
 
     String DATASPACE_FOLDERTYPE_NAME = "Dataspace";
 
@@ -160,6 +160,8 @@ public interface StudyService
     @Deprecated // Use SpecimenSchema instead
     DbSchema getStudySchema();
 
+    UserSchema getStudyQuerySchema(Study study, User user);
+
     void updateDatasetCategory(User user, @NotNull Dataset dataset, @NotNull ViewCategory category);
 
     void addAssayRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user);
@@ -167,8 +169,6 @@ public interface StudyService
     void addStudyAuditEvent(Container container, User user, String comment);
 
     List<SecurableResource> getSecurableResources(Container container, User user);
-
-    Set<Role> getStudyRoles();
 
     String getSubjectNounSingular(Container container);
 
@@ -244,4 +244,13 @@ public interface StudyService
 
     // Do any of the tables that study manages reference this location?
     boolean isLocationInUse(Location loc);
+
+    void appendLocationInUseClauses(SQLFragment sql, String locationTableAlias, String exists);
+
+    interface StudyTabProvider
+    {
+        void addStudyTabs(Collection<FolderTab> tabs);
+    }
+
+    void registerStudyTabProvider(StudyTabProvider provider);
 }
