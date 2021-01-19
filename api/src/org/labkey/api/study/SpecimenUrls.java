@@ -53,4 +53,8 @@ public interface SpecimenUrls extends UrlProvider
     ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
 
     ActionURL getInsertSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
+
+    ActionURL getSubmitRequestURL(Container c, String id);
+
+    ActionURL getDeleteRequestURL(Container c, String id);
 }

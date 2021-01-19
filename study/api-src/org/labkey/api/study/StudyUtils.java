@@ -21,6 +21,10 @@ public class StudyUtils
     // Shared because, for some reason, SpecimenQueryView checks for this type
     public static final String STUDY_CROSSTAB_REPORT_TYPE = "ReportService.crosstabReport";
 
+    // These don't really belong here...
+    public static final String SUBMISSION_WARNING = "Once a request is submitted, its specimen list may no longer be modified. Continue?";
+    public static final String CANCELLATION_WARNING = "Canceling will permanently delete this pending request. Continue?";
+
     //Create a fixed point number encoding the date.
     public static double sequenceNumFromDate(Date d)
     {

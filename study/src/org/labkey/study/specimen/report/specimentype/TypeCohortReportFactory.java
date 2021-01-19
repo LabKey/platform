@@ -19,6 +19,8 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.CohortFilter;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
@@ -28,7 +30,6 @@ import org.labkey.api.util.element.Select;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.SingleCohortFilter;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
 
@@ -59,7 +60,7 @@ public class TypeCohortReportFactory extends TypeReportFactory
     public List<Pair<String, HtmlString>> getAdditionalFormInputHtml()
     {
         List<Pair<String, HtmlString>> inputs = super.getAdditionalFormInputHtml();
-        StudyImpl study =  StudyManager.getInstance().getStudy(getContainer());
+        Study study = StudyService.get().getStudy(getContainer());
         if (study.isAdvancedCohorts())
         {
             CohortFilter.Type currentType = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;

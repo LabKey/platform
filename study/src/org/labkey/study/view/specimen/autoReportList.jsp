@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.query.CustomView" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.study.Cohort" %>
 <%@ page import="org.labkey.api.study.CohortFilter" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
@@ -30,7 +31,6 @@
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page import="org.labkey.study.CohortFilterFactory" %>
 <%@ page import="org.labkey.study.controllers.specimen.ReportConfigurationBean" %>
-<%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.ParticipantCategoryImpl" %>
 <%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -46,7 +46,7 @@
     User user = getUser();
     boolean showCohorts = StudyManager.getInstance().showCohorts(container, user);
     Study study = StudyManager.getInstance().getStudy(container);
-    List<CohortImpl> cohorts = null;
+    List<? extends Cohort> cohorts = null;
     if (showCohorts)
         cohorts = StudyManager.getInstance().getCohorts(container, user);
     HtmlString optionLabelStyle = HtmlString.unsafe("text-align: left; padding: 5px 5px 0 5px;");
@@ -142,7 +142,7 @@ This folder does not contain a study.
                             <select name="<%= CohortFilterFactory.Params.cohortId %>" class="form-control">
                                 <option value="">All Cohorts</option>
                             <%
-                                for (CohortImpl cohort : cohorts)
+                                for (Cohort cohort : cohorts)
                                 {
                             %>
                                 <option value="<%= cohort.getRowId() %>"<%=selected(cohort.getRowId() == selectedCohortId)%>>

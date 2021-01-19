@@ -100,10 +100,12 @@ import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.notifications.ActorNotificationRecipientSet;
+import org.labkey.api.specimen.notifications.DefaultRequestNotification;
 import org.labkey.api.specimen.notifications.NotificationRecipientSet;
 import org.labkey.api.specimen.pipeline.SpecimenArchive;
 import org.labkey.api.specimen.query.SpecimenEventQueryView;
 import org.labkey.api.specimen.query.SpecimenQueryView;
+import org.labkey.api.specimen.query.SpecimenRequestQueryView;
 import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
@@ -181,9 +183,7 @@ import org.labkey.study.pipeline.SpecimenBatch;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.SpecimenDetailTable;
-import org.labkey.study.query.SpecimenRequestQueryView;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.api.specimen.notifications.DefaultRequestNotification;
 import org.labkey.study.specimen.report.SpecimenReportExcelWriter;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 import org.labkey.study.specimen.report.participant.ParticipantSiteReportFactory;
@@ -348,6 +348,18 @@ public class SpecimenController extends BaseStudyController
             url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
 
             return url;
+        }
+
+        @Override
+        public ActionURL getSubmitRequestURL(Container c, String id)
+        {
+            return new ActionURL(SpecimenController.SubmitRequestAction.class, c).addParameter("id", "${requestId}");
+        }
+
+        @Override
+        public ActionURL getDeleteRequestURL(Container c, String id)
+        {
+            return new ActionURL(SpecimenController.DeleteRequestAction.class, c).addParameter("id", "${requestId}");
         }
     }
 
@@ -1060,9 +1072,6 @@ public class SpecimenController extends BaseStudyController
 
     public class ManageRequestBean extends SpecimensViewBean
     {
-        public static final String SUBMISSION_WARNING = "Once a request is submitted, its specimen list may no longer be modified. Continue?";
-        public static final String CANCELLATION_WARNING = "Canceling will permanently delete this pending request. Continue?";
-
         protected SpecimenRequest _specimenRequest;
         protected boolean _requestManager;
         protected boolean _requirementsComplete;
