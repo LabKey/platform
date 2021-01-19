@@ -15,6 +15,7 @@
  */
 package org.labkey.api.specimen.query;
 
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
@@ -26,6 +27,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Set;
 
+@Migrate // TODO: Update SpecimenTest.exportSpecimenTest() after moving this class to specimen-main
 public class SpecimenRequestDisplayColumn extends SimpleDisplayColumn
 {
     private final boolean _showOneVialIndicator;
