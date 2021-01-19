@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="org.labkey.study.specimen.SpecimenSearchBean" %>
+<%@ page import="org.labkey.api.specimen.SpecimenSearchBean" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override

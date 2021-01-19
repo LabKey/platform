@@ -10,7 +10,6 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 import org.labkey.study.specimen.report.participant.ParticipantSiteReportFactory;

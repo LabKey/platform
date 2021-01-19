@@ -36,7 +36,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.study.model.ParticipantGroupManager;
-import org.labkey.study.query.SpecimenQueryView;
+import org.labkey.api.specimen.query.SpecimenQueryView;
 
 import java.util.ArrayList;
 import java.util.Collection;

@@ -18,6 +18,7 @@ package org.labkey.study.specimen.report.request;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.specimen.SpecimenManager;
+import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
@@ -25,10 +26,8 @@ import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.VisitImpl;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
 
 import java.util.ArrayList;
@@ -93,7 +92,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
         String[] participantIds;
         if (!isAllSubjectsOption(_participantId) && _participantId != null && _participantId.trim().length() > 0)
         {
-            Study study = StudyManager.getInstance().getStudy(getContainer());
+            Study study = StudyService.get().getStudy(getContainer());
             Participant participant = StudyManager.getInstance().getParticipant(study, _participantId);
             if (participant == null)
                 return Collections.emptyList();
@@ -101,7 +100,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
         }
         else
         {
-            Study study = StudyManager.getInstance().getStudy(getContainer());
+            Study study = StudyService.get().getStudy(getContainer());
             if (getParticipantGroupFilter() >= 0)
                 participantIds = StudyManager.getInstance().getParticipantIdsForGroup(study, getUser(), getParticipantGroupFilter());
             else
@@ -113,8 +112,8 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
         List<SpecimenVisitReport> reports = new ArrayList<>();
         Map<Integer, List<? extends Visit>> visitListCache = new HashMap<>(); // cohort rowId -> visit
         boolean showCohorts = StudyService.get().showCohorts(getContainer(), getUser());
-        List<VisitImpl> allVisits = null;
-        Study study = StudyManager.getInstance().getStudy(getContainer());
+        List<? extends Visit> allVisits = null;
+        Study study = StudyService.get().getStudy(getContainer());
         for (String participantId : participantIds)
         {
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(StudyService.get().getSubjectColumnName(getContainer())), participantId);
@@ -122,7 +121,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
             List<? extends Visit> visits = null;
             if (showCohorts)
             {
-                CohortImpl cohort = StudyManager.getInstance().getCurrentCohortForParticipant(getContainer(), getUser(), participantId);
+                Cohort cohort = StudyManager.getInstance().getCurrentCohortForParticipant(getContainer(), getUser(), participantId);
                 if (cohort != null)
                 {
                     visits = visitListCache.get(cohort.getRowId());

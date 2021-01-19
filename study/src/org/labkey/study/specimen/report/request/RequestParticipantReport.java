@@ -22,7 +22,7 @@ import org.labkey.api.specimen.report.RequestSummaryByVisitType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.query.SpecimenQueryView;
+import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
 
 import java.util.Collection;

@@ -20,7 +20,6 @@ import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.model.VisitImpl;
 import org.labkey.study.specimen.report.SpecimenTypeVisitReport;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 

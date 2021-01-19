@@ -1,6 +1,7 @@
 package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.specimen.Vial;
@@ -17,6 +18,9 @@ import java.util.Set;
 // Utility methods that are shared between study and specimen
 public class StudyUtils
 {
+    // Shared because, for some reason, SpecimenQueryView checks for this type
+    public static final String STUDY_CROSSTAB_REPORT_TYPE = "ReportService.crosstabReport";
+
     //Create a fixed point number encoding the date.
     public static double sequenceNumFromDate(Date d)
     {
@@ -76,5 +80,13 @@ public class StudyUtils
         return Collections.emptySet();
     }
 
-
+    public static boolean isFieldTrue(RenderContext ctx, String fieldName)
+    {
+        Object value = ctx.getRow().get(fieldName);
+        if (value instanceof Integer)
+            return ((Integer) value).intValue() != 0;
+        else if (value instanceof Boolean)
+            return ((Boolean) value).booleanValue();
+        return false;
+    }
 }

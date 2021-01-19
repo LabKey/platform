@@ -18,7 +18,7 @@ package org.labkey.study.specimen.report.request;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.specimen.report.SummaryByVisitType;
 import org.labkey.api.study.Visit;
-import org.labkey.study.query.SpecimenQueryView;
+import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.study.specimen.report.SpecimenTypeVisitReport;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 

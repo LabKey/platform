@@ -28,7 +28,6 @@ import org.labkey.api.util.element.Select;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.SingleCohortFilter;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
@@ -93,7 +92,7 @@ public class TypeCohortReportFactory extends TypeReportFactory
     {
         List<CohortFilter> reportCohorts = new ArrayList<>();
         CohortFilter.Type type = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
-        for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
+        for (Cohort cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
             reportCohorts.add(new SingleCohortFilter(type, cohort));
         reportCohorts.add(CohortFilterFactory.UNASSIGNED);
 

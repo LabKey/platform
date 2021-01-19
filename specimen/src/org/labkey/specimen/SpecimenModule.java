@@ -26,6 +26,7 @@ import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenRequestManager;
+import org.labkey.specimen.view.SpecimenSearchWebPartFactory;
 import org.labkey.api.specimen.SpecimensPage;
 import org.labkey.api.specimen.importer.DefaultSpecimenImportStrategyFactory;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
@@ -39,6 +40,7 @@ import org.labkey.api.specimen.view.SpecimenToolsWebPartFactory;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.specimen.action.SpecimenApiController;
 import org.labkey.specimen.security.roles.SpecimenCoordinatorRole;
@@ -68,8 +70,9 @@ public class SpecimenModule extends CodeOnlyModule
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return List.of(
-            new SpecimenWebPartFactory(),
-            new SpecimenToolsWebPartFactory()
+            new SpecimenSearchWebPartFactory(HttpView.BODY),
+            new SpecimenToolsWebPartFactory(),
+            new SpecimenWebPartFactory()
         );
     }
 

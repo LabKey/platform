@@ -17,6 +17,7 @@
 package org.labkey.study.query;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
@@ -28,19 +29,21 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.SettingsManager;
+import org.labkey.api.study.SpecimenUrls;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.query.BaseStudyQueryView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.controllers.specimen.SpecimenController.ManageRequestAction;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -51,6 +54,7 @@ import java.util.Set;
  * Date: Apr 20, 2007
  * Time: 2:49:42 PM
  */
+@Migrate // Move to study-api
 public class SpecimenRequestQueryView extends BaseStudyQueryView
 {
     private NavTree[] _extraLinks;
@@ -130,7 +134,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
                     }
                 }
 
-                ActionURL detailsUrl = new ActionURL(ManageRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");
+                ActionURL detailsUrl = PageFlowUtil.urlProvider(SpecimenUrls.class).getRequestDetailsURL(ctx.getContainer(), "${requestId}");
                 content.append(PageFlowUtil.button("Details").href(detailsUrl));
             }
             content.append("</div>");
@@ -152,8 +156,8 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
 
     public static SpecimenRequestQueryView createView(ViewContext context, @Nullable SimpleFilter filter)
     {
-        StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
-        StudyQuerySchema schema = StudyQuerySchema.createSchema(study, context.getUser(), true);
+        Study study = StudyService.get().getStudy(context.getContainer());
+        UserSchema schema = SpecimenQuerySchema.get(study, context.getUser());
         String queryName = "SpecimenRequest";
         QuerySettings qs = schema.getSettings(context, queryName, queryName);
 

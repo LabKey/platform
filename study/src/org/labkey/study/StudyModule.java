@@ -221,7 +221,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     @Migrate
     public static final WebPartFactory specimenReportWebPartFactory = new SpecimenReportWebPartFactory();
-    public static final WebPartFactory specimenSearchWebPartFactory = new SpecimenSearchWebPartFactory(HttpView.BODY);
 
     @Override
     public String getName()
@@ -317,8 +316,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             vaccineDesignWebPartFactory,
             new SharedStudyController.StudyFilterWebPartFactory(),
 
-            specimenReportWebPartFactory,
-            specimenSearchWebPartFactory
+            specimenReportWebPartFactory
         );
     }
 

@@ -429,7 +429,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
         String allString = getAllString();
         Collection<Participant> participants = StudyManager.getInstance().getParticipants(study);
-        HtmlString particpantPickerValues;
+        HtmlString participantPickerValues;
         if (participants.size() <= 200)
         {
             // select the previously selected option or the first non-all option. We don't want to select 'all participants'
@@ -454,7 +454,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
                     .selected(isSelected)
                     .build());
             }
-            particpantPickerValues = unsafe(builder.toString());
+            participantPickerValues = unsafe(builder.toString());
         }
         else
         {
@@ -483,10 +483,10 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
                 throw new RuntimeException(e);
             }
 
-            particpantPickerValues = unsafe(writer.toString());
+            participantPickerValues = unsafe(writer.toString());
         }
 
-        return new Pair<>(StudyService.get().getSubjectColumnName(getContainer()), particpantPickerValues);
+        return new Pair<>(StudyService.get().getSubjectColumnName(getContainer()), participantPickerValues);
     }
 
     protected abstract List<? extends SpecimenVisitReport> createReports();

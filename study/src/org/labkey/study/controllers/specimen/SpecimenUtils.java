@@ -88,13 +88,13 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.ParticipantDataset;
+import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.SpecimenQueryView;
+import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.specimen.notifications.DefaultRequestNotification;
+import org.labkey.api.specimen.notifications.DefaultRequestNotification;
 import org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
@@ -900,15 +900,5 @@ public class SpecimenUtils
         else
             label = "rowId" + location.getRowId();
         return label.replaceAll("\\W+", "_");
-    }
-
-    public static boolean isFieldTrue(RenderContext ctx, String fieldName)
-    {
-        Object value = ctx.getRow().get(fieldName);
-        if (value instanceof Integer)
-            return ((Integer) value).intValue() != 0;
-        else if (value instanceof Boolean)
-            return ((Boolean) value).booleanValue();
-        return false;
     }
 }

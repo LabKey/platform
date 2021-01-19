@@ -64,6 +64,7 @@ import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryView;
@@ -87,6 +88,7 @@ import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput;
 import org.labkey.api.specimen.SpecimenRequestStatus;
+import org.labkey.api.specimen.SpecimenSearchWebPart;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.AutoCompleteAction;
 import org.labkey.api.specimen.actions.ManageReqsBean;
@@ -100,6 +102,8 @@ import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.notifications.ActorNotificationRecipientSet;
 import org.labkey.api.specimen.notifications.NotificationRecipientSet;
 import org.labkey.api.specimen.pipeline.SpecimenArchive;
+import org.labkey.api.specimen.query.SpecimenEventQueryView;
+import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
@@ -130,6 +134,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.ConfigurationException;
@@ -168,7 +173,6 @@ import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.designer.MapArrayExcelWriter;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -177,12 +181,9 @@ import org.labkey.study.pipeline.SpecimenBatch;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.SpecimenDetailTable;
-import org.labkey.study.query.SpecimenEventQueryView;
-import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.query.SpecimenRequestQueryView;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.specimen.SpecimenSearchWebPart;
-import org.labkey.study.specimen.notifications.DefaultRequestNotification;
+import org.labkey.api.specimen.notifications.DefaultRequestNotification;
 import org.labkey.study.specimen.report.SpecimenReportExcelWriter;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 import org.labkey.study.specimen.report.participant.ParticipantSiteReportFactory;
@@ -291,6 +292,12 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
+        public ActionURL getRequestDetailsURL(Container c, String requestId)
+        {
+            return new ActionURL(ManageRequestAction.class, c).addParameter("id", requestId);
+        }
+
+        @Override
         public ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, ActionURL returnUrl)
         {
             ActionURL url = new ActionURL(ShowGroupMembersAction.class, c);
@@ -312,6 +319,35 @@ public class SpecimenController extends BaseStudyController
         public ActionURL getAutoReportListURL(Container c)
         {
             return new ActionURL(AutoReportListAction.class, c);
+        }
+
+        @Override
+        public ActionURL getSpecimenEventsURL(Container c, ActionURL returnURL)
+        {
+            ActionURL url = new ActionURL(SpecimenEventsAction.class, c);
+            url.addReturnURL(returnURL);
+
+            return url;
+        }
+
+        @Override
+        public ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table)
+        {
+            ActionURL url = new ActionURL(UpdateSpecimenQueryRowAction.class, c);
+            url.addParameter("schemaName", schemaName);
+            url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
+
+            return url;
+        }
+
+        @Override
+        public ActionURL getInsertSpecimenQueryRowURL(Container c, String schemaName, TableInfo table)
+        {
+            ActionURL url = new ActionURL(UpdateSpecimenQueryRowAction.class, c);
+            url.addParameter("schemaName", schemaName);
+            url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
+
+            return url;
         }
     }
 
@@ -1077,9 +1113,9 @@ public class SpecimenController extends BaseStudyController
                     ActionURL importActionURL = new ActionURL(ImportVialIdsAction.class, getContainer());
                     importActionURL.addParameter("id", specimenRequest.getRowId());
                     Button importButton = new Button.ButtonBuilder("Upload Specimen Ids")
-                            .href(importActionURL)
-                            .submit(false)
-                            .build();
+                        .href(importActionURL)
+                        .submit(false)
+                        .build();
                     buttons.add(importButton);
                     buttons.add(deleteButton);
                 }
