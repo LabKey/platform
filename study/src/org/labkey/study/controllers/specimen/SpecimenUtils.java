@@ -54,6 +54,7 @@ import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.actions.VialRequestForm;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
@@ -73,7 +74,6 @@ import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.StudyUtils;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MailHelper;
@@ -112,7 +112,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -222,8 +221,8 @@ public class SpecimenUtils
                     {
                         requestMenuButton.addMenuItem("Add To Existing Request",
                                 "if (verifySelected(" + jsRegionObject + ".form, '#', " +
-                                "'get', 'rows')) { " + jsRegionObject + ".getSelected({success: function (data) { showRequestWindow(data.selected, '" + (showVials ? SpecimenApiController.VialRequestForm.IdTypes.RowId
-                                : SpecimenApiController.VialRequestForm.IdTypes.SpecimenHash) + "');}})}");
+                                "'get', 'rows')) { " + jsRegionObject + ".getSelected({success: function (data) { showRequestWindow(data.selected, '" + (showVials ? VialRequestForm.IdTypes.RowId
+                                : VialRequestForm.IdTypes.SpecimenHash) + "');}})}");
                     }
                 }
             }

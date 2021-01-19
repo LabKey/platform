@@ -120,7 +120,6 @@ import org.labkey.study.controllers.StudyPropertiesController;
 import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.security.SecurityController;
-import org.labkey.study.controllers.specimen.SpecimenApiController;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.controllers.specimen.SpecimenReportWebPartFactory;
 import org.labkey.study.dataset.DatasetAuditProvider;
@@ -250,7 +249,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         addController("study-properties", StudyPropertiesController.class);
         addController("study-reports", ReportsController.class);
         addController("study-samples", SpecimenController.class);
-        addController("study-samples-api", SpecimenApiController.class);
         addController("study-security", SecurityController.class);
         addController("study-shared", SharedStudyController.class);
 

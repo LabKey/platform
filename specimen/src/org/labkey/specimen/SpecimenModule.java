@@ -36,16 +36,17 @@ import org.labkey.api.specimen.model.SpecimenEventDomainKind;
 import org.labkey.api.specimen.model.SpecimenRequestEventType;
 import org.labkey.api.specimen.model.VialDomainKind;
 import org.labkey.api.specimen.view.SpecimenToolsWebPartFactory;
-import org.labkey.specimen.view.SpecimenWebPartFactory;
-import org.labkey.specimen.writer.SpecimenArchiveWriter;
-import org.labkey.specimen.writer.SpecimenSettingsWriter;
-import org.labkey.specimen.writer.SpecimenWriter;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.specimen.action.SpecimenApiController;
 import org.labkey.specimen.security.roles.SpecimenCoordinatorRole;
 import org.labkey.specimen.security.roles.SpecimenRequesterRole;
+import org.labkey.specimen.view.SpecimenWebPartFactory;
+import org.labkey.specimen.writer.SpecimenArchiveWriter;
+import org.labkey.specimen.writer.SpecimenSettingsWriter;
+import org.labkey.specimen.writer.SpecimenWriter;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -87,6 +88,8 @@ public class SpecimenModule extends CodeOnlyModule
         RoleManager.registerRole(new SpecimenRequesterRole());
 
         AttachmentService.get().registerAttachmentType(SpecimenRequestEventType.get());
+
+        addController("study-samples-api", SpecimenApiController.class);
     }
 
     @Override
@@ -94,7 +97,7 @@ public class SpecimenModule extends CodeOnlyModule
     {
         ContainerManager.addContainerListener(SpecimenRequestManager.get());
 
-        StudyService.get().registerStudyTabProvider(tabs ->tabs.add(new SpecimensPage("Specimen Data")));
+        StudyService.get().registerStudyTabProvider(tabs->tabs.add(new SpecimensPage("Specimen Data")));
 
         SpecimenService.get().registerSpecimenImportStrategyFactory(new DefaultSpecimenImportStrategyFactory());
 
