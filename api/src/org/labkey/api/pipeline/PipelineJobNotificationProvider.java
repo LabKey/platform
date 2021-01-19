@@ -9,6 +9,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -55,6 +56,11 @@ public interface PipelineJobNotificationProvider
     default void onJobDone(PipelineJob job)
     {
 
+    }
+
+    default URLHelper getPipelineStatusHref(PipelineJob job)
+    {
+        return null;
     }
 
     // allow provider to fall back to the default notification for specific jobs
