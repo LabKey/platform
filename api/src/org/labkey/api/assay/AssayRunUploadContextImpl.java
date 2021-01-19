@@ -91,6 +91,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     // async fields
     protected String _jobDescription;
     protected String _jobNotificationProvider;
+    protected String _pipelineJobGUID;
 
     private AssayRunUploadContextImpl(Factory<ProviderType> factory)
     {
@@ -406,6 +407,18 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     public String getJobNotificationProvider()
     {
         return _jobNotificationProvider;
+    }
+
+    @Override
+    public String getPipelineJobGUID()
+    {
+        return _pipelineJobGUID;
+    }
+
+    @Override
+    public void setPipelineJobGUID(String jobGUID)
+    {
+        _pipelineJobGUID = jobGUID;
     }
 
     @Override
