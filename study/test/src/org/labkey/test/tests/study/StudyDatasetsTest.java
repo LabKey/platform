@@ -30,6 +30,7 @@ import org.labkey.test.components.LookAndFeelScatterPlot;
 import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.components.PagingWidget;
 import org.labkey.test.components.domain.DomainFormPanel;
+import org.labkey.test.components.ext4.Checkbox;
 import org.labkey.test.components.ext4.Window;
 import org.labkey.test.components.study.DatasetFacetPanel;
 import org.labkey.test.pages.TimeChartWizard;
@@ -150,11 +151,15 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         importDatasetData("B", DATASET_HEADER, DATASET_B_DATA, "All data");
         checkDataElementsPresent("B",  DATASET_B_DATA.split("\t|\n"));
 
-        // Issue 21234: Dataset import no longer merges rows during import
+        // Issue 21234: Dataset import no longer merges rows during import by default
         importDatasetData("B", DATASET_HEADER, DATASET_B_MERGE, "Duplicate dataset row. All rows must have unique MouseId/SequenceNum values.");
         clickButton("Cancel");
         waitForText("All data");
         checkDataElementsPresent("B", DATASET_B_DATA.split("\t|\n"));
+
+        // Bulk import using the merge option checkbox
+        importDatasetData("B", DATASET_HEADER, DATASET_B_MERGE, true,"All data");
+        checkDataElementsPresent("B", DATASET_B_MERGE.split("\t|\n"));
     }
 
     @LogMethod
@@ -205,15 +210,32 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     protected void importDatasetData(String datasetName, String header, String tsv, String msg)
     {
+        importDatasetData(datasetName, header, tsv, false, msg);
+    }
+
+    protected void importDatasetData(String datasetName, String header, String tsv, boolean checkMergeOption, String msg)
+    {
         _studyHelper.goToManageDatasets()
                 .selectDatasetByName(datasetName)
                 .clickViewData();
         waitForText("All data");
         new DataRegionTable("Dataset", getDriver()).clickImportBulkData();
         waitForText("Copy/paste text");
+
+        setImportOption(checkMergeOption);
+
         setFormElement(Locator.xpath("//textarea"), header + tsv);
         clickButton("Submit", 0);
         waitForText(WAIT_FOR_PAGE, msg);
+    }
+
+    protected void setImportOption(boolean merge)
+    {
+        Checkbox checkbox = new Checkbox(Locator.inputById("insertOption1-inputEl").findWhenNeeded(this.getWrappedDriver()));
+        if (merge)
+            checkbox.check();
+        else
+            checkbox.uncheck();
     }
 
     @LogMethod
