@@ -121,7 +121,14 @@ configurations {
         canBeResolved = true
     }
 
-    extjs // used to pull in differently licensed versions of the extJS libraries
+    // used to declare dependencies on differently licensed versions of the extJS libraries
+    extJs
+
+    // consumable configuration to attach artifacts to
+    extJsCommercial {
+        canBeConsumed = true
+        canBeResolved = false
+    }
 }
 
 // declared separately to include the gwtsrc directory
@@ -183,12 +190,8 @@ dependencies {
     jspImplementation files(project.tasks.jar)
     jspImplementation apache, jackson, spring
 
-    extjs "com.sencha.extjs:extjs:4.2.1@zip"
-    extjs "com.sencha.extjs:extjs:3.4.1@zip"
-}
-
-artifacts {
-    apiJarFile(jar)
+    extJs "com.sencha.extjs:extjs:4.2.1:commercial@zip"
+    extJs "com.sencha.extjs:extjs:3.4.1:commercial@zip"
 }
 
 
@@ -205,8 +208,13 @@ project.tasks.register('patchModule', Jar) {
         // replace the ext-3.4.1 and ext-4.2.1 directories from the extjs configuration artifacts
         jar.duplicatesStrategy(DuplicatesStrategy.INCLUDE)
         jar.into('web') {
-            from configurations.extjs.collect {
+            from configurations.extJs.collect {
                 zipTree(it)
             }
         }
+}
+
+artifacts {
+    apiJarFile(jar)
+    extJsCommercial(project.tasks.patchModule)
 }
