@@ -16,20 +16,21 @@
 package org.labkey.study.specimen.report.specimentype;
 
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.specimen.SpecimenManager;
+import org.labkey.api.study.Cohort;
+import org.labkey.api.study.CohortFilter;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.element.Input;
 import org.labkey.api.util.element.Option;
 import org.labkey.api.util.element.Select;
-import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.SingleCohortFilter;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.VisitImpl;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
 
 import java.util.ArrayList;
@@ -59,7 +60,7 @@ public class TypeCohortReportFactory extends TypeReportFactory
     public List<Pair<String, HtmlString>> getAdditionalFormInputHtml()
     {
         List<Pair<String, HtmlString>> inputs = super.getAdditionalFormInputHtml();
-        StudyImpl study =  StudyManager.getInstance().getStudy(getContainer());
+        Study study = StudyService.get().getStudy(getContainer());
         if (study.isAdvancedCohorts())
         {
             CohortFilter.Type currentType = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
@@ -92,19 +93,19 @@ public class TypeCohortReportFactory extends TypeReportFactory
     {
         List<CohortFilter> reportCohorts = new ArrayList<>();
         CohortFilter.Type type = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
-        for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
+        for (Cohort cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
             reportCohorts.add(new SingleCohortFilter(type, cohort));
         reportCohorts.add(CohortFilterFactory.UNASSIGNED);
 
         List<SpecimenVisitReport> reports = new ArrayList<>();
         for (CohortFilter cohortFilter : reportCohorts)
         {
-            CohortImpl cohort = cohortFilter.getCohort(getContainer(), getUser());
+            Cohort cohort = cohortFilter.getCohort(getContainer(), getUser());
             String title = cohort != null ? cohort.getLabel() : "[No cohort assigned]";
             SimpleFilter filter = new SimpleFilter();
             addBaseFilters(filter);
             addCohortFilter(filter, cohortFilter);
-            List<VisitImpl> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), cohort);
+            List<? extends Visit> visits = SpecimenManager.get().getVisitsWithSpecimens(getContainer(), getUser(), cohort);
             reports.add(new TypeCohortReport(title, visits, filter, this, cohortFilter));
         }
         return reports;
@@ -114,7 +115,7 @@ public class TypeCohortReportFactory extends TypeReportFactory
     public String getLabel()
     {
         CohortFilter filter = getCohortFilter();
-        CohortImpl cohort = filter != null ? filter.getCohort(getContainer(), getUser()) : null;
+        Cohort cohort = filter != null ? filter.getCohort(getContainer(), getUser()) : null;
         return cohort != null ? cohort.getLabel() : "Type by Cohort";
     }
 

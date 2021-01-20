@@ -16,8 +16,10 @@
 
 package org.labkey.api.study;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
@@ -152,4 +154,7 @@ public interface SpecimenService
         VisitId,
         LabId
     }
+
+    @Migrate // Remove after specimen module refactor (SpecimenImporter should call the impl)
+    void fireSpecimensChanged(Container c, User user, Logger logger);
 }

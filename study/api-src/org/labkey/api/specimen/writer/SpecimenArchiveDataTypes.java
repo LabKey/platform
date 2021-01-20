@@ -2,6 +2,8 @@ package org.labkey.api.specimen.writer;
 
 public class SpecimenArchiveDataTypes
 {
+    public static final String SCHEMA_FILENAME = "specimens_metadata.xml";
+
     private SpecimenArchiveDataTypes()
     {
     }

@@ -34,6 +34,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
@@ -43,7 +44,6 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudyFolderType;
 import org.labkey.study.importer.CreateChildStudyPipelineJob;
 import org.labkey.study.importer.SpecimenSchemaImporter;
@@ -165,7 +165,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         if (null != form.getRequestId() || null != form.getSpecimenIds())
         {
             form.setIncludeSpecimens(true);
-            SpecimenManager sm = SpecimenManager.getInstance();
+            SpecimenManagerNew sm = SpecimenManagerNew.get();
 
             if (null != form.getRequestId())
             {

@@ -100,6 +100,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.CPUTimer;
@@ -2200,7 +2201,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             {
                 SQLFragment seq = new SQLFragment();
                 seq.append("CAST((");
-                seq.append(StudyManager.sequenceNumFromDateSQL("date"));
+                seq.append(StudyUtils.sequenceNumFromDateSQL("date"));
                 seq.append(") AS VARCHAR(36))");
                 parts.add(seq);
                 parts.add(new SQLFragment("'.0000'"));   // Match what insert/import does
