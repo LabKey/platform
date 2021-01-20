@@ -101,6 +101,11 @@ public class PurgeParticipantsTask extends TimerTask
                                 _logger.info("Object not found exception (" + e.getMessage() + "). Requeuing another participant purge attempt.");
                                 retry = true;
                             }
+                            else if (SqlDialect.isTransactionException(e))
+                            {
+                                _logger.info("Transaction or deadlock exception (" + e.getMessage() + "). Requeuing another participant purge attempt.");
+                                retry = true;
+                            }
                             else
                             {
                                 // Unexpected problem... log it and continue on

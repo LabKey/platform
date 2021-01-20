@@ -16,6 +16,7 @@
 package org.labkey.api.dataiterator;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,6 +36,11 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.ColumnMetaDataReader;
+import org.labkey.api.data.dialect.JdbcHelper;
+import org.labkey.api.data.dialect.PkMetaDataReader;
+import org.labkey.api.data.dialect.SimpleSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.MvFieldWrapper;
@@ -47,10 +53,12 @@ import org.labkey.api.util.GUID;
 import java.io.IOException;
 import java.sql.BatchUpdateException;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -58,6 +66,7 @@ import java.util.function.Supplier;
 
 public class StatementDataIterator extends AbstractDataIterator
 {
+    final SqlDialect _dialect;
     protected ParameterMapStatement[] _stmts;
     Triple[][] _bindings = null;
 
@@ -65,7 +74,7 @@ public class StatementDataIterator extends AbstractDataIterator
     Triple[] _currentBinding;
 
     // coordinate asynchronous statement execution
-    boolean _useAsynchronousExecute = false;
+    private boolean _useAsynchronousExecute = false;
     SwapQueue<ParameterMapStatement> _queue = new SwapQueue<>();
     final Thread _foregroundThread;
     Thread _asyncThread = null;
@@ -90,10 +99,11 @@ public class StatementDataIterator extends AbstractDataIterator
     CPUTimer _elapsed = new CPUTimer("StatementDataIterator@" + System.identityHashCode(this) + ".elapsed");
     CPUTimer _execute = new CPUTimer("StatementDataIterator@" + System.identityHashCode(this) + ".execute()");
 
-    public StatementDataIterator(DataIterator data, DataIteratorContext context, ParameterMapStatement... maps)
+    public StatementDataIterator(SqlDialect dialect, DataIterator data, DataIteratorContext context, ParameterMapStatement... maps)
     {
         super(context);
 
+        _dialect = dialect;
         _data = data;
 
         _stmts = maps;
@@ -106,7 +116,8 @@ public class StatementDataIterator extends AbstractDataIterator
 
     public void setUseAsynchronousExecute(boolean useAsynchronousExecute)
     {
-        _useAsynchronousExecute = useAsynchronousExecute && null == _rowIdIndex && null == _objectIdIndex && null == _objectUriIndex;
+        if (_dialect.allowAsynchronousExecute())
+            _useAsynchronousExecute = useAsynchronousExecute && null == _rowIdIndex && null == _objectIdIndex && null == _objectUriIndex;
     }
 
 
@@ -635,7 +646,7 @@ public class StatementDataIterator extends AbstractDataIterator
 
                 DataIteratorContext context = new DataIteratorContext();
                 DataIterator source = getSource(context, rowCount);
-                StatementDataIterator sdi = new StatementDataIterator(source, context, pm1, pm2)
+                StatementDataIterator sdi = new StatementDataIterator(scope.getSqlDialect(), source, context, pm1, pm2)
                 {
                     @Override
                     void init()
@@ -644,7 +655,7 @@ public class StatementDataIterator extends AbstractDataIterator
                         _batchSize = batchSize;
                     }
                 };
-                sdi._useAsynchronousExecute = true;
+                sdi.setUseAsynchronousExecute(true);
 
                 new Pump(sdi,context).run();
 
@@ -654,9 +665,12 @@ public class StatementDataIterator extends AbstractDataIterator
                 int x = ((Number)result.get("X")).intValue();
                 int y = ((Number)result.get("Y")).intValue();
                 assertEquals(rowCount, x+y);
-                if (0 == rowCount % (2*batchSize))
-                    assertEquals(x,y);
-                assertTrue(Math.abs(x-y) <= batchSize);
+                if (scope.getSqlDialect().allowAsynchronousExecute())
+                {
+                    if (0 == rowCount % (2 * batchSize))
+                        assertEquals(x, y);
+                    assertTrue(Math.abs(x - y) <= batchSize);
+                }
             }
             finally
             {
@@ -725,6 +739,65 @@ public class StatementDataIterator extends AbstractDataIterator
             _testException(3);
         }
 
+        static class MockDialect extends SimpleSqlDialect
+        {
+            @Override
+            public String getProductName()
+            {
+                return null;
+            }
+
+            @Override
+            public String concatenate(String... args)
+            {
+                return null;
+            }
+
+            @Override
+            public SQLFragment concatenate(SQLFragment... args)
+            {
+                return null;
+            }
+
+            @Override
+            public JdbcHelper getJdbcHelper()
+            {
+                return null;
+            }
+
+            @Override
+            public boolean allowSortOnSubqueryWithoutLimit()
+            {
+                return false;
+            }
+
+            @Override
+            public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, TableInfo table)
+            {
+                return null;
+            }
+
+            @Override
+            public PkMetaDataReader getPkMetaDataReader(ResultSet rs)
+            {
+                return null;
+            }
+
+            @NotNull
+            @Override
+            protected Set<String> getReservedWords()
+            {
+                return Set.of();
+            }
+
+            @Override
+            public boolean allowAsynchronousExecute()
+            {
+                return true;
+            }
+        }
+
+
         public void _testException(int when)
         {
             AtomicInteger intWhen = new AtomicInteger(when);
@@ -733,7 +806,7 @@ public class StatementDataIterator extends AbstractDataIterator
 
             DataIteratorContext context = new DataIteratorContext();
             DataIterator source = getSource(context, 100);
-            StatementDataIterator sdi = new StatementDataIterator(source, context, pm1, pm2)
+            StatementDataIterator sdi = new StatementDataIterator(new MockDialect(), source, context, pm1, pm2)
             {
                 @Override
                 void init()
@@ -742,7 +815,7 @@ public class StatementDataIterator extends AbstractDataIterator
                     _batchSize = 10;
                 }
             };
-            sdi._useAsynchronousExecute = true;
+            sdi.setUseAsynchronousExecute(true);
 
             new Pump(sdi,context).run();
             assertTrue(pm1.isClosed());
