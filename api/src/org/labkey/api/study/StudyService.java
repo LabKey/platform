@@ -23,6 +23,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -47,6 +49,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -157,11 +160,6 @@ public interface StudyService
 
     DbSchema getDatasetSchema();
 
-    @Deprecated // Use SpecimenSchema instead
-    DbSchema getStudySchema();
-
-    UserSchema getStudyQuerySchema(Study study, User user);
-
     void updateDatasetCategory(User user, @NotNull Dataset dataset, @NotNull ViewCategory category);
 
     void addAssayRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user);
@@ -240,6 +238,16 @@ public interface StudyService
 
     List<StudyManagementOption> getManagementOptions();
 
+    /**
+     *  Methods below are needed only for modules that depend on study-api (currently just specimen). Consider moving
+     *  these to a separate interface that lives in study-api.
+     */
+
+    @Deprecated // Use SpecimenSchema instead
+    DbSchema getStudySchema();
+
+    UserSchema getStudyQuerySchema(Study study, User user);
+
     void registerManagementOption(StudyManagementOption option);
 
     // Do any of the tables that study manages reference this location?
@@ -253,4 +261,18 @@ public interface StudyService
     }
 
     void registerStudyTabProvider(StudyTabProvider provider);
+
+    Collection<? extends Study> getAncillaryStudies(Container sourceStudyContainer);
+
+    Study getStudyForVisits(@NotNull Study study);
+
+    boolean showCohorts(Container container, @Nullable User user);
+
+    /**
+     * Unfortunately, LastSpecimenLoad is stored in study.Study
+     */
+    Date getLastSpecimenLoad(@NotNull Study study);
+    void setLastSpecimenLoad(@NotNull Study study, User user, Date lastSpecimenLoad);
+
+    List<? extends Visit> getVisits(Study study, SimpleFilter filter, Sort sort);
 }

@@ -16,15 +16,15 @@
  */
 %>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
+<%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.specimen.ShowGroupMembersAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteActorAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorOrderAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorsAction" %>
-<%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -32,10 +32,10 @@
 <%
     JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
     StudyImpl study = me.getModelBean();
-    SpecimenRequestActor[] actors = study.getSampleRequestActors();
+    SpecimenRequestActor[] actors = study.getSpecimenRequestActors();
     String showMemberSitesIdStr = request.getParameter("showMemberSites");
     int showMemberSitesId = -1;
-    Set<Integer> inUseActorIds = study.getSampleRequestActorsInUse();
+    Set<Integer> inUseActorIds = study.getSpecimenRequestActorsInUse();
     if (showMemberSitesIdStr != null && showMemberSitesIdStr.length() > 0)
     {
         try

@@ -27,8 +27,8 @@ import jxl.write.WritableWorkbook;
 import jxl.write.WriteException;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.specimen.report.SpecimenReportTitle;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.study.model.VisitImpl;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
@@ -105,7 +105,7 @@ public class SpecimenReportExcelWriter
 
         WritableSheet sheet = workbook.createSheet(sheetName, workbook.getNumberOfSheets());
 
-        List<VisitImpl> visits = report.getVisits();
+        List<Visit> visits = report.getVisits();
 
         // Merge cells at top of sheet and write the headers
         // One or more embedded tabs split a header into equally spaced columns
@@ -131,7 +131,7 @@ public class SpecimenReportExcelWriter
                 for (SpecimenReportTitle titleElement : rowData.getTitleHierarchy())
                     sheet.addCell(new Label(columnIndex++, rowIndex, titleElement.getDisplayValue()));
 
-                for (VisitImpl visit : visits)
+                for (Visit visit : visits)
                 {
                     String[] valueSet = rowData.getCellExcelText(visit);
                     if (valueSet != null && valueSet.length > 0)

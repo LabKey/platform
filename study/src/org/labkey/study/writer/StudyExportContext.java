@@ -19,7 +19,7 @@ import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PHI;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.writer.SimpleStudyExportContext;
+import org.labkey.api.study.writer.SimpleStudyExportContext;
 import org.labkey.api.study.Dataset;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantMapper;
