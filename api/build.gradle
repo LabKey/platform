@@ -1,4 +1,5 @@
 import org.labkey.gradle.util.BuildUtils
+import org.labkey.gradle.util.GroupNames
 
 plugins {
     id 'java-library'
@@ -110,7 +111,7 @@ configurations {
         canBeResolved = true
     }
 
-    // this configuration and its artifact are declared because the default outgoing variant for the api
+    // This configuration and its artifact are declared because the default outgoing variant for the api
     // module (runtimeElements) does not include all the class files since the classes compiled from
     // the XSDs are produced in a separate classes directory.  The name is chosen to be the same as
     // the apiJarFile configuration that comes from the API Gradle plugin.  We need this jar file for
@@ -119,6 +120,8 @@ configurations {
         canBeConsumed = true
         canBeResolved = true
     }
+
+    extjs // used to pull in differently licensed versions of the extJS libraries
 }
 
 // declared separately to include the gwtsrc directory
@@ -179,8 +182,31 @@ dependencies {
 
     jspImplementation files(project.tasks.jar)
     jspImplementation apache, jackson, spring
+
+    extjs "com.sencha.extjs:extjs:4.2.1@zip"
+    extjs "com.sencha.extjs:extjs:3.4.1@zip"
 }
 
 artifacts {
     apiJarFile(jar)
+}
+
+
+project.tasks.register('patchModule', Jar) {
+    Jar jar ->
+        jar.group = GroupNames.MODULE
+        jar.description = "Patches the api module to replace ExtJS libraries with commercial versions"
+        jar.classifier("extJsCommercial")
+        jar.archiveExtension.set('module')
+        jar.destinationDirectory = project.buildDir
+        jar.outputs.cacheIf({true})
+        // include the original module file
+        jar.from(zipTree(project.tasks.module.outputs.files.singleFile))
+        // replace the ext-3.4.1 and ext-4.2.1 directories from the extjs configuration artifacts
+        jar.duplicatesStrategy(DuplicatesStrategy.INCLUDE)
+        jar.into('web') {
+            from configurations.extjs.collect {
+                zipTree(it)
+            }
+        }
 }
