@@ -247,9 +247,9 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
             {
                 // remove any existing not in-use actors
                 // note: this will also remove all groups and members for that actor
-                Set<Integer> inUseActorIds = study.getSampleRequestActorsInUse();
+                Set<Integer> inUseActorIds = study.getSpecimenRequestActorsInUse();
                 Map<String, SpecimenRequestActor> inUseActors = new HashMap<>();
-                for (SpecimenRequestActor existingActor : study.getSampleRequestActors())
+                for (SpecimenRequestActor existingActor : study.getSpecimenRequestActors())
                 {
                     if (!inUseActorIds.contains(existingActor.getRowId()))
                         existingActor.delete();

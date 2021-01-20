@@ -36,12 +36,12 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.study.CohortFilter;
 import org.labkey.study.SingleCohortFilter;
 import org.labkey.study.StudySchema;
 

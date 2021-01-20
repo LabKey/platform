@@ -18,6 +18,7 @@ package org.labkey.study.importer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -27,6 +28,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenColumns;
+import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.importer.EventVialRollup;
 import org.labkey.api.specimen.importer.IteratorSpecimenImportFile;
@@ -38,8 +40,6 @@ import org.labkey.api.specimen.importer.SpecimenImportFile;
 import org.labkey.api.specimen.importer.SpecimenTableType;
 import org.labkey.api.specimen.importer.StandardSpecimenImportStrategy;
 import org.labkey.api.study.SpecimenImportStrategy;
-import org.labkey.study.SpecimenManager;
-import org.labkey.study.StudySchema;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,6 +53,7 @@ import java.util.Set;
  * Date: 6/13/13
  * Time: 12:13 PM
  */
+@Migrate // Depends only on SpecimenImporter
 public class EditableSpecimenImporter extends SpecimenImporter
 {
     private static final String GUID_COLNAME = "GlobalUniqueId";
@@ -259,7 +260,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
                 SQLFragment sql = new SQLFragment(sqlPrefix);
                 tableInfoSpecimenEvent.getSqlDialect().appendInClauseSql(sql, guids);
                 sql.append(")");
-                new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+                new SqlExecutor(SpecimenSchema.get().getSchema()).execute(sql);
                 guids.clear();
             }
         }
@@ -268,12 +269,12 @@ public class EditableSpecimenImporter extends SpecimenImporter
             SQLFragment sql = new SQLFragment(sqlPrefix);
             tableInfoSpecimenEvent.getSqlDialect().appendInClauseSql(sql, guids);
             sql.append(")");
-            new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
+            new SqlExecutor(SpecimenSchema.get().getSchema()).execute(sql);
         }
 
         if (guidRowCount > 0)
         {
-            SpecimenManager.getInstance().clearCaches(container);
+            SpecimenRequestManager.get().clearCaches(container);
         }
         return noGuidRowCount;
     }

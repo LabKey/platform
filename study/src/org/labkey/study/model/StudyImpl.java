@@ -277,12 +277,12 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return StudyManager.getInstance().getSharedProperties(this);
     }
 
-    public SpecimenRequestActor[] getSampleRequestActors()
+    public SpecimenRequestActor[] getSpecimenRequestActors()
     {
         return SpecimenRequestRequirementProvider.get().getActors(getContainer());
     }
 
-    public Set<Integer> getSampleRequestActorsInUse()
+    public Set<Integer> getSpecimenRequestActorsInUse()
     {
         Collection<SpecimenRequestActor> actors = SpecimenRequestRequirementProvider.get().getActorsInUse(getContainer());
         Set<Integer> ids = new HashSet<>();

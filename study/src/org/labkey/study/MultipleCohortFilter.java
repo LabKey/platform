@@ -23,9 +23,9 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.model.CohortImpl;
 
 /**
  * User: adam
@@ -123,7 +123,7 @@ public class MultipleCohortFilter extends BaseCohortFilter
     }
 
     @Override
-    public CohortImpl getCohort(Container container, User user)
+    public Cohort getCohort(Container container, User user)
     {
         throw new IllegalStateException("Should not be calling getCohort()");
     }

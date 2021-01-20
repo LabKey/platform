@@ -23,6 +23,7 @@ import org.labkey.api.specimen.SpecimenTypeLevel;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Cohort;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.model.ParticipantGroup;
@@ -35,11 +36,9 @@ import org.labkey.api.util.element.Option.OptionBuilder;
 import org.labkey.api.util.element.Select;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewForm;
-import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyManager;
@@ -135,14 +134,14 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         return _cohortFilter;
     }
 
-    public CohortImpl getCohort()
+    public Cohort getCohort()
     {
         return _cohortFilter != null ? _cohortFilter.getCohort(getContainer(), getUser()) : null;
     }
 
     public void setCohortFilter(CohortFilter cohortFilter)
     {
-        if (StudyManager.getInstance().showCohorts(getContainer(), getUser()))
+        if (StudyService.get().showCohorts(getContainer(), getUser()))
             _cohortFilter = cohortFilter;
     }
 
@@ -425,16 +424,15 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     protected Pair<String, HtmlString> getParticipantPicker(String inputName, String selectedParticipantId)
     {
-        Study study = StudyManager.getInstance().getStudy(getContainer());
+        Study study = StudyService.get().getStudy(getContainer());
         Select.SelectBuilder builder = new Select.SelectBuilder();
-
 
         String allString = getAllString();
         Collection<Participant> participants = StudyManager.getInstance().getParticipants(study);
-        HtmlString particpantPickerValues;
+        HtmlString participantPickerValues;
         if (participants.size() <= 200)
         {
-            // select the previously selected option or the first non-all option.  We don't want to select 'all participants'
+            // select the previously selected option or the first non-all option. We don't want to select 'all participants'
             // by default, since these reports are extremely expensive to generate.
             builder.name(inputName)
                 .addOption(new OptionBuilder()
@@ -456,7 +454,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
                     .selected(isSelected)
                     .build());
             }
-            particpantPickerValues = unsafe(builder.toString());
+            participantPickerValues = unsafe(builder.toString());
         }
         else
         {
@@ -485,10 +483,10 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
                 throw new RuntimeException(e);
             }
 
-            particpantPickerValues = unsafe(writer.toString());
+            participantPickerValues = unsafe(writer.toString());
         }
 
-        return new Pair<>(StudyService.get().getSubjectColumnName(getContainer()), particpantPickerValues);
+        return new Pair<>(StudyService.get().getSubjectColumnName(getContainer()), participantPickerValues);
     }
 
     protected abstract List<? extends SpecimenVisitReport> createReports();
@@ -500,7 +498,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     public boolean allowsCohortFilter()
     {
-        return StudyManager.getInstance().showCohorts(getContainer(), getUser());
+        return StudyService.get().showCohorts(getContainer(), getUser());
     }
 
     public boolean allowsAvailabilityFilter()

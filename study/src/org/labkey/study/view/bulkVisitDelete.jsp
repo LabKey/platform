@@ -16,14 +16,14 @@
  */
 %>
 
-<%@ page import="org.labkey.api.study.TimepointType"%>
+<%@ page import="org.labkey.api.specimen.SpecimenManager"%>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.study.SpecimenManager" %>
 <%@ page import="org.labkey.study.controllers.StudyController.BulkDeleteVisitsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DeleteVisitsForm" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
@@ -95,7 +95,7 @@
             ActionURL visitSummaryURL = new ActionURL(VisitSummaryAction.class, study.getContainer());
             visitSummaryURL.addParameter("id", visit.getRowId());
             int dataCount = visitRowCountMap.containsKey(visit.getRowId()) ? visitRowCountMap.get(visit.getRowId()) : 0;
-            int vialCount = SpecimenManager.getInstance().getSampleCountForVisit(visit);
+            int vialCount = SpecimenManager.get().getSpecimenCountForVisit(visit);
 
             rowCount++;
     %>

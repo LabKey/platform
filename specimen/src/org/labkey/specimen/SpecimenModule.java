@@ -25,7 +25,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.specimen.view.SpecimenWebPartFactory;
+import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimensPage;
 import org.labkey.api.specimen.importer.DefaultSpecimenImportStrategyFactory;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
@@ -35,16 +35,25 @@ import org.labkey.api.specimen.model.SpecimenDomainKind;
 import org.labkey.api.specimen.model.SpecimenEventDomainKind;
 import org.labkey.api.specimen.model.SpecimenRequestEventType;
 import org.labkey.api.specimen.model.VialDomainKind;
-import org.labkey.api.specimen.view.SpecimenToolsWebPartFactory;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.specimen.action.SpecimenApiController;
 import org.labkey.specimen.security.roles.SpecimenCoordinatorRole;
 import org.labkey.specimen.security.roles.SpecimenRequesterRole;
+import org.labkey.specimen.view.SpecimenSearchWebPartFactory;
+import org.labkey.specimen.view.SpecimenToolsWebPartFactory;
+import org.labkey.specimen.view.SpecimenWebPartFactory;
+import org.labkey.specimen.writer.SpecimenArchiveWriter;
+import org.labkey.specimen.writer.SpecimenSettingsWriter;
+import org.labkey.specimen.writer.SpecimenWriter;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class SpecimenModule extends CodeOnlyModule
 {
@@ -61,16 +70,15 @@ public class SpecimenModule extends CodeOnlyModule
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return List.of(
-            new SpecimenWebPartFactory(),
-            new SpecimenToolsWebPartFactory()
+            new SpecimenSearchWebPartFactory(HttpView.BODY),
+            new SpecimenToolsWebPartFactory(),
+            new SpecimenWebPartFactory()
         );
     }
 
     @Override
     protected void init()
     {
-        addController(SpecimenController.NAME, SpecimenController.class);
-
         PropertyService.get().registerDomainKind(new AdditiveTypeDomainKind());
         PropertyService.get().registerDomainKind(new DerivativeTypeDomainKind());
         PropertyService.get().registerDomainKind(new PrimaryTypeDomainKind());
@@ -83,19 +91,25 @@ public class SpecimenModule extends CodeOnlyModule
         RoleManager.registerRole(new SpecimenRequesterRole());
 
         AttachmentService.get().registerAttachmentType(SpecimenRequestEventType.get());
+
+        addController("specimen-api", SpecimenApiController.class, "study-samples-api");
     }
 
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
-        // add a container listener so we'll know when our container is deleted:
-        ContainerManager.addContainerListener(new SpecimenContainerListener());
+        ContainerManager.addContainerListener(SpecimenRequestManager.get());
 
-        StudyService.get().registerStudyTabProvider(tabs ->tabs.add(new SpecimensPage("Specimen Data")));
+        StudyService.get().registerStudyTabProvider(tabs->tabs.add(new SpecimensPage("Specimen Data")));
 
         SpecimenService.get().registerSpecimenImportStrategyFactory(new DefaultSpecimenImportStrategyFactory());
 
         AuditLogService.get().registerAuditType(new SpecimenCommentAuditProvider());
+
+        SimpleStudyWriterRegistry.registerSimpleStudyWriterProvider(() -> List.of(
+            new SpecimenSettingsWriter(),
+            new SpecimenArchiveWriter()
+        ));
     }
 
     @Override
@@ -103,5 +117,14 @@ public class SpecimenModule extends CodeOnlyModule
     public Collection<String> getSummary(Container c)
     {
         return Collections.emptyList();
+    }
+
+    @Override
+    @NotNull
+    public Set<Class> getUnitTests()
+    {
+        return Set.of(
+            SpecimenWriter.TestCase.class
+        );
     }
 }

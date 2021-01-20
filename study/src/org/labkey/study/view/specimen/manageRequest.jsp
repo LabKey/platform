@@ -21,9 +21,11 @@
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.UserManager"%>
 <%@ page import="org.labkey.api.settings.AppProps"%>
-<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus" %>
+<%@ page import="org.labkey.api.specimen.SpecimenManager" %>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestManager" %>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus"%>
 <%@ page import="org.labkey.api.specimen.Vial" %>
-<%@ page import="org.labkey.api.specimen.location.LocationImpl"%>
+<%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
 <%@ page import="org.labkey.api.specimen.location.LocationManager" %>
 <%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
 <%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirement" %>
@@ -31,13 +33,13 @@
 <%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
 <%@ page import="org.labkey.api.study.Location" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
+<%@ page import="org.labkey.api.study.StudyUtils" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.SafeToRender" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.study.SpecimenManager" %>
 <%@ page import="org.labkey.study.controllers.CreateChildStudyAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.ShowSearchAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteMissingRequestSpecimensAction" %>
@@ -54,7 +56,6 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SubmitRequestAction" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.specimen.SpecimenRequestManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
@@ -74,7 +75,7 @@
     String comments = bean.getSpecimenRequest().getComments();
     if (comments == null)
         comments = "[No description provided]";
-    boolean hasExtendedRequestView = SpecimenManager.getInstance().getExtendedSpecimenRequestView(getViewContext()) != null;
+    boolean hasExtendedRequestView = SpecimenManager.get().getExtendedSpecimenRequestView(getViewContext()) != null;
     SpecimenRequestActor[] actors = SpecimenRequestRequirementProvider.get().getActors(c);
     SpecimenRequestRequirement[] requirements = SpecimenRequestManager.get().getRequestRequirements(bean.getSpecimenRequest());
     Location destinationLocation = bean.getDestinationSite();
@@ -334,7 +335,7 @@
                 Request processing will begin after the request has been submitted.<br><br>
                 <%= button("Submit Request")
                         .href(urlFor(SubmitRequestAction.class).addParameter("id", bean.getSpecimenRequest().getRowId()))
-                        .onClick("return LABKEY.Utils.confirmAndPost('" + ManageRequestBean.SUBMISSION_WARNING + "', '" + h(urlFor(SubmitRequestAction.class).addParameter("id", bean.getSpecimenRequest().getRowId())) + "')") %>
+                        .onClick("return LABKEY.Utils.confirmAndPost('" + StudyUtils.SUBMISSION_WARNING + "', '" + h(urlFor(SubmitRequestAction.class).addParameter("id", bean.getSpecimenRequest().getRowId())) + "')") %>
 <%
             }
             else
@@ -353,7 +354,7 @@
             }
 %>
                 <%= button("Cancel Request")
-                        .onClick("return LABKEY.Utils.confirmAndPost('" + ManageRequestBean.CANCELLATION_WARNING + "', '" + h(urlFor(DeleteRequestAction.class).addParameter("id", bean.getSpecimenRequest().getRowId())) + "')") %>
+                        .onClick("return LABKEY.Utils.confirmAndPost('" + StudyUtils.CANCELLATION_WARNING + "', '" + h(urlFor(DeleteRequestAction.class).addParameter("id", bean.getSpecimenRequest().getRowId())) + "')") %>
 <%
             if (bean.getReturnUrl() != null)
             {
