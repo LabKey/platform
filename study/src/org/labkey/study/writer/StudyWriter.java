@@ -17,9 +17,7 @@ package org.labkey.study.writer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.labkey.api.specimen.writer.SimpleStudyExportContext;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.writer.BaseStudyWriter;
+import org.labkey.api.study.writer.SimpleStudyWriter;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
@@ -53,7 +51,7 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
 
         try
         {
-            for (BaseStudyWriter<Study, SimpleStudyExportContext> writer : StudySerializationRegistryImpl.get().getRegisteredStudyWriters())
+            for (SimpleStudyWriter writer : StudySerializationRegistryImpl.get().getRegisteredStudyWriters())
             {
                 String text = writer.getDataType();
 

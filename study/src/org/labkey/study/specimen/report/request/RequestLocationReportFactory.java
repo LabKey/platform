@@ -16,16 +16,16 @@
 package org.labkey.study.specimen.report.request;
 
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.study.Location;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.element.Option;
 import org.labkey.api.util.element.Select;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.VisitImpl;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
 
 import java.util.ArrayList;
@@ -78,11 +78,11 @@ public class RequestLocationReportFactory extends BaseRequestReportFactory
         if (getLocationId() != null)
             locations = new LocationImpl[] { LocationManager.get().getLocation(getContainer(), getLocationId()) };
         else
-            locations = SpecimenManager.getInstance().getSitesWithRequests(getContainer());
+            locations = SpecimenManager.get().getSitesWithRequests(getContainer());
         if (locations == null)
             return Collections.emptyList();
         List<SpecimenVisitReport> reports = new ArrayList<>();
-        List<VisitImpl> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
+        List<? extends Visit> visits = SpecimenManager.get().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
         for (LocationImpl location : locations)
         {
             SimpleFilter filter = new SimpleFilter();
@@ -126,7 +126,7 @@ public class RequestLocationReportFactory extends BaseRequestReportFactory
             .label("All Requesting Locations")
             .build());
 
-        for (LocationImpl location : SpecimenManager.getInstance().getSitesWithRequests(getContainer()))
+        for (LocationImpl location : SpecimenManager.get().getSitesWithRequests(getContainer()))
         {
             builder.addOption(new Option.OptionBuilder()
                 .value(Integer.toString(location.getRowId()))

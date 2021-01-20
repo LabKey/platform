@@ -450,7 +450,7 @@
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Actors</td>
-                        <td class="lk-study-prop-desc">This study defines <%= study.getSampleRequestActors().length %> specimen request
+                        <td class="lk-study-prop-desc">This study defines <%= study.getSpecimenRequestActors().length %> specimen request
                             actors</td>
                         <td><%= link("Manage Actors and Groups", urlFor(ManageActorsAction.class)) %></td>
                     </tr>

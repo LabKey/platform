@@ -22,9 +22,7 @@ import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
-import org.labkey.api.specimen.writer.SimpleStudyExportContext;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.writer.BaseStudyWriter;
+import org.labkey.api.study.writer.SimpleStudyWriter;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.folder.xml.FolderDocument;
@@ -120,7 +118,7 @@ public class StudyWriterFactory implements FolderWriterFactory
         public Collection<Writer> getChildren(boolean sort, boolean forTemplate)
         {
             List<Writer> children = new ArrayList<>();
-            for (BaseStudyWriter<Study, SimpleStudyExportContext> writer : StudySerializationRegistryImpl.get().getRegisteredStudyWriters())
+            for (SimpleStudyWriter writer : StudySerializationRegistryImpl.get().getRegisteredStudyWriters())
             {
                 if (!forTemplate || writer.includeWithTemplate())
                     children.add(writer);

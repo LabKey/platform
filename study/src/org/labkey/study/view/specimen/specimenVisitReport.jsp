@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.study.specimen.report.SpecimenVisitReportParameters" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.study.Visit" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenVisitReportParameters> me = (JspView<SpecimenVisitReportParameters>) HttpView.currentView();
@@ -54,7 +55,7 @@ The request has produced no records.
     {
     for (SpecimenVisitReport report : reports)
     {
-        List<VisitImpl> visits = report.getVisits();
+        List<Visit> visits = report.getVisits();
         int colCount = visits.size() + report.getLabelDepth();
 %>
 <div id="<%=tableContainerId%>" style="overflow-x:auto;">
@@ -74,7 +75,7 @@ The request has produced no records.
         {
             %><td class="labkey-column-header" colspan="<%= report.getLabelDepth() %>">&nbsp;</td><%
         }
-        for (VisitImpl visit : visits)
+        for (Visit visit : visits)
         {
             String label = visit.getDisplayString();
             %><td class="labkey-column-header" align="center"><%= h(label) %></td><%
@@ -139,7 +140,7 @@ The request has produced no records.
                 }
             if (SpecimenService.get().getRequestCustomizer().omitTypeGroupingsWhenReporting()){ %><td></td><% }
 
-                for (VisitImpl visit : visits)
+                for (Visit visit : visits)
                 {
                     %><td align="center"><%
                         %><%= text(row.getCellHtml(visit)) %><%

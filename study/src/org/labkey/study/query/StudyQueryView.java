@@ -18,9 +18,9 @@ package org.labkey.study.query;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.study.CohortFilter;
 import org.springframework.validation.BindException;
 
 /**

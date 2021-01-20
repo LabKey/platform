@@ -23,6 +23,7 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -37,7 +38,7 @@ import org.labkey.study.model.VisitImpl;
  */
 public class StudyCrosstabReport extends CrosstabReport
 {
-    public static final String TYPE = "ReportService.crosstabReport";
+    public static final String TYPE = StudyUtils.STUDY_CROSSTAB_REPORT_TYPE;
 
     @Override
     public String getType()

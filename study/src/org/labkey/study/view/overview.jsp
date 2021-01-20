@@ -19,6 +19,8 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.study.Cohort" %>
+<%@ page import="org.labkey.api.study.CohortFilter" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
@@ -26,7 +28,6 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.CohortFilter" %>
 <%@ page import="org.labkey.study.CohortFilterFactory" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController.SharedFormParameters" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DatasetAction" %>
@@ -62,7 +63,7 @@
     String subjectNoun = StudyService.get().getSubjectNounSingular(container);
 
     boolean showCohorts = CohortManager.getInstance().hasCohortMenu(container, user);
-    CohortImpl selectedCohort = null;
+    Cohort selectedCohort = null;
     List<CohortImpl> cohorts = null;
 
     if (showCohorts)

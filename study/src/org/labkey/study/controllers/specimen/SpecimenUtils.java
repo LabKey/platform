@@ -19,6 +19,7 @@ package org.labkey.study.controllers.specimen;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.ActionButton;
@@ -45,10 +46,15 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.specimen.AmbiguousLocationException;
+import org.labkey.api.specimen.RequestEventType;
+import org.labkey.api.specimen.RequestedSpecimens;
+import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.actions.VialRequestForm;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
@@ -64,6 +70,7 @@ import org.labkey.api.specimen.security.permissions.SetSpecimenCommentsPermissio
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -78,19 +85,16 @@ import org.labkey.api.view.GridView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.CohortFilter;
-import org.labkey.api.specimen.RequestEventType;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.ParticipantDataset;
+import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.SpecimenQueryView;
+import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.specimen.notifications.DefaultRequestNotification;
+import org.labkey.api.specimen.notifications.DefaultRequestNotification;
 import org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
@@ -108,7 +112,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -218,8 +221,8 @@ public class SpecimenUtils
                     {
                         requestMenuButton.addMenuItem("Add To Existing Request",
                                 "if (verifySelected(" + jsRegionObject + ".form, '#', " +
-                                "'get', 'rows')) { " + jsRegionObject + ".getSelected({success: function (data) { showRequestWindow(data.selected, '" + (showVials ? SpecimenApiController.VialRequestForm.IdTypes.RowId
-                                : SpecimenApiController.VialRequestForm.IdTypes.SpecimenHash) + "');}})}");
+                                "'get', 'rows')) { " + jsRegionObject + ".getSelected({success: function (data) { showRequestWindow(data.selected, '" + (showVials ? VialRequestForm.IdTypes.RowId
+                                : VialRequestForm.IdTypes.SpecimenHash) + "');}})}");
                     }
                 }
             }
@@ -629,47 +632,6 @@ public class SpecimenUtils
         }
     }
 
-    @NotNull
-    public static <T> Set<T> intersect(@NotNull Set<T> left, @NotNull Set<T> right)
-    {
-        Set<T> intersection = new HashSet<>();
-        for (T item : left)
-        {
-            if (right.contains(item))
-                intersection.add(item);
-        }
-        return intersection;
-    }
-
-    @NotNull
-    public static Collection<Integer> getPreferredProvidingLocations(Collection<List<Vial>> specimensBySample)
-    {
-        Set<Integer> locationIntersection = null;
-
-        for (List<Vial> vials : specimensBySample)
-        {
-            Set<Integer> currentLocations = new HashSet<>();
-            for (Vial vial : vials)
-            {
-                if (vial.getCurrentLocation() != null)
-                    currentLocations.add(vial.getCurrentLocation());
-            }
-            if (locationIntersection == null)
-                locationIntersection = currentLocations;
-            else
-            {
-                locationIntersection = intersect(locationIntersection, currentLocations);
-                if (locationIntersection.isEmpty())
-                    return locationIntersection;
-            }
-        }
-
-        if (null != locationIntersection)
-            return locationIntersection;
-
-        return Collections.emptySet();
-    }
-
     public void ensureSpecimenRequestsConfigured(boolean checkExistingStatuses)
     {
         if (!SettingsManager.get().isSpecimenRequestEnabled(getContainer(), checkExistingStatuses))
@@ -686,7 +648,7 @@ public class SpecimenUtils
             List<Vial> vials = new ArrayList<>();
             for (long requestedSampleId : requestedSampleIds)
             {
-                Vial current = SpecimenManager.getInstance().getVial(getContainer(), getUser(), requestedSampleId);
+                Vial current = SpecimenManagerNew.get().getVial(getContainer(), getUser(), requestedSampleId);
                 if (current != null)
                     vials.add(current);
             }
@@ -707,7 +669,7 @@ public class SpecimenUtils
             List<Vial> vials = new ArrayList<>();
             for (String globalUniqueId : globalUniqueIds)
             {
-                Vial match = SpecimenManager.getInstance().getVial(container, user, globalUniqueId);
+                Vial match = SpecimenManagerNew.get().getVial(container, user, globalUniqueId);
                 if (match != null)
                     vials.add(match);
             }
@@ -735,7 +697,7 @@ public class SpecimenUtils
         if (fromGroupedView)
         {
             Map<String, List<Vial>> keyToVialMap =
-                    SpecimenManager.getInstance().getVialsForSpecimenHashes(getContainer(), getUser(),  formValues, onlyAvailable);
+                    SpecimenManagerNew.get().getVialsForSpecimenHashes(getContainer(), getUser(),  formValues, onlyAvailable);
             List<Vial> vials = new ArrayList<>();
             for (List<Vial> vialList : keyToVialMap.values())
                 vials.addAll(vialList);
@@ -746,91 +708,11 @@ public class SpecimenUtils
         return selectedVials;
     }
 
-    public static class AmbiguousLocationException extends Exception
-    {
-        private final Container _container;
-        private final Collection<Integer> _possibleLocationIds;
-
-        private LocationImpl[] _possibleLocations = null;
-
-        public AmbiguousLocationException(Container container, Collection<Integer> possibleLocationIds)
-        {
-            _container = container;
-            _possibleLocationIds = possibleLocationIds;
-        }
-
-        public Collection<Integer> getPossibleLocationIds()
-        {
-            return _possibleLocationIds;
-        }
-
-        public LocationImpl[] getPossibleLocations()
-        {
-            if (_possibleLocations == null)
-            {
-                _possibleLocations = new LocationImpl[_possibleLocationIds.size()];
-                int idx = 0;
-
-                for (Integer id : _possibleLocationIds)
-                    _possibleLocations[idx++] = LocationManager.get().getLocation(_container, id.intValue());
-            }
-            return _possibleLocations;
-        }
-    }
-
-    public static class RequestedSpecimens
-    {
-        private final Collection<Integer> _providingLocationIds;
-        private final List<Vial> _vials;
-
-        private List<Location> _providingLocations;
-
-        public RequestedSpecimens(List<Vial> vials, Collection<Integer> providingLocationIds)
-        {
-            _vials = vials;
-            _providingLocationIds = providingLocationIds;
-        }
-
-        public RequestedSpecimens(List<Vial> vials)
-        {
-            _vials = vials;
-            _providingLocationIds = new HashSet<>();
-            if (vials != null)
-            {
-                for (Vial vial : vials)
-                    _providingLocationIds.add(vial.getCurrentLocation());
-            }
-        }
-
-        public List<Location> getProvidingLocations()
-        {
-            if (_providingLocations == null)
-            {
-                if (_vials == null || _vials.size() == 0)
-                    _providingLocations = Collections.emptyList();
-                else
-                {
-                    Container container = _vials.get(0).getContainer();
-                    _providingLocations = new ArrayList<>(_providingLocationIds.size());
-
-                    for (Integer locationId : _providingLocationIds)
-                        _providingLocations.add(LocationManager.get().getLocation(container, locationId.intValue()));
-                }
-            }
-            return _providingLocations;
-        }
-
-        public List<Vial> getVials()
-        {
-            return _vials;
-        }
-    }
-
     public RequestedSpecimens getRequestableByVialRowIds(Set<String> rowIds)
     {
         Set<Long> ids = new HashSet<>();
         Arrays.stream(BaseStudyController.toLongArray(rowIds)).forEach(ids::add);
-        List<Vial> requestedSpecimens = SpecimenManager.getInstance().getRequestableVials(getContainer(), getUser(), ids);
+        List<Vial> requestedSpecimens = SpecimenManagerNew.get().getRequestableVials(getContainer(), getUser(), ids);
         return new RequestedSpecimens(requestedSpecimens);
     }
 
@@ -840,48 +722,12 @@ public class SpecimenUtils
         return new RequestedSpecimens(requestedSpecimens);
     }
 
+    @Migrate // TODO: Refactor SpecimenUtils and callers should use SpecimenRequestManager directly
     public RequestedSpecimens getRequestableBySpecimenHash(Set<String> formValues, Integer preferredLocation) throws AmbiguousLocationException
     {
-        Map<String, List<Vial>> vialsByHash = SpecimenManager.getInstance().getVialsForSpecimenHashes(getContainer(), getUser(), formValues, true);
-
-        if (vialsByHash == null || vialsByHash.isEmpty())
-            return new RequestedSpecimens(Collections.emptyList());
-
-        if (preferredLocation == null)
-        {
-            Collection<Integer> preferredLocations = getPreferredProvidingLocations(vialsByHash.values());
-            if (preferredLocations.size() == 1)
-                preferredLocation = preferredLocations.iterator().next();
-            else if (preferredLocations.size() > 1)
-                throw new AmbiguousLocationException(getContainer(), preferredLocations);
-        }
-
-        List<Vial> requestedSpecimens = new ArrayList<>(vialsByHash.size());
-        Set<Integer> providingLocations = new HashSet<>();
-
-        for (List<Vial> vials : vialsByHash.values())
-        {
-            Vial selectedVial = null;
-            if (preferredLocation == null)
-                selectedVial = vials.get(0);
-            else
-            {
-                for (Iterator<Vial> it = vials.iterator(); it.hasNext() && selectedVial == null;)
-                {
-                    Vial vial = it.next();
-                    if (vial.getCurrentLocation() != null && vial.getCurrentLocation().intValue() == preferredLocation.intValue())
-                        selectedVial = vial;
-                }
-            }
-            if (selectedVial == null)
-                throw new IllegalStateException("Vial was not available from specified location " + preferredLocation);
-            providingLocations.add(selectedVial.getCurrentLocation());
-            requestedSpecimens.add(selectedVial);
-        }
-
-        return new RequestedSpecimens(requestedSpecimens, providingLocations);
+        return SpecimenRequestManager.get().getRequestableBySpecimenHash(getContainer(), getUser(), formValues, preferredLocation);
     }
-    
+
     public GridView getRequestEventGridView(HttpServletRequest request, BindException errors, SimpleFilter filter)
     {
         DataRegion rgn = new DataRegion();
@@ -1054,15 +900,5 @@ public class SpecimenUtils
         else
             label = "rowId" + location.getRowId();
         return label.replaceAll("\\W+", "_");
-    }
-
-    public static boolean isFieldTrue(RenderContext ctx, String fieldName)
-    {
-        Object value = ctx.getRow().get(fieldName);
-        if (value instanceof Integer)
-            return ((Integer) value).intValue() != 0;
-        else if (value instanceof Boolean)
-            return ((Boolean) value).booleanValue();
-        return false;
     }
 }

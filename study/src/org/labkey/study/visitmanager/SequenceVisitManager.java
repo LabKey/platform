@@ -31,12 +31,12 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.User;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.DateUtil;
-import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyUnionTableInfo;
 import org.labkey.study.model.DatasetDefinition;
@@ -167,7 +167,6 @@ public class SequenceVisitManager extends VisitManager
         return sql;
     }
 
-
     /**
      * TODO: this is a performance HACK
      * TODO: we should be incrementally updating ParticipantVisit, rather than trying to speed up resync!
@@ -220,7 +219,6 @@ public class SequenceVisitManager extends VisitManager
         _updateVisitRowId(false, logger);
         _updateVisitDate(user, ds, logger);
     }
-
 
     @Override
     protected void updateParticipantVisitTable(@Nullable User user, @Nullable Logger logger)
@@ -293,7 +291,6 @@ public class SequenceVisitManager extends VisitManager
         _updateVisitDate(user);
     }
 
-
     private void _updateVisitDate(User user)
     {
         Study study = getStudy();
@@ -328,17 +325,17 @@ public class SequenceVisitManager extends VisitManager
             if (!schema.getSqlDialect().isSqlServer())
                 sqlUpdateVisitDates.append(" PV");          // For Postgres put "PV" here
             sqlUpdateVisitDates.append("\n").append("SET VisitDate = _VisitDate, Day = _VisitDay FROM\n")
-                    .append(" (\n")
-                    .append(" SELECT DISTINCT _VisitDate, _VisitDay, SequenceNum, ParticipantId, DatasetId\n")
-                    .append(" FROM ").append(tableStudyDataFiltered.getFromSQL("SD1")).append(") SD,  ")
-                    .append(tableVisit.getFromSQL("V"));
+                .append(" (\n")
+                .append(" SELECT DISTINCT _VisitDate, _VisitDay, SequenceNum, ParticipantId, DatasetId\n")
+                .append(" FROM ").append(tableStudyDataFiltered.getFromSQL("SD1")).append(") SD,  ")
+                .append(tableVisit.getFromSQL("V"));
 
             if (schema.getSqlDialect().isSqlServer())
                 sqlUpdateVisitDates.append(", ").append(tableParticipantVisit.getFromSQL("PV"));     // Have to put the "PV" here for MSSQL
 
             sqlUpdateVisitDates.append("\n WHERE  PV.VisitRowId = V.RowId AND")    // 'join' V
-                    .append("   SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum AND\n")   // 'join' SD
-                    .append("   SD.DatasetId = V.VisitDateDatasetId AND V.Container = ? AND PV.Container = ?\n");
+                .append("   SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum AND\n")   // 'join' SD
+                .append("   SD.DatasetId = V.VisitDateDatasetId AND V.Container = ? AND PV.Container = ?\n");
 
             sqlUpdateVisitDates.add(visitStudy.getContainer());
             sqlUpdateVisitDates.add(container);
@@ -363,7 +360,6 @@ public class SequenceVisitManager extends VisitManager
                 new Object[]{study.getContainer(), study.getContainer()});
         */
     }
-
 
     private void _updateVisitDate(User user, DatasetDefinition def, @Nullable Logger logger)
     {
@@ -400,24 +396,23 @@ public class SequenceVisitManager extends VisitManager
         if (!schema.getSqlDialect().isSqlServer())
             sqlUpdateVisitDates.append(" PV");          // For Postgres put "PV" here
         sqlUpdateVisitDates.append("\n").append("SET VisitDate = _VisitDate, Day = _VisitDay FROM\n")
-                .append(" (\n")
-                .append(" SELECT DISTINCT _VisitDate, _VisitDay, SequenceNum, ParticipantId, DatasetId\n")
-                .append(" FROM ").append(tableStudyDataFiltered.getFromSQL("SD1")).append(") SD, ")
-                .append(tableVisit.getFromSQL("V"));
+            .append(" (\n")
+            .append(" SELECT DISTINCT _VisitDate, _VisitDay, SequenceNum, ParticipantId, DatasetId\n")
+            .append(" FROM ").append(tableStudyDataFiltered.getFromSQL("SD1")).append(") SD, ")
+            .append(tableVisit.getFromSQL("V"));
 
         if (schema.getSqlDialect().isSqlServer())
             sqlUpdateVisitDates.append(", ").append(tableParticipantVisit.getFromSQL("PV"));     // Have to put the "PV" here for MSSQL
 
         sqlUpdateVisitDates.append("\n WHERE PV.VisitRowId = V.RowId AND")    // 'join' V
-                .append("   SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum AND\n")   // 'join' SD
-                .append("   ? = V.VisitDateDatasetId AND V.Container = ? AND PV.Container = ?\n");
+            .append("   SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum AND\n")   // 'join' SD
+            .append("   ? = V.VisitDateDatasetId AND V.Container = ? AND PV.Container = ?\n");
 
         sqlUpdateVisitDates.add(def.getDatasetId());
         sqlUpdateVisitDates.add(visitStudy.getContainer());
         sqlUpdateVisitDates.add(container);
         executor.execute(sqlUpdateVisitDates);
     }
-
 
     private void _updateVisitRowId(boolean updateAll, @Nullable Logger logger)
     {
@@ -444,13 +439,13 @@ public class SequenceVisitManager extends VisitManager
         else
         {
             seqnum2visit.append(
-                    "WITH seqnum2visit AS (" +
-                    "  SELECT SequenceNum, COALESCE(V.RowId,-1) AS RowId\n" +
-                    "  FROM (SELECT DISTINCT SequenceNum FROM study.ParticipantVisit WHERE Container = ?");
+                "WITH seqnum2visit AS (" +
+                "  SELECT SequenceNum, COALESCE(V.RowId,-1) AS RowId\n" +
+                "  FROM (SELECT DISTINCT SequenceNum FROM study.ParticipantVisit WHERE Container = ?");
             if (!updateAll)
                 seqnum2visit.append(" AND VisitRowId=-1");
             seqnum2visit.append(") seqnumPV, study.Visit V\n" +
-                    "  WHERE SequenceNum BETWEEN V.SequenceNumMin AND V.SequenceNumMax AND V.Container = ?)\n");
+                "  WHERE SequenceNum BETWEEN V.SequenceNumMin AND V.SequenceNumMax AND V.Container = ?)\n");
             seqnum2visit.add(getStudy().getContainer());
             seqnum2visit.add(visitStudy.getContainer());
         }
@@ -486,7 +481,6 @@ public class SequenceVisitManager extends VisitManager
         (null==logger?LogManager.getLogger(SequenceVisitManager.class):logger).trace("DONE UPDATE " + DateUtil.formatDuration(System.currentTimeMillis()-start));
     }
 
-
     /** Make sure there is a Visit for each row in StudyData otherwise rows will be orphaned */
     @Override
     protected void updateVisitTable(User user, @Nullable Logger logger)
@@ -518,11 +512,11 @@ public class SequenceVisitManager extends VisitManager
     {
         SQLFragment sql = new SQLFragment();
         sql.append(
-                "SELECT x.DatasetId AS DatasetId, CAST(x.SequenceNum AS FLOAT) AS SequenceNum\n" +
-                        "FROM (" +
-                        "     SELECT DISTINCT SequenceNum, DatasetId\n" +
-                        "     FROM ").append(StudySchema.getInstance().getTableInfoStudyData(getStudy(), null).getFromSQL("SD")).append(
-                ") x\nORDER BY DatasetId, SequenceNum");
+            "SELECT x.DatasetId AS DatasetId, CAST(x.SequenceNum AS FLOAT) AS SequenceNum\n" +
+                "FROM (" +
+                "     SELECT DISTINCT SequenceNum, DatasetId\n" +
+                "     FROM ").append(StudySchema.getInstance().getTableInfoStudyData(getStudy(), null).getFromSQL("SD")).append(
+            ") x\nORDER BY DatasetId, SequenceNum");
         return sql;
     }
 
@@ -599,8 +593,9 @@ public class SequenceVisitManager extends VisitManager
             return sb.toString();
         }
     }
+
     private void _indent(StringBuilder sb, int indent)
     {
-        sb.append("\n                                             ".substring(0,indent));
+        sb.append("\n                                             ", 0, indent);
     }
 }
