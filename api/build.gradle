@@ -203,15 +203,16 @@ project.tasks.register('patchModule', Jar) {
         jar.archiveExtension.set('module')
         jar.destinationDirectory = project.buildDir
         jar.outputs.cacheIf({true})
-        // include the original module file
-        jar.from(zipTree(project.tasks.module.outputs.files.singleFile))
-        // replace the ext-3.4.1 and ext-4.2.1 directories from the extjs configuration artifacts
-        jar.duplicatesStrategy(DuplicatesStrategy.INCLUDE)
+        // first include the ext-3.4.1 and ext-4.2.1 directories from the extjs configuration artifacts
         jar.into('web') {
             from configurations.extJs.collect {
                 zipTree(it)
             }
         }
+        // include the original module file ...
+        jar.from(zipTree(project.tasks.module.outputs.files.singleFile))
+        // ... but don't use the ext directories that come from that file
+        jar.duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
 }
 
 artifacts {
