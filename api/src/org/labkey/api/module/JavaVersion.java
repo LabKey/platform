@@ -34,7 +34,7 @@ public enum JavaVersion
     JAVA_13(13, true, true),
     JAVA_14(14, false, true),
     JAVA_15(15, false, true),
-    JAVA_16(16, false, false),
+    JAVA_16(16, false, true),
     JAVA_FUTURE(Integer.MAX_VALUE, false, false);
 
     private final int _version;
@@ -79,7 +79,7 @@ public enum JavaVersion
         JavaVersion jv = get(version);
 
         if (JAVA_UNSUPPORTED == jv)
-            throw new ConfigurationException("Unsupported Java runtime version: " + getJavaVersionDescription() + ". LabKey Server requires Java 13 or Java 14. We recommend installing " + getRecommendedJavaVersion() + ".");
+            throw new ConfigurationException("Unsupported Java runtime version: " + getJavaVersionDescription() + ". We recommend installing " + getRecommendedJavaVersion() + ".");
 
         return jv;
     }
