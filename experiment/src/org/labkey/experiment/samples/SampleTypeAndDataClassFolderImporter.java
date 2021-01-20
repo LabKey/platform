@@ -60,7 +60,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
     @Override
     public String getDescription()
     {
-        return "Sample Types and Data Class Importer";
+        return getDataType().toLowerCase();
     }
 
     @Override
@@ -75,7 +75,10 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
             Map<String, String> dataClassDataFiles = new HashMap<>();
             Logger log = ctx.getLogger();
 
+            if (null != job)
+                job.setStatus("IMPORT " + getDescription());
             log.info("Starting Sample Type and Data Class import");
+
             for (String file: xarDir.list())
             {
                 if (file.toLowerCase().endsWith(".xar"))
