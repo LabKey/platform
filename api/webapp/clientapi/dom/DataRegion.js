@@ -4558,7 +4558,7 @@ if (!LABKEY.DataRegions) {
      * @param {boolean} [config.showSurroundingBorder] Render the table with a surrounding border (default true).
      * @param {boolean} [config.showFilterDescription] Include filter and parameter values in the grid header, if present (default true).
      * @param {boolean} [config.showRecordSelectors] Render the select checkbox column (default undefined, meaning they will be shown if the query is updatable by the current user).
-     *  If 'showDeleteButton' is true, or if 'showExportButtons' is not explicitly false, the checkboxes will be  included regardless of the 'showRecordSelectors' config option.
+     *  Both 'showDeleteButton' and 'showExportButtons' must be set to false for the 'showRecordSelectors = false' setting to hide the checkboxes.
      * @param {boolean} [config.showPagination] Show the pagination links and count (default true).
      * @param {boolean} [config.showPaginationCount] Show the total count of rows in the pagination information text (default true).
      * @param {boolean} [config.shadeAlternatingRows] Shade every other row with a light gray background color (default true).
