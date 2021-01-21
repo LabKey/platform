@@ -844,7 +844,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
                 {
                     try
                     {
-                        Object file = AbstractQueryUpdateService.saveFile(_datasetDefinition.getContainer(), _name, value, "datasets");
+                        Object file = AbstractQueryUpdateService.saveFile(_datasetDefinition.getContainer(), _name, value, "datasetdata");
                         assert file instanceof File;
                         value = ((File)file).getPath();
                         _savedName = (String)value;
