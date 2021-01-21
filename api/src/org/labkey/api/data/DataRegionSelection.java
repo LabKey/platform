@@ -298,7 +298,7 @@ public class DataRegionSelection
         return getSelected(view, form.getQuerySettings().getSelectionKey());
     }
 
-    public static Pair<DataRegion, RenderContext> getDataRegionContext(QueryView view)
+    private static Pair<DataRegion, RenderContext> getDataRegionContext(QueryView view)
     {
         // Turn off features of QueryView
         view.setPrintView(true);
