@@ -1619,19 +1619,14 @@ public class PipelineController extends SpringActionController
             URLHelper url;
 
             PipelineService.get().saveTriggerConfig(getContainer(), getUser(), form);
-            if (form.getReturnUrl() != null)
+            if (form.getReturnActionURL() != null)
             {
-                try
-                {
-                    url = new URLHelper(form.getReturnUrl());
-                }
-                catch (URISyntaxException e)
-                {
-                    url = getContainer().getStartURL(getUser());
-                }
+                url = form.getReturnActionURL();
             }
             else
+            {
                 url = getContainer().getStartURL(getUser());
+            }
 
             response.put("success", true);
             response.put(ActionURL.Param.returnUrl.name(), url.toString());

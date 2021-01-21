@@ -28,7 +28,6 @@ import org.labkey.api.util.NetworkDrive;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -92,7 +91,7 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
     public void initDir(ContextType context) throws ExperimentException
     {
         // If upload files are specified
-        if(!context.getUploadedData().isEmpty())
+        if (!context.getUploadedData().isEmpty())
         {
             // TODO: remove this instanceof check
             if (!(context instanceof AssayRunUploadForm))
@@ -106,7 +105,7 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
             if (NetworkDrive.exists(uploadAttemptDir))
             {
                 File[] fileList = uploadAttemptDir.listFiles();
-                if(null != fileList)
+                if (null != fileList)
                 {
                     for (File file : fileList)
                     {
@@ -123,7 +122,7 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
                             }
                         }
 
-                        if(!save)
+                        if (!save)
                         {
                             FileUtils.deleteQuietly(file);
                         }
@@ -131,25 +130,6 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
                 }
             }
         }
-    }
-
-    @Override
-    @Nullable
-    public File getRoot(@Nullable ExpRun run, @Nullable File data)
-    {
-        File root = null;
-
-        if(null != run)
-        {
-            root = Paths.get(run.getFilePathRoot().getParentFile().getParentFile().getParent()).toFile();
-        }
-        else if(null != data)
-        {
-            // Need to get to root in root/assaydata/uploadTemp/<tempname>/file
-            root = Paths.get(data.getParentFile().getParentFile().getParentFile().getParent()).toFile();
-        }
-
-        return root;
     }
 
     @Override
@@ -211,7 +191,7 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
             for (File tempDirFile : tempDir.listFiles())
             {
                 File assayDirFile = getFilePath(context, run, tempDirFile);
-                if(assayDirFile != null)
+                if (assayDirFile != null)
                 {
                     String uploadName = fileToName.get(tempDirFile);
                     if (uploadName != null)
