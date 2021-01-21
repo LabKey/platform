@@ -242,7 +242,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         @Override
         public int getPriority()
         {
-            // TODO add a note about why this value is set as such? what other importer does it need to be after?
+            // make sure this importer runs after the FolderXarImporter (i.e. "Experiments and runs")
             return 75;
         }
     }
