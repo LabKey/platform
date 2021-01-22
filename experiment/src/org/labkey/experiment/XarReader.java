@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
@@ -67,6 +68,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipelineJob;
@@ -74,6 +76,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.assay.AssayPublishService;
@@ -1404,10 +1407,14 @@ public class XarReader extends AbstractXarImporter
             data.setLSID(dataLSID);
             data.setName(trimString(xbData.getName()));
             data.setCpasType(declaredType);
+            ExpDataClass currentDataClass = null;
             for (ExpDataClass dataClass : _loadedDataClasses)
             {
                 if (dataClass.getLSID().equals(declaredType))
+                {
+                    currentDataClass = dataClass;
                     data.setClassId(dataClass.getRowId());
+                }
             }
 
             // This existing hack is that newData has the source URL, but the dest container
@@ -1442,9 +1449,16 @@ public class XarReader extends AbstractXarImporter
 
             expData = new ExpDataImpl(data);
             expData.save(getUser());
-//            if (_auditBehaviorType == AuditBehaviorType.DETAILED)
-//            {
-//            }
+            if (_auditBehaviorType == AuditBehaviorType.DETAILED && currentDataClass != null)
+            {
+                UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), ExpSchema.SCHEMA_EXP_DATA.toString());
+                TableInfo dataTable = userSchema.getTable(currentDataClass.getName());
+                if (dataTable != null)
+                {
+                    Map<String, Object> row = BeanObjectFactory.Registry.getFactory(Data.class).toMap(data, null);
+                    dataTable.addAuditEvent(getUser(), getContainer(), _auditBehaviorType, null, QueryService.AuditAction.INSERT, row);
+                }
+            }
 
             PropertyCollectionType xbProps = xbData.getProperties();
             if (null == xbProps)

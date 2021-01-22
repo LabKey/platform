@@ -11,6 +11,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.exp.CompressedInputStreamXarSource;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.XarSource;
@@ -200,6 +201,16 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                                     context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
                                     context.setAllowImportLookupByAlternateKey(true);
                                     ((AbstractQueryUpdateService)qus).setAttachmentDirectory(dir.getDir(tableName));
+                                    Map<Enum, Object> options = new HashMap<>();
+                                    try
+                                    {
+                                        options.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, ctx.getAuditBehaviorType());
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        log.error("Unable to get audit behavior for import. Default behavior will be used.");
+                                    }
+                                    context.setConfigParameters(options);
 
                                     qus.loadRows(ctx.getUser(), ctx.getContainer(), loader, context, null);
                                     if (context.getErrors().hasErrors())
