@@ -30,6 +30,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
@@ -152,8 +153,8 @@ public class SecurityManager
     static final String ADD_GROUP_TO_ITSELF_ERROR_MESSAGE = "Can't add a group to itself";
     static final String ADD_TO_SYSTEM_GROUP_ERROR_MESSAGE = "Can't add a group to a system group";
     static final String ADD_SYSTEM_GROUP_ERROR_MESSAGE = "Can't add a system group to another group";
-    static final String DIFFERENT_PROJECTS_ERROR_MESSAGE =  "Can't add a project group to a group in a different project";
-    static final String PROJECT_TO_SITE_ERROR_MESSAGE =  "Can't add a project group to a site group";
+    static final String DIFFERENT_PROJECTS_ERROR_MESSAGE = "Can't add a project group to a group in a different project";
+    static final String PROJECT_TO_SITE_ERROR_MESSAGE = "Can't add a project group to a site group";
     static final String CIRCULAR_GROUP_ERROR_MESSAGE = "Can't add a group that results in a circular group relation";
 
     public static final String TRANSFORM_SESSION_ID = "LabKeyTransformSessionId";  // issue 19748
@@ -844,7 +845,7 @@ public class SecurityManager
         if (provider == null)
             return defaultUrl;
 
-        ResetPasswordProvider urlProvider =  AuthenticationManager.getResetPasswordProvider(provider);
+        ResetPasswordProvider urlProvider = AuthenticationManager.getResetPasswordProvider(provider);
         if (urlProvider == null)
             return defaultUrl;
 
@@ -1757,12 +1758,12 @@ public class SecurityManager
     }
 
     // Returns comma-separated list of group names this user belongs to in this container
-    public static String getGroupList(Container c, User u)
+    public static HtmlString getGroupList(Container c, User u)
     {
         Container proj = c.getProject();
 
         if (null == proj || u == null)
-            return "";
+            return HtmlString.EMPTY_STRING;
 
         int[] groupIds = u.getGroups();
 
@@ -1789,7 +1790,7 @@ public class SecurityManager
             }
         }
 
-        return groupList.toString();
+        return HtmlString.of(groupList.toString());
     }
 
 
@@ -2729,15 +2730,15 @@ public class SecurityManager
             MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
 
             // prepare test UserRole properties
-            ConfigProperty testUserRoleProp =  new ConfigProperty(TEST_USER_1_EMAIL, ",," + TEST_USER_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_ROLES);
+            ConfigProperty testUserRoleProp = new ConfigProperty(TEST_USER_1_EMAIL, ",," + TEST_USER_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_ROLES);
             testConfigPropertyMap.put(ConfigProperty.SCOPE_USER_ROLES, testUserRoleProp);
 
             // prepare test GroupRole properties
-            ConfigProperty testGroupRoleProp =  new ConfigProperty(TEST_GROUP_1_NAME, ",," + TEST_GROUP_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_GROUP_ROLES);
+            ConfigProperty testGroupRoleProp = new ConfigProperty(TEST_GROUP_1_NAME, ",," + TEST_GROUP_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_GROUP_ROLES);
             testConfigPropertyMap.put(ConfigProperty.SCOPE_GROUP_ROLES, testGroupRoleProp);
 
             // prepare test UserRole properties
-            ConfigProperty testUserGroupProp =  new ConfigProperty(TEST_USER_2_EMAIL, ",," + TEST_USER_2_GROUP_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_GROUPS);
+            ConfigProperty testUserGroupProp = new ConfigProperty(TEST_USER_2_EMAIL, ",," + TEST_USER_2_GROUP_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_GROUPS);
             testConfigPropertyMap.put(ConfigProperty.SCOPE_USER_GROUPS, testUserGroupProp);
 
             // set these test startup properties to be used by the entire server
