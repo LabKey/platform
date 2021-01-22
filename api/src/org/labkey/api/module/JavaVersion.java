@@ -34,7 +34,7 @@ public enum JavaVersion
     JAVA_13(13, true, true),
     JAVA_14(14, false, true),
     JAVA_15(15, false, true),
-    JAVA_16(16, false, false),
+    JAVA_16(16, false, true),
     JAVA_FUTURE(Integer.MAX_VALUE, false, false);
 
     private final int _version;
