@@ -298,13 +298,14 @@ abstract public class PipelineJob extends Job implements Serializable
         // Not yet queued
         _queue = null;
 
-        // New ID
-        _jobGUID = GUID.makeGUID();
-
+//        // New ID
+//        _jobGUID = GUID.makeGUID();
+//
         // Copy everything else
         _info = job._info;
         _provider = job._provider;
         _parentGUID = job._jobGUID;
+        _jobGUID = job._jobGUID;             // WITHOUT this we can't update parent's statusfile
         _pipeRoot = job._pipeRoot;
         _logFilePathName = job._logFilePathName;
         _interrupted = job._interrupted;
@@ -441,7 +442,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public File getLogFile()
     {
-        Path logFilePath =  getLogFilePath();
+        Path logFilePath = getLogFilePath();
         if (null != logFilePath && !FileUtil.hasCloudScheme(logFilePath))
             return logFilePath.toFile();
         return null;

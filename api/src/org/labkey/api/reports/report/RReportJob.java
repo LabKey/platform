@@ -39,6 +39,8 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * User: Karl Lum
@@ -55,6 +57,8 @@ public class RReportJob extends PipelineJob implements Serializable
 
     private ReportIdentifier _reportId;
     private Report _report;
+
+    private TreeMap<String,String> params = new TreeMap<>();
 
     // For serialization
     protected RReportJob() {}
@@ -80,10 +84,16 @@ public class RReportJob extends PipelineJob implements Serializable
         init(this.getContainerId());
     }
 
+    public void addReportParams(Map<String,String> map)
+    {
+        if (null != map)
+            params.putAll(map);
+    }
+
     protected void init(@NotNull String executingContainerId)
     {
         RReport report = getReport();
-        if (report != null)
+        if (report != null && null == getLogFilePath())
         {
             _jobIdentifier.set(getJobGUID());
             File logFile = new File(report.getReportDir(executingContainerId), LOG_FILE_NAME);
@@ -173,10 +183,14 @@ public class RReportJob extends PipelineJob implements Serializable
             File inputFile = inputFile(report, context);
             List<ParamReplacement> outputSubst = new ArrayList<>();
 
-            // todo: figure out a way to pass script input parameters for a script job if needed.
+            ActionURL url = context.cloneActionURL();
+            url.addParameters(params);
+            context.setActionURL(url);
             String output = report.runScript(context, outputSubst, inputFile, null);
             if (!StringUtils.isEmpty(output))
-                info(output);
+            {
+                info("CONSOLE OUTPUT:\n" + output);
+            }
 
             processOutputs(report, outputSubst);
             setStatus(TaskStatus.complete, "Job finished at: " + DateUtil.nowISO());
