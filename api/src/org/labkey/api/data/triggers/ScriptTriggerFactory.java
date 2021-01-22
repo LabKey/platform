@@ -49,6 +49,7 @@ public class ScriptTriggerFactory implements TriggerFactory
     @NotNull
     public Collection<Trigger> createTrigger(@Nullable Container c, TableInfo table, Map<String, Object> extraContext)
     {
+        // Without a container this factory is unable to determine the set of active modules available.
         if (c == null)
             return Collections.emptyList();
 
@@ -63,7 +64,7 @@ public class ScriptTriggerFactory implements TriggerFactory
     }
 
     @NotNull
-    protected Collection<Trigger> createTriggerScript(Container c, TableInfo table) throws ScriptException
+    protected Collection<Trigger> createTriggerScript(@NotNull Container c, TableInfo table) throws ScriptException
     {
         ScriptService svc = ScriptService.get();
         assert svc != null;
@@ -74,7 +75,7 @@ public class ScriptTriggerFactory implements TriggerFactory
     }
 
     @NotNull
-    private Collection<Trigger> getDefaultTriggers(Container c, TableInfo table, @NotNull ScriptService svc) throws ScriptException
+    private Collection<Trigger> getDefaultTriggers(@NotNull Container c, TableInfo table, @NotNull ScriptService svc) throws ScriptException
     {
 
         final String schemaName = table.getPublicSchemaName();
@@ -116,7 +117,7 @@ public class ScriptTriggerFactory implements TriggerFactory
     }
 
     @NotNull
-    protected Collection<Trigger> checkPaths(Container c, TableInfo table, @NotNull ScriptService svc, Path path) throws ScriptException
+    protected Collection<Trigger> checkPaths(@NotNull Container c, TableInfo table, @NotNull ScriptService svc, Path path) throws ScriptException
     {
         Collection<Trigger> scripts = new LinkedHashSet<>();
 
