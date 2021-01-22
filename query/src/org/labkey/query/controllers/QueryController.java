@@ -5478,7 +5478,7 @@ public class QueryController extends SpringActionController
     public static class SetCheckAction extends MutatingApiAction<SetCheckForm>
     {
         @Override
-        public ApiResponse execute(final SetCheckForm form, BindException errors)
+        public ApiResponse execute(final SetCheckForm form, BindException errors) throws Exception
         {
             String[] ids = form.getId(getViewContext().getRequest());
             List<String> selection = new ArrayList<>();
@@ -5491,9 +5491,16 @@ public class QueryController extends SpringActionController
                 }
             }
 
-            int count = DataRegionSelection.setSelected(
+            int count;
+            if (form.getQueryName() != null && form.isValidateIds() && form.isChecked())
+            {
+                selection = DataRegionSelection.getValidatedIds(selection, form);
+            }
+
+            count = DataRegionSelection.setSelected(
                     getViewContext(), form.getKey(),
                     selection, form.isChecked());
+
             return new DataRegionSelection.SelectionResponse(count);
         }
     }
@@ -5504,6 +5511,7 @@ public class QueryController extends SpringActionController
     {
         protected String[] ids;
         protected boolean checked;
+        protected boolean validateIds;
 
         public String[] getId(HttpServletRequest request)
         {
@@ -5528,6 +5536,17 @@ public class QueryController extends SpringActionController
         {
             this.checked = checked;
         }
+
+        public boolean isValidateIds()
+        {
+            return validateIds;
+        }
+
+        public void setValidateIds(boolean validateIds)
+        {
+            this.validateIds = validateIds;
+        }
+
     }
 
     @RequiresPermission(ReadPermission.class)
