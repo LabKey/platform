@@ -18,6 +18,7 @@ package org.labkey.api.data.triggers;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
@@ -46,8 +47,11 @@ public class ScriptTriggerFactory implements TriggerFactory
 
     @Override
     @NotNull
-    public Collection<Trigger> createTrigger(Container c, TableInfo table, Map<String, Object> extraContext)
+    public Collection<Trigger> createTrigger(@Nullable Container c, TableInfo table, Map<String, Object> extraContext)
     {
+        if (c == null)
+            return Collections.emptyList();
+
         try
         {
             return createTriggerScript(c, table);
@@ -123,7 +127,7 @@ public class ScriptTriggerFactory implements TriggerFactory
                 scripts.add(new ScriptTrigger(c, table, script));
 
         }
+
         return scripts;
     }
-
 }

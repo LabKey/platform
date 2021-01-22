@@ -1628,12 +1628,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             // }
             StudyServiceImpl.addDatasetAuditEvent(user, DatasetDefinition.this, oldRow, parameters);
         }
-
-        @Override
-        public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
-        {
-            return new TableInsertDataIteratorBuilder(data, this, null);
-        }
     }
 
 

@@ -1,5 +1,6 @@
 package org.labkey.api.dataiterator;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.DomainProperty;
@@ -11,7 +12,7 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
 {
     final DataIteratorBuilder builder;
     final TableInfo table;
-    final Container container;     // If container != null, it will be set as a constant in the insert statement
+    final Container container;
     Set<String> keyColumns = null;
     Set<String> addlSkipColumns = null;
     Set<String> dontUpdate = null;
@@ -19,11 +20,19 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
     private Set<DomainProperty> vocabularyProperties;
     Map<String, String> remapSchemaColumns = null;
 
-    public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table, Container c)
+    public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table)
+    {
+        this(data, table, null);
+    }
+
+    /**
+     * @param container If container != null, it will be set as a constant in the insert statement.
+     */
+    public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table, @Nullable Container container)
     {
         this.builder = data;
         this.table = table;
-        this.container = c;
+        this.container = container;
     }
 
     public TableInsertDataIteratorBuilder setKeyColumns(Set<String> keyColumns)
