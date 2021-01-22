@@ -2247,7 +2247,7 @@ public class AnnouncementsController extends SpringActionController
                     User user = UserManager.getUser(userId);
 
                     if (null != user)
-                        return HtmlString.of(SecurityManager.getGroupList(ctx.getContainer(), user));
+                        return SecurityManager.getGroupList(ctx.getContainer(), user);
                 }
 
                 return HtmlString.EMPTY_STRING;
