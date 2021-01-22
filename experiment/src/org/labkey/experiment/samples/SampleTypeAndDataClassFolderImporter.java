@@ -152,7 +152,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                     log.info("Importing XAR file: " + xarFile.getName());
                     XarReader reader = new XarReader(xarSource, job);
                     reader.setStrictValidateExistingSampleType(false);
-                    reader.parseAndLoad(false);
+                    reader.parseAndLoad(false, ctx.getAuditBehaviorType());
 
                     // process any sample type data files and data class files
                     importTsvData(ctx, SamplesSchema.SCHEMA_NAME, reader.getSampleTypes().stream().map(Identifiable::getName).collect(Collectors.toList()),

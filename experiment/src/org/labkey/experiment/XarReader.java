@@ -68,10 +68,12 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.assay.AssayPublishService;
@@ -135,6 +137,7 @@ public class XarReader extends AbstractXarImporter
     public static final String ORIGINAL_URL_PROPERTY = "terms.fhcrc.org#Data.OriginalURL";
     public static final String ORIGINAL_URL_PROPERTY_NAME = "OriginalURL";
     private List<String> _processedRunsLSIDs = new ArrayList<>();
+    private AuditBehaviorType _auditBehaviorType = null;
 
     public XarReader(XarSource source, PipelineJob job)
     {
@@ -156,9 +159,10 @@ public class XarReader extends AbstractXarImporter
         _strictValidateExistingSampleType = strictValidateExistingSampleType;
     }
 
-    public void parseAndLoad(boolean reloadExistingRuns) throws ExperimentException
+    public void parseAndLoad(boolean reloadExistingRuns, @Nullable AuditBehaviorType auditBehaviorType) throws ExperimentException
     {
         _reloadExistingRuns = reloadExistingRuns;
+        _auditBehaviorType = auditBehaviorType;
         parseAndLoad();
     }
 
@@ -883,8 +887,6 @@ public class XarReader extends AbstractXarImporter
             }
         }
 
-        TableInfo tiExperimentRun = ExperimentServiceImpl.get().getTinfoExperimentRun();
-
         ExperimentRun run = ExperimentServiceImpl.get().getExperimentRun(pRunLSID.toString());
 
         if (null != run)
@@ -1235,6 +1237,11 @@ public class XarReader extends AbstractXarImporter
                 mi.save(getUser());
                 mi.setProperties(getUser(), props);
 
+                if (_auditBehaviorType == AuditBehaviorType.DETAILED)
+                {
+                    SampleTypeServiceImpl service = SampleTypeServiceImpl.get();
+                    service.addAuditEvent(getUser(), getContainer(), service.getCommentDetailed(QueryService.AuditAction.INSERT, false), mi, null);
+                }
                 if (xbMaterial.isSetAlias())
                 {
                     AliasInsertHelper.handleInsertUpdate(getContainer(), getUser(), mi.getLSID(),
@@ -1435,6 +1442,9 @@ public class XarReader extends AbstractXarImporter
 
             expData = new ExpDataImpl(data);
             expData.save(getUser());
+//            if (_auditBehaviorType == AuditBehaviorType.DETAILED)
+//            {
+//            }
 
             PropertyCollectionType xbProps = xbData.getProperties();
             if (null == xbProps)
