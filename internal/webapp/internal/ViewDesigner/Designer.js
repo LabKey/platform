@@ -662,8 +662,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
         var canEdit = this.canEdit();
 
-        // User must have appropriate delete permissions, Issue 41601
-        var currentUserCanDelete = this.customView.shared ? this.canEditSharedViews : this.customView.session || !LABKEY.user.isGuest;
+        // User must have appropriate delete permissions, Issue 41601. This should match DeleteViewAction permission check.
+        var currentUserCanDelete = this.customView.shared ? this.query.canEditSharedViews : this.customView.session || !LABKEY.user.isGuest;
 
         // Enabled for named editable views that exist; additionally, overridable module based view is not deletable.
         var isDeletable = canEdit && this.customView.deletable && this.customView.name && !this.customView.doesNotExist;
