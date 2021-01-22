@@ -17,7 +17,6 @@ package org.labkey.study.model;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
-import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
@@ -37,11 +36,9 @@ import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
-import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -52,9 +49,7 @@ import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.DatasetUpdateService;
 import org.labkey.study.writer.DefaultStudyDesignWriter;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -596,7 +591,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         int addFileColumn(String name, int index)
         {
             var col = new BaseColumnInfo(name, JdbcType.VARCHAR);
-            return addColumn(col, new FileColumn(name, index));
+            return addColumn(col, new FileColumn(_datasetDefinition.getContainer(), name, index, "datasetdata"));
         }
 
     //        int addSequenceNumFromDateColumn()
@@ -818,44 +813,6 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
                     return _defaultQCState.getRowId();
                 }
                 return null;
-            }
-        }
-
-        class FileColumn implements Supplier<Object>
-        {
-            private final String _name;
-            private final int _index;
-            private String _savedName;
-
-            FileColumn(String name, int idx)
-            {
-                _name = name;
-                _index = idx;
-            }
-
-            @Override
-            public Object get()
-            {
-                if (_savedName != null)
-                    return _savedName;
-
-                Object value = getInput().get(_index);
-                if (value instanceof MultipartFile || value instanceof AttachmentFile)
-                {
-                    try
-                    {
-                        Object file = AbstractQueryUpdateService.saveFile(_datasetDefinition.getContainer(), _name, value, "datasetdata");
-                        assert file instanceof File;
-                        value = ((File)file).getPath();
-                        _savedName = (String)value;
-                    }
-                    catch (QueryUpdateServiceException | ValidationException ex)
-                    {
-                        addRowError(ex.getMessage());
-                        value = null;
-                    }
-                }
-                return value;
             }
         }
     }
