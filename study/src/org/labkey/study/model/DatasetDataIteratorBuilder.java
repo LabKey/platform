@@ -33,6 +33,7 @@ import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.ScrollableDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.BatchValidationException;
@@ -222,6 +223,10 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
                 {
                     // make sure guid is not null (12884)
                     out = it.addCoaleseColumn(match.getName(), in, new SimpleTranslator.GuidColumn());
+                }
+                else if (match.getPropertyType() == PropertyType.FILE_LINK)
+                {
+                    out = it.addFileColumn(match.getName(), in);
                 }
                 else
                 {
@@ -581,6 +586,12 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             qcCol.setPropertyURI(uri);
             Callable qcCall = new QCStateColumn(index, defaultQCState);
             return addColumn(qcCol, qcCall);
+        }
+
+        int addFileColumn(String name, int index)
+        {
+            var col = new BaseColumnInfo(name, JdbcType.VARCHAR);
+            return addColumn(col, new FileColumn(_datasetDefinition.getContainer(), name, index, "datasetdata"));
         }
 
     //        int addSequenceNumFromDateColumn()
