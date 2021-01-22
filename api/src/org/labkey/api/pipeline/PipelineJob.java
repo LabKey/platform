@@ -305,7 +305,7 @@ abstract public class PipelineJob extends Job implements Serializable
         _info = job._info;
         _provider = job._provider;
         _parentGUID = job._jobGUID;
-        _jobGUID = job._jobGUID;             // WITHOUT this we can't update parent's statusfile
+        _jobGUID = job._jobGUID;             // We need to use the same guid as parent, otherwise we can't update parent's statusfile
         _pipeRoot = job._pipeRoot;
         _logFilePathName = job._logFilePathName;
         _interrupted = job._interrupted;
