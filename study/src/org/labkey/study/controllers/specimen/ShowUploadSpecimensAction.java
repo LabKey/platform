@@ -30,6 +30,8 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.specimen.SpecimenManagerNew;
+import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -41,11 +43,9 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.StudyManager;
-import org.labkey.api.specimen.settings.RepositorySettings;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -76,7 +76,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         if (!settings.isSimple())
             return HttpView.redirect(PageFlowUtil. urlProvider(PipelineUrls.class).urlBrowse(container));
 
-        boolean isEmpty = SpecimenManager.getInstance().isSpecimensEmpty(container, getUser());
+        boolean isEmpty = SpecimenManagerNew.get().isSpecimensEmpty(container, getUser());
         if (isEmpty)
         {
             form.setNoSpecimens(true);

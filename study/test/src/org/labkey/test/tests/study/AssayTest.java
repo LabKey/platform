@@ -664,7 +664,7 @@ public class AssayTest extends AbstractAssayTest
         setFormElement(Locator.xpath("(//input[@name='participantId'])[4]"), "new4");
 
         DataRegionTable copyStudy = new DataRegionTable("Data", getDriver());
-        copyStudy.clickHeaderButton("Re-Validate");
+        copyStudy.clickHeaderButtonAndWait("Re-Validate");
 
         //validate timepoints:
         assertElementPresent(Locator.xpath("//td[text()='Day 32 - 39' and following-sibling::td/a[text()='AAA07XMC-02'] and following-sibling::td[text()='301.0']]"));

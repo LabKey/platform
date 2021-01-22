@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
@@ -115,16 +116,20 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DataspaceContainerFilter;
+import org.labkey.api.study.QueryHelper;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyCache;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -140,9 +145,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.api.study.QueryHelper;
-import org.labkey.api.study.StudyCache;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.BaseStudyController;
@@ -169,7 +171,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -1598,7 +1599,7 @@ public class StudyManager
                 for (VisitImpl visit : visits)
                 {
                     // Delete specimens first because we may need ParticipantVisit to figure out which specimens
-                    SpecimenManager.getInstance().deleteSpecimensForVisit(visit);
+                    SpecimenManager.get().deleteSpecimensForVisit(visit);
 
                     TreatmentManager.getInstance().deleteTreatmentVisitMapForVisit(study.getContainer(), visit.getRowId());
                     deleteAssaySpecimenVisits(study.getContainer(), visit.getRowId());
@@ -1757,7 +1758,7 @@ public class StudyManager
         return getVisits(study, null, null, order);
     }
 
-    public List<VisitImpl> getVisits(Study study, @Nullable CohortImpl cohort, @Nullable User user, Visit.Order order)
+    public List<VisitImpl> getVisits(Study study, @Nullable Cohort cohort, @Nullable User user, Visit.Order order)
     {
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
             return Collections.emptyList();
@@ -2160,7 +2161,7 @@ public class StudyManager
     }
 
 
-    public List<DatasetDefinition> getDatasetDefinitions(Study study, @Nullable CohortImpl cohort, String... types)
+    public List<DatasetDefinition> getDatasetDefinitions(Study study, @Nullable Cohort cohort, String... types)
     {
         List<DatasetDefinition> local = getDatasetDefinitionsLocal(study, cohort, types);
         List<DatasetDefinition> shared = Collections.emptyList();
@@ -2262,7 +2263,7 @@ public class StudyManager
     }
 
 
-    public List<DatasetDefinition> getDatasetDefinitionsLocal(Study study, @Nullable CohortImpl cohort, String... types)
+    public List<DatasetDefinition> getDatasetDefinitionsLocal(Study study, @Nullable Cohort cohort, String... types)
     {
         SimpleFilter filter = null;
         if (cohort != null)
@@ -2744,7 +2745,7 @@ public class StudyManager
             //
             // specimens
             //
-            SpecimenManager.getInstance().deleteAllSpecimenData(c, deletedTables, user);
+            SpecimenManager.get().deleteAllSpecimenData(c, deletedTables, user);
 
             //
             // assay schedule
@@ -3898,38 +3899,21 @@ public class StudyManager
         return DatasetDomainKind.generateDomainURI(name, id, c);
     }
 
-
     @NotNull
-    public VisitManager getVisitManager(StudyImpl study)
+    public VisitManager getVisitManager(Study study)
     {
+        @Migrate // TODO: Switch VisitManager() to take Study and get rid of cast
+        StudyImpl studyImpl = (StudyImpl)study;
         switch (study.getTimepointType())
         {
             case VISIT:
-                return new SequenceVisitManager(study);
+                return new SequenceVisitManager(studyImpl);
             case CONTINUOUS:
-                return new AbsoluteDateVisitManager(study);
+                return new AbsoluteDateVisitManager(studyImpl);
             case DATE:
             default:
-                return new RelativeDateVisitManager(study);
+                return new RelativeDateVisitManager(studyImpl);
         }
-    }
-
-    //Create a fixed point number encoding the date.
-    public static double sequenceNumFromDate(Date d)
-    {
-        Calendar cal = DateUtil.newCalendar(d.getTime());
-        return cal.get(Calendar.YEAR) * 10000 + (cal.get(Calendar.MONTH) + 1) * 100 + cal.get(Calendar.DAY_OF_MONTH);
-    }
-
-    public static SQLFragment sequenceNumFromDateSQL(String dateColumnName)
-    {
-        // Returns a SQL statement that produces a single number from a date, in the form of YYYYMMDD.
-        SqlDialect dialect = StudySchema.getInstance().getSqlDialect();
-        SQLFragment sql = new SQLFragment();
-        sql.append("(10000 * ").append(dialect.getDatePart(Calendar.YEAR, dateColumnName)).append(") + ");
-        sql.append("(100 * ").append(dialect.getDatePart(Calendar.MONTH, dateColumnName)).append(") + ");
-        sql.append("(").append(dialect.getDatePart(Calendar.DAY_OF_MONTH, dateColumnName)).append(")");
-        return sql;
     }
 
     public static SQLFragment timePortionFromDateSQL(String dateColumnName)

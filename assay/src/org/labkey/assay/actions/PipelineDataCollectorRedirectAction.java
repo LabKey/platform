@@ -15,6 +15,8 @@
  */
 package org.labkey.assay.actions;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
@@ -50,6 +52,8 @@ import java.util.Map;
 @RequiresPermission(InsertPermission.class)
 public class PipelineDataCollectorRedirectAction extends SimpleViewAction<PipelineDataCollectorRedirectAction.UploadRedirectForm>
 {
+    private static final Logger LOG = LogManager.getLogger(PipelineDataCollectorRedirectAction.class);
+
     @Override
     public ModelAndView getView(UploadRedirectForm form, BindException errors)
     {
@@ -135,6 +139,8 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         for (File file : files)
         {
             ExpData data = ExperimentService.get().getExpDataByURL(file, getContainer());
+            if (data != null)
+                LOG.debug("Found existing data: rowId=" + data.getRowId() + ", url=" + data.getDataFileUrl());
             if (data != null && data.getRun() != null)
             {
                 errors.addError(new LabKeyError("The file " + file.getAbsolutePath() + " has already been imported"));

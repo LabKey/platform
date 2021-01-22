@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.ConcurrentCaseInsensitiveSortedMap;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.NormalContainerType;
@@ -118,6 +119,13 @@ public class PipelineServiceImpl implements PipelineService
     private static final String PREF_LASTSEQUENCEDB = "lastsequencedb";
     private static final String PREF_LASTSEQUENCEDBPATHS = "lastsequencedbpaths";
     private static final String KEY_PREFERENCES = "pipelinePreferences";
+
+    public static final List<String> INACTIVE_JOB_STATUSES = Arrays.asList(
+            PipelineJob.TaskStatus.cancelled.toString(),
+            PipelineJob.TaskStatus.cancelling.toString(),
+            PipelineJob.TaskStatus.complete.toString(),
+            PipelineJob.TaskStatus.error.toString()
+    );
 
     private final Map<String, PipelineProvider> _mapPipelineProviders = new ConcurrentSkipListMap<>();
     private final Map<String, PipelineJobNotificationProvider> _jobNotificationProviders = new ConcurrentCaseInsensitiveSortedMap<>();
@@ -935,6 +943,15 @@ public class PipelineServiceImpl implements PipelineService
     public void deleteStatusFile(Container c, User u, boolean deleteExpRuns, Collection<Integer> rowIds) throws PipelineProvider.HandlerException
     {
         PipelineStatusManager.deleteStatus(c, u, deleteExpRuns, rowIds);
+    }
+
+    @Override
+    public Collection<Map<String, Object>> getActivePipelineJobs(User u, Container c, String providerName)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Provider"), providerName);
+        filter.addCondition(FieldKey.fromParts("Status"), INACTIVE_JOB_STATUSES, CompareType.NOT_IN);
+
+        return new TableSelector(PipelineService.get().getJobsTable(u, c), Collections.singleton("Description"), filter, null).getMapCollection();
     }
 
     public static class TestCase extends Assert

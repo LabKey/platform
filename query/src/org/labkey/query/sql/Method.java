@@ -1287,6 +1287,30 @@ public abstract class Method
         }
     }
 
+    class SimilarToMethodInfo extends AbstractMethodInfo
+    {
+        SimilarToMethodInfo()
+        {
+            super(JdbcType.BOOLEAN);
+        }
+
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            SQLFragment ret = new SQLFragment();
+            ret.append("((").append(arguments[0]).append(")");
+            ret.append(" SIMILAR TO ");
+            ret.append("(").append(arguments[1]).append(")");
+            if (arguments.length == 3)
+            {
+                ret.append(" ESCAPE (").append(arguments[2]).append(")");
+            }
+            ret.append(")");
+            return ret;
+        }
+    }
+
+
     class GreatestAndLeastInfo extends PassthroughInfo
     {
         public GreatestAndLeastInfo(String method)
@@ -1393,6 +1417,10 @@ public abstract class Method
         postgresMethods.put("repeat",new PassthroughMethod("repeat",JdbcType.VARCHAR,2,2));
         postgresMethods.put("replace",new PassthroughMethod("replace",JdbcType.VARCHAR,3,3));
         postgresMethods.put("rpad",new PassthroughMethod("rpad",JdbcType.VARCHAR,2,3));
+        postgresMethods.put("similar_to", new PassthroughMethod("similar_to", JdbcType.BOOLEAN, 2, 3) {
+            @Override
+            public MethodInfo getMethodInfo() { return new SimilarToMethodInfo(); }
+        });
         postgresMethods.put("split_part",new PassthroughMethod("split_part",JdbcType.VARCHAR,3,3));
         postgresMethods.put("strpos",new PassthroughMethod("strpos",JdbcType.VARCHAR,2,2));
         postgresMethods.put("substr",new PassthroughMethod("substr",JdbcType.VARCHAR,2,3));

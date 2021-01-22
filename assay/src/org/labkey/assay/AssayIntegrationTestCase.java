@@ -10,8 +10,9 @@ import org.labkey.api.assay.AssayDataCollector;
 import org.labkey.api.assay.AssayDomainService;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunCreator;
-import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.PipelineDataCollector;
+import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -40,7 +41,9 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.springframework.mock.web.MockMultipartHttpServletRequest;
 
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.List;
@@ -70,6 +73,9 @@ public class AssayIntegrationTestCase
     // - deletes the assay run
     // - verifies the exp.data is detatched from the run, but the properties haven't been deleted
     // - re-imports the same file again
+    //
+    // Issue 42141: assay: importing a file into assay after deleting the run creates a new exp.data row
+    // - verify only a single exp.data exists for the file
     @Test
     public void testIssue41675() throws Exception
     {
@@ -117,11 +123,13 @@ public class AssayIntegrationTestCase
         resultDomain.getFields().add(sampleLookup);
 
         // create the assay
+        LOG.info("creating assay");
         GWTProtocol savedAssayDesign = assayDomainService.saveChanges(assayTemplate, true);
         ExpProtocol assayProtocol = ExperimentService.get().getExpProtocol(savedAssayDesign.getProtocolId());
         AssayProvider provider = AssayService.get().getProvider(assayProtocol);
 
         // create a sample that will be used as an input to the run
+        LOG.info("creating material");
         final String materialName = "TestMaterial";
         final String materialLsid = ExperimentService.get().generateLSID(c, ExpMaterial.class, "TestMaterial");
         ExpMaterial material = ExperimentService.get().createExpMaterial(c, materialLsid, materialName);
@@ -132,14 +140,32 @@ public class AssayIntegrationTestCase
         Files.writeString(file.toPath(), "SampleLookup\n" + materialName + "\n", Charsets.UTF_8);
 
         // create an upload context that imports the file
-        AssayRunUploadContext uploadContext = provider.createRunUploadFactory(assayProtocol, user, c)
-                .setName("New Run")
-                .setUploadedData(Map.of(AssayDataCollector.PRIMARY_FILE, file))
-                .create();
+        LOG.info("setting up first import");
+        HttpSession session = TestContext.get().getRequest().getSession();
+
+        // Use the AssayFileUploadForm and the PipelineDataCollector to simulate the user selecting a file from the filebrowser.
+        PipelineDataCollector.setFileCollection(session, c, assayProtocol, List.of(Map.of(AssayDataCollector.PRIMARY_FILE, file)));
+
+        // Use a multipart request to trigger the AssayFileWriter.savePipelineFiles() code path that copies files into the assayupload directory
+        var mockRequest = new MockMultipartHttpServletRequest();
+        mockRequest.setUserPrincipal(user);
+        mockRequest.setSession(session);
+
+        var mockContext = new ViewContext(mockRequest, null, null);
+        mockContext.setContainer(c);
+        mockContext.setUser(user);
+
+        var uploadForm = new AssayRunUploadForm<TsvAssayProvider>();
+        uploadForm.setViewContext(new ViewContext(mockRequest, null, null));
+        uploadForm.setContainer(c);
+        uploadForm.setUser(user);
+        uploadForm.setRowId(assayProtocol.getRowId());
+        uploadForm.setName("New Run2");
+        uploadForm.setDataCollectorName("Pipeline");
 
         // create a new run
         AssayRunCreator runCreator = provider.getRunCreator();
-        Pair<ExpExperiment, ExpRun> pair = runCreator.saveExperimentRun(uploadContext, null);
+        Pair<ExpExperiment, ExpRun> pair = runCreator.saveExperimentRun(uploadForm, null);
         ExpRun run = pair.second;
 
         // verify the exp.data is attached to the run
@@ -163,9 +189,11 @@ public class AssayIntegrationTestCase
         assertThat(parents.second, CoreMatchers.hasItem(material));
 
         // delete the run
+        LOG.info("run delete");
         run.delete(user);
 
         // verify the exp.data, exp.object, and the properties were not deleted
+        LOG.info("verifying post run delete");
         ExpData data2 = ExperimentService.get().getExpData(dataRowId);
         assertNotNull(data2);
         assertEquals(dataLsid, data2.getLSID());
@@ -186,17 +214,25 @@ public class AssayIntegrationTestCase
         assertEquals(oo1.getOwnerObjectId(), oo2.getOwnerObjectId());
 
         // import the same file again
-        uploadContext = provider.createRunUploadFactory(assayProtocol, user, c)
-                .setName("New Run2")
-                .setUploadedData(Map.of(AssayDataCollector.PRIMARY_FILE, file))
-                .create();
+        LOG.info("setting up second import");
+        PipelineDataCollector.setFileCollection(session, c, assayProtocol, List.of(Map.of(AssayDataCollector.PRIMARY_FILE, file)));
+
+        uploadForm = new AssayRunUploadForm<>();
+        uploadForm.setViewContext(new ViewContext(mockRequest, null, null));
+        uploadForm.setContainer(c);
+        uploadForm.setUser(user);
+        uploadForm.setRowId(assayProtocol.getRowId());
+        uploadForm.setName("New Run2");
+        uploadForm.setDataCollectorName("Pipeline");
 
         // create a new run
         runCreator = provider.getRunCreator();
-        pair = runCreator.saveExperimentRun(uploadContext, null);
+        pair = runCreator.saveExperimentRun(uploadForm, null);
         ExpRun run2 = pair.second;
 
         // verify the exp.data and exp.object again
+        LOG.info("verifying second upload");
+
         ExpData data3 = ExperimentService.get().getExpData(dataRowId);
         assertNotNull(data3);
         assertEquals(dataLsid, data3.getLSID());
@@ -205,6 +241,12 @@ public class AssayIntegrationTestCase
         if (someStuffProp != null)
             assertEquals("SomeData", data3.getProperty(someStuffProp));
 
+        // Issue 42141: assay: importing a file into assay after deleting the run creates a new exp.data row
+        var dataList = ExperimentService.get().getAllExpDataByURL(data3.getDataFileUrl());
+        assertEquals("Expected to re-use existing exp.data instead of creating a new one:\n" +
+                dataList.toString(), 1, dataList.size());
+
+        assertNotNull(data3.getRunId());
         assertEquals(run2.getRowId(), data3.getRunId().intValue());
         parents = ExperimentService.get().getParents(c, user, data3);
         assertThat(parents.second, CoreMatchers.hasItem(material));
