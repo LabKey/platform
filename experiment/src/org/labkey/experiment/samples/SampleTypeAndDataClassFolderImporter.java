@@ -212,17 +212,17 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                                     }
                                 }
                                 else
-                                    log.error("Unable to import TSV data, could not find QUS for table : " + tableName);
+                                    log.error("Unable to import TSV data for " + dataFileName + ". Could not find query update service for table " + tableName + ".");
                             }
                         }
                     }
                 }
                 else
-                    log.error("Unable to import TSV data, data for table not found: " + tableName);
+                    log.error("Unable to import TSV data for table " + tableName + ". File not found.");
             }
         }
         else
-            log.error("Unable to import TSV data, schema not found: " + schemaName);
+            log.error("Could not find " + schemaName + " schema.");
     }
 
     @Override
