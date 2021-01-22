@@ -3334,53 +3334,53 @@ if (!LABKEY.DataRegions) {
     };
 
     var _saveSessionShowPrompt = function(region, queryDetails) {
-        var config = Ext4.applyIf({
-            allowableContainerFilters: region.allowableContainerFilters,
-            targetContainers: queryDetails.targetContainers,
-            canEditSharedViews: queryDetails.canEditSharedViews,
-            canEdit: LABKEY.DataRegion.getCustomViewEditableErrors(config).length == 0,
-            success: function (win, o) {
-                var timerId = setTimeout(function() {
-                    timerId = 0;
-                    Ext4.Msg.progress("Saving...", "Saving custom view...");
-                }, 500);
-
-                var jsonData = {
-                    schemaName: region.schemaName,
-                    "query.queryName": region.queryName,
-                    "query.viewName": region.viewName,
-                    newName: o.name,
-                    inherit: o.inherit,
-                    shared: o.shared
-                };
-
-                if (o.inherit) {
-                    jsonData.containerPath = o.containerPath;
-                }
-
-                LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('query', 'saveSessionView', region.containerPath),
-                    method: 'POST',
-                    jsonData: jsonData,
-                    callback: function() {
-                        if (timerId > 0)
-                            clearTimeout(timerId);
-                        win.close();
-                    },
-                    success: function() {
-                        region.showSuccessMessage.call(region);
-                        region.changeView.call(region, {type: 'view', viewName: o.name});
-                    },
-                    failure: function(json) {
-                        Ext4.Msg.alert('Error saving view', json.exception || json.statusText);
-                    },
-                    scope: region
-                });
-            },
-            scope: region
-        }, region.view);
-
         LABKEY.DataRegion.loadViewDesigner(function() {
+            var config = Ext4.applyIf({
+                allowableContainerFilters: region.allowableContainerFilters,
+                targetContainers: queryDetails.targetContainers,
+                canEditSharedViews: queryDetails.canEditSharedViews,
+                canEdit: LABKEY.DataRegion.getCustomViewEditableErrors(config).length == 0,
+                success: function (win, o) {
+                    var timerId = setTimeout(function() {
+                        timerId = 0;
+                        Ext4.Msg.progress("Saving...", "Saving custom view...");
+                    }, 500);
+
+                    var jsonData = {
+                        schemaName: region.schemaName,
+                        "query.queryName": region.queryName,
+                        "query.viewName": region.viewName,
+                        newName: o.name,
+                        inherit: o.inherit,
+                        shared: o.shared
+                    };
+
+                    if (o.inherit) {
+                        jsonData.containerPath = o.containerPath;
+                    }
+
+                    LABKEY.Ajax.request({
+                        url: LABKEY.ActionURL.buildURL('query', 'saveSessionView', region.containerPath),
+                        method: 'POST',
+                        jsonData: jsonData,
+                        callback: function() {
+                            if (timerId > 0)
+                                clearTimeout(timerId);
+                            win.close();
+                        },
+                        success: function() {
+                            region.showSuccessMessage.call(region);
+                            region.changeView.call(region, {type: 'view', viewName: o.name});
+                        },
+                        failure: function(json) {
+                            Ext4.Msg.alert('Error saving view', json.exception || json.statusText);
+                        },
+                        scope: region
+                    });
+                },
+                scope: region
+            }, region.view);
+
             LABKEY.internal.ViewDesigner.Designer.saveCustomizeViewPrompt(config);
         });
     };
