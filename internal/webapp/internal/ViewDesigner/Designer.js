@@ -599,8 +599,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                     afterrender: function() {
                         rendered = true;
                         treeStore.filterBy(function(record) {
-                            // Issue 26404: filters and sorts on columns from look up tables result in duplicate nodes.
-                            // skip node on CV render if it's a child node of a lookup table that's collpased
+                            // Issue 26404: filters and sorts on columns from look-up tables result in duplicate nodes.
+                            // skip node on CV render if it's a child node of a lookup table that's collapsed
                             // All nodes except ROOT are collapsed on render
                             if (record && record.get('fieldKey').indexOf('/') == -1) {
                                 return record;
@@ -662,8 +662,13 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
         var canEdit = this.canEdit();
 
-        // Enabled for named editable views that exist; additionally overridable module based view is not deletable. And user must have delete permissions, Issue 41601.
-        var deleteEnabled = canEdit && this.customView.deletable && this.customView.name && !this.customView.doesNotExist && LABKEY.user.canDelete;
+        // User must have appropriate delete permissions, Issue 41601
+        var currentUserCanDelete = this.customView.shared ? this.canEditSharedViews : this.customView.session || !LABKEY.user.isGuest;
+
+        // Enabled for named editable views that exist; additionally, overridable module based view is not deletable.
+        var isDeletable = canEdit && this.customView.deletable && this.customView.name && !this.customView.doesNotExist;
+
+        var deleteEnabled = isDeletable && currentUserCanDelete;
 
         // Enabled for saved (non-session) editable views or customized default or overridable module based view (not new) views.
         var revertEnabled = canEdit && (this.customView.revertable || this.customView.session || (!this.customView.name && !this.customView.doesNotExist));
