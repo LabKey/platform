@@ -3327,7 +3327,9 @@ if (!LABKEY.DataRegions) {
                     return;
                 }
 
-                _saveSessionShowPrompt(this, json);
+                LABKEY.requiresExt4Sandbox(function() {
+                    _saveSessionShowPrompt(this, json);
+                }, this);
             },
             scope: region
         });
