@@ -19,6 +19,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.specimen.query.BaseSpecimenPivotTable;
 import org.labkey.api.study.StudyService;
 
 import java.util.Map;

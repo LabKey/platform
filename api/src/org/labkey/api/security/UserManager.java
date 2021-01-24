@@ -52,6 +52,8 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Result;
@@ -1144,14 +1146,14 @@ public class UserManager
      * @param displayedUserId The user id of the url we want to navigate to
      * @return The HTML string to navigate to the displayedUserId's user details page
      */
-    public static String getUserDetailsHTMLLink(Container container, User currentUser, int displayedUserId)
+    public static HtmlString getUserDetailsHTMLLink(Container container, User currentUser, int displayedUserId)
     {
         User displayUser = getUser(displayedUserId);
 
         boolean isDeletedUser = displayUser == null;
 
         if (isDeletedUser)
-            return PageFlowUtil.filter("<" + displayedUserId + ">");
+            return HtmlString.of("<" + displayedUserId + ">");
 
         String displayName = displayUser.getDisplayName(currentUser);
         ActionURL url = getUserDetailsURL(container, currentUser, displayedUserId);
@@ -1159,11 +1161,10 @@ public class UserManager
         // currentUser has permissions to see user details of the displayed user
         if (url != null)
         {
-            return "<a class=\"labkey-link\" href=\"" + url +
-                    "\">" + PageFlowUtil.filter(displayName) + "</a>";
+            return new Link.LinkBuilder(displayName).href(url).clearClasses().getHtmlString();
         }
 
-        return PageFlowUtil.filter(displayName);
+        return HtmlString.of(displayName);
     }
 
     /**

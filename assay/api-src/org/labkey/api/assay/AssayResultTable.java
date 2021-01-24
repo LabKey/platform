@@ -28,7 +28,6 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.OORDisplayColumnFactory;
-import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
@@ -39,7 +38,7 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.dataiterator.TableInsertDataIterator;
+import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -548,7 +547,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
-        return TableInsertDataIterator.create(data, this, null, context);
+        return new TableInsertDataIteratorBuilder(data, this);
     }
 
     @Override

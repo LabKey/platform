@@ -1625,7 +1625,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     // Register an admin warning that reports if any database views are missing, Issue 40187
     private void verifyDatabaseViews()
     {
-        // This is a "dynamic" warning because the RecreateViewsAction can correct the problem at runtime
+        // This is a "dynamic" warning because RecreateViewsAction might correct the problem at runtime
         WarningService.get().register(new WarningProvider()
         {
             @Override

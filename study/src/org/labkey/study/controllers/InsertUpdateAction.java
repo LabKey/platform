@@ -83,7 +83,7 @@ import java.util.Objects;
  */
 public abstract class InsertUpdateAction<Form extends DatasetController.EditDatasetRowForm> extends FormViewAction<Form>
 {
-    private static String DEFAULT_INSERT_VALUE_PREFIX = "default.";
+    private static final String DEFAULT_INSERT_VALUE_PREFIX = "default.";
 
     protected abstract boolean isInsert();
     protected abstract void addExtraNavTrail(NavTree root);

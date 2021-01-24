@@ -193,7 +193,7 @@ for (AnnouncementModel a : bean.announcementModels)
         if (a.getResponseCount() > 0)
             out.print(unsafe(" (" + a.getResponseCount() + (a.getResponseCount() == 1 ? "&nbsp;response)" : "&nbsp;responses)")));
         %></td>
-        <td width="20%" align="center" class="message-creator"><%=text(AnnouncementManager.getUserDetailsLink(c, user, a.getCreatedBy(), bean.includeGroups, false))%></td>
+        <td width="20%" align="center" class="message-creator"><%=AnnouncementManager.getUserDetailsLink(c, user, a.getCreatedBy(), bean.includeGroups, false)%></td>
         <td width="40%" align="right" nowrap><%=formatDateTime(a.getCreated())%></td>
     </tr>
     <tr><td colspan=3 class="labkey-title-area-line"></td></tr>

@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.specimen.SpecimenManager" %>
 <%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.study.SpecimenManager" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
@@ -48,7 +48,7 @@
             datasetRowCount += e.getValue().get(VisitStatistic.RowCount);
     }
 
-    int vialCount = SpecimenManager.getInstance().getSampleCountForVisit(visit);
+    int vialCount = SpecimenManager.get().getSpecimenCountForVisit(visit);
 %>
 <labkey:errors/>
 

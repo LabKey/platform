@@ -27,6 +27,7 @@ import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DataView;
@@ -297,7 +298,7 @@ public class DataRegionSelection
         return getSelected(view, form.getQuerySettings().getSelectionKey());
     }
 
-    public static List<String> getSelected(QueryView view, String key) throws IOException
+    private static Pair<DataRegion, RenderContext> getDataRegionContext(QueryView view)
     {
         // Turn off features of QueryView
         view.setPrintView(true);
@@ -306,8 +307,6 @@ public class DataRegionSelection
         view.setShowPaginationCount(false);
         view.setShowDetailsColumn(false);
         view.setShowUpdateColumn(false);
-
-        ViewContext context = view.getViewContext();
 
         TableInfo table = view.getTable();
 
@@ -324,6 +323,16 @@ public class DataRegionSelection
 
         setDataRegionColumnsForSelection(rgn, rc, view, table );
 
+        return Pair.of(rgn, rc);
+    }
+
+    public static List<String> getSelected(QueryView view, String key) throws IOException
+    {
+        Pair<DataRegion, RenderContext> dataRegionContext = getDataRegionContext(view);
+        DataRegion rgn = dataRegionContext.first;
+        RenderContext rc = dataRegionContext.second;
+        ViewContext context = view.getViewContext();
+
         try (Timing ignored = MiniProfiler.step("getSelected"); Results results = rgn.getResults(rc))
         {
             return getSelectedItems(context, key, rc, rgn, results);
@@ -334,6 +343,43 @@ public class DataRegionSelection
         }
     }
 
+    public static List<String> getValidatedIds(List<String> selection, QueryForm form) throws IOException
+    {
+        UserSchema schema = form.getSchema();
+        if (schema == null)
+            throw new NotFoundException();
+
+        QueryView view = schema.createView(form, null);
+
+        Pair<DataRegion, RenderContext> dataRegionContext = getDataRegionContext(view);
+        DataRegion rgn = dataRegionContext.first;
+        RenderContext ctx = dataRegionContext.second;
+
+        List<String> validatedIds = new ArrayList<>();
+        try (Timing ignored = MiniProfiler.step("getSelected"); Results rs = rgn.getResults(ctx))
+        {
+            if (rs == null)
+                return validatedIds;
+
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+            while (rs.next())
+            {
+                ctx.setRow(factory.getRowMap(rs));
+                if (rgn.isRecordSelectorEnabled(ctx))
+                {
+                    String value = rgn.getRecordSelectorValue(ctx);
+                    if (selection.contains(value))
+                        validatedIds.add(value);
+                }
+            }
+            return validatedIds;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+    }
 
     /**
      * Sets the selection for all items in the given query form's view

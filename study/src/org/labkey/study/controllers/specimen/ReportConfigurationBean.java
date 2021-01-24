@@ -10,7 +10,6 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 import org.labkey.study.specimen.report.participant.ParticipantSiteReportFactory;
@@ -48,7 +47,7 @@ public class ReportConfigurationBean
         _viewContext = viewContext;
         registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeSummaryReportFactory());
         registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeParticipantReportFactory());
-        if (StudyManager.getInstance().showCohorts(_viewContext.getContainer(), _viewContext.getUser()))
+        if (StudyService.get().showCohorts(_viewContext.getContainer(), _viewContext.getUser()))
             registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeCohortReportFactory());
         if (study != null)
         {
