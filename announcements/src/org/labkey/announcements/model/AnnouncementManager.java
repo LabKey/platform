@@ -63,6 +63,7 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MailHelper.BulkEmailer;
@@ -972,30 +973,30 @@ public class AnnouncementManager
         }
     }
 
-    public static String getUserDetailsLink(Container container, User currentUser, int formattedUserId, boolean includeGroups, boolean forEmail)
+    public static HtmlString getUserDetailsLink(Container container, User currentUser, int formattedUserId, boolean includeGroups, boolean forEmail)
     {
-        String result;
+        HtmlStringBuilder builder = HtmlStringBuilder.of();
 
         // Email link shows display name and not html link
         if (forEmail)
         {
-            result = PageFlowUtil.filter(UserManager.getDisplayName(formattedUserId, currentUser));
+            builder.append(UserManager.getDisplayName(formattedUserId, currentUser));
         }
         else
         {
-            result = UserManager.getUserDetailsHTMLLink(container, currentUser, formattedUserId);
+            builder.append(UserManager.getUserDetailsHTMLLink(container, currentUser, formattedUserId));
         }
 
         if (includeGroups)
         {
-            String groupList = SecurityManager.getGroupList(container, UserManager.getUser(formattedUserId));
+            HtmlString groupList = SecurityManager.getGroupList(container, UserManager.getUser(formattedUserId));
             if (groupList.length() > 0)
             {
-                result += " (" + (groupList) + ")";
+                builder.append(" (").append(groupList).append(")");
             }
         }
 
-        return result;
+        return builder.getHtmlString();
     }
 
 
@@ -1105,7 +1106,7 @@ public class AnnouncementManager
                     if (notificationBean == null)
                         return null;
 
-                    return getUserDetailsLink(c, notificationBean.recipient,  notificationBean.announcementModel.getCreatedBy(),notificationBean.includeGroups, true);
+                    return getUserDetailsLink(c, notificationBean.recipient,  notificationBean.announcementModel.getCreatedBy(),notificationBean.includeGroups, true).toString();
                 }
             });
 

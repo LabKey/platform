@@ -506,7 +506,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     /**
      * Return true if there are trigger scripts associated with this table.
      */
-    boolean hasTriggers(Container c);
+    boolean hasTriggers(@Nullable Container c);
 
     /**
      * Return true if all trigger scripts support streaming.
