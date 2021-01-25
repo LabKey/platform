@@ -741,7 +741,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         }
     }
 
-    static class AssignedToForeignKey extends UserIdQueryForeignKey
+    static class AssignedToForeignKey extends UserIdForeignKey
     {
         UserSchema _schema;
 
