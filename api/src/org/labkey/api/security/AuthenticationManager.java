@@ -1054,7 +1054,7 @@ public class AuthenticationManager
         if (null != session && !user.isGuest())
         {
             // notify websocket clients associated with this http session, the user has logged out
-            NotificationService.get().closeServerEvents(user.getUserId(), session, AuthNotify.LoggedOut);
+            NotificationService.get().closeServerEvents(user.getUserId(), session, AuthNotify.SessionLogOut);
 
             // notify any remaining websocket clients for this user that were not closed that the user has logged out elsewhere
             NotificationService.get().sendServerEvent(user.getUserId(), AuthNotify.LoggedOut);

@@ -3,6 +3,28 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+
+// Type definition not provided for event codes so here we provide our own
+// Source: https://www.iana.org/assignments/websocket/websocket.xml#close-code-number
+var CloseEventCode = {
+    NORMAL_CLOSURE: 1000,
+    GOING_AWAY: 1001,
+    PROTOCOL_ERROR: 1002,
+    UNSUPPORTED_DATA: 1003,
+    RESERVED: 1004,
+    NO_STATUS_RCVD: 1005,
+    ABNORMAL_CLOSURE: 1006,
+    INVALID_FRAME_PAYLOAD_DATA: 1007,
+    POLICY_VIOLATION: 1008,
+    MESSAGE_TOO_BIG: 1009,
+    MISSING_EXT: 1010,
+    INTERNAL_ERROR: 1011,
+    SERVICE_RESTART: 1012,
+    TRY_AGAIN_LATER: 1013,
+    BAD_GATEWAY: 1014,
+    TLS_HANDSHAKE: 1015
+};
+
 if(!LABKEY.WebSocket) {
     LABKEY.WebSocket = {};
 }
@@ -36,23 +58,23 @@ LABKEY.WebSocket = new function ()
             else if (_callbacks[evt.reason]) {
                 _callbacks[evt.reason].forEach(function(cb){cb(evt)});
             }
-            else if (evt.code === 1000 || evt.code === 1003) {
+            else if (evt.code === CloseEventCode.NORMAL_CLOSURE || evt.code === CloseEventCode.UNSUPPORTED_DATA) {
                 // normal close
-                if (evt.reason === "org.labkey.api.security.AuthNotify#LoggedOut") {
+                if (evt.reason === "org.labkey.api.security.AuthNotify#SessionLogOut") {
                     setTimeout(function(){
                         displayModal('Logged Out', 'You have been logged out. Please reload the page to continue.');
                     }, 1000);
                 }
             }
-            else if (evt.code === 1001 && evt.reason && evt.reason !== "") {
+            else if (evt.code === CloseEventCode.GOING_AWAY && evt.reason && evt.reason !== "") {
                 // 1001 sent when server is shutdown normally (AND on page reload in FireFox, but that one doesn't have a reason)
                 setTimeout(showDisconnectedMessage, 1000);
             }
-            else if (evt.code === 1006) {
+            else if (evt.code === CloseEventCode.ABNORMAL_CLOSURE) {
                 // 1006 abnormal close (e.g, server process died)
                 setTimeout(showDisconnectedMessage, 1000);
             }
-            else if (evt.code === 1008) {
+            else if (evt.code === CloseEventCode.POLICY_VIOLATION) {
                 // Tomcat closes the websocket with "1008 Policy Violation" code when the session has expired.
                 // evt.reason === "This connection was established under an authenticated HTTP session that has ended."
                 setTimeout(function() {
