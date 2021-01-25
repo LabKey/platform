@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -46,16 +47,21 @@ import org.labkey.api.data.TestSchema;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -1483,7 +1489,49 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             return null;
         }
     }
-    
+
+    protected class FileColumn implements Supplier<Object>
+    {
+        private final Container _container;
+        private final String _name;
+        private final int _index;
+        private final String _dirName;
+        private String _savedName;
+
+        public FileColumn(Container c, String name, int idx, String dirName)
+        {
+            _container = c;
+            _name = name;
+            _dirName = dirName;
+            _index = idx;
+        }
+
+        @Override
+        public Object get()
+        {
+            if (_savedName != null)
+                return _savedName;
+
+            Object value = getInput().get(_index);
+            if (value instanceof MultipartFile || value instanceof AttachmentFile)
+            {
+                try
+                {
+                    Object file = AbstractQueryUpdateService.saveFile(_container, _name, value, _dirName);
+                    assert file instanceof File;
+                    value = ((File)file).getPath();
+                    _savedName = (String)value;
+                }
+                catch (QueryUpdateServiceException | ValidationException ex)
+                {
+                    addRowError(ex.getMessage());
+                    value = null;
+                }
+            }
+            return value;
+        }
+    }
+
     /** implementation **/
 
     @Override

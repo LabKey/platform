@@ -208,6 +208,8 @@ public class Notification
         props.put("Type", getType());
         props.put("ContainerId", getContainer());
         props.put("HtmlContent", getHtmlContent());
+        props.put("Content", getContent());
+        props.put("ContentType", getContentType());
         props.put("ActionLinkText", getActionLinkText());
         props.put("ActionLinkUrl", getActionLinkURL());
         props.put("ReadOn", getReadOn());

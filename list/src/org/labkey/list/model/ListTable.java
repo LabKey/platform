@@ -534,8 +534,8 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     {
         // NOTE: it's a little ambiguous how to factor code between persistRows() and createImportDIB()
         data = new _DataIteratorBuilder(data, context);
-        return new TableInsertDataIteratorBuilder(data, this, null)
-                .setKeyColumns( new CaseInsensitiveHashSet(getPkColumnNames()));
+        return new TableInsertDataIteratorBuilder(data, this)
+                .setKeyColumns(new CaseInsensitiveHashSet(getPkColumnNames()));
     }
 
 

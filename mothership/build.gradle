@@ -6,6 +6,5 @@ plugins {
 
 dependencies
 {
-   external 'com.jayway.jsonpath:json-path:2.4.0'
    BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath:  BuildUtils.getPlatformModuleProjectPath(project.gradle, "issues"), depProjectConfig: 'apiJarFile')
 }
