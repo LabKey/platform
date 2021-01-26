@@ -545,6 +545,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             if (col != null && value != null &&
                     !col.getJavaObjectClass().isInstance(value) &&
                     !(value instanceof AttachmentFile) &&
+                    !(value instanceof MultipartFile) &&
                     !(value instanceof String[]) &&
                     !(col.getFk() instanceof MultiValuedForeignKey))
             {

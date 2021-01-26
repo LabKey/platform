@@ -268,9 +268,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
         if (null != StringUtils.trimToNull(request.getParameter("_print")) ||
             null != StringUtils.trimToNull(request.getParameter("_print.x")))
             page.setTemplate(PageConfig.Template.Print);
-        if (null != StringUtils.trimToNull(request.getParameter("_frame")) ||
-            null != StringUtils.trimToNull(request.getParameter("_frame.x")))
-            page.setTemplate(PageConfig.Template.Framed);
         if (null != StringUtils.trimToNull(request.getParameter("_template")))
         {
             try

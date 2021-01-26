@@ -63,7 +63,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     }
 
     final static String PRODUCT_NAME = "PostgreSQL";
-    final static String RECOMMENDED = PRODUCT_NAME + " 12.x is the recommended version.";
+    final static String RECOMMENDED = PRODUCT_NAME + " 13.x is the recommended version.";
     final static String JDBC_PREFIX = "jdbc:postgresql:";
 
     @Override
@@ -127,7 +127,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     @Override
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
-        // PostgreSQL dialects are nearly identical, so just test 9.4
+        // PostgreSQL dialects are nearly identical, so just test 9.5
         return PageFlowUtil.set(
             new PostgreSql95Dialect(true),
             new PostgreSql95Dialect(false)

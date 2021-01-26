@@ -62,6 +62,7 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -76,6 +77,7 @@ import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.study.assay.SpecimenForeignKey;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.ContainerContext;
@@ -303,13 +305,23 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     if (!col.isMvIndicatorColumn() && null != dp && (pd.getLookupQuery() != null || pd.getConceptURI() != null))
                         col.setFk(PdLookupForeignKey.create(schema, pd));
 
-                    if (pd != null && pd.getPropertyType() == PropertyType.MULTI_LINE)
+                    if (pd != null)
                     {
-                        col.setDisplayColumnFactory(colInfo -> {
-                            DataColumn dc = new DataColumn(colInfo);
-                            dc.setPreserveNewlines(true);
-                            return dc;
-                        });
+                        if (pd.getPropertyType() == PropertyType.MULTI_LINE)
+                        {
+                            col.setDisplayColumnFactory(colInfo -> {
+                                DataColumn dc = new DataColumn(colInfo);
+                                dc.setPreserveNewlines(true);
+                                return dc;
+                            });
+                        }
+                        else if (pd.getPropertyType() == PropertyType.FILE_LINK)
+                        {
+                            col.setDisplayColumnFactory(new FileLinkDisplayColumn.Factory(pd, getContainer(),
+                                    SchemaKey.fromParts("study"),
+                                    dsd.getName(),
+                                    FieldKey.fromParts("lsid")));
+                        }
                     }
                 }
                 if (isVisibleByDefault(col))
