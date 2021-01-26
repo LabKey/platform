@@ -90,6 +90,7 @@ import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AbstractXarImporter;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExpander;
+import org.labkey.api.exp.xar.XarReaderRegistry;
 
 import javax.xml.namespace.QName;
 import java.io.File;
@@ -118,18 +119,18 @@ import java.util.Set;
 
 public class XarReader extends AbstractXarImporter
 {
-    private Set<String> _experimentLSIDs = new HashSet<>();
-    private Map<String, Integer> _propertyIdMap = new HashMap<>();
+    private final Set<String> _experimentLSIDs = new HashSet<>();
+    private final Map<String, Integer> _propertyIdMap = new HashMap<>();
 
-    private List<DeferredDataLoad> _deferredDataLoads = new ArrayList<>();
+    private final List<DeferredDataLoad> _deferredDataLoads = new ArrayList<>();
 
     private boolean _reloadExistingRuns = false;
     private boolean _useOriginalFileUrl = false;
     private boolean _strictValidateExistingSampleType = true;
 
-    private List<ExpRun> _loadedRuns = new ArrayList<>();
-    private List<ExpSampleType> _loadedSampleTypes = new ArrayList<>();
-    private List<ExpDataClass> _loadedDataClasses = new ArrayList<>();
+    private final List<ExpRun> _loadedRuns = new ArrayList<>();
+    private final List<ExpSampleType> _loadedSampleTypes = new ArrayList<>();
+    private final List<ExpDataClass> _loadedDataClasses = new ArrayList<>();
 
     public static final String CONTACT_PROPERTY = "terms.fhcrc.org#Contact";
     public static final String CONTACT_ID_PROPERTY = "terms.fhcrc.org#ContactId";
@@ -139,7 +140,7 @@ public class XarReader extends AbstractXarImporter
 
     public static final String ORIGINAL_URL_PROPERTY = "terms.fhcrc.org#Data.OriginalURL";
     public static final String ORIGINAL_URL_PROPERTY_NAME = "OriginalURL";
-    private List<String> _processedRunsLSIDs = new ArrayList<>();
+    private final List<String> _processedRunsLSIDs = new ArrayList<>();
     private AuditBehaviorType _auditBehaviorType = null;
 
     public XarReader(XarSource source, PipelineJob job)
@@ -992,6 +993,7 @@ public class XarReader extends AbstractXarImporter
         _processedRunsLSIDs.add(runLSID);
         ExpRun loadedRun = ExperimentService.get().getExpRun(runLSID);
         assert loadedRun != null;
+        XarReaderRegistry.get().postProcessImportedRun(getContainer(), getUser(), loadedRun, getLog());
         _loadedRuns.add(loadedRun);
         getLog().debug("Finished loading ExperimentRun with LSID '" + runLSID + "'");
     }
