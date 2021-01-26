@@ -264,6 +264,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             out = helper.after(importDIB);
 
         out = postTriggerDataIterator(out, context);
+
         if (hasTableScript)
         {
             context.setFailFast(false);
