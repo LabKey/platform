@@ -62,7 +62,6 @@ public class PageConfig
         None,
         Home,
         Print,
-        Framed, // In an Iframe same as print except tries to maintain template on navigate
         Dialog,
         Wizard,
         Body,
