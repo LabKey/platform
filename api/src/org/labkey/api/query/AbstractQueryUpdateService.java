@@ -468,18 +468,18 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (hasTableScript)
             getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, false, errors, extraScriptContext);
 
-        addAuditEvent(user, container, QueryService.AuditAction.INSERT, null, result);
+        addAuditEvent(user, container, QueryService.AuditAction.INSERT, null, result, null);
 
         return result;
     }
 
-    protected void addAuditEvent(User user, Container container, QueryService.AuditAction auditAction, @Nullable Map<Enum, Object> configParameters, List<Map<String, Object>>... parameters)
+    protected void addAuditEvent(User user, Container container, QueryService.AuditAction auditAction, @Nullable Map<Enum, Object> configParameters, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
     {
         if (!isBulkLoad())
         {
             AuditBehaviorType auditBehavior = configParameters != null ? (AuditBehaviorType) configParameters.get(AuditBehavior) : null;
             String userComment = configParameters == null ? null : (String) configParameters.get(AuditUserComment);
-            getQueryTable().addAuditEvent(user, container, auditBehavior, userComment, auditAction, parameters);
+            getQueryTable().addAuditEvent(user, container, auditBehavior, userComment, auditAction, rows, existingRows);
         }
     }
 
@@ -697,7 +697,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         // Fire triggers, if any, and also throw if there are any errors
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, false, errors, extraScriptContext);
 
-        addAuditEvent(user, container,  QueryService.AuditAction.DELETE, configParameters, result);
+        addAuditEvent(user, container,  QueryService.AuditAction.DELETE, configParameters, result, null);
 
         return result;
     }
@@ -722,7 +722,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         int result = truncateRows(user, container);
 
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.TRUNCATE, false, errors, extraScriptContext);
-        addAuditEvent(user, container,  QueryService.AuditAction.TRUNCATE, configParameters);
+        addAuditEvent(user, container,  QueryService.AuditAction.TRUNCATE, configParameters, null, null);
 
         return result;
     }

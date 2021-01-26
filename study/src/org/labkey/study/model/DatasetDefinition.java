@@ -1594,21 +1594,18 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         }
 
         @Override
-        public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, List<Map<String, Object>>[] params)
+        public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
         {
             // Only add an event if Detailed audit logging is enabled
             if (AuditBehaviorType.DETAILED != auditBehavior)
                 return;
 
-                List<Map<String, Object>> rows = params[0];
-            List<Map<String, Object>> updatedRows = params.length > 1 ? params[1] : Collections.emptyList();
-
             for (int i=0; i < rows.size(); i++)
             {
                 Map<String, Object> row = rows.get(i);
-                Map<String, Object> updatedRow = updatedRows.isEmpty() ? Collections.emptyMap() : updatedRows.get(i);
-
-                StudyServiceImpl.addDatasetAuditEvent(user, DatasetDefinition.this, row, updatedRow);
+                Map<String, Object> existingRow = null==existingRows ? Collections.emptyMap() : existingRows.get(i);
+                // note switched order
+                StudyServiceImpl.addDatasetAuditEvent(user, DatasetDefinition.this, existingRow, row);
             }
         }
 

@@ -26,9 +26,12 @@ import static org.labkey.api.gwt.client.AuditBehaviorType.SUMMARY;
 public interface AuditHandler
 {
     void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount);
-    void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action, List<Map<String, Object>>... params);
 
-    public abstract class AbstractAuditHandler implements AuditHandler
+    /* In the case of update the 'existingRows' is the 'before' version of the record. Caller is not expected to provide existingRows without rows. */
+    void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action,
+                       @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows);
+
+    abstract class AbstractAuditHandler implements AuditHandler
     {
         protected abstract AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row);
 
@@ -54,8 +57,8 @@ public interface AuditHandler
         /**
          * Allow for adding fields that may be present in the updated row but not represented in the original row
          * @param originalRow the original data
-         * @param modifiedRow the data from the updated row that has changed
-         * @param updatedRow the row that has been updated, which may include fields that have not changed
+         * @param modifiedRow the data from the updated row that has changed (after/new)
+         * @param updatedRow the row that has been updated, which may include fields that have not changed (before/existing)
          */
         protected void addDetailedModifiedFields(Map<String, Object> originalRow, Map<String, Object> modifiedRow, Map<String, Object> updatedRow)
         {
@@ -63,7 +66,7 @@ public interface AuditHandler
         }
 
         @Override
-        public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action, List<Map<String, Object>>... params)
+        public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action, List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
         {
             if (table.supportsAuditTracking())
             {
@@ -74,7 +77,7 @@ public interface AuditHandler
                 // Truncate audit event doesn't accept any params
                 if (action == QueryService.AuditAction.TRUNCATE)
                 {
-                    assert params.length == 0;
+                    assert null == rows && null == existingRows;
                     switch (auditType)
                     {
                         case NONE:
@@ -95,25 +98,21 @@ public interface AuditHandler
 
                     case SUMMARY:
                     {
-                        assert (params.length > 0);
+                        assert null != rows;
 
-                        List<Map<String, Object>> rows = params[0];
                         AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, userComment, rows.size(), rows.get(0));
 
                         AuditLogService.get().addEvent(user, event);
                     }
                     case DETAILED:
                     {
-                        assert (params.length > 0);
-
-                        List<Map<String, Object>> rows = params[0];
-                        List<Map<String, Object>> updatedRows = params.length > 1 ? params[1] : Collections.emptyList();
+                        assert null != rows;
 
                         for (int i=0; i < rows.size(); i++)
                         {
                             Map<String, Object> row = rows.get(i);
-                            Map<String, Object> updatedRow = updatedRows.isEmpty() ? Collections.emptyMap() : updatedRows.get(i);
-                            DetailedAuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, action, userComment, row, updatedRow);
+                            Map<String, Object> existingRow = null == existingRows ? Collections.emptyMap() : existingRows.get(i);
+                            DetailedAuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, action, userComment, row, existingRow);
 
                             switch (action)
                             {
@@ -126,7 +125,7 @@ public interface AuditHandler
                                 }
                                 case MERGE:
                                 {
-                                    if (updatedRow.isEmpty())
+                                    if (existingRow.isEmpty())
                                     {
                                         String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, row);
                                         if (newRecord != null)
@@ -134,7 +133,7 @@ public interface AuditHandler
                                     }
                                     else
                                     {
-                                        setOldAndNewMapsForUpdate(event, c, row, updatedRow, table);
+                                        setOldAndNewMapsForUpdate(event, c, row, existingRow, table);
                                     }
                                     break;
                                 }
@@ -147,7 +146,7 @@ public interface AuditHandler
                                 }
                                 case UPDATE:
                                 {
-                                    setOldAndNewMapsForUpdate(event, c, row, updatedRow, table);
+                                    setOldAndNewMapsForUpdate(event, c, row, existingRow, table);
                                     break;
                                 }
                             }

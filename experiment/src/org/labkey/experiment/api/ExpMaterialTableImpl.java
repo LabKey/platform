@@ -847,22 +847,22 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 }
             }
             if (existingRow != null)
-                auditHandler.addAuditEvent(user, container, table, auditBehavior, userComment, auditAction, Collections.singletonList(existingRow), Collections.singletonList(newRow));
+                auditHandler.addAuditEvent(user, container, table, auditBehavior, userComment, auditAction, Collections.singletonList(newRow), Collections.singletonList(existingRow));
             else
-                auditHandler.addAuditEvent(user, container, table, auditBehavior, userComment, auditAction, Collections.singletonList(newRow));
+                auditHandler.addAuditEvent(user, container, table, auditBehavior, userComment, auditAction, Collections.singletonList(newRow), null);
         }
 
         @Override
-        public void addAuditEvent(User user, Container container, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction auditAction, List<Map<String, Object>>... params)
+        public void addAuditEvent(User user, Container container, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction auditAction, List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> updatedRows)
         {
             // If we are merge and we don't have before records, then fetch them
-            if (auditAction == QueryService.AuditAction.MERGE && params.length == 1)
+            if (auditAction == QueryService.AuditAction.MERGE && null == updatedRows)
             {
-                for (var map : params[0])
+                for (var map : rows)
                     _addMergeAuditEvent(user, container, table, auditType, userComment, auditAction, map);
                 return;
             }
-            auditHandler.addAuditEvent(user, container, table, auditType, userComment, auditAction, params);
+            auditHandler.addAuditEvent(user, container, table, auditType, userComment, auditAction, rows, updatedRows);
         }
     }
 }
