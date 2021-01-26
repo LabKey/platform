@@ -1620,12 +1620,11 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 return;
 
             Map<String, Object> oldRow = null;
-            //Leaving this block as reference for getting update diff
-            // if (auditAction == QueryService.AuditAction.MERGE)
-            // {
-            //      String lsid = String.valueOf(parameters.get("lsid"));
-            //      oldRow = DatasetDefinition.this.getDatasetRow(user, lsid);
-            // }
+            if (auditAction == QueryService.AuditAction.MERGE || auditAction == QueryService.AuditAction.UPDATE)
+            {
+              String lsid = String.valueOf(parameters.get("lsid"));
+              oldRow = DatasetDefinition.this.getDatasetRow(user, lsid);
+            }
             StudyServiceImpl.addDatasetAuditEvent(user, DatasetDefinition.this, oldRow, parameters);
         }
     }
