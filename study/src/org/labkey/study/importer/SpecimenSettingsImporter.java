@@ -44,7 +44,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.DefaultRequirementType;
 import org.labkey.study.xml.DefaultRequirementsType;
-import org.labkey.study.xml.LegacySpecimenSettingsType;
 import org.labkey.study.xml.SpecimenRepositoryType;
 import org.labkey.study.xml.SpecimenSettingsType;
 import org.labkey.study.xml.SpecimensDocument;
@@ -90,13 +89,11 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         {
             StudyDocument.Study.Specimens xmlSettings = ctx.getXml().getSpecimens();
 
-            ctx.getLogger().info("Loading " + getDescription());
-
-            StudyImpl study = ctx.getStudy().createMutable();
-
             if (xmlSettings.getSettings() != null)
             {
-                // Import specimen settings from specimen_settings.xml doc for versions >= 13.2.
+                ctx.getLogger().info("Loading " + getDescription());
+
+                // Import specimen settings from specimen_settings.xml doc
                 VirtualFile settingsDir = studyDir;
                 if (xmlSettings.getDir() != null)
                     settingsDir = studyDir.getDir(xmlSettings.getDir());
@@ -104,17 +101,14 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                 SpecimensDocument specimensDoc = (SpecimensDocument)settingsDir.getXmlBean(xmlSettings.getSettings());
                 SpecimenSettingsType xmlSpecimens = specimensDoc.getSpecimens();
 
+                StudyImpl study = ctx.getStudy().createMutable();
+
                 importSettings(study, ctx, xmlSpecimens);
-            }
-            else
-            {
-                // Import specimen settings from study.xml doc for versions <13.2.
-                importLegacySettings(study, ctx, xmlSettings);
-            }
 
-            StudyManager.getInstance().updateStudy(ctx.getUser(), study);
+                StudyManager.getInstance().updateStudy(ctx.getUser(), study);
 
-            ctx.getLogger().info("Done importing " + getDescription());
+                ctx.getLogger().info("Done importing " + getDescription());
+            }
         }
     }
 
@@ -124,7 +118,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         return ctx.getXml() != null && ctx.getXml().getSpecimens() != null;
     }
 
-    // Import specimen settings for versions >= 13.2.
+    // Import specimen settings from specimen_settings.xml
     private void importSettings(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
     {
         Container c = ctx.getContainer();
@@ -367,47 +361,6 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                 }
             }
         }
-    }
-
-    // Import specimen settings from study.xml doc for versions <13.2.
-    private void importLegacySettings(StudyImpl study, StudyImportContext ctx, LegacySpecimenSettingsType xmlSettings)
-    {
-        Container c = ctx.getContainer();
-        RepositorySettings reposSettings = SettingsManager.get().getRepositorySettings(c);
-
-        // webpart groupings
-        StudyDocument.Study.Specimens.SpecimenWebPartGroupings xmlSpecimenWebPartGroupings = xmlSettings.getSpecimenWebPartGroupings();
-        if (null != xmlSpecimenWebPartGroupings)
-        {
-            StudyDocument.Study.Specimens.SpecimenWebPartGroupings.Grouping[] xmlGroupings = xmlSpecimenWebPartGroupings.getGroupingArray();
-            if (null != xmlGroupings)
-            {
-                ArrayList<String[]> groupings = new ArrayList<>(2);
-                for (StudyDocument.Study.Specimens.SpecimenWebPartGroupings.Grouping xmlGrouping : xmlGroupings)
-                {
-                    String[] groupBys = xmlGrouping.getGroupByArray();
-                    groupings.add(groupBys);
-                }
-                reposSettings.setSpecimenWebPartGroupings(groupings);
-            }
-        }
-
-        // repository type
-        SpecimenRepositoryType.Enum repositoryType = xmlSettings.getRepositoryType();
-        boolean simple = (SpecimenRepositoryType.STANDARD == repositoryType);
-        reposSettings.setSimple(simple);
-        reposSettings.setEnableRequests(!simple);
-        SettingsManager.get().saveRepositorySettings(c, reposSettings);
-
-        // location types
-        if (xmlSettings.isSetAllowReqLocRepository())
-            study.setAllowReqLocRepository(xmlSettings.getAllowReqLocRepository());
-        if (xmlSettings.isSetAllowReqLocClinic())
-            study.setAllowReqLocClinic(xmlSettings.getAllowReqLocClinic());
-        if (xmlSettings.isSetAllowReqLocSal())
-            study.setAllowReqLocSal(xmlSettings.getAllowReqLocSal());
-        if (xmlSettings.isSetAllowReqLocEndpoint())
-            study.setAllowReqLocEndpoint(xmlSettings.getAllowReqLocEndpoint());
     }
 
     private void importDisplaySettings(StudyImportContext ctx, SpecimenSettingsType xmlSettings)
