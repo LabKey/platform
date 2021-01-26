@@ -122,6 +122,7 @@ import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.XarReader;
+import org.labkey.experiment.api.property.DomainPropertyManager;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.pipeline.ExpGeneratorHelper;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
@@ -3528,6 +3529,7 @@ public class ExperimentServiceImpl implements ExperimentService
         ((SampleTypeServiceImpl) SampleTypeService.get()).clearMaterialSourceCache(null);
         getDataClassCache().clear();
         getProtocolCache().clear();
+        DomainPropertyManager.clearCaches();
     }
 
     @Override
