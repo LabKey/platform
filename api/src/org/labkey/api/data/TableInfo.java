@@ -271,7 +271,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * Return the default query grid view URL for the table or null.
      * Instead of calling this method directly, callers should pass
      * {@link QueryAction#executeQuery} to
-     * {@link org.labkey.api.query.QueryView#urlFor(QueryAction)} or
+     * {@link org.labkey.api.query.QueryView#cd serurlFor(QueryAction)} or
      * {@link org.labkey.api.query.UserSchema#urlFor(org.labkey.api.query.QueryAction)}.
      */
     ActionURL getGridURL(Container container);

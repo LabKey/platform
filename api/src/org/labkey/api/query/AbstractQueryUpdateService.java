@@ -276,7 +276,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             return 0;
         else
         {
-            QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, count);
+            getQueryTable().getAuditHandler().addSummaryAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, count);
             return count;
         }
     }

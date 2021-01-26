@@ -855,7 +855,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         @Override
         public void addAuditEvent(User user, Container container, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction auditAction, List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> updatedRows)
         {
-            // If we are merge and we don't have before records, then fetch them
+            // If we are doing a merge/replace and we don't have before records, then fetch them
             if (auditAction == QueryService.AuditAction.MERGE && null == updatedRows)
             {
                 for (var map : rows)
