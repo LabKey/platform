@@ -18,6 +18,9 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AuditHandler;
+import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
@@ -115,16 +118,36 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     @NotNull
     Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices();
 
+    class _DoNothingAuditHandler implements AuditHandler
+    {
+        @Override
+        public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount)
+        {
+        }
+
+        @Override
+        public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action, List<Map<String, Object>>... params)
+        {
+        }
+    }
+
+    default AuditHandler getAuditHandler()
+    {
+        if (!supportsAuditTracking() || getAuditBehavior()==AuditBehaviorType.NONE)
+            return new _DoNothingAuditHandler();
+        return QueryService.get().getDefaultAuditHandler();
+    }
+
     /** Log an audit event to capture a data change made to this table */
     default void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, List<Map<String, Object>>[] parameters)
     {
-        QueryService.get().addAuditEvent(user, container, this, auditBehavior, userComment, auditAction, parameters);
+        getAuditHandler().addAuditEvent(user, container, this, auditBehavior, userComment, auditAction, parameters);
     }
 
     @SuppressWarnings("unchecked")
     default void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, Map<String, Object> parameters)
     {
-        QueryService.get().addAuditEvent(user, container, this, auditBehavior, userComment, auditAction, Collections.singletonList(parameters));
+        getAuditHandler().addAuditEvent(user, container, this, auditBehavior, userComment, auditAction, Collections.singletonList(parameters));
     }
 
     enum IndexType
