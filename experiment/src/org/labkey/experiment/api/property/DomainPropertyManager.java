@@ -268,6 +268,11 @@ public class DomainPropertyManager
         CONDITIONAL_FORMAT_CACHE.clear();
     }
 
+    public static void clearCaches()
+    {
+        VALIDATOR_CACHE.clear();
+        CONDITIONAL_FORMAT_CACHE.clear();
+    }
 
     public void saveConditionalFormats(User user, PropertyDescriptor prop, List<ConditionalFormat> formats)
     {
