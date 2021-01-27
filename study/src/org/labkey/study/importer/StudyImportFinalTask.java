@@ -24,6 +24,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.api.util.FileType;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
@@ -73,9 +74,6 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
             internalImporters.add(new VisitCohortAssigner());
             internalImporters.add(new DatasetCohortAssigner());
 
-            // Can't setup specimen request actors until the locations have been created
-            internalImporters.add(new SpecimenSettingsImporter());
-
             internalImporters.add(new ParticipantCommentImporter());
             internalImporters.add(new ParticipantGroupImporter());
             internalImporters.add(new ProtocolDocumentImporter());
@@ -91,6 +89,11 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
                 if (job != null)
                     job.setStatus("IMPORT " + importer.getDescription());
 
+                importer.process(ctx, vf, errors);
+            }
+
+            for (SimpleStudyImporter importer : StudySerializationRegistryImpl.get().getSimpleStudyImporters())
+            {
                 importer.process(ctx, vf, errors);
             }
 

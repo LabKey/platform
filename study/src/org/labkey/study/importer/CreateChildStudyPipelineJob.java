@@ -38,6 +38,8 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.importer.SpecimenSchemaImporter;
+import org.labkey.api.specimen.importer.SpecimenSettingsImporter;
 import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudySnapshotType;
@@ -86,6 +88,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
     private final ChildStudyDefinition _form;
     private final boolean _destFolderCreated;
 
+    @SuppressWarnings("unused")
     @JsonCreator
     protected CreateChildStudyPipelineJob(@JsonProperty("_form") ChildStudyDefinition form, @JsonProperty("_destFolderCreated") boolean destFolderCreated)
     {

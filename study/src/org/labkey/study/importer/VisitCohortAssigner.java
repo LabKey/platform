@@ -71,7 +71,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
 
         if (isValidForImportArchive(ctx, root))
         {
-            StudyImpl study = ctx.getStudy();
+            StudyImpl study = ctx.getStudyImpl();
             StudyDocument.Study.Visits visitsXml = ctx.getXml().getVisits();
 
             if (study.getTimepointType() == TimepointType.CONTINUOUS)

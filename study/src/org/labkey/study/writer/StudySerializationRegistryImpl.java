@@ -17,7 +17,10 @@ package org.labkey.study.writer;
 
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
+import org.labkey.api.specimen.importer.SpecimenSchemaImporter;
+import org.labkey.api.specimen.importer.SpecimenSettingsImporter;
 import org.labkey.api.study.StudySerializationRegistry;
+import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.api.study.writer.SimpleStudyWriter;
 import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
 import org.labkey.study.importer.AssayScheduleImporter;
@@ -28,8 +31,6 @@ import org.labkey.study.importer.InternalStudyImporter;
 import org.labkey.study.importer.ParticipantCommentImporter;
 import org.labkey.study.importer.ParticipantGroupImporter;
 import org.labkey.study.importer.ProtocolDocumentImporter;
-import org.labkey.study.importer.SpecimenSchemaImporter;
-import org.labkey.study.importer.SpecimenSettingsImporter;
 import org.labkey.study.importer.StudyQcStatesImporter;
 import org.labkey.study.importer.StudyViewsImporter;
 import org.labkey.study.importer.TopLevelStudyPropertiesImporter;
@@ -117,14 +118,20 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
             new ParticipantGroupImporter(),
             new ProtocolDocumentImporter(),
             new StudyQcStatesImporter(),
-            new SpecimenSettingsImporter(),
-            new SpecimenSchemaImporter(),
             new TreatmentDataImporter(),
             new TreatmentVisitMapImporter(),
             new VisitImporter(),
             new VisitCohortAssigner(),
             new StudyViewsImporter(),
             new TopLevelStudyPropertiesImporter()
+        );
+    }
+
+    public Collection<SimpleStudyImporter> getSimpleStudyImporters()
+    {
+        return List.of(
+            new SpecimenSettingsImporter(),
+            new SpecimenSchemaImporter()
         );
     }
 }

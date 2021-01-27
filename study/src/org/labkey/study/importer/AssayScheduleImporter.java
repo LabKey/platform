@@ -74,7 +74,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                 try (DbScope.Transaction transaction = scope.ensureTransaction())
                 {
                     // import project-level tables first, since study-level may reference them
-                    StudyQuerySchema schema = StudyQuerySchema.createSchema(ctx.getStudy(), ctx.getUser(), true);
+                    StudyQuerySchema schema = StudyQuerySchema.createSchema(ctx.getStudyImpl(), ctx.getUser(), true);
 
                     // study design tables
                     List<String> studyDesignTableNames = new ArrayList<>();

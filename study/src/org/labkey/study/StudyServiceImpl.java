@@ -1310,4 +1310,20 @@ public class StudyServiceImpl implements StudyService
         queryFilter.addAllClauses(filter);
         return new TableSelector(SpecimenSchema.get().getTableInfoVisit(), filter, new Sort("DisplayOrder,SequenceNumMin")).getArrayList(VisitImpl.class);
     }
+
+    @Override
+    public void saveLocationSettings(Study study, User user, @Nullable Boolean allowReqLocRepository, @Nullable Boolean allowReqLocClinic, @Nullable Boolean allowReqLocSal, @Nullable Boolean allowReqLocEndpoint)
+    {
+        StudyImpl studyImpl = (StudyImpl)study;
+        StudyImpl mutable = studyImpl.createMutable();
+        if (null != allowReqLocRepository)
+            mutable.setAllowReqLocRepository(allowReqLocRepository);
+        if (null != allowReqLocClinic)
+            mutable.setAllowReqLocClinic(allowReqLocClinic);
+        if (null != allowReqLocSal)
+            mutable.setAllowReqLocSal(allowReqLocSal);
+        if (null != allowReqLocEndpoint)
+            mutable.setAllowReqLocEndpoint(allowReqLocEndpoint);
+        StudyManager.getInstance().updateStudy(user, mutable);
+    }
 }

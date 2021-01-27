@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.importer.SpecimenSchemaImporter;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.FileType;

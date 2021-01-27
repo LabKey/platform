@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.importer;
+package org.labkey.api.specimen.importer;
 
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.attachments.AttachmentService;
@@ -24,7 +24,6 @@ import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.actions.ManageReqsBean;
-import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
@@ -38,10 +37,11 @@ import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.settings.StatusSettings;
 import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.importer.SimpleStudyImportContext;
+import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.security.xml.GroupType;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.DefaultRequirementType;
 import org.labkey.study.xml.DefaultRequirementsType;
 import org.labkey.study.xml.SpecimenRepositoryType;
@@ -65,7 +65,7 @@ import java.util.Set;
  * User: kevink
  * Date: 6/13/13
  */
-public class SpecimenSettingsImporter implements InternalStudyImporter
+public class SpecimenSettingsImporter implements SimpleStudyImporter
 {
     @Override
     public String getDescription()
@@ -80,7 +80,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
     }
 
     @Override
-    public void process(StudyImportContext ctx, VirtualFile studyDir, BindException errors) throws SQLException, ImportException, IOException
+    public void process(SimpleStudyImportContext ctx, VirtualFile studyDir, BindException errors) throws SQLException, ImportException, IOException
     {
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
@@ -107,13 +107,13 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
     }
 
     @Override
-    public boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root) throws ImportException
+    public boolean isValidForImportArchive(SimpleStudyImportContext ctx, VirtualFile root) throws ImportException
     {
         return ctx.getXml() != null && ctx.getXml().getSpecimens() != null;
     }
 
     // Import specimen settings from specimen_settings.xml
-    private void importSettings(StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
+    private void importSettings(SimpleStudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
     {
         Container c = ctx.getContainer();
         RepositorySettings reposSettings = SettingsManager.get().getRepositorySettings(c);
@@ -149,16 +149,12 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         SpecimenSettingsType.LocationTypes xmlLocationTypes = xmlSettings.getLocationTypes();
         if (null != xmlLocationTypes)
         {
-            StudyImpl study = ctx.getStudy().createMutable();
-            if (xmlLocationTypes.isSetRepository() && xmlLocationTypes.getRepository().isSetAllowRequests())
-                study.setAllowReqLocRepository(xmlLocationTypes.getRepository().getAllowRequests());
-            if (xmlLocationTypes.isSetClinic() && xmlLocationTypes.getClinic().isSetAllowRequests())
-                study.setAllowReqLocClinic(xmlLocationTypes.getClinic().getAllowRequests());
-            if (xmlLocationTypes.isSetSiteAffiliatedLab() && xmlLocationTypes.getSiteAffiliatedLab().isSetAllowRequests())
-                study.setAllowReqLocSal(xmlLocationTypes.getSiteAffiliatedLab().getAllowRequests());
-            if (xmlLocationTypes.isSetEndpointLab() && xmlLocationTypes.getEndpointLab().isSetAllowRequests())
-                study.setAllowReqLocEndpoint(xmlLocationTypes.getEndpointLab().getAllowRequests());
-            StudyManager.getInstance().updateStudy(ctx.getUser(), study);
+            Boolean repo = xmlLocationTypes.isSetRepository() ? xmlLocationTypes.getRepository().isSetAllowRequests() : null;
+            Boolean clinic = xmlLocationTypes.isSetClinic() ? xmlLocationTypes.getClinic().isSetAllowRequests() : null;
+            Boolean sal = xmlLocationTypes.isSetSiteAffiliatedLab() ? xmlLocationTypes.getSiteAffiliatedLab().isSetAllowRequests() : null;
+            Boolean endpoint = xmlLocationTypes.isSetEndpointLab() ? xmlLocationTypes.getEndpointLab().isSetAllowRequests() : null;
+
+            StudyService.get().saveLocationSettings(ctx.getStudy(), ctx.getUser(), repo, clinic, sal, endpoint);
         }
 
         importRequestStatuses(ctx, xmlSettings);
@@ -170,7 +166,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         importRequestabilityRules(ctx, xmlSettings);
     }
 
-    private void importRequestStatuses(StudyImportContext ctx, SpecimenSettingsType xmlSettings)
+    private void importRequestStatuses(SimpleStudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
         SpecimenSettingsType.RequestStatuses xmlRequestStatuses = xmlSettings.getRequestStatuses();
         if (xmlRequestStatuses != null)
@@ -227,7 +223,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         }
     }
 
-    private void importRequestActors(StudyImportContext ctx, SpecimenSettingsType xmlSettings)
+    private void importRequestActors(SimpleStudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
         SpecimenSettingsType.RequestActors xmlRequestActors = xmlSettings.getRequestActors();
         if (xmlRequestActors != null)
@@ -302,7 +298,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         }
     }
 
-    private void importDefaultRequirements(StudyImportContext ctx, SpecimenSettingsType xmlSettings)
+    private void importDefaultRequirements(SimpleStudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
         SpecimenSettingsType.DefaultRequirements xmlDefRequirements = xmlSettings.getDefaultRequirements();
         if (xmlDefRequirements != null)
@@ -335,7 +331,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         }
     }
 
-    private void createDefaultRequirement(DefaultRequirementsType xmlReqs, StudyImportContext ctx, RequirementType type)
+    private void createDefaultRequirement(DefaultRequirementsType xmlReqs, SimpleStudyImportContext ctx, RequirementType type)
     {
         if (xmlReqs != null && xmlReqs.getRequirementArray().length > 0)
         {
@@ -359,7 +355,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         }
     }
 
-    private void importDisplaySettings(StudyImportContext ctx, SpecimenSettingsType xmlSettings)
+    private void importDisplaySettings(SimpleStudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
         ctx.getLogger().info("Importing specimen display settings");
         SpecimenSettingsType.DisplaySettings xmlDisplay = xmlSettings.getDisplaySettings();
@@ -383,7 +379,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         }
     }
 
-    private void importRequestForm(StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
+    private void importRequestForm(SimpleStudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
     {
         ctx.getLogger().info("Importing specimen request forms");
         // try to merge with any existing request forms, even though there doesn't seem to be the notion of a duplicate value
@@ -425,7 +421,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         }
     }
 
-    private void importNotifications(StudyImportContext ctx, SpecimenSettingsType xmlSettings)
+    private void importNotifications(SimpleStudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
         ctx.getLogger().info("Importing specimen notification settings");
         SpecimenSettingsType.Notifications xmlNotifications = xmlSettings.getNotifications();
@@ -452,7 +448,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         }
     }
 
-    private void importRequestabilityRules(StudyImportContext ctx, SpecimenSettingsType xmlSettings)
+    private void importRequestabilityRules(SimpleStudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
         ctx.getLogger().info("Importing specimen requestability rules");
         SpecimenSettingsType.RequestabilityRules xmlRules = xmlSettings.getRequestabilityRules();

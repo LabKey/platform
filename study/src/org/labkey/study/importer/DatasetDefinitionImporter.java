@@ -67,7 +67,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
         if (isValidForImportArchive(ctx, vf))
         {
             SchemaReader reader = null;
-            StudyImpl study = ctx.getStudy();
+            StudyImpl study = ctx.getStudyImpl();
             List<Integer> orderedIds = null;
 
             // dataset metadata provided or at least a definition file

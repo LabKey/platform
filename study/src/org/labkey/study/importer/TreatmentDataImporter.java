@@ -42,15 +42,15 @@ import java.util.Set;
 public class TreatmentDataImporter extends DefaultStudyDesignImporter implements InternalStudyImporter
 {
     // shared transform data structures
-    Map<Object, Object> _productIdMap = new HashMap<>();
-    Map<Object, Object> _productAntigenIdMap = new HashMap<>();
-    Map<Object, Object> _treatmentIdMap = new HashMap<>();
+    private final Map<Object, Object> _productIdMap = new HashMap<>();
+    private final Map<Object, Object> _productAntigenIdMap = new HashMap<>();
+    private final Map<Object, Object> _treatmentIdMap = new HashMap<>();
 
-    private SharedTableMapBuilder _productTableMapBuilder = new SharedTableMapBuilder(_productIdMap, "Label");
-    private SharedTableMapBuilder _productAntigenTableMapBuilder = new SharedTableMapBuilder(_productAntigenIdMap, "GenBankId");
-    private ProductAntigenTableTransform _productAntigenTableTransform = new ProductAntigenTableTransform();
-    private NonSharedTableMapBuilder _treatmentTableMapBuilder = new NonSharedTableMapBuilder(_treatmentIdMap);
-    private TreatmentProductTransform _treatmentProductTransform = new TreatmentProductTransform();
+    private final SharedTableMapBuilder _productTableMapBuilder = new SharedTableMapBuilder(_productIdMap, "Label");
+    private final SharedTableMapBuilder _productAntigenTableMapBuilder = new SharedTableMapBuilder(_productAntigenIdMap, "GenBankId");
+    private final ProductAntigenTableTransform _productAntigenTableTransform = new ProductAntigenTableTransform();
+    private final NonSharedTableMapBuilder _treatmentTableMapBuilder = new NonSharedTableMapBuilder(_treatmentIdMap);
+    private final TreatmentProductTransform _treatmentProductTransform = new TreatmentProductTransform();
 
     private static final Set<String> _productAntigenFieldNames = new HashSet<>();
     static
@@ -99,7 +99,7 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     importTableinfo(ctx, vf, TreatmentDataWriter.SCHEMA_FILENAME);
 
                     // import project-level tables first, since study-level may reference them
-                    StudyQuerySchema schema = StudyQuerySchema.createSchema(ctx.getStudy(), ctx.getUser(), true);
+                    StudyQuerySchema schema = StudyQuerySchema.createSchema(ctx.getStudyImpl(), ctx.getUser(), true);
                     StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
 
                     // study design tables

@@ -275,4 +275,6 @@ public interface StudyService
     void setLastSpecimenLoad(@NotNull Study study, User user, Date lastSpecimenLoad);
 
     List<? extends Visit> getVisits(Study study, SimpleFilter filter, Sort sort);
+
+    void saveLocationSettings(Study study, User user, @Nullable Boolean allowReqLocRepository, @Nullable Boolean allowReqLocClinic, @Nullable Boolean allowReqLocSal, @Nullable Boolean allowReqLocEndpoint);
 }
