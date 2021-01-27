@@ -37,6 +37,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.view.Portal.urlProvider;
+
 /**
  * User: klum
  * Date: Jan 17, 2011
@@ -92,8 +94,7 @@ public class FolderManagement
             void addNavTrail(BaseViewAction action, NavTree root, Container c, User user)
             {
                 action.setHelpTopic(new HelpTopic("customizeLook"));
-                root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
-                root.addChild("Look and Feel Settings");
+                PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "Look and Feel Settings", null);
             }
 
             @Override

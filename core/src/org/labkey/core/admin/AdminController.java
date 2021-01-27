@@ -399,26 +399,24 @@ public class AdminController extends SpringActionController
 
     private void addAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action)
     {
-        addAdminNavTrail(root, childTitle, action, getContainer());
+        addAdminNavTrail(root, childTitle, null != action ? new ActionURL(action, getContainer()) : null, getContainer());
     }
 
-    private static void addAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action, Container container)
+    private static void addAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL url, Container container)
     {
         if (container.isRoot())
-            root.addChild("Admin Console", getShowAdminURL());
+            root.addChild("Admin Console", getShowAdminURL().setFragment("links"));
 
-        if (null == action)
+        if (null == url)
             root.addChild(childTitle);
         else
-            root.addChild(childTitle, new ActionURL(action, container));
+            root.addChild(childTitle, url);
     }
-
 
     public static ActionURL getShowAdminURL()
     {
         return new ActionURL(ShowAdminAction.class, ContainerManager.getRoot());
     }
-
 
     @AdminConsoleAction
     public static class ShowAdminAction extends SimpleViewAction
@@ -619,12 +617,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL)
         {
-            root.addChild("Admin Console", getAdminConsoleURL().setFragment("links") );
-
-            if (null != childURL)
-                root.addChild(childTitle, childURL);
-            else
-                root.addChild(childTitle);
+            AdminController.addAdminNavTrail(root, childTitle, childURL, ContainerManager.getRoot());
         }
 
         @Override
@@ -2296,7 +2289,7 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("dumpHeap"));
-            PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "Heap dump", null);
+            addAdminNavTrail(root, "Heap dump", null, getContainer());
         }
     }
 
@@ -7517,8 +7510,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Admin Console", new ActionURL(ShowAdminAction.class, getContainer()).getLocalURIString());
-            root.addChild("Test Email Configuration");
+            addAdminNavTrail(root, "Test Email Configuration", getClass());
         }
     }
 
@@ -8400,7 +8392,7 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("experimental");
-            root.addChild("Experimental Features");
+            addAdminNavTrail(root, "Experimental Features", getClass());
         }
     }
 
@@ -8466,7 +8458,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Folder Types");
+            addAdminNavTrail(root, "Folder Types", getClass());
         }
     }
 
@@ -9061,7 +9053,7 @@ public class AdminController extends SpringActionController
 
     @AdminConsoleAction
     @RequiresPermission(AdminPermission.class)
-    public static class ShortURLAdminAction extends FormViewAction<ShortURLForm>
+    public class ShortURLAdminAction extends FormViewAction<ShortURLForm>
     {
         @Override
         public void validateCommand(ShortURLForm target, Errors errors) {}
@@ -9167,7 +9159,7 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("shortURL");
-            root.addChild("Short URL Admin");
+            addAdminNavTrail(root, "Short URL Admin", getClass());
         }
     }
 
@@ -9555,7 +9547,7 @@ public class AdminController extends SpringActionController
     }
 
     @AdminConsoleAction()
-    public static class ExternalRedirectAdminAction extends FormViewAction<ExternalRedirectForm>
+    public class ExternalRedirectAdminAction extends FormViewAction<ExternalRedirectForm>
     {
         @Override
         public void validateCommand(ExternalRedirectForm target, Errors errors)
@@ -9682,7 +9674,7 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("externalRedirectsURL");
-            root.addChild("External Redirect Host Admin");
+            addAdminNavTrail(root, "External Redirect Host Admin", getClass());
         }
     }
 
@@ -10309,7 +10301,7 @@ public class AdminController extends SpringActionController
                     controller.new MemTrackerAction(),
                     controller.new MemoryChartAction(),
                     controller.new FolderTypesAction(),
-                    new ShortURLAdminAction(),
+                    controller.new ShortURLAdminAction(),
                     controller.new CustomizeSiteAction(),
                     controller.new CachesAction(),
                     controller.new EnvironmentVariablesAction(),
