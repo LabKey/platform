@@ -37,6 +37,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         this.measures = {};
         this.options = {};
+        this.userFilters = [];
 
         // boolean to check if we should allow things like export to PDF
         this.supportedBrowser = !(Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8);
@@ -663,29 +664,38 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     renderDataGrid : function(renderTo)
     {
-        var urlParams = LABKEY.ActionURL.getParameters(this.baseUrl);
-        var filterUrl = urlParams['filterUrl'];
-        var userFilters, wpConfig, wp;
+        var filters = [];
+        var removableFilters = this.userFilters;
+        var dataRegion = LABKEY.DataRegions[this.dataRegionName];
 
-        if (this.userFilters)
-            userFilters = this.userFilters;
+        if (dataRegion !== undefined)
+        {
+            // If the region exists, then apply it's user filters as immutable filters to the QWP.
+            // They can be mutated on the data region directly.
+            filters = this.getDataRegionFilters();
+        }
         else
-            userFilters = LABKEY.Filter.getFiltersFromUrl(filterUrl, this.dataRegionName);
+        {
+            // If the region does not exist, then apply it's filters from the URL
+            // and allow them to be mutated on the QWP.
+            removableFilters = removableFilters.concat(this.getDataRegionFilters());
+        }
 
-        var userSort = LABKEY.Filter.getSortFromUrl(filterUrl, this.dataRegionName);
+        var userSort = LABKEY.Filter.getSortFromUrl(this.getFilterURL(), this.dataRegionName);
 
-        this.currentFilterStr = this.createFilterString(userFilters);
+        this.currentFilterStr = this.createFilterString(removableFilters);
         this.currentParameterStr = Ext4.JSON.encode(this.parameters);
 
-        wpConfig = {
+        var wpConfig = {
             schemaName  : this.schemaName,
             queryName   : this.queryName,
             viewName    : this.viewName,
             columns     : this.savedColumns,
             parameters  : this.parameters,
             frame       : 'none',
+            filters     : filters,
             disableAnalytics      : true,
-            removeableFilters     : userFilters,
+            removeableFilters     : removableFilters,
             removeableSort        : userSort,
             showSurroundingBorder : false,
             allowHeaderLock       : false,
@@ -699,7 +709,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             wpConfig.dataRegionName = this.dataRegionName + '-chartdata';
         }
 
-        wp = new LABKEY.QueryWebPart(wpConfig);
+        var wp = new LABKEY.QueryWebPart(wpConfig);
 
         // save the dataregion
         this.panelDataRegionName = wp.dataRegionName;
@@ -713,11 +723,37 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         wp.render(renderTo);
     },
 
+    getDataRegionFilters : function()
+    {
+        var dataRegion = LABKEY.DataRegions[this.dataRegionName];
+
+        if (dataRegion)
+            return dataRegion.getUserFilterArray();
+
+        // Fallback to pulling the data region's filters directly from the URL
+        return LABKEY.Filter.getFiltersFromUrl(this.getFilterURL(), this.dataRegionName);
+    },
+
+    getFilterURL : function()
+    {
+        return LABKEY.ActionURL.getParameters(this.baseUrl)['filterUrl'];
+    },
+
+    getQWPFilters : function()
+    {
+        var qwpRegion = LABKEY.DataRegions[this.panelDataRegionName];
+
+        // The associated QWP may not exist yet if the user hasn't viewed it
+        if (qwpRegion)
+            return qwpRegion.getUserFilterArray();
+
+        return [];
+    },
+
     // Returns a configuration based on the baseUrl plus any filters applied on the dataregion panel
     // the configuration can be used to make a selectRows request
     getQueryConfig : function(serialize)
     {
-        var dataRegion = LABKEY.DataRegions[this.panelDataRegionName];
         var sortKey = 'lsid'; // needed to keep expected ordering for legend data
 
         // Issue 38105: For plots with study visit labels on the x-axis, sort by visit display order and then sequenceNum
@@ -778,20 +814,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             config.scope = this;
         }
 
-        var filters;
+        // Filter scenarios (Issue 37153, Issue 40384)
+        // 1. Filters defined explicitly on chart configuration (this.userFilters)
+        // 2. Filters defined on associated QWP (panelDataRegionName)
+        // 3. Filters defined on associated Data Region (dataRegionName)
+        // 4. Filters defined on URL for associated Data Region (overlap with #3)
 
-        if (dataRegion)
-            filters = dataRegion.getUserFilterArray();
-        else if (this.userFilters)
-            filters = this.userFilters || [];
-        else
-        {
-            var urlParams = LABKEY.ActionURL.getParameters(this.baseUrl);
-            var filterUrl = urlParams['filterUrl'];
-
-            // lastly check if there is a filter on the url
-            filters = LABKEY.Filter.getFiltersFromUrl(filterUrl, this.dataRegionName);
-        }
+        var filters = this.userFilters.concat(this.getQWPFilters(), this.getDataRegionFilters());
 
         if (serialize)
         {
@@ -805,7 +834,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
             filters = newFilters;
         }
-        config['filterArray'] = filters;
+
+        config.filterArray = filters;
 
         return config;
     },
@@ -1141,14 +1171,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             if (Ext4.isArray(queryConfig.filterArray))
             {
-                this.userFilters = [];
+                var filters = [];
                 for (var i=0; i < queryConfig.filterArray.length; i++)
                 {
                     var f = queryConfig.filterArray[i];
                     var type = LABKEY.Filter.getFilterTypeForURLSuffix(f.type);
                     var value = type.isMultiValued() ? f.value : (Ext4.isArray(f.value) ? f.value[0]: f.value);
-                    this.userFilters.push(LABKEY.Filter.create(f.name,  value, type));
+                    filters.push(LABKEY.Filter.create(f.name, value, type));
                 }
+                this.userFilters = filters;
             }
 
             if (queryConfig.columns)
