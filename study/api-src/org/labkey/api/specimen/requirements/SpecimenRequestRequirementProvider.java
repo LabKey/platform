@@ -16,11 +16,15 @@
 
 package org.labkey.api.specimen.requirements;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
 
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -85,5 +89,14 @@ public class SpecimenRequestRequirementProvider extends DefaultRequirementProvid
     protected List<SpecimenRequestRequirement> generateRequirementsFromDefault(RequirementOwner owner, SpecimenRequestRequirement defaultRequirement, RequirementType type)
     {
         return ((SpecimenRequestRequirementType) type).generateRequirements((SpecimenRequest) owner, defaultRequirement);
+    }
+
+    public Set<Integer> getActorsInUseSet(Container container)
+    {
+        Collection<SpecimenRequestActor> actors = getActorsInUse(container);
+        Set<Integer> ids = new HashSet<>();
+        for (SpecimenRequestActor actor : actors)
+            ids.add(actor.getRowId());
+        return ids;
     }
 }
