@@ -80,4 +80,10 @@ public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationP
     {
         return Collections.emptyMap();
     }
+
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName() + " " + getDescription();
+    }
 }

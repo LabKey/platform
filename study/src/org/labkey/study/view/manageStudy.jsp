@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.specimen.SpecimenRequestManager" %>
 <%@ page import="org.labkey.api.specimen.model.SpecimenTablesProvider" %>
+<%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider" %>
 <%@ page import="org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
@@ -450,7 +451,7 @@
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Actors</td>
-                        <td class="lk-study-prop-desc">This study defines <%= study.getSpecimenRequestActors().length %> specimen request
+                        <td class="lk-study-prop-desc">This study defines <%=SpecimenRequestRequirementProvider.get().getActors(getContainer()).length %> specimen request
                             actors</td>
                         <td><%= link("Manage Actors and Groups", urlFor(ManageActorsAction.class)) %></td>
                     </tr>

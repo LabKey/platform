@@ -51,7 +51,7 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
 
         try
         {
-            for (SimpleStudyWriter writer : StudySerializationRegistryImpl.get().getRegisteredStudyWriters())
+            for (SimpleStudyWriter writer : StudySerializationRegistryImpl.get().getSimpleStudyWriters())
             {
                 String text = writer.getDataType();
 
