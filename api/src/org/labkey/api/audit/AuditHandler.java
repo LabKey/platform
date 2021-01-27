@@ -11,6 +11,8 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -25,7 +27,7 @@ public abstract class AuditHandler
     // we exclude these from the detailed record because they are already on the audit record itself and
     // depending on the data iterator behavior (e.g., for ExpDataIteraotrs.getDataIterator), these values
     // time of creating the audit log may actually already have been updated so the difference shown will be incorrect.
-    protected static final Set<String> excludedFromDetailDiff = CaseInsensitiveHashSet.of("Modified", "ModifiedBy");
+    protected static final Set<String> excludedFromDetailDiff = CaseInsensitiveHashSet.of("Modified", "ModifiedBy", "Created", "CreatedBy");
 
     protected abstract AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row);
 
@@ -169,12 +171,12 @@ public abstract class AuditHandler
             if (!excludedFromDetailDiff.contains(entry.getKey()) && updatedRow.containsKey(entry.getKey()))
             {
                 Object newValue = updatedRow.get(entry.getKey());
+                Object oldValue = entry.getValue();
                 // compare dates using string values to allow for both Date and Timestamp types
-                if (newValue instanceof Date && entry.getValue() != null)
+                if (newValue instanceof Date && oldValue != null)
                 {
                     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
                     String newString = formatter.format((java.util.Date) newValue);
-                    Object oldValue = entry.getValue();
                     String oldString = oldValue instanceof Date ? formatter.format((Date) oldValue) : oldValue.toString();
                     if (!newString.equals(oldString) || isExtraAuditField)
                     {
@@ -182,7 +184,30 @@ public abstract class AuditHandler
                         modifiedRow.put(entry.getKey(), newValue);
                     }
                 }
-                else if (!Objects.equals(entry.getValue(), newValue) || isExtraAuditField)
+                else if (newValue instanceof Number && oldValue != null)
+                {
+                    try
+                    {
+                        //Trying to catch 1.000 != 1.0
+                        Number num = NumberFormat.getInstance().parse(String.valueOf(oldValue));
+                        Double newVal = ((Number) newValue).doubleValue();
+                        Double oldVal = num.doubleValue();
+
+                        // If values differ than include in difference maps
+                        if (!newVal.equals(oldVal) || isExtraAuditField)
+                        {
+                            originalRow.put(entry.getKey(), oldValue);
+                            modifiedRow.put(entry.getKey(), newValue);
+                        }
+                    }
+                    catch (ParseException e)
+                    {
+                        // If a parsing error occurred e.g. one value was NaN, then include values in difference maps
+                        originalRow.put(entry.getKey(), oldValue);
+                        modifiedRow.put(entry.getKey(), newValue);
+                    }
+                }
+                else if (!Objects.equals(oldValue, newValue) || isExtraAuditField)
                 {
                     originalRow.put(entry.getKey(), entry.getValue());
                     modifiedRow.put(entry.getKey(), newValue);
