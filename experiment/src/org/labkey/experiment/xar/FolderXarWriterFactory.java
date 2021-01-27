@@ -97,9 +97,12 @@ public class FolderXarWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public boolean selectedByDefault(AbstractFolderContext.ExportType type)
+        public boolean selectedByDefault(AbstractFolderContext.ExportType type, Container c)
         {
-            return false; // Should be unchecked by default.
+            if (null != c)
+                return c.hasActiveModuleByName("SampleManagement");
+
+            return false;
         }
 
         @Override
