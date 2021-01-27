@@ -100,7 +100,7 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
     }
 
     // These writers are related to study and serialize into the study archive, but are registered by other modules
-    public Collection<SimpleStudyWriter> getRegisteredStudyWriters()
+    public Collection<SimpleStudyWriter> getSimpleStudyWriters()
     {
         return SimpleStudyWriterRegistry.getSimpleStudyWriters();
     }

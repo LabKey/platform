@@ -339,6 +339,7 @@ public class DomainImpl implements Domain
             OntologyManager.deleteDomain(getTypeURI(), getContainer());
             StorageProvisioner.get().drop(this);
             addAuditEvent(user, String.format("The domain %s was deleted", _dd.getName()));
+            DomainPropertyManager.clearCaches();
             transaction.commit();
         }
     }

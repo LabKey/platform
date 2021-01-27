@@ -27,15 +27,16 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorsAction" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
     StudyImpl study = me.getModelBean();
-    SpecimenRequestActor[] actors = study.getSpecimenRequestActors();
+    SpecimenRequestActor[] actors = SpecimenRequestRequirementProvider.get().getActors(getContainer());
     String showMemberSitesIdStr = request.getParameter("showMemberSites");
     int showMemberSitesId = -1;
-    Set<Integer> inUseActorIds = study.getSpecimenRequestActorsInUse();
+    Set<Integer> inUseActorIds = SpecimenRequestRequirementProvider.get().getActorsInUseSet(getContainer());
     if (showMemberSitesIdStr != null && showMemberSitesIdStr.length() > 0)
     {
         try

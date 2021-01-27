@@ -67,30 +67,25 @@ public class ViewServiceImpl implements ViewService
     {
         switch (t)
         {
-            case None:
-            {
+            case None -> {
                 return null;
             }
-            case Framed:
-            case Print:
-            {
+            case Print -> {
                 return new PrintTemplate(context, body, page);
             }
-            case Dialog:
-            {
+            case Dialog -> {
                 return new DialogTemplate(context, body, page);
             }
-            case Wizard:
-            {
+            case Wizard -> {
                 return new WizardTemplate(context, body, page);
             }
-            case Body:
-            case App:
-            {
-                return new AppTemplate(context, body, page, t.equals(Template.App));
+            case App -> {
+                return new AppTemplate(context, body, page, true);
             }
-            case Home:
-            {
+            case Body -> {
+                return new AppTemplate(context, body, page, false);
+            }
+            case Home -> {
                 return new PageTemplate(context, body, page);
             }
         }
