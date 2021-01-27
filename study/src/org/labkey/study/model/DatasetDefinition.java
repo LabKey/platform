@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
@@ -130,6 +131,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
@@ -1594,36 +1596,46 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         }
 
         @Override
-        public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
+        public AuditHandler getAuditHandler()
         {
-            // Only add an event if Detailed audit logging is enabled
-            if (AuditBehaviorType.DETAILED != auditBehavior)
-                return;
-
-            for (int i=0; i < rows.size(); i++)
+            return new AuditHandler()
             {
-                Map<String, Object> row = rows.get(i);
-                Map<String, Object> existingRow = null==existingRows ? Collections.emptyMap() : existingRows.get(i);
-                // note switched order
-                StudyServiceImpl.addDatasetAuditEvent(user, DatasetDefinition.this, existingRow, row);
-            }
-        }
+                @Override
+                public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount)
+                {
+                    QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, c, table, action, dataRowCount);
+                }
 
-        @Override
-        public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, Map<String, Object> parameters)
-        {
-            // Only add an event if Detailed audit logging is enabled
-            if (AuditBehaviorType.DETAILED != auditBehavior)
-                return;
+                @Override
+                public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
+                {
+                    // Only add an event if Detailed audit logging is enabled
+                    if (AuditBehaviorType.DETAILED != auditType)
+                        return;
+                    Objects.requireNonNull(rows);
 
-            Map<String, Object> oldRow = null;
-            //Leaving this block as reference for getting update diff
-            // if (auditAction == QueryService.AuditAction.MERGE)
-            // {
-            //      String lsid = String.valueOf(parameters.get("lsid"));
-            //      oldRow = DatasetDefinition.this.getDatasetRow(user, lsid);
-            // }
-            StudyServiceImpl.addDatasetAuditEvent(user, DatasetDefinition.this, oldRow, parameters);
+                    if (null == existingRows && action == QueryService.AuditAction.MERGE)
+                    {
+                        for (int i=0; i < rows.size(); i++)
+                        {
+                            Map<String, Object> row = rows.get(i);
+                            String lsid = String.valueOf(row.get("lsid"));
+                            var oldRow = DatasetDefinition.this.getDatasetRow(user, lsid);
+                            // note switched order (oldRecord, newRecord)
+                            StudyServiceImpl.addDatasetAuditEvent(user, DatasetDefinition.this, oldRow, row);
+                        }
+                        return;
+                    }
+
+                    for (int i=0; i < rows.size(); i++)
+                    {
+                        Map<String, Object> row = rows.get(i);
+                        Map<String, Object> existingRow = null==existingRows ? Collections.emptyMap() : existingRows.get(i);
+                        // note switched order (oldRecord, newRecord)
+                        StudyServiceImpl.addDatasetAuditEvent(user, DatasetDefinition.this, existingRow, row);
+                    }
+                }
+            };
         }
     }
 

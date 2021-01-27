@@ -479,7 +479,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             AuditBehaviorType auditBehavior = configParameters != null ? (AuditBehaviorType) configParameters.get(AuditBehavior) : null;
             String userComment = configParameters == null ? null : (String) configParameters.get(AuditUserComment);
-            getQueryTable().addAuditEvent(user, container, auditBehavior, userComment, auditAction, rows, existingRows);
+            getQueryTable().getAuditHandler().addAuditEvent(user, container, getQueryTable(), auditBehavior, userComment, auditAction, rows, existingRows);
         }
     }
 
