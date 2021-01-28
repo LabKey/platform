@@ -666,9 +666,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     {
         var filters = [];
         var removableFilters = this.userFilters;
-        var dataRegion = LABKEY.DataRegions[this.dataRegionName];
 
-        if (dataRegion !== undefined)
+        if (this.isDataRegionPresent())
         {
             // If the region exists, then apply it's user filters as immutable filters to the QWP.
             // They can be mutated on the data region directly.
@@ -678,7 +677,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             // If the region does not exist, then apply it's filters from the URL
             // and allow them to be mutated on the QWP.
-            removableFilters = removableFilters.concat(this.getDataRegionFilters());
+            removableFilters = removableFilters.concat(this.getURLFilters());
         }
 
         var allFilters = this.getUniqueFilters(filters.concat(removableFilters));
@@ -726,17 +725,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     /**
      * Returns the filters applied to the associated Data Region. This region's presence is optional.
-     * If this region is not available, then this method will return any filters found explicitly on the URL.
      */
     getDataRegionFilters : function()
     {
-        var dataRegion = LABKEY.DataRegions[this.dataRegionName];
+        if (this.isDataRegionPresent())
+            return LABKEY.DataRegions[this.dataRegionName].getUserFilterArray();
 
-        if (dataRegion)
-            return dataRegion.getUserFilterArray();
-
-        // Fallback to pulling the data region's filters directly from the URL
-        return LABKEY.Filter.getFiltersFromUrl(this.getFilterURL(), this.dataRegionName);
+        return [];
     },
 
     getFilterURL : function()
@@ -755,6 +750,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             return LABKEY.DataRegions[this.panelDataRegionName].getUserFilterArray();
 
         return [];
+    },
+
+    getURLFilters : function()
+    {
+        return LABKEY.Filter.getFiltersFromUrl(this.getFilterURL(), this.dataRegionName);
+    },
+
+    isDataRegionPresent : function()
+    {
+        return LABKEY.DataRegions[this.dataRegionName] !== undefined;
     },
 
     isQWPPresent : function()
@@ -833,12 +838,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         // 4. Filters defined on URL for associated Data Region (overlap with #3)
         var filters = this.getDataRegionFilters();
 
-        // If the QWP is present, then it is expected to have the "userFilters" already applied.
+        // If the QWP is present, then it is expected to have the "userFilters" and URL filters already applied.
         // Additionally, they are removable from the QWP so respect the current filters on the QWP.
         if (this.isQWPPresent())
             filters = filters.concat(this.getQWPFilters());
         else
-            filters = filters.concat(this.userFilters);
+            filters = filters.concat(this.userFilters, this.getURLFilters());
 
         filters = this.getUniqueFilters(filters);
 
