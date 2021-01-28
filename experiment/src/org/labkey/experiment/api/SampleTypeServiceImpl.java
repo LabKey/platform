@@ -116,7 +116,7 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
-public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeService
+public class SampleTypeServiceImpl extends AuditHandler.AbstractAuditHandler implements SampleTypeService
 {
     public static SampleTypeServiceImpl get()
     {

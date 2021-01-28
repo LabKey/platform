@@ -32,7 +32,7 @@
 
 <p>Registered Pipelines:</p>
 
-<table>
+<table class="labkey-data-region-legacy labkey-show-borders">
 
 <% for (TaskPipeline pipeline : pipelines) { %>
     <tr>
