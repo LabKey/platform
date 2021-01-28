@@ -34,7 +34,8 @@ import {
     SearchResultsPanel,
     ChangePasswordModal,
     UserDetailHeader,
-    SelectInput
+    SelectInput,
+    OntologyBrowserPanel,
 } from '@labkey/components';
 import { getServerContext } from "@labkey/api";
 import { CREATE_ROW, GRID_COLUMNS, GRID_DATA, SEARCH_RESULT_HITS } from './constants';
@@ -73,6 +74,7 @@ const COMPONENT_NAMES = List<string>([
     {value: 'LoadingModal'},
     {value: 'LoadingSpinner'},
     {value: 'NavigationBar'},
+    {value: 'OntologyBrowser'},
     {value: 'PageDetailHeader'},
     {value: 'PermissionAssignments'},
     {value: 'Progress'},
@@ -362,6 +364,11 @@ export class App extends React.Component<any, State> {
                 {selected === 'LoadingSpinner' &&
                     this.renderPanel('LoadingSpinner',
                         <LoadingSpinner msg={'Loading message goes here...'}/>
+                    )
+                }
+                {selected === 'OntologyBrowser' &&
+                    this.renderPanel('OntologyBrowser',
+                        <OntologyBrowserPanel ontologyId={ 7 } />
                     )
                 }
                 {selected === 'NavigationBar' &&
