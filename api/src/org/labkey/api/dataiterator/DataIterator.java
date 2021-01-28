@@ -16,6 +16,7 @@
 
 package org.labkey.api.dataiterator;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
 
@@ -74,6 +75,17 @@ public interface DataIterator extends DataIteratorBuilder, Closeable
         return () -> get(i);
     }
 
+    default boolean supportsGetExistingRecord()
+    {
+        return false;
+    }
+
+    @Nullable
+    default Map<String,Object> getExistingRecord()
+    {
+        return null;
+    }
+
     @Override
     void close() throws IOException;
 
@@ -86,6 +98,7 @@ public interface DataIterator extends DataIteratorBuilder, Closeable
     {
         return DataIteratorUtil.stream(this,false);
     }
+
 
     default void debugLogInfo(StringBuilder sb)
     {
