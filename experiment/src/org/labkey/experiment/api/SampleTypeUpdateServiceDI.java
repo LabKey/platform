@@ -351,7 +351,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             // NOTE: Not necessary to call onSamplesChanged -- already called by deleteMaterialByRowIds
             audit(QueryService.AuditAction.DELETE);
-            addAuditEvent(user, container,  QueryService.AuditAction.DELETE, configParameters, result);
+            addAuditEvent(user, container,  QueryService.AuditAction.DELETE, configParameters, result, null);
         }
         return result;
     }
