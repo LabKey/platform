@@ -149,10 +149,10 @@ public class SpecimenSettingsImporter implements SimpleStudyImporter
         SpecimenSettingsType.LocationTypes xmlLocationTypes = xmlSettings.getLocationTypes();
         if (null != xmlLocationTypes)
         {
-            Boolean repo = xmlLocationTypes.isSetRepository() ? xmlLocationTypes.getRepository().isSetAllowRequests() : null;
-            Boolean clinic = xmlLocationTypes.isSetClinic() ? xmlLocationTypes.getClinic().isSetAllowRequests() : null;
-            Boolean sal = xmlLocationTypes.isSetSiteAffiliatedLab() ? xmlLocationTypes.getSiteAffiliatedLab().isSetAllowRequests() : null;
-            Boolean endpoint = xmlLocationTypes.isSetEndpointLab() ? xmlLocationTypes.getEndpointLab().isSetAllowRequests() : null;
+            Boolean repo = xmlLocationTypes.isSetRepository() && xmlLocationTypes.getRepository().isSetAllowRequests() ? xmlLocationTypes.getRepository().getAllowRequests() : null;
+            Boolean clinic = xmlLocationTypes.isSetClinic() && xmlLocationTypes.getClinic().isSetAllowRequests() ? xmlLocationTypes.getClinic().getAllowRequests() : null;
+            Boolean sal = xmlLocationTypes.isSetSiteAffiliatedLab() && xmlLocationTypes.getSiteAffiliatedLab().isSetAllowRequests() ? xmlLocationTypes.getSiteAffiliatedLab().getAllowRequests() : null;
+            Boolean endpoint = xmlLocationTypes.isSetEndpointLab() && xmlLocationTypes.getEndpointLab().isSetAllowRequests() ? xmlLocationTypes.getEndpointLab().getAllowRequests() : null;
 
             StudyService.get().saveLocationSettings(ctx.getStudy(), ctx.getUser(), repo, clinic, sal, endpoint);
         }
