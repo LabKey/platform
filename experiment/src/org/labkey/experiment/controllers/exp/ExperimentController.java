@@ -5681,7 +5681,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(MoveRunsForm form)
         {
-            return PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(_targetContainer);
+            return urlProvider(PipelineUrls.class).urlBegin(_targetContainer);
         }
     }
 
@@ -6190,7 +6190,7 @@ public class ExperimentController extends SpringActionController
 
         public static ExperimentUrlsImpl get()
         {
-            return (ExperimentUrlsImpl) PageFlowUtil.urlProvider(ExperimentUrls.class);
+            return (ExperimentUrlsImpl) urlProvider(ExperimentUrls.class);
         }
 
         public ActionURL getDownloadGraphURL(ExpRun run, boolean detail, String focus, String focusType)

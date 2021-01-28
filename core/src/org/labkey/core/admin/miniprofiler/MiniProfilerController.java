@@ -37,7 +37,6 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -110,7 +109,7 @@ public class MiniProfilerController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(MiniProfilerSettingsForm form)
         {
-            return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
+            return urlProvider(AdminUrls.class).getAdminConsoleURL();
         }
 
         @Override
@@ -139,7 +138,7 @@ public class MiniProfilerController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(Object o)
         {
-            return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
+            return urlProvider(AdminUrls.class).getAdminConsoleURL();
         }
     }
 

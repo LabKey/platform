@@ -80,7 +80,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JunitUtil;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.util.TestContext;
@@ -130,7 +129,7 @@ public class PropertyController extends SpringActionController
 
     public static final String UNRECOGNIZED_FILE_TYPE_ERROR = "Unrecognized file type. Please upload a .xls, .xlsx, .tsv, .csv or .txt file";
 
-    private static PropertyService _propertyService = PropertyService.get();
+    private static final PropertyService _propertyService = PropertyService.get();
 
     public PropertyController()
     {
@@ -197,7 +196,7 @@ public class PropertyController extends SpringActionController
 
                 // re-fetch the domain so that we can redirect using the saved domainId
                 _domain = PropertyService.get().getDomain(getContainer(), domainURI);
-                ActionURL redirectURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), _domain);
+                ActionURL redirectURL = urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), _domain);
                 URLHelper returnURL = getViewContext().getActionURL().getReturnURL();
                 if (returnURL != null)
                     redirectURL.addReturnURL(returnURL);

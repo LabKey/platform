@@ -573,7 +573,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             if (null != action && action.getClass().isAnnotationPresent(AllowedBeforeInitialUserIsSet.class))
                 return null;
             else
-                return PageFlowUtil.urlProvider(LoginUrls.class).getInitialUserURL();
+                return urlProvider(LoginUrls.class).getInitialUserURL();
         }
 
         boolean upgradeRequired = ModuleLoader.getInstance().isUpgradeRequired();
@@ -621,11 +621,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
                         uae.setType(UnauthorizedException.Type.sendBasicAuth);
                         throw uae;
                     }
-                    return PageFlowUtil.urlProvider(AdminUrls.class).getMaintenanceURL(returnURL);
+                    return urlProvider(AdminUrls.class).getMaintenanceURL(returnURL);
                 }
                 else if (upgradeRequired || !startupComplete)
                 {
-                    return PageFlowUtil.urlProvider(AdminUrls.class).getModuleStatusURL(returnURL);
+                    return urlProvider(AdminUrls.class).getModuleStatusURL(returnURL);
                 }
             }
         }

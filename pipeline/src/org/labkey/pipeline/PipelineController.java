@@ -1443,11 +1443,11 @@ public class PipelineController extends SpringActionController
             Container c = getContainer();
             if (_importContainers.size() == 1 && _importContainers.get(0).equals(c))
             {
-                return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
+                return urlProvider(PipelineStatusUrls.class).urlBegin(c);
             }
             else
             {
-                ActionURL url = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c.getProject());
+                ActionURL url = urlProvider(PipelineStatusUrls.class).urlBegin(c.getProject());
                 url.addParameter("StatusFiles.containerFilterName", ContainerFilter.Type.CurrentAndSubfolders.name());
                 return url;
             }
@@ -1703,7 +1703,7 @@ public class PipelineController extends SpringActionController
 
     public static void registerAdminConsoleLinks()
     {
-        ActionURL url = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(ContainerManager.getRoot());
+        ActionURL url = urlProvider(PipelineUrls.class).urlSetup(ContainerManager.getRoot());
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "pipeline email notification", url, AdminOperationsPermission.class);
     }
 

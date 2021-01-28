@@ -296,7 +296,7 @@ public class AdminController extends SpringActionController
         Container root = ContainerManager.getRoot();
 
         // Configuration
-        AdminConsole.addLink(Configuration, "authentication", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL());
+        AdminConsole.addLink(Configuration, "authentication", urlProvider(LoginUrls.class).getConfigureURL());
         AdminConsole.addLink(Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Configuration, "experimental features", new ActionURL(ExperimentalFeaturesAction.class, root), AdminOperationsPermission.class);
         // TODO move to FileContentModule
@@ -314,11 +314,11 @@ public class AdminController extends SpringActionController
 /*
         // Management
         // note these should match (link and permissions) with SiteAdminMenu.getNavTree()
-        AdminConsole.addLink(Management, "site admins", PageFlowUtil.urlProvider(SecurityUrls.class).getManageGroupURL(root, "Administrators"), AdminOperationsPermission.class);
-        AdminConsole.addLink(Management, "site developers", PageFlowUtil.urlProvider(SecurityUrls.class).getManageGroupURL(root, "Developers"), AdminOperationsPermission.class);
-        AdminConsole.addLink(Management, "site users", PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL(), UserManagementPermission.class);
-        AdminConsole.addLink(Management, "site groups", PageFlowUtil.urlProvider(SecurityUrls.class).getSiteGroupsURL(root, null), UserManagementPermission.class);
-        AdminConsole.addLink(Management, "site permissions", PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(root), UserManagementPermission.class);
+        AdminConsole.addLink(Management, "site admins", urlProvider(SecurityUrls.class).getManageGroupURL(root, "Administrators"), AdminOperationsPermission.class);
+        AdminConsole.addLink(Management, "site developers", urlProvider(SecurityUrls.class).getManageGroupURL(root, "Developers"), AdminOperationsPermission.class);
+        AdminConsole.addLink(Management, "site users", urlProvider(UserUrls.class).getSiteUsersURL(), UserManagementPermission.class);
+        AdminConsole.addLink(Management, "site groups", urlProvider(SecurityUrls.class).getSiteGroupsURL(root, null), UserManagementPermission.class);
+        AdminConsole.addLink(Management, "site permissions", urlProvider(SecurityUrls.class).getPermissionsURL(root), UserManagementPermission.class);
 */
 
         // Diagnostics
@@ -750,9 +750,9 @@ public class AdminController extends SpringActionController
             {
                 URLHelper returnURL = form.getReturnURLHelper();
                 if (returnURL != null)
-                    loginURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(ContainerManager.getRoot(), returnURL);
+                    loginURL = urlProvider(LoginUrls.class).getLoginURL(ContainerManager.getRoot(), returnURL);
                 else
-                    loginURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL();
+                    loginURL = urlProvider(LoginUrls.class).getLoginURL();
             }
 
             MaintenanceBean bean = new MaintenanceBean();
@@ -3036,7 +3036,7 @@ public class AdminController extends SpringActionController
             if (null != jobGuid)
                 _jobId = PipelineService.get().getJobId(getUser(), getContainer(), jobGuid);
 
-            PipelineStatusUrls urls = PageFlowUtil.urlProvider(PipelineStatusUrls.class);
+            PipelineStatusUrls urls = urlProvider(PipelineStatusUrls.class);
             _url = null != _jobId ? urls.urlDetails(getContainer(), _jobId) : urls.urlBegin(getContainer());
 
             return true;
@@ -4335,7 +4335,7 @@ public class AdminController extends SpringActionController
                         {
                             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
                         }
-                        _successURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(container);
+                        _successURL = urlProvider(PipelineUrls.class).urlBrowse(container);
                     }
                     break;
                 }
@@ -4356,7 +4356,7 @@ public class AdminController extends SpringActionController
                     {
                         errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
                     }
-                    _successURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(container);
+                    _successURL = urlProvider(PipelineUrls.class).urlBrowse(container);
                     break;
                 }
                 case 2:
@@ -4518,7 +4518,7 @@ public class AdminController extends SpringActionController
             }
 
             // make sure we have a pipeline url provider to use for the success URL redirect
-            pipelineUrlProvider = PageFlowUtil.urlProvider(PipelineUrls.class);
+            pipelineUrlProvider = urlProvider(PipelineUrls.class);
             if (pipelineUrlProvider == null)
             {
                 errors.reject("folderImport", "Pipeline url provider does not exist.");
@@ -4921,7 +4921,7 @@ public class AdminController extends SpringActionController
 
             if (form.isWizard())
             {
-                _successURL = PageFlowUtil.urlProvider(SecurityUrls.class).getContainerURL(container);
+                _successURL = urlProvider(SecurityUrls.class).getContainerURL(container);
                 _successURL.addParameter("wizard", Boolean.TRUE.toString());
             }
             else
@@ -4936,7 +4936,6 @@ public class AdminController extends SpringActionController
             return _successURL;
         }
     }
-
 
     @SuppressWarnings("unused")
     public static class FileRootsForm extends SetupForm implements FileManagementForm
@@ -7834,7 +7833,7 @@ public class AdminController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(Object o)
         {
-            return PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(ContainerManager.getRoot());
+            return urlProvider(PipelineUrls.class).urlBegin(ContainerManager.getRoot());
         }
     }
 
