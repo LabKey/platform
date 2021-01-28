@@ -32,12 +32,6 @@ public interface FolderWriter extends Writer<Container, ImportContext<FolderDocu
     @Nullable Collection<Writer> getChildren(boolean sort, boolean forTemplate);
     boolean show(Container c);
     boolean selectedByDefault(AbstractFolderContext.ExportType type);
-
-    default boolean selectedByDefault(AbstractFolderContext.ExportType type, Container container)
-    {
-        return selectedByDefault(type);
-    }
-
     void initialize(ImportContext<FolderDocument.Folder> context);
     boolean includeWithTemplate();
 }
